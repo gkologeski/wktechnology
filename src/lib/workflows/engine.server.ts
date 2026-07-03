@@ -137,17 +137,22 @@ async function runAction(
         };
       }
       case "send_notification": {
-        // notifications table not present yet — log only.
-        return {
-          at,
-          ok: true,
-          action: "send_notification",
-          detail: {
-            note: "Tabela 'notifications' não existe ainda; ação apenas registrada.",
-            title: renderTokens(action.title, ctx.after),
-            body: action.body ? renderTokens(action.body, ctx.after) : null,
-          },
-        };
+        const title = renderTokens(action.title, ctx.after) as string;
+        const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
+        const targetUserId = action.user_id?.trim() ? action.user_id : ctx.ownerId;
+        const link = ctx.entity === "deals" ? `/deals?id=${ctx.entityId}` : null;
+        const { error } = await supabase.from("notifications").insert({
+          owner_id: ctx.ownerId,
+          user_id: targetUserId,
+          type: "workflow",
+          title,
+          body,
+          link,
+          entity: ctx.entity,
+          entity_id: ctx.entityId,
+        } as never);
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "send_notification", detail: { title, user_id: targetUserId } };
       }
       case "webhook": {
         const payload = action.payload
@@ -160,6 +165,77 @@ async function runAction(
         });
         if (!res.ok) throw new Error(`Webhook respondeu ${res.status}`);
         return { at, ok: true, action: "webhook", detail: { url: action.url, status: res.status } };
+      }
+      case "create_ats_job": {
+        if (ctx.entity !== "deals") {
+          throw new Error("create_ats_job só pode ser usado em workflows de Negócios");
+        }
+        const after = ctx.after ?? {};
+        const title = (renderTokens(action.title, ctx.after) as string) ||
+          `Vaga para ${String((after as AnyRow).name ?? "")}`.trim();
+        // Encontra/cria pipeline default do owner
+        let pipelineId: string | null = null;
+        const { data: pipe } = await supabase
+          .from("ats_pipelines")
+          .select("id")
+          .eq("owner_id", ctx.ownerId)
+          .order("is_default", { ascending: false })
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (pipe) pipelineId = pipe.id as string;
+        else {
+          const { data: created, error: pErr } = await supabase
+            .from("ats_pipelines")
+            .insert({ owner_id: ctx.ownerId, name: "Pipeline padrão", is_default: true, stages: [] } as never)
+            .select("id")
+            .single();
+          if (pErr) throw new Error(pErr.message);
+          pipelineId = created.id as string;
+        }
+        const headcount = action.headcount && action.headcount > 0 ? action.headcount : 1;
+        const slugBase = title
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/\p{Diacritic}/gu, "")
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "");
+        const createdIds: string[] = [];
+        for (let i = 0; i < headcount; i++) {
+          const slug = `${slugBase}-${Date.now().toString(36)}-${i}`;
+          const { data: inserted, error } = await supabase
+            .from("ats_jobs")
+            .insert({
+              owner_id: ctx.ownerId,
+              pipeline_id: pipelineId,
+              title,
+              slug,
+              status: "draft",
+              deal_id: ctx.entityId,
+              company_id: ((after as AnyRow).company_id as string) ?? null,
+              hiring_manager_id: action.hiring_manager_id ?? null,
+              recruiter_id: action.recruiter_id ?? null,
+              metadata: action.department ? { department: action.department } : {},
+            } as never)
+            .select("id")
+            .single();
+          if (error) throw new Error(error.message);
+          createdIds.push(inserted.id as string);
+        }
+        // Notifica aprovador se configurado
+        if (action.notify_user_id) {
+          await supabase.from("notifications").insert({
+            owner_id: ctx.ownerId,
+            user_id: action.notify_user_id,
+            type: "workflow",
+            title: `Nova vaga em rascunho: ${title}`,
+            body: `Origem: negócio fechado. Revise e publique para abrir a vaga.`,
+            link: `/jobs`,
+            entity: "ats_job",
+            entity_id: createdIds[0] ?? null,
+          } as never);
+        }
+        return { at, ok: true, action: "create_ats_job", detail: { ids: createdIds, headcount } };
       }
     }
   } catch (e) {
