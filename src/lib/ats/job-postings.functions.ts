@@ -174,12 +174,15 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
       payload,
     );
 
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const jobOwnerId = (job as { owner_id: string }).owner_id;
+
     if (!result.ok) {
-      await context.supabase
+      await supabaseAdmin
         .from("ats_job_postings")
         .upsert(
           {
-            owner_id: context.userId,
+            owner_id: jobOwnerId,
             job_id: job.id,
             provider: data.provider,
             status: "failed",
@@ -193,13 +196,11 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
 
     const isMock = await detectIsMock(data.provider, context.userId);
 
-
-
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await supabaseAdmin
       .from("ats_job_postings")
       .upsert(
         {
-          owner_id: context.userId,
+          owner_id: jobOwnerId,
           job_id: job.id,
           provider: data.provider,
           status: "published",
@@ -212,8 +213,10 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
         { onConflict: "job_id,provider" },
       )
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!row) throw new Error("Não foi possível salvar a publicação");
+
 
     await recordAtsEvent(context.supabase, {
       ownerId: context.userId,
@@ -252,7 +255,8 @@ export const unpublishJobFromProvider = createServerFn({ method: "POST" })
       );
     }
 
-    const { data: row, error } = await context.supabase
+    const { supabaseAdmin: sbAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await sbAdmin
       .from("ats_job_postings")
       .update({
         status: "unpublished",
@@ -261,8 +265,10 @@ export const unpublishJobFromProvider = createServerFn({ method: "POST" })
       })
       .eq("id", posting.id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!row) throw new Error("Publicação não encontrada");
+
 
     await recordAtsEvent(context.supabase, {
       ownerId: context.userId,
