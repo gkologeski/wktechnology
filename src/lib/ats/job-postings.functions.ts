@@ -255,7 +255,8 @@ export const unpublishJobFromProvider = createServerFn({ method: "POST" })
       );
     }
 
-    const { data: row, error } = await context.supabase
+    const { supabaseAdmin: sbAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await sbAdmin
       .from("ats_job_postings")
       .update({
         status: "unpublished",
@@ -264,8 +265,10 @@ export const unpublishJobFromProvider = createServerFn({ method: "POST" })
       })
       .eq("id", posting.id)
       .select()
-      .single();
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!row) throw new Error("Publicação não encontrada");
+
 
     await recordAtsEvent(context.supabase, {
       ownerId: context.userId,
