@@ -87,7 +87,8 @@ export const listAtsJobs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { status?: string; search?: string } | undefined) => data ?? {})
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+
     let q = supabase
       .from("ats_jobs")
       .select(
