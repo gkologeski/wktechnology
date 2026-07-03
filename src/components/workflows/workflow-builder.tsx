@@ -37,11 +37,39 @@ import {
 } from "lucide-react";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { TokenPills } from "@/components/ui/token-pills";
 import { WORKFLOW_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { cn } from "@/lib/utils";
+import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
+
+type FieldOpt = {
+  name: string;
+  label: string;
+  type?: "text" | "number" | "date" | "select" | "boolean";
+  options?: { value: string; label: string }[];
+};
+
+function useEntityFieldOptions(entity: WorkflowEntity): FieldOpt[] {
+  const fetchCatalog = useServerFn(getEntityFieldCatalog);
+  const { data } = useQuery({
+    queryKey: ["wf-entity-fields", entity],
+    queryFn: () => fetchCatalog({ data: { entity } }),
+    staleTime: 5 * 60_000,
+  });
+  if (data?.fields?.length) {
+    return data.fields.map((f) => ({
+      name: f.name,
+      label: f.label,
+      type: f.type,
+      options: f.options,
+    }));
+  }
+  // Fallback: usa constantes locais enquanto o catálogo carrega.
+  return (ENTITY_FIELDS[entity] ?? []).map((n) => ({ name: n, label: n }));
+}
 
 import {
   ENTITY_FIELDS,
@@ -230,6 +258,7 @@ export function WorkflowBuilder({
   const [selection, setSelection] = useState<StepPath | "trigger" | null>("trigger");
   const [library, setLibrary] = useState<{ parentPath: StepPath } | null>(null);
   const [entityPickerOpen, setEntityPickerOpen] = useState(false);
+  const fieldOptions = useEntityFieldOptions(state.entity);
 
   useEffect(() => {
     if (open) {
@@ -421,13 +450,14 @@ export function WorkflowBuilder({
                   <TriggerConfigPanel
                     entity={state.entity}
                     trigger={state.trigger}
+                    fields={fieldOptions}
                     onEntityClick={() => setEntityPickerOpen(true)}
                     onChange={setTrigger}
                   />
                 ) : selection && selectedAction ? (
                   <StepConfigPanel
                     action={selectedAction}
-                    entityFields={ENTITY_FIELDS[state.entity]}
+                    entityFields={fieldOptions}
                     onChange={(na) =>
                       setActions((prev) => updateStep(prev, selection, () => na))
                     }
@@ -825,17 +855,19 @@ function ActionLibraryPanel({
 function TriggerConfigPanel({
   entity,
   trigger,
+  fields,
   onEntityClick,
   onChange,
 }: {
   entity: WorkflowEntity;
   trigger: WorkflowTrigger;
+  fields: FieldOpt[];
   onEntityClick: () => void;
   onChange: (fn: (t: WorkflowTrigger) => WorkflowTrigger) => void;
 }) {
-  const fields = ENTITY_FIELDS[entity];
   const setFilters = (fn: (f: WorkflowFilter[]) => WorkflowFilter[]) =>
     onChange((t) => ({ ...t, filters: fn(t.filters ?? []) }));
+  const defaultField = fields[0]?.name ?? "";
 
   return (
     <div className="space-y-5">
@@ -879,12 +911,18 @@ function TriggerConfigPanel({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Condições</Label>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs">Condições</Label>
+            <Badge variant="secondary" className="text-[10px] font-normal">
+              opcional
+            </Badge>
+          </div>
           <Button
             variant="ghost"
             size="sm"
+            disabled={!defaultField}
             onClick={() =>
-              setFilters((p) => [...p, { field: fields[0], op: "eq", value: "" }])
+              setFilters((p) => [...p, { field: defaultField, op: "eq", value: "" }])
             }
           >
             <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
@@ -892,7 +930,7 @@ function TriggerConfigPanel({
         </div>
         {(trigger.filters ?? []).length === 0 && (
           <p className="text-xs text-muted-foreground">
-            Sem condições — todos os eventos casam.
+            Sem condições, todos os registros que dispararem o evento entram no workflow.
           </p>
         )}
         {(trigger.filters ?? []).map((f, i) => (
@@ -964,22 +1002,25 @@ function FilterRow({
   onRemove,
 }: {
   filter: WorkflowFilter;
-  fields: string[];
+  fields: FieldOpt[];
   onChange: (f: WorkflowFilter) => void;
   onRemove: () => void;
 }) {
   const needsValue = filter.op !== "is_empty" && filter.op !== "is_not_empty";
+  const selected = fields.find((f) => f.name === filter.field);
+  const options = selected?.options;
+  const type = selected?.type;
   return (
     <div className="space-y-2 rounded-md border p-2 bg-card">
       <div className="grid grid-cols-[1fr_auto] gap-2">
         <Select value={filter.field} onValueChange={(v) => onChange({ ...filter, field: v })}>
           <SelectTrigger className="h-8 text-xs">
-            <SelectValue />
+            <SelectValue placeholder="Selecionar propriedade" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-h-72">
             {fields.map((f) => (
-              <SelectItem key={f} value={f}>
-                {f}
+              <SelectItem key={f.name} value={f.name}>
+                {f.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -1003,14 +1044,32 @@ function FilterRow({
           ))}
         </SelectContent>
       </Select>
-      {needsValue && (
-        <Input
-          className="h-8 text-xs"
-          value={String(filter.value ?? "")}
-          onChange={(e) => onChange({ ...filter, value: e.target.value })}
-          placeholder="valor"
-        />
-      )}
+      {needsValue &&
+        (options && options.length > 0 ? (
+          <Select
+            value={String(filter.value ?? "")}
+            onValueChange={(v) => onChange({ ...filter, value: v })}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Selecionar valor" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {options.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            className="h-8 text-xs"
+            type={type === "number" ? "number" : type === "date" ? "date" : "text"}
+            value={String(filter.value ?? "")}
+            onChange={(e) => onChange({ ...filter, value: e.target.value })}
+            placeholder="valor"
+          />
+        ))}
     </div>
   );
 }
@@ -1024,7 +1083,7 @@ function StepConfigPanel({
   onChange,
 }: {
   action: WorkflowAction;
-  entityFields: string[];
+  entityFields: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
   return (
@@ -1044,7 +1103,7 @@ function StepConfigForm({
   onChange,
 }: {
   action: WorkflowAction;
-  entityFields: string[];
+  entityFields: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
   const subjectInserter = useTokenInserter<HTMLInputElement>(
@@ -1070,8 +1129,8 @@ function StepConfigForm({
             </SelectTrigger>
             <SelectContent>
               {entityFields.map((f) => (
-                <SelectItem key={f} value={f}>
-                  {f}
+                <SelectItem key={f.name} value={f.name}>
+                  {f.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -1270,7 +1329,7 @@ function StepConfigForm({
                   ...action,
                   filters: [
                     ...action.filters,
-                    { field: entityFields[0], op: "eq", value: "" },
+                    { field: entityFields[0]?.name ?? "", op: "eq", value: "" },
                   ],
                 })
               }
