@@ -123,11 +123,32 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   add_to_sequence: "Adicionar a sequência",
   send_notification: "Enviar notificação",
   webhook: "Disparar webhook",
+  delay: "Esperar (delay)",
+  branch_if: "Se / Então / Senão",
   create_ats_job: "Abrir vaga no ATS (rascunho)",
   advance_ats_application_stage: "Mover aplicação para etapa (ATS)",
   create_ats_candidate: "Criar candidato (ATS)",
   assign_recruiter: "Atribuir recrutador (ATS)",
 };
+
+// Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
+export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionType[] }> = [
+  { label: "Controle de fluxo", actions: ["delay", "branch_if"] },
+  { label: "CRM", actions: ["set_field", "assign_to", "rotate_assign"] },
+  { label: "Comunicação", actions: ["create_activity", "send_notification"] },
+  { label: "Sequências", actions: ["add_to_sequence"] },
+  {
+    label: "Recrutamento (ATS)",
+    actions: [
+      "create_ats_job",
+      "create_ats_candidate",
+      "advance_ats_application_stage",
+      "assign_recruiter",
+    ],
+  },
+  { label: "Externo", actions: ["webhook"] },
+];
+
 
 // Common fields by entity, used in filter dropdowns and set_field actions
 export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
