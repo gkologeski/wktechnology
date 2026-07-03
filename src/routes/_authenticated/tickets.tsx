@@ -1,6 +1,7 @@
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -103,6 +104,7 @@ function TicketsIndex() {
   const { user } = useAuth();
   const { can } = useMyTools();
   const qc = useQueryClient();
+  useRealtimeInvalidate([{ table: "tickets", queryKeys: [["tickets"]] }]);
   const navigate = useNavigate();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
   const { pipelines, selected: pipeline, selectedId, setSelectedId } = usePipelines("ticket");
