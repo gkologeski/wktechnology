@@ -35,8 +35,17 @@ export type WorkflowAction =
   | { type: "assign_to"; user_id: string }
   | { type: "rotate_assign"; rule_id: string }
   | { type: "add_to_sequence"; sequence_id: string }
-  | { type: "send_notification"; title: string; body?: string }
-  | { type: "webhook"; url: string; payload?: Record<string, unknown> };
+  | { type: "send_notification"; title: string; body?: string; user_id?: string }
+  | { type: "webhook"; url: string; payload?: Record<string, unknown> }
+  | {
+      type: "create_ats_job";
+      title: string;
+      department?: string;
+      headcount?: number;
+      hiring_manager_id?: string;
+      recruiter_id?: string;
+      notify_user_id?: string;
+    };
 
 export type WorkflowActionType = WorkflowAction["type"];
 
@@ -62,6 +71,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   add_to_sequence: "Adicionar a sequência",
   send_notification: "Enviar notificação",
   webhook: "Disparar webhook",
+  create_ats_job: "Abrir vaga no ATS (rascunho)",
 };
 
 // Common fields by entity, used in filter dropdowns and set_field actions

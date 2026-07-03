@@ -34,11 +34,21 @@ const ActionSchema = z.discriminatedUnion("type", [
     type: z.literal("send_notification"),
     title: z.string().min(1).max(200),
     body: z.string().max(2000).optional(),
+    user_id: z.string().uuid().optional(),
   }),
   z.object({
     type: z.literal("webhook"),
     url: z.string().url().max(500),
     payload: z.record(z.string(), z.unknown()).optional(),
+  }),
+  z.object({
+    type: z.literal("create_ats_job"),
+    title: z.string().min(1).max(200),
+    department: z.string().max(100).optional(),
+    headcount: z.number().int().min(1).max(50).optional(),
+    hiring_manager_id: z.string().uuid().optional(),
+    recruiter_id: z.string().uuid().optional(),
+    notify_user_id: z.string().uuid().optional(),
   }),
 ]);
 
