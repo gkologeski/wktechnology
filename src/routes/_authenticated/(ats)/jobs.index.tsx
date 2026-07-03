@@ -62,6 +62,7 @@ import {
 import { MetaPill } from "@/components/techhire/ui";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/")({
   component: AtsJobsPage,
