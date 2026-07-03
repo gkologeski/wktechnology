@@ -47,6 +47,15 @@ export const updateLinkedinJobConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => CONFIG.parse(i))
   .handler(async ({ context, data }) => {
+    // Verifica acesso à vaga sob RLS do usuário (admin, líder de time ou dono).
+    const { data: job, error: readErr } = await context.supabase
+      .from("ats_jobs")
+      .select("id, owner_id")
+      .eq("id", data.job_id)
+      .maybeSingle();
+    if (readErr) throw new Error(readErr.message);
+    if (!job) throw new Error("Vaga não encontrada ou sem permissão.");
+
     const patch = {
       linkedin_company_id: data.linkedin_company_id ?? null,
       linkedin_company_name: data.linkedin_company_name ?? null,
@@ -58,14 +67,16 @@ export const updateLinkedinJobConfig = createServerFn({ method: "POST" })
       linkedin_apply_url: data.linkedin_apply_url ?? null,
       linkedin_notification_email: data.linkedin_notification_email ?? null,
     };
-    const { data: row, error } = await context.supabase
+    // UPDATE via admin: autorização já garantida acima. Preserva owner_id original.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
       .from("ats_jobs")
       .update(patch as never)
       .eq("id", data.job_id)
-      .eq("owner_id", context.userId)
       .select("id")
-      .single();
+      .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!row) throw new Error("Falha ao atualizar configuração da vaga.");
     return { ok: true, id: row.id };
   });
 
