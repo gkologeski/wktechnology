@@ -31,6 +31,10 @@ export interface WorkflowFilter {
 export interface WorkflowTrigger {
   event: WorkflowEventType;
   filters?: WorkflowFilter[];
+  reenroll?: {
+    enabled: boolean;
+    events?: WorkflowEventType[];
+  };
 }
 
 export type WorkflowAction =
@@ -47,6 +51,13 @@ export type WorkflowAction =
   | { type: "add_to_sequence"; sequence_id: string }
   | { type: "send_notification"; title: string; body?: string; user_id?: string }
   | { type: "webhook"; url: string; payload?: Record<string, unknown> }
+  | { type: "delay"; amount: number; unit: "minutes" | "hours" | "days" }
+  | {
+      type: "branch_if";
+      filters: WorkflowFilter[];
+      then: WorkflowAction[];
+      else: WorkflowAction[];
+    }
   | {
       type: "create_ats_job";
       title: string;
@@ -72,6 +83,7 @@ export type WorkflowAction =
       user_id: string;
       target?: "auto" | "job" | "candidate" | "application" | "interview";
     };
+
 
 export type WorkflowActionType = WorkflowAction["type"];
 
