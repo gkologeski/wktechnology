@@ -855,17 +855,19 @@ function ActionLibraryPanel({
 function TriggerConfigPanel({
   entity,
   trigger,
+  fields,
   onEntityClick,
   onChange,
 }: {
   entity: WorkflowEntity;
   trigger: WorkflowTrigger;
+  fields: FieldOpt[];
   onEntityClick: () => void;
   onChange: (fn: (t: WorkflowTrigger) => WorkflowTrigger) => void;
 }) {
-  const fields = ENTITY_FIELDS[entity];
   const setFilters = (fn: (f: WorkflowFilter[]) => WorkflowFilter[]) =>
     onChange((t) => ({ ...t, filters: fn(t.filters ?? []) }));
+  const defaultField = fields[0]?.name ?? "";
 
   return (
     <div className="space-y-5">
@@ -909,12 +911,18 @@ function TriggerConfigPanel({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Condições</Label>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs">Condições</Label>
+            <Badge variant="secondary" className="text-[10px] font-normal">
+              opcional
+            </Badge>
+          </div>
           <Button
             variant="ghost"
             size="sm"
+            disabled={!defaultField}
             onClick={() =>
-              setFilters((p) => [...p, { field: fields[0], op: "eq", value: "" }])
+              setFilters((p) => [...p, { field: defaultField, op: "eq", value: "" }])
             }
           >
             <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
@@ -922,7 +930,7 @@ function TriggerConfigPanel({
         </div>
         {(trigger.filters ?? []).length === 0 && (
           <p className="text-xs text-muted-foreground">
-            Sem condições — todos os eventos casam.
+            Sem condições, todos os registros que dispararem o evento entram no workflow.
           </p>
         )}
         {(trigger.filters ?? []).map((f, i) => (
