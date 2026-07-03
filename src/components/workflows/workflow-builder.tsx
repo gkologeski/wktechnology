@@ -1083,7 +1083,7 @@ function StepConfigPanel({
   onChange,
 }: {
   action: WorkflowAction;
-  entityFields: string[];
+  entityFields: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
   return (
@@ -1103,7 +1103,7 @@ function StepConfigForm({
   onChange,
 }: {
   action: WorkflowAction;
-  entityFields: string[];
+  entityFields: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
   const subjectInserter = useTokenInserter<HTMLInputElement>(
