@@ -271,10 +271,8 @@ export function WorkflowBuilder({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent
-        className="max-w-none w-screen h-screen p-0 gap-0 rounded-none border-0 flex flex-col sm:rounded-none"
-        showCloseButton={false}
-      >
+      <DialogContent className="max-w-none w-screen h-screen max-h-screen p-0 gap-0 rounded-none border-0 flex flex-col sm:rounded-none [&>button.absolute]:hidden">
+
         <DialogTitle className="sr-only">
           {state.id ? "Editar workflow" : "Novo workflow"}
         </DialogTitle>
