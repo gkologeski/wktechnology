@@ -70,6 +70,12 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, url: "https://" };
     case "create_ats_job":
       return { type, title: "Vaga para {{name}}", headcount: 1 };
+    case "advance_ats_application_stage":
+      return { type, stage_value: "" };
+    case "create_ats_candidate":
+      return { type, full_name: "{{full_name}}" };
+    case "assign_recruiter":
+      return { type, user_id: "", target: "auto" };
   }
 }
 
