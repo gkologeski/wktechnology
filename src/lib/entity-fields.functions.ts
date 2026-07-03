@@ -129,7 +129,21 @@ function inferType(dataType: string): EntityFieldType {
 export const getEntityFieldCatalog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ entity: z.enum(["leads", "contacts", "companies", "deals"]) }).parse(input),
+    z
+      .object({
+        entity: z.enum([
+          "leads",
+          "contacts",
+          "companies",
+          "deals",
+          "tickets",
+          "ats_jobs",
+          "ats_candidates",
+          "ats_applications",
+          "ats_interviews",
+        ]),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
