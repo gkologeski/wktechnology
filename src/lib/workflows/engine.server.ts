@@ -172,9 +172,6 @@ async function runAction(
         return { at, ok: true, action: "webhook", detail: { url: action.url, status: res.status } };
       }
       case "create_ats_job": {
-        if (ctx.entity !== "deals") {
-          throw new Error("create_ats_job só pode ser usado em workflows de Negócios");
-        }
         const after = ctx.after ?? {};
         const title = (renderTokens(action.title, ctx.after) as string) ||
           `Vaga para ${String((after as AnyRow).name ?? "")}`.trim();
