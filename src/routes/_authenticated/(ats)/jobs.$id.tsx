@@ -506,44 +506,6 @@ function JobDetailPage() {
     </div>
   );
 
-  const candidatesSection = totalApps === 0 ? (
-    <EmptyState
-      icon={Users}
-      title="Sem candidatos"
-      description="Adicione um candidato para esta vaga."
-      action={
-        <Button onClick={openAdd}>
-          <Plus className="h-4 w-4 mr-2" aria-hidden />
-          Adicionar candidato
-        </Button>
-      }
-    />
-  ) : (
-    <div className="rounded-lg border border-border-subtle bg-surface-1 divide-y divide-border-subtle">
-      {apps.map((a) => (
-        <div key={a.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-          <div className="min-w-0 flex-1">
-            <Link
-              to="/candidates/$id"
-              params={{ id: a.candidate_id as string }}
-              className="font-medium text-text-primary hover:underline inline-flex items-center gap-1"
-            >
-              {a.candidate?.full_name ?? "Candidato"}
-              <ExternalLink className="h-3 w-3 opacity-60" aria-hidden />
-            </Link>
-            <div className="text-xs text-text-tertiary truncate">
-              {a.candidate?.current_position}
-              {a.candidate?.current_company ? ` @ ${a.candidate.current_company}` : ""}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <MetaPill>{a.stage_value}</MetaPill>
-            {a.ai_match_score != null && <ScoreBadge score={Number(a.ai_match_score)} />}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 
   const applicantsForScheduling = apps.filter((a) => {
     if (schedActiveOnly && (a.status ?? "active") !== "active") return false;
@@ -585,7 +547,7 @@ function JobDetailPage() {
         </div>
         {applicantsForScheduling.length === 0 ? (
           <p className="text-xs text-text-tertiary">
-            Nenhum candidato encontrado. Assim que aparecerem na aba Candidatos, você poderá agendar entrevistas aqui.
+            Nenhum candidato encontrado. Assim que aparecerem na aba Pipeline, você poderá agendar entrevistas aqui.
           </p>
         ) : (
           <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 max-h-[420px] overflow-y-auto pr-1">
@@ -760,7 +722,7 @@ function JobDetailPage() {
                 Pipeline{" "}
                 <span className="ml-1 text-[10px] text-text-tertiary">({totalApps})</span>
               </TabsTrigger>
-              <TabsTrigger value="candidates">Candidatos</TabsTrigger>
+              
               <TabsTrigger value="interviews">
                 Entrevistas{" "}
                 <span className="ml-1 text-[10px] text-text-tertiary">
@@ -780,9 +742,6 @@ function JobDetailPage() {
                 description="Arraste candidatos entre etapas para atualizar o status."
               />
               <div className="mt-3">{pipelineSection}</div>
-            </TabsContent>
-            <TabsContent value="candidates" className="mt-0">
-              {candidatesSection}
             </TabsContent>
             <TabsContent value="interviews" className="mt-0">
               {interviewsSection}
