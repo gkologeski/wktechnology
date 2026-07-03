@@ -875,5 +875,11 @@ function describeAction(a: WorkflowAction): string {
       return a.url;
     case "create_ats_job":
       return `${a.headcount ?? 1}× ${a.title}`;
+    case "advance_ats_application_stage":
+      return `→ ${a.stage_value || "—"}`;
+    case "create_ats_candidate":
+      return a.full_name;
+    case "assign_recruiter":
+      return `${a.target ?? "auto"} · ${a.user_id ? a.user_id.slice(0, 8) + "…" : "—"}`;
   }
 }
