@@ -189,26 +189,6 @@ async function runAction(
         const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
         const targetUserId = action.user_id?.trim() ? action.user_id : ctx.ownerId;
         const link = notificationLinkFor(ctx.entity, ctx.entityId);
-        const { error } = await supabase.from("sequence_enrollments").insert({
-          owner_id: ctx.ownerId,
-          sequence_id: action.sequence_id,
-          entity_id: ctx.entityId,
-          status: "active",
-          next_run_at: new Date().toISOString(),
-        });
-        if (error) throw new Error(error.message);
-        return {
-          at,
-          ok: true,
-          action: "add_to_sequence",
-          detail: { sequence_id: action.sequence_id },
-        };
-      }
-      case "send_notification": {
-        const title = renderTokens(action.title, ctx.after) as string;
-        const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
-        const targetUserId = action.user_id?.trim() ? action.user_id : ctx.ownerId;
-        const link = ctx.entity === "deals" ? `/deals?id=${ctx.entityId}` : null;
         const { error } = await supabase.from("notifications").insert({
           owner_id: ctx.ownerId,
           user_id: targetUserId,
