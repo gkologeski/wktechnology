@@ -506,44 +506,6 @@ function JobDetailPage() {
     </div>
   );
 
-  const candidatesSection = totalApps === 0 ? (
-    <EmptyState
-      icon={Users}
-      title="Sem candidatos"
-      description="Adicione um candidato para esta vaga."
-      action={
-        <Button onClick={openAdd}>
-          <Plus className="h-4 w-4 mr-2" aria-hidden />
-          Adicionar candidato
-        </Button>
-      }
-    />
-  ) : (
-    <div className="rounded-lg border border-border-subtle bg-surface-1 divide-y divide-border-subtle">
-      {apps.map((a) => (
-        <div key={a.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-          <div className="min-w-0 flex-1">
-            <Link
-              to="/candidates/$id"
-              params={{ id: a.candidate_id as string }}
-              className="font-medium text-text-primary hover:underline inline-flex items-center gap-1"
-            >
-              {a.candidate?.full_name ?? "Candidato"}
-              <ExternalLink className="h-3 w-3 opacity-60" aria-hidden />
-            </Link>
-            <div className="text-xs text-text-tertiary truncate">
-              {a.candidate?.current_position}
-              {a.candidate?.current_company ? ` @ ${a.candidate.current_company}` : ""}
-            </div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <MetaPill>{a.stage_value}</MetaPill>
-            {a.ai_match_score != null && <ScoreBadge score={Number(a.ai_match_score)} />}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 
   const applicantsForScheduling = apps.filter((a) => {
     if (schedActiveOnly && (a.status ?? "active") !== "active") return false;
