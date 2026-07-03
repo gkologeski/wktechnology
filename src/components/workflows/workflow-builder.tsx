@@ -708,5 +708,7 @@ function describeAction(a: WorkflowAction): string {
       return a.title;
     case "webhook":
       return a.url;
+    case "create_ats_job":
+      return `${a.headcount ?? 1}× ${a.title}`;
   }
 }
