@@ -157,10 +157,17 @@ export function WorkflowBuilder({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {(Object.keys(ENTITY_LABELS) as WorkflowEntity[]).map((e) => (
-                      <SelectItem key={e} value={e}>
-                        {ENTITY_LABELS[e]}
-                      </SelectItem>
+                    {ENTITY_GROUPS.map((g) => (
+                      <div key={g.label}>
+                        <div className="px-2 py-1 text-[10px] font-semibold uppercase text-muted-foreground">
+                          {g.label}
+                        </div>
+                        {g.entities.map((e) => (
+                          <SelectItem key={e} value={e}>
+                            {ENTITY_LABELS[e]}
+                          </SelectItem>
+                        ))}
+                      </div>
                     ))}
                   </SelectContent>
                 </Select>
