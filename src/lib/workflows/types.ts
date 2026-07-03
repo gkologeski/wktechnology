@@ -71,6 +71,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   add_to_sequence: "Adicionar a sequência",
   send_notification: "Enviar notificação",
   webhook: "Disparar webhook",
+  create_ats_job: "Abrir vaga no ATS (rascunho)",
 };
 
 // Common fields by entity, used in filter dropdowns and set_field actions
