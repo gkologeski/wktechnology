@@ -13136,6 +13136,10 @@ export type Database = {
         Returns: undefined
       }
       can_access_ats_job: { Args: { _job_id: string }; Returns: boolean }
+      can_write_owner: {
+        Args: { _owner: string; _user: string }
+        Returns: boolean
+      }
       companies_facets: {
         Args: { p_limit?: number }
         Returns: {
@@ -13244,6 +13248,10 @@ export type Database = {
         Args: { _user: string; _workspace: string }
         Returns: boolean
       }
+      is_workspace_admin_of: {
+        Args: { _owner: string; _user: string }
+        Returns: boolean
+      }
       is_workspace_admin_v2: {
         Args: { _user: string; _workspace: string }
         Returns: boolean
@@ -13319,6 +13327,10 @@ export type Database = {
       seed_quote_templates: {
         Args: { _owner: string; _workspace: string }
         Returns: undefined
+      }
+      shares_team_with: {
+        Args: { _owner: string; _user: string }
+        Returns: boolean
       }
       shares_workspace_with: { Args: { _other: string }; Returns: boolean }
       show_limit: { Args: never; Returns: number }
