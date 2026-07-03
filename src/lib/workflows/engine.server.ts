@@ -7,6 +7,49 @@ import type { WorkflowAction, WorkflowEntity, WorkflowFilter, WorkflowTrigger } 
 type AnyRow = Record<string, unknown>;
 type LogStep = { at: string; ok: boolean; action: string; detail?: unknown; error?: string };
 
+// Coluna de atribuição principal por entidade.
+function assignFieldFor(entity: WorkflowEntity): string {
+  switch (entity) {
+    case "tickets":
+      return "assignee_id";
+    case "ats_jobs":
+      return "recruiter_id";
+    case "ats_applications":
+      return "candidate_id"; // aplicações não têm dono direto — cai no owner_id via fallback abaixo
+    case "ats_interviews":
+      return "interviewer_id";
+    default:
+      return "owner_id";
+  }
+}
+
+// Deep-link do sino de notificações por entidade.
+function notificationLinkFor(entity: WorkflowEntity, entityId: string): string | null {
+  switch (entity) {
+    case "deals":
+      return `/deals?id=${entityId}`;
+    case "leads":
+      return `/leads?id=${entityId}`;
+    case "contacts":
+      return `/contacts?id=${entityId}`;
+    case "companies":
+      return `/companies?id=${entityId}`;
+    case "tickets":
+      return `/tickets?id=${entityId}`;
+    case "ats_jobs":
+      return `/ats/jobs?id=${entityId}`;
+    case "ats_candidates":
+      return `/ats/candidates?id=${entityId}`;
+    case "ats_applications":
+      return `/ats/applications/${entityId}`;
+    case "ats_interviews":
+      return `/ats/interviews?id=${entityId}`;
+    default:
+      return null;
+  }
+}
+
+
 function getField(obj: AnyRow | null | undefined, path: string): unknown {
   if (!obj) return undefined;
   return path.split(".").reduce<unknown>((acc, k) => {
