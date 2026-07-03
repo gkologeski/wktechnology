@@ -7,7 +7,6 @@ import type { WorkflowAction, WorkflowEntity, WorkflowFilter, WorkflowTrigger } 
 type AnyRow = Record<string, unknown>;
 type LogStep = { at: string; ok: boolean; action: string; detail?: unknown; error?: string };
 
-// Coluna de atribuição principal por entidade.
 function assignFieldFor(entity: WorkflowEntity): string {
   switch (entity) {
     case "tickets":
@@ -23,7 +22,6 @@ function assignFieldFor(entity: WorkflowEntity): string {
   }
 }
 
-// Deep-link do sino de notificações por entidade.
 function notificationLinkFor(entity: WorkflowEntity, entityId: string): string | null {
   switch (entity) {
     case "deals":
@@ -48,7 +46,6 @@ function notificationLinkFor(entity: WorkflowEntity, entityId: string): string |
       return null;
   }
 }
-
 
 function getField(obj: AnyRow | null | undefined, path: string): unknown {
   if (!obj) return undefined;
@@ -103,10 +100,85 @@ function evalFilter(f: WorkflowFilter, after: AnyRow | null, before: AnyRow | nu
   }
 }
 
+interface RunCtx {
+  entity: WorkflowEntity;
+  entityId: string;
+  ownerId: string;
+  after: AnyRow | null;
+  before: AnyRow | null;
+}
+
+interface RunResult {
+  log: LogStep[];
+  hadError: boolean;
+  // Se != null, execução foi suspensa para retomar depois desse índice na lista de ações.
+  suspendedAt?: { runAtIso: string; resumeCursor: number };
+}
+
+async function runActions(
+  supabase: SupabaseClient,
+  actions: WorkflowAction[],
+  ctx: RunCtx,
+  startIndex = 0,
+): Promise<RunResult> {
+  const log: LogStep[] = [];
+  for (let i = startIndex; i < actions.length; i++) {
+    const action = actions[i];
+
+    // Delay: agenda retomada e para aqui.
+    if (action.type === "delay") {
+      const mult =
+        action.unit === "minutes" ? 60_000 : action.unit === "hours" ? 3_600_000 : 86_400_000;
+      const ms = Math.max(1, action.amount) * mult;
+      const runAtIso = new Date(Date.now() + ms).toISOString();
+      log.push({
+        at: new Date().toISOString(),
+        ok: true,
+        action: "delay",
+        detail: { amount: action.amount, unit: action.unit, resume_at: runAtIso },
+      });
+      return { log, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
+    }
+
+    // Branch: filtra e executa then/else recursivamente.
+    if (action.type === "branch_if") {
+      const filters = action.filters ?? [];
+      const passes = filters.length === 0 || filters.every((f) => evalFilter(f, ctx.after, ctx.before));
+      const branchName = passes ? "then" : "else";
+      const branchActions = passes ? action.then ?? [] : action.else ?? [];
+      log.push({
+        at: new Date().toISOString(),
+        ok: true,
+        action: "branch_if",
+        detail: { branch: branchName, filters },
+      });
+      const branchRes = await runActions(supabase, branchActions, ctx);
+      log.push(...branchRes.log);
+      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.suspendedAt) {
+        // Delays dentro de branches não são retomáveis nesta versão — reportamos e paramos.
+        log.push({
+          at: new Date().toISOString(),
+          ok: false,
+          action: "delay",
+          error: "Delays dentro de ramificações ainda não são retomáveis",
+        });
+        return { log, hadError: true };
+      }
+      continue;
+    }
+
+    const step = await runAction(supabase, action, ctx);
+    log.push(step);
+    if (!step.ok) return { log, hadError: true };
+  }
+  return { log, hadError: false };
+}
+
 async function runAction(
   supabase: SupabaseClient,
-  action: WorkflowAction,
-  ctx: { entity: WorkflowEntity; entityId: string; ownerId: string; after: AnyRow | null },
+  action: Exclude<WorkflowAction, { type: "delay" } | { type: "branch_if" }>,
+  ctx: RunCtx,
 ): Promise<LogStep> {
   const at = new Date().toISOString();
   try {
@@ -163,7 +235,6 @@ async function runAction(
         else if (ctx.entity === "contacts") baseRow.related_contact_id = ctx.entityId;
         else if (ctx.entity === "companies") baseRow.related_company_id = ctx.entityId;
         else if (ctx.entity === "deals") baseRow.related_deal_id = ctx.entityId;
-        // Demais entidades (tickets/ATS): grava atividade solta com referência no body.
         const { error } = await supabase.from("activities").insert(baseRow as never);
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_activity", detail: { subject } };
@@ -218,7 +289,6 @@ async function runAction(
         const after = ctx.after ?? {};
         const title = (renderTokens(action.title, ctx.after) as string) ||
           `Vaga para ${String((after as AnyRow).name ?? "")}`.trim();
-        // Encontra/cria pipeline default do owner
         let pipelineId: string | null = null;
         const { data: pipe } = await supabase
           .from("ats_pipelines")
@@ -330,7 +400,6 @@ async function runAction(
         };
       }
       case "assign_recruiter": {
-        // Escolhe alvo automaticamente pela entidade do gatilho quando não informado.
         const target =
           action.target && action.target !== "auto"
             ? action.target
@@ -369,8 +438,12 @@ async function runAction(
           detail: { target, user_id: action.user_id, column },
         };
       }
+      default: {
+        const _exhaustive: never = action;
+        void _exhaustive;
+        return { at, ok: false, action: "unknown", error: "Ação não suportada" };
+      }
     }
-
   } catch (e) {
     return {
       at,
@@ -389,6 +462,8 @@ interface EventRow {
   event_type: string;
   before: AnyRow | null;
   after: AnyRow | null;
+  resume_workflow_id?: string | null;
+  resume_cursor?: number | null;
 }
 
 interface WorkflowRow {
@@ -399,7 +474,70 @@ interface WorkflowRow {
   actions: WorkflowAction[];
 }
 
+async function alreadyEnrolled(
+  supabase: SupabaseClient,
+  workflowId: string,
+  entity: WorkflowEntity,
+  entityId: string,
+): Promise<boolean> {
+  // Verifica se este workflow já rodou com sucesso para este record
+  // (join workflow_runs -> workflow_events por event_id).
+  const { data } = await supabase
+    .from("workflow_runs")
+    .select("id, workflow_events!inner(entity, entity_id)")
+    .eq("workflow_id", workflowId)
+    .eq("status", "success")
+    .eq("workflow_events.entity", entity)
+    .eq("workflow_events.entity_id", entityId)
+    .limit(1);
+  return (data ?? []).length > 0;
+}
+
 export async function processEvent(supabase: SupabaseClient, event: EventRow) {
+  // Caso 1: retomada (delay) → executa apenas o workflow indicado a partir do cursor.
+  if (event.resume_workflow_id && typeof event.resume_cursor === "number") {
+    const { data: wf } = await supabase
+      .from("workflows")
+      .select("id, owner_id, entity, trigger, actions")
+      .eq("id", event.resume_workflow_id)
+      .maybeSingle();
+    if (wf) {
+      const wfr = wf as WorkflowRow;
+      const { data: run } = await supabase
+        .from("workflow_runs")
+        .insert({
+          owner_id: wfr.owner_id,
+          workflow_id: wfr.id,
+          event_id: event.id,
+          status: "running",
+          started_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+      if (run) {
+        const res = await runActions(
+          supabase,
+          wfr.actions ?? [],
+          {
+            entity: event.entity,
+            entityId: event.entity_id,
+            ownerId: event.owner_id,
+            after: event.after,
+            before: event.before,
+          },
+          event.resume_cursor,
+        );
+        await finishRun(supabase, run.id, res, event);
+      }
+    }
+    await supabase
+      .from("workflow_events")
+      .update({ processed_at: new Date().toISOString() })
+      .eq("id", event.id);
+    return;
+  }
+
+  // Caso 2: evento normal (created/updated/stage_changed).
   const { data: workflows } = await supabase
     .from("workflows")
     .select("id, owner_id, entity, trigger, actions")
@@ -414,6 +552,21 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     const passes = filters.every((f) => evalFilter(f, event.after, event.before));
     if (!passes) continue;
 
+    // Re-enrollment: se desabilitado e já existe run bem-sucedido, pula.
+    // Se habilitado, só reprocessa quando o evento atual está na lista permitida.
+    const reenroll = trig.reenroll;
+    if (!reenroll?.enabled) {
+      const enrolled = await alreadyEnrolled(supabase, wf.id, event.entity, event.entity_id);
+      if (enrolled) continue;
+    } else if (
+      reenroll.events &&
+      reenroll.events.length > 0 &&
+      !reenroll.events.includes(event.event_type as WorkflowTrigger["event"])
+    ) {
+      const enrolled = await alreadyEnrolled(supabase, wf.id, event.entity, event.entity_id);
+      if (enrolled) continue;
+    }
+
     // dedupe via unique (workflow_id, event_id)
     const { data: run, error: insErr } = await supabase
       .from("workflow_runs")
@@ -426,33 +579,16 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       })
       .select("id")
       .single();
-    if (insErr || !run) continue; // já processado
+    if (insErr || !run) continue;
 
-    const log: LogStep[] = [];
-    let hadError = false;
-    for (const action of wf.actions ?? []) {
-      const step = await runAction(supabase, action, {
-        entity: event.entity,
-        entityId: event.entity_id,
-        ownerId: event.owner_id,
-        after: event.after,
-      });
-      log.push(step);
-      if (!step.ok) {
-        hadError = true;
-        break;
-      }
-    }
-
-    await supabase
-      .from("workflow_runs")
-      .update({
-        status: hadError ? "error" : "success",
-        log,
-        error: hadError ? (log[log.length - 1]?.error ?? null) : null,
-        finished_at: new Date().toISOString(),
-      })
-      .eq("id", run.id);
+    const res = await runActions(supabase, wf.actions ?? [], {
+      entity: event.entity,
+      entityId: event.entity_id,
+      ownerId: event.owner_id,
+      after: event.after,
+      before: event.before,
+    });
+    await finishRun(supabase, run.id, res, event, wf.id);
   }
 
   await supabase
@@ -461,11 +597,56 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     .eq("id", event.id);
 }
 
+async function finishRun(
+  supabase: SupabaseClient,
+  runId: string,
+  res: RunResult,
+  event: EventRow,
+  workflowId?: string,
+) {
+  // Se suspenso por delay, agenda novo evento de retomada.
+  if (res.suspendedAt && workflowId) {
+    await supabase.from("workflow_events").insert({
+      owner_id: event.owner_id,
+      entity: event.entity,
+      entity_id: event.entity_id,
+      event_type: event.event_type,
+      before: event.before,
+      after: event.after,
+      run_at: res.suspendedAt.runAtIso,
+      resume_workflow_id: workflowId,
+      resume_cursor: res.suspendedAt.resumeCursor,
+    } as never);
+    await supabase
+      .from("workflow_runs")
+      .update({
+        status: "success",
+        log: res.log,
+        finished_at: new Date().toISOString(),
+      })
+      .eq("id", runId);
+    return;
+  }
+  await supabase
+    .from("workflow_runs")
+    .update({
+      status: res.hadError ? "error" : "success",
+      log: res.log,
+      error: res.hadError ? (res.log[res.log.length - 1]?.error ?? null) : null,
+      finished_at: new Date().toISOString(),
+    })
+    .eq("id", runId);
+}
+
 export async function tickWorkflows(supabase: SupabaseClient, limit = 50) {
+  const nowIso = new Date().toISOString();
   const { data: events, error } = await supabase
     .from("workflow_events")
-    .select("id, owner_id, entity, entity_id, event_type, before, after")
+    .select(
+      "id, owner_id, entity, entity_id, event_type, before, after, resume_workflow_id, resume_cursor",
+    )
     .is("processed_at", null)
+    .lte("run_at", nowIso)
     .order("created_at", { ascending: true })
     .limit(limit);
   if (error) throw new Error(error.message);
