@@ -450,13 +450,14 @@ export function WorkflowBuilder({
                   <TriggerConfigPanel
                     entity={state.entity}
                     trigger={state.trigger}
+                    fields={fieldOptions}
                     onEntityClick={() => setEntityPickerOpen(true)}
                     onChange={setTrigger}
                   />
                 ) : selection && selectedAction ? (
                   <StepConfigPanel
                     action={selectedAction}
-                    entityFields={ENTITY_FIELDS[state.entity]}
+                    entityFields={fieldOptions}
                     onChange={(na) =>
                       setActions((prev) => updateStep(prev, selection, () => na))
                     }
