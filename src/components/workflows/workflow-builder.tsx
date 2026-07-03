@@ -591,6 +591,93 @@ function ActionCard({
         </div>
       )}
 
+      {action.type === "advance_ats_application_stage" && (
+        <div className="space-y-2">
+          <Label className="text-xs">Novo stage_value da aplicação</Label>
+          <Input
+            value={action.stage_value}
+            onChange={(e) => onChange({ ...action, stage_value: e.target.value })}
+            placeholder="ex: entrevista, contratado, rejeitado"
+          />
+          <p className="text-xs text-muted-foreground">
+            Use o mesmo <code>stage_value</code> definido no pipeline de aplicações do ATS.
+          </p>
+        </div>
+      )}
+
+      {action.type === "create_ats_candidate" && (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Nome completo</Label>
+            <Input
+              value={action.full_name}
+              onChange={(e) => onChange({ ...action, full_name: e.target.value })}
+              placeholder="{{full_name}}"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Email (opcional)</Label>
+              <Input
+                value={action.email ?? ""}
+                onChange={(e) => onChange({ ...action, email: e.target.value })}
+                placeholder="{{email}}"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Telefone (opcional)</Label>
+              <Input
+                value={action.phone ?? ""}
+                onChange={(e) => onChange({ ...action, phone: e.target.value })}
+                placeholder="{{phone}}"
+              />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Origem (opcional)</Label>
+            <Input
+              value={action.source ?? ""}
+              onChange={(e) => onChange({ ...action, source: e.target.value })}
+              placeholder="workflow, indicação, site…"
+            />
+          </div>
+        </div>
+      )}
+
+      {action.type === "assign_recruiter" && (
+        <div className="space-y-2">
+          <Label className="text-xs">Recrutador / responsável</Label>
+          <UserPicker
+            value={action.user_id}
+            onChange={(v) => onChange({ ...action, user_id: v })}
+          />
+          <div>
+            <Label className="text-xs">Alvo</Label>
+            <Select
+              value={action.target ?? "auto"}
+              onValueChange={(v) =>
+                onChange({
+                  ...action,
+                  target: v as "auto" | "job" | "candidate" | "application" | "interview",
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">Automático (entidade do gatilho)</SelectItem>
+                <SelectItem value="job">Vaga</SelectItem>
+                <SelectItem value="candidate">Candidato</SelectItem>
+                <SelectItem value="application">Aplicação</SelectItem>
+                <SelectItem value="interview">Entrevista</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      )}
+
+
 
       {action.type === "webhook" && (
         <div className="space-y-2">
