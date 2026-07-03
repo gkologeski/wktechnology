@@ -1329,7 +1329,7 @@ function StepConfigForm({
                   ...action,
                   filters: [
                     ...action.filters,
-                    { field: entityFields[0], op: "eq", value: "" },
+                    { field: entityFields[0]?.name ?? "", op: "eq", value: "" },
                   ],
                 })
               }
