@@ -1002,22 +1002,25 @@ function FilterRow({
   onRemove,
 }: {
   filter: WorkflowFilter;
-  fields: string[];
+  fields: FieldOpt[];
   onChange: (f: WorkflowFilter) => void;
   onRemove: () => void;
 }) {
   const needsValue = filter.op !== "is_empty" && filter.op !== "is_not_empty";
+  const selected = fields.find((f) => f.name === filter.field);
+  const options = selected?.options;
+  const type = selected?.type;
   return (
     <div className="space-y-2 rounded-md border p-2 bg-card">
       <div className="grid grid-cols-[1fr_auto] gap-2">
         <Select value={filter.field} onValueChange={(v) => onChange({ ...filter, field: v })}>
           <SelectTrigger className="h-8 text-xs">
-            <SelectValue />
+            <SelectValue placeholder="Selecionar propriedade" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-h-72">
             {fields.map((f) => (
-              <SelectItem key={f} value={f}>
-                {f}
+              <SelectItem key={f.name} value={f.name}>
+                {f.label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -1041,14 +1044,32 @@ function FilterRow({
           ))}
         </SelectContent>
       </Select>
-      {needsValue && (
-        <Input
-          className="h-8 text-xs"
-          value={String(filter.value ?? "")}
-          onChange={(e) => onChange({ ...filter, value: e.target.value })}
-          placeholder="valor"
-        />
-      )}
+      {needsValue &&
+        (options && options.length > 0 ? (
+          <Select
+            value={String(filter.value ?? "")}
+            onValueChange={(v) => onChange({ ...filter, value: v })}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Selecionar valor" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {options.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            className="h-8 text-xs"
+            type={type === "number" ? "number" : type === "date" ? "date" : "text"}
+            value={String(filter.value ?? "")}
+            onChange={(e) => onChange({ ...filter, value: e.target.value })}
+            placeholder="valor"
+          />
+        ))}
     </div>
   );
 }
