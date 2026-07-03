@@ -163,12 +163,32 @@ async function runAction(
         else if (ctx.entity === "contacts") baseRow.related_contact_id = ctx.entityId;
         else if (ctx.entity === "companies") baseRow.related_company_id = ctx.entityId;
         else if (ctx.entity === "deals") baseRow.related_deal_id = ctx.entityId;
-        // tickets: sem coluna de associação direta em activities; cria como atividade solta.
+        // Demais entidades (tickets/ATS): grava atividade solta com referência no body.
         const { error } = await supabase.from("activities").insert(baseRow as never);
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_activity", detail: { subject } };
       }
       case "add_to_sequence": {
+        const { error } = await supabase.from("sequence_enrollments").insert({
+          owner_id: ctx.ownerId,
+          sequence_id: action.sequence_id,
+          entity_id: ctx.entityId,
+          status: "active",
+          next_run_at: new Date().toISOString(),
+        });
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "add_to_sequence",
+          detail: { sequence_id: action.sequence_id },
+        };
+      }
+      case "send_notification": {
+        const title = renderTokens(action.title, ctx.after) as string;
+        const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
+        const targetUserId = action.user_id?.trim() ? action.user_id : ctx.ownerId;
+        const link = notificationLinkFor(ctx.entity, ctx.entityId);
         const { error } = await supabase.from("sequence_enrollments").insert({
           owner_id: ctx.ownerId,
           sequence_id: action.sequence_id,
