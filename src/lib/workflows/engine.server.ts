@@ -7,6 +7,49 @@ import type { WorkflowAction, WorkflowEntity, WorkflowFilter, WorkflowTrigger } 
 type AnyRow = Record<string, unknown>;
 type LogStep = { at: string; ok: boolean; action: string; detail?: unknown; error?: string };
 
+// Coluna de atribuição principal por entidade.
+function assignFieldFor(entity: WorkflowEntity): string {
+  switch (entity) {
+    case "tickets":
+      return "assignee_id";
+    case "ats_jobs":
+      return "recruiter_id";
+    case "ats_interviews":
+      return "interviewer_id";
+    case "ats_applications":
+    case "ats_candidates":
+    default:
+      return "owner_id";
+  }
+}
+
+// Deep-link do sino de notificações por entidade.
+function notificationLinkFor(entity: WorkflowEntity, entityId: string): string | null {
+  switch (entity) {
+    case "deals":
+      return `/deals?id=${entityId}`;
+    case "leads":
+      return `/leads?id=${entityId}`;
+    case "contacts":
+      return `/contacts?id=${entityId}`;
+    case "companies":
+      return `/companies?id=${entityId}`;
+    case "tickets":
+      return `/tickets?id=${entityId}`;
+    case "ats_jobs":
+      return `/ats/jobs?id=${entityId}`;
+    case "ats_candidates":
+      return `/ats/candidates?id=${entityId}`;
+    case "ats_applications":
+      return `/ats/applications/${entityId}`;
+    case "ats_interviews":
+      return `/ats/interviews?id=${entityId}`;
+    default:
+      return null;
+  }
+}
+
+
 function getField(obj: AnyRow | null | undefined, path: string): unknown {
   if (!obj) return undefined;
   return path.split(".").reduce<unknown>((acc, k) => {
@@ -78,13 +121,18 @@ async function runAction(
         return { at, ok: true, action: "set_field", detail: { field: action.field, value } };
       }
       case "assign_to": {
-        const assignField = ctx.entity === "tickets" ? "assignee_id" : "owner_id";
+        const assignField = assignFieldFor(ctx.entity);
         const { error } = await supabase
           .from(ctx.entity)
           .update({ [assignField]: action.user_id })
           .eq("id", ctx.entityId);
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "assign_to", detail: { user_id: action.user_id } };
+        return {
+          at,
+          ok: true,
+          action: "assign_to",
+          detail: { user_id: action.user_id, field: assignField },
+        };
       }
       case "rotate_assign": {
         if (ctx.entity !== "leads" && ctx.entity !== "deals" && ctx.entity !== "tickets") {
@@ -115,7 +163,7 @@ async function runAction(
         else if (ctx.entity === "contacts") baseRow.related_contact_id = ctx.entityId;
         else if (ctx.entity === "companies") baseRow.related_company_id = ctx.entityId;
         else if (ctx.entity === "deals") baseRow.related_deal_id = ctx.entityId;
-        // tickets: sem coluna de associação direta em activities; cria como atividade solta.
+        // Demais entidades (tickets/ATS): grava atividade solta com referência no body.
         const { error } = await supabase.from("activities").insert(baseRow as never);
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_activity", detail: { subject } };
@@ -140,7 +188,7 @@ async function runAction(
         const title = renderTokens(action.title, ctx.after) as string;
         const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
         const targetUserId = action.user_id?.trim() ? action.user_id : ctx.ownerId;
-        const link = ctx.entity === "deals" ? `/deals?id=${ctx.entityId}` : null;
+        const link = notificationLinkFor(ctx.entity, ctx.entityId);
         const { error } = await supabase.from("notifications").insert({
           owner_id: ctx.ownerId,
           user_id: targetUserId,
@@ -167,9 +215,6 @@ async function runAction(
         return { at, ok: true, action: "webhook", detail: { url: action.url, status: res.status } };
       }
       case "create_ats_job": {
-        if (ctx.entity !== "deals") {
-          throw new Error("create_ats_job só pode ser usado em workflows de Negócios");
-        }
         const after = ctx.after ?? {};
         const title = (renderTokens(action.title, ctx.after) as string) ||
           `Vaga para ${String((after as AnyRow).name ?? "")}`.trim();
@@ -211,8 +256,10 @@ async function runAction(
               title,
               slug,
               status: "draft",
-              deal_id: ctx.entityId,
-              company_id: ((after as AnyRow).company_id as string) ?? null,
+              deal_id: ctx.entity === "deals" ? ctx.entityId : null,
+              company_id:
+                (((after as AnyRow).company_id as string) ??
+                  (ctx.entity === "companies" ? ctx.entityId : null)) as string | null,
               hiring_manager_id: action.hiring_manager_id ?? null,
               recruiter_id: action.recruiter_id ?? null,
               metadata: action.department ? { department: action.department } : {},
@@ -222,22 +269,108 @@ async function runAction(
           if (error) throw new Error(error.message);
           createdIds.push(inserted.id as string);
         }
-        // Notifica aprovador se configurado
         if (action.notify_user_id) {
           await supabase.from("notifications").insert({
             owner_id: ctx.ownerId,
             user_id: action.notify_user_id,
             type: "workflow",
             title: `Nova vaga em rascunho: ${title}`,
-            body: `Origem: negócio fechado. Revise e publique para abrir a vaga.`,
-            link: `/jobs`,
-            entity: "ats_job",
+            body: `Origem: ${ctx.entity}. Revise e publique para abrir a vaga.`,
+            link: `/ats/jobs`,
+            entity: "ats_jobs",
             entity_id: createdIds[0] ?? null,
           } as never);
         }
         return { at, ok: true, action: "create_ats_job", detail: { ids: createdIds, headcount } };
       }
+      case "advance_ats_application_stage": {
+        if (ctx.entity !== "ats_applications") {
+          throw new Error("advance_ats_application_stage exige workflow sobre Aplicações (ATS)");
+        }
+        const stageValue = renderTokens(action.stage_value, ctx.after) as string;
+        if (!stageValue) throw new Error("stage_value obrigatório");
+        const { error } = await supabase
+          .from("ats_applications")
+          .update({ stage_value: stageValue, moved_at: new Date().toISOString() })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "advance_ats_application_stage",
+          detail: { stage_value: stageValue },
+        };
+      }
+      case "create_ats_candidate": {
+        const fullName = (renderTokens(action.full_name, ctx.after) as string).trim();
+        if (!fullName) throw new Error("full_name obrigatório");
+        const email = action.email
+          ? ((renderTokens(action.email, ctx.after) as string) || null)
+          : null;
+        const phone = action.phone
+          ? ((renderTokens(action.phone, ctx.after) as string) || null)
+          : null;
+        const { data: inserted, error } = await supabase
+          .from("ats_candidates")
+          .insert({
+            owner_id: ctx.ownerId,
+            full_name: fullName,
+            email,
+            phone,
+            source: action.source ?? "workflow",
+          } as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "create_ats_candidate",
+          detail: { id: inserted.id, full_name: fullName },
+        };
+      }
+      case "assign_recruiter": {
+        // Escolhe alvo automaticamente pela entidade do gatilho quando não informado.
+        const target =
+          action.target && action.target !== "auto"
+            ? action.target
+            : ctx.entity === "ats_jobs"
+              ? "job"
+              : ctx.entity === "ats_candidates"
+                ? "candidate"
+                : ctx.entity === "ats_applications"
+                  ? "application"
+                  : ctx.entity === "ats_interviews"
+                    ? "interview"
+                    : "job";
+        const table =
+          target === "job"
+            ? "ats_jobs"
+            : target === "candidate"
+              ? "ats_candidates"
+              : target === "application"
+                ? "ats_applications"
+                : "ats_interviews";
+        const column =
+          target === "job"
+            ? "recruiter_id"
+            : target === "interview"
+              ? "interviewer_id"
+              : "owner_id";
+        const { error } = await supabase
+          .from(table)
+          .update({ [column]: action.user_id })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "assign_recruiter",
+          detail: { target, user_id: action.user_id, column },
+        };
+      }
     }
+
   } catch (e) {
     return {
       at,

@@ -5,7 +5,17 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tickWorkflows } from "@/lib/workflows/engine.server";
 import { requireTool } from "@/lib/permissions.server";
 
-const EntityEnum = z.enum(["leads", "contacts", "companies", "deals", "tickets"]);
+const EntityEnum = z.enum([
+  "leads",
+  "contacts",
+  "companies",
+  "deals",
+  "tickets",
+  "ats_jobs",
+  "ats_candidates",
+  "ats_applications",
+  "ats_interviews",
+]);
 
 const FilterSchema = z.object({
   field: z.string().min(1).max(100),
@@ -49,6 +59,22 @@ const ActionSchema = z.discriminatedUnion("type", [
     hiring_manager_id: z.string().uuid().optional(),
     recruiter_id: z.string().uuid().optional(),
     notify_user_id: z.string().uuid().optional(),
+  }),
+  z.object({
+    type: z.literal("advance_ats_application_stage"),
+    stage_value: z.string().min(1).max(100),
+  }),
+  z.object({
+    type: z.literal("create_ats_candidate"),
+    full_name: z.string().min(1).max(200),
+    email: z.string().max(200).optional(),
+    phone: z.string().max(50).optional(),
+    source: z.string().max(50).optional(),
+  }),
+  z.object({
+    type: z.literal("assign_recruiter"),
+    user_id: z.string().uuid(),
+    target: z.enum(["auto", "job", "candidate", "application", "interview"]).optional(),
   }),
 ]);
 

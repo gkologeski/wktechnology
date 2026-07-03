@@ -1,4 +1,14 @@
-export type WorkflowEntity = "leads" | "contacts" | "companies" | "deals" | "tickets";
+export type WorkflowEntity =
+  | "leads"
+  | "contacts"
+  | "companies"
+  | "deals"
+  | "tickets"
+  | "ats_jobs"
+  | "ats_candidates"
+  | "ats_applications"
+  | "ats_interviews";
+
 export type WorkflowEventType = "created" | "updated" | "stage_changed";
 
 export type FilterOp =
@@ -45,6 +55,22 @@ export type WorkflowAction =
       hiring_manager_id?: string;
       recruiter_id?: string;
       notify_user_id?: string;
+    }
+  | {
+      type: "advance_ats_application_stage";
+      stage_value: string;
+    }
+  | {
+      type: "create_ats_candidate";
+      full_name: string;
+      email?: string;
+      phone?: string;
+      source?: string;
+    }
+  | {
+      type: "assign_recruiter";
+      user_id: string;
+      target?: "auto" | "job" | "candidate" | "application" | "interview";
     };
 
 export type WorkflowActionType = WorkflowAction["type"];
@@ -55,7 +81,21 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   companies: "Empresas",
   deals: "Negócios",
   tickets: "Tickets",
+  ats_jobs: "Vagas (ATS)",
+  ats_candidates: "Candidatos (ATS)",
+  ats_applications: "Aplicações (ATS)",
+  ats_interviews: "Entrevistas (ATS)",
 };
+
+// Grupos por módulo (para dropdown do builder).
+export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }> = [
+  { label: "Vendas", entities: ["leads", "contacts", "companies", "deals"] },
+  { label: "Atendimento", entities: ["tickets"] },
+  {
+    label: "Recrutamento",
+    entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews"],
+  },
+];
 
 export const EVENT_LABELS: Record<WorkflowEventType, string> = {
   created: "Quando for criado",
@@ -72,6 +112,9 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   send_notification: "Enviar notificação",
   webhook: "Disparar webhook",
   create_ats_job: "Abrir vaga no ATS (rascunho)",
+  advance_ats_application_stage: "Mover aplicação para etapa (ATS)",
+  create_ats_candidate: "Criar candidato (ATS)",
+  assign_recruiter: "Atribuir recrutador (ATS)",
 };
 
 // Common fields by entity, used in filter dropdowns and set_field actions
@@ -132,6 +175,52 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "company_id",
     "deal_id",
     "due_at",
+  ],
+  ats_jobs: [
+    "title",
+    "status",
+    "seniority",
+    "employment_type",
+    "location",
+    "remote_mode",
+    "pipeline_id",
+    "hiring_manager_id",
+    "recruiter_id",
+    "company_id",
+    "deal_id",
+  ],
+  ats_candidates: [
+    "full_name",
+    "email",
+    "phone",
+    "source",
+    "score",
+    "location",
+    "current_position",
+    "current_company",
+    "relationship_status",
+    "relationship_owner_id",
+    "owner_id",
+  ],
+  ats_applications: [
+    "job_id",
+    "candidate_id",
+    "stage_value",
+    "status",
+    "source",
+    "ai_match_score",
+    "position",
+  ],
+  ats_interviews: [
+    "job_id",
+    "candidate_id",
+    "application_id",
+    "interviewer_id",
+    "status",
+    "kind",
+    "scheduled_at",
+    "duration_min",
+    "stage_value",
   ],
 };
 

@@ -175,6 +175,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         children: [
           { title: "Vagas", url: "/ats/jobs", icon: Briefcase },
           { title: "Candidatos", url: "/ats/candidates", icon: UsersRound },
+          { title: "Workflows", url: "/settings/workflows", icon: Workflow, need: "manager" },
         ],
       },
     ],
