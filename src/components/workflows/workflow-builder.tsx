@@ -67,6 +67,8 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, title: "Atenção" };
     case "webhook":
       return { type, url: "https://" };
+    case "create_ats_job":
+      return { type, title: "Vaga para {{name}}", headcount: 1 };
   }
 }
 
