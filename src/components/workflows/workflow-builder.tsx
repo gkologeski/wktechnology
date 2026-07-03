@@ -37,11 +37,39 @@ import {
 } from "lucide-react";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { TokenPills } from "@/components/ui/token-pills";
 import { WORKFLOW_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { cn } from "@/lib/utils";
+import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
+
+type FieldOpt = {
+  name: string;
+  label: string;
+  type?: "text" | "number" | "date" | "select" | "boolean";
+  options?: { value: string; label: string }[];
+};
+
+function useEntityFieldOptions(entity: WorkflowEntity): FieldOpt[] {
+  const fetchCatalog = useServerFn(getEntityFieldCatalog);
+  const { data } = useQuery({
+    queryKey: ["wf-entity-fields", entity],
+    queryFn: () => fetchCatalog({ data: { entity } }),
+    staleTime: 5 * 60_000,
+  });
+  if (data?.fields?.length) {
+    return data.fields.map((f) => ({
+      name: f.name,
+      label: f.label,
+      type: f.type,
+      options: f.options,
+    }));
+  }
+  // Fallback: usa constantes locais enquanto o catálogo carrega.
+  return (ENTITY_FIELDS[entity] ?? []).map((n) => ({ name: n, label: n }));
+}
 
 import {
   ENTITY_FIELDS,
