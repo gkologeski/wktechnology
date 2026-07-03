@@ -585,7 +585,7 @@ function JobDetailPage() {
         </div>
         {applicantsForScheduling.length === 0 ? (
           <p className="text-xs text-text-tertiary">
-            Nenhum candidato encontrado. Assim que aparecerem na aba Candidatos, você poderá agendar entrevistas aqui.
+            Nenhum candidato encontrado. Assim que aparecerem na aba Pipeline, você poderá agendar entrevistas aqui.
           </p>
         ) : (
           <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 max-h-[420px] overflow-y-auto pr-1">
@@ -760,7 +760,7 @@ function JobDetailPage() {
                 Pipeline{" "}
                 <span className="ml-1 text-[10px] text-text-tertiary">({totalApps})</span>
               </TabsTrigger>
-              <TabsTrigger value="candidates">Candidatos</TabsTrigger>
+              
               <TabsTrigger value="interviews">
                 Entrevistas{" "}
                 <span className="ml-1 text-[10px] text-text-tertiary">
@@ -780,9 +780,6 @@ function JobDetailPage() {
                 description="Arraste candidatos entre etapas para atualizar o status."
               />
               <div className="mt-3">{pipelineSection}</div>
-            </TabsContent>
-            <TabsContent value="candidates" className="mt-0">
-              {candidatesSection}
             </TabsContent>
             <TabsContent value="interviews" className="mt-0">
               {interviewsSection}
