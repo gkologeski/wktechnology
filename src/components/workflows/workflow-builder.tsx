@@ -24,6 +24,7 @@ import { useTokenInserter } from "@/lib/token-insert";
 import {
   ENTITY_FIELDS,
   ENTITY_LABELS,
+  ENTITY_GROUPS,
   EVENT_LABELS,
   ACTION_LABELS,
   FILTER_OPS,
