@@ -23,12 +23,23 @@ const FilterSchema = z.object({
   value: z.unknown().optional(),
 });
 
+const EventEnum = z.enum(["created", "updated", "stage_changed"]);
+
 const TriggerSchema = z.object({
-  event: z.enum(["created", "updated", "stage_changed"]),
+  event: EventEnum,
   filters: z.array(FilterSchema).max(20).default([]),
+  reenroll: z
+    .object({
+      enabled: z.boolean(),
+      events: z.array(EventEnum).max(3).optional(),
+    })
+    .optional(),
 });
 
-const ActionSchema = z.discriminatedUnion("type", [
+// Zod union recursivo (branch_if contém arrays de WorkflowAction).
+type ActionInput = Record<string, unknown>;
+
+const SimpleActionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("set_field"), field: z.string().min(1).max(100), value: z.unknown() }),
   z.object({
     type: z.literal("create_activity"),
@@ -50,6 +61,11 @@ const ActionSchema = z.discriminatedUnion("type", [
     type: z.literal("webhook"),
     url: z.string().url().max(500),
     payload: z.record(z.string(), z.unknown()).optional(),
+  }),
+  z.object({
+    type: z.literal("delay"),
+    amount: z.number().int().min(1).max(10080),
+    unit: z.enum(["minutes", "hours", "days"]),
   }),
   z.object({
     type: z.literal("create_ats_job"),
@@ -78,14 +94,41 @@ const ActionSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
+// Limita profundidade da recursão para evitar payloads abusivos.
+const MAX_BRANCH_DEPTH = 3;
+
+function parseActionsAtDepth(input: unknown, depth: number): ActionInput[] {
+  if (!Array.isArray(input)) throw new Error("actions deve ser um array");
+  if (input.length > 20) throw new Error("máximo 20 ações por ramo");
+  return input.map((raw) => parseActionAtDepth(raw, depth));
+}
+
+function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
+  if (raw && typeof raw === "object" && (raw as ActionInput).type === "branch_if") {
+    if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima de branch_if excedida");
+    const src = raw as ActionInput;
+    const filters = z.array(FilterSchema).max(20).parse(src.filters ?? []);
+    const thenActions = parseActionsAtDepth(src.then ?? [], depth + 1);
+    const elseActions = parseActionsAtDepth(src.else ?? [], depth + 1);
+    return { type: "branch_if", filters, then: thenActions, else: elseActions };
+  }
+  return SimpleActionSchema.parse(raw) as unknown as ActionInput;
+}
+
+
 const SaveSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().min(1).max(120),
   entity: EntityEnum,
   enabled: z.boolean(),
   trigger: TriggerSchema,
-  actions: z.array(ActionSchema).min(1).max(20),
+  actions: z
+    .array(z.unknown())
+    .min(1)
+    .max(20)
+    .transform((arr) => parseActionsAtDepth(arr, 0)),
 });
+
 
 export const listWorkflows = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

@@ -12571,6 +12571,9 @@ export type Database = {
           id: string
           owner_id: string
           processed_at: string | null
+          resume_cursor: number | null
+          resume_workflow_id: string | null
+          run_at: string
           workspace_id: string
         }
         Insert: {
@@ -12583,6 +12586,9 @@ export type Database = {
           id?: string
           owner_id: string
           processed_at?: string | null
+          resume_cursor?: number | null
+          resume_workflow_id?: string | null
+          run_at?: string
           workspace_id?: string
         }
         Update: {
@@ -12595,6 +12601,9 @@ export type Database = {
           id?: string
           owner_id?: string
           processed_at?: string | null
+          resume_cursor?: number | null
+          resume_workflow_id?: string | null
+          run_at?: string
           workspace_id?: string
         }
         Relationships: [
