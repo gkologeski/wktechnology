@@ -258,6 +258,7 @@ export function WorkflowBuilder({
   const [selection, setSelection] = useState<StepPath | "trigger" | null>("trigger");
   const [library, setLibrary] = useState<{ parentPath: StepPath } | null>(null);
   const [entityPickerOpen, setEntityPickerOpen] = useState(false);
+  const fieldOptions = useEntityFieldOptions(state.entity);
 
   useEffect(() => {
     if (open) {
