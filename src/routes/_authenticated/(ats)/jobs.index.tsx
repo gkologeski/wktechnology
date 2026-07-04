@@ -345,6 +345,7 @@ function AtsJobsPage() {
           description: form.description || null,
           requirements: form.requirements || null,
           status: form.status as never,
+          pipeline_id: form.pipeline_id || null,
         },
       });
       toast.success("Vaga criada");
@@ -358,6 +359,7 @@ function AtsJobsPage() {
         description: "",
         requirements: "",
         status: "draft",
+        pipeline_id: pipelines.find((p) => p.is_default)?.id ?? pipelines[0]?.id ?? "",
       });
       if (r?.id) navigate({ to: "/jobs/$id", params: { id: r.id as string } });
       else refresh();
