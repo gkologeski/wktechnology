@@ -127,7 +127,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
 
         {MODULE_LIST.map((m) => {
           const Icon = m.icon;
-          const isActive = m.id === active;
+          const isActive = !isWorkspaceContext && m.id === active;
           return (
             <button
               key={m.id}
