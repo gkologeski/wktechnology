@@ -831,6 +831,7 @@ type JobPatch = {
   salary_min?: number | null;
   salary_max?: number | null;
   status?: string;
+  pipeline_id?: string | null;
 };
 
 function JobPropertiesPanel({
