@@ -49,6 +49,7 @@ import {
   setAtsJobStatus,
   setAtsJobDepartment,
 } from "@/lib/ats/ats.functions";
+import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
 
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
 import {
@@ -250,6 +251,8 @@ function AtsJobsPage() {
   const save = useServerFn(saveAtsJob);
   const updateJobStatus = useServerFn(setAtsJobStatus);
   const updateJobDepartment = useServerFn(setAtsJobDepartment);
+  const listPipelinesFn = useServerFn(listAtsPipelines);
+  const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
@@ -274,7 +277,22 @@ function AtsJobsPage() {
     description: "",
     requirements: "",
     status: "draft",
+    pipeline_id: "",
   });
+
+  useEffect(() => {
+    listPipelinesFn()
+      .then((rs) => {
+        const list = (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
+          id: p.id,
+          name: p.name,
+          is_default: p.is_default,
+        }));
+        setPipelines(list);
+        setForm((f) => (f.pipeline_id ? f : { ...f, pipeline_id: list.find((p) => p.is_default)?.id ?? list[0]?.id ?? "" }));
+      })
+      .catch(() => undefined);
+  }, [listPipelinesFn]);
 
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("jobs:view", view);
@@ -327,6 +345,7 @@ function AtsJobsPage() {
           description: form.description || null,
           requirements: form.requirements || null,
           status: form.status as never,
+          pipeline_id: form.pipeline_id || null,
         },
       });
       toast.success("Vaga criada");
@@ -340,6 +359,7 @@ function AtsJobsPage() {
         description: "",
         requirements: "",
         status: "draft",
+        pipeline_id: pipelines.find((p) => p.is_default)?.id ?? pipelines[0]?.id ?? "",
       });
       if (r?.id) navigate({ to: "/jobs/$id", params: { id: r.id as string } });
       else refresh();
@@ -511,6 +531,29 @@ function AtsJobsPage() {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="col-span-2">
+            <Label htmlFor="job-pipeline">Pipeline</Label>
+            <Select
+              value={form.pipeline_id}
+              onValueChange={(v) => setForm({ ...form, pipeline_id: v })}
+              disabled={pipelines.length === 0}
+            >
+              <SelectTrigger id="job-pipeline">
+                <SelectValue placeholder="Selecionar pipeline" />
+              </SelectTrigger>
+              <SelectContent>
+                {pipelines.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                    {p.is_default ? " (padrão)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="mt-1 text-[11px] text-text-tertiary">
+              Define as etapas pelas quais as candidaturas desta vaga vão passar.
+            </p>
           </div>
         </div>
         <DialogFooter>

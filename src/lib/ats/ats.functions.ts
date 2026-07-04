@@ -81,6 +81,7 @@ const JobSaveSchema = z.object({
   company_id: z.string().uuid().optional().nullable(),
   hiring_manager_id: z.string().uuid().optional().nullable(),
   recruiter_id: z.string().uuid().optional().nullable(),
+  pipeline_id: z.string().uuid().optional().nullable(),
 });
 
 export const listAtsJobs = createServerFn({ method: "POST" })
@@ -169,11 +170,25 @@ export const saveAtsJob = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => JobSaveSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const pipeline = await ensureDefaultPipeline(supabase, userId);
+    let pipelineId: string;
+    if (data.pipeline_id) {
+      const { data: pipe, error: pErr } = await supabase
+        .from("ats_pipelines")
+        .select("id")
+        .eq("id", data.pipeline_id)
+        .eq("owner_id", userId)
+        .maybeSingle();
+      if (pErr) throw new Error(pErr.message);
+      if (!pipe) throw new Error("Pipeline não encontrado neste workspace");
+      pipelineId = pipe.id as string;
+    } else {
+      const pipeline = await ensureDefaultPipeline(supabase, userId);
+      pipelineId = pipeline.id;
+    }
     const slug = slugify(data.title) + "-" + Date.now().toString(36);
     const base = {
       owner_id: userId,
-      pipeline_id: pipeline.id,
+      pipeline_id: pipelineId,
       title: data.title,
       description: data.description ?? null,
       requirements: data.requirements ?? null,

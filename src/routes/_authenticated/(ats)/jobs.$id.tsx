@@ -44,7 +44,18 @@ import {
   listJobEvents,
   listJobInterviews,
 } from "@/lib/ats/ats.functions";
+import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
 import { DEFAULT_ATS_STAGES, type AtsStage, ATS_JOB_STATUSES } from "@/lib/ats/stages";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { listJobScorecardSummary } from "@/lib/ats/scorecards.functions";
 import { exportJobApplicationsCsv } from "@/lib/ats/export.functions";
 import { ScorecardEvalDialog } from "@/components/ats/scorecard-eval-dialog";
@@ -134,6 +145,9 @@ function JobDetailPage() {
   const saveJobFn = useServerFn(saveAtsJob);
   const listEventsFn = useServerFn(listJobEvents);
   const listInterviewsFn = useServerFn(listJobInterviews);
+  const listPipelinesFn = useServerFn(listAtsPipelines);
+  const [pipelineNames, setPipelineNames] = useState<Record<string, string>>({});
+
 
   const [job, setJob] = useState<Job | null>(null);
   const [apps, setApps] = useState<App[]>([]);
@@ -197,6 +211,13 @@ function JobDetailPage() {
 
   useEffect(() => {
     refresh();
+    listPipelinesFn()
+      .then((rs) => {
+        const m: Record<string, string> = {};
+        for (const p of rs as Array<{ id: string; name: string }>) m[p.id] = p.name;
+        setPipelineNames(m);
+      })
+      .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -307,6 +328,7 @@ function JobDetailPage() {
     metadata?: { department?: string | null } | null;
     salary_min?: number | null;
     salary_max?: number | null;
+    pipeline_id?: string | null;
   };
   const department = jobAny.metadata?.department ?? null;
 
@@ -323,6 +345,8 @@ function JobDetailPage() {
     });
   if (jobAny.location) metaItems.push({ key: "loc", label: jobAny.location });
   if (department) metaItems.push({ key: "dep", label: department });
+  if (jobAny.pipeline_id && pipelineNames[jobAny.pipeline_id])
+    metaItems.push({ key: "pipe", label: `Pipeline: ${pipelineNames[jobAny.pipeline_id]}` });
 
   const header = (
     <AtsPageHeader
@@ -694,6 +718,7 @@ function JobDetailPage() {
         left={
           <JobPropertiesPanel
             job={job}
+            applicationCount={totalApps}
             onSaved={refresh}
             save={async (patch) => {
               await saveJobFn({
@@ -709,6 +734,7 @@ function JobDetailPage() {
                   salary_min: patch.salary_min ?? jobAny.salary_min ?? null,
                   salary_max: patch.salary_max ?? jobAny.salary_max ?? null,
                   status: (patch.status ?? jobAny.status) as never,
+                  pipeline_id: patch.pipeline_id ?? jobAny.pipeline_id ?? null,
                 },
               });
             }}
@@ -820,16 +846,19 @@ type JobPatch = {
   salary_min?: number | null;
   salary_max?: number | null;
   status?: string;
+  pipeline_id?: string | null;
 };
 
 function JobPropertiesPanel({
   job,
   save,
   onSaved,
+  applicationCount,
 }: {
   job: Job;
   save: (patch: JobPatch) => Promise<unknown>;
   onSaved: () => void;
+  applicationCount: number;
 }) {
   const j = job as unknown as {
     title: string;
@@ -842,6 +871,7 @@ function JobPropertiesPanel({
     status: string;
     salary_min: number | null;
     salary_max: number | null;
+    pipeline_id: string | null;
   };
   const [form, setForm] = useState({
     title: j.title,
@@ -854,8 +884,26 @@ function JobPropertiesPanel({
     status: j.status,
     salary_min: j.salary_min?.toString() ?? "",
     salary_max: j.salary_max?.toString() ?? "",
+    pipeline_id: j.pipeline_id ?? "",
   });
   const [saving, setSaving] = useState(false);
+  const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
+  const [confirmPipeline, setConfirmPipeline] = useState<string | null>(null);
+  const listPipelinesFn = useServerFn(listAtsPipelines);
+
+  useEffect(() => {
+    listPipelinesFn()
+      .then((rs) =>
+        setPipelines(
+          (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
+            id: p.id,
+            name: p.name,
+            is_default: p.is_default,
+          })),
+        ),
+      )
+      .catch(() => undefined);
+  }, [listPipelinesFn]);
 
   useEffect(() => {
     setForm({
@@ -869,8 +917,9 @@ function JobPropertiesPanel({
       status: j.status,
       salary_min: j.salary_min?.toString() ?? "",
       salary_max: j.salary_max?.toString() ?? "",
+      pipeline_id: j.pipeline_id ?? "",
     });
-  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max]);
+  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max, j.pipeline_id]);
 
   const dirty =
     form.title !== j.title ||
@@ -882,9 +931,10 @@ function JobPropertiesPanel({
     (form.requirements || null) !== (j.requirements ?? null) ||
     form.status !== j.status ||
     (form.salary_min ? Number(form.salary_min) : null) !== j.salary_min ||
-    (form.salary_max ? Number(form.salary_max) : null) !== j.salary_max;
+    (form.salary_max ? Number(form.salary_max) : null) !== j.salary_max ||
+    (form.pipeline_id || null) !== (j.pipeline_id ?? null);
 
-  const onSubmit = async () => {
+  const persist = async () => {
     setSaving(true);
     try {
       await save({
@@ -898,6 +948,7 @@ function JobPropertiesPanel({
         salary_min: form.salary_min ? Number(form.salary_min) : null,
         salary_max: form.salary_max ? Number(form.salary_max) : null,
         status: form.status,
+        pipeline_id: form.pipeline_id || null,
       });
       toast.success("Vaga atualizada");
       onSaved();
@@ -905,8 +956,19 @@ function JobPropertiesPanel({
       toast.error(e instanceof Error ? e.message : "Erro ao salvar");
     } finally {
       setSaving(false);
+      setConfirmPipeline(null);
     }
   };
+
+  const onSubmit = async () => {
+    const pipelineChanged = (form.pipeline_id || null) !== (j.pipeline_id ?? null);
+    if (pipelineChanged && applicationCount > 0) {
+      setConfirmPipeline(form.pipeline_id || null);
+      return;
+    }
+    await persist();
+  };
+
 
   const jobRow = job as unknown as { id: string; owner_id: string | null };
   return (
@@ -951,6 +1013,31 @@ function JobPropertiesPanel({
               ))}
             </SelectContent>
           </Select>
+        </div>
+        <div>
+          <Label htmlFor="prop-pipeline" className="text-xs text-text-tertiary">
+            Pipeline
+          </Label>
+          <Select
+            value={form.pipeline_id}
+            onValueChange={(v) => setForm({ ...form, pipeline_id: v })}
+            disabled={pipelines.length === 0}
+          >
+            <SelectTrigger id="prop-pipeline">
+              <SelectValue placeholder="Selecionar pipeline" />
+            </SelectTrigger>
+            <SelectContent>
+              {pipelines.map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {p.name}
+                  {p.is_default ? " (padrão)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="mt-1 text-[11px] text-text-tertiary">
+            Define as etapas pelas quais as candidaturas desta vaga vão passar.
+          </p>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
@@ -1077,6 +1164,30 @@ function JobPropertiesPanel({
           {saving ? "Salvando…" : "Salvar"}
         </Button>
       </div>
+      <AlertDialog
+        open={confirmPipeline !== null}
+        onOpenChange={(o) => {
+          if (!o) setConfirmPipeline(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterar pipeline desta vaga?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta vaga tem {applicationCount}{" "}
+              {applicationCount === 1 ? "candidatura" : "candidaturas"} em andamento.
+              As etapas atuais dos candidatos podem não existir no novo pipeline e
+              precisarão ser reajustadas manualmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={persist} disabled={saving}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
