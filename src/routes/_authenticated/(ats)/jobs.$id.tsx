@@ -318,6 +318,7 @@ function JobDetailPage() {
     metadata?: { department?: string | null } | null;
     salary_min?: number | null;
     salary_max?: number | null;
+    pipeline_id?: string | null;
   };
   const department = jobAny.metadata?.department ?? null;
 
