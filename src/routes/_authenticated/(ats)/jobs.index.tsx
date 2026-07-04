@@ -251,6 +251,8 @@ function AtsJobsPage() {
   const save = useServerFn(saveAtsJob);
   const updateJobStatus = useServerFn(setAtsJobStatus);
   const updateJobDepartment = useServerFn(setAtsJobDepartment);
+  const listPipelinesFn = useServerFn(listAtsPipelines);
+  const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
@@ -275,7 +277,22 @@ function AtsJobsPage() {
     description: "",
     requirements: "",
     status: "draft",
+    pipeline_id: "",
   });
+
+  useEffect(() => {
+    listPipelinesFn()
+      .then((rs) => {
+        const list = (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
+          id: p.id,
+          name: p.name,
+          is_default: p.is_default,
+        }));
+        setPipelines(list);
+        setForm((f) => (f.pipeline_id ? f : { ...f, pipeline_id: list.find((p) => p.is_default)?.id ?? list[0]?.id ?? "" }));
+      })
+      .catch(() => undefined);
+  }, [listPipelinesFn]);
 
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("jobs:view", view);
