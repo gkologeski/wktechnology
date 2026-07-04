@@ -211,6 +211,13 @@ function JobDetailPage() {
 
   useEffect(() => {
     refresh();
+    listPipelinesFn()
+      .then((rs) => {
+        const m: Record<string, string> = {};
+        for (const p of rs as Array<{ id: string; name: string }>) m[p.id] = p.name;
+        setPipelineNames(m);
+      })
+      .catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
