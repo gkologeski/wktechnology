@@ -3,7 +3,7 @@
 // navega para a rota padrão dentro da mesma aplicação.
 
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, LayoutGrid, Home } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,14 +13,34 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
-import { useActiveModule } from "@/lib/modules/active-module";
-import { buildModuleUrl, buildWorkspaceUrl, isCrossHostUrl, isReachableHost } from "@/lib/hosts";
+import { useActiveModule, detectModuleFromPath, detectModuleFromHost } from "@/lib/modules/active-module";
+import { buildModuleUrl, buildWorkspaceUrl, isCrossHostUrl, isReachableHost, getCurrentHostKind } from "@/lib/hosts";
 import { cn } from "@/lib/utils";
+
+// Rotas comuns do workspace (não pertencem a um módulo específico).
+const WORKSPACE_ROUTE_PREFIXES = ["/home", "/workspace", "/settings", "/marketplace", "/invoices", "/integrations"];
+
+function isWorkspaceRoute(pathname: string): boolean {
+  return WORKSPACE_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+}
 
 export function ModuleSwitcher({ className }: { className?: string }) {
   const active = useActiveModule();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+
+  // Considera o contexto "workspace" quando:
+  // - a rota atual pertence claramente ao workspace (ex.: /home, /settings); ou
+  // - estamos em preview/localhost e o path não indica um módulo específico
+  //   (evita mostrar "TechSales" como default na home do ERP).
+  const hostname = typeof window !== "undefined" ? window.location.hostname : null;
+  const hostKind = getCurrentHostKind();
+  const pathModule = detectModuleFromPath(pathname);
+  const hostModule = detectModuleFromHost(hostname);
+  const isWorkspaceContext =
+    isWorkspaceRoute(pathname) ||
+    (hostKind === "preview" && !pathModule && !hostModule);
 
   const handleSelect = (moduleId: typeof active) => {
     setOpen(false);
