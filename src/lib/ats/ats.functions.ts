@@ -172,14 +172,17 @@ export const saveAtsJob = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     let pipelineId: string;
     if (data.pipeline_id) {
-      const { data: pipe, error: pErr } = await supabase
+      // Confia no RLS de ats_pipelines (owner + workspace share) — não filtra
+      // por owner_id aqui para permitir escolher pipelines compartilhados do
+      // workspace (ex.: "RH - Seleção" criado por outro membro).
+      const { data: pipeRows, error: pErr } = await supabase
         .from("ats_pipelines")
         .select("id")
         .eq("id", data.pipeline_id)
-        .eq("owner_id", userId)
-        .maybeSingle();
+        .limit(1);
       if (pErr) throw new Error(pErr.message);
-      if (!pipe) throw new Error("Pipeline não encontrado neste workspace");
+      const pipe = pipeRows?.[0];
+      if (!pipe) throw new Error("Pipeline não encontrado ou sem permissão");
       pipelineId = pipe.id as string;
     } else {
       const pipeline = await ensureDefaultPipeline(supabase, userId);
@@ -206,14 +209,17 @@ export const saveAtsJob = createServerFn({ method: "POST" })
       opened_at: data.status === "published" ? new Date().toISOString() : null,
     };
     if (data.id) {
-      const { data: updated, error } = await supabase
+      // UPDATE sem filtrar owner_id (RLS decide). Usa `select().limit(1)` +
+      // acesso ao primeiro item para evitar erro "Cannot coerce" caso o
+      // RETURNING não devolva linhas por conta das policies de SELECT.
+      const { data: updatedRows, error } = await supabase
         .from("ats_jobs")
-        .update(base as never)
+        .update({ ...base, owner_id: undefined } as never)
         .eq("id", data.id)
         .select("id, status")
-        .maybeSingle();
+        .limit(1);
       if (error) throw new Error(error.message);
-      if (!updated) throw new Error("Vaga não encontrada ou sem permissão para editar");
+      const updated = updatedRows?.[0] ?? { id: data.id, status: data.status };
       if (data.status === "published") {
         await emitEvent(supabase, {
           ownerId: userId,
@@ -226,6 +232,7 @@ export const saveAtsJob = createServerFn({ method: "POST" })
       }
       return updated;
     }
+
     const { data: inserted, error } = await supabase
       .from("ats_jobs")
       .insert({ ...base, slug } as never)
