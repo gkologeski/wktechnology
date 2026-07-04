@@ -1152,6 +1152,30 @@ function JobPropertiesPanel({
           {saving ? "Salvando…" : "Salvar"}
         </Button>
       </div>
+      <AlertDialog
+        open={confirmPipeline !== null}
+        onOpenChange={(o) => {
+          if (!o) setConfirmPipeline(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Alterar pipeline desta vaga?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta vaga tem {applicationCount}{" "}
+              {applicationCount === 1 ? "candidatura" : "candidaturas"} em andamento.
+              As etapas atuais dos candidatos podem não existir no novo pipeline e
+              precisarão ser reajustadas manualmente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={persist} disabled={saving}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }
