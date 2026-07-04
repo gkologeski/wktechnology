@@ -706,6 +706,7 @@ function JobDetailPage() {
         left={
           <JobPropertiesPanel
             job={job}
+            applicationCount={totalApps}
             onSaved={refresh}
             save={async (patch) => {
               await saveJobFn({
@@ -721,6 +722,7 @@ function JobDetailPage() {
                   salary_min: patch.salary_min ?? jobAny.salary_min ?? null,
                   salary_max: patch.salary_max ?? jobAny.salary_max ?? null,
                   status: (patch.status ?? jobAny.status) as never,
+                  pipeline_id: patch.pipeline_id ?? jobAny.pipeline_id ?? null,
                 },
               });
             }}
