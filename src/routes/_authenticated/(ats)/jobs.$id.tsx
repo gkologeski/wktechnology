@@ -145,6 +145,9 @@ function JobDetailPage() {
   const saveJobFn = useServerFn(saveAtsJob);
   const listEventsFn = useServerFn(listJobEvents);
   const listInterviewsFn = useServerFn(listJobInterviews);
+  const listPipelinesFn = useServerFn(listAtsPipelines);
+  const [pipelineNames, setPipelineNames] = useState<Record<string, string>>({});
+
 
   const [job, setJob] = useState<Job | null>(null);
   const [apps, setApps] = useState<App[]>([]);
