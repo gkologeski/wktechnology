@@ -81,6 +81,7 @@ const JobSaveSchema = z.object({
   company_id: z.string().uuid().optional().nullable(),
   hiring_manager_id: z.string().uuid().optional().nullable(),
   recruiter_id: z.string().uuid().optional().nullable(),
+  pipeline_id: z.string().uuid().optional().nullable(),
 });
 
 export const listAtsJobs = createServerFn({ method: "POST" })
