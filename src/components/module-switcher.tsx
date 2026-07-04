@@ -104,7 +104,10 @@ export function ModuleSwitcher({ className }: { className?: string }) {
               navigate({ to: "/home" });
             }
           }}
-          className="w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-accent transition-colors"
+          className={cn(
+            "w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-accent transition-colors",
+            isWorkspaceContext && "bg-accent",
+          )}
         >
           <span className="h-8 w-8 rounded-lg grid place-items-center bg-muted text-foreground">
             <Home className="h-4 w-4" />
@@ -115,6 +118,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
               Módulos e configurações do workspace
             </div>
           </span>
+          {isWorkspaceContext && <Check className="h-4 w-4 text-primary" />}
         </button>
         <div className="my-1 h-px bg-border" />
         <div className="px-2 py-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
