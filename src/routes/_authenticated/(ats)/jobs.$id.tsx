@@ -345,6 +345,8 @@ function JobDetailPage() {
     });
   if (jobAny.location) metaItems.push({ key: "loc", label: jobAny.location });
   if (department) metaItems.push({ key: "dep", label: department });
+  if (jobAny.pipeline_id && pipelineNames[jobAny.pipeline_id])
+    metaItems.push({ key: "pipe", label: `Pipeline: ${pipelineNames[jobAny.pipeline_id]}` });
 
   const header = (
     <AtsPageHeader
