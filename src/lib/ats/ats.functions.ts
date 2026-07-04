@@ -210,10 +210,10 @@ export const saveAtsJob = createServerFn({ method: "POST" })
         .from("ats_jobs")
         .update(base as never)
         .eq("id", data.id)
-        .eq("owner_id", userId)
         .select("id, status")
-        .single();
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!updated) throw new Error("Vaga não encontrada ou sem permissão para editar");
       if (data.status === "published") {
         await emitEvent(supabase, {
           ownerId: userId,
