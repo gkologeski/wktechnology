@@ -77,8 +77,8 @@ export function ModuleSwitcher({ className }: { className?: string }) {
           className={cn("h-9 gap-2 justify-between min-w-[140px]", className)}
         >
           <span className="flex items-center gap-2 min-w-0">
-            <LayoutGrid className="h-4 w-4 shrink-0" />
-            <span className="truncate">{activeDef.productName}</span>
+            {isWorkspaceContext ? <Home className="h-4 w-4 shrink-0" /> : <LayoutGrid className="h-4 w-4 shrink-0" />}
+            <span className="truncate">{isWorkspaceContext ? "ERP Home" : activeDef.productName}</span>
           </span>
           <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
         </Button>
