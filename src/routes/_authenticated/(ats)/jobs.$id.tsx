@@ -841,10 +841,12 @@ function JobPropertiesPanel({
   job,
   save,
   onSaved,
+  applicationCount,
 }: {
   job: Job;
   save: (patch: JobPatch) => Promise<unknown>;
   onSaved: () => void;
+  applicationCount: number;
 }) {
   const j = job as unknown as {
     title: string;
@@ -857,6 +859,7 @@ function JobPropertiesPanel({
     status: string;
     salary_min: number | null;
     salary_max: number | null;
+    pipeline_id: string | null;
   };
   const [form, setForm] = useState({
     title: j.title,
@@ -869,8 +872,26 @@ function JobPropertiesPanel({
     status: j.status,
     salary_min: j.salary_min?.toString() ?? "",
     salary_max: j.salary_max?.toString() ?? "",
+    pipeline_id: j.pipeline_id ?? "",
   });
   const [saving, setSaving] = useState(false);
+  const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
+  const [confirmPipeline, setConfirmPipeline] = useState<string | null>(null);
+  const listPipelinesFn = useServerFn(listAtsPipelines);
+
+  useEffect(() => {
+    listPipelinesFn()
+      .then((rs) =>
+        setPipelines(
+          (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
+            id: p.id,
+            name: p.name,
+            is_default: p.is_default,
+          })),
+        ),
+      )
+      .catch(() => undefined);
+  }, [listPipelinesFn]);
 
   useEffect(() => {
     setForm({
@@ -884,8 +905,9 @@ function JobPropertiesPanel({
       status: j.status,
       salary_min: j.salary_min?.toString() ?? "",
       salary_max: j.salary_max?.toString() ?? "",
+      pipeline_id: j.pipeline_id ?? "",
     });
-  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max]);
+  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max, j.pipeline_id]);
 
   const dirty =
     form.title !== j.title ||
@@ -897,9 +919,10 @@ function JobPropertiesPanel({
     (form.requirements || null) !== (j.requirements ?? null) ||
     form.status !== j.status ||
     (form.salary_min ? Number(form.salary_min) : null) !== j.salary_min ||
-    (form.salary_max ? Number(form.salary_max) : null) !== j.salary_max;
+    (form.salary_max ? Number(form.salary_max) : null) !== j.salary_max ||
+    (form.pipeline_id || null) !== (j.pipeline_id ?? null);
 
-  const onSubmit = async () => {
+  const persist = async () => {
     setSaving(true);
     try {
       await save({
@@ -913,6 +936,7 @@ function JobPropertiesPanel({
         salary_min: form.salary_min ? Number(form.salary_min) : null,
         salary_max: form.salary_max ? Number(form.salary_max) : null,
         status: form.status,
+        pipeline_id: form.pipeline_id || null,
       });
       toast.success("Vaga atualizada");
       onSaved();
@@ -920,8 +944,19 @@ function JobPropertiesPanel({
       toast.error(e instanceof Error ? e.message : "Erro ao salvar");
     } finally {
       setSaving(false);
+      setConfirmPipeline(null);
     }
   };
+
+  const onSubmit = async () => {
+    const pipelineChanged = (form.pipeline_id || null) !== (j.pipeline_id ?? null);
+    if (pipelineChanged && applicationCount > 0) {
+      setConfirmPipeline(form.pipeline_id || null);
+      return;
+    }
+    await persist();
+  };
+
 
   const jobRow = job as unknown as { id: string; owner_id: string | null };
   return (
