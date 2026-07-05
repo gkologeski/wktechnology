@@ -145,6 +145,13 @@ function EditRolePage() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+        <p className="font-medium text-amber-700 dark:text-amber-400">Edição em tela legada</p>
+        <p className="text-muted-foreground mt-1">
+          Este editor pertence ao módulo legado de perfis. Para novas configurações prefira{" "}
+          <Link to="/home/access" className="underline font-medium text-foreground">Controle de Acesso</Link>.
+        </p>
+      </div>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <Link to="/settings/roles">
