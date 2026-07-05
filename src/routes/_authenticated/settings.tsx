@@ -183,8 +183,7 @@ const sections: Section[] = [
   {
     label: "Pessoas & Acesso",
     tabs: [
-      { to: "/settings/workspace-team", label: "Membros", icon: Users, need: "admin" },
-      { to: "/settings/teams", label: "Usuários (admin)", icon: UsersRound, need: "admin" },
+      { to: "/settings/teams", label: "Membros", icon: Users, need: "admin" },
       { to: "/settings/user-groups", label: "Times", icon: UsersRound, need: "manager" },
       { to: "/settings/roles", label: "Papéis e permissões", icon: KeyRound, need: "admin" },
       { to: "/settings/access-policy", label: "Política de acesso", icon: Lock, need: "admin" },

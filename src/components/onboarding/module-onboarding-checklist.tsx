@@ -15,7 +15,7 @@ const STEPS: Record<string, Step[]> = {
     { id: "crm.first_lead", title: "Criar seu primeiro lead", href: "/leads", description: "Comece capturando um lead manual ou via formulário." },
     { id: "crm.first_deal", title: "Criar um negócio", href: "/deals", description: "Transforme um lead qualificado em oportunidade." },
     { id: "crm.connect_email", title: "Conectar caixa de e-mail", href: "/settings/email", description: "Integre Gmail/Outlook para sincronizar mensagens." },
-    { id: "crm.invite_team", title: "Convidar equipe", href: "/settings/workspace-team", description: "Adicione vendedores ao workspace." },
+    { id: "crm.invite_team", title: "Convidar equipe", href: "/settings/teams", description: "Adicione vendedores ao workspace." },
   ],
   ats: [
     { id: "ats.first_job", title: "Publicar 1ª vaga", href: "/jobs", description: "Crie uma vaga e marque como publicada." },

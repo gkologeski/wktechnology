@@ -10,7 +10,6 @@ import {
   Boxes,
   Building2,
   UsersRound,
-  UserCog,
   Shield,
   ShieldCheck,
   CreditCard,
@@ -197,8 +196,7 @@ const SETTING_GROUPS: SettingGroup[] = [
     title: "Pessoas",
     description: "Membros, times e convites do workspace.",
     items: [
-      { to: "/settings/workspace-team", title: "Membros", desc: "Convites por link e acessos do workspace.", icon: UsersRound },
-      { to: "/settings/teams", title: "Usuários (admin)", desc: "Gestão avançada: perfis, telefone, limites de plano.", icon: UserCog },
+      { to: "/settings/teams", title: "Membros", desc: "Convites por link, papéis e acessos do workspace.", icon: UsersRound },
       { to: "/settings/user-groups", title: "Times", desc: "Grupos operacionais de usuários.", icon: Users },
       { to: "/settings/roles", title: "Papéis e permissões", desc: "Admin, gestor, membro.", icon: ShieldCheck },
       { to: "/home/access", title: "Controle de Acesso (TechERP)", desc: "Cargos, pacotes e regras de campo.", icon: Shield },
