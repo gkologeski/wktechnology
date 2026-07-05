@@ -81,7 +81,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   quotes: "Orçamentos",
   "record-layouts": "Layouts de registro",
   recurring: "Recorrências",
-  roles: "Perfis",
+  roles: "Papéis e permissões",
   rotation: "Rotação",
   scim: "SCIM",
   scoring: "Lead scoring",
@@ -92,8 +92,8 @@ export const SEGMENT_LABELS: Record<string, string> = {
   sso: "SSO",
   subscriptions: "Assinaturas",
   surveys: "Pesquisas",
-  teams: "Equipes",
-  "user-groups": "Grupos de usuários",
+  teams: "Membros",
+  "user-groups": "Times",
   video: "Vídeo",
   "voice-agent": "Agente de voz",
   "wa-ads": "Anúncios WhatsApp",
@@ -102,7 +102,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   "whatsapp-templates": "Modelos WhatsApp",
   widget: "Widget",
   workflows: "Automações",
-  "workspace-team": "Equipe do workspace",
+  "workspace-team": "Membros",
   zapier: "Zapier",
 };
 
