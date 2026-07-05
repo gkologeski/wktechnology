@@ -16,6 +16,7 @@ import {
   Settings as SettingsIcon,
   User,
   Mail,
+  Shield,
   ShieldCheck,
   Languages,
   Smartphone,
