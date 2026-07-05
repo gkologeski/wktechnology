@@ -244,7 +244,6 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     items: [
       { to: "/settings/teams", label: "Membros", icon: UsersRound, need: "admin" },
       { to: "/settings/user-groups", label: "Times", icon: UsersRound, need: "manager" },
-      { to: "/settings/roles", label: "Papéis e permissões (legado)", icon: KeyRound, need: "admin" },
       { to: "/home/access", label: "Controle de Acesso", icon: Shield, need: "admin" },
     ],
   },
