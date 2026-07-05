@@ -230,6 +230,28 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
     const email = data.email.toLowerCase();
     const token = randomToken();
 
+    // ---- Enforcement: limite de usuários do plano ----
+    // Owner conta como 1. Comparamos (membros atuais + 1) com get_entitlement_limit('users.max').
+    {
+      const [{ data: limitRow }, { count: currentMembers }] = await Promise.all([
+        supabaseAdmin.rpc("get_entitlement_limit", {
+          _workspace: workspaceId,
+          _key: "users.max",
+        } as never),
+        supabaseAdmin
+          .from("workspace_members")
+          .select("workspace_id", { count: "exact", head: true })
+          .eq("workspace_id", workspaceId),
+      ]);
+      const limit = (limitRow as number | null) ?? null; // null = ilimitado
+      const used = currentMembers ?? 0;
+      if (limit !== null && used + 1 > limit) {
+        throw new Error(
+          `plan_limit_exceeded:users — seu plano permite até ${limit} usuário(s) e você já está no limite. Faça upgrade em Configurações → Planos e cobrança.`,
+        );
+      }
+    }
+
     // Revoga qualquer convite pendente do mesmo email para o mesmo workspace
     await supabaseAdmin
       .from("workspace_invites")
