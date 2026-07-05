@@ -281,7 +281,7 @@ function UsersPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Usuários</h2>
+          <h2 className="text-lg font-semibold">Usuários (admin)</h2>
           <p className="text-sm text-muted-foreground">
             Convide pessoas, defina permissões e gerencie acessos ao workspace.
           </p>
