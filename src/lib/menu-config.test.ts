@@ -50,7 +50,7 @@ const SETTINGS_ADMIN_ONLY = [
   "/settings/custom-properties",
   "/settings/custom-objects",
   "/settings/teams",
-  "/settings/roles",
+  "/home/access",
   "/marketplace",
   "/integrations",
   "/settings/whatsapp",

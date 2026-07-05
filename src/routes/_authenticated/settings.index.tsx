@@ -46,7 +46,7 @@ const GROUPS: Group[] = [
       { title: "Residência de dados", description: "Região de armazenamento", url: "/settings/data-residency", icon: Globe2 },
       { title: "Planos & Cobrança", description: "Assinaturas por módulo, faturas", url: "/settings/billing", icon: CreditCard },
       { title: "Equipe", description: "Membros do workspace", url: "/settings/teams", icon: UsersRound },
-      { title: "Papéis & Permissões", description: "Roles, perfis de acesso por módulo", url: "/settings/roles", icon: ShieldCheck },
+      { title: "Controle de Acesso", description: "Cargos, pacotes de permissão e regras de campo", url: "/home/access", icon: ShieldCheck },
       { title: "Segurança & SSO", description: "MFA, SSO/SAML, SCIM", url: "/settings/security", icon: ShieldCheck },
       { title: "API Keys", description: "Chaves de API por escopo", url: "/settings/api-keys", icon: KeyRound },
       { title: "Webhooks", description: "Notificações de eventos", url: "/settings/webhooks", icon: Plug },
