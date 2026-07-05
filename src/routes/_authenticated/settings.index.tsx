@@ -45,7 +45,7 @@ const GROUPS: Group[] = [
       { title: "Idioma", description: "Idioma padrão e overrides por usuário", url: "/settings/language", icon: Languages },
       { title: "Residência de dados", description: "Região de armazenamento", url: "/settings/data-residency", icon: Globe2 },
       { title: "Planos & Cobrança", description: "Assinaturas por módulo, faturas", url: "/settings/billing", icon: CreditCard },
-      { title: "Equipe", description: "Membros do workspace", url: "/settings/workspace-team", icon: UsersRound },
+      { title: "Equipe", description: "Membros do workspace", url: "/settings/teams", icon: UsersRound },
       { title: "Papéis & Permissões", description: "Roles, perfis de acesso por módulo", url: "/settings/roles", icon: ShieldCheck },
       { title: "Segurança & SSO", description: "MFA, SSO/SAML, SCIM", url: "/settings/security", icon: ShieldCheck },
       { title: "API Keys", description: "Chaves de API por escopo", url: "/settings/api-keys", icon: KeyRound },
