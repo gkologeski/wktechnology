@@ -602,12 +602,47 @@ export const updateTeamMember = createServerFn({ method: "POST" })
 
 export const removeTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ member_user_id: z.string().uuid() }).parse(i))
+  .inputValidator((i) =>
+    z
+      .object({
+        member_user_id: z.string().uuid(),
+        reassign_to: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
+  )
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
     if (data.member_user_id === userId) throw new Error("Você não pode remover a si mesmo.");
+
+    const reassignTo = data.reassign_to ?? null;
+    if (reassignTo) {
+      if (reassignTo === data.member_user_id)
+        throw new Error("Reatribua para um membro diferente.");
+      const { data: target } = await supabaseAdmin
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", workspace.id)
+        .eq("user_id", reassignTo)
+        .maybeSingle();
+      if (!target) throw new Error("Membro de destino não pertence ao workspace.");
+    }
+
+    // Reatribui (ou zera) registros com assigned_user_id apontando para o membro removido.
+    let reassigned = 0;
+    for (const t of ASSIGNED_TABLES) {
+      const update = reassignTo
+        ? { assigned_user_id: reassignTo }
+        : { assigned_user_id: null };
+      const { count, error: uErr } = await supabaseAdmin
+        .from(t)
+        .update(update as never, { count: "exact" })
+        .eq("workspace_id", workspace.id)
+        .eq("assigned_user_id", data.member_user_id);
+      if (uErr) throw new Error(uErr.message);
+      reassigned += count ?? 0;
+    }
 
     const { error } = await supabaseAdmin
       .from("workspace_members")
@@ -626,5 +661,5 @@ export const removeTeamMember = createServerFn({ method: "POST" })
       .delete()
       .eq("workspace_owner_id", workspace.id)
       .eq("member_user_id", data.member_user_id);
-    return { ok: true };
+    return { ok: true, reassigned };
   });
