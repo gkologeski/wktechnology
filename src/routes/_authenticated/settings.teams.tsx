@@ -1,7 +1,8 @@
 import { formatDateTime } from "@/lib/crm";
-// Página /settings/teams — gerenciar usuários do workspace (papéis, convites, remoção).
+// Página /settings/teams — gestão unificada de usuários do workspace.
+// Convite por link (token, tabela workspace_invites) + membros + reassign-on-remove.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -60,17 +61,24 @@ import {
   Pencil,
   Clock,
   Send,
+  Copy,
+  Link as LinkIcon,
 } from "lucide-react";
 import {
   listTeamMembers,
-  inviteTeamMember,
+  listPendingTeamInvites,
+  countAssignedToTeamMember,
   updateTeamMemberRole,
   updateTeamMember,
   removeTeamMember,
-  resendTeamInvite,
   TEAM_ROLE_LABELS,
   type TeamRole,
 } from "@/lib/teams.functions";
+import {
+  createWorkspaceInvite,
+  resendWorkspaceInvite,
+  revokeWorkspaceInvite,
+} from "@/lib/workspace-invites.functions";
 import { useEntitlements } from "@/lib/use-entitlements";
 import { ENT, PLAN_LABELS } from "@/lib/entitlements";
 
@@ -112,13 +120,18 @@ function initials(name: string, email: string) {
 
 function UsersPage() {
   const listFn = useServerFn(listTeamMembers);
-  const inviteFn = useServerFn(inviteTeamMember);
+  const listInvitesFn = useServerFn(listPendingTeamInvites);
+  const inviteFn = useServerFn(createWorkspaceInvite);
+  const resendFn = useServerFn(resendWorkspaceInvite);
+  const revokeFn = useServerFn(revokeWorkspaceInvite);
+  const countAssignedFn = useServerFn(countAssignedToTeamMember);
   const updateFn = useServerFn(updateTeamMemberRole);
   const updateMemberFn = useServerFn(updateTeamMember);
   const removeFn = useServerFn(removeTeamMember);
-  const resendFn = useServerFn(resendTeamInvite);
 
   type Row = Awaited<ReturnType<typeof listTeamMembers>>[number];
+  type InviteRow = Awaited<ReturnType<typeof listPendingTeamInvites>>[number];
+
   const {
     data: rows = [],
     isLoading: loading,
@@ -127,19 +140,53 @@ function UsersPage() {
     queryKey: ["settings-teams"],
     queryFn: () => listFn(),
   });
+
+  const { data: invites = [], refetch: refetchInvites } = useQuery<InviteRow[]>({
+    queryKey: ["settings-teams", "pending-invites"],
+    queryFn: () => listInvitesFn(),
+  });
+
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | TeamRole>("all");
 
   // invite dialog
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
   const [role, setRole] = useState<TeamRole>("member");
   const [inviting, setInviting] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
-  // remove dialog
+  // remove dialog (with reassign)
   const [toRemove, setToRemove] = useState<Row | null>(null);
+  const [reassignTo, setReassignTo] = useState<string>("__none__");
+  const [assignedInfo, setAssignedInfo] = useState<
+    { counts: Record<string, number>; total: number } | null
+  >(null);
+  const [assignedLoading, setAssignedLoading] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
+  useEffect(() => {
+    if (!toRemove) {
+      setAssignedInfo(null);
+      setReassignTo("__none__");
+      return;
+    }
+    let alive = true;
+    setAssignedLoading(true);
+    countAssignedFn({ data: { member_user_id: toRemove.user_id } })
+      .then((r) => {
+        if (alive) setAssignedInfo(r);
+      })
+      .catch(() => {
+        if (alive) setAssignedInfo({ counts: {}, total: 0 });
+      })
+      .finally(() => {
+        if (alive) setAssignedLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [toRemove, countAssignedFn]);
 
   // edit dialog
   const [editing, setEditing] = useState<Row | null>(null);
@@ -180,7 +227,7 @@ function UsersPage() {
   };
 
   const refresh = async () => {
-    await refetch();
+    await Promise.all([refetch(), refetchInvites()]);
   };
 
   const stats = useMemo(() => {
@@ -200,37 +247,33 @@ function UsersPage() {
     });
   }, [rows, query, roleFilter]);
 
-  // Limite de usuários do plano (owner + membros). null = ilimitado.
+  // Limite de usuários do plano.
   const ents = useEntitlements();
   const usersInfo = ents.info(ENT.USERS_MAX);
   const usersLimit: number | null = usersInfo.limit;
   const usersUsed = rows.length;
   const atLimit = usersLimit !== null && usersUsed >= usersLimit;
 
-  const canInvite =
-    !atLimit && email.trim().length > 0 && fullName.trim().length >= 2 && phone.trim().length >= 8;
+  const canInvite = !atLimit && email.trim().length > 0;
 
   const handleInvite = async () => {
     if (!canInvite) return;
     setInviting(true);
     try {
-      await inviteFn({
+      const res = await inviteFn({
         data: {
           email: email.trim(),
-          full_name: fullName.trim(),
-          phone: phone.trim(),
           role,
-          redirect_origin: typeof window !== "undefined" ? window.location.origin : undefined,
+          redirect_origin:
+            typeof window !== "undefined" ? window.location.origin : "https://ats.wktechnology.com.br",
         },
       });
-      toast.success("Convite enviado", {
-        description: `${email.trim()} receberá um e-mail para acessar o workspace.`,
+      setInviteUrl(res.url);
+      toast.success("Convite criado", {
+        description: `${email.trim()} receberá um e-mail com o link de acesso.`,
       });
       setEmail("");
-      setFullName("");
-      setPhone("");
       setRole("member");
-      setInviteOpen(false);
       await refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao convidar");
@@ -239,17 +282,43 @@ function UsersPage() {
     }
   };
 
-  const handleResend = async (user_id: string) => {
+  const closeInviteDialog = () => {
+    setInviteOpen(false);
+    setInviteUrl(null);
+  };
+
+  const handleCopyInviteUrl = async () => {
+    if (!inviteUrl) return;
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Link copiado");
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
+
+  const handleResendInvite = async (inviteId: string) => {
     try {
       await resendFn({
         data: {
-          member_user_id: user_id,
-          redirect_origin: typeof window !== "undefined" ? window.location.origin : undefined,
+          invite_id: inviteId,
+          redirect_origin:
+            typeof window !== "undefined" ? window.location.origin : "https://ats.wktechnology.com.br",
         },
       });
       toast.success("Convite reenviado");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao reenviar");
+    }
+  };
+
+  const handleRevokeInvite = async (inviteId: string) => {
+    try {
+      await revokeFn({ data: { invite_id: inviteId } });
+      await refetchInvites();
+      toast.success("Convite revogado");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao revogar");
     }
   };
 
@@ -265,16 +334,34 @@ function UsersPage() {
 
   const handleRemove = async () => {
     if (!toRemove) return;
+    setRemoving(true);
     try {
-      await removeFn({ data: { member_user_id: toRemove.user_id } });
+      const reassign = reassignTo === "__none__" ? null : reassignTo;
+      const res = await removeFn({
+        data: { member_user_id: toRemove.user_id, reassign_to: reassign },
+      });
       await refresh();
-      toast.success("Usuário removido");
+      if (res.reassigned > 0) {
+        toast.success(
+          reassign
+            ? `Usuário removido. ${res.reassigned} registro(s) reatribuído(s).`
+            : `Usuário removido. ${res.reassigned} registro(s) ficaram sem proprietário.`,
+        );
+      } else {
+        toast.success("Usuário removido");
+      }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
+      setRemoving(false);
       setToRemove(null);
     }
   };
+
+  const reassignCandidates = useMemo(
+    () => rows.filter((r) => r.user_id !== toRemove?.user_id),
+    [rows, toRemove],
+  );
 
   return (
     <div className="space-y-4">
@@ -283,11 +370,17 @@ function UsersPage() {
         <div>
           <h2 className="text-lg font-semibold">Usuários (admin)</h2>
           <p className="text-sm text-muted-foreground">
-            Convide pessoas, defina permissões e gerencie acessos ao workspace.
+            Convide pessoas por link, defina permissões e gerencie acessos ao workspace.
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5">
-          <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+          <Dialog
+            open={inviteOpen}
+            onOpenChange={(o) => {
+              if (!o) closeInviteDialog();
+              else setInviteOpen(true);
+            }}
+          >
             <DialogTrigger asChild>
               <Button
                 disabled={atLimit}
@@ -301,72 +394,91 @@ function UsersPage() {
               <DialogHeader>
                 <DialogTitle>Convidar usuário</DialogTitle>
                 <DialogDescription>
-                  O usuário receberá um e-mail com link para criar a conta e acessar o workspace.
+                  Um e-mail com link seguro (válido por 14 dias) será enviado. O usuário completa
+                  nome, telefone e senha ao aceitar.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-3 py-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="invite-name">
-                    Nome completo <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="invite-name"
-                    placeholder="Maria da Silva"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    autoFocus
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="invite-email">
-                    E-mail <span className="text-destructive">*</span>
-                  </Label>
-                  <EmailInput
-                    id="invite-email"
-                    placeholder="pessoa@empresa.com"
-                    required
-                    value={email}
-                    onChange={setEmail}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="invite-phone">
-                    Telefone celular <span className="text-destructive">*</span>
-                  </Label>
-                  <PhoneInput id="invite-phone" required value={phone} onChange={setPhone} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="invite-role">Papel</Label>
-                  <Select value={role} onValueChange={(v) => setRole(v as TeamRole)}>
-                    <SelectTrigger id="invite-role">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(TEAM_ROLE_LABELS) as TeamRole[]).map((k) => {
-                        const Icon = ROLE_ICONS[k];
-                        return (
-                          <SelectItem key={k} value={k}>
-                            <div className="flex items-center gap-2">
-                              <Icon className="h-4 w-4 text-muted-foreground" />
-                              <span>{TEAM_ROLE_LABELS[k]}</span>
-                            </div>
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground pt-1">{ROLE_DESCRIPTIONS[role]}</p>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="ghost" onClick={() => setInviteOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleInvite} disabled={inviting || !canInvite}>
-                  <Mail className="h-4 w-4 mr-2" />
-                  {inviting ? "Enviando…" : "Enviar convite"}
-                </Button>
-              </DialogFooter>
+              {!inviteUrl ? (
+                <>
+                  <div className="space-y-3 py-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="invite-email">
+                        E-mail <span className="text-destructive">*</span>
+                      </Label>
+                      <EmailInput
+                        id="invite-email"
+                        placeholder="pessoa@empresa.com"
+                        required
+                        value={email}
+                        onChange={setEmail}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="invite-role">Papel</Label>
+                      <Select value={role} onValueChange={(v) => setRole(v as TeamRole)}>
+                        <SelectTrigger id="invite-role">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(Object.keys(TEAM_ROLE_LABELS) as TeamRole[]).map((k) => {
+                            const Icon = ROLE_ICONS[k];
+                            return (
+                              <SelectItem key={k} value={k}>
+                                <div className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4 text-muted-foreground" />
+                                  <span>{TEAM_ROLE_LABELS[k]}</span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground pt-1">
+                        {ROLE_DESCRIPTIONS[role]}
+                      </p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="ghost" onClick={closeInviteDialog}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleInvite} disabled={inviting || !canInvite}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      {inviting ? "Enviando…" : "Enviar convite"}
+                    </Button>
+                  </DialogFooter>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-3 py-2">
+                    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        <LinkIcon className="h-3.5 w-3.5" />
+                        Link do convite (válido 14 dias)
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input value={inviteUrl} readOnly className="text-xs" />
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="outline"
+                          onClick={handleCopyInviteUrl}
+                          aria-label="Copiar link"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        O e-mail já foi enviado. Você também pode compartilhar este link por outro
+                        canal.
+                      </p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={closeInviteDialog}>Concluir</Button>
+                  </DialogFooter>
+                </>
+              )}
             </DialogContent>
           </Dialog>
           {usersLimit !== null && (
@@ -401,6 +513,72 @@ function UsersPage() {
           </Card>
         ))}
       </div>
+
+      {/* Pending invites */}
+      {invites.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="h-4 w-4 text-amber-600" />
+              Convites pendentes ({invites.length})
+            </CardTitle>
+            <CardDescription>
+              Convites por link que ainda não foram aceitos. Expiram em 14 dias após o envio.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>E-mail</TableHead>
+                  <TableHead>Papel</TableHead>
+                  <TableHead>Enviado em</TableHead>
+                  <TableHead>Expira em</TableHead>
+                  <TableHead className="w-[100px]" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invites.map((i) => (
+                  <TableRow key={i.id}>
+                    <TableCell className="text-sm">{i.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{TEAM_ROLE_LABELS[i.role]}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDateTime(i.created_at)}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {formatDateTime(i.expires_at)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleResendInvite(i.id)}
+                          aria-label="Reenviar convite"
+                          title="Reenviar convite"
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRevokeInvite(i.id)}
+                          aria-label="Revogar convite"
+                          title="Revogar convite"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Table */}
       <Card>
@@ -533,17 +711,6 @@ function UsersPage() {
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      {r.pending && !r.is_owner && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleResend(r.user_id)}
-                          aria-label="Reenviar convite"
-                          title="Reenviar convite"
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                      )}
                       {!r.is_owner && (
                         <Button
                           variant="ghost"
@@ -611,23 +778,74 @@ function UsersPage() {
         </CardContent>
       </Card>
 
-      {/* Remove confirm */}
-      <AlertDialog open={!!toRemove} onOpenChange={(o) => !o && setToRemove(null)}>
+      {/* Remove confirm with impact + reassign */}
+      <AlertDialog open={!!toRemove} onOpenChange={(o) => !o && !removing && setToRemove(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remover usuário do workspace?</AlertDialogTitle>
-            <AlertDialogDescription>
-              {toRemove?.full_name || toRemove?.email} perderá o acesso imediatamente. Os registros
-              criados por ele continuarão existindo.
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>
+                  <strong className="text-foreground">
+                    {toRemove?.full_name || toRemove?.email}
+                  </strong>{" "}
+                  perderá o acesso imediatamente.
+                </p>
+                {assignedLoading && (
+                  <p className="text-muted-foreground">Analisando impacto…</p>
+                )}
+                {!assignedLoading && assignedInfo && assignedInfo.total > 0 && (
+                  <div className="rounded-md border bg-amber-50 dark:bg-amber-950/20 p-3 space-y-2">
+                    <p className="text-amber-900 dark:text-amber-100 font-medium">
+                      Este usuário é proprietário de {assignedInfo.total} registro(s):
+                    </p>
+                    <ul className="text-xs text-amber-900 dark:text-amber-100 space-y-0.5">
+                      {Object.entries(assignedInfo.counts)
+                        .filter(([, v]) => v > 0)
+                        .map(([k, v]) => (
+                          <li key={k}>
+                            • {v} {k}
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                )}
+                {!assignedLoading && assignedInfo && assignedInfo.total > 0 && (
+                  <div className="space-y-1.5">
+                    <Label htmlFor="reassign-to">Reatribuir para</Label>
+                    <Select value={reassignTo} onValueChange={setReassignTo}>
+                      <SelectTrigger id="reassign-to">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">
+                          Deixar sem proprietário
+                        </SelectItem>
+                        {reassignCandidates.map((c) => (
+                          <SelectItem key={c.user_id} value={c.user_id}>
+                            {c.full_name || c.email || c.user_id.slice(0, 8)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                {!assignedLoading && assignedInfo && assignedInfo.total === 0 && (
+                  <p className="text-muted-foreground">
+                    Este usuário não é proprietário de nenhum registro.
+                  </p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={removing}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleRemove}
+              disabled={removing || assignedLoading}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Remover
+              {removing ? "Removendo…" : "Remover"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
