@@ -1,47 +1,36 @@
 ## Diagnóstico
 
-Você está certo: **hoje não existe UI para trocar o pipeline de uma vaga**. Verifiquei o código e:
+Ao entrar em uma vaga e clicar em um candidato, a rota `/candidates/$id` chama `getCandidateDetail`, que faz:
 
-- O schema `JobSaveSchema` (`src/lib/ats/ats.functions.ts`) **não aceita `pipeline_id`**.
-- A função `saveAtsJob` sempre sobrescreve com `ensureDefaultPipeline(...)` — ou seja, mesmo se o form enviasse, o backend ignoraria e forçaria o pipeline padrão.
-- Nem o dialog de criação (`jobs.index.tsx`) nem a página de detalhe (`jobs.$id.tsx`) mostram um seletor de pipeline.
+```ts
+supabase.from("ats_candidates")
+  .select(...)
+  .eq("id", data.id)
+  .eq("owner_id", userId)   // ← filtro redundante
+  .maybeSingle();
+```
 
-Por isso todas as 4 vagas (Java, React, Delphi, xispito) acabaram no pipeline padrão "RH - Seleção" — não porque você escolheu, mas porque é o único caminho hoje.
+O filtro `owner_id = userId` exclui candidatos criados por **outros membros do mesmo workspace** — mesmo que a RLS permita a leitura (candidatos compartilhados, ex.: capturados por outro recrutador, ou associados via vaga do workspace). Resultado: `cand = null` → a página renderiza "Candidato não encontrado".
 
-## Plano
+É exatamente o mesmo problema que causou os erros recentes em `ats_pipelines` / `ats_jobs` (`saveAtsJob`). A RLS já garante que o usuário só verá candidatos permitidos; o `.eq("owner_id", userId)` no servidor é redundante e quebra visibilidade compartilhada.
 
-Escopo: **apenas UI de vagas + backend do save**, sem tocar em RLS, candidatos, workflows ou o motor do pipeline.
+## Correção
 
-### 1. Backend — aceitar `pipeline_id` no save da vaga
-Arquivo: `src/lib/ats/ats.functions.ts`
-- Adicionar `pipeline_id: z.string().uuid().optional().nullable()` em `JobSaveSchema`.
-- Em `saveAtsJob`: se o cliente enviar `pipeline_id`, validar que o pipeline pertence ao workspace (consulta em `ats_pipelines` com `owner_id`) e usá-lo; caso contrário, manter o fallback `ensureDefaultPipeline`.
-- `getAtsJob` já retorna `*`, então `pipeline_id` já vem para o front — não precisa mudar.
+Arquivo: `src/lib/ats/candidate-detail.functions.ts`
 
-### 2. UI — dialog de criação/edição de vaga
-Arquivo: `src/routes/_authenticated/(ats)/jobs.index.tsx` (dialog "Nova vaga") e o form de edição usado em `jobs.$id.tsx`.
-- Adicionar um **Select "Pipeline"** dentro de um `FormSection`, listando `listAtsPipelines()` (função já existente em `src/lib/ats/pipelines.functions.ts`).
-- Default: pipeline atual da vaga (edição) ou o marcado como `is_default` (criação).
-- Texto de ajuda: "Define as etapas pelas quais as candidaturas desta vaga vão passar."
-- Aviso ao trocar pipeline de uma vaga com candidaturas ativas: `AlertDialog` de confirmação — "As etapas atuais dos candidatos podem não existir no novo pipeline." Sem migração automática de etapa (fora do escopo).
+1. Em `getCandidateDetail` (linha ~144): remover `.eq("owner_id", userId)`. Manter `.maybeSingle()` e o retorno `null` quando a RLS de fato bloquear.
+2. Auditar as demais queries do mesmo handler (`ats_applications`, `ats_talent_pool_members`, `ats_interviews`, `ats_offers`, `ats_candidate_flags`, eventos): elas já filtram por `candidate_id` e dependem da RLS — nenhuma mudança extra prevista, mas confirmar em leitura rápida que não há outro `.eq("owner_id", userId)` filtrando indevidamente relacionamentos do candidato.
 
-### 3. UI — cabeçalho da página da vaga
-Arquivo: `src/routes/_authenticated/(ats)/jobs.$id.tsx`
-- Exibir o nome do pipeline atual como uma `MetaPill` clicável ao lado das outras meta-infos (status, localização, etc.).
-- Clique abre o mesmo dialog de edição já focado no campo Pipeline.
-
-### 4. Ação em massa (opcional, marcar no plano mas confirmar antes)
-Na listagem `/jobs`, adicionar "Alterar pipeline" na `BulkActionBar` para trocar várias vagas de uma vez. **Só implemento se você confirmar** — dá para ficar para depois.
-
-## Fora do escopo
-- Não migra automaticamente as etapas dos candidatos ao trocar pipeline.
-- Não altera schema do banco (coluna `pipeline_id` já existe).
-- Não mexe em RLS, workflows ou pipeline-insights.
+Escopo: **somente leitura do detalhe do candidato**. Não altero `saveAtsCandidate`, `deleteAtsCandidate` nem RLS — mutações continuam protegidas pela RLS/policies existentes (padrão idêntico ao fix anterior de `saveAtsJob`).
 
 ## Validação manual
-1. Abrir `/jobs/<id>` → editar → conferir novo campo "Pipeline" com pipelines do workspace.
-2. Criar uma vaga escolhendo outro pipeline → conferir no banco que `pipeline_id` foi persistido corretamente.
-3. Trocar pipeline de uma vaga que tem candidatos → aparece o alerta antes de salvar.
-4. Voltar ao pipeline "RH - Seleção" e conferir que a vaga volta a aparecer nele em `/pipelines`.
 
-Confirma que posso implementar? Diga também se quer incluir a **ação em massa** do item 4.
+1. Logar como usuário A no workspace.
+2. Abrir uma vaga que contenha candidatos criados por outro usuário B do mesmo workspace.
+3. Clicar em um desses candidatos → a página de detalhe deve carregar normalmente, sem "Candidato não encontrado".
+4. Verificar que candidatos próprios continuam abrindo.
+5. Confirmar que um candidato de outro workspace (sem permissão RLS) continua retornando "não encontrado".
+
+## Riscos
+
+Baixo. A visibilidade real permanece governada pela RLS de `ats_candidates`. Se a policy hoje já permite SELECT de candidatos do workspace inteiro (que é o comportamento esperado, conforme o fix anterior de jobs/pipelines), o efeito é apenas destravar o que a RLS já autorizava.
