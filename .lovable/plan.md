@@ -1,72 +1,60 @@
-## Contexto
+## Causa raiz
 
-Diagnóstico das duas telas dos prints identificou:
+Ao remover o usuário, `removeTeamMember` faz `UPDATE assigned_user_id` em `contacts`, `companies`, `leads` e `deals`. Todas essas tabelas têm o trigger `enqueue_workflow_event`, cujo corpo contém a expressão:
 
-1. **Rótulos inconsistentes** para as mesmas rotas (Home diz "Membros/Times/Papéis e permissões", sidebar de Settings diz "Equipe do workspace/Usuários/Permissões").
-2. **Card "Equipes (grupos)"** existe na sidebar mas falta na Home.
-3. **Duplicidade funcional real** entre `/settings/workspace-team` e `/settings/teams` — dois sistemas paralelos de gestão de membros (token-invite vs auth-invite).
-4. **Sobreposição** entre `/settings/roles` (perfis legado) e `/home/access` (Controle de Acesso TechERP) — dois motores de permissão coexistindo.
-
-## Escopo desta rodada
-
-Apenas mudanças de **rotulagem e navegação**. Zero mudança funcional, de RLS, schema, server functions ou lógica de negócio.
-
-Decisões maiores (consolidar workspace-team↔teams; migrar roles→access) ficam fora deste plano por dependerem de migração de dados / decisão de produto.
-
-## Alterações
-
-### 1. Padronizar rótulos entre Home e Sidebar de Settings
-
-Arquivo: `src/routes/_authenticated/settings.tsx` (seção "Pessoas & Acesso", linhas ~186–189).
-
-| Rota | Rótulo atual (sidebar) | Novo rótulo | Descrição/tooltip nova |
-|---|---|---|---|
-| `/settings/workspace-team` | Equipe do workspace | **Membros** | "Convites por link e acessos do workspace" |
-| `/settings/teams` | Usuários | **Usuários (admin)** | "Gestão avançada: perfis, telefone, limites de plano" |
-| `/settings/user-groups` | Equipes (grupos) | **Times** | "Grupos operacionais de usuários" |
-| `/settings/roles` | Permissões | **Papéis e permissões** | (mantém rota, só renomeia) |
-
-Rationale para diferenciar "Membros" vs "Usuários (admin)": até a consolidação futura, os rótulos precisam sinalizar por que existem duas telas. "Membros" = fluxo padrão de convite/remoção; "Usuários (admin)" = tela avançada com limites de plano, edição de perfil e matriz de permissões.
-
-Também trocar o título interno da página `/settings/teams` (`src/routes/_authenticated/settings.teams.tsx` linha 284) de "Usuários" para "Usuários (admin)".
-
-### 2. Atualizar cards da Home
-
-Arquivo: `src/routes/_authenticated/home.index.tsx` (seção "Pessoas", linhas ~196–202).
-
-Trocar de 4 para 5 cards, com rótulos e descrições alinhados aos da sidebar:
-
-```text
-- Membros              → /settings/workspace-team   (Convites e acessos)
-- Usuários (admin)     → /settings/teams            (Gestão avançada e limites)
-- Times                → /settings/user-groups      (Grupos operacionais)   ← NOVO
-- Papéis e permissões  → /settings/roles            (Admin, gestor, membro)
-- Controle de Acesso   → /home/access               (Cargos, pacotes, matriz)
+```sql
+if v_entity = 'deals' and (coalesce(new.stage_id,'') is distinct from coalesce(old.stage_id,'') ...)
 ```
 
-Ícones sugeridos (usar os já importados no arquivo): `UsersRound` (Membros), `Users2`/`UserCog` (Usuários admin), `Users` (Times), `ShieldCheck` (Papéis), `Shield` (Controle de Acesso).
+O PL/pgSQL prepara a expressão inteira como SQL na primeira execução por tabela. Mesmo com o guarda `v_entity='deals'`, a referência `new.stage_id` precisa existir no `NEW` daquela tabela. Em `contacts` e `companies` (que não têm `stage_id`) a preparação falha com:
 
-### 3. Atualizar menu ERP
+```
+record "new" has no field "stage_id"
+```
 
-Arquivo: `src/lib/menu-config-erp.ts` linha 18 — o item já foi corrigido para `/settings/workspace-team`; apenas renomear label de "Membros" (já está) para permanecer coerente com o rótulo unificado — sem mudança se já bate.
+Por isso o erro só aparece quando a reatribuição toca contacts/companies (ou seja, quando o usuário removido tinha registros nessas tabelas). O mesmo padrão afeta `new.stage`, `new.stage_value` e `new.status` em ramos análogos.
 
-## Fora do escopo (documentado para próximos passos)
+## Correção
 
-Nenhum destes itens será executado agora — apenas registrados como pendências:
+Reescrever `public.enqueue_workflow_event` para isolar cada tipo de entidade em ramos `IF/ELSIF` separados, de modo que a referência a `NEW.<coluna>` só apareça no ramo da entidade que possui aquela coluna. Nada muda no comportamento dos eventos (`created`, `updated`, `stage_changed`) — só a estrutura do código PL/pgSQL.
 
-1. **Consolidar `/settings/workspace-team` e `/settings/teams`**: portar as features únicas do workspace-team (revoke de convite, reassign-on-remove, token-link invite) para dentro de `/settings/teams` e deprecar workspace-team. Requer decisão sobre modelo de convite unificado (token vs auth.admin).
-2. **Migrar dados de `access_profiles` → `job_roles`/`permission_sets`** e depois esconder/remover `/settings/roles`. Requer script de migração e validação de atribuições existentes.
-3. Revisar se o `WorkspaceMenu` header e o `global-search/commands.ts` precisam dos mesmos rótulos unificados (verificar após aprovação).
+### Migração (SQL)
 
-## Validação manual
+```text
+CREATE OR REPLACE FUNCTION public.enqueue_workflow_event() ...
+  IF tg_op = 'INSERT' THEN
+     v_event := 'created'; ...
+  ELSIF tg_op = 'UPDATE' THEN
+     v_event := 'updated';  -- default
+     IF v_entity = 'deals' THEN
+        IF coalesce(new.stage_id::text,'') IS DISTINCT FROM coalesce(old.stage_id::text,'')
+           OR new.stage IS DISTINCT FROM old.stage THEN
+           v_event := 'stage_changed';
+        END IF;
+     ELSIF v_entity = 'leads' THEN
+        IF new.status IS DISTINCT FROM old.status THEN v_event := 'stage_changed'; END IF;
+     ELSIF v_entity = 'tickets' THEN ...
+     ELSIF v_entity = 'ats_jobs' THEN ...
+     ELSIF v_entity = 'ats_applications' THEN
+        IF coalesce(new.stage_value,'') IS DISTINCT FROM coalesce(old.stage_value,'')
+           OR new.status IS DISTINCT FROM old.status THEN v_event := 'stage_changed'; END IF;
+     ELSIF v_entity = 'ats_interviews' THEN ...
+     END IF;
+  END IF;
+  INSERT INTO public.workflow_events ...;
+  RETURN NULL;
+```
 
-1. Abrir `/home` → seção "Pessoas" deve mostrar 5 cards na ordem acima, com rótulos coincidindo com a sidebar.
-2. Abrir qualquer rota `/settings/*` → sidebar "Pessoas & Acesso" deve exibir Membros / Usuários (admin) / Times / Papéis e permissões.
-3. Clicar em "Times" (Home ou sidebar) → cai em `/settings/user-groups`.
-4. Clicar em "Usuários (admin)" → cai em `/settings/teams` com o mesmo título na página.
-5. Nenhuma tela deve ter perdido funcionalidade — apenas texto de rótulo mudou.
+Cada tabela só compila o ramo que corresponde à sua `v_entity`, então referências como `new.stage_id`, `new.stage_value`, `new.status`, `new.stage` só são resolvidas quando existem.
 
-## Riscos
+## Validação
 
-- Baixo. Só strings de UI. Sem impacto em RLS, queries ou server functions.
-- Usuários acostumados aos rótulos antigos podem estranhar por 1 sessão — mitigado pelas descrições explicativas nos cards.
+1. `bunx tsgo --noEmit` (não deve mudar — só migração SQL).
+2. Repetir a remoção de `e2e@wktechnology.com.br` reatribuindo para `guilherme@wktechnology.com.br` e confirmar sucesso.
+3. Sanity: fazer um `UPDATE` em `contacts`, `deals`, `leads` e conferir que `workflow_events` recebe `created/updated/stage_changed` como antes.
+
+## Escopo
+
+- Somente 1 migração SQL alterando a função `enqueue_workflow_event`.
+- Nenhuma alteração em rotas, componentes, RLS, grants ou schema de tabelas.
+- Sem mudança de contrato dos eventos gravados em `workflow_events`.
