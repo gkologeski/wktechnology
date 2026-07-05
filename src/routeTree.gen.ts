@@ -53,6 +53,7 @@ import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authenticated/my-bug-reports'
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated/meetings'
 import { Route as AuthenticatedMatchScoresRouteImport } from './routes/_authenticated/match-scores'
+import { Route as AuthenticatedMarketplaceRouteImport } from './routes/_authenticated/marketplace'
 import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
@@ -509,6 +510,12 @@ const AuthenticatedMatchScoresRoute =
     path: '/match-scores',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedMarketplaceRoute =
+  AuthenticatedMarketplaceRouteImport.update({
+    id: '/marketplace',
+    path: '/marketplace',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -597,9 +604,9 @@ const AuthenticatedProposalsIndexRoute =
   } as any)
 const AuthenticatedMarketplaceIndexRoute =
   AuthenticatedMarketplaceIndexRouteImport.update({
-    id: '/marketplace/',
-    path: '/marketplace/',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedMarketplaceRoute,
   } as any)
 const AuthenticatedLandingPagesIndexRoute =
   AuthenticatedLandingPagesIndexRouteImport.update({
@@ -1082,9 +1089,9 @@ const AuthenticatedProposalsIdRoute =
   } as any)
 const AuthenticatedMarketplaceSlugRoute =
   AuthenticatedMarketplaceSlugRouteImport.update({
-    id: '/marketplace/$slug',
-    path: '/marketplace/$slug',
-    getParentRoute: () => AuthenticatedRoute,
+    id: '/$slug',
+    path: '/$slug',
+    getParentRoute: () => AuthenticatedMarketplaceRoute,
   } as any)
 const AuthenticatedLeadsImportHubspotRoute =
   AuthenticatedLeadsImportHubspotRouteImport.update({
@@ -1886,6 +1893,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/match-scores': typeof AuthenticatedMatchScoresRoute
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
@@ -2440,6 +2448,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
   '/_authenticated/leads': typeof AuthenticatedLeadsRouteWithChildren
+  '/_authenticated/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/_authenticated/match-scores': typeof AuthenticatedMatchScoresRoute
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRoute
   '/_authenticated/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
@@ -2720,6 +2729,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/invoices'
     | '/leads'
+    | '/marketplace'
     | '/match-scores'
     | '/meetings'
     | '/my-bug-reports'
@@ -3273,6 +3283,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/invoices'
     | '/_authenticated/leads'
+    | '/_authenticated/marketplace'
     | '/_authenticated/match-scores'
     | '/_authenticated/meetings'
     | '/_authenticated/my-bug-reports'
@@ -3938,6 +3949,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMatchScoresRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/marketplace': {
+      id: '/_authenticated/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof AuthenticatedMarketplaceRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/leads': {
       id: '/_authenticated/leads'
       path: '/leads'
@@ -4052,10 +4070,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/marketplace/': {
       id: '/_authenticated/marketplace/'
-      path: '/marketplace'
+      path: '/'
       fullPath: '/marketplace/'
       preLoaderRoute: typeof AuthenticatedMarketplaceIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedMarketplaceRoute
     }
     '/_authenticated/landing-pages/': {
       id: '/_authenticated/landing-pages/'
@@ -4626,10 +4644,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/marketplace/$slug': {
       id: '/_authenticated/marketplace/$slug'
-      path: '/marketplace/$slug'
+      path: '/$slug'
       fullPath: '/marketplace/$slug'
       preLoaderRoute: typeof AuthenticatedMarketplaceSlugRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedMarketplaceRoute
     }
     '/_authenticated/leads/import-hubspot': {
       id: '/_authenticated/leads/import-hubspot'
@@ -5639,6 +5657,22 @@ const AuthenticatedLeadsRouteChildren: AuthenticatedLeadsRouteChildren = {
 const AuthenticatedLeadsRouteWithChildren =
   AuthenticatedLeadsRoute._addFileChildren(AuthenticatedLeadsRouteChildren)
 
+interface AuthenticatedMarketplaceRouteChildren {
+  AuthenticatedMarketplaceSlugRoute: typeof AuthenticatedMarketplaceSlugRoute
+  AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
+}
+
+const AuthenticatedMarketplaceRouteChildren: AuthenticatedMarketplaceRouteChildren =
+  {
+    AuthenticatedMarketplaceSlugRoute: AuthenticatedMarketplaceSlugRoute,
+    AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
+  }
+
+const AuthenticatedMarketplaceRouteWithChildren =
+  AuthenticatedMarketplaceRoute._addFileChildren(
+    AuthenticatedMarketplaceRouteChildren,
+  )
+
 interface AuthenticatedProposalsRouteChildren {
   AuthenticatedProposalsIdRoute: typeof AuthenticatedProposalsIdRoute
   AuthenticatedProposalsIndexRoute: typeof AuthenticatedProposalsIndexRoute
@@ -5955,6 +5989,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
   AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRouteWithChildren
+  AuthenticatedMarketplaceRoute: typeof AuthenticatedMarketplaceRouteWithChildren
   AuthenticatedMatchScoresRoute: typeof AuthenticatedMatchScoresRoute
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRoute
   AuthenticatedMyBugReportsRoute: typeof AuthenticatedMyBugReportsRoute
@@ -5994,14 +6029,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
-  AuthenticatedMarketplaceSlugRoute: typeof AuthenticatedMarketplaceSlugRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
   AuthenticatedAtsIndexRoute: typeof AuthenticatedAtsIndexRoute
   AuthenticatedHomeIndexRoute: typeof AuthenticatedHomeIndexRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
-  AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
   AuthenticatedatsCandidatesIdRoute: typeof AuthenticatedatsCandidatesIdRoute
   AuthenticatedatsHuntingCapturesRoute: typeof AuthenticatedatsHuntingCapturesRoute
@@ -6037,6 +6070,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
   AuthenticatedLeadsRoute: AuthenticatedLeadsRouteWithChildren,
+  AuthenticatedMarketplaceRoute: AuthenticatedMarketplaceRouteWithChildren,
   AuthenticatedMatchScoresRoute: AuthenticatedMatchScoresRoute,
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRoute,
   AuthenticatedMyBugReportsRoute: AuthenticatedMyBugReportsRoute,
@@ -6077,14 +6111,12 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
-  AuthenticatedMarketplaceSlugRoute: AuthenticatedMarketplaceSlugRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
   AuthenticatedAtsIndexRoute: AuthenticatedAtsIndexRoute,
   AuthenticatedHomeIndexRoute: AuthenticatedHomeIndexRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
-  AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
   AuthenticatedatsCandidatesIdRoute: AuthenticatedatsCandidatesIdRoute,
   AuthenticatedatsHuntingCapturesRoute: AuthenticatedatsHuntingCapturesRoute,
