@@ -60,7 +60,7 @@ export function OnboardingChecklist() {
     {
       done: data.team,
       label: "Convide um membro do seu time",
-      to: "/settings/workspace-team" as const,
+      to: "/settings/teams" as const,
     },
   ];
 
