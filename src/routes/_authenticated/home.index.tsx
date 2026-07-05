@@ -10,6 +10,8 @@ import {
   Boxes,
   Building2,
   UsersRound,
+  UserCog,
+  Shield,
   ShieldCheck,
   CreditCard,
   Palette,
