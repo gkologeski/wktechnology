@@ -1,36 +1,40 @@
 ## Diagnóstico
 
-Ao entrar em uma vaga e clicar em um candidato, a rota `/candidates/$id` chama `getCandidateDetail`, que faz:
+Os dois sintomas relatados têm a mesma causa raiz em `src/lib/access-control/access-mutations.functions.ts`, função `setMemberAssignments`:
 
-```ts
-supabase.from("ats_candidates")
-  .select(...)
-  .eq("id", data.id)
-  .eq("owner_id", userId)   // ← filtro redundante
-  .maybeSingle();
-```
+- A função grava/lê em `user_job_roles` e `user_permission_sets` usando `workspace_id = userId` (o UUID do próprio usuário logado).
+- A tela de governança (`getAccessBundle` em `src/lib/access-control/access.functions.ts`, linhas 90–140) resolve o `workspaceId` real via `workspace_members.workspace_id` (um UUID distinto do user_id) e é esse valor que aparece no grid.
+- O mesmo `resolveActiveWorkspace` é usado para checar se Aline é membro — mas `setMemberAssignments` procura em `workspace_members` com `.eq("workspace_id", userId)`, então:
+  - **Atribuir owner a si mesmo:** o `if (!member && data.user_id !== userId)` é curto-circuitado (data.user_id === userId), o INSERT ocorre em `user_job_roles` com `workspace_id = userId`. A tela lê pelo workspace real → nada aparece no grid, apesar do toast de sucesso.
+  - **Atribuir a Aline:** o SELECT em `workspace_members` retorna vazio (workspace_id filtrado errado), Aline !== userId → lança "Usuário não é membro deste workspace."
 
-O filtro `owner_id = userId` exclui candidatos criados por **outros membros do mesmo workspace** — mesmo que a RLS permita a leitura (candidatos compartilhados, ex.: capturados por outro recrutador, ou associados via vaga do workspace). Resultado: `cand = null` → a página renderiza "Candidato não encontrado".
+## Correção proposta (escopo mínimo)
 
-É exatamente o mesmo problema que causou os erros recentes em `ats_pipelines` / `ats_jobs` (`saveAtsJob`). A RLS já garante que o usuário só verá candidatos permitidos; o `.eq("owner_id", userId)` no servidor é redundante e quebra visibilidade compartilhada.
+**Arquivo único:** `src/lib/access-control/access-mutations.functions.ts`
 
-## Correção
-
-Arquivo: `src/lib/ats/candidate-detail.functions.ts`
-
-1. Em `getCandidateDetail` (linha ~144): remover `.eq("owner_id", userId)`. Manter `.maybeSingle()` e o retorno `null` quando a RLS de fato bloquear.
-2. Auditar as demais queries do mesmo handler (`ats_applications`, `ats_talent_pool_members`, `ats_interviews`, `ats_offers`, `ats_candidate_flags`, eventos): elas já filtram por `candidate_id` e dependem da RLS — nenhuma mudança extra prevista, mas confirmar em leitura rápida que não há outro `.eq("owner_id", userId)` filtrando indevidamente relacionamentos do candidato.
-
-Escopo: **somente leitura do detalhe do candidato**. Não altero `saveAtsCandidate`, `deleteAtsCandidate` nem RLS — mutações continuam protegidas pela RLS/policies existentes (padrão idêntico ao fix anterior de `saveAtsJob`).
+1. Adicionar um helper local `resolveActiveWorkspace(supabase, userId)` idêntico ao já existente em `access.functions.ts` (consulta `workspace_members.workspace_id` e cai para `workspaces.created_by`). Retorna o UUID real do workspace.
+2. Em `setMemberAssignments` (linhas 285–374):
+  - Resolver `const workspaceId = await resolveActiveWorkspace(supabase, userId)` logo após `assertWorkspaceOwner`; se `null`, lançar erro claro.
+  - Trocar `workspace_id: userId` / `.eq("workspace_id", userId)` por `workspaceId` em:
+    - lookup em `workspace_members` (linha 296) — inclusive tratar o próprio owner (que pode não estar em `workspace_members`) mantendo o bypass `data.user_id === userId` **ou** validando via `workspaces.created_by = data.user_id`.
+    - DELETE de `user_job_roles` (linha 307).
+    - INSERT rows em `user_job_roles` (`workspace_id: workspaceId` — linhas 313, 321, 331).
+    - DELETE de `user_permission_sets` (linha 346).
+    - INSERT rows em `user_permission_sets` (linha 353).
+3. **Não alterar** as demais funções (`upsertJobRole`, `upsertPermissionSet`, `upsertFieldRule`, `logAudit`) neste passo — elas seguem o padrão legado `workspace_id: userId` e a leitura correspondente hoje já ignora esse filtro; mexer nelas está fora do escopo relatado e pode invalidar dados existentes.
+4. **Não alterar** RLS, schema, ou `getAccessBundle`. Só o path de escrita de atribuição de membro.
 
 ## Validação manual
 
-1. Logar como usuário A no workspace.
-2. Abrir uma vaga que contenha candidatos criados por outro usuário B do mesmo workspace.
-3. Clicar em um desses candidatos → a página de detalhe deve carregar normalmente, sem "Candidato não encontrado".
-4. Verificar que candidatos próprios continuam abrindo.
-5. Confirmar que um candidato de outro workspace (sem permissão RLS) continua retornando "não encontrado".
+1. Como owner, abrir Governança/Controle de Acesso, atribuir cargo "Workspace Owner" (ou outro) a si mesmo → salvar → recarregar → verificar que aparece no grid com o cargo correto.
+2. Convidar Aline (se ainda não é membro) e aguardar aceite; depois atribuir cargo a ela → deve salvar sem erro e aparecer no grid.
+3. Tentar atribuir cargo a um usuário que NÃO é membro → deve continuar retornando "Usuário não é membro deste workspace."
+4. Rodar typecheck: `bun run typecheck`.
 
 ## Riscos
 
-Baixo. A visibilidade real permanece governada pela RLS de `ats_candidates`. Se a policy hoje já permite SELECT de candidatos do workspace inteiro (que é o comportamento esperado, conforme o fix anterior de jobs/pipelines), o efeito é apenas destravar o que a RLS já autorizava.
+- Baixo. A mudança é aditiva no caminho de escrita e alinha com o path de leitura já em produção. Registros gravados anteriormente com o workspace_id incorreto (= user_id do owner) continuarão órfãos no grid; se desejado, um script de backfill pode migrá-los depois — **não incluído** neste plano por estar fora do escopo do bug reportado.
+
+## Pendências (fora deste plano)
+
+- Auditar as outras mutações do mesmo arquivo que usam `workspace_id: userId` (roles, sets, field rules, audit log). Provavelmente têm o mesmo problema latente, mas não afetam o sintoma relatado.
