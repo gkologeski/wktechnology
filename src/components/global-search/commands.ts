@@ -10,7 +10,6 @@ import {
   Briefcase,
   Settings,
   Shield,
-  ShieldCheck,
   Home,
 } from "lucide-react";
 
