@@ -15,7 +15,7 @@ export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Workspace",
     items: [
-      { title: "Membros", url: "/workspace/members", icon: Users2 },
+      { title: "Membros", url: "/settings/workspace-team", icon: Users2 },
       { title: "Configurações", url: "/settings", icon: SettingsIcon },
       { title: "Controle de acesso", url: "/home/access", icon: Shield },
     ],
