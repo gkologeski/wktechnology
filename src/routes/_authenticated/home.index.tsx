@@ -198,8 +198,7 @@ const SETTING_GROUPS: SettingGroup[] = [
     items: [
       { to: "/settings/teams", title: "Membros", desc: "Convites por link, papéis e acessos do workspace.", icon: UsersRound },
       { to: "/settings/user-groups", title: "Times", desc: "Grupos operacionais de usuários.", icon: Users },
-      { to: "/home/access", title: "Controle de Acesso", desc: "Cargos, pacotes de permissão e regras de campo (recomendado).", icon: Shield },
-      { to: "/settings/roles", title: "Papéis e permissões (legado)", desc: "Perfis antigos. Prefira Controle de Acesso.", icon: ShieldCheck },
+      { to: "/home/access", title: "Controle de Acesso", desc: "Cargos, pacotes de permissão e regras de campo.", icon: Shield },
     ],
   },
   {
