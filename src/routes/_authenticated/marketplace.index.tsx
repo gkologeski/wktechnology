@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { listMarketplaceApps } from "@/lib/marketplace.functions";
 
-export const Route = createFileRoute("/_authenticated/marketplace")({
+export const Route = createFileRoute("/_authenticated/marketplace/")({
   component: MarketplacePage,
 });
 
