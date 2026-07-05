@@ -48,6 +48,26 @@ async function assertWorkspaceOwner(supabase: SB, userId: string): Promise<void>
   }
 }
 
+// Resolve the real workspace UUID (distinct from userId) so member-assignment
+// writes land on the same workspace_id that getAccessBundle reads.
+async function resolveActiveWorkspace(supabase: SB, userId: string): Promise<string | null> {
+  const m = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (m.data?.workspace_id) return m.data.workspace_id as string;
+  const w = await supabase
+    .from("workspaces")
+    .select("id")
+    .eq("created_by", userId)
+    .limit(1)
+    .maybeSingle();
+  return (w.data?.id as string) ?? null;
+}
+
+
 async function assertNotSystemRow(
   supabase: SB,
   table: "job_roles" | "permission_sets" | "field_permission_rules",
