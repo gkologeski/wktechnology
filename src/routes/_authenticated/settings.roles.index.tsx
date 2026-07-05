@@ -154,6 +154,14 @@ function RolesPage() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm">
+        <p className="font-medium text-amber-700 dark:text-amber-400">Tela legada</p>
+        <p className="text-muted-foreground mt-1">
+          Esta tela permanece disponível para compatibilidade. Novas configurações de permissão devem ser feitas em{" "}
+          <Link to="/home/access" className="underline font-medium text-foreground">Controle de Acesso</Link>{" "}
+          (cargos, pacotes de permissão e regras de campo). Perfis criados aqui não são migrados automaticamente.
+        </p>
+      </div>
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Perfis de acesso</h2>
