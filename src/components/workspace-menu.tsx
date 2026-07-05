@@ -19,7 +19,7 @@ type Item = { label: string; path: string; icon: React.ComponentType<{ className
 const ITEMS: Item[] = [
   { label: "Configurações do Workspace", path: "/workspace", icon: Cog },
   { label: "Módulos contratados", path: "/workspace/modules", icon: Boxes },
-  { label: "Membros & Equipes", path: "/settings/workspace-team", icon: UsersRound },
+  { label: "Membros & Equipes", path: "/settings/teams", icon: UsersRound },
   { label: "Planos & Cobrança", path: "/settings/billing", icon: CreditCard },
 ];
 
