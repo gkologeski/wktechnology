@@ -70,6 +70,7 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
+import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace.index'
 import { Route as AuthenticatedLandingPagesIndexRouteImport } from './routes/_authenticated/landing-pages.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
@@ -600,6 +601,12 @@ const AuthenticatedProposalsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedProposalsRoute,
+  } as any)
+const AuthenticatedMarketplaceIndexRoute =
+  AuthenticatedMarketplaceIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedMarketplaceRoute,
   } as any)
 const AuthenticatedLandingPagesIndexRoute =
   AuthenticatedLandingPagesIndexRouteImport.update({
@@ -2034,6 +2041,7 @@ export interface FileRoutesByFullPath {
   '/inbox/': typeof AuthenticatedInboxIndexRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
+  '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
@@ -2163,7 +2171,6 @@ export interface FileRoutesByTo {
   '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
-  '/marketplace': typeof AuthenticatedMarketplaceRouteWithChildren
   '/match-scores': typeof AuthenticatedMatchScoresRoute
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
@@ -2308,6 +2315,7 @@ export interface FileRoutesByTo {
   '/inbox': typeof AuthenticatedInboxIndexRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages': typeof AuthenticatedLandingPagesIndexRoute
+  '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
@@ -2588,6 +2596,7 @@ export interface FileRoutesById {
   '/_authenticated/inbox/': typeof AuthenticatedInboxIndexRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
+  '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
@@ -2868,6 +2877,7 @@ export interface FileRouteTypes {
     | '/inbox/'
     | '/integrations/'
     | '/landing-pages/'
+    | '/marketplace/'
     | '/proposals/'
     | '/settings/'
     | '/workspace/'
@@ -2997,7 +3007,6 @@ export interface FileRouteTypes {
     | '/fraud-flags'
     | '/invoices'
     | '/leads'
-    | '/marketplace'
     | '/match-scores'
     | '/meetings'
     | '/my-bug-reports'
@@ -3142,6 +3151,7 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/integrations'
     | '/landing-pages'
+    | '/marketplace'
     | '/proposals'
     | '/settings'
     | '/workspace'
@@ -3421,6 +3431,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inbox/'
     | '/_authenticated/integrations/'
     | '/_authenticated/landing-pages/'
+    | '/_authenticated/marketplace/'
     | '/_authenticated/proposals/'
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/'
@@ -4056,6 +4067,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/proposals/'
       preLoaderRoute: typeof AuthenticatedProposalsIndexRouteImport
       parentRoute: typeof AuthenticatedProposalsRoute
+    }
+    '/_authenticated/marketplace/': {
+      id: '/_authenticated/marketplace/'
+      path: '/'
+      fullPath: '/marketplace/'
+      preLoaderRoute: typeof AuthenticatedMarketplaceIndexRouteImport
+      parentRoute: typeof AuthenticatedMarketplaceRoute
     }
     '/_authenticated/landing-pages/': {
       id: '/_authenticated/landing-pages/'
@@ -5641,11 +5659,13 @@ const AuthenticatedLeadsRouteWithChildren =
 
 interface AuthenticatedMarketplaceRouteChildren {
   AuthenticatedMarketplaceSlugRoute: typeof AuthenticatedMarketplaceSlugRoute
+  AuthenticatedMarketplaceIndexRoute: typeof AuthenticatedMarketplaceIndexRoute
 }
 
 const AuthenticatedMarketplaceRouteChildren: AuthenticatedMarketplaceRouteChildren =
   {
     AuthenticatedMarketplaceSlugRoute: AuthenticatedMarketplaceSlugRoute,
+    AuthenticatedMarketplaceIndexRoute: AuthenticatedMarketplaceIndexRoute,
   }
 
 const AuthenticatedMarketplaceRouteWithChildren =
