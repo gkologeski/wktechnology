@@ -1,71 +1,46 @@
-## Objetivo
-Permitir criar/editar em `/surveys` (mesma tela usada em `/settings/surveys`): modelos de pesquisa (templates), envio avulso e edição de respostas existentes. Sem alterar a geração automática atual disparada por ticket resolvido/fechado.
+# Conectar LinkedIn via Unipile — descoberta na UI
 
-## Escopo
-- Somente a página de Pesquisas (CRM e Configurações — é a mesma via alias).
-- Sem mexer em RLS de outras tabelas, sem tocar em `bug_reports`, ATS, branding ou menus.
+## Situação atual
 
-## 1. Modelos de pesquisa (templates)
+A funcionalidade **já existe e está funcional**:
 
-### Banco (migration)
-Nova tabela `public.survey_templates`:
-- `id uuid pk`, `workspace_id uuid not null`, `owner_id uuid not null`
-- `name text not null`
-- `kind text not null check (kind in ('csat','nps'))`
-- `question text not null` (texto principal exibido ao respondente)
-- `invite_subject text`, `invite_body text` (usados no convite por email/WhatsApp)
-- `channel text not null default 'email' check (channel in ('email','whatsapp','both'))`
-- `trigger_event text not null default 'ticket_resolved' check (trigger_event in ('ticket_resolved','ticket_closed','manual'))`
-- `delay_minutes int not null default 0`
-- `is_active boolean not null default true`
-- `is_default boolean not null default false`
-- `created_at`, `updated_at` (+ trigger de updated_at)
+- Página completa em `/settings/integrations/linkedin` (`src/routes/_authenticated/settings.integrations.linkedin.tsx`) com:
+  - Botão "Conectar LinkedIn" (Unipile Hosted Auth — credenciais não passam pelo TechHire)
+  - Status da conta (conectado / pendente / erro / desconectado)
+  - Configuração de janela horária human-like (fuso + hora início/fim)
+  - Painel de uso diário por endpoint (profile.fetch, profile.search, message.send, invite.send, chat.list)
+  - Ações Reconectar / Desconectar / Atualizar
+- Server functions em `src/lib/unipile/accounts.functions.ts` (start/disconnect/reconcile/getAccount/getRateUsage/updateDailyWindow)
+- Webhook `/api/public/unipile/webhook` e página de retorno `/unipile-connected`
+- Secrets `UNIPILE_DSN`, `UNIPILE_API_KEY`, `UNIPILE_WEBHOOK_SECRET` já configurados
 
-GRANTs para `authenticated` e `service_role`. RLS: `SELECT/INSERT/UPDATE/DELETE` restritos a `workspace_id = current setting do usuário` seguindo o mesmo padrão já usado em `survey_responses` (replicar policies existentes: reuso do helper `is_workspace_member`/equivalente já presente no projeto).
+**O que falta:** a tela não aparece no Marketplace de Integrações (`/integrations`) nem em nenhum item de menu, então o usuário não a encontra.
 
-Observação: nenhum código atual lê `survey_templates` — a inserção automática de `survey_responses` no resolve/close continua como está. Wiring dos templates à geração automática fica registrado como pendência (fora deste escopo).
+## Escopo (apenas UX/descoberta, sem alterar lógica)
 
-### UI
-Nova aba "Modelos" na página de Pesquisas, ao lado das abas CSAT/NPS existentes. Usa o componente já existente `CrudSettings` (`src/components/crud-settings.tsx`) parametrizado para `survey_templates`, com campos: name, kind (select), question, invite_subject, invite_body, channel, trigger_event, delay_minutes, is_active, is_default.
+### 1. Adicionar "LinkedIn (Unipile)" ao Marketplace de Integrações
 
-## 2. Envio avulso
+- Editar `src/lib/integrations/registry.ts`:
+  - Adicionar `"linkedin"` ao union `ProviderSlug`
+  - Adicionar entrada `PROVIDERS`: nome "LinkedIn (Unipile)", categoria `crm` (ou nova `sourcing` — decidir usar existente pra não mexer no CATEGORY_LABELS), ícone `Linkedin` do `lucide-react`, cor `bg-[#0A66C2]`, `authMode: "oauth"`, descrição curta sobre buscar perfis, capturar candidatos e mensageria com limites human-like
+- Editar `src/routes/_authenticated/integrations.$slug.tsx` para, quando `slug === "linkedin"`, redirecionar/link para `/settings/integrations/linkedin` (padrão já usado por outros providers com página dedicada, se houver — verificar) OU renderizar um card curto com botão "Abrir configuração" apontando para essa rota
 
-Botão "Nova pesquisa" no header da página abre um `Dialog`:
-- Campos: ticket (Combobox buscando `tickets` do workspace por assunto/número), kind (csat/nps), template opcional (lista `survey_templates` do mesmo kind).
-- Ao confirmar: `supabase.from('survey_responses').insert({ ticket_id, kind, owner_id, workspace_id })` — `token`, `sent_at`, `created_at` vêm do default. Toast com link público copiável.
-- Reaproveita padrão já usado (`copyLink`) para mostrar/copiar `/survey/{token}`.
+### 2. Item de menu direto em Configurações
 
-Sem server function nova: `survey_responses` já tem RLS/GRANT ativos e o insert respeita `owner_id = auth.uid()`.
+- Editar `src/lib/menu-config.ts`: adicionar entry `{ to: "/settings/integrations/linkedin", label: "LinkedIn (Unipile)", icon: Linkedin, need: "admin" }` na seção de Configurações/Integrações (localizar seção equivalente próxima ao item "Integrações")
 
-## 3. Editar respostas existentes
+### 3. Documentação in-app
 
-Cada linha da tabela ganha botão "Editar" (ícone `Pencil`) que abre `Dialog` com:
-- Score (input numérico com range conforme kind: 0–10 NPS, 0–5 CSAT).
-- Comentário (Textarea).
-- `responded_at` fica somente-leitura; se estiver nulo e o admin salvar um score, gravamos `responded_at = now()`.
+- Texto atual da página já explica o fluxo. Sem mudanças.
 
-Update via `supabase.from('survey_responses').update({...}).eq('id', id)`. Restrição de admin fica a cargo da RLS existente (não alteramos policies aqui).
+## Fora de escopo
 
-## 4. Arquivos
+- Não alterar server functions, tabela `unipile_accounts`, RLS, webhook, limites, janela horária ou lógica de reconciliação
+- Não mexer em fluxos de hunting/captura que já consomem a conexão
 
-Criar:
-- `supabase/migrations/<timestamp>_survey_templates.sql` (via ferramenta de migration).
-- `src/components/surveys/new-survey-dialog.tsx`
-- `src/components/surveys/edit-response-dialog.tsx`
-- `src/components/surveys/survey-templates-tab.tsx` (wrapper fino sobre `CrudSettings`).
+## Validação manual
 
-Editar:
-- `src/routes/_authenticated/settings.surveys.tsx`: adicionar aba "Modelos", botão "Nova pesquisa" no header do Card, coluna de ações com "Editar" abrindo o dialog. Nenhuma mudança no cálculo de stats/agentes.
-
-Não mexer:
-- `src/routes/_authenticated/surveys.tsx` (alias — herda automaticamente).
-- `src/lib/surveys.functions.ts` (fluxo público de resposta permanece intacto).
-- `src/routes/survey.$token.tsx`, geração automática de pesquisas, menus, sidebar.
-
-## 5. Validação
-- `bunx tsgo --noEmit`.
-- Manual: criar/editar/excluir template; disparar pesquisa avulsa e copiar link; abrir link público e responder; editar score de resposta existente; conferir stats CSAT/NPS e "Por responsável" continuam corretos.
-
-## 6. Pendências registradas (não implementadas)
-- Wiring dos `survey_templates` no gatilho automático de `ticket_resolved/closed` (hoje o insert automático usa defaults, não lê templates).
-- Envio real por email/WhatsApp do convite gerado no fluxo avulso (hoje entregamos link copiável — mesmo comportamento das pesquisas já existentes).
+1. Acessar `/integrations` → filtrar categoria → ver card "LinkedIn (Unipile)"
+2. Clicar no card → cair em `/settings/integrations/linkedin`
+3. Menu lateral (admin) → Configurações → item "LinkedIn (Unipile)" leva à mesma tela
+4. Clicar "Conectar LinkedIn" → abre Unipile Hosted Auth → retorna em `/unipile-connected` → redireciona → status "Conectado"
