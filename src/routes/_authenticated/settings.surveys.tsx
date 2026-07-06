@@ -37,7 +37,10 @@ type Survey = {
 };
 
 export function SurveysPage() {
-  const [tab, setTab] = useState<"csat" | "nps">("csat");
+  const [tab, setTab] = useState<"csat" | "nps" | "templates">("csat");
+  const [newOpen, setNewOpen] = useState(false);
+  const [editing, setEditing] = useState<Survey | null>(null);
+  const qc = useQueryClient();
 
   const { data: surveys = [], isLoading } = useQuery({
     queryKey: ["surveys"],
