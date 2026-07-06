@@ -87,15 +87,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         title: "Leads",
         url: "/leads",
         icon: UserPlus,
-        children: [
-          {
-            title: "Importar HubSpot",
-            url: "/leads/import-hubspot",
-            icon: Download,
-            need: "admin",
-          },
-        ],
       },
+
       { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
       { title: "Formulários", url: "/forms", icon: FileText, need: "manager" },
       { title: "Pesquisas", url: "/surveys", icon: Star },
