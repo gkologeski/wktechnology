@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "notif_insert_workspace" ON public.notifications;
