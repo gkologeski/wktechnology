@@ -64,6 +64,7 @@ type Props = {
 export function AssociationsPanel({ entity, entityId, companyId, contactId, dealId }: Props) {
   return (
     <>
+      {entity === "lead" && <ConvertedFromLeadCard entityId={entityId} />}
       {(entity === "contact" || entity === "deal" || entity === "ticket") && (
         <CompanyCard entity={entity} entityId={entityId} companyId={companyId ?? null} />
       )}
@@ -86,6 +87,131 @@ export function AssociationsPanel({ entity, entityId, companyId, contactId, deal
     </>
   );
 }
+
+/* ───────────── Converted-from-lead card (entity = lead) ───────────── */
+
+function ConvertedFromLeadCard({ entityId }: { entityId: string }) {
+  const [state, setState] = useState<{
+    convertedAt: string | null;
+    deal: { id: string; name: string | null; value: number | null; currency: string | null; stage: string | null } | null;
+    contact: { id: string; first_name: string | null; last_name: string | null } | null;
+    dealMissing: boolean;
+    hasConversion: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("converted_contact_id, converted_deal_id, converted_at")
+        .eq("id", entityId)
+        .maybeSingle();
+      const dealId = (lead as { converted_deal_id?: string | null } | null)?.converted_deal_id ?? null;
+      const contactId = (lead as { converted_contact_id?: string | null } | null)?.converted_contact_id ?? null;
+      const convertedAt = (lead as { converted_at?: string | null } | null)?.converted_at ?? null;
+      if (!dealId && !contactId && !convertedAt) {
+        if (!cancelled) setState({ convertedAt: null, deal: null, contact: null, dealMissing: false, hasConversion: false });
+        return;
+      }
+      let deal: { id: string; name: string | null; value: number | null; currency: string | null; stage: string | null } | null = null;
+      let dealMissing = false;
+      if (dealId) {
+        const { data: d } = await supabase
+          .from("deals")
+          .select("id, name, value, currency, stage")
+          .eq("id", dealId)
+          .maybeSingle();
+        deal = (d as typeof deal) ?? null;
+        dealMissing = !deal;
+      }
+      let contact: { id: string; first_name: string | null; last_name: string | null } | null = null;
+      if (contactId) {
+        const { data: c } = await supabase
+          .from("contacts")
+          .select("id, first_name, last_name")
+          .eq("id", contactId)
+          .maybeSingle();
+        contact = (c as typeof contact) ?? null;
+      }
+      if (!cancelled) setState({ convertedAt, deal, contact, dealMissing, hasConversion: true });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [entityId]);
+
+  if (!state || !state.hasConversion) return null;
+  const { deal, contact, convertedAt, dealMissing } = state;
+
+  return (
+    <AssocCard icon={<Briefcase className="w-4 h-4" />} title="Convertido em negócio" count={deal ? 1 : 0}>
+      <div className="space-y-3">
+        {deal ? (
+          <div className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
+            <div className="flex items-start gap-3">
+              <EntityAvatar initials={(deal.name?.[0] ?? "N").toUpperCase()} tone="primary" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Link
+                    to="/deals/$id"
+                    params={{ id: deal.id }}
+                    className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
+                  >
+                    {deal.name ?? "Sem nome"}
+                  </Link>
+                  {deal.stage && (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-foreground font-medium">
+                      {deal.stage}
+                    </span>
+                  )}
+                </div>
+                {typeof deal.value === "number" && (
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {formatCurrency(deal.value, deal.currency ?? "BRL")}
+                  </div>
+                )}
+              </div>
+              <AssocItemActions link={{ to: "/deals/$id", params: { id: deal.id } }} />
+            </div>
+          </div>
+        ) : dealMissing ? (
+          <Empty label="Negócio removido." />
+        ) : null}
+
+        {contact && (
+          <div className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
+            <div className="flex items-start gap-3">
+              <EntityAvatar
+                initials={((contact.first_name?.[0] ?? "?") + (contact.last_name?.[0] ?? "")).toUpperCase()}
+              />
+              <div className="min-w-0 flex-1">
+                <Link
+                  to="/contacts/$id"
+                  params={{ id: contact.id }}
+                  className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
+                >
+                  {`${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() || "Sem nome"}
+                </Link>
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium mt-0.5">
+                  Contato criado
+                </div>
+              </div>
+              <AssocItemActions link={{ to: "/contacts/$id", params: { id: contact.id } }} />
+            </div>
+          </div>
+        )}
+
+        {convertedAt && (
+          <p className="text-[11px] text-muted-foreground">
+            Convertido em {formatDateTime(convertedAt)}
+          </p>
+        )}
+      </div>
+    </AssocCard>
+  );
+}
+
 
 /* ───────────── card primitive ───────────── */
 
