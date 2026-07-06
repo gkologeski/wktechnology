@@ -162,10 +162,13 @@ function JobCard({ job }: { job: JobRow }) {
         <div className="flex items-center gap-2">
           {job.deal_id ? (
             <span
-              className="inline-flex items-center gap-1 text-text-tertiary"
-              title="Vinculada a um negócio"
+              className="inline-flex min-w-0 items-center gap-1 text-text-tertiary"
+              title={job.deal?.name ? `Negócio: ${job.deal.name}` : "Vinculada a um negócio"}
             >
-              <Link2 className="h-3.5 w-3.5" aria-hidden />
+              <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {job.deal?.name ? (
+                <span className="max-w-[140px] truncate">{job.deal.name}</span>
+              ) : null}
             </span>
           ) : null}
           <span className="inline-flex items-center gap-1 tabular-nums text-text-primary">
