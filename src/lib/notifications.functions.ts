@@ -285,9 +285,15 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     }
 
     if (inappRows.length > 0) {
-      const { error: insertErr } = await supabase.from("notifications").insert(inappRows as never);
+      // Use service role to insert: client-side inserts are disallowed by RLS
+      // to prevent workspace members from spoofing notifications to peers.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error: insertErr } = await supabaseAdmin
+        .from("notifications")
+        .insert(inappRows as never);
       if (insertErr) console.error("notify insert failed", insertErr.message);
     }
+
 
     // Send emails (admin needed to read auth.users.email)
     if (emailJobs.length > 0) {
