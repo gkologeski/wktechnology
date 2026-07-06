@@ -121,6 +121,20 @@ export const listAtsJobs = createServerFn({ method: "POST" })
         counts[a.job_id] = (counts[a.job_id] ?? 0) + 1;
       }
     }
+    // Hidratar nomes de negócios vinculados
+    const dealIds = Array.from(
+      new Set(((rows ?? []) as Array<{ deal_id: string | null }>).map((r) => r.deal_id).filter((v): v is string => !!v)),
+    );
+    let deals: Record<string, { id: string; name: string }> = {};
+    if (dealIds.length) {
+      const { data: dealRows } = await supabase
+        .from("deals")
+        .select("id, name")
+        .in("id", dealIds);
+      for (const d of (dealRows ?? []) as Array<{ id: string; name: string }>) {
+        deals[d.id] = { id: d.id, name: d.name };
+      }
+    }
     type JobRow = {
       id: string;
       title: string;
@@ -144,6 +158,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
       metadata: undefined,
       department: ((r.metadata as { department?: string } | null)?.department) ?? null,
       active_applications: counts[r.id] ?? 0,
+      deal: r.deal_id ? deals[r.deal_id] ?? null : null,
     }));
   });
 
@@ -189,6 +204,17 @@ export const saveAtsJob = createServerFn({ method: "POST" })
       pipelineId = pipeline.id;
     }
     const slug = slugify(data.title) + "-" + Date.now().toString(36);
+    // Auto-preencher company_id a partir do deal quando o usuário associou um
+    // negócio mas não escolheu empresa explicitamente (paridade com createJobFromDeal).
+    let resolvedCompanyId = data.company_id ?? null;
+    if (data.deal_id && !data.company_id) {
+      const { data: deal } = await supabase
+        .from("deals")
+        .select("company_id")
+        .eq("id", data.deal_id)
+        .maybeSingle();
+      if (deal?.company_id) resolvedCompanyId = deal.company_id as string;
+    }
     const base = {
       owner_id: userId,
       pipeline_id: pipelineId,
@@ -203,7 +229,7 @@ export const saveAtsJob = createServerFn({ method: "POST" })
       salary_max: data.salary_max ?? null,
       status: data.status,
       deal_id: data.deal_id ?? null,
-      company_id: data.company_id ?? null,
+      company_id: resolvedCompanyId,
       hiring_manager_id: data.hiring_manager_id ?? null,
       recruiter_id: data.recruiter_id ?? null,
       opened_at: data.status === "published" ? new Date().toISOString() : null,
@@ -307,6 +333,41 @@ export const createJobFromDeal = createServerFn({ method: "POST" })
     }).catch(() => undefined);
     return inserted;
   });
+
+// Busca negócios acessíveis ao usuário para vincular a uma vaga. Retorna um
+// conjunto pequeno (limit 20) com colunas seguras. Suporta busca por texto e
+// hidratação por ids (para exibir o negócio já vinculado ao abrir a vaga).
+export const searchDeals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        q: z.string().trim().max(120).optional(),
+        ids: z.array(z.string().uuid()).max(50).optional(),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    let q = supabase
+      .from("deals")
+      .select("id, name, value, currency, company_id")
+      .order("updated_at", { ascending: false })
+      .limit(20);
+    if (data.ids && data.ids.length) q = q.in("id", data.ids);
+    else if (data.q) q = q.ilike("name", `%${data.q}%`);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as Array<{
+      id: string;
+      name: string;
+      value: number | null;
+      currency: string | null;
+      company_id: string | null;
+    }>;
+  });
+
+
 
 // ---------- candidates -----------------------------------------------------
 

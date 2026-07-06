@@ -75,6 +75,7 @@ import {
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
 import { OwnerField } from "@/components/entity/owner-field";
+import { DealPicker } from "@/components/ats/deal-picker";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
@@ -329,6 +330,7 @@ function JobDetailPage() {
     salary_min?: number | null;
     salary_max?: number | null;
     pipeline_id?: string | null;
+    deal_id?: string | null;
   };
   const department = jobAny.metadata?.department ?? null;
 
@@ -735,6 +737,7 @@ function JobDetailPage() {
                   salary_max: patch.salary_max ?? jobAny.salary_max ?? null,
                   status: (patch.status ?? jobAny.status) as never,
                   pipeline_id: patch.pipeline_id ?? jobAny.pipeline_id ?? null,
+                  deal_id: patch.deal_id !== undefined ? patch.deal_id : jobAny.deal_id ?? null,
                 },
               });
             }}
@@ -847,6 +850,7 @@ type JobPatch = {
   salary_max?: number | null;
   status?: string;
   pipeline_id?: string | null;
+  deal_id?: string | null;
 };
 
 function JobPropertiesPanel({
@@ -872,6 +876,7 @@ function JobPropertiesPanel({
     salary_min: number | null;
     salary_max: number | null;
     pipeline_id: string | null;
+    deal_id: string | null;
   };
   const [form, setForm] = useState({
     title: j.title,
@@ -885,6 +890,7 @@ function JobPropertiesPanel({
     salary_min: j.salary_min?.toString() ?? "",
     salary_max: j.salary_max?.toString() ?? "",
     pipeline_id: j.pipeline_id ?? "",
+    deal_id: j.deal_id ?? null,
   });
   const [saving, setSaving] = useState(false);
   const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
@@ -918,8 +924,9 @@ function JobPropertiesPanel({
       salary_min: j.salary_min?.toString() ?? "",
       salary_max: j.salary_max?.toString() ?? "",
       pipeline_id: j.pipeline_id ?? "",
+      deal_id: j.deal_id ?? null,
     });
-  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max, j.pipeline_id]);
+  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max, j.pipeline_id, j.deal_id]);
 
   const dirty =
     form.title !== j.title ||
@@ -932,7 +939,8 @@ function JobPropertiesPanel({
     form.status !== j.status ||
     (form.salary_min ? Number(form.salary_min) : null) !== j.salary_min ||
     (form.salary_max ? Number(form.salary_max) : null) !== j.salary_max ||
-    (form.pipeline_id || null) !== (j.pipeline_id ?? null);
+    (form.pipeline_id || null) !== (j.pipeline_id ?? null) ||
+    (form.deal_id ?? null) !== (j.deal_id ?? null);
 
   const persist = async () => {
     setSaving(true);
@@ -949,6 +957,7 @@ function JobPropertiesPanel({
         salary_max: form.salary_max ? Number(form.salary_max) : null,
         status: form.status,
         pipeline_id: form.pipeline_id || null,
+        deal_id: form.deal_id,
       });
       toast.success("Vaga atualizada");
       onSaved();
@@ -1037,6 +1046,28 @@ function JobPropertiesPanel({
           </Select>
           <p className="mt-1 text-[11px] text-text-tertiary">
             Define as etapas pelas quais as candidaturas desta vaga vão passar.
+          </p>
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-text-tertiary">Negócio</Label>
+            {form.deal_id ? (
+              <Link
+                to="/deals/$id"
+                params={{ id: form.deal_id }}
+                className="inline-flex items-center gap-1 text-[11px] text-text-tertiary hover:text-text-primary"
+              >
+                Abrir <ExternalLink className="h-3 w-3" aria-hidden />
+              </Link>
+            ) : null}
+          </div>
+          <DealPicker
+            value={form.deal_id}
+            onChange={(id) => setForm({ ...form, deal_id: id })}
+            placeholder="Vincular negócio…"
+          />
+          <p className="mt-1 text-[11px] text-text-tertiary">
+            Associa esta vaga a um negócio do CRM.
           </p>
         </div>
         <div className="grid grid-cols-2 gap-2">

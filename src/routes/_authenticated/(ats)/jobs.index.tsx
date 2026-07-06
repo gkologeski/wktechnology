@@ -61,6 +61,7 @@ import {
   type JobStatus,
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
+import { DealPicker } from "@/components/ats/deal-picker";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -161,10 +162,13 @@ function JobCard({ job }: { job: JobRow }) {
         <div className="flex items-center gap-2">
           {job.deal_id ? (
             <span
-              className="inline-flex items-center gap-1 text-text-tertiary"
-              title="Vinculada a um negócio"
+              className="inline-flex min-w-0 items-center gap-1 text-text-tertiary"
+              title={job.deal?.name ? `Negócio: ${job.deal.name}` : "Vinculada a um negócio"}
             >
-              <Link2 className="h-3.5 w-3.5" aria-hidden />
+              <Link2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              {job.deal?.name ? (
+                <span className="max-w-[140px] truncate">{job.deal.name}</span>
+              ) : null}
             </span>
           ) : null}
           <span className="inline-flex items-center gap-1 tabular-nums text-text-primary">
@@ -278,6 +282,7 @@ function AtsJobsPage() {
     requirements: "",
     status: "draft",
     pipeline_id: "",
+    deal_id: null as string | null,
   });
 
   useEffect(() => {
@@ -346,6 +351,7 @@ function AtsJobsPage() {
           requirements: form.requirements || null,
           status: form.status as never,
           pipeline_id: form.pipeline_id || null,
+          deal_id: form.deal_id,
         },
       });
       toast.success("Vaga criada");
@@ -360,6 +366,7 @@ function AtsJobsPage() {
         requirements: "",
         status: "draft",
         pipeline_id: pipelines.find((p) => p.is_default)?.id ?? pipelines[0]?.id ?? "",
+        deal_id: null,
       });
       if (r?.id) navigate({ to: "/jobs/$id", params: { id: r.id as string } });
       else refresh();
@@ -553,6 +560,17 @@ function AtsJobsPage() {
             </Select>
             <p className="mt-1 text-[11px] text-text-tertiary">
               Define as etapas pelas quais as candidaturas desta vaga vão passar.
+            </p>
+          </div>
+          <div className="col-span-2">
+            <Label className="text-xs text-text-tertiary">Negócio (opcional)</Label>
+            <DealPicker
+              value={form.deal_id}
+              onChange={(id) => setForm({ ...form, deal_id: id })}
+              placeholder="Vincular a um negócio…"
+            />
+            <p className="mt-1 text-[11px] text-text-tertiary">
+              Associe esta vaga a um negócio do CRM. A empresa do negócio será preenchida automaticamente.
             </p>
           </div>
         </div>
