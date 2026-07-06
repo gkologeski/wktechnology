@@ -3355,7 +3355,7 @@ export type Database = {
         Row: {
           all_day: boolean
           attendees: Json
-          calendar_account_id: string
+          calendar_account_id: string | null
           conference_id: string | null
           created_at: string
           description: string | null
@@ -3390,7 +3390,7 @@ export type Database = {
         Insert: {
           all_day?: boolean
           attendees?: Json
-          calendar_account_id: string
+          calendar_account_id?: string | null
           conference_id?: string | null
           created_at?: string
           description?: string | null
@@ -3425,7 +3425,7 @@ export type Database = {
         Update: {
           all_day?: boolean
           attendees?: Json
-          calendar_account_id?: string
+          calendar_account_id?: string | null
           conference_id?: string | null
           created_at?: string
           description?: string | null

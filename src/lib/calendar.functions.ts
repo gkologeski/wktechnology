@@ -244,6 +244,16 @@ export const disconnectCalendarAccount = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    // Preserva o histórico de reuniões (recording_url, transcript, summary_text,
+    // vínculos com activities/bookings) desassociando os eventos da conta antes
+    // de removê-la. A FK também é ON DELETE SET NULL, mas mantemos explícito
+    // para deixar clara a intenção e evitar regressões futuras.
+    const { error: detachError } = await supabaseAdmin
+      .from("calendar_events")
+      .update({ calendar_account_id: null })
+      .eq("calendar_account_id", data.id)
+      .eq("workspace_id", ws);
+    if (detachError) throw new Error(detachError.message);
     const { error } = await supabaseAdmin
       .from("calendar_accounts")
       .delete()
