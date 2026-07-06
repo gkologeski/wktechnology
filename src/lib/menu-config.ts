@@ -97,8 +97,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         ],
       },
       { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
-      { title: "Formulários", url: "/settings/forms", icon: FileText, need: "manager" },
-      { title: "Pesquisas", url: "/settings/surveys", icon: Star },
+      { title: "Formulários", url: "/forms", icon: FileText, need: "manager" },
+      { title: "Pesquisas", url: "/surveys", icon: Star },
 
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },

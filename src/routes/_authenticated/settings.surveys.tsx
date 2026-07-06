@@ -33,7 +33,7 @@ type Survey = {
   responded_at: string | null;
 };
 
-function SurveysPage() {
+export function SurveysPage() {
   const [tab, setTab] = useState<"csat" | "nps">("csat");
 
   const { data: surveys = [], isLoading } = useQuery({
