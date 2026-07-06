@@ -1,59 +1,56 @@
 ## Objetivo
 
-Permitir associar um **negócio (deal)** a uma **vaga (ats_jobs)** pela UI. O schema já tem a coluna `ats_jobs.deal_id` e o `saveAtsJob` já aceita esse campo — falta somente expor na interface.
+Na tela de detalhe do Lead, quando o lead já foi qualificado (convertido em negócio), exibir o **negócio associado** (e opcionalmente o contato criado), com link para abrir o registro.
+
+Hoje, ao qualificar um lead, `convertLead` já grava em `leads`:
+- `status = 'qualified'`
+- `converted_at`
+- `converted_contact_id`
+- `converted_deal_id`
+
+Mas o painel direito do lead (`AssociationsPanel entity="lead"`) não mostra nada sobre o deal/contato resultantes.
 
 ## Escopo
 
-- Adicionar seletor de negócio no diálogo **Nova vaga** (`jobs.index.tsx`).
-- Adicionar campo **Negócio** no painel de propriedades da vaga (`jobs.$id.tsx` → `JobPropertiesPanel`), com busca, limpar e link para o deal.
-- Exibir o nome do negócio no card da lista (hoje só mostra um ícone `Link2` sem contexto).
-- Criar server function `searchDeals` para alimentar o combobox.
+- Exibir o negócio associado (e o contato) no painel direito de `/leads/$id` quando o lead estiver convertido.
+- Somente leitura + link "Abrir". Sem alterar `convertLead`, sem alterar schema/RLS, sem alterar fluxo de qualificação.
 
-Fora do escopo: alterações em RLS, migrations, tabela `deals`, fluxo `createJobFromDeal`, kanban de deals.
+Fora do escopo: mudar o dialog de conversão, criar/reassociar deals a partir do lead, tocar em outras entidades.
 
 ## Alterações
 
-**Backend** — `src/lib/ats/ats.functions.ts`
+**`src/components/record/associations-panel.tsx`**
 
-- Nova server fn `searchDeals({ q?: string, ids?: string[] })` com `requireSupabaseAuth` que faz `select id, name, value, currency, company_id from deals` (limit 20, `ilike` no nome). Confia no RLS existente. Usada para autocomplete e para hidratar o deal já selecionado ao abrir a vaga.
-- Ajuste no `saveAtsJob`: quando `deal_id` for enviado e `company_id` não for, buscar `deals.company_id` e preencher automaticamente (comportamento consistente com `createJobFromDeal`, mas só quando o usuário não sobrescreveu).
+- Adicionar um novo card `ConvertedFromLeadCard` que só renderiza quando `entity === "lead"`.
+- O card recebe `entityId` (leadId), busca em `leads` os campos `converted_contact_id, converted_deal_id, converted_at, status` e, se houver `converted_deal_id`, faz join/select em `deals(id, name, value, currency, stage)` e em `contacts(id, first_name, last_name)` para o `converted_contact_id`.
+- Renderiza:
+  - Se não convertido → não mostra o card (evita ruído).
+  - Se convertido → dois blocos compactos:
+    - **Negócio**: nome (link `/deals/$id`), valor formatado (`formatCurrency`), stage como badge. Botão `Eye` para abrir.
+    - **Contato criado** (se houver): nome (link `/contacts/$id`).
+  - Rodapé: `Convertido em {formatDateTime(converted_at)}`.
+- Reusa `AssocCard`, `EntityAvatar`, `AssocItemActions` (só `link`, sem `onUnlink` — a associação de conversão é histórica, não desvinculável aqui).
 
-**UI — Nova vaga** (`src/routes/_authenticated/(ats)/jobs.index.tsx`)
+**`src/routes/_authenticated/leads.$id.tsx`**
 
-- Novo campo no `form`: `deal_id: string | null`.
-- Componente `DealPicker` inline (Popover + Command + Input de busca com debounce 300ms) usado no diálogo.
-- Enviar `deal_id` no `save({ data: { ... } })`.
-- No card (`JobCard`) e na linha de tabela: quando `deal.name` existir na resposta de `listAtsJobs`, mostrar `Negócio · {name}` no lugar do ícone solto. Para isso, `listAtsJobs` passa a incluir `deals(id, name)` via join do PostgREST no mesmo select.
-
-**UI — Detalhe da vaga** (`src/routes/_authenticated/(ats)/jobs.$id.tsx`)
-
-- Em `JobPropertiesPanel`, nova seção “Negócio” logo abaixo de Pipeline:
-  - Se `job.deal_id`: badge com nome + `<Link to="/deals/$id">` (ícone external) + botão “Alterar/Remover”.
-  - Se vazio: botão “Vincular negócio…” que abre o mesmo `DealPicker`.
-  - O nome vem de `searchDeals({ ids: [job.deal_id] })` chamado uma vez no mount.
-- Adicionar `deal_id` ao `form`, ao `dirty` check, ao `persist`.
-- Passar `deal_id` no `save(...)` do `RecordLayout`.
-
-**Componente compartilhado** — `src/components/ats/deal-picker.tsx` (novo)
-
-- Combobox controlado com props `value`, `onChange`, `disabled`.
-- Usa `searchDeals` server fn com debounce, mostra `name` + valor formatado.
-- Reutilizado nos dois locais.
+- Nenhuma mudança de layout. O card aparece automaticamente porque já se usa `<AssociationsPanel entity="lead" entityId={lead.id} />`.
+- Após qualificar (quando `CreateDealFromLeadDialog` chama `onCreated`), o `load()` do lead já é disparado, o que faz o `AssociationsPanel` remontar/recarregar e o novo card aparece.
 
 ## Detalhes técnicos
 
-- Sem migration: `ats_jobs.deal_id` já existe e o RLS de `deals` já limita a visibilidade.
-- `searchDeals` retorna `{ id, name, value, currency, company_id }` — pequenas colunas, sem risco de vazamento.
-- Auto-fill de `company_id`: aplicado apenas em `saveAtsJob` quando `deal_id` estiver presente **e** `company_id` não for enviado explicitamente, para não sobrescrever escolha manual.
-- Join em `listAtsJobs`: `select("..., deals:deal_id(id, name)")`. Se o PostgREST FK inferir errado, cai para hidratação via `searchDeals({ ids })` num segundo passo.
-- Tipos: atualizar o `JobRow` local de `listAtsJobs` para incluir `deal: { id: string; name: string } | null`.
+- Cliente Supabase browser (mesmo padrão dos demais cards do arquivo). RLS já filtra deals/contacts do usuário.
+- Consulta em duas etapas simples (sem depender de FK inferida pelo PostgREST):
+  1. `select converted_contact_id, converted_deal_id, converted_at from leads where id = :leadId`
+  2. Se `converted_deal_id`: `select id, name, value, currency, stage from deals where id = ...`
+  3. Se `converted_contact_id`: `select id, first_name, last_name from contacts where id = ...`
+- Se o deal foi excluído posteriormente (retorno vazio), o card mostra estado "Negócio removido" só com a data de conversão, ainda sem link quebrado.
 
 ## Validação
 
 - `bunx tsgo --noEmit`
-- Manual: criar vaga com negócio, editar vaga adicionando/removendo negócio, verificar link para `/deals/$id`, confirmar que o nome aparece no card da lista.
+- Manual: abrir um lead ainda `new` → não aparece card. Qualificar via botão de status → depois de confirmar, o card "Convertido em negócio" aparece com link para `/deals/$id`. Abrir um lead já qualificado antigo → card aparece direto.
 
 ## Riscos
 
-- Se `deals(id, name)` não for aceito pelo PostgREST por falta de FK explícita, usar o fallback via `searchDeals({ ids })`.
-- Nenhuma mudança em RLS/negócio; comportamento aditivo.
+- Nenhum impacto em regras de negócio ou RLS; alteração puramente aditiva na UI.
+- Se um lead tiver `status = qualified` sem `converted_deal_id` (dados legados de conversão manual), o card só mostra a data de conversão ou nada — não quebra a página.
