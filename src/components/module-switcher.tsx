@@ -44,7 +44,9 @@ export function ModuleSwitcher({ className }: { className?: string }) {
 
   const handleSelect = (moduleId: typeof active) => {
     setOpen(false);
-    if (moduleId === active) return;
+    // No contexto workspace (ERP Home / settings), o módulo "ativo" é apenas
+    // um default visual — sempre permita navegar para o módulo escolhido.
+    if (!isWorkspaceContext && moduleId === active) return;
     const target = MODULE_LIST.find((m) => m.id === moduleId);
     if (!target) return;
     const url = buildModuleUrl(moduleId, target.defaultRoute);
