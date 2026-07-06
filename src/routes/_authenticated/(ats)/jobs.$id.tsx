@@ -1048,6 +1048,28 @@ function JobPropertiesPanel({
             Define as etapas pelas quais as candidaturas desta vaga vão passar.
           </p>
         </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-text-tertiary">Negócio</Label>
+            {form.deal_id ? (
+              <Link
+                to="/deals/$id"
+                params={{ id: form.deal_id }}
+                className="inline-flex items-center gap-1 text-[11px] text-text-tertiary hover:text-text-primary"
+              >
+                Abrir <ExternalLink className="h-3 w-3" aria-hidden />
+              </Link>
+            ) : null}
+          </div>
+          <DealPicker
+            value={form.deal_id}
+            onChange={(id) => setForm({ ...form, deal_id: id })}
+            placeholder="Vincular negócio…"
+          />
+          <p className="mt-1 text-[11px] text-text-tertiary">
+            Associa esta vaga a um negócio do CRM.
+          </p>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label htmlFor="prop-sen" className="text-xs text-text-tertiary">
