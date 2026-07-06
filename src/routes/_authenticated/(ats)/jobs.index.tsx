@@ -61,6 +61,7 @@ import {
   type JobStatus,
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
+import { DealPicker } from "@/components/ats/deal-picker";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
