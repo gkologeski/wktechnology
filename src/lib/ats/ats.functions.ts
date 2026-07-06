@@ -189,6 +189,17 @@ export const saveAtsJob = createServerFn({ method: "POST" })
       pipelineId = pipeline.id;
     }
     const slug = slugify(data.title) + "-" + Date.now().toString(36);
+    // Auto-preencher company_id a partir do deal quando o usuário associou um
+    // negócio mas não escolheu empresa explicitamente (paridade com createJobFromDeal).
+    let resolvedCompanyId = data.company_id ?? null;
+    if (data.deal_id && !data.company_id) {
+      const { data: deal } = await supabase
+        .from("deals")
+        .select("company_id")
+        .eq("id", data.deal_id)
+        .maybeSingle();
+      if (deal?.company_id) resolvedCompanyId = deal.company_id as string;
+    }
     const base = {
       owner_id: userId,
       pipeline_id: pipelineId,
@@ -203,7 +214,7 @@ export const saveAtsJob = createServerFn({ method: "POST" })
       salary_max: data.salary_max ?? null,
       status: data.status,
       deal_id: data.deal_id ?? null,
-      company_id: data.company_id ?? null,
+      company_id: resolvedCompanyId,
       hiring_manager_id: data.hiring_manager_id ?? null,
       recruiter_id: data.recruiter_id ?? null,
       opened_at: data.status === "published" ? new Date().toISOString() : null,
