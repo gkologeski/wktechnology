@@ -121,6 +121,20 @@ export const listAtsJobs = createServerFn({ method: "POST" })
         counts[a.job_id] = (counts[a.job_id] ?? 0) + 1;
       }
     }
+    // Hidratar nomes de negócios vinculados
+    const dealIds = Array.from(
+      new Set(((rows ?? []) as Array<{ deal_id: string | null }>).map((r) => r.deal_id).filter((v): v is string => !!v)),
+    );
+    let deals: Record<string, { id: string; name: string }> = {};
+    if (dealIds.length) {
+      const { data: dealRows } = await supabase
+        .from("deals")
+        .select("id, name")
+        .in("id", dealIds);
+      for (const d of (dealRows ?? []) as Array<{ id: string; name: string }>) {
+        deals[d.id] = { id: d.id, name: d.name };
+      }
+    }
     type JobRow = {
       id: string;
       title: string;
@@ -144,6 +158,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
       metadata: undefined,
       department: ((r.metadata as { department?: string } | null)?.department) ?? null,
       active_applications: counts[r.id] ?? 0,
+      deal: r.deal_id ? deals[r.deal_id] ?? null : null,
     }));
   });
 
