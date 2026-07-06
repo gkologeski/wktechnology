@@ -1,78 +1,44 @@
-## Diagnóstico
+## Problema
 
-Hoje o mesmo item aparece em 3 lugares — Sidebar do ERP, Home (`/home`) e Configurações (`/settings`) — sem hierarquia clara. Duplicações atuais:
+No sidebar do TechSales (CRM), o item **Captar › Formulários** aponta para `/settings/forms`. Como `/settings/*` está na lista `WORKSPACE_ROUTE_PREFIXES` (module-switcher) e é reconhecido pelo `AppSidebar` como contexto de workspace, ao clicar o layout troca para o shell do TechERP focado em **Configurações**, saindo do TechSales.
 
-| Item | Sidebar ERP | Home | Configurações |
-|---|---|---|---|
-| Marketplace | ✓ | ✓ (grid + card "Explorar") | ✓ |
-| Faturas | ✓ | ✓ | — |
-| Membros (`/settings/teams`) | ✓ | ✓ | ✓ |
-| Controle de Acesso (`/home/access`) | ✓ | ✓ | ✓ |
-| Configurações | ✓ | (botão) | ✓ (é a própria) |
-| Integrações | — | ✓ | ✓ |
-| Branding / Idioma / Billing / Segurança / API Keys / Webhooks / Auditoria / Notificações / Importar / Exportar / Privacidade / Residência / Módulos | — | ✓ | ✓ |
+O mesmo padrão afeta o item vizinho **Pesquisas** (`/settings/surveys`).
 
-Além disso, `settings.index.tsx` repete grupos que já estão no menu lateral de configurações (`settings.tsx`), gerando um 4º nível de duplicação dentro do próprio /settings.
+## Objetivo
 
-## Princípio de organização
+Manter o usuário dentro do TechSales ao acessar Formulários/Pesquisas a partir do menu do CRM, sem alterar a experiência do módulo ATS nem mover funcionalidade/regra de negócio.
 
-Cada destino tem **um único lar canônico**:
+## Abordagem (apenas UI/roteamento)
 
-- **Sidebar ERP** = trilho de navegação primária. Só atalhos de alto nível para áreas do workspace.
-- **Home (`/home`)** = dashboard/launcher. Módulos + KPIs + poucos atalhos curados. Não reproduz o menu de configurações.
-- **Configurações (`/settings`)** = fonte única e completa de todas as configurações administrativas do workspace, com sua própria sidebar interna (`settings.tsx`) já bem estruturada.
+Criar aliases de rota no contexto CRM que renderizam o mesmo componente já existente em `settings.forms.tsx` e `settings.surveys.tsx`, e apontar o menu do CRM para esses aliases. As rotas em `/settings/*` continuam existindo (para quem acessa via Configurações do workspace).
 
-## Mudanças
+### Mudanças
 
-### 1. Sidebar ERP — `src/lib/menu-config-erp.ts`
+1. `src/routes/_authenticated/forms.tsx` (novo)
+   - `createFileRoute("/_authenticated/forms")`
+   - Reexporta o componente atualmente montado em `settings.forms.tsx` (extraímos o componente para um arquivo compartilhado `src/components/forms/forms-page.tsx`, ou simplesmente importamos o componente exportado).
 
-Reduzir para apenas os atalhos primários. Remover Membros e Controle de acesso (vivem em Configurações → Pessoas & Acesso).
+2. `src/routes/_authenticated/surveys.tsx` (novo)
+   - Mesma abordagem para `settings.surveys.tsx`.
 
-```
-ERP:        Home · Marketplace · Faturas
-Workspace:  Configurações
-```
+3. `src/lib/menu-config.ts`
+   - `Formulários`: `/settings/forms` → `/forms`
+   - `Pesquisas`: `/settings/surveys` → `/surveys`
 
-### 2. Home — `src/routes/_authenticated/home.index.tsx`
+4. `src/routes/_authenticated/settings.forms.tsx` e `settings.surveys.tsx`
+   - Mantidos, agora renderizando o mesmo componente compartilhado (sem duplicação de lógica). Nenhuma alteração de server function, RLS ou schema.
 
-Remover completamente a `SettingsGrid` (6 grupos × 3-4 cards = 21 links duplicados com /settings).
+### Por que não apenas remover `/settings` de `WORKSPACE_ROUTE_PREFIXES`
 
-Manter:
-- `PageHeader` com botões "Gerenciar módulos" e "Todas as configurações" (já existe).
-- 3 MetricCards (Módulos ativos, contratados, Status).
-- `ModulesGrid` (identidade da Home).
-- Uma única seção curada **"Atalhos"** com 4 cards estáveis: Membros, Controle de Acesso, Marketplace, Faturas. Serve como onboarding rápido; qualquer coisa além disso vive em `/settings`.
-- Remover o rodapé "As configurações acima…" (some com o grid).
+Isso quebraria a intenção de trocar o sidebar quando o usuário realmente navega para Configurações do workspace (ex.: via header). O gatilho correto do sidebar é o path — então a correção é usar um path CRM-scoped no menu do CRM.
 
-### 3. Configurações (índice) — `src/routes/_authenticated/settings.index.tsx`
+## Fora do escopo
 
-Remover os 3 grupos `GROUPS` (Workspace ERP / CRM / ATS) porque duplicam a sidebar de configurações à esquerda (`settings.tsx`). Manter só:
-- Cabeçalho "Configurações".
-- Card "Meu perfil" (email + nome + salvar) — já existe e é útil como landing.
-- Um bloco discreto de "Continue de onde parou" **opcional** com 3 links (Membros, Branding, Billing) — pode ficar ou não; proposta é remover para máxima clareza.
-
-Manter `settings.tsx` (sidebar de configurações) intocado — já é a estrutura canônica.
-
-### 4. Ajustes de consistência
-
-- Nenhuma alteração em rotas, server functions, RLS, permissões ou lógica de negócio.
-- Testes de `menu-config.test.ts` continuam válidos (não mexemos em `SIDEBAR_GROUPS`/`SETTINGS_GROUPS` de módulos).
-- Global search (`commands.ts`) já aponta cada item para seu destino em `/settings/*` — nada a mudar.
-
-## Resultado
-
-- **Sidebar ERP**: 4 itens (era 6). Sem duplicação com Configurações.
-- **Home**: dashboard de módulos + 4 atalhos curados. Sem repetir menu de settings.
-- **Configurações**: única fonte completa via sidebar interna. Página inicial limpa (perfil).
-
-## Arquivos alterados
-
-- `src/lib/menu-config-erp.ts` — remover Membros e Controle de acesso do trilho.
-- `src/routes/_authenticated/home.index.tsx` — remover `SETTING_GROUPS`/`SettingsGrid`, adicionar seção "Atalhos" curada (4 cards).
-- `src/routes/_authenticated/settings.index.tsx` — remover `GROUPS`, manter só cabeçalho + perfil.
+- Nenhuma mudança em `forms.functions.ts`, RLS, permissões, migrations.
+- Nenhuma mudança na sidebar de Configurações — Formulários/Pesquisas continuam lá.
+- Nenhuma mudança no ATS.
 
 ## Validação
 
 - `bunx tsgo --noEmit`
-- `bun run test` (menu-config.test.ts)
-- Manual: navegar Sidebar → Home → Configurações e conferir que cada item existe em exatamente 1 lugar (exceto Marketplace/Faturas/Membros/Acesso que reaparecem só como "atalho" curado na Home).
+- Manual: em TechSales, clicar Captar › Formulários deve manter sidebar TechSales, breadcrumb `Início › Formulários`. Em Configurações › Formulários (via header), sidebar de Configurações permanece.
