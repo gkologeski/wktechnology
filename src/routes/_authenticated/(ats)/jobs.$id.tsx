@@ -736,6 +736,7 @@ function JobDetailPage() {
                   salary_max: patch.salary_max ?? jobAny.salary_max ?? null,
                   status: (patch.status ?? jobAny.status) as never,
                   pipeline_id: patch.pipeline_id ?? jobAny.pipeline_id ?? null,
+                  deal_id: patch.deal_id !== undefined ? patch.deal_id : jobAny.deal_id ?? null,
                 },
               });
             }}
