@@ -84,7 +84,8 @@ export function NewSurveyDialog({
         .select("token")
         .single();
       if (error) throw error;
-      const url = `${window.location.origin}/survey/${(data as { token: string }).token}`;
+      if (!data) throw new Error("Falha ao criar pesquisa.");
+      const url = `${window.location.origin}/survey/${data.token}`;
       await navigator.clipboard.writeText(url).catch(() => undefined);
       toast.success("Pesquisa criada. Link copiado.");
       onCreated?.();
