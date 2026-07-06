@@ -334,6 +334,41 @@ export const createJobFromDeal = createServerFn({ method: "POST" })
     return inserted;
   });
 
+// Busca negócios acessíveis ao usuário para vincular a uma vaga. Retorna um
+// conjunto pequeno (limit 20) com colunas seguras. Suporta busca por texto e
+// hidratação por ids (para exibir o negócio já vinculado ao abrir a vaga).
+export const searchDeals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        q: z.string().trim().max(120).optional(),
+        ids: z.array(z.string().uuid()).max(50).optional(),
+      })
+      .parse(d ?? {}),
+  )
+  .handler(async ({ context, data }) => {
+    const { supabase } = context;
+    let q = supabase
+      .from("deals")
+      .select("id, name, value, currency, company_id")
+      .order("updated_at", { ascending: false })
+      .limit(20);
+    if (data.ids && data.ids.length) q = q.in("id", data.ids);
+    else if (data.q) q = q.ilike("name", `%${data.q}%`);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as Array<{
+      id: string;
+      name: string;
+      value: number | null;
+      currency: string | null;
+      company_id: string | null;
+    }>;
+  });
+
+
+
 // ---------- candidates -----------------------------------------------------
 
 const ExperienceEntrySchema = z.object({
