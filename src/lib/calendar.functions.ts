@@ -213,11 +213,13 @@ export const startCalendarOAuth = createServerFn({ method: "POST" })
 export const listCalendarAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data, error } = await supabaseAdmin
       .from("calendar_accounts")
       .select(
         "id, provider, email, primary_calendar_id, sync_enabled, auto_create_meet_link, last_synced_at, last_status, last_error, created_at",
       )
+      .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return { items: data ?? [] };
@@ -227,10 +229,12 @@ export const setCalendarMeetEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { error } = await supabaseAdmin
       .from("calendar_accounts")
       .update({ auto_create_meet_link: data.enabled })
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .eq("workspace_id", ws);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -239,7 +243,12 @@ export const disconnectCalendarAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("calendar_accounts").delete().eq("id", data.id);
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { error } = await supabaseAdmin
+      .from("calendar_accounts")
+      .delete()
+      .eq("id", data.id)
+      .eq("workspace_id", ws);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -248,10 +257,12 @@ export const setCalendarSyncEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { error } = await supabaseAdmin
       .from("calendar_accounts")
       .update({ sync_enabled: data.enabled })
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .eq("workspace_id", ws);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -260,11 +271,12 @@ export const syncCalendarNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    // Verify ownership
-    const { data: row, error } = await context.supabase
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data: row, error } = await supabaseAdmin
       .from("calendar_accounts")
       .select("id")
       .eq("id", data.id)
+      .eq("workspace_id", ws)
       .maybeSingle();
     if (error || !row) throw new Error("Calendário não encontrado");
     const { syncCalendarAccount } = await import("./calendar/engine.server");
@@ -275,10 +287,12 @@ export const syncAccountRecordings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ account_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: row, error } = await context.supabase
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data: row, error } = await supabaseAdmin
       .from("calendar_accounts")
       .select("id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at")
       .eq("id", data.account_id)
+      .eq("workspace_id", ws)
       .maybeSingle();
     if (error || !row) throw new Error("Calendário não encontrado");
     const { syncPastRecordings } = await import("./calendar/engine.server");
@@ -297,11 +311,12 @@ export const pushActivityToCalendar = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    // Verify ownership of both account and activity
-    const { data: acct, error: aErr } = await context.supabase
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data: acct, error: aErr } = await supabaseAdmin
       .from("calendar_accounts")
       .select("id")
       .eq("id", data.account_id)
+      .eq("workspace_id", ws)
       .maybeSingle();
     if (aErr || !acct) throw new Error("Calendário não encontrado");
     const { data: act, error: actErr } = await context.supabase
@@ -313,6 +328,7 @@ export const pushActivityToCalendar = createServerFn({ method: "POST" })
     const { pushSingleActivity } = await import("./calendar/engine.server");
     return pushSingleActivity(data.account_id, data.activity_id);
   });
+
 
 export const listCalendarEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
