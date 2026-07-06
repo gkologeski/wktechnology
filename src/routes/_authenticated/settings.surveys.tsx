@@ -193,7 +193,7 @@ export function SurveysPage() {
       </Card>
 
 
-      {perAgent.length > 0 && (
+      {tab !== "templates" && perAgent.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Por responsável</CardTitle>
@@ -223,84 +223,109 @@ export function SurveysPage() {
         </Card>
       )}
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Enviado</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Comentário</TableHead>
-                <TableHead>Respondido</TableHead>
-                <TableHead className="w-[1%]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
+      {tab !== "templates" && (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    Carregando…
-                  </TableCell>
+                  <TableHead>Enviado</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Comentário</TableHead>
+                  <TableHead>Respondido</TableHead>
+                  <TableHead className="w-[1%]" />
                 </TableRow>
-              )}
-              {!isLoading && filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    Nenhuma pesquisa.
-                  </TableCell>
-                </TableRow>
-              )}
-              {filtered.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatDateTime(s.sent_at)}
-                  </TableCell>
-                  <TableCell>
-                    {s.score !== null ? (
-                      <Badge
-                        variant={
-                          tab === "nps"
-                            ? s.score >= 9
-                              ? "default"
-                              : s.score <= 6
-                                ? "destructive"
-                                : "secondary"
-                            : s.score >= 4
-                              ? "default"
-                              : s.score >= 3
-                                ? "secondary"
-                                : "destructive"
-                        }
+              </TableHeader>
+              <TableBody>
+                {isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Carregando…
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isLoading && filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Nenhuma pesquisa.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {filtered.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {formatDateTime(s.sent_at)}
+                    </TableCell>
+                    <TableCell>
+                      {s.score !== null ? (
+                        <Badge
+                          variant={
+                            tab === "nps"
+                              ? s.score >= 9
+                                ? "default"
+                                : s.score <= 6
+                                  ? "destructive"
+                                  : "secondary"
+                              : s.score >= 4
+                                ? "default"
+                                : s.score >= 3
+                                  ? "secondary"
+                                  : "destructive"
+                          }
+                        >
+                          {s.score}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="max-w-md truncate text-sm">
+                      {s.comment ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {s.responded_at ? formatDateTime(s.responded_at) : "—"}
+                    </TableCell>
+                    <TableCell className="flex gap-1 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditing(s)}
+                        title="Editar resposta"
                       >
-                        {s.score}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="max-w-md truncate text-sm">{s.comment ?? "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {s.responded_at ? formatDateTime(s.responded_at) : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => copyLink(s.token)}
-                      title="Copiar link público"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => copyLink(s.token)}
+                        title="Copiar link público"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <NewSurveyDialog
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        onCreated={() => qc.invalidateQueries({ queryKey: ["surveys"] })}
+      />
+      <EditResponseDialog
+        open={!!editing}
+        onOpenChange={(v) => !v && setEditing(null)}
+        survey={editing}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["surveys"] })}
+      />
     </div>
   );
 }
+
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
