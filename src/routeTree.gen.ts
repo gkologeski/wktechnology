@@ -45,6 +45,7 @@ import { Route as BookSlugRouteImport } from './routes/book.$slug'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
+import { Route as AuthenticatedSurveysRouteImport } from './routes/_authenticated/surveys'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedProspectingRouteImport } from './routes/_authenticated/prospecting'
@@ -58,6 +59,7 @@ import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedInvoicesRouteImport } from './routes/_authenticated/invoices'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedFraudFlagsRouteImport } from './routes/_authenticated/fraud-flags'
+import { Route as AuthenticatedFormsRouteImport } from './routes/_authenticated/forms'
 import { Route as AuthenticatedDeiAnalyticsRouteImport } from './routes/_authenticated/dei-analytics'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
 import { Route as AuthenticatedDashboardsRouteImport } from './routes/_authenticated/dashboards'
@@ -467,6 +469,11 @@ const AuthenticatedTasksRoute = AuthenticatedTasksRouteImport.update({
   path: '/tasks',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSurveysRoute = AuthenticatedSurveysRouteImport.update({
+  id: '/surveys',
+  path: '/surveys',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -535,6 +542,11 @@ const AuthenticatedIntegrationsRoute =
 const AuthenticatedFraudFlagsRoute = AuthenticatedFraudFlagsRouteImport.update({
   id: '/fraud-flags',
   path: '/fraud-flags',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedFormsRoute = AuthenticatedFormsRouteImport.update({
+  id: '/forms',
+  path: '/forms',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedDeiAnalyticsRoute =
@@ -1889,6 +1901,7 @@ export interface FileRoutesByFullPath {
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
+  '/forms': typeof AuthenticatedFormsRoute
   '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
   '/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/invoices': typeof AuthenticatedInvoicesRoute
@@ -1902,6 +1915,7 @@ export interface FileRoutesByFullPath {
   '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/reports': typeof AuthenticatedReportsRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/surveys': typeof AuthenticatedSurveysRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
@@ -2168,6 +2182,7 @@ export interface FileRoutesByTo {
   '/dashboards': typeof AuthenticatedDashboardsRoute
   '/deals': typeof AuthenticatedDealsRouteWithChildren
   '/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
+  '/forms': typeof AuthenticatedFormsRoute
   '/fraud-flags': typeof AuthenticatedFraudFlagsRoute
   '/invoices': typeof AuthenticatedInvoicesRoute
   '/leads': typeof AuthenticatedLeadsRouteWithChildren
@@ -2177,6 +2192,7 @@ export interface FileRoutesByTo {
   '/notes': typeof AuthenticatedNotesRoute
   '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/reports': typeof AuthenticatedReportsRoute
+  '/surveys': typeof AuthenticatedSurveysRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
@@ -2444,6 +2460,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboards': typeof AuthenticatedDashboardsRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRouteWithChildren
   '/_authenticated/dei-analytics': typeof AuthenticatedDeiAnalyticsRoute
+  '/_authenticated/forms': typeof AuthenticatedFormsRoute
   '/_authenticated/fraud-flags': typeof AuthenticatedFraudFlagsRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRouteWithChildren
   '/_authenticated/invoices': typeof AuthenticatedInvoicesRoute
@@ -2457,6 +2474,7 @@ export interface FileRoutesById {
   '/_authenticated/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/_authenticated/surveys': typeof AuthenticatedSurveysRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/_authenticated/tickets': typeof AuthenticatedTicketsRouteWithChildren
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
@@ -2725,6 +2743,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/deals'
     | '/dei-analytics'
+    | '/forms'
     | '/fraud-flags'
     | '/integrations'
     | '/invoices'
@@ -2738,6 +2757,7 @@ export interface FileRouteTypes {
     | '/prospecting'
     | '/reports'
     | '/settings'
+    | '/surveys'
     | '/tasks'
     | '/tickets'
     | '/accept-invite/$token'
@@ -3004,6 +3024,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/deals'
     | '/dei-analytics'
+    | '/forms'
     | '/fraud-flags'
     | '/invoices'
     | '/leads'
@@ -3013,6 +3034,7 @@ export interface FileRouteTypes {
     | '/notes'
     | '/prospecting'
     | '/reports'
+    | '/surveys'
     | '/tasks'
     | '/tickets'
     | '/accept-invite/$token'
@@ -3279,6 +3301,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboards'
     | '/_authenticated/deals'
     | '/_authenticated/dei-analytics'
+    | '/_authenticated/forms'
     | '/_authenticated/fraud-flags'
     | '/_authenticated/integrations'
     | '/_authenticated/invoices'
@@ -3292,6 +3315,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prospecting'
     | '/_authenticated/reports'
     | '/_authenticated/settings'
+    | '/_authenticated/surveys'
     | '/_authenticated/tasks'
     | '/_authenticated/tickets'
     | '/accept-invite/$token'
@@ -3893,6 +3917,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/surveys': {
+      id: '/_authenticated/surveys'
+      path: '/surveys'
+      fullPath: '/surveys'
+      preLoaderRoute: typeof AuthenticatedSurveysRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -3982,6 +4013,13 @@ declare module '@tanstack/react-router' {
       path: '/fraud-flags'
       fullPath: '/fraud-flags'
       preLoaderRoute: typeof AuthenticatedFraudFlagsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/forms': {
+      id: '/_authenticated/forms'
+      path: '/forms'
+      fullPath: '/forms'
+      preLoaderRoute: typeof AuthenticatedFormsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dei-analytics': {
@@ -5985,6 +6023,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDashboardsRoute: typeof AuthenticatedDashboardsRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRouteWithChildren
   AuthenticatedDeiAnalyticsRoute: typeof AuthenticatedDeiAnalyticsRoute
+  AuthenticatedFormsRoute: typeof AuthenticatedFormsRoute
   AuthenticatedFraudFlagsRoute: typeof AuthenticatedFraudFlagsRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRouteWithChildren
   AuthenticatedInvoicesRoute: typeof AuthenticatedInvoicesRoute
@@ -5998,6 +6037,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProspectingRoute: typeof AuthenticatedProspectingRouteWithChildren
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
+  AuthenticatedSurveysRoute: typeof AuthenticatedSurveysRoute
   AuthenticatedTasksRoute: typeof AuthenticatedTasksRouteWithChildren
   AuthenticatedTicketsRoute: typeof AuthenticatedTicketsRouteWithChildren
   AuthenticatedatsAtsDashboardRoute: typeof AuthenticatedatsAtsDashboardRoute
@@ -6066,6 +6106,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardsRoute: AuthenticatedDashboardsRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRouteWithChildren,
   AuthenticatedDeiAnalyticsRoute: AuthenticatedDeiAnalyticsRoute,
+  AuthenticatedFormsRoute: AuthenticatedFormsRoute,
   AuthenticatedFraudFlagsRoute: AuthenticatedFraudFlagsRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRouteWithChildren,
   AuthenticatedInvoicesRoute: AuthenticatedInvoicesRoute,
@@ -6079,6 +6120,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProspectingRoute: AuthenticatedProspectingRouteWithChildren,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
+  AuthenticatedSurveysRoute: AuthenticatedSurveysRoute,
   AuthenticatedTasksRoute: AuthenticatedTasksRouteWithChildren,
   AuthenticatedTicketsRoute: AuthenticatedTicketsRouteWithChildren,
   AuthenticatedatsAtsDashboardRoute: AuthenticatedatsAtsDashboardRoute,
