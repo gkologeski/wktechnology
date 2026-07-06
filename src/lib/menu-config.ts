@@ -49,7 +49,9 @@ import {
   Plug,
   ShoppingBag,
   RefreshCw,
+  Linkedin,
 } from "lucide-react";
+
 
 export type Need = "admin" | "manager" | "platform" | undefined;
 export type Perms = {
@@ -256,11 +258,13 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/marketplace", label: "Marketplace", icon: ShoppingBag, need: "admin" },
       { to: "/integrations", label: "Integrações", icon: Plug, need: "admin" },
       { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin" },
+      { to: "/settings/integrations/linkedin", label: "LinkedIn (Unipile)", icon: Linkedin, need: "admin" },
       { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
       { to: "/settings/widget", label: "Widget do site", icon: Megaphone, need: "admin" },
       { to: "/leads/import-hubspot", label: "Importar HubSpot", icon: Download, need: "admin" },
     ],
   },
+
   {
     label: "Plataforma",
     items: [
