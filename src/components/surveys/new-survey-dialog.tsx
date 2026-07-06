@@ -72,7 +72,13 @@ export function NewSurveyDialog({
         (profile as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
       const insert: Record<string, unknown> = { ticket_id: ticketId, kind, owner_id: userId };
       if (workspaceId) insert.workspace_id = workspaceId;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as unknown as {
+        from: (t: string) => {
+          insert: (v: unknown) => {
+            select: (c: string) => { single: () => Promise<{ data: { token: string } | null; error: { message: string } | null }> };
+          };
+        };
+      })
         .from("survey_responses")
         .insert(insert)
         .select("token")
