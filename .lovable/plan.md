@@ -1,46 +1,59 @@
-# Conectar LinkedIn via Unipile — descoberta na UI
+## Objetivo
 
-## Situação atual
+Permitir associar um **negócio (deal)** a uma **vaga (ats_jobs)** pela UI. O schema já tem a coluna `ats_jobs.deal_id` e o `saveAtsJob` já aceita esse campo — falta somente expor na interface.
 
-A funcionalidade **já existe e está funcional**:
+## Escopo
 
-- Página completa em `/settings/integrations/linkedin` (`src/routes/_authenticated/settings.integrations.linkedin.tsx`) com:
-  - Botão "Conectar LinkedIn" (Unipile Hosted Auth — credenciais não passam pelo TechHire)
-  - Status da conta (conectado / pendente / erro / desconectado)
-  - Configuração de janela horária human-like (fuso + hora início/fim)
-  - Painel de uso diário por endpoint (profile.fetch, profile.search, message.send, invite.send, chat.list)
-  - Ações Reconectar / Desconectar / Atualizar
-- Server functions em `src/lib/unipile/accounts.functions.ts` (start/disconnect/reconcile/getAccount/getRateUsage/updateDailyWindow)
-- Webhook `/api/public/unipile/webhook` e página de retorno `/unipile-connected`
-- Secrets `UNIPILE_DSN`, `UNIPILE_API_KEY`, `UNIPILE_WEBHOOK_SECRET` já configurados
+- Adicionar seletor de negócio no diálogo **Nova vaga** (`jobs.index.tsx`).
+- Adicionar campo **Negócio** no painel de propriedades da vaga (`jobs.$id.tsx` → `JobPropertiesPanel`), com busca, limpar e link para o deal.
+- Exibir o nome do negócio no card da lista (hoje só mostra um ícone `Link2` sem contexto).
+- Criar server function `searchDeals` para alimentar o combobox.
 
-**O que falta:** a tela não aparece no Marketplace de Integrações (`/integrations`) nem em nenhum item de menu, então o usuário não a encontra.
+Fora do escopo: alterações em RLS, migrations, tabela `deals`, fluxo `createJobFromDeal`, kanban de deals.
 
-## Escopo (apenas UX/descoberta, sem alterar lógica)
+## Alterações
 
-### 1. Adicionar "LinkedIn (Unipile)" ao Marketplace de Integrações
+**Backend** — `src/lib/ats/ats.functions.ts`
 
-- Editar `src/lib/integrations/registry.ts`:
-  - Adicionar `"linkedin"` ao union `ProviderSlug`
-  - Adicionar entrada `PROVIDERS`: nome "LinkedIn (Unipile)", categoria `crm` (ou nova `sourcing` — decidir usar existente pra não mexer no CATEGORY_LABELS), ícone `Linkedin` do `lucide-react`, cor `bg-[#0A66C2]`, `authMode: "oauth"`, descrição curta sobre buscar perfis, capturar candidatos e mensageria com limites human-like
-- Editar `src/routes/_authenticated/integrations.$slug.tsx` para, quando `slug === "linkedin"`, redirecionar/link para `/settings/integrations/linkedin` (padrão já usado por outros providers com página dedicada, se houver — verificar) OU renderizar um card curto com botão "Abrir configuração" apontando para essa rota
+- Nova server fn `searchDeals({ q?: string, ids?: string[] })` com `requireSupabaseAuth` que faz `select id, name, value, currency, company_id from deals` (limit 20, `ilike` no nome). Confia no RLS existente. Usada para autocomplete e para hidratar o deal já selecionado ao abrir a vaga.
+- Ajuste no `saveAtsJob`: quando `deal_id` for enviado e `company_id` não for, buscar `deals.company_id` e preencher automaticamente (comportamento consistente com `createJobFromDeal`, mas só quando o usuário não sobrescreveu).
 
-### 2. Item de menu direto em Configurações
+**UI — Nova vaga** (`src/routes/_authenticated/(ats)/jobs.index.tsx`)
 
-- Editar `src/lib/menu-config.ts`: adicionar entry `{ to: "/settings/integrations/linkedin", label: "LinkedIn (Unipile)", icon: Linkedin, need: "admin" }` na seção de Configurações/Integrações (localizar seção equivalente próxima ao item "Integrações")
+- Novo campo no `form`: `deal_id: string | null`.
+- Componente `DealPicker` inline (Popover + Command + Input de busca com debounce 300ms) usado no diálogo.
+- Enviar `deal_id` no `save({ data: { ... } })`.
+- No card (`JobCard`) e na linha de tabela: quando `deal.name` existir na resposta de `listAtsJobs`, mostrar `Negócio · {name}` no lugar do ícone solto. Para isso, `listAtsJobs` passa a incluir `deals(id, name)` via join do PostgREST no mesmo select.
 
-### 3. Documentação in-app
+**UI — Detalhe da vaga** (`src/routes/_authenticated/(ats)/jobs.$id.tsx`)
 
-- Texto atual da página já explica o fluxo. Sem mudanças.
+- Em `JobPropertiesPanel`, nova seção “Negócio” logo abaixo de Pipeline:
+  - Se `job.deal_id`: badge com nome + `<Link to="/deals/$id">` (ícone external) + botão “Alterar/Remover”.
+  - Se vazio: botão “Vincular negócio…” que abre o mesmo `DealPicker`.
+  - O nome vem de `searchDeals({ ids: [job.deal_id] })` chamado uma vez no mount.
+- Adicionar `deal_id` ao `form`, ao `dirty` check, ao `persist`.
+- Passar `deal_id` no `save(...)` do `RecordLayout`.
 
-## Fora de escopo
+**Componente compartilhado** — `src/components/ats/deal-picker.tsx` (novo)
 
-- Não alterar server functions, tabela `unipile_accounts`, RLS, webhook, limites, janela horária ou lógica de reconciliação
-- Não mexer em fluxos de hunting/captura que já consomem a conexão
+- Combobox controlado com props `value`, `onChange`, `disabled`.
+- Usa `searchDeals` server fn com debounce, mostra `name` + valor formatado.
+- Reutilizado nos dois locais.
 
-## Validação manual
+## Detalhes técnicos
 
-1. Acessar `/integrations` → filtrar categoria → ver card "LinkedIn (Unipile)"
-2. Clicar no card → cair em `/settings/integrations/linkedin`
-3. Menu lateral (admin) → Configurações → item "LinkedIn (Unipile)" leva à mesma tela
-4. Clicar "Conectar LinkedIn" → abre Unipile Hosted Auth → retorna em `/unipile-connected` → redireciona → status "Conectado"
+- Sem migration: `ats_jobs.deal_id` já existe e o RLS de `deals` já limita a visibilidade.
+- `searchDeals` retorna `{ id, name, value, currency, company_id }` — pequenas colunas, sem risco de vazamento.
+- Auto-fill de `company_id`: aplicado apenas em `saveAtsJob` quando `deal_id` estiver presente **e** `company_id` não for enviado explicitamente, para não sobrescrever escolha manual.
+- Join em `listAtsJobs`: `select("..., deals:deal_id(id, name)")`. Se o PostgREST FK inferir errado, cai para hidratação via `searchDeals({ ids })` num segundo passo.
+- Tipos: atualizar o `JobRow` local de `listAtsJobs` para incluir `deal: { id: string; name: string } | null`.
+
+## Validação
+
+- `bunx tsgo --noEmit`
+- Manual: criar vaga com negócio, editar vaga adicionando/removendo negócio, verificar link para `/deals/$id`, confirmar que o nome aparece no card da lista.
+
+## Riscos
+
+- Se `deals(id, name)` não for aceito pelo PostgREST por falta de FK explícita, usar o fallback via `searchDeals({ ids })`.
+- Nenhuma mudança em RLS/negócio; comportamento aditivo.
