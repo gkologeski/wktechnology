@@ -876,6 +876,7 @@ function JobPropertiesPanel({
     salary_min: number | null;
     salary_max: number | null;
     pipeline_id: string | null;
+    deal_id: string | null;
   };
   const [form, setForm] = useState({
     title: j.title,
@@ -889,6 +890,7 @@ function JobPropertiesPanel({
     salary_min: j.salary_min?.toString() ?? "",
     salary_max: j.salary_max?.toString() ?? "",
     pipeline_id: j.pipeline_id ?? "",
+    deal_id: j.deal_id ?? null,
   });
   const [saving, setSaving] = useState(false);
   const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
