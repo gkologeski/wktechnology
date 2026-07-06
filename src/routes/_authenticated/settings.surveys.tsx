@@ -1,13 +1,13 @@
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Copy, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -17,6 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { NewSurveyDialog } from "@/components/surveys/new-survey-dialog";
+import { EditResponseDialog } from "@/components/surveys/edit-response-dialog";
+import { SurveyTemplatesTab } from "@/components/surveys/survey-templates-tab";
 
 export const Route = createFileRoute("/_authenticated/settings/surveys")({
   component: SurveysPage,
