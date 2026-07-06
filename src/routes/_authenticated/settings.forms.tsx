@@ -73,7 +73,7 @@ const DEFAULT_POPUP: PopupConfig = {
   position: "center",
 };
 
-function FormsPage() {
+export function FormsPage() {
   const qc = useQueryClient();
   const listFn = useServerFn(listForms);
   const upsertFn = useServerFn(upsertForm);
