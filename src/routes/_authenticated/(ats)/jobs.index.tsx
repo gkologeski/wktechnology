@@ -282,6 +282,7 @@ function AtsJobsPage() {
     requirements: "",
     status: "draft",
     pipeline_id: "",
+    deal_id: null as string | null,
   });
 
   useEffect(() => {
