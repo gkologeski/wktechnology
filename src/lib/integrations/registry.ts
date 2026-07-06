@@ -126,6 +126,20 @@ export const PROVIDERS: ProviderDef[] = [
     supports: { sync: true },
     docs: "https://developers.contaazul.com/",
   },
+  {
+    slug: "linkedin",
+    name: "LinkedIn (Unipile)",
+    description:
+      "Conecte sua conta LinkedIn via Unipile para buscar perfis, capturar candidatos e enviar mensagens respeitando limites human-like.",
+    category: "sourcing",
+    icon: Linkedin,
+    color: "bg-[#0A66C2]",
+    authMode: "oauth",
+    entities: ["contact", "lead"],
+    supports: { sourcing: true, messaging: true, enrich: true },
+    docs: "https://developer.unipile.com/docs/linkedin",
+    href: "/settings/integrations/linkedin",
+  },
 ];
 
 export function getProvider(slug: string): ProviderDef | undefined {
@@ -138,7 +152,9 @@ export const CATEGORY_LABELS: Record<ProviderDef["category"], string> = {
   address: "Endereço",
   finance: "Financeiro / ERP",
   tasks: "Tarefas",
+  sourcing: "Sourcing & Mensageria",
 };
+
 
 // re-export icon for convenience
 export { Zap, MessageSquare };
