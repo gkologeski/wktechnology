@@ -3,6 +3,7 @@ import {
   Building2,
   Briefcase,
   Cloud,
+  Linkedin,
   MapPin,
   MessageSquare,
   Sparkles,
@@ -10,7 +11,15 @@ import {
   Zap,
 } from "lucide-react";
 
-export type ProviderSlug = "hubspot" | "apollo" | "lusha" | "viacep" | "contaazul" | "clickup";
+export type ProviderSlug =
+  | "hubspot"
+  | "apollo"
+  | "lusha"
+  | "viacep"
+  | "contaazul"
+  | "clickup"
+  | "linkedin";
+
 export type Entity = "lead" | "contact" | "company" | "deal";
 
 export type ProviderDef = {
