@@ -1,6 +1,8 @@
 // Menu neutro exibido no shell do Workspace/ERP Home (paths /home, /workspace, /settings, ...).
-// Não pertence a nenhum módulo — apresenta apenas atalhos administrativos.
-import { Home, Users2, Store, Receipt, Settings as SettingsIcon, Shield } from "lucide-react";
+// Não pertence a nenhum módulo — apresenta apenas atalhos administrativos primários.
+// Itens administrativos detalhados (Membros, Controle de acesso, Billing, etc.) vivem
+// em /settings, para não duplicar entre Sidebar, Home e Configurações.
+import { Home, Store, Receipt, Settings as SettingsIcon } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
 export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
@@ -15,9 +17,7 @@ export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Workspace",
     items: [
-      { title: "Membros", url: "/settings/teams", icon: Users2 },
       { title: "Configurações", url: "/settings", icon: SettingsIcon },
-      { title: "Controle de acesso", url: "/home/access", icon: Shield },
     ],
   },
 ];

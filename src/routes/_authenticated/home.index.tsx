@@ -1,6 +1,5 @@
-// /home — ERP Home: agrega módulos contratados e configurações do workspace.
-// Presentational + read-only. Usa server functions existentes; nenhuma
-// alteração em RLS, schema ou lógica de negócio.
+// /home — ERP Home: agrega módulos contratados e poucos atalhos curados.
+// Configurações completas vivem em /settings (fonte única). Presentational + read-only.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -11,19 +10,8 @@ import {
   Building2,
   UsersRound,
   Shield,
-  ShieldCheck,
-  CreditCard,
-  Palette,
-  KeyRound,
-  Languages,
-  Webhook,
-  ScrollText,
-  Puzzle,
   Store,
-  FileDown,
-  FileUp,
-  Globe,
-  Bell,
+  Receipt,
   Sparkles,
   ArrowRight,
   CheckCircle2,
@@ -175,114 +163,47 @@ function ModulesGrid() {
 }
 
 // ---------------------------------------------------------------------------
-// Configurações do workspace
+// Atalhos curados (não replica /settings)
 // ---------------------------------------------------------------------------
 
-type SettingItem = {
+type Shortcut = {
   to: string;
   title: string;
   desc: string;
   icon: React.ComponentType<{ className?: string }>;
 };
 
-type SettingGroup = {
-  title: string;
-  description: string;
-  items: SettingItem[];
-};
-
-const SETTING_GROUPS: SettingGroup[] = [
-  {
-    title: "Pessoas",
-    description: "Membros, times e convites do workspace.",
-    items: [
-      { to: "/settings/teams", title: "Membros", desc: "Convites por link, papéis e acessos do workspace.", icon: UsersRound },
-      { to: "/settings/user-groups", title: "Times", desc: "Grupos operacionais de usuários.", icon: Users },
-      { to: "/home/access", title: "Controle de Acesso", desc: "Cargos, pacotes de permissão e regras de campo.", icon: Shield },
-    ],
-  },
-  {
-    title: "Faturamento",
-    description: "Assinatura, uso e pagamento.",
-    items: [
-      { to: "/settings/billing", title: "Plano & cobrança", desc: "Assinatura e faturas.", icon: CreditCard },
-      { to: "/invoices", title: "Faturas", desc: "Histórico de pagamentos.", icon: FileDown },
-      { to: "/workspace/modules", title: "Módulos contratados", desc: "Ative ou desative módulos.", icon: Boxes },
-    ],
-  },
-  {
-    title: "Identidade",
-    description: "Marca, idioma e residência.",
-    items: [
-      { to: "/settings/branding", title: "Branding", desc: "Logo, cores e identidade.", icon: Palette },
-      { to: "/settings/language", title: "Idioma & região", desc: "Idioma, fuso e moeda.", icon: Languages },
-      { to: "/settings/data-residency", title: "Residência de dados", desc: "Localização de armazenamento.", icon: Globe },
-    ],
-  },
-  {
-    title: "Segurança & auditoria",
-    description: "Chaves, políticas e histórico.",
-    items: [
-      { to: "/settings/api-keys", title: "API Keys", desc: "Tokens para integração.", icon: KeyRound },
-      { to: "/settings/security", title: "Segurança", desc: "Políticas e SSO/SAML.", icon: ShieldCheck },
-      { to: "/settings/audit-log", title: "Audit log", desc: "Ações administrativas.", icon: ScrollText },
-      { to: "/settings/webhooks", title: "Webhooks", desc: "Eventos para sistemas externos.", icon: Webhook },
-    ],
-  },
-  {
-    title: "Integrações",
-    description: "Conectores e extensões.",
-    items: [
-      { to: "/integrations", title: "Integrações", desc: "Conectores nativos.", icon: Puzzle },
-      { to: "/marketplace", title: "Marketplace", desc: "Extensões e add-ons.", icon: Store },
-      { to: "/settings/notifications", title: "Notificações", desc: "E-mail, Slack, in-app.", icon: Bell },
-    ],
-  },
-  {
-    title: "Dados",
-    description: "Importação, exportação e privacidade.",
-    items: [
-      { to: "/settings/import-csv", title: "Importar", desc: "CSV, HubSpot e outros.", icon: FileUp },
-      { to: "/settings/exports", title: "Exportar", desc: "Extraia dados do workspace.", icon: FileDown },
-      { to: "/settings/privacy", title: "Privacidade & LGPD", desc: "Titulares e consentimento.", icon: ShieldCheck },
-    ],
-  },
+const SHORTCUTS: Shortcut[] = [
+  { to: "/settings/teams", title: "Membros", desc: "Convites, papéis e acessos.", icon: UsersRound },
+  { to: "/home/access", title: "Controle de Acesso", desc: "Cargos e pacotes de permissão.", icon: Shield },
+  { to: "/marketplace", title: "Marketplace", desc: "Add-ons e integrações.", icon: Store },
+  { to: "/invoices", title: "Faturas", desc: "Histórico de pagamentos.", icon: Receipt },
 ];
 
-function SettingsGrid() {
+function ShortcutsGrid() {
   return (
-    <div className="space-y-8">
-      {SETTING_GROUPS.map((group) => (
-        <section key={group.title} className="space-y-3">
-          <div>
-            <h3 className="text-sm font-semibold tracking-tight">{group.title}</h3>
-            <p className="text-xs text-muted-foreground">{group.description}</p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {group.items.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.to + item.title}
-                  to={item.to}
-                  aria-label={item.title}
-                  className="group rounded-lg border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="size-8 shrink-0 rounded-md bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium">{item.title}</div>
-                      <div className="text-xs text-muted-foreground line-clamp-2">{item.desc}</div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
-      ))}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {SHORTCUTS.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.to}
+            to={item.to}
+            aria-label={item.title}
+            className="group rounded-lg border border-border bg-card p-4 transition-all hover:border-primary/40 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <div className="flex items-start gap-3">
+              <div className="size-8 shrink-0 rounded-md bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                <Icon className="h-4 w-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium">{item.title}</div>
+                <div className="text-xs text-muted-foreground line-clamp-2">{item.desc}</div>
+              </div>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -307,7 +228,7 @@ function ErpHome() {
       <PageHeader
         eyebrow="Workspace"
         title="Bem-vindo ao seu ERP"
-        description="Acesse seus módulos e gerencie as configurações comuns a todo o workspace."
+        description="Acesse seus módulos contratados e gerencie o workspace."
         primaryAction={
           <Button asChild>
             <Link to="/workspace/modules">
@@ -353,17 +274,18 @@ function ErpHome() {
 
       <section className="space-y-4">
         <SectionHeader
-          title="Configurações do workspace"
-          description="Ajustes comuns a todos os módulos do ERP."
+          title="Atalhos"
+          description="Acesso rápido às áreas mais usadas do workspace."
         />
-        <SettingsGrid />
+        <ShortcutsGrid />
       </section>
 
       <div className="text-xs text-muted-foreground pt-6 border-t flex items-center gap-2">
         <StatusBadge status="open" label="Workspace" />
-        <span>As configurações acima se aplicam a todos os módulos do ERP.</span>
+        <span>Configurações completas ficam em <Link to="/settings" className="underline hover:text-foreground">Configurações</Link>.</span>
       </div>
 
     </div>
   );
 }
+
