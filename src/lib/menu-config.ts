@@ -49,7 +49,9 @@ import {
   Plug,
   ShoppingBag,
   RefreshCw,
+  Linkedin,
 } from "lucide-react";
+
 
 export type Need = "admin" | "manager" | "platform" | undefined;
 export type Perms = {
