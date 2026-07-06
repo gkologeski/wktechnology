@@ -96,36 +96,49 @@ function IntegrationsCatalog() {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((p) => {
                 const status = connected.get(p.slug);
+                const cardInner = (
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`h-10 w-10 rounded-md ${p.color} grid place-items-center text-white shrink-0`}
+                    >
+                      <p.icon className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold truncate">{p.name}</h3>
+                        {status === "connected" && <Badge variant="default">Conectado</Badge>}
+                        {status === "pending" && <Badge variant="secondary">Pendente</Badge>}
+                        {status === "error" && <Badge variant="destructive">Erro</Badge>}
+                        {!status && p.comingSoon && <Badge variant="outline">Em breve</Badge>}
+                        {!status && !p.comingSoon && <Badge variant="outline">Disponível</Badge>}
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                        {p.description}
+                      </p>
+                    </div>
+                  </div>
+                );
+                const className =
+                  "group rounded-lg border bg-card p-4 hover:border-primary/40 hover:shadow-sm transition";
+                if (p.href) {
+                  return (
+                    <Link key={p.slug} to={p.href} className={className}>
+                      {cardInner}
+                    </Link>
+                  );
+                }
                 return (
                   <Link
                     key={p.slug}
                     to="/integrations/$slug"
                     params={{ slug: p.slug }}
-                    className="group rounded-lg border bg-card p-4 hover:border-primary/40 hover:shadow-sm transition"
+                    className={className}
                   >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`h-10 w-10 rounded-md ${p.color} grid place-items-center text-white shrink-0`}
-                      >
-                        <p.icon className="h-5 w-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold truncate">{p.name}</h3>
-                          {status === "connected" && <Badge variant="default">Conectado</Badge>}
-                          {status === "pending" && <Badge variant="secondary">Pendente</Badge>}
-                          {status === "error" && <Badge variant="destructive">Erro</Badge>}
-                          {!status && p.comingSoon && <Badge variant="outline">Em breve</Badge>}
-                          {!status && !p.comingSoon && <Badge variant="outline">Disponível</Badge>}
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                          {p.description}
-                        </p>
-                      </div>
-                    </div>
+                    {cardInner}
                   </Link>
                 );
               })}
+
             </div>
           </section>
         ))}
