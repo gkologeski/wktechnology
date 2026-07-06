@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildCalendarAuthUrl, callbackRedirectUri, signState } from "@/lib/email-oauth.server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export type CalendarTestStep = {
   name: string;
