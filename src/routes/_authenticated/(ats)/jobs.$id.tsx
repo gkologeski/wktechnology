@@ -924,8 +924,9 @@ function JobPropertiesPanel({
       salary_min: j.salary_min?.toString() ?? "",
       salary_max: j.salary_max?.toString() ?? "",
       pipeline_id: j.pipeline_id ?? "",
+      deal_id: j.deal_id ?? null,
     });
-  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max, j.pipeline_id]);
+  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max, j.pipeline_id, j.deal_id]);
 
   const dirty =
     form.title !== j.title ||
@@ -938,7 +939,8 @@ function JobPropertiesPanel({
     form.status !== j.status ||
     (form.salary_min ? Number(form.salary_min) : null) !== j.salary_min ||
     (form.salary_max ? Number(form.salary_max) : null) !== j.salary_max ||
-    (form.pipeline_id || null) !== (j.pipeline_id ?? null);
+    (form.pipeline_id || null) !== (j.pipeline_id ?? null) ||
+    (form.deal_id ?? null) !== (j.deal_id ?? null);
 
   const persist = async () => {
     setSaving(true);
@@ -955,6 +957,7 @@ function JobPropertiesPanel({
         salary_max: form.salary_max ? Number(form.salary_max) : null,
         status: form.status,
         pipeline_id: form.pipeline_id || null,
+        deal_id: form.deal_id,
       });
       toast.success("Vaga atualizada");
       onSaved();
