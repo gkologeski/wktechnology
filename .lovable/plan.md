@@ -1,26 +1,35 @@
 ## Problema
 
-Em `/settings/calendars`, o botão **Sincronizar gravações** chama o server function `syncAccountRecordings` (`src/lib/calendar.functions.ts:273-286`). O handler procura o `calendar_accounts` usando o cliente Supabase do usuário (`context.supabase`), cujas policies exigem `owner_id = auth.uid()`. Quando o calendário exibido pertence a outro membro do workspace (ex.: uma conta corporativa conectada por outra pessoa), o `maybeSingle()` retorna `null` e o handler lança "Calendário não encontrado". O mesmo problema silenciosamente afeta `syncCalendarNow`, `disconnectCalendarAccount`, `setCalendarSyncEnabled`, `setCalendarMeetEnabled` e `pushActivityToCalendar`, além de `listCalendarAccounts` (que só lista os do próprio usuário).
+Na tela de detalhes de um negócio (`/deals/$id`), o botão **Ver gravação** de uma reunião do Google Calendar abre a gravação de outro negócio. Causa: a função Postgres `public.get_entity_timeline` mescla `calendar_events` no timeline do deal filtrando apenas por `ce.related_contact_id = ANY(v_contact_ids)`. Como `v_contact_ids` reúne todos os contatos do deal (primary_contact + `deal_contacts`), **todos** os eventos de calendário desses contatos entram na timeline — inclusive os que pertencem a outros negócios do mesmo contato. O card então mostra o `recording_url` do evento vizinho, e "Ver gravação" abre a gravação errada.
 
-## Objetivo
+O bug é de dados/associação — a UI (`src/components/activity-timeline.tsx`) já mapeia corretamente `recording_url` por evento; ela só recebe eventos que não deveriam estar ali.
 
-Permitir que qualquer membro do workspace enxergue e opere as contas de calendário conectadas ao workspace, mantendo isolamento entre workspaces.
+## Alteração
 
-## Alterações
+### Migration: reescrever `public.get_entity_timeline`
 
-### 1. `src/lib/calendar.functions.ts`
-- Em `listCalendarAccounts`: passar a buscar via `supabaseAdmin` filtrando por `workspace_id = resolveActiveWorkspace(userId)`, para listar todas as contas do workspace ativo.
-- Em `syncAccountRecordings`, `syncCalendarNow`, `disconnectCalendarAccount`, `setCalendarSyncEnabled`, `setCalendarMeetEnabled` e `pushActivityToCalendar`:
-  - resolver o workspace ativo do usuário;
-  - fazer o SELECT/UPDATE/DELETE via `supabaseAdmin` com `.eq("workspace_id", ws)` (e `.eq("id", …)`), garantindo que apenas contas do próprio workspace sejam alcançadas;
-  - manter o erro "Calendário não encontrado" para tentativas fora do workspace.
-- Nenhuma alteração de RLS, de schema ou de comportamento do provider.
+Manter todo o comportamento atual e alterar apenas o bloco `UNION ALL` que junta `calendar_events`. Passar a incluir eventos no timeline quando:
 
-### 2. Nada mais muda
-- UI de `src/routes/_authenticated/settings.calendars.tsx` continua igual (mesma assinatura dos server functions).
-- `syncPastRecordings`, `syncCalendarAccount` e `pushSingleActivity` do `engine.server.ts` continuam operando com admin, como já fazem.
-- Segurança: continuamos escopados por workspace do usuário autenticado; nenhuma exposição a outros workspaces.
+- `p_entity_kind = 'contact'` e `ce.related_contact_id = p_entity_id` (comportamento atual), **ou**
+- `p_entity_kind IN ('deal','lead','ticket','company')` e o evento estiver ligado a uma `activity` cuja associação bate com a entidade atual — ou seja, existe `activities a` com `a.id = ce.related_activity_id` e:
+  - para `deal`: `a.related_deal_id = p_entity_id`
+  - para `lead`: `a.related_lead_id = p_entity_id`
+  - para `ticket`: `a.related_ticket_id = p_entity_id`
+  - para `company`: `a.related_company_id = p_entity_id` OR `a.related_contact_id = ANY(v_contact_ids)`
+
+Ajustar também `direct_link` e o `mirrored_from_*` desse trecho para refletir a nova origem: quando o match é via activity de outra entidade, marcar `mirrored_from_kind = 'activity'` e `mirrored_from_id = a.id`; em contato continua com o comportamento atual.
+
+Nada muda em: filtro por `workspace_id`, filtros de data, pins, LIMIT, colunas retornadas, RLS, GRANTs, e demais UNIONs (activities, meetings, emails, whatsapp).
+
+### Nenhuma alteração em outros arquivos
+
+- `src/components/activity-timeline.tsx` e demais componentes de UI permanecem inalterados; passam a receber somente os eventos corretos.
+- Sem alteração de schema em `calendar_events` — não é necessário adicionar `related_deal_id`.
+- Sem alteração em `src/lib/calendar/engine.server.ts` — o vínculo por `related_activity_id` já é criado quando a reunião é agendada pelo CRM.
 
 ## Validação
 - `bunx tsgo --noEmit`.
-- Manual: usuário do mesmo workspace que não é dono da conta clica em **Sincronizar gravações**, **Sincronizar agora**, **Testar** e alterna switches — todas devem funcionar sem "Calendário não encontrado". Usuário de outro workspace não deve ver a conta na listagem.
+- Manual em `/deals/54c49367-9744-4254-9687-b7fc4b476a7e`: as reuniões que não pertencem a este deal devem sumir do timeline; "Ver gravação" nos cards remanescentes deve abrir a gravação correta. Repetir em `/contacts/$id` para confirmar que a timeline do contato continua mostrando todos os eventos como antes.
+
+## Riscos
+- Reuniões do Google Calendar sincronizadas por participante mas nunca associadas a uma activity do CRM deixarão de aparecer na timeline de deals (mas continuam na do contato). Esse é o comportamento correto — hoje elas apareciam em todo deal do contato, o que era o bug.
