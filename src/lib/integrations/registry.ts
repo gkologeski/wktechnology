@@ -26,7 +26,7 @@ export type ProviderDef = {
   slug: ProviderSlug;
   name: string;
   description: string;
-  category: "crm" | "enrichment" | "address" | "finance" | "tasks";
+  category: "crm" | "enrichment" | "address" | "finance" | "tasks" | "sourcing";
   icon: LucideIcon;
   color: string; // tailwind bg class
   authMode: "connector_gateway" | "api_key" | "oauth" | "personal_token_or_oauth" | "none";
@@ -40,10 +40,18 @@ export type ProviderDef = {
     pushTask?: boolean; // criar item externo (ClickUp etc.)
     sync?: boolean; // sincronização bidirecional
     addressLookup?: boolean; // ViaCEP
+    sourcing?: boolean; // busca/captura de perfis
+    messaging?: boolean; // envio de mensagens
   };
   comingSoon?: boolean;
   docs: string;
+  /**
+   * Rota interna dedicada para providers que possuem tela própria de
+   * configuração (fora do fluxo genérico de /integrations/$slug).
+   */
+  href?: string;
 };
+
 
 export const PROVIDERS: ProviderDef[] = [
   {
