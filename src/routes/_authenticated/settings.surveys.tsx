@@ -145,36 +145,53 @@ export function SurveysPage() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Pesquisas pós-resolução</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Geradas automaticamente quando um ticket é resolvido ou fechado. Envie o link ao
-            cliente.
-          </p>
+        <CardHeader className="flex flex-row items-start justify-between gap-3">
+          <div>
+            <CardTitle>Pesquisas pós-resolução</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Geradas automaticamente quando um ticket é resolvido ou fechado. Envie o link ao
+              cliente ou crie uma pesquisa avulsa.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setNewOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Nova pesquisa
+          </Button>
         </CardHeader>
         <CardContent>
           <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
             <TabsList>
               <TabsTrigger value="csat">CSAT</TabsTrigger>
               <TabsTrigger value="nps">NPS</TabsTrigger>
+              <TabsTrigger value="templates">Modelos</TabsTrigger>
             </TabsList>
+            <TabsContent value="templates" className="mt-4">
+              <SurveyTemplatesTab />
+            </TabsContent>
           </Tabs>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-            <Stat label="Convites" value={String(stats.total)} />
-            <Stat label="Respondidas" value={String(stats.answered)} />
-            {tab === "nps" ? (
-              <Stat label="NPS" value={stats.nps !== null ? `${stats.nps}` : "—"} />
-            ) : (
-              <Stat label="Média (0–5)" value={stats.avg !== null ? stats.avg.toFixed(2) : "—"} />
-            )}
-            <Stat
-              label="Taxa de resposta"
-              value={stats.total ? `${Math.round((stats.answered / stats.total) * 100)}%` : "—"}
-            />
-          </div>
+          {tab !== "templates" && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+              <Stat label="Convites" value={String(stats.total)} />
+              <Stat label="Respondidas" value={String(stats.answered)} />
+              {tab === "nps" ? (
+                <Stat label="NPS" value={stats.nps !== null ? `${stats.nps}` : "—"} />
+              ) : (
+                <Stat
+                  label="Média (0–5)"
+                  value={stats.avg !== null ? stats.avg.toFixed(2) : "—"}
+                />
+              )}
+              <Stat
+                label="Taxa de resposta"
+                value={
+                  stats.total ? `${Math.round((stats.answered / stats.total) * 100)}%` : "—"
+                }
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
+
 
       {perAgent.length > 0 && (
         <Card>
