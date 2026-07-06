@@ -562,6 +562,17 @@ function AtsJobsPage() {
               Define as etapas pelas quais as candidaturas desta vaga vão passar.
             </p>
           </div>
+          <div className="col-span-2">
+            <Label className="text-xs text-text-tertiary">Negócio (opcional)</Label>
+            <DealPicker
+              value={form.deal_id}
+              onChange={(id) => setForm({ ...form, deal_id: id })}
+              placeholder="Vincular a um negócio…"
+            />
+            <p className="mt-1 text-[11px] text-text-tertiary">
+              Associe esta vaga a um negócio do CRM. A empresa do negócio será preenchida automaticamente.
+            </p>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
