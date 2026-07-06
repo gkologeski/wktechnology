@@ -10948,6 +10948,60 @@ export type Database = {
           },
         ]
       }
+      survey_templates: {
+        Row: {
+          channel: string
+          created_at: string
+          delay_minutes: number
+          id: string
+          invite_body: string | null
+          invite_subject: string | null
+          is_active: boolean
+          is_default: boolean
+          kind: string
+          name: string
+          owner_id: string
+          question: string
+          trigger_event: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          delay_minutes?: number
+          id?: string
+          invite_body?: string | null
+          invite_subject?: string | null
+          is_active?: boolean
+          is_default?: boolean
+          kind?: string
+          name: string
+          owner_id: string
+          question: string
+          trigger_event?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          delay_minutes?: number
+          id?: string
+          invite_body?: string | null
+          invite_subject?: string | null
+          is_active?: boolean
+          is_default?: boolean
+          kind?: string
+          name?: string
+          owner_id?: string
+          question?: string
+          trigger_event?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       task_queue_items: {
         Row: {
           activity_id: string | null

@@ -1,13 +1,13 @@
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Copy, Pencil, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   Table,
@@ -17,6 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { NewSurveyDialog } from "@/components/surveys/new-survey-dialog";
+import { EditResponseDialog } from "@/components/surveys/edit-response-dialog";
+import { SurveyTemplatesTab } from "@/components/surveys/survey-templates-tab";
 
 export const Route = createFileRoute("/_authenticated/settings/surveys")({
   component: SurveysPage,
@@ -34,7 +37,10 @@ type Survey = {
 };
 
 export function SurveysPage() {
-  const [tab, setTab] = useState<"csat" | "nps">("csat");
+  const [tab, setTab] = useState<"csat" | "nps" | "templates">("csat");
+  const [newOpen, setNewOpen] = useState(false);
+  const [editing, setEditing] = useState<Survey | null>(null);
+  const qc = useQueryClient();
 
   const { data: surveys = [], isLoading } = useQuery({
     queryKey: ["surveys"],
@@ -139,38 +145,55 @@ export function SurveysPage() {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Pesquisas pós-resolução</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Geradas automaticamente quando um ticket é resolvido ou fechado. Envie o link ao
-            cliente.
-          </p>
+        <CardHeader className="flex flex-row items-start justify-between gap-3">
+          <div>
+            <CardTitle>Pesquisas pós-resolução</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Geradas automaticamente quando um ticket é resolvido ou fechado. Envie o link ao
+              cliente ou crie uma pesquisa avulsa.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setNewOpen(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Nova pesquisa
+          </Button>
         </CardHeader>
         <CardContent>
           <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
             <TabsList>
               <TabsTrigger value="csat">CSAT</TabsTrigger>
               <TabsTrigger value="nps">NPS</TabsTrigger>
+              <TabsTrigger value="templates">Modelos</TabsTrigger>
             </TabsList>
+            <TabsContent value="templates" className="mt-4">
+              <SurveyTemplatesTab />
+            </TabsContent>
           </Tabs>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-            <Stat label="Convites" value={String(stats.total)} />
-            <Stat label="Respondidas" value={String(stats.answered)} />
-            {tab === "nps" ? (
-              <Stat label="NPS" value={stats.nps !== null ? `${stats.nps}` : "—"} />
-            ) : (
-              <Stat label="Média (0–5)" value={stats.avg !== null ? stats.avg.toFixed(2) : "—"} />
-            )}
-            <Stat
-              label="Taxa de resposta"
-              value={stats.total ? `${Math.round((stats.answered / stats.total) * 100)}%` : "—"}
-            />
-          </div>
+          {tab !== "templates" && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+              <Stat label="Convites" value={String(stats.total)} />
+              <Stat label="Respondidas" value={String(stats.answered)} />
+              {tab === "nps" ? (
+                <Stat label="NPS" value={stats.nps !== null ? `${stats.nps}` : "—"} />
+              ) : (
+                <Stat
+                  label="Média (0–5)"
+                  value={stats.avg !== null ? stats.avg.toFixed(2) : "—"}
+                />
+              )}
+              <Stat
+                label="Taxa de resposta"
+                value={
+                  stats.total ? `${Math.round((stats.answered / stats.total) * 100)}%` : "—"
+                }
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      {perAgent.length > 0 && (
+
+      {tab !== "templates" && perAgent.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Por responsável</CardTitle>
@@ -200,84 +223,109 @@ export function SurveysPage() {
         </Card>
       )}
 
-      <Card>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Enviado</TableHead>
-                <TableHead>Score</TableHead>
-                <TableHead>Comentário</TableHead>
-                <TableHead>Respondido</TableHead>
-                <TableHead className="w-[1%]" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
+      {tab !== "templates" && (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    Carregando…
-                  </TableCell>
+                  <TableHead>Enviado</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Comentário</TableHead>
+                  <TableHead>Respondido</TableHead>
+                  <TableHead className="w-[1%]" />
                 </TableRow>
-              )}
-              {!isLoading && filtered.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                    Nenhuma pesquisa.
-                  </TableCell>
-                </TableRow>
-              )}
-              {filtered.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatDateTime(s.sent_at)}
-                  </TableCell>
-                  <TableCell>
-                    {s.score !== null ? (
-                      <Badge
-                        variant={
-                          tab === "nps"
-                            ? s.score >= 9
-                              ? "default"
-                              : s.score <= 6
-                                ? "destructive"
-                                : "secondary"
-                            : s.score >= 4
-                              ? "default"
-                              : s.score >= 3
-                                ? "secondary"
-                                : "destructive"
-                        }
+              </TableHeader>
+              <TableBody>
+                {isLoading && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Carregando…
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!isLoading && filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      Nenhuma pesquisa.
+                    </TableCell>
+                  </TableRow>
+                )}
+                {filtered.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {formatDateTime(s.sent_at)}
+                    </TableCell>
+                    <TableCell>
+                      {s.score !== null ? (
+                        <Badge
+                          variant={
+                            tab === "nps"
+                              ? s.score >= 9
+                                ? "default"
+                                : s.score <= 6
+                                  ? "destructive"
+                                  : "secondary"
+                              : s.score >= 4
+                                ? "default"
+                                : s.score >= 3
+                                  ? "secondary"
+                                  : "destructive"
+                          }
+                        >
+                          {s.score}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="max-w-md truncate text-sm">
+                      {s.comment ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {s.responded_at ? formatDateTime(s.responded_at) : "—"}
+                    </TableCell>
+                    <TableCell className="flex gap-1 justify-end">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditing(s)}
+                        title="Editar resposta"
                       >
-                        {s.score}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="max-w-md truncate text-sm">{s.comment ?? "—"}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {s.responded_at ? formatDateTime(s.responded_at) : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => copyLink(s.token)}
-                      title="Copiar link público"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => copyLink(s.token)}
+                        title="Copiar link público"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      <NewSurveyDialog
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        onCreated={() => qc.invalidateQueries({ queryKey: ["surveys"] })}
+      />
+      <EditResponseDialog
+        open={!!editing}
+        onOpenChange={(v) => !v && setEditing(null)}
+        survey={editing}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["surveys"] })}
+      />
     </div>
   );
 }
+
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

@@ -1,44 +1,71 @@
-## Problema
-
-No sidebar do TechSales (CRM), o item **Captar › Formulários** aponta para `/settings/forms`. Como `/settings/*` está na lista `WORKSPACE_ROUTE_PREFIXES` (module-switcher) e é reconhecido pelo `AppSidebar` como contexto de workspace, ao clicar o layout troca para o shell do TechERP focado em **Configurações**, saindo do TechSales.
-
-O mesmo padrão afeta o item vizinho **Pesquisas** (`/settings/surveys`).
-
 ## Objetivo
+Permitir criar/editar em `/surveys` (mesma tela usada em `/settings/surveys`): modelos de pesquisa (templates), envio avulso e edição de respostas existentes. Sem alterar a geração automática atual disparada por ticket resolvido/fechado.
 
-Manter o usuário dentro do TechSales ao acessar Formulários/Pesquisas a partir do menu do CRM, sem alterar a experiência do módulo ATS nem mover funcionalidade/regra de negócio.
+## Escopo
+- Somente a página de Pesquisas (CRM e Configurações — é a mesma via alias).
+- Sem mexer em RLS de outras tabelas, sem tocar em `bug_reports`, ATS, branding ou menus.
 
-## Abordagem (apenas UI/roteamento)
+## 1. Modelos de pesquisa (templates)
 
-Criar aliases de rota no contexto CRM que renderizam o mesmo componente já existente em `settings.forms.tsx` e `settings.surveys.tsx`, e apontar o menu do CRM para esses aliases. As rotas em `/settings/*` continuam existindo (para quem acessa via Configurações do workspace).
+### Banco (migration)
+Nova tabela `public.survey_templates`:
+- `id uuid pk`, `workspace_id uuid not null`, `owner_id uuid not null`
+- `name text not null`
+- `kind text not null check (kind in ('csat','nps'))`
+- `question text not null` (texto principal exibido ao respondente)
+- `invite_subject text`, `invite_body text` (usados no convite por email/WhatsApp)
+- `channel text not null default 'email' check (channel in ('email','whatsapp','both'))`
+- `trigger_event text not null default 'ticket_resolved' check (trigger_event in ('ticket_resolved','ticket_closed','manual'))`
+- `delay_minutes int not null default 0`
+- `is_active boolean not null default true`
+- `is_default boolean not null default false`
+- `created_at`, `updated_at` (+ trigger de updated_at)
 
-### Mudanças
+GRANTs para `authenticated` e `service_role`. RLS: `SELECT/INSERT/UPDATE/DELETE` restritos a `workspace_id = current setting do usuário` seguindo o mesmo padrão já usado em `survey_responses` (replicar policies existentes: reuso do helper `is_workspace_member`/equivalente já presente no projeto).
 
-1. `src/routes/_authenticated/forms.tsx` (novo)
-   - `createFileRoute("/_authenticated/forms")`
-   - Reexporta o componente atualmente montado em `settings.forms.tsx` (extraímos o componente para um arquivo compartilhado `src/components/forms/forms-page.tsx`, ou simplesmente importamos o componente exportado).
+Observação: nenhum código atual lê `survey_templates` — a inserção automática de `survey_responses` no resolve/close continua como está. Wiring dos templates à geração automática fica registrado como pendência (fora deste escopo).
 
-2. `src/routes/_authenticated/surveys.tsx` (novo)
-   - Mesma abordagem para `settings.surveys.tsx`.
+### UI
+Nova aba "Modelos" na página de Pesquisas, ao lado das abas CSAT/NPS existentes. Usa o componente já existente `CrudSettings` (`src/components/crud-settings.tsx`) parametrizado para `survey_templates`, com campos: name, kind (select), question, invite_subject, invite_body, channel, trigger_event, delay_minutes, is_active, is_default.
 
-3. `src/lib/menu-config.ts`
-   - `Formulários`: `/settings/forms` → `/forms`
-   - `Pesquisas`: `/settings/surveys` → `/surveys`
+## 2. Envio avulso
 
-4. `src/routes/_authenticated/settings.forms.tsx` e `settings.surveys.tsx`
-   - Mantidos, agora renderizando o mesmo componente compartilhado (sem duplicação de lógica). Nenhuma alteração de server function, RLS ou schema.
+Botão "Nova pesquisa" no header da página abre um `Dialog`:
+- Campos: ticket (Combobox buscando `tickets` do workspace por assunto/número), kind (csat/nps), template opcional (lista `survey_templates` do mesmo kind).
+- Ao confirmar: `supabase.from('survey_responses').insert({ ticket_id, kind, owner_id, workspace_id })` — `token`, `sent_at`, `created_at` vêm do default. Toast com link público copiável.
+- Reaproveita padrão já usado (`copyLink`) para mostrar/copiar `/survey/{token}`.
 
-### Por que não apenas remover `/settings` de `WORKSPACE_ROUTE_PREFIXES`
+Sem server function nova: `survey_responses` já tem RLS/GRANT ativos e o insert respeita `owner_id = auth.uid()`.
 
-Isso quebraria a intenção de trocar o sidebar quando o usuário realmente navega para Configurações do workspace (ex.: via header). O gatilho correto do sidebar é o path — então a correção é usar um path CRM-scoped no menu do CRM.
+## 3. Editar respostas existentes
 
-## Fora do escopo
+Cada linha da tabela ganha botão "Editar" (ícone `Pencil`) que abre `Dialog` com:
+- Score (input numérico com range conforme kind: 0–10 NPS, 0–5 CSAT).
+- Comentário (Textarea).
+- `responded_at` fica somente-leitura; se estiver nulo e o admin salvar um score, gravamos `responded_at = now()`.
 
-- Nenhuma mudança em `forms.functions.ts`, RLS, permissões, migrations.
-- Nenhuma mudança na sidebar de Configurações — Formulários/Pesquisas continuam lá.
-- Nenhuma mudança no ATS.
+Update via `supabase.from('survey_responses').update({...}).eq('id', id)`. Restrição de admin fica a cargo da RLS existente (não alteramos policies aqui).
 
-## Validação
+## 4. Arquivos
 
-- `bunx tsgo --noEmit`
-- Manual: em TechSales, clicar Captar › Formulários deve manter sidebar TechSales, breadcrumb `Início › Formulários`. Em Configurações › Formulários (via header), sidebar de Configurações permanece.
+Criar:
+- `supabase/migrations/<timestamp>_survey_templates.sql` (via ferramenta de migration).
+- `src/components/surveys/new-survey-dialog.tsx`
+- `src/components/surveys/edit-response-dialog.tsx`
+- `src/components/surveys/survey-templates-tab.tsx` (wrapper fino sobre `CrudSettings`).
+
+Editar:
+- `src/routes/_authenticated/settings.surveys.tsx`: adicionar aba "Modelos", botão "Nova pesquisa" no header do Card, coluna de ações com "Editar" abrindo o dialog. Nenhuma mudança no cálculo de stats/agentes.
+
+Não mexer:
+- `src/routes/_authenticated/surveys.tsx` (alias — herda automaticamente).
+- `src/lib/surveys.functions.ts` (fluxo público de resposta permanece intacto).
+- `src/routes/survey.$token.tsx`, geração automática de pesquisas, menus, sidebar.
+
+## 5. Validação
+- `bunx tsgo --noEmit`.
+- Manual: criar/editar/excluir template; disparar pesquisa avulsa e copiar link; abrir link público e responder; editar score de resposta existente; conferir stats CSAT/NPS e "Por responsável" continuam corretos.
+
+## 6. Pendências registradas (não implementadas)
+- Wiring dos `survey_templates` no gatilho automático de `ticket_resolved/closed` (hoje o insert automático usa defaults, não lê templates).
+- Envio real por email/WhatsApp do convite gerado no fluxo avulso (hoje entregamos link copiável — mesmo comportamento das pesquisas já existentes).
