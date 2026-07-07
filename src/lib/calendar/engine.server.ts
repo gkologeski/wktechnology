@@ -177,7 +177,7 @@ async function driveSearch(
  */
 async function findDriveRecording(
   token: string,
-  ev: { title: string | null; end_at: string | null; start_at?: string | null },
+  ev: { title: string | null; end_at: string | null; start_at?: string | null; conference_id?: string | null },
 ): Promise<
   | { ok: true; file_id: string; url: string; mime_type: string; matched_by: string }
   | { ok: false; reason: string }
@@ -186,15 +186,26 @@ async function findDriveRecording(
   const endMs = new Date(ev.end_at).getTime();
   if (!Number.isFinite(endMs)) return { ok: false, reason: "horário de término inválido" };
   const after = new Date(endMs - 1 * 3600_000).toISOString();
-  const before = new Date(endMs + 7 * 86400_000).toISOString();
+  // Meet publica a gravação em minutos/horas. Reduzir a janela de +7d para
+  // +6h evita casar com gravação de outra reunião com título parecido.
+  const before = new Date(endMs + 6 * 3600_000).toISOString();
   const baseTime = `createdTime > '${after}' and createdTime < '${before}' and trashed = false`;
   const videoMime = "(mimeType='video/mp4' or mimeType contains 'video/')";
 
   const rawTitle = (ev.title ?? "").trim();
   const titleFragment = rawTitle.slice(0, 40).replace(/'/g, "\\'");
+  const conferenceId = (ev.conference_id ?? "").trim().toLowerCase();
+  const meetCodeRe = /[a-z]{3}-[a-z]{4}-[a-z]{3}/g;
 
   type DriveFile = { id: string; name: string; mimeType: string; webViewLink?: string; createdTime?: string };
   const strategies: { label: string; q: string }[] = [];
+  if (conferenceId) {
+    // Meet nomeia o arquivo começando pelo código do Meet (ex.: "eim-xejq-etq (2026-07-06 ...).mp4").
+    strategies.push({
+      label: "meet code",
+      q: `name contains '${conferenceId.replace(/'/g, "\\'")}' and ${videoMime} and ${baseTime}`,
+    });
+  }
   if (titleFragment) {
     strategies.push({
       label: "título",
@@ -211,7 +222,6 @@ async function findDriveRecording(
     const r = await driveSearch(token, s.q);
     if (r.error) {
       errors.push(`${s.label}: ${r.error}`);
-      // 403/401 → escopo do Drive ausente, não adianta tentar próximas
       if (/^drive 40[13]/.test(r.error)) break;
       continue;
     }
@@ -220,6 +230,21 @@ async function findDriveRecording(
       matchedBy = s.label;
       break;
     }
+  }
+
+  // Se sabemos o código do Meet, descartar candidatos cujo nome contenha um
+  // código de Meet diferente — evita bater com gravação de outra reunião.
+  if (conferenceId && candidates.length > 0) {
+    const filtered = candidates.filter((f) => {
+      const name = (f.name ?? "").toLowerCase();
+      const codes = name.match(meetCodeRe);
+      if (!codes || codes.length === 0) return true; // nome sem código: aceitar
+      return codes.includes(conferenceId);
+    });
+    if (filtered.length === 0) {
+      return { ok: false, reason: `nenhuma gravação com o código do Meet '${conferenceId}' na janela de busca` };
+    }
+    candidates = filtered;
   }
 
   if (candidates.length === 0) {
@@ -242,6 +267,7 @@ async function findDriveRecording(
     matched_by: matchedBy,
   };
 }
+
 
 // Skip auto-retry after this many attempts (~1h of every-5-min cron). User
 // can still force a lookup from the timeline button.
