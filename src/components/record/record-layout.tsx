@@ -24,7 +24,7 @@ export function RecordLayout({
   return (
     <div className="-m-4 md:-m-6 p-6 md:p-8 bg-muted/30 min-h-full space-y-6">
       {header}
-      <div className="grid gap-6 grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
+      <div className="grid gap-6 grid-cols-1 xl:grid-cols-[260px_minmax(0,1fr)_300px] 2xl:grid-cols-[280px_minmax(0,1fr)_320px]">
         <aside className="space-y-4 min-w-0">{left}</aside>
         <div className="space-y-6 min-w-0">{center}</div>
         <aside className="space-y-4 min-w-0">{right}</aside>
