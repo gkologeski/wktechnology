@@ -1,48 +1,43 @@
 ## Problema
 
-Hoje `calendar_events.calendar_account_id` tem FK `ON DELETE CASCADE`, então quando o usuário desconecta o calendário em `/settings/calendars` (ou se um dia limparmos contas órfãs de usuários excluídos), todos os eventos sincronizados — incluindo `recording_url`, `transcript`, `summary_text`, `hangout_link` e o vínculo com `activities`/`bookings` — são apagados. O histórico de reuniões some da timeline de contatos, deals, leads e tickets.
+No deal `/deals/54c49367…` (e em qualquer deal/company), reuniões e gravações do Google Calendar não aparecem no timeline mesmo com contatos corretamente relacionados.
 
-Objetivo: manter os eventos (e as gravações/resumos já materializados no CRM) mesmo depois que a conta de calendário for excluída ou o usuário deixar de existir.
+Causa: a RPC `public.get_entity_timeline` só espelha `calendar_events` no timeline de `deal`/`lead`/`ticket`/`company` via `calendar_events.related_activity_id → activities.related_<kind>_id`. Para `contact`, usa `ce.related_contact_id` direto — mas essa mesma ligação não é propagada para deal (via contatos do deal) nem para company (via contatos da empresa). O evento do Samuel existe, tem gravação, `related_contact_id` aponta pra ele, e ele é `primary_contact_id` do deal — mas o timeline do deal não o mostra.
 
-## Alteração
+## Resposta à dúvida sobre attendees
 
-### Migration — soltar cascade e permitir evento sem conta
+O plano NÃO adiciona match por lista bruta de attendees. Ele reusa a coluna `calendar_events.related_contact_id`, que já é resolvida no ingest pelo `matchContactForAttendees` em `src/lib/calendar/engine.server.ts` filtrando:
 
-1. `ALTER TABLE public.calendar_events ALTER COLUMN calendar_account_id DROP NOT NULL;`
-2. Recriar a FK: `DROP CONSTRAINT calendar_events_calendar_account_id_fkey` → `ADD ... FOREIGN KEY (calendar_account_id) REFERENCES public.calendar_accounts(id) ON DELETE SET NULL`.
-3. Nenhuma mudança em `owner_id` (continua `NOT NULL`, sem FK para `auth.users` — a exclusão de usuário no Auth já não apagava eventos, então basta garantir que a UI não filtra por owner vivo).
-4. Nenhuma mudança na unique `(calendar_account_id, provider_event_id)` — Postgres já trata `NULL` como distinto, então múltiplos eventos podem ficar com `calendar_account_id = NULL` sem colisão.
-5. Nenhuma mudança em RLS/GRANTs — as policies existentes já filtram por `workspace_id` e continuam válidas quando `calendar_account_id` é `NULL`.
+- domínio do dono da conta (ex.: `@wktechnology.com.br`);
+- todo attendee marcado `self`/`organizer` (colegas internos, independentemente do domínio);
+- priorizando contatos com domínio corporativo sobre free-email.
 
-### `src/lib/calendar.functions.ts` — desconexão preserva histórico e limpa a conta
+Cada evento tem no máximo 1 "cliente externo" apontado nessa FK. Casar por ela é equivalente a "filtrar por e-mail do cliente, excluindo funcionários" — e sem replicar essa lógica em SQL.
 
-Em `disconnectCalendarAccount`, antes de deletar a linha de `calendar_accounts`:
+## Correção
 
-- Fazer `UPDATE calendar_events SET calendar_account_id = NULL, sync_token = NULL WHERE calendar_account_id = data.id AND workspace_id = ws` — redundante graças ao `SET NULL` da FK, mas explícito e à prova de futuras mudanças; e já deixa claro na leitura do server function que estamos preservando o histórico.
-- Manter o `DELETE FROM calendar_accounts` como está (agora seguro, sem cascade destrutivo).
+Migration única que substitui `public.get_entity_timeline` mantendo assinatura, colunas, ordenação e limite atuais, adicionando um `UNION ALL` para `calendar_events` quando `p_entity_kind IN ('deal','company')`:
 
-Nenhuma outra função (`syncCalendarNow`, `syncAccountRecordings`, `syncCalendarAccount`) precisa mudar; todas só operam quando a conta existe.
+- `deal`: inclui eventos onde `ce.related_contact_id = ANY(v_contact_ids)` (contatos resolvidos de `deals.primary_contact_id` + `deal_contacts`).
+- `company`: inclui eventos onde `ce.related_contact_id = ANY(v_contact_ids)` (contatos da company já resolvidos hoje pela RPC).
+- `lead`/`ticket`: sem mudança (a RPC não resolve contatos para esses tipos hoje).
+- Deduplicação: `WHERE NOT EXISTS (SELECT 1 FROM activities a WHERE a.id = ce.related_activity_id AND a.related_<kind>_id = p_entity_id)` para não repetir eventos que já entram pelo caminho via activity.
+- Preserva `workspace_id = v_workspace_id`, filtros `p_since`/`p_until` em `start_at` e `p_limit`.
+- Novo bloco marca `direct_link = false` e `mirrored_from_kind = 'contact'`, deixando claro que o evento chegou ao deal/company via contato relacionado.
 
-### `src/lib/calendar/engine.server.ts` — sem mudança de comportamento
-
-- Inserts de novos eventos continuam com `calendar_account_id` preenchido; a coluna só fica `NULL` para eventos legados de contas desconectadas.
-- A busca de gravações (`fetchRecordingForEvent`, linha ~736) já usa `.eq("id", ev.calendar_account_id as string)`; passa a retornar "conta não encontrada" para eventos órfãos, que já não vão ser sincronizados novamente — comportamento correto.
-
-### `src/components/activity-timeline.tsx` — nenhuma alteração
-
-O mirror de calendar_events no timeline usa apenas `workspace_id`, `related_contact_id` e `related_activity_id`; funciona igual com `calendar_account_id = NULL`. Botões "Ver gravação" e "Resumir reunião" seguem lendo `recording_url`/`summary_text` diretamente da linha do evento.
-
-### Exclusão de usuário
-
-Não há FK de tabelas `public.*` para `auth.users`, então excluir um usuário via Auth Admin nunca apagou `calendar_events`. Este plano não muda o fluxo de exclusão de usuário — apenas garante que, se alguém decidir apagar a conta de calendário órfã, o histórico continue no CRM.
+Nada é alterado em:
+- `calendar_events` (schema, RLS, FKs, ingest, `matchContactForAttendees`).
+- `activity-timeline.tsx` — já lê `calendar_event` da RPC e enriquece título, `recording_url`, `hangout_link`.
+- Regras de negócio, autenticação, permissões, ou o domínio interno hardcoded (continua vindo do ingest, não da RPC).
 
 ## Validação
 
-- Migration aplicada com sucesso.
-- `bunx tsgo --noEmit`.
-- Manual em `/settings/calendars`: desconectar uma conta e confirmar em `/deals/…`, `/contacts/…` e `/leads/…` que reuniões passadas + botão "Ver gravação" continuam visíveis; reconectar a mesma conta Google e verificar que novos eventos entram normalmente (os antigos permanecem órfãos e imutáveis, não são "readotados").
+- `bunx tsgo --noEmit` (sanity).
+- `SELECT id, source, subject FROM get_entity_timeline('deal','54c49367-9744-4254-9687-b7fc4b476a7e', null, null, 300) WHERE source = 'calendar_event';` — deve retornar as 2 reuniões do Samuel.
+- Abrir o deal na UI e confirmar as reuniões e o link de gravação da reunião de 06/07.
 
-## Riscos
+## Fora do escopo
 
-- Eventos órfãos (sem conta) não recebem mais sync incremental nem re-fetch de gravação; ficam congelados como snapshot. Aceitável — é isso que "preservar histórico" significa.
-- Reconectar a mesma conta Google gera novos eventos com o mesmo `provider_event_id` mas `calendar_account_id` diferente; a unique `(calendar_account_id, provider_event_id)` permite (chave composta), então podem coexistir duas linhas para o mesmo evento do Google — uma órfã (histórica) e uma nova (viva). Este é o trade-off necessário para preservar o histórico; documentar no relatório final.
+- Não altero UI, ingest do calendar, sincronização, gravação/resumo, RLS ou permissões.
+- Não introduzo filtro por domínio na RPC — a exclusão de funcionários continua no ingest.
+- Não removo nem renomeio funções existentes.
