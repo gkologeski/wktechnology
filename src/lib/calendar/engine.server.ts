@@ -299,7 +299,7 @@ export async function syncPastRecordings(
   for (const ev of events ?? []) {
     const attempts = ((ev as { recording_attempts?: number }).recording_attempts ?? 0) + 1;
     try {
-      const rec = await findDriveRecording(token, { title: ev.title, end_at: ev.end_at });
+      const rec = await findDriveRecording(token, { title: ev.title, end_at: ev.end_at, conference_id: ev.conference_id as string | null });
       if (rec.ok) {
         const { error: upErr } = await supabaseAdmin
           .from("calendar_events")
