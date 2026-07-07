@@ -786,7 +786,9 @@ export async function syncRecordingForEvent(eventId: string): Promise<
   const rec = await findDriveRecording(token, {
     title: ev.title as string | null,
     end_at: ev.end_at as string | null,
+    conference_id: ev.conference_id as string | null,
   });
+
   if (rec.ok) {
     await supabaseAdmin
       .from("calendar_events")
