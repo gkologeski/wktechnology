@@ -17,6 +17,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+type DiscountType = "pct" | "amount";
+
 type LineItem = {
   id: string;
   owner_id: string;
@@ -27,6 +29,8 @@ type LineItem = {
   quantity: number;
   unit_price: number;
   discount_pct: number;
+  discount_amount: number;
+  discount_type: DiscountType;
   tax_rate: number;
   position: number;
 };
@@ -35,13 +39,34 @@ function n(v: unknown) {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
 }
+function lineDiscount(li: {
+  quantity?: number | null;
+  unit_price?: number | null;
+  discount_pct?: number | null;
+  discount_amount?: number | null;
+  discount_type?: DiscountType | string | null;
+}) {
+  const qty = n(li.quantity);
+  const price = n(li.unit_price);
+  const gross = qty * price;
+  if ((li.discount_type ?? "pct") === "amount") {
+    const raw = n(li.discount_amount) * qty;
+    return Math.min(Math.max(raw, 0), gross);
+  }
+  return gross * (n(li.discount_pct) / 100);
+}
+function lineSubtotalAfterDiscount(li: Parameters<typeof lineDiscount>[0]) {
+  return n(li.quantity) * n(li.unit_price) - lineDiscount(li);
+}
 function lineTotal(li: {
   quantity?: number | null;
   unit_price?: number | null;
   discount_pct?: number | null;
+  discount_amount?: number | null;
+  discount_type?: DiscountType | string | null;
   tax_rate?: number | null;
 }) {
-  const sub = n(li.quantity) * n(li.unit_price) * (1 - n(li.discount_pct) / 100);
+  const sub = lineSubtotalAfterDiscount(li);
   return sub * (1 + n(li.tax_rate) / 100);
 }
 
