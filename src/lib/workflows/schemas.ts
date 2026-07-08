@@ -23,6 +23,14 @@ export const FilterSchema = z.object({
 
 export const EventEnum = z.enum(["created", "updated", "stage_changed"]);
 
+export const TimeTriggerConfigSchema = z.object({
+  kind: z.enum(["time_since_field", "no_activity_for", "stuck_in_stage_for", "field_unchanged_for"]),
+  field: z.string().max(100).optional(),
+  amount: z.number().int().min(1).max(100_000),
+  unit: z.enum(["minutes", "hours", "days"]),
+  filters: z.array(FilterSchema).max(20).optional(),
+});
+
 export const TriggerSchema = z.object({
   event: EventEnum,
   filters: z.array(FilterSchema).max(20).default([]),
@@ -33,6 +41,7 @@ export const TriggerSchema = z.object({
     })
     .optional(),
   goal_filters: z.array(FilterSchema).max(20).optional(),
+  time_based: TimeTriggerConfigSchema.optional(),
 });
 
 type ActionInput = Record<string, unknown>;
@@ -207,6 +216,13 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     webhook_url: z.string().url().max(500),
     title: z.string().max(200).optional(),
     text: z.string().min(1).max(4000),
+  }),
+  z.object({
+    type: z.literal("approval_step"),
+    title: z.string().min(1).max(200),
+    note: z.string().max(2000).optional(),
+    approver_user_id: z.string().uuid().optional(),
+    halt_on_reject: z.boolean().optional(),
   }),
 ]);
 

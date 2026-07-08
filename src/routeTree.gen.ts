@@ -219,6 +219,7 @@ import { Route as ApiPublicHuntingRenderTemplateRouteImport } from './routes/api
 import { Route as ApiPublicHuntingLogOutreachRouteImport } from './routes/api/public/hunting/log-outreach'
 import { Route as ApiPublicHuntingCaptureRouteImport } from './routes/api/public/hunting/capture'
 import { Route as ApiPublicHuntingBulkCaptureRouteImport } from './routes/api/public/hunting/bulk-capture'
+import { Route as ApiPublicHooksWorkflowsTimeTriggersTickRouteImport } from './routes/api/public/hooks/workflows-time-triggers-tick'
 import { Route as ApiPublicHooksWorkflowsTickRouteImport } from './routes/api/public/hooks/workflows-tick'
 import { Route as ApiPublicHooksWhatsappCampaignTickRouteImport } from './routes/api/public/hooks/whatsapp-campaign-tick'
 import { Route as ApiPublicHooksWebhookTickRouteImport } from './routes/api/public/hooks/webhook-tick'
@@ -1468,6 +1469,12 @@ const ApiPublicHuntingBulkCaptureRoute =
     path: '/api/public/hunting/bulk-capture',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksWorkflowsTimeTriggersTickRoute =
+  ApiPublicHooksWorkflowsTimeTriggersTickRouteImport.update({
+    id: '/api/public/hooks/workflows-time-triggers-tick',
+    path: '/api/public/hooks/workflows-time-triggers-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksWorkflowsTickRoute =
   ApiPublicHooksWorkflowsTickRouteImport.update({
     id: '/api/public/hooks/workflows-tick',
@@ -2112,6 +2119,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/hooks/workflows-time-triggers-tick': typeof ApiPublicHooksWorkflowsTimeTriggersTickRoute
   '/api/public/hunting/bulk-capture': typeof ApiPublicHuntingBulkCaptureRoute
   '/api/public/hunting/capture': typeof ApiPublicHuntingCaptureRoute
   '/api/public/hunting/log-outreach': typeof ApiPublicHuntingLogOutreachRoute
@@ -2388,6 +2396,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/hooks/workflows-time-triggers-tick': typeof ApiPublicHooksWorkflowsTimeTriggersTickRoute
   '/api/public/hunting/bulk-capture': typeof ApiPublicHuntingBulkCaptureRoute
   '/api/public/hunting/capture': typeof ApiPublicHuntingCaptureRoute
   '/api/public/hunting/log-outreach': typeof ApiPublicHuntingLogOutreachRoute
@@ -2671,6 +2680,7 @@ export interface FileRoutesById {
   '/api/public/hooks/webhook-tick': typeof ApiPublicHooksWebhookTickRoute
   '/api/public/hooks/whatsapp-campaign-tick': typeof ApiPublicHooksWhatsappCampaignTickRoute
   '/api/public/hooks/workflows-tick': typeof ApiPublicHooksWorkflowsTickRoute
+  '/api/public/hooks/workflows-time-triggers-tick': typeof ApiPublicHooksWorkflowsTimeTriggersTickRoute
   '/api/public/hunting/bulk-capture': typeof ApiPublicHuntingBulkCaptureRoute
   '/api/public/hunting/capture': typeof ApiPublicHuntingCaptureRoute
   '/api/public/hunting/log-outreach': typeof ApiPublicHuntingLogOutreachRoute
@@ -2954,6 +2964,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/hooks/workflows-time-triggers-tick'
     | '/api/public/hunting/bulk-capture'
     | '/api/public/hunting/capture'
     | '/api/public/hunting/log-outreach'
@@ -3230,6 +3241,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/hooks/workflows-time-triggers-tick'
     | '/api/public/hunting/bulk-capture'
     | '/api/public/hunting/capture'
     | '/api/public/hunting/log-outreach'
@@ -3512,6 +3524,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/webhook-tick'
     | '/api/public/hooks/whatsapp-campaign-tick'
     | '/api/public/hooks/workflows-tick'
+    | '/api/public/hooks/workflows-time-triggers-tick'
     | '/api/public/hunting/bulk-capture'
     | '/api/public/hunting/capture'
     | '/api/public/hunting/log-outreach'
@@ -3628,6 +3641,7 @@ export interface RootRouteChildren {
   ApiPublicHooksWebhookTickRoute: typeof ApiPublicHooksWebhookTickRoute
   ApiPublicHooksWhatsappCampaignTickRoute: typeof ApiPublicHooksWhatsappCampaignTickRoute
   ApiPublicHooksWorkflowsTickRoute: typeof ApiPublicHooksWorkflowsTickRoute
+  ApiPublicHooksWorkflowsTimeTriggersTickRoute: typeof ApiPublicHooksWorkflowsTimeTriggersTickRoute
   ApiPublicHuntingBulkCaptureRoute: typeof ApiPublicHuntingBulkCaptureRoute
   ApiPublicHuntingCaptureRoute: typeof ApiPublicHuntingCaptureRoute
   ApiPublicHuntingLogOutreachRoute: typeof ApiPublicHuntingLogOutreachRoute
@@ -5135,6 +5149,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHuntingBulkCaptureRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/workflows-time-triggers-tick': {
+      id: '/api/public/hooks/workflows-time-triggers-tick'
+      path: '/api/public/hooks/workflows-time-triggers-tick'
+      fullPath: '/api/public/hooks/workflows-time-triggers-tick'
+      preLoaderRoute: typeof ApiPublicHooksWorkflowsTimeTriggersTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/workflows-tick': {
       id: '/api/public/hooks/workflows-tick'
       path: '/api/public/hooks/workflows-tick'
@@ -6337,6 +6358,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksWhatsappCampaignTickRoute:
     ApiPublicHooksWhatsappCampaignTickRoute,
   ApiPublicHooksWorkflowsTickRoute: ApiPublicHooksWorkflowsTickRoute,
+  ApiPublicHooksWorkflowsTimeTriggersTickRoute:
+    ApiPublicHooksWorkflowsTimeTriggersTickRoute,
   ApiPublicHuntingBulkCaptureRoute: ApiPublicHuntingBulkCaptureRoute,
   ApiPublicHuntingCaptureRoute: ApiPublicHuntingCaptureRoute,
   ApiPublicHuntingLogOutreachRoute: ApiPublicHuntingLogOutreachRoute,

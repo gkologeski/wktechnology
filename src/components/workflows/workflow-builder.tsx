@@ -158,6 +158,7 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   format_data: Wand2,
   send_slack: Hash,
   send_teams: MessageSquare,
+  approval_step: CheckSquare,
 };
 
 
@@ -227,6 +228,8 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, text: "Notificação de workflow: {{name}}" };
     case "send_teams":
       return { type, webhook_url: "https://outlook.office.com/webhook/...", text: "Notificação de workflow: {{name}}" };
+    case "approval_step":
+      return { type, title: "Aprovar {{name}}", note: "", halt_on_reject: true };
   }
 }
 
@@ -987,6 +990,109 @@ function TriggerConfigPanel({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      <div className="rounded-md border p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-xs">Gatilho baseado em tempo</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Dispara periodicamente para registros que atendem à condição temporal.
+            </p>
+          </div>
+          <Switch
+            checked={!!trigger.time_based}
+            onCheckedChange={(v) =>
+              onChange((t) => ({
+                ...t,
+                time_based: v
+                  ? { kind: "time_since_field", field: "created_at", amount: 1, unit: "days" }
+                  : undefined,
+              }))
+            }
+          />
+        </div>
+        {trigger.time_based && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2">
+              <Label className="text-xs">Tipo</Label>
+              <Select
+                value={trigger.time_based.kind}
+                onValueChange={(v) =>
+                  onChange((t) => ({
+                    ...t,
+                    time_based: { ...(t.time_based ?? { amount: 1, unit: "days" }), kind: v as never },
+                  }))
+                }
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="time_since_field">Tempo desde campo (data)</SelectItem>
+                  <SelectItem value="no_activity_for">Sem atividade há…</SelectItem>
+                  <SelectItem value="stuck_in_stage_for">Parado na etapa há…</SelectItem>
+                  <SelectItem value="field_unchanged_for">Campo inalterado há…</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(trigger.time_based.kind === "time_since_field" ||
+              trigger.time_based.kind === "field_unchanged_for") && (
+              <div className="col-span-2">
+                <Label className="text-xs">Campo (data)</Label>
+                <Input
+                  value={trigger.time_based.field ?? ""}
+                  onChange={(e) =>
+                    onChange((t) => ({
+                      ...t,
+                      time_based: { ...(t.time_based ?? { kind: "time_since_field", amount: 1, unit: "days" }), field: e.target.value },
+                    }))
+                  }
+                  placeholder="created_at"
+                />
+              </div>
+            )}
+            <div>
+              <Label className="text-xs">Quantidade</Label>
+              <Input
+                type="number"
+                min={1}
+                value={trigger.time_based.amount}
+                onChange={(e) =>
+                  onChange((t) => ({
+                    ...t,
+                    time_based: { ...(t.time_based ?? { kind: "time_since_field", unit: "days" }), amount: Math.max(1, parseInt(e.target.value) || 1) },
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Unidade</Label>
+              <Select
+                value={trigger.time_based.unit}
+                onValueChange={(v) =>
+                  onChange((t) => ({
+                    ...t,
+                    time_based: { ...(t.time_based ?? { kind: "time_since_field", amount: 1 }), unit: v as "minutes" | "hours" | "days" },
+                  }))
+                }
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="minutes">minutos</SelectItem>
+                  <SelectItem value="hours">horas</SelectItem>
+                  <SelectItem value="days">dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="col-span-2 text-[11px] text-muted-foreground">
+              Varredura executa a cada 15 min. Cada registro dispara no máximo uma vez até
+              o campo de referência mudar.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -2030,6 +2136,8 @@ function StepConfigForm({
       return <SendSlackForm action={action} onChange={onChange} />;
     case "send_teams":
       return <SendTeamsForm action={action} onChange={onChange} />;
+    case "approval_step":
+      return <ApprovalStepForm action={action} onChange={onChange} />;
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
@@ -2930,6 +3038,57 @@ function SendTeamsForm({
           placeholder="Aceita tokens {{campo}} e {{vars.NOME}}"
         />
       </div>
+    </div>
+  );
+}
+
+function ApprovalStepForm({
+  action,
+  onChange,
+}: {
+  action: Extract<WorkflowAction, { type: "approval_step" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <Label>Título da aprovação</Label>
+        <Input
+          value={action.title}
+          onChange={(e) => onChange({ ...action, title: e.target.value })}
+          placeholder="Aprovar desconto de {{name}}"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label>Contexto para o aprovador (opcional)</Label>
+        <Textarea
+          value={action.note ?? ""}
+          onChange={(e) => onChange({ ...action, note: e.target.value })}
+          rows={3}
+          placeholder="Detalhes que o aprovador precisa ver."
+        />
+      </div>
+      <div className="space-y-1">
+        <Label>Aprovador (deixe vazio para o dono do workflow)</Label>
+        <UserPicker
+          value={action.approver_user_id ?? ""}
+          onChange={(v) => onChange({ ...action, approver_user_id: v || undefined })}
+        />
+      </div>
+      <div className="flex items-center gap-2 pt-1">
+        <Switch
+          checked={action.halt_on_reject ?? true}
+          onCheckedChange={(v) => onChange({ ...action, halt_on_reject: v })}
+          id="halt_on_reject"
+        />
+        <Label htmlFor="halt_on_reject" className="text-xs">
+          Interromper workflow em caso de rejeição
+        </Label>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        O workflow pausa aqui. O aprovador recebe uma notificação e decide em
+        Configurações → Workflows → Aprovações pendentes.
+      </p>
     </div>
   );
 }
