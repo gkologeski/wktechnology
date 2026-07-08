@@ -286,14 +286,11 @@ function LineItemsEditorBody({
 
 
   const subtotal = items.reduce((s, li) => s + n(li.quantity) * n(li.unit_price), 0);
-  const discount = items.reduce(
-    (s, li) => s + n(li.quantity) * n(li.unit_price) * (n(li.discount_pct) / 100),
+  const discount = items.reduce((s, li) => s + lineDiscount(li), 0);
+  const tax = items.reduce(
+    (s, li) => s + lineSubtotalAfterDiscount(li) * (n(li.tax_rate) / 100),
     0,
   );
-  const tax = items.reduce((s, li) => {
-    const base = n(li.quantity) * n(li.unit_price) * (1 - n(li.discount_pct) / 100);
-    return s + base * (n(li.tax_rate) / 100);
-  }, 0);
   const total = items.reduce((s, li) => s + lineTotal(li), 0);
 
   return (
