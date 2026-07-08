@@ -438,6 +438,143 @@ async function runAction(
           detail: { target, user_id: action.user_id, column },
         };
       }
+      case "create_lead": {
+        const first = (renderTokens(action.first_name, ctx.after) as string).trim();
+        if (!first) throw new Error("first_name obrigatório");
+        const owner = action.owner_id?.trim() || ctx.ownerId;
+        const row: Record<string, unknown> = {
+          owner_id: owner,
+          status: "new",
+          first_name: first,
+          last_name: action.last_name ? (renderTokens(action.last_name, ctx.after) as string) || null : null,
+          email: action.email ? (renderTokens(action.email, ctx.after) as string) || null : null,
+          phone: action.phone ? (renderTokens(action.phone, ctx.after) as string) || null : null,
+          company_name: action.company_name ? (renderTokens(action.company_name, ctx.after) as string) || null : null,
+          source: action.source ? (renderTokens(action.source, ctx.after) as string) || null : "workflow",
+        };
+        const { data, error } = await supabase.from("leads").insert(row as never).select("id").single();
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "create_lead", detail: { id: data.id, first_name: first } };
+      }
+      case "create_contact": {
+        const first = (renderTokens(action.first_name, ctx.after) as string).trim();
+        if (!first) throw new Error("first_name obrigatório");
+        const owner = action.owner_id?.trim() || ctx.ownerId;
+        const row: Record<string, unknown> = {
+          owner_id: owner,
+          first_name: first,
+          last_name: action.last_name ? (renderTokens(action.last_name, ctx.after) as string) || null : null,
+          email: action.email ? (renderTokens(action.email, ctx.after) as string) || null : null,
+          phone: action.phone ? (renderTokens(action.phone, ctx.after) as string) || null : null,
+          job_title: action.job_title ? (renderTokens(action.job_title, ctx.after) as string) || null : null,
+          company_name: action.company_name ? (renderTokens(action.company_name, ctx.after) as string) || null : null,
+        };
+        const { data, error } = await supabase.from("contacts").insert(row as never).select("id").single();
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "create_contact", detail: { id: data.id, first_name: first } };
+      }
+      case "create_company": {
+        const name = (renderTokens(action.name, ctx.after) as string).trim();
+        if (!name) throw new Error("name obrigatório");
+        const owner = action.owner_id?.trim() || ctx.ownerId;
+        const row: Record<string, unknown> = {
+          owner_id: owner,
+          name,
+          domain: action.domain ? (renderTokens(action.domain, ctx.after) as string) || null : null,
+          industry: action.industry ? (renderTokens(action.industry, ctx.after) as string) || null : null,
+        };
+        const { data, error } = await supabase.from("companies").insert(row as never).select("id").single();
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "create_company", detail: { id: data.id, name } };
+      }
+      case "create_deal": {
+        const name = (renderTokens(action.name, ctx.after) as string).trim();
+        if (!name) throw new Error("name obrigatório");
+        const owner = action.owner_id?.trim() || ctx.ownerId;
+        let pipelineId = action.pipeline_id ?? null;
+        let stageId = action.stage_id ?? null;
+        if (!pipelineId) {
+          const { data: pipe } = await supabase
+            .from("pipelines")
+            .select("id")
+            .eq("owner_id", owner)
+            .eq("entity", "deals")
+            .order("is_default", { ascending: false })
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (pipe) pipelineId = pipe.id as string;
+        }
+        const row: Record<string, unknown> = {
+          owner_id: owner,
+          name,
+          value: typeof action.value === "number" ? action.value : null,
+          currency: action.currency ?? "BRL",
+          pipeline_id: pipelineId,
+          stage_id: stageId,
+        };
+        // Associação automática quando disparado por lead/contact/company
+        if (ctx.entity === "contacts") row.contact_id = ctx.entityId;
+        else if (ctx.entity === "companies") row.company_id = ctx.entityId;
+        const { data, error } = await supabase.from("deals").insert(row as never).select("id").single();
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "create_deal", detail: { id: data.id, name } };
+      }
+      case "create_ticket": {
+        const subject = (renderTokens(action.subject, ctx.after) as string).trim();
+        if (!subject) throw new Error("subject obrigatório");
+        let pipelineId = action.pipeline_id ?? null;
+        if (!pipelineId) {
+          const { data: pipe } = await supabase
+            .from("pipelines")
+            .select("id")
+            .eq("owner_id", ctx.ownerId)
+            .eq("entity", "tickets")
+            .order("is_default", { ascending: false })
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle();
+          if (pipe) pipelineId = pipe.id as string;
+        }
+        const row: Record<string, unknown> = {
+          owner_id: ctx.ownerId,
+          subject,
+          description: action.description
+            ? (renderTokens(action.description, ctx.after) as string) || null
+            : null,
+          priority: action.priority ?? "normal",
+          pipeline_id: pipelineId,
+          assignee_id: action.assignee_id ?? null,
+        };
+        if (ctx.entity === "contacts") row.contact_id = ctx.entityId;
+        else if (ctx.entity === "companies") row.company_id = ctx.entityId;
+        else if (ctx.entity === "deals") row.deal_id = ctx.entityId;
+        const { data, error } = await supabase.from("tickets").insert(row as never).select("id").single();
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "create_ticket", detail: { id: data.id, subject } };
+      }
+      case "create_task": {
+        const subject = (renderTokens(action.subject, ctx.after) as string).trim();
+        if (!subject) throw new Error("subject obrigatório");
+        const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
+        const due = action.due_in_days
+          ? new Date(Date.now() + action.due_in_days * 86_400_000).toISOString()
+          : null;
+        const baseRow: Record<string, unknown> = {
+          owner_id: action.assignee_id?.trim() || ctx.ownerId,
+          type: "task",
+          subject,
+          body,
+          due_date: due,
+        };
+        if (ctx.entity === "leads") baseRow.related_lead_id = ctx.entityId;
+        else if (ctx.entity === "contacts") baseRow.related_contact_id = ctx.entityId;
+        else if (ctx.entity === "companies") baseRow.related_company_id = ctx.entityId;
+        else if (ctx.entity === "deals") baseRow.related_deal_id = ctx.entityId;
+        const { error } = await supabase.from("activities").insert(baseRow as never);
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "create_task", detail: { subject } };
+      }
       default: {
         const _exhaustive: never = action;
         void _exhaustive;
