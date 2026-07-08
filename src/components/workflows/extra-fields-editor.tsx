@@ -279,9 +279,11 @@ function FkPicker({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
   const [open, setOpen] = useState(false);
   const [rawQ, setRawQ] = useState("");
   const [q, setQ] = useState("");
+  const [tokenMode, setTokenMode] = useState<boolean>(isToken);
   const labels = useReferenceLabels();
   const fetchCompanies = useServerFn(searchCompanies);
   const fetchContacts = useServerFn(searchContacts);
@@ -308,7 +310,6 @@ function FkPicker({
     },
   });
 
-  const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
   const currentLabel = !value
     ? ""
     : isToken
@@ -324,15 +325,37 @@ function FkPicker({
   const items = (searchQuery.data ?? []) as Array<{ id: string; name: string }>;
   const isLoading = searchQuery.isFetching;
 
+  if (tokenMode || isToken) {
+    return (
+      <div className="space-y-1.5">
+        <TokenInput
+          value={value}
+          onValueChange={(v) => onChange(v)}
+          placeholder="{{token}}"
+        />
+        <button
+          type="button"
+          className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+          onClick={() => {
+            setTokenMode(false);
+            if (isToken) onChange("");
+          }}
+        >
+          Selecionar da lista
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-[1fr_auto] gap-1">
+    <div className="space-y-1.5">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="outline"
             role="combobox"
-            className="h-9 justify-between text-left font-normal"
+            className="h-9 w-full justify-between text-left font-normal"
           >
             <span className={cn("truncate", !value && "text-muted-foreground")}>
               {currentLabel || "Selecionar..."}
@@ -389,12 +412,13 @@ function FkPicker({
           </Command>
         </PopoverContent>
       </Popover>
-      <TokenInput
-        value={isToken ? value : ""}
-        onValueChange={(v) => onChange(v)}
-        placeholder="{{token}}"
-        className="w-32"
-      />
+      <button
+        type="button"
+        className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+        onClick={() => setTokenMode(true)}
+      >
+        Usar token…
+      </button>
     </div>
   );
 }
