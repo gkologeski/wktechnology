@@ -1,70 +1,47 @@
-## Diagnóstico
+## Problemas observados no painel direito do Workflow Builder
 
-**1. "Contato principal" mostrando todos os dados como hash**
-Em `src/components/workflows/extra-fields-editor.tsx` (FK_KIND, l.227-238), `primary_contact_id` está mapeado como `"company"` (com comentário `// fallback lookup`). Como contatos não existem em `companies`, nada resolve — o rótulo cai em "Carregando…" ou hash. A entidade `contacts` existe (id, first_name, last_name, email) e precisa de tratamento próprio.
+Ao selecionar um passo (ex.: `create_activity`, `create_deal`), o painel direito (`aside` em `workflow-builder.tsx`, largura fixa `sm:w-96` = 384px) renderiza `ExtraFieldsEditor`. Dentro dele há quatro problemas ligados ao layout e à UX de tokens:
 
-**2. Um responsável ainda aparece como hash**
-`labelForUser` (`use-reference-labels.ts` l.179-189) enfileira o ID via `enqueue("user", id)` e `searchUsers({ ids })` busca `profiles.full_name` + fallback `auth.users.email`. Quando ambos falham (perfil ausente / lookup admin falhando silenciosamente / usuário deletado), o resultado grava `${id.slice(0,8)}…` no cache e nunca mais tenta. Precisamos garantir fallback melhor (nunca gravar hash como nome resolvido — deixar em branco para tentar de novo) e devolver `null`/marcador especial para o UI mostrar "Usuário removido".
+1. Cada linha de campo usa `grid grid-cols-[1fr_1.5fr_auto]` — em 384px de painel menos padding sobra ~340px, dos quais 1fr (~130px) fica para label e 1.5fr (~195px) para o input. Isso empurra inputs para a direita e faz FKs sumirem. Precisa empilhar (label em cima, input full width).
+2. Abaixo do `<Label>` há um `<p class="truncate">{key} · {type}</p>` mostrando o nome técnico do campo (ex.: `owner_id · uuid`). O usuário quer só o label amigável.
+3. `TokenInput` / `TokenTextarea` só oferecem inserção de token via botão discreto `{ }` que abre popover — os tokens não ficam visíveis como pills. O padrão desejado é `TokenPills` renderizado sempre abaixo do input.
+4. Em `FkPicker` (campo empresa/contato/usuário/pipeline) o combobox e um `TokenInput` de largura fixa `w-32` dividem a linha em `grid-cols-[1fr_auto]`. Dentro dos 195px da coluna, o `TokenInput` fica cortado/sobreposto ao combobox.
 
-**3. Empresa: campo de busca sobrepondo o texto do valor selecionado**
-O `PopoverContent` do `FkPicker` usa `w-[--radix-popover-trigger-width]` (largura só do botão do combobox, sem incluir o TokenInput ao lado) e sem `sideOffset` explícito. Quando o Radix escolhe `side="top"` (visto no session replay: `data-side="top"`), o `CommandInput` encosta visualmente no botão do combobox, criando a sensação de sobreposição do texto selecionado. Precisamos garantir largura mínima confortável e um `sideOffset` real.
+Fora de escopo: alterar RLS, catálogo de campos, server functions de busca (`searchCompanies`, `searchContacts`, etc.), tokens do catálogo e comportamento do builder fora do painel de detalhes.
 
----
+## Correções propostas
 
-## Alterações propostas
+### 1. Alargar e reorganizar o painel direito
+Arquivo: `src/components/workflows/workflow-builder.tsx` (linha ~636)
+- Trocar `sm:w-96 ... max-w-96` por `sm:w-[28rem] lg:w-[32rem] max-w-full` para dar respiro ao formulário sem quebrar o layout do canvas.
 
-### A) Suportar FK do tipo contato
+### 2. Empilhar linhas do `ExtraFieldsEditor` e remover subtítulo técnico
+Arquivo: `src/components/workflows/extra-fields-editor.tsx` (linhas 489–521)
+- Substituir `grid grid-cols-[1fr_1.5fr_auto]` por layout empilhado: header com Label + botão remover à direita (flex justify-between), e input em bloco full-width abaixo.
+- Remover o `<p>{key} · {type}</p>` — mostrar somente `field.label ?? key`.
+- Manter o botão `Trash2` como `ghost/icon` alinhado ao topo direito da linha.
 
-**`src/lib/workflow-refs.functions.ts`** — nova server function `searchContacts({ q?, ids? })`:
-- Autenticada (`requireSupabaseAuth`), respeita RLS.
-- Projeta `id, first_name, last_name, email`; retorna `{ id, name }` onde `name = "First Last" || email || null`.
-- Busca livre: `.or("first_name.ilike.%q%,last_name.ilike.%q%,email.ilike.%q%")` com `LIMIT=50`, ordenado por `last_name, first_name`.
-- Hidratação por `ids`: `.in("id", ids)`.
+### 3. TokenPills sempre visíveis nos campos de texto
+Arquivo: `src/components/workflows/token-input.tsx`
+- Remover o botão `{ }` (`TokenButton`) e o `pr-8`.
+- Renderizar `<TokenPills tokens={tokens} onInsert={...} label="" className="mt-1" />` logo abaixo do `<Input>` / `<Textarea>`.
+- Manter API atual (`value`, `onValueChange`, `tokens`, `pickerLabel` continua aceito porém ignorado ou usado como aria-label do bloco de pills). Inserção continua via `insertAtCursor`.
+- Efeito colateral: `CustomFieldsEditor` (usa `TokenInput` inline em grid) e `FkPicker` (usa `TokenInput` inline com `w-32`) passarão a mostrar pills embaixo. No `FkPicker` a mudança é resolvida no item 4; no `CustomFieldsEditor` as pills aparecendo abaixo do valor são desejáveis e não quebram o layout de pares.
 
-**`src/components/workflows/extra-fields-editor.tsx`**:
-- Adicionar `"contact"` ao tipo de `FkPicker` e ao `FK_KIND`:
-  - `primary_contact_id: "contact"`, `contact_id: "contact"`.
-- Estender a `useQuery` interna do FkPicker para chamar `searchContacts` quando `kind === "contact"`.
-- Estender `currentLabel` para usar `labels.labelForContact(value)`.
-
-**`src/components/workflows/use-reference-labels.ts`**:
-- Adicionar cache/enqueue para `"contact"` (mesma estrutura já usada para company/pipeline/user).
-- Adicionar `labelForContact(id)` que resolve por demanda via `searchContacts({ ids })`.
-
-### B) Endurecer o fallback de usuário
-
-**`src/lib/workflow-refs.functions.ts`** (`searchUsers`, l.163-166):
-- Trocar `name = nameById || emailById || `${id.slice(0,8)}…`` por `name = nameById || emailById || ""` (string vazia).
-- Quando `name === ""`, retornar `{ id, name: "", is_member }`.
-
-**`src/components/workflows/use-reference-labels.ts`** (`labelForUser`):
-- Quando `resolved === ""` (server respondeu sem nome), retornar rótulo **"Usuário removido"** — nunca hash. Não reenfileirar.
-- Quando `resolved` ainda não existe (não requisitado), continuar mostrando `LOADING_LABEL`.
-
-Isso deixa claro pro usuário que o ID salvo aponta pra um usuário sem perfil (deletado / fora do workspace / sem e-mail acessível), em vez de mostrar hash silenciosamente.
-
-### C) Corrigir overlap visual do combobox de Empresa (e demais FKs)
-
-**`src/components/workflows/extra-fields-editor.tsx`** (PopoverContent do FkPicker, l.338):
-- Ajustar para `className="w-[min(360px,90vw)] min-w-[--radix-popover-trigger-width] p-0"` e adicionar `sideOffset={6}`.
-- Isto garante largura mínima ≥ trigger, largura preferida de 360px, e espaçamento suficiente pro CommandInput não encostar no botão quando abrir "para cima".
-
----
-
-## Fora do escopo
-
-- Alterações em RLS de `contacts`/`companies`/`profiles`.
-- Redesign do FkPicker ou do TokenInput.
-- Mudança em `listWorkspaceMembers` (`rotation.functions.ts`) — o fallback de e-mail já existente permanece.
-- Adicionar outros tipos de FK (deals, tickets, leads) no picker — só o que aparece nos formulários hoje.
+### 4. `FkPicker` sem TokenInput lateral
+Arquivo: `src/components/workflows/extra-fields-editor.tsx` (linhas 273–400)
+- Trocar o grid `grid-cols-[1fr_auto]` por layout empilhado: combobox full-width no topo; abaixo, um botão texto discreto "Usar token…" que alterna para um `TokenInput` full-width (linha abaixo, também full-width) quando o usuário quer inserir `{{token}}`.
+- Se `value` já for um token (`isToken`), abrir automaticamente no modo TokenInput; caso contrário, modo combobox.
+- Preservar comportamento: seleção via combobox grava o `id`; token gravado sobrescreve o id.
 
 ## Validação
 
-- `bunx tsgo --noEmit`.
-- Verificação manual no workflow builder: abrir `create_activity`/`create_deal`, selecionar campo `primary_contact_id`, buscar por nome de contato, confirmar rótulo salvo; abrir "Responsável" e confirmar rótulo (nome, e-mail ou "Usuário removido"); abrir combobox de Empresa e confirmar que o CommandInput não encosta no botão selecionado.
+- `bunx tsgo --noEmit`
+- Conferência visual manual: abrir Workflows → Novo → configurar step `create_deal` e `create_activity`; validar (a) painel mais largo, (b) label sem `{key}·{type}`, (c) TokenPills visíveis abaixo dos inputs, (d) campo `company_id` sem sobreposição — combobox e alternador de token empilhados.
 
-## Arquivos afetados
+## Detalhes técnicos
 
-- Editado: `src/lib/workflow-refs.functions.ts` (nova `searchContacts` + ajuste `searchUsers`).
-- Editado: `src/components/workflows/extra-fields-editor.tsx` (kind `contact`, `sideOffset`, largura do popover).
-- Editado: `src/components/workflows/use-reference-labels.ts` (cache/enqueue `contact`, `labelForContact`, política "Usuário removido").
+- Nenhuma alteração de dados, RLS, catálogo ou server functions.
+- `TokenPills` já existe (`src/components/ui/token-pills.tsx`) e recebe `tokens` + `onInsert` — o mesmo `insertAtCursor(el, current, text, setValue)` já usado hoje.
+- Nenhuma quebra de contrato do `TokenInput`/`TokenTextarea`: props seguem iguais, apenas o layout muda.
+- Ícone `Braces` deixa de ser usado — remover import.

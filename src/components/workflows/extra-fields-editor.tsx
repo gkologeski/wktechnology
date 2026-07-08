@@ -279,9 +279,11 @@ function FkPicker({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
   const [open, setOpen] = useState(false);
   const [rawQ, setRawQ] = useState("");
   const [q, setQ] = useState("");
+  const [tokenMode, setTokenMode] = useState<boolean>(isToken);
   const labels = useReferenceLabels();
   const fetchCompanies = useServerFn(searchCompanies);
   const fetchContacts = useServerFn(searchContacts);
@@ -308,7 +310,6 @@ function FkPicker({
     },
   });
 
-  const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
   const currentLabel = !value
     ? ""
     : isToken
@@ -324,15 +325,37 @@ function FkPicker({
   const items = (searchQuery.data ?? []) as Array<{ id: string; name: string }>;
   const isLoading = searchQuery.isFetching;
 
+  if (tokenMode || isToken) {
+    return (
+      <div className="space-y-1.5">
+        <TokenInput
+          value={value}
+          onValueChange={(v) => onChange(v)}
+          placeholder="{{token}}"
+        />
+        <button
+          type="button"
+          className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+          onClick={() => {
+            setTokenMode(false);
+            if (isToken) onChange("");
+          }}
+        >
+          Selecionar da lista
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-[1fr_auto] gap-1">
+    <div className="space-y-1.5">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             type="button"
             variant="outline"
             role="combobox"
-            className="h-9 justify-between text-left font-normal"
+            className="h-9 w-full justify-between text-left font-normal"
           >
             <span className={cn("truncate", !value && "text-muted-foreground")}>
               {currentLabel || "Selecionar..."}
@@ -389,12 +412,13 @@ function FkPicker({
           </Command>
         </PopoverContent>
       </Popover>
-      <TokenInput
-        value={isToken ? value : ""}
-        onValueChange={(v) => onChange(v)}
-        placeholder="{{token}}"
-        className="w-32"
-      />
+      <button
+        type="button"
+        className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+        onClick={() => setTokenMode(true)}
+      >
+        Usar token…
+      </button>
     </div>
   );
 }
@@ -489,14 +513,20 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange }:
           {usedEntries.map(([key, field, value]) => (
             <div
               key={key}
-              className="grid grid-cols-[1fr_1.5fr_auto] items-start gap-2 rounded border border-border/40 bg-background p-2"
+              className="space-y-1.5 rounded border border-border/40 bg-background p-2"
             >
-              <div className="min-w-0">
+              <div className="flex items-start justify-between gap-2">
                 <Label className="text-xs font-medium">{field?.label ?? key}</Label>
-                <p className="truncate text-[10px] text-muted-foreground">
-                  {key}
-                  {field?.type ? ` · ${field.type}` : ""}
-                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 -mt-1 -mr-1"
+                  aria-label={`Remover ${field?.label ?? key}`}
+                  onClick={() => removeKey(key)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
               </div>
               <div>
                 {field ? (
@@ -509,15 +539,6 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange }:
                   />
                 )}
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={`Remover ${field?.label ?? key}`}
-                onClick={() => removeKey(key)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
             </div>
           ))}
 
