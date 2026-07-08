@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
-import { searchCompanies, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
+import { searchCompanies, searchContacts, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
@@ -224,7 +224,7 @@ function FieldInput({
   }
 
   // FKs conhecidas → combobox com nomes resolvidos.
-  const FK_KIND: Record<string, "user" | "company" | "pipeline"> = {
+  const FK_KIND: Record<string, "user" | "company" | "pipeline" | "contact"> = {
     owner_id: "user",
     assigned_user_id: "user",
     assignee_id: "user",
@@ -233,7 +233,8 @@ function FieldInput({
     notify_user_id: "user",
     company_id: "company",
     parent_company_id: "company",
-    primary_contact_id: "company", // fallback lookup
+    primary_contact_id: "contact",
+    contact_id: "contact",
     pipeline_id: "pipeline",
   };
   if (FK_KIND[field.name]) {
@@ -274,7 +275,7 @@ function FkPicker({
   value,
   onChange,
 }: {
-  kind: "user" | "company" | "pipeline";
+  kind: "user" | "company" | "pipeline" | "contact";
   value: string;
   onChange: (v: string) => void;
 }) {
@@ -283,6 +284,7 @@ function FkPicker({
   const [q, setQ] = useState("");
   const labels = useReferenceLabels();
   const fetchCompanies = useServerFn(searchCompanies);
+  const fetchContacts = useServerFn(searchContacts);
   const fetchPipelines = useServerFn(searchPipelines);
   const fetchUsers = useServerFn(searchUsers);
 
@@ -299,6 +301,7 @@ function FkPicker({
     placeholderData: (prev) => prev,
     queryFn: async () => {
       if (kind === "company") return await fetchCompanies({ data: { q: q || undefined } });
+      if (kind === "contact") return await fetchContacts({ data: { q: q || undefined } });
       if (kind === "pipeline") return await fetchPipelines({ data: { q: q || undefined } });
       const rows = await fetchUsers({ data: { q: q || undefined } });
       return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
@@ -314,7 +317,9 @@ function FkPicker({
         ? labels.labelForUser(value)
         : kind === "company"
           ? labels.labelForCompany(value)
-          : labels.labelForPipeline(value);
+          : kind === "contact"
+            ? labels.labelForContact(value)
+            : labels.labelForPipeline(value);
 
   const items = (searchQuery.data ?? []) as Array<{ id: string; name: string }>;
   const isLoading = searchQuery.isFetching;
@@ -335,7 +340,11 @@ function FkPicker({
             <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <PopoverContent
+          className="w-[min(360px,90vw)] min-w-[--radix-popover-trigger-width] p-0"
+          align="start"
+          sideOffset={6}
+        >
           <Command shouldFilter={false}>
             <CommandInput
               placeholder="Buscar por nome..."

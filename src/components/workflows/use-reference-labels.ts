@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
-import { searchCompanies, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
+import { searchCompanies, searchContacts, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
 
 type Pipeline = { id: string; name: string; stages: unknown };
 
@@ -16,6 +16,7 @@ const LOADING_LABEL = "Carregando…";
 export function useReferenceLabels() {
   const { nameFor: nameForUser, byId: userByIdMembers } = useWorkspaceMembers();
   const fetchCompanies = useServerFn(searchCompanies);
+  const fetchContacts = useServerFn(searchContacts);
   const fetchPipelines = useServerFn(searchPipelines);
   const fetchUsers = useServerFn(searchUsers);
 
@@ -96,20 +97,23 @@ export function useReferenceLabels() {
     company: Set<string>;
     pipeline: Set<string>;
     user: Set<string>;
-  }>({ company: new Set(), pipeline: new Set(), user: new Set() });
+    contact: Set<string>;
+  }>({ company: new Set(), pipeline: new Set(), user: new Set(), contact: new Set() });
   const resolvedRef = useRef<{
     company: Map<string, string>;
     pipeline: Map<string, string>;
     user: Map<string, string>;
-  }>({ company: new Map(), pipeline: new Map(), user: new Map() });
+    contact: Map<string, string>;
+  }>({ company: new Map(), pipeline: new Map(), user: new Map(), contact: new Map() });
   const requestedRef = useRef<{
     company: Set<string>;
     pipeline: Set<string>;
     user: Set<string>;
-  }>({ company: new Set(), pipeline: new Set(), user: new Set() });
+    contact: Set<string>;
+  }>({ company: new Set(), pipeline: new Set(), user: new Set(), contact: new Set() });
   const [tick, setTick] = useState(0);
 
-  function enqueue(kind: "company" | "pipeline" | "user", id: string) {
+  function enqueue(kind: "company" | "pipeline" | "user" | "contact", id: string) {
     if (!id) return;
     if (resolvedRef.current[kind].has(id)) return;
     if (requestedRef.current[kind].has(id)) return;
@@ -123,19 +127,24 @@ export function useReferenceLabels() {
 
   useEffect(() => {
     const hasWork =
-      pending.company.size > 0 || pending.pipeline.size > 0 || pending.user.size > 0;
+      pending.company.size > 0 ||
+      pending.pipeline.size > 0 ||
+      pending.user.size > 0 ||
+      pending.contact.size > 0;
     if (!hasWork) return;
     const t = setTimeout(async () => {
       const batches = {
         company: Array.from(pending.company),
         pipeline: Array.from(pending.pipeline),
         user: Array.from(pending.user),
+        contact: Array.from(pending.contact),
       };
       // marcar como requested para evitar reenvios enquanto in-flight
       batches.company.forEach((id) => requestedRef.current.company.add(id));
       batches.pipeline.forEach((id) => requestedRef.current.pipeline.add(id));
       batches.user.forEach((id) => requestedRef.current.user.add(id));
-      setPending({ company: new Set(), pipeline: new Set(), user: new Set() });
+      batches.contact.forEach((id) => requestedRef.current.contact.add(id));
+      setPending({ company: new Set(), pipeline: new Set(), user: new Set(), contact: new Set() });
 
       await Promise.all([
         batches.company.length > 0 &&
@@ -153,14 +162,21 @@ export function useReferenceLabels() {
         batches.user.length > 0 &&
           fetchUsers({ data: { ids: batches.user } })
             .then((rows) => {
-              rows.forEach((r) => resolvedRef.current.user.set(r.id, r.name));
+              // Grava mesmo com nome vazio para sinalizar "resolvido sem nome"
+              rows.forEach((r) => resolvedRef.current.user.set(r.id, r.name ?? ""));
+            })
+            .catch(() => {}),
+        batches.contact.length > 0 &&
+          fetchContacts({ data: { ids: batches.contact } })
+            .then((rows) => {
+              rows.forEach((r) => resolvedRef.current.contact.set(r.id, r.name));
             })
             .catch(() => {}),
       ]);
       setTick((v) => v + 1);
     }, 120);
     return () => clearTimeout(t);
-  }, [pending, fetchCompanies, fetchPipelines, fetchUsers]);
+  }, [pending, fetchCompanies, fetchContacts, fetchPipelines, fetchUsers]);
 
   // Silence unused-variable warning: tick is only used to force re-render.
   void tick;
@@ -181,7 +197,8 @@ export function useReferenceLabels() {
       const m = userByIdMembers.get(id)?.full_name?.trim();
       if (m) return m;
       const resolved = resolvedRef.current.user.get(id);
-      if (resolved) return resolved;
+      if (resolved && resolved.length > 0) return resolved;
+      if (resolved === "") return "Usuário removido";
       enqueue("user", id);
       // fallback enquanto resolve: nome curto original do hook
       const fallback = nameForUser(id);
@@ -194,6 +211,14 @@ export function useReferenceLabels() {
       const resolved = resolvedRef.current.company.get(id);
       if (resolved) return resolved;
       enqueue("company", id);
+      return LOADING_LABEL;
+    },
+    labelForContact: (id: string | null | undefined) => {
+      if (!id) return "—";
+      const resolved = resolvedRef.current.contact.get(id);
+      if (resolved && resolved.length > 0) return resolved;
+      if (resolved === "") return "Contato removido";
+      enqueue("contact", id);
       return LOADING_LABEL;
     },
     labelForPipeline: (id: string | null | undefined) => {

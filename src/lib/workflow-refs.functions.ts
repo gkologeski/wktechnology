@@ -65,6 +65,46 @@ export const searchPipelines = createServerFn({ method: "POST" })
     return (rows ?? []) as Array<{ id: string; name: string }>;
   });
 
+export const searchContacts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => RefInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const toName = (r: {
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+      email: string | null;
+    }) => {
+      const full = `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim();
+      return { id: r.id, name: full || (r.email ?? "") || "" };
+    };
+    if (data.ids && data.ids.length > 0) {
+      const { data: rows, error } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name, email")
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      return (rows ?? []).map(toName);
+    }
+    const q = data.q?.trim();
+    let query = supabase
+      .from("contacts")
+      .select("id, first_name, last_name, email")
+      .order("last_name", { ascending: true, nullsFirst: false })
+      .order("first_name", { ascending: true, nullsFirst: false })
+      .limit(LIMIT);
+    if (q) {
+      const like = `%${escapeLike(q)}%`;
+      query = query.or(
+        `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like}`,
+      );
+    }
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(toName);
+  });
+
 /**
  * Busca / hidrata usuários para uso no FkPicker.
  *
@@ -161,7 +201,7 @@ export const searchUsers = createServerFn({ method: "POST" })
     }
 
     const results = idList.map((id) => {
-      const name = nameById.get(id) || emailById.get(id) || `${id.slice(0, 8)}…`;
+      const name = nameById.get(id) || emailById.get(id) || "";
       return { id, name, is_member: memberIds.has(id) };
     });
 
