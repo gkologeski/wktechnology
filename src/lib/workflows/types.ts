@@ -82,6 +82,58 @@ export type WorkflowAction =
       type: "assign_recruiter";
       user_id: string;
       target?: "auto" | "job" | "candidate" | "application" | "interview";
+    }
+  // Fase 1 — Criar entidade
+  | {
+      type: "create_lead";
+      first_name: string;
+      last_name?: string;
+      email?: string;
+      phone?: string;
+      company_name?: string;
+      source?: string;
+      owner_id?: string;
+    }
+  | {
+      type: "create_contact";
+      first_name: string;
+      last_name?: string;
+      email?: string;
+      phone?: string;
+      job_title?: string;
+      company_name?: string;
+      owner_id?: string;
+    }
+  | {
+      type: "create_company";
+      name: string;
+      domain?: string;
+      industry?: string;
+      owner_id?: string;
+    }
+  | {
+      type: "create_deal";
+      name: string;
+      value?: number;
+      currency?: string;
+      pipeline_id?: string;
+      stage_id?: string;
+      owner_id?: string;
+    }
+  | {
+      type: "create_ticket";
+      subject: string;
+      description?: string;
+      priority?: string;
+      pipeline_id?: string;
+      assignee_id?: string;
+    }
+  | {
+      type: "create_task";
+      subject: string;
+      body?: string;
+      due_in_days?: number;
+      assignee_id?: string;
     };
 
 
