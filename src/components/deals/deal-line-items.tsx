@@ -45,9 +45,11 @@ function lineTotal(li: {
   return sub * (1 + n(li.tax_rate) / 100);
 }
 
+const lineItemsQueryKey = (dealId: string) => ["deal_line_items", dealId] as const;
+
 function useLineItems(dealId: string) {
   return useQuery({
-    queryKey: ["deal_line_items", dealId],
+    queryKey: lineItemsQueryKey(dealId),
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
@@ -152,8 +154,16 @@ function LineItemsEditorBody({
   const qc = useQueryClient();
   const { data: items = [], isLoading } = useLineItems(dealId);
 
+  const setItemsCache = (updater: (current: LineItem[]) => LineItem[]) => {
+    qc.setQueryData<LineItem[]>(lineItemsQueryKey(dealId), (current = []) => updater(current));
+  };
+
+  const refreshItems = () => {
+    qc.invalidateQueries({ queryKey: lineItemsQueryKey(dealId) });
+  };
+
   function notifyChanged() {
-    qc.invalidateQueries({ queryKey: ["deal_line_items", dealId] });
+    refreshItems();
     qc.invalidateQueries({ queryKey: ["deals"] });
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("deal:line-items-changed", { detail: { dealId } }));
@@ -162,17 +172,24 @@ function LineItemsEditorBody({
 
   async function addBlank() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("deal_line_items").insert({
-      owner_id: ownerId,
-      deal_id: dealId,
-      name: "Novo item",
-      quantity: 1,
-      unit_price: 0,
-      discount_pct: 0,
-      tax_rate: 0,
-      position: items.length,
-    });
+    const { data, error } = await (supabase as any)
+      .from("deal_line_items")
+      .insert({
+        owner_id: ownerId,
+        deal_id: dealId,
+        name: "Novo item",
+        quantity: 1,
+        unit_price: 0,
+        discount_pct: 0,
+        tax_rate: 0,
+        position: items.length,
+      })
+      .select("*")
+      .single();
     if (error) return toast.error(error.message);
+    if (data) {
+      setItemsCache((current) => [...current, data as LineItem].sort((a, b) => n(a.position) - n(b.position)));
+    }
     notifyChanged();
   }
   async function addFromProduct(pid: string) {
@@ -184,30 +201,49 @@ function LineItemsEditorBody({
       .maybeSingle();
     if (perr || !p) return toast.error(perr?.message ?? "Produto não encontrado");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("deal_line_items").insert({
-      owner_id: ownerId,
-      deal_id: dealId,
-      product_id: p.id,
-      name: p.name,
-      quantity: 1,
-      unit_price: p.unit_price,
-      discount_pct: 0,
-      tax_rate: p.tax_rate,
-      position: items.length,
-    });
+    const { data, error } = await (supabase as any)
+      .from("deal_line_items")
+      .insert({
+        owner_id: ownerId,
+        deal_id: dealId,
+        product_id: p.id,
+        name: p.name,
+        quantity: 1,
+        unit_price: p.unit_price,
+        discount_pct: 0,
+        tax_rate: p.tax_rate,
+        position: items.length,
+      })
+      .select("*")
+      .single();
     if (error) return toast.error(error.message);
+    if (data) {
+      setItemsCache((current) => [...current, data as LineItem].sort((a, b) => n(a.position) - n(b.position)));
+    }
     notifyChanged();
   }
   async function update(id: string, patch: Partial<LineItem>) {
+    const previous = qc.getQueryData<LineItem[]>(lineItemsQueryKey(dealId));
+    setItemsCache((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      qc.setQueryData(lineItemsQueryKey(dealId), previous);
+      refreshItems();
+      return toast.error(error.message);
+    }
     notifyChanged();
   }
   async function remove(id: string) {
+    const previous = qc.getQueryData<LineItem[]>(lineItemsQueryKey(dealId));
+    setItemsCache((current) => current.filter((item) => item.id !== id));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      qc.setQueryData(lineItemsQueryKey(dealId), previous);
+      refreshItems();
+      return toast.error(error.message);
+    }
     notifyChanged();
   }
 
@@ -383,7 +419,7 @@ function TextField({
       onChange={(e) => setV(e.target.value)}
       onBlur={() => {
         setFocused(false);
-        onCommit(v);
+        if (v !== value) onCommit(v);
       }}
     />
   );
