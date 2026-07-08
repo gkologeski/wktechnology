@@ -181,12 +181,29 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   advance_ats_application_stage: "Mover aplicação para etapa (ATS)",
   create_ats_candidate: "Criar candidato (ATS)",
   assign_recruiter: "Atribuir recrutador (ATS)",
+  create_lead: "Criar lead",
+  create_contact: "Criar contato",
+  create_company: "Criar empresa",
+  create_deal: "Criar negócio",
+  create_ticket: "Criar ticket",
+  create_task: "Criar tarefa",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
 export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionType[] }> = [
   { label: "Controle de fluxo", actions: ["delay", "branch_if"] },
   { label: "CRM", actions: ["set_field", "assign_to", "rotate_assign"] },
+  {
+    label: "Criar registro",
+    actions: [
+      "create_lead",
+      "create_contact",
+      "create_company",
+      "create_deal",
+      "create_ticket",
+      "create_task",
+    ],
+  },
   { label: "Comunicação", actions: ["create_activity", "send_notification"] },
   { label: "Sequências", actions: ["add_to_sequence"] },
   {
