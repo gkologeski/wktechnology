@@ -2615,6 +2615,12 @@ function countSteps(actions: WorkflowAction[]): number {
     n += 1;
     if (a.type === "branch_if") {
       n += countSteps(a.then ?? []) + countSteps(a.else ?? []);
+    } else if (a.type === "switch_by_value") {
+      n += (a.cases ?? []).reduce((s, c) => s + countSteps(c.actions ?? []), 0);
+      n += countSteps(a.default ?? []);
+    } else if (a.type === "branch_multi") {
+      n += (a.branches ?? []).reduce((s, b) => s + countSteps(b.actions ?? []), 0);
+      n += countSteps(a.else ?? []);
     }
   }
   return n;
