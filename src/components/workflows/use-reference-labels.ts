@@ -226,7 +226,5 @@ export function useReferenceLabels() {
   };
 }
 
-// Silenciando import de useQueries que não usamos aqui (mantido para futuro).
-void useQueries;
 
 export type ReferenceLabels = ReturnType<typeof useReferenceLabels>;
