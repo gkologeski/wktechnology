@@ -1,47 +1,47 @@
-## Problemas observados no painel direito do Workflow Builder
+## Contexto
 
-Ao selecionar um passo (ex.: `create_activity`, `create_deal`), o painel direito (`aside` em `workflow-builder.tsx`, largura fixa `sm:w-96` = 384px) renderiza `ExtraFieldsEditor`. Dentro dele há quatro problemas ligados ao layout e à UX de tokens:
+Bug em `src/components/deals/deal-line-items.tsx` (dialog "Itens de linha" da proposta/negócio):
 
-1. Cada linha de campo usa `grid grid-cols-[1fr_1.5fr_auto]` — em 384px de painel menos padding sobra ~340px, dos quais 1fr (~130px) fica para label e 1.5fr (~195px) para o input. Isso empurra inputs para a direita e faz FKs sumirem. Precisa empilhar (label em cima, input full width).
-2. Abaixo do `<Label>` há um `<p class="truncate">{key} · {type}</p>` mostrando o nome técnico do campo (ex.: `owner_id · uuid`). O usuário quer só o label amigável.
-3. `TokenInput` / `TokenTextarea` só oferecem inserção de token via botão discreto `{ }` que abre popover — os tokens não ficam visíveis como pills. O padrão desejado é `TokenPills` renderizado sempre abaixo do input.
-4. Em `FkPicker` (campo empresa/contato/usuário/pipeline) o combobox e um `TokenInput` de largura fixa `w-32` dividem a linha em `grid-cols-[1fr_auto]`. Dentro dos 195px da coluna, o `TokenInput` fica cortado/sobreposto ao combobox.
+- Ao adicionar o **primeiro** item pelo catálogo, os campos (nome, preço, imposto) aparecem vazios/zerados.
+- Ao editar imposto ou desconto do item recém-criado, o total continua 0.
+- Fechar e reabrir o modal exibe os dados corretamente.
 
-Fora de escopo: alterar RLS, catálogo de campos, server functions de busca (`searchCompanies`, `searchContacts`, etc.), tokens do catálogo e comportamento do builder fora do painel de detalhes.
+## Causa
 
-## Correções propostas
+Os inputs da linha usam estado local que só é inicializado uma vez:
 
-### 1. Alargar e reorganizar o painel direito
-Arquivo: `src/components/workflows/workflow-builder.tsx` (linha ~636)
-- Trocar `sm:w-96 ... max-w-96` por `sm:w-[28rem] lg:w-[32rem] max-w-full` para dar respiro ao formulário sem quebrar o layout do canvas.
+- `LabeledNumber` (Qtd, Desc %, Imp %) usa `useState(String(value))` e nunca ressincroniza quando `value` muda vindo do React Query.
+- O `Input` de nome usa `defaultValue={li.name}` (uncontrolled), então também congela o valor inicial.
 
-### 2. Empilhar linhas do `ExtraFieldsEditor` e remover subtítulo técnico
-Arquivo: `src/components/workflows/extra-fields-editor.tsx` (linhas 489–521)
-- Substituir `grid grid-cols-[1fr_1.5fr_auto]` por layout empilhado: header com Label + botão remover à direita (flex justify-between), e input em bloco full-width abaixo.
-- Remover o `<p>{key} · {type}</p>` — mostrar somente `field.label ?? key`.
-- Manter o botão `Trash2` como `ghost/icon` alinhado ao topo direito da linha.
+Depois do `invalidateQueries`, o item já vem com `unit_price`/`tax_rate` do produto e o array `items` é substituído — mas como o `key={li.id}` é estável, o React reaproveita o mesmo `LabeledNumber`/`Input`, cujo estado interno guarda o valor "zero" original renderizado no primeiro paint (antes do refetch completar). O `CurrencyInput` sincroniza via `useEffect` no `value`, por isso ele até atualiza — mas Qtd/Desc/Imp/nome não. Como Qtd fica travado em `1` e imposto/desconto travam no valor antigo, o total derivado usa os valores errados. Reabrir o modal remonta tudo com o estado do servidor, o que explica por que o dado só aparece após sair e entrar.
 
-### 3. TokenPills sempre visíveis nos campos de texto
-Arquivo: `src/components/workflows/token-input.tsx`
-- Remover o botão `{ }` (`TokenButton`) e o `pr-8`.
-- Renderizar `<TokenPills tokens={tokens} onInsert={...} label="" className="mt-1" />` logo abaixo do `<Input>` / `<Textarea>`.
-- Manter API atual (`value`, `onValueChange`, `tokens`, `pickerLabel` continua aceito porém ignorado ou usado como aria-label do bloco de pills). Inserção continua via `insertAtCursor`.
-- Efeito colateral: `CustomFieldsEditor` (usa `TokenInput` inline em grid) e `FkPicker` (usa `TokenInput` inline com `w-32`) passarão a mostrar pills embaixo. No `FkPicker` a mudança é resolvida no item 4; no `CustomFieldsEditor` as pills aparecendo abaixo do valor são desejáveis e não quebram o layout de pares.
+## Escopo
 
-### 4. `FkPicker` sem TokenInput lateral
-Arquivo: `src/components/workflows/extra-fields-editor.tsx` (linhas 273–400)
-- Trocar o grid `grid-cols-[1fr_auto]` por layout empilhado: combobox full-width no topo; abaixo, um botão texto discreto "Usar token…" que alterna para um `TokenInput` full-width (linha abaixo, também full-width) quando o usuário quer inserir `{{token}}`.
-- Se `value` já for um token (`isToken`), abrir automaticamente no modo TokenInput; caso contrário, modo combobox.
-- Preservar comportamento: seleção via combobox grava o `id`; token gravado sobrescreve o id.
+- Somente `src/components/deals/deal-line-items.tsx` (UI/frontend).
+- Não altera schema, RLS, server functions, catálogo de produtos, `deal_line_items` insert/update ou o fluxo de invalidação.
 
-## Validação
+## Plano
 
-- `bunx tsgo --noEmit`
-- Conferência visual manual: abrir Workflows → Novo → configurar step `create_deal` e `create_activity`; validar (a) painel mais largo, (b) label sem `{key}·{type}`, (c) TokenPills visíveis abaixo dos inputs, (d) campo `company_id` sem sobreposição — combobox e alternador de token empilhados.
+1. **`LabeledNumber` — sincronizar com prop `value`.**
+   - Manter estado local `v` apenas enquanto o input estiver focado.
+   - Adicionar `useEffect` que, quando `!focused`, faz `setV(String(value))` sempre que `value` mudar.
+   - Ajustar `onFocus`/`onBlur` para controlar `focused` e continuar chamando `onCommit` só quando o valor mudou.
 
-## Detalhes técnicos
+2. **Campo "Nome do item" — trocar `defaultValue` por controlled com o mesmo padrão de `LabeledNumber`.**
+   - Estado local sincronizado com `li.name` quando não estiver focado.
+   - Commit no `onBlur` só se diferente do valor atual.
 
-- Nenhuma alteração de dados, RLS, catálogo ou server functions.
-- `TokenPills` já existe (`src/components/ui/token-pills.tsx`) e recebe `tokens` + `onInsert` — o mesmo `insertAtCursor(el, current, text, setValue)` já usado hoje.
-- Nenhuma quebra de contrato do `TokenInput`/`TokenTextarea`: props seguem iguais, apenas o layout muda.
-- Ícone `Braces` deixa de ser usado — remover import.
+3. **Manter comportamento existente:**
+   - `key={li.id}` continua no wrapper (não em cada input).
+   - `CurrencyInput` já é controlado — sem mudanças.
+   - Totais (subtotal/descontos/impostos/total) continuam derivados de `items` da query — passarão a refletir imediatamente os valores corretos do produto após o refetch.
+
+4. **Validação:**
+   - `bunx tsgo --noEmit`.
+   - Teste manual: abrir dialog de itens de linha em um deal, adicionar produto do catálogo, verificar que nome/preço/imposto aparecem imediatamente e que o total é recalculado ao editar Desc %/Imp %.
+
+## Fora do escopo
+
+- Migrar `deal-line-items.tsx` para server functions ou tipos gerados (mantém `(supabase as any)` atual).
+- Alterar `EntityCombobox`, `CurrencyInput` ou o layout do dialog.
+- Ajustes em quotes/propostas assinadas (`ats_offers`, `esign_documents`) ou no `settings.quotes`.
