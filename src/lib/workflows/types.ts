@@ -300,6 +300,9 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   switch_by_value: "Ramificar por valor (switch)",
   branch_multi: "Ramificação múltipla",
   delay_until_date: "Esperar até data",
+  format_data: "Formatar dados",
+  send_slack: "Enviar mensagem no Slack",
+  send_teams: "Enviar mensagem no Teams",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
