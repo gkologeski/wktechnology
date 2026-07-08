@@ -1059,6 +1059,52 @@ function TriggerConfigPanel({
           </div>
         )}
       </div>
+
+      {/* Critérios de meta (goal) */}
+      <div className="rounded-md border p-3 space-y-2 bg-muted/20">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Target className="h-4 w-4 text-muted-foreground" />
+            <Label className="text-sm">Critérios de meta</Label>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!defaultField}
+            onClick={() =>
+              onChange((t) => ({
+                ...t,
+                goal_filters: [...(t.goal_filters ?? []), { field: defaultField, op: "eq", value: "" }],
+              }))
+            }
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Se todos os critérios passarem no processamento do evento, o registro é considerado no objetivo
+          e não recebe novas execuções.
+        </p>
+        {(trigger.goal_filters ?? []).map((f, i) => (
+          <FilterRow
+            key={i}
+            filter={f}
+            fields={fields}
+            onChange={(nf) =>
+              onChange((t) => ({
+                ...t,
+                goal_filters: (t.goal_filters ?? []).map((x, idx) => (idx === i ? nf : x)),
+              }))
+            }
+            onRemove={() =>
+              onChange((t) => ({
+                ...t,
+                goal_filters: (t.goal_filters ?? []).filter((_, idx) => idx !== i),
+              }))
+            }
+          />
+        ))}
+      </div>
     </div>
   );
 }
