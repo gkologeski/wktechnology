@@ -45,6 +45,10 @@ import {
   Eraser,
   Plus as PlusIcon,
   MessageCircle,
+  SplitSquareHorizontal,
+  GitFork,
+  CalendarClock,
+  Target,
 } from "lucide-react";
 
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
