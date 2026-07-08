@@ -323,6 +323,72 @@ function insertStep(
   });
 }
 
+// Insere ação em posição específica dentro do array endereçado por parentPath.
+function insertStepAt(
+  actions: WorkflowAction[],
+  parentPath: StepPath,
+  index: number,
+  newAction: WorkflowAction,
+): WorkflowAction[] {
+  if (parentPath.length === 0) {
+    const copy = [...actions];
+    const clamped = Math.max(0, Math.min(index, copy.length));
+    copy.splice(clamped, 0, newAction);
+    return copy;
+  }
+  const [head, ...rest] = parentPath;
+  if (typeof head !== "number") return actions;
+  return actions.map((a, i) => {
+    if (i !== head) return a;
+    if (a.type !== "branch_if") return a;
+    const branch = rest[0];
+    if (branch !== "then" && branch !== "else") return a;
+    const remaining = rest.slice(1) as StepPath;
+    const list = a[branch] ?? [];
+    if (remaining.length === 0) {
+      const copy = [...list];
+      const clamped = Math.max(0, Math.min(index, copy.length));
+      copy.splice(clamped, 0, newAction);
+      return { ...a, [branch]: copy };
+    }
+    return { ...a, [branch]: insertStepAt(list, remaining, index, newAction) };
+  });
+}
+
+// True se `target` está dentro (ou é igual a) `source`.
+function isDescendantOrSelf(target: StepPath, source: StepPath): boolean {
+  if (target.length < source.length) return false;
+  for (let i = 0; i < source.length; i++) {
+    if (target[i] !== source[i]) return false;
+  }
+  return true;
+}
+
+// Move um passo para um novo destino. Retorna null se inválido / no-op.
+function moveStepTo(
+  actions: WorkflowAction[],
+  from: StepPath,
+  to: { parentPath: StepPath; index: number },
+): { actions: WorkflowAction[]; newPath: StepPath } | null {
+  if (from.length === 0) return null;
+  if (isDescendantOrSelf(to.parentPath, from)) return null;
+  const step = getStep(actions, from);
+  if (!step) return null;
+  const fromParent = from.slice(0, -1) as StepPath;
+  const fromIndex = from[from.length - 1] as number;
+  const sameParent = JSON.stringify(fromParent) === JSON.stringify(to.parentPath);
+  let targetIndex = to.index;
+  if (sameParent) {
+    if (targetIndex === fromIndex || targetIndex === fromIndex + 1) return null;
+    if (targetIndex > fromIndex) targetIndex -= 1;
+  }
+  const afterRemove = removeStep(actions, from);
+  const afterInsert = insertStepAt(afterRemove, to.parentPath, targetIndex, step);
+  return { actions: afterInsert, newPath: [...to.parentPath, targetIndex] };
+}
+
+
+
 // ============================================================================
 // Componente principal
 // ============================================================================
