@@ -252,7 +252,6 @@ import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
-import { Route as ApiPublicAdminRescheduleCronRouteImport } from './routes/api/public/admin/reschedule-cron'
 import { Route as AuthenticatedSettingsRolesMatrixRouteImport } from './routes/_authenticated/settings.roles.matrix'
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
 import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
@@ -1662,12 +1661,6 @@ const ApiPublicBookingSlugRoute = ApiPublicBookingSlugRouteImport.update({
   path: '/api/public/booking/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAdminRescheduleCronRoute =
-  ApiPublicAdminRescheduleCronRouteImport.update({
-    id: '/api/public/admin/reschedule-cron',
-    path: '/api/public/admin/reschedule-cron',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const AuthenticatedSettingsRolesMatrixRoute =
   AuthenticatedSettingsRolesMatrixRouteImport.update({
     id: '/matrix',
@@ -2086,7 +2079,6 @@ export interface FileRoutesByFullPath {
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
-  '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -2363,7 +2355,6 @@ export interface FileRoutesByTo {
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
-  '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -2647,7 +2638,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/_authenticated/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
-  '/api/public/admin/reschedule-cron': typeof ApiPublicAdminRescheduleCronRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -2931,7 +2921,6 @@ export interface FileRouteTypes {
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
     | '/settings/roles/matrix'
-    | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -3208,7 +3197,6 @@ export interface FileRouteTypes {
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
     | '/settings/roles/matrix'
-    | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -3491,7 +3479,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications/slack'
     | '/_authenticated/settings/roles/$roleId'
     | '/_authenticated/settings/roles/matrix'
-    | '/api/public/admin/reschedule-cron'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -3608,7 +3595,6 @@ export interface RootRouteChildren {
   CareersIndexRoute: typeof CareersIndexRoute
   KbIndexRoute: typeof KbIndexRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
-  ApiPublicAdminRescheduleCronRoute: typeof ApiPublicAdminRescheduleCronRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
@@ -5380,13 +5366,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBookingSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/admin/reschedule-cron': {
-      id: '/api/public/admin/reschedule-cron'
-      path: '/api/public/admin/reschedule-cron'
-      fullPath: '/api/public/admin/reschedule-cron'
-      preLoaderRoute: typeof ApiPublicAdminRescheduleCronRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_authenticated/settings/roles/matrix': {
       id: '/_authenticated/settings/roles/matrix'
       path: '/matrix'
@@ -6317,7 +6296,6 @@ const rootRouteChildren: RootRouteChildren = {
   CareersIndexRoute: CareersIndexRoute,
   KbIndexRoute: KbIndexRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
-  ApiPublicAdminRescheduleCronRoute: ApiPublicAdminRescheduleCronRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
@@ -6398,13 +6376,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
