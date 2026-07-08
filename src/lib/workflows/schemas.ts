@@ -109,6 +109,7 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     company_name: z.string().max(200).optional(),
     source: z.string().max(80).optional(),
     owner_id: z.string().uuid().optional(),
+    extra_fields: z.record(z.string(), z.unknown()).optional(),
   }),
   z.object({
     type: z.literal("create_contact"),
@@ -119,6 +120,7 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     job_title: z.string().max(120).optional(),
     company_name: z.string().max(200).optional(),
     owner_id: z.string().uuid().optional(),
+    extra_fields: z.record(z.string(), z.unknown()).optional(),
   }),
   z.object({
     type: z.literal("create_company"),
@@ -126,6 +128,7 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     domain: z.string().max(200).optional(),
     industry: z.string().max(120).optional(),
     owner_id: z.string().uuid().optional(),
+    extra_fields: z.record(z.string(), z.unknown()).optional(),
   }),
   z.object({
     type: z.literal("create_deal"),
@@ -135,6 +138,7 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     pipeline_id: z.string().uuid().optional(),
     stage_id: z.string().uuid().optional(),
     owner_id: z.string().uuid().optional(),
+    extra_fields: z.record(z.string(), z.unknown()).optional(),
   }),
   z.object({
     type: z.literal("create_ticket"),
@@ -143,6 +147,7 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
     pipeline_id: z.string().uuid().optional(),
     assignee_id: z.string().uuid().optional(),
+    extra_fields: z.record(z.string(), z.unknown()).optional(),
   }),
   z.object({
     type: z.literal("create_task"),
@@ -150,7 +155,9 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     body: z.string().max(5000).optional(),
     due_in_days: z.number().int().min(0).max(365).optional(),
     assignee_id: z.string().uuid().optional(),
+    extra_fields: z.record(z.string(), z.unknown()).optional(),
   }),
+
   // Fase 2 — CRM avançado
   z.object({
     type: z.literal("copy_field_from_association"),

@@ -127,6 +127,7 @@ export type WorkflowAction =
       company_name?: string;
       source?: string;
       owner_id?: string;
+      extra_fields?: Record<string, unknown>;
     }
   | {
       type: "create_contact";
@@ -137,6 +138,7 @@ export type WorkflowAction =
       job_title?: string;
       company_name?: string;
       owner_id?: string;
+      extra_fields?: Record<string, unknown>;
     }
   | {
       type: "create_company";
@@ -144,6 +146,7 @@ export type WorkflowAction =
       domain?: string;
       industry?: string;
       owner_id?: string;
+      extra_fields?: Record<string, unknown>;
     }
   | {
       type: "create_deal";
@@ -153,6 +156,7 @@ export type WorkflowAction =
       pipeline_id?: string;
       stage_id?: string;
       owner_id?: string;
+      extra_fields?: Record<string, unknown>;
     }
   | {
       type: "create_ticket";
@@ -161,6 +165,7 @@ export type WorkflowAction =
       priority?: string;
       pipeline_id?: string;
       assignee_id?: string;
+      extra_fields?: Record<string, unknown>;
     }
   | {
       type: "create_task";
@@ -168,7 +173,9 @@ export type WorkflowAction =
       body?: string;
       due_in_days?: number;
       assignee_id?: string;
+      extra_fields?: Record<string, unknown>;
     }
+
   // Fase 2 — CRM avançado
   | {
       type: "copy_field_from_association";

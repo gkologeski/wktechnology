@@ -137,11 +137,13 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
           "companies",
           "deals",
           "tickets",
+          "activities",
           "ats_jobs",
           "ats_candidates",
           "ats_applications",
           "ats_interviews",
         ]),
+
       })
       .parse(input),
   )
