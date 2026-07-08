@@ -992,6 +992,109 @@ function TriggerConfigPanel({
         </Select>
       </div>
 
+      <div className="rounded-md border p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-xs">Gatilho baseado em tempo</Label>
+            <p className="text-[11px] text-muted-foreground">
+              Dispara periodicamente para registros que atendem à condição temporal.
+            </p>
+          </div>
+          <Switch
+            checked={!!trigger.time_based}
+            onCheckedChange={(v) =>
+              onChange((t) => ({
+                ...t,
+                time_based: v
+                  ? { kind: "time_since_field", field: "created_at", amount: 1, unit: "days" }
+                  : undefined,
+              }))
+            }
+          />
+        </div>
+        {trigger.time_based && (
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2">
+              <Label className="text-xs">Tipo</Label>
+              <Select
+                value={trigger.time_based.kind}
+                onValueChange={(v) =>
+                  onChange((t) => ({
+                    ...t,
+                    time_based: { ...(t.time_based ?? { amount: 1, unit: "days" }), kind: v as never },
+                  }))
+                }
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="time_since_field">Tempo desde campo (data)</SelectItem>
+                  <SelectItem value="no_activity_for">Sem atividade há…</SelectItem>
+                  <SelectItem value="stuck_in_stage_for">Parado na etapa há…</SelectItem>
+                  <SelectItem value="field_unchanged_for">Campo inalterado há…</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(trigger.time_based.kind === "time_since_field" ||
+              trigger.time_based.kind === "field_unchanged_for") && (
+              <div className="col-span-2">
+                <Label className="text-xs">Campo (data)</Label>
+                <Input
+                  value={trigger.time_based.field ?? ""}
+                  onChange={(e) =>
+                    onChange((t) => ({
+                      ...t,
+                      time_based: { ...(t.time_based ?? { kind: "time_since_field", amount: 1, unit: "days" }), field: e.target.value },
+                    }))
+                  }
+                  placeholder="created_at"
+                />
+              </div>
+            )}
+            <div>
+              <Label className="text-xs">Quantidade</Label>
+              <Input
+                type="number"
+                min={1}
+                value={trigger.time_based.amount}
+                onChange={(e) =>
+                  onChange((t) => ({
+                    ...t,
+                    time_based: { ...(t.time_based ?? { kind: "time_since_field", unit: "days" }), amount: Math.max(1, parseInt(e.target.value) || 1) },
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Unidade</Label>
+              <Select
+                value={trigger.time_based.unit}
+                onValueChange={(v) =>
+                  onChange((t) => ({
+                    ...t,
+                    time_based: { ...(t.time_based ?? { kind: "time_since_field", amount: 1 }), unit: v as "minutes" | "hours" | "days" },
+                  }))
+                }
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="minutes">minutos</SelectItem>
+                  <SelectItem value="hours">horas</SelectItem>
+                  <SelectItem value="days">dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="col-span-2 text-[11px] text-muted-foreground">
+              Varredura executa a cada 15 min. Cada registro dispara no máximo uma vez até
+              o campo de referência mudar.
+            </p>
+          </div>
+        )}
+      </div>
+
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
