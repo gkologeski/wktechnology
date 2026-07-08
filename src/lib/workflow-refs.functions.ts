@@ -161,7 +161,7 @@ export const searchUsers = createServerFn({ method: "POST" })
     }
 
     const results = idList.map((id) => {
-      const name = nameById.get(id) || emailById.get(id) || `${id.slice(0, 8)}…`;
+      const name = nameById.get(id) || emailById.get(id) || "";
       return { id, name, is_member: memberIds.has(id) };
     });
 
