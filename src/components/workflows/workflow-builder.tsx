@@ -2756,5 +2756,184 @@ function describeAction(a: WorkflowAction): string {
 }
 
 
+// ============================================================================
+// Fase 5 — forms simples para novas ações
+// ============================================================================
+function FormatDataForm({
+  action,
+  onChange,
+}: {
+  action: Extract<WorkflowAction, { type: "format_data" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  const showSource = action.op !== "template_string";
+  const showFormat = action.op === "date_format";
+  const showAmount = action.op === "date_add" || action.op === "number_round";
+  const showUnit = action.op === "date_add";
+  const showTemplate = action.op === "template_string";
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <Label>Operação</Label>
+        <Select value={action.op} onValueChange={(v) => onChange({ ...action, op: v as typeof action.op })}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="upper">Maiúsculas</SelectItem>
+            <SelectItem value="lower">Minúsculas</SelectItem>
+            <SelectItem value="trim">Remover espaços</SelectItem>
+            <SelectItem value="date_add">Somar tempo à data</SelectItem>
+            <SelectItem value="date_format">Formatar data</SelectItem>
+            <SelectItem value="number_round">Arredondar número</SelectItem>
+            <SelectItem value="template_string">Concatenar (template)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {showSource && (
+        <div className="space-y-1">
+          <Label>Campo de origem</Label>
+          <Input
+            value={action.source_field ?? ""}
+            onChange={(e) => onChange({ ...action, source_field: e.target.value })}
+            placeholder="ex: name, created_at, value"
+          />
+        </div>
+      )}
+      {showTemplate && (
+        <div className="space-y-1">
+          <Label>Template</Label>
+          <Textarea
+            value={action.template ?? ""}
+            onChange={(e) => onChange({ ...action, template: e.target.value })}
+            placeholder="Ex: {{first_name}} <{{email}}> — score {{vars.score_pct}}"
+            rows={3}
+          />
+        </div>
+      )}
+      {showFormat && (
+        <div className="space-y-1">
+          <Label>Formato</Label>
+          <Input
+            value={action.format ?? "yyyy-MM-dd"}
+            onChange={(e) => onChange({ ...action, format: e.target.value })}
+            placeholder="yyyy-MM-dd HH:mm"
+          />
+          <p className="text-xs text-muted-foreground">Tokens: yyyy, MM, dd, HH, mm, ss.</p>
+        </div>
+      )}
+      {showAmount && (
+        <div className="space-y-1">
+          <Label>{action.op === "number_round" ? "Casas decimais" : "Quantidade"}</Label>
+          <Input
+            type="number"
+            value={action.amount ?? 0}
+            onChange={(e) => onChange({ ...action, amount: Number(e.target.value) })}
+          />
+        </div>
+      )}
+      {showUnit && (
+        <div className="space-y-1">
+          <Label>Unidade</Label>
+          <Select
+            value={action.unit ?? "days"}
+            onValueChange={(v) => onChange({ ...action, unit: v as "minutes" | "hours" | "days" })}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="minutes">Minutos</SelectItem>
+              <SelectItem value="hours">Horas</SelectItem>
+              <SelectItem value="days">Dias</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <div className="space-y-1">
+        <Label>Salvar em variável</Label>
+        <Input
+          value={action.target_var}
+          onChange={(e) => onChange({ ...action, target_var: e.target.value })}
+          placeholder="ex: score_pct"
+        />
+        <p className="text-xs text-muted-foreground">
+          Use nas ações seguintes como <code>{"{{vars." + (action.target_var || "nome") + "}}"}</code>.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function SendSlackForm({
+  action,
+  onChange,
+}: {
+  action: Extract<WorkflowAction, { type: "send_slack" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <Label>Canal (opcional)</Label>
+        <Input
+          value={action.channel ?? ""}
+          onChange={(e) => onChange({ ...action, channel: e.target.value })}
+          placeholder="C0123ABCD ou #geral (usa canal padrão se vazio)"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label>Mensagem</Label>
+        <Textarea
+          value={action.text}
+          onChange={(e) => onChange({ ...action, text: e.target.value })}
+          rows={4}
+          placeholder="Aceita tokens {{campo}} e {{vars.NOME}}"
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Requer o Slack conectado nas integrações do workspace.
+      </p>
+    </div>
+  );
+}
+
+function SendTeamsForm({
+  action,
+  onChange,
+}: {
+  action: Extract<WorkflowAction, { type: "send_teams" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <Label>Webhook URL do Teams</Label>
+        <Input
+          value={action.webhook_url}
+          onChange={(e) => onChange({ ...action, webhook_url: e.target.value })}
+          placeholder="https://outlook.office.com/webhook/..."
+        />
+        <p className="text-xs text-muted-foreground">
+          Crie um "Incoming Webhook" no canal do Teams e cole a URL aqui.
+        </p>
+      </div>
+      <div className="space-y-1">
+        <Label>Título (opcional)</Label>
+        <Input
+          value={action.title ?? ""}
+          onChange={(e) => onChange({ ...action, title: e.target.value })}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label>Mensagem</Label>
+        <Textarea
+          value={action.text}
+          onChange={(e) => onChange({ ...action, text: e.target.value })}
+          rows={4}
+          placeholder="Aceita tokens {{campo}} e {{vars.NOME}}"
+        />
+      </div>
+    </div>
+  );
+}
+
 // Silence unused-import in case memo helper not used elsewhere.
 void useMemo;
+
