@@ -615,6 +615,11 @@ export function WorkflowBuilder({
                   }
                 }}
                 onAddAt={(parentPath) => setLibrary({ parentPath })}
+                dragging={dragging}
+                onDragStartStep={(p) => setDragging(p)}
+                onDragEndStep={() => setDragging(null)}
+                onDropAt={handleDropAt}
+                onMove={handleMove}
               />
 
               {state.actions.length === 0 && (
