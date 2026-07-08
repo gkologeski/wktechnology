@@ -633,7 +633,7 @@ export function WorkflowBuilder({
           </main>
 
           {/* Painel direito */}
-          <aside className="w-full sm:w-96 border-l bg-background flex flex-col shrink-0 max-w-full sm:max-w-96">
+          <aside className="w-full sm:w-[28rem] lg:w-[32rem] border-l bg-background flex flex-col shrink-0 max-w-full">
             <ScrollArea className="flex-1">
               <div className="p-4" aria-live="polite">
                 {library ? (
