@@ -2,7 +2,7 @@
 // regra de rotação) para nomes amigáveis. Faz pré-carregamento leve dos
 // primeiros N registros e resolve IDs desconhecidos sob demanda via server
 // functions autenticadas (respeitando RLS).
-import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
