@@ -15,7 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Pencil, Zap, Upload, TestTube2, Users } from "lucide-react";
+import { Plus, Trash2, Pencil, Zap, Upload, TestTube2, Users, ShieldCheck } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
   listWorkflows,
@@ -27,6 +28,8 @@ import {
   discardDraft,
   testWorkflow,
   bulkEnrollWorkflow,
+  listPendingApprovals,
+  decideApproval,
 } from "@/lib/workflows.functions";
 import {
   WorkflowBuilder,
@@ -231,6 +234,9 @@ function WorkflowsPage() {
         <TabsList>
           <TabsTrigger value="list">Workflows</TabsTrigger>
           <TabsTrigger value="runs">Execuções recentes</TabsTrigger>
+          <TabsTrigger value="approvals">
+            <ShieldCheck className="h-3.5 w-3.5 mr-1" /> Aprovações
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-3 mt-3">
@@ -326,6 +332,14 @@ function WorkflowsPage() {
 
         <TabsContent value="runs" className="mt-3">
           <WorkflowRunsList runs={runs} namesById={namesById} />
+        </TabsContent>
+
+        <TabsContent value="approvals" className="mt-3">
+          <PendingApprovalsList
+            listFn={useServerFn(listPendingApprovals)}
+            decideFn={useServerFn(decideApproval)}
+            namesById={namesById}
+          />
         </TabsContent>
       </Tabs>
 

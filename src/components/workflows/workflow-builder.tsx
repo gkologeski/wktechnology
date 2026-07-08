@@ -158,6 +158,7 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   format_data: Wand2,
   send_slack: Hash,
   send_teams: MessageSquare,
+  approval_step: CheckSquare,
 };
 
 
@@ -227,6 +228,8 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, text: "Notificação de workflow: {{name}}" };
     case "send_teams":
       return { type, webhook_url: "https://outlook.office.com/webhook/...", text: "Notificação de workflow: {{name}}" };
+    case "approval_step":
+      return { type, title: "Aprovar {{name}}", note: "", halt_on_reject: true };
   }
 }
 
@@ -2030,6 +2033,8 @@ function StepConfigForm({
       return <SendSlackForm action={action} onChange={onChange} />;
     case "send_teams":
       return <SendTeamsForm action={action} onChange={onChange} />;
+    case "approval_step":
+      return <ApprovalStepForm action={action} onChange={onChange} />;
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
@@ -2930,6 +2935,57 @@ function SendTeamsForm({
           placeholder="Aceita tokens {{campo}} e {{vars.NOME}}"
         />
       </div>
+    </div>
+  );
+}
+
+function ApprovalStepForm({
+  action,
+  onChange,
+}: {
+  action: Extract<WorkflowAction, { type: "approval_step" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <Label>Título da aprovação</Label>
+        <Input
+          value={action.title}
+          onChange={(e) => onChange({ ...action, title: e.target.value })}
+          placeholder="Aprovar desconto de {{name}}"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label>Contexto para o aprovador (opcional)</Label>
+        <Textarea
+          value={action.note ?? ""}
+          onChange={(e) => onChange({ ...action, note: e.target.value })}
+          rows={3}
+          placeholder="Detalhes que o aprovador precisa ver."
+        />
+      </div>
+      <div className="space-y-1">
+        <Label>Aprovador (deixe vazio para o dono do workflow)</Label>
+        <UserPicker
+          value={action.approver_user_id ?? ""}
+          onChange={(v) => onChange({ ...action, approver_user_id: v || undefined })}
+        />
+      </div>
+      <div className="flex items-center gap-2 pt-1">
+        <Switch
+          checked={action.halt_on_reject ?? true}
+          onCheckedChange={(v) => onChange({ ...action, halt_on_reject: v })}
+          id="halt_on_reject"
+        />
+        <Label htmlFor="halt_on_reject" className="text-xs">
+          Interromper workflow em caso de rejeição
+        </Label>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        O workflow pausa aqui. O aprovador recebe uma notificação e decide em
+        Configurações → Workflows → Aprovações pendentes.
+      </p>
     </div>
   );
 }

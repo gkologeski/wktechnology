@@ -112,6 +112,9 @@ interface RunCtx {
   before: AnyRow | null;
   /** Fase 5 — variáveis mutáveis do run, populadas por format_data e lidas via {{vars.X}}. */
   vars?: AnyRow;
+  /** Fase 5b — usados para vincular workflow_approvals ao run/workflow atuais. */
+  workflowId?: string;
+  runId?: string;
 }
 
 interface RunResult {
@@ -119,6 +122,8 @@ interface RunResult {
   hadError: boolean;
   // Se != null, execução foi suspensa para retomar depois desse índice na lista de ações.
   suspendedAt?: { runAtIso: string; resumeCursor: number };
+  // Fase 5b: aguardando decisão de aprovação (retomada acontece via decideApproval).
+  waitingApproval?: { approvalId: string; resumeCursor: number };
 }
 
 async function runActions(
@@ -270,6 +275,52 @@ async function runActions(
       return { log, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
     }
 
+    // Approval step: cria linha em workflow_approvals e suspende o run.
+    if (action.type === "approval_step") {
+      const title = (renderTokens(action.title, ctx.after, ctx.vars) as string) || "Aprovação";
+      const note = action.note ? (renderTokens(action.note, ctx.after, ctx.vars) as string) : null;
+      const approver = action.approver_user_id?.trim() || ctx.ownerId;
+      const { data: appr, error: apprErr } = await supabase
+        .from("workflow_approvals")
+        .insert({
+          owner_id: ctx.ownerId,
+          workflow_id: ctx.workflowId ?? null,
+          run_id: ctx.runId ?? null,
+          entity: ctx.entity,
+          entity_id: ctx.entityId,
+          requested_by: ctx.ownerId,
+          approver_user_id: approver,
+          resume_cursor: i + 1,
+          status: "pending",
+          title,
+          note,
+          event_snapshot: { after: ctx.after, before: ctx.before, vars: ctx.vars ?? null } as never,
+        } as never)
+        .select("id")
+        .single();
+      if (apprErr || !appr) {
+        log.push({ at: new Date().toISOString(), ok: false, action: "approval_step", error: apprErr?.message ?? "falha ao criar aprovação" });
+        return { log, hadError: true };
+      }
+      // Notifica o aprovador.
+      await supabase.from("notifications").insert({
+        owner_id: ctx.ownerId,
+        user_id: approver,
+        type: "workflow",
+        title: `Aprovação necessária: ${title}`,
+        body: note ?? "Uma execução de workflow aguarda sua decisão.",
+        entity: "workflows",
+        entity_id: ctx.workflowId ?? null,
+      } as never);
+      log.push({
+        at: new Date().toISOString(),
+        ok: true,
+        action: "approval_step",
+        detail: { approval_id: appr.id, approver, title },
+      });
+      return { log, hadError: false, waitingApproval: { approvalId: appr.id as string, resumeCursor: i + 1 } };
+    }
+
     const step = await runAction(supabase, action, ctx);
     log.push(step);
     if (!step.ok) return { log, hadError: true };
@@ -286,6 +337,7 @@ async function runAction(
     | { type: "switch_by_value" }
     | { type: "branch_multi" }
     | { type: "delay_until_date" }
+    | { type: "approval_step" }
   >,
   ctx: RunCtx,
 ): Promise<LogStep> {
@@ -976,10 +1028,12 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
             ownerId: event.owner_id,
             after: event.after,
             before: event.before,
+            workflowId: wfr.id,
+            runId: run.id as string,
           },
           event.resume_cursor,
         );
-        await finishRun(supabase, run.id, res, event);
+        await finishRun(supabase, run.id, res, event, wfr.id);
       }
     }
     await supabase
@@ -1053,6 +1107,8 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       ownerId: event.owner_id,
       after: event.after,
       before: event.before,
+      workflowId: wf.id,
+      runId: run.id as string,
     });
     await finishRun(supabase, run.id, res, event, wf.id);
   }
@@ -1070,6 +1126,18 @@ async function finishRun(
   event: EventRow,
   workflowId?: string,
 ) {
+  // Se aguardando aprovação, deixa run em estado waiting (será retomado por decideApproval).
+  if (res.waitingApproval) {
+    await supabase
+      .from("workflow_runs")
+      .update({
+        status: "waiting_approval" as never,
+        log: res.log,
+        finished_at: null,
+      })
+      .eq("id", runId);
+    return;
+  }
   // Se suspenso por delay, agenda novo evento de retomada.
   if (res.suspendedAt && workflowId) {
     await supabase.from("workflow_events").insert({
@@ -1127,4 +1195,90 @@ export async function tickWorkflows(supabase: SupabaseClient, limit = 50) {
     }
   }
   return { processed: results.length, results };
+}
+
+// ============================================================================
+// Fase 5c — Triggers baseados em tempo.
+// Varre workflows com trigger.time_based e enfileira eventos sintéticos
+// para registros que atendem à condição temporal. Usa workflow_time_cursors
+// para não redisparar.
+// ============================================================================
+export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 100) {
+  const { data: workflows, error } = await supabase
+    .from("workflows")
+    .select("id, owner_id, entity, trigger")
+    .eq("enabled", true)
+    .eq("status", "published");
+  if (error) throw new Error(error.message);
+
+  let enqueued = 0;
+  const wfResults: Array<{ workflow_id: string; matched: number; enqueued: number }> = [];
+  for (const wf of (workflows ?? []) as Array<{ id: string; owner_id: string; entity: WorkflowEntity; trigger: WorkflowTrigger | null }>) {
+    const trig = wf.trigger ?? ({} as WorkflowTrigger);
+    const tb = trig.time_based;
+    if (!tb) continue;
+    const mult = tb.unit === "minutes" ? 60_000 : tb.unit === "hours" ? 3_600_000 : 86_400_000;
+    const thresholdMs = Date.now() - tb.amount * mult;
+    const thresholdIso = new Date(thresholdMs).toISOString();
+
+    // Campo de referência por kind
+    const field =
+      tb.kind === "no_activity_for"
+        ? "updated_at"
+        : tb.kind === "stuck_in_stage_for"
+          ? "moved_at"
+          : tb.field ?? "updated_at";
+
+    let q = supabase.from(wf.entity as never).select("*").eq("owner_id", wf.owner_id).lte(field, thresholdIso).limit(limitPerWf);
+    const { data: records, error: recErr } = await q;
+    if (recErr) {
+      wfResults.push({ workflow_id: wf.id, matched: 0, enqueued: 0 });
+      continue;
+    }
+
+    let localEnqueued = 0;
+    const rows = (records ?? []) as Array<Record<string, unknown>>;
+    for (const rec of rows) {
+      // Aplica filtros do trigger + do time_based
+      const filters = [...(trig.filters ?? []), ...(tb.filters ?? [])];
+      if (!filters.every((f) => evalFilter(f, rec, null))) continue;
+
+      // Confere cursor
+      const { data: cursor } = await supabase
+        .from("workflow_time_cursors")
+        .select("last_fired_at")
+        .eq("workflow_id", wf.id)
+        .eq("entity_id", rec.id as string)
+        .maybeSingle();
+      const refIso = rec[field] as string | null | undefined;
+      if (cursor && refIso && new Date(cursor.last_fired_at).getTime() >= new Date(refIso).getTime()) {
+        continue; // já disparou depois da última mudança do campo de referência
+      }
+
+      const { error: evErr } = await supabase.from("workflow_events").insert({
+        owner_id: wf.owner_id,
+        entity: wf.entity,
+        entity_id: rec.id as string,
+        event_type: trig.event ?? "updated",
+        after: rec as never,
+        before: null,
+      } as never);
+      if (evErr) continue;
+
+      await supabase
+        .from("workflow_time_cursors")
+        .upsert({
+          workflow_id: wf.id,
+          entity_id: rec.id as string,
+          owner_id: wf.owner_id,
+          last_fired_at: new Date().toISOString(),
+        } as never);
+      localEnqueued += 1;
+      enqueued += 1;
+    }
+    wfResults.push({ workflow_id: wf.id, matched: rows.length, enqueued: localEnqueued });
+  }
+  // Processa imediatamente os eventos gerados
+  const tickRes = enqueued > 0 ? await tickWorkflows(supabase, Math.min(enqueued, 200)) : { processed: 0 };
+  return { enqueued, processed: tickRes.processed, workflows: wfResults };
 }

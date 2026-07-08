@@ -381,6 +381,80 @@ export const triggerTickNow = createServerFn({ method: "POST" })
     return await tickWorkflows(context.supabase, 50);
   });
 
+// Fase 5b — lista aprovações pendentes do usuário atual (owner-scoped via RLS).
+export const listPendingApprovals = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("workflow_approvals")
+      .select("id, workflow_id, run_id, entity, entity_id, title, note, approver_user_id, status, created_at, workflows(name)")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+// Fase 5b — aprovar/rejeitar. Se aprovado, enfileira evento de retomada.
+export const decideApproval = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        approvalId: z.string().uuid(),
+        decision: z.enum(["approved", "rejected"]),
+        comment: z.string().max(2000).optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: appr, error: getErr } = await supabase
+      .from("workflow_approvals")
+      .select("id, owner_id, workflow_id, run_id, entity, entity_id, status, resume_cursor, event_snapshot")
+      .eq("id", data.approvalId)
+      .maybeSingle();
+    if (getErr) throw new Error(getErr.message);
+    if (!appr) throw new Error("Aprovação não encontrada");
+    if (appr.status !== "pending") throw new Error("Aprovação já foi decidida");
+
+    const { error: updErr } = await supabase
+      .from("workflow_approvals")
+      .update({
+        status: data.decision,
+        decided_at: new Date().toISOString(),
+        decided_by: userId,
+        decision_comment: data.comment ?? null,
+      } as never)
+      .eq("id", data.approvalId);
+    if (updErr) throw new Error(updErr.message);
+
+    if (data.decision === "approved") {
+      const snap = (appr.event_snapshot ?? {}) as { after?: unknown; before?: unknown };
+      await supabase.from("workflow_events").insert({
+        owner_id: appr.owner_id,
+        entity: appr.entity,
+        entity_id: appr.entity_id,
+        event_type: "created",
+        before: (snap.before ?? null) as never,
+        after: (snap.after ?? null) as never,
+        resume_workflow_id: appr.workflow_id,
+        resume_cursor: appr.resume_cursor,
+      } as never);
+      await tickWorkflows(supabase, 5);
+    } else if (appr.run_id) {
+      await supabase
+        .from("workflow_runs")
+        .update({
+          status: "rejected" as never,
+          finished_at: new Date().toISOString(),
+          error: `Aprovação rejeitada${data.comment ? `: ${data.comment}` : ""}`,
+        })
+        .eq("id", appr.run_id);
+    }
+    return { ok: true };
+  });
+
 // Suprime warning de import não usado quando processEvent futuramente for referenciado.
 void processEvent;
 

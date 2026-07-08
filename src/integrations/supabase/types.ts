@@ -12614,6 +12614,84 @@ export type Database = {
           },
         ]
       }
+      workflow_approvals: {
+        Row: {
+          approver_user_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision_comment: string | null
+          entity: string
+          entity_id: string
+          event_snapshot: Json | null
+          id: string
+          note: string | null
+          owner_id: string
+          requested_by: string | null
+          resume_cursor: number
+          run_id: string | null
+          status: string
+          title: string
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          approver_user_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_comment?: string | null
+          entity: string
+          entity_id: string
+          event_snapshot?: Json | null
+          id?: string
+          note?: string | null
+          owner_id: string
+          requested_by?: string | null
+          resume_cursor?: number
+          run_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          approver_user_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_comment?: string | null
+          entity?: string
+          entity_id?: string
+          event_snapshot?: Json | null
+          id?: string
+          note?: string | null
+          owner_id?: string
+          requested_by?: string | null
+          resume_cursor?: number
+          run_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_approvals_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_approvals_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_events: {
         Row: {
           after: Json | null
@@ -12739,6 +12817,35 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_time_cursors: {
+        Row: {
+          entity_id: string
+          last_fired_at: string
+          owner_id: string
+          workflow_id: string
+        }
+        Insert: {
+          entity_id: string
+          last_fired_at?: string
+          owner_id: string
+          workflow_id: string
+        }
+        Update: {
+          entity_id?: string
+          last_fired_at?: string
+          owner_id?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_time_cursors_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
             referencedColumns: ["id"]
           },
         ]

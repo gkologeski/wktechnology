@@ -28,6 +28,22 @@ export interface WorkflowFilter {
   value?: unknown;
 }
 
+export type TimeTriggerKind =
+  | "time_since_field"
+  | "no_activity_for"
+  | "stuck_in_stage_for"
+  | "field_unchanged_for";
+
+export interface TimeTriggerConfig {
+  kind: TimeTriggerKind;
+  /** Campo de referência (data). Para no_activity_for usa-se `updated_at` por padrão. */
+  field?: string;
+  amount: number;
+  unit: "minutes" | "hours" | "days";
+  /** Filtros aplicados na varredura para restringir os registros elegíveis. */
+  filters?: WorkflowFilter[];
+}
+
 export interface WorkflowTrigger {
   event: WorkflowEventType;
   filters?: WorkflowFilter[];
@@ -38,6 +54,9 @@ export interface WorkflowTrigger {
   /** Fase 3 — critérios de meta. Se todos passarem no processamento do evento,
    *  o registro sai do workflow sem executar novas ações. */
   goal_filters?: WorkflowFilter[];
+  /** Fase 5c — quando presente, o workflow é disparado pelo cron temporal
+   *  (não por eventos CRUD). Gera evento sintético do tipo `event`. */
+  time_based?: TimeTriggerConfig;
 }
 
 export interface SwitchCase {
@@ -236,6 +255,18 @@ export type WorkflowAction =
       webhook_url: string;
       title?: string;
       text: string;
+    }
+  // Fase 5b — Aprovações
+  | {
+      type: "approval_step";
+      /** Título da aprovação exibido para o aprovador. Aceita tokens. */
+      title: string;
+      /** Nota/contexto para o aprovador. Aceita tokens. */
+      note?: string;
+      /** Usuário responsável pela decisão. Se vazio, usa o owner do workflow. */
+      approver_user_id?: string;
+      /** Se true, ao rejeitar interrompe a run com erro; se false, apenas ignora o restante. */
+      halt_on_reject?: boolean;
     };
 
 
@@ -303,11 +334,12 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   format_data: "Formatar dados",
   send_slack: "Enviar mensagem no Slack",
   send_teams: "Enviar mensagem no Teams",
+  approval_step: "Aprovação humana",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
 export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionType[] }> = [
-  { label: "Controle de fluxo", actions: ["delay", "delay_until_date", "branch_if", "switch_by_value", "branch_multi"] },
+  { label: "Controle de fluxo", actions: ["delay", "delay_until_date", "branch_if", "switch_by_value", "branch_multi", "approval_step"] },
   {
     label: "CRM",
     actions: [
