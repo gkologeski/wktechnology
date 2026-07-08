@@ -403,3 +403,107 @@ function WorkflowsPage() {
   );
 }
 
+type ApprovalRow = Awaited<ReturnType<typeof listPendingApprovals>>[number];
+
+function PendingApprovalsList({
+  listFn,
+  decideFn,
+  namesById,
+}: {
+  listFn: ReturnType<typeof useServerFn<typeof listPendingApprovals>>;
+  decideFn: ReturnType<typeof useServerFn<typeof decideApproval>>;
+  namesById: Record<string, string>;
+}) {
+  const [rows, setRows] = useState<ApprovalRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
+
+  const refresh = async () => {
+    setLoading(true);
+    try {
+      const r = (await listFn()) as unknown as ApprovalRow[];
+      setRows(r);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, []);
+
+  const handleDecide = async (id: string, decision: "approved" | "rejected") => {
+    setDecidingId(id);
+    try {
+      await decideFn({ data: { approvalId: id, decision, comment: comment || undefined } });
+      toast.success(decision === "approved" ? "Aprovado — workflow retomado" : "Rejeitado");
+      setComment("");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    } finally {
+      setDecidingId(null);
+    }
+  };
+
+  if (loading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  if (rows.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          Nenhuma aprovação pendente.
+        </CardContent>
+      </Card>
+    );
+  }
+  return (
+    <div className="space-y-3">
+      {rows.map((r) => (
+        <Card key={r.id}>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
+              {r.title}
+              <Badge variant="outline">
+                {namesById[r.workflow_id] ?? "Workflow"}
+              </Badge>
+              <Badge variant="secondary">{r.entity}</Badge>
+            </CardTitle>
+            {r.note && <p className="text-xs text-muted-foreground mt-1">{r.note}</p>}
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Registro: {r.entity_id} · Criada em {new Date(r.created_at).toLocaleString()}
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Textarea
+              placeholder="Comentário da decisão (opcional)"
+              value={decidingId === r.id ? comment : ""}
+              onFocus={() => setDecidingId(r.id)}
+              onChange={(e) => setComment(e.target.value)}
+              rows={2}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleDecide(r.id, "rejected")}
+                disabled={decidingId === r.id}
+              >
+                Rejeitar
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => handleDecide(r.id, "approved")}
+                disabled={decidingId === r.id}
+              >
+                Aprovar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+
