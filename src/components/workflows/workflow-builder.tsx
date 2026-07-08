@@ -188,8 +188,23 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, subject: "" };
     case "create_task":
       return { type, subject: "" };
+    case "copy_field_from_association":
+      return { type, association: "", source_field: "", target_field: "" };
+    case "associate_records":
+      return { type, association: "", target_id: "" };
+    case "disassociate_records":
+      return { type, association: "" };
+    case "clear_field":
+      return { type, field: "" };
+    case "increment_field":
+      return { type, field: "score", amount: 1 };
+    case "send_email":
+      return { type, subject: "Assunto", body: "Corpo do email" };
+    case "send_whatsapp":
+      return { type, body: "" };
   }
 }
+
 
 // ============================================================================
 // Path: um passo é endereçado por um array de índices (branches criam níveis).
