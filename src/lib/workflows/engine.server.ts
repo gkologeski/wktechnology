@@ -110,6 +110,8 @@ interface RunCtx {
   ownerId: string;
   after: AnyRow | null;
   before: AnyRow | null;
+  /** Fase 5 — variáveis mutáveis do run, populadas por format_data e lidas via {{vars.X}}. */
+  vars?: AnyRow;
 }
 
 interface RunResult {
