@@ -61,9 +61,13 @@ function toStr(v: unknown): string {
   return JSON.stringify(v);
 }
 
-function renderTokens(input: unknown, after: AnyRow | null): unknown {
+function renderTokens(input: unknown, after: AnyRow | null, vars?: AnyRow): unknown {
   if (typeof input !== "string") return input;
-  return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key) => toStr(getField(after, String(key))));
+  return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key) => {
+    const path = String(key);
+    if (path.startsWith("vars.")) return toStr(getField(vars ?? null, path.slice(5)));
+    return toStr(getField(after, path));
+  });
 }
 
 function evalFilter(f: WorkflowFilter, after: AnyRow | null, before: AnyRow | null): boolean {
@@ -106,6 +110,8 @@ interface RunCtx {
   ownerId: string;
   after: AnyRow | null;
   before: AnyRow | null;
+  /** Fase 5 — variáveis mutáveis do run, populadas por format_data e lidas via {{vars.X}}. */
+  vars?: AnyRow;
 }
 
 interface RunResult {
@@ -796,6 +802,89 @@ async function runAction(
           action: "send_whatsapp",
           detail: { to, template: action.template_name ?? null, queued: true },
         };
+      }
+      case "format_data": {
+        ctx.vars = ctx.vars ?? {};
+        const src = action.source_field ? getField(ctx.after, action.source_field) : undefined;
+        let out: unknown = src;
+        try {
+          switch (action.op) {
+            case "upper": out = toStr(src).toUpperCase(); break;
+            case "lower": out = toStr(src).toLowerCase(); break;
+            case "trim": out = toStr(src).trim(); break;
+            case "template_string":
+              out = renderTokens(action.template ?? "", ctx.after, ctx.vars);
+              break;
+            case "date_add": {
+              const base = src ? new Date(String(src)) : new Date();
+              if (Number.isNaN(base.getTime())) throw new Error("data inválida");
+              const mult = action.unit === "minutes" ? 60_000 : action.unit === "hours" ? 3_600_000 : 86_400_000;
+              out = new Date(base.getTime() + (action.amount ?? 0) * mult).toISOString();
+              break;
+            }
+            case "date_format": {
+              const d = src ? new Date(String(src)) : new Date();
+              if (Number.isNaN(d.getTime())) throw new Error("data inválida");
+              const fmt = action.format ?? "yyyy-MM-dd";
+              const pad = (n: number, w = 2) => String(n).padStart(w, "0");
+              out = fmt
+                .replace(/yyyy/g, String(d.getFullYear()))
+                .replace(/MM/g, pad(d.getMonth() + 1))
+                .replace(/dd/g, pad(d.getDate()))
+                .replace(/HH/g, pad(d.getHours()))
+                .replace(/mm/g, pad(d.getMinutes()))
+                .replace(/ss/g, pad(d.getSeconds()));
+              break;
+            }
+            case "number_round": {
+              const n = typeof src === "number" ? src : parseFloat(String(src));
+              if (Number.isNaN(n)) throw new Error("valor não numérico");
+              const p = Math.max(0, Math.floor(action.amount ?? 0));
+              const factor = Math.pow(10, p);
+              out = Math.round(n * factor) / factor;
+              break;
+            }
+          }
+        } catch (e) {
+          throw new Error(`format_data: ${e instanceof Error ? e.message : String(e)}`);
+        }
+        (ctx.vars as AnyRow)[action.target_var] = out;
+        return { at, ok: true, action: "format_data", detail: { op: action.op, target_var: action.target_var, value: out } };
+      }
+      case "send_slack": {
+        const { data: integ } = await supabase
+          .from("slack_integrations")
+          .select("access_token, default_channel_id")
+          .eq("owner_id", ctx.ownerId)
+          .maybeSingle();
+        if (!integ) throw new Error("Slack não conectado neste workspace");
+        const channel = action.channel?.trim() || (integ.default_channel_id as string | null);
+        if (!channel) throw new Error("Canal do Slack não informado e sem canal padrão");
+        const text = renderTokens(action.text, ctx.after, ctx.vars) as string;
+        const res = await fetch("https://slack.com/api/chat.postMessage", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            Authorization: `Bearer ${integ.access_token}`,
+          },
+          body: JSON.stringify({ channel, text }),
+        });
+        const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+        if (!res.ok || !json.ok) throw new Error(`Slack: ${json.error ?? res.status}`);
+        return { at, ok: true, action: "send_slack", detail: { channel } };
+      }
+      case "send_teams": {
+        const text = renderTokens(action.text, ctx.after, ctx.vars) as string;
+        const title = action.title ? (renderTokens(action.title, ctx.after, ctx.vars) as string) : undefined;
+        // Microsoft Teams Incoming Webhook aceita MessageCard simples.
+        const body = title ? { title, text } : { text };
+        const res = await fetch(action.webhook_url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`Teams respondeu ${res.status}`);
+        return { at, ok: true, action: "send_teams", detail: { title } };
       }
       default: {
         const _exhaustive: never = action;

@@ -186,6 +186,28 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     offset_amount: z.number().int().min(-100_000).max(100_000).optional(),
     offset_unit: z.enum(["minutes", "hours", "days"]).optional(),
   }),
+  // Fase 5 — Utilitários avançados
+  z.object({
+    type: z.literal("format_data"),
+    op: z.enum(["upper", "lower", "trim", "date_add", "date_format", "number_round", "template_string"]),
+    source_field: z.string().max(100).optional(),
+    target_var: z.string().min(1).max(60).regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "nome inválido"),
+    template: z.string().max(4000).optional(),
+    format: z.string().max(60).optional(),
+    amount: z.number().min(-1_000_000).max(1_000_000).optional(),
+    unit: z.enum(["minutes", "hours", "days"]).optional(),
+  }),
+  z.object({
+    type: z.literal("send_slack"),
+    channel: z.string().max(60).optional(),
+    text: z.string().min(1).max(4000),
+  }),
+  z.object({
+    type: z.literal("send_teams"),
+    webhook_url: z.string().url().max(500),
+    title: z.string().max(200).optional(),
+    text: z.string().min(1).max(4000),
+  }),
 ]);
 
 
