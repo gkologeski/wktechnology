@@ -90,25 +90,26 @@ export const saveWorkflow = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await requireTool(userId, "manage_workflows");
-    // Fase 4: escritas do builder vão para o rascunho. Só toggle enabled/name/entity vão para o registro vivo.
-    const basePayload = {
-      owner_id: userId,
+    // Fase 4: escritas do builder vão SEMPRE para o rascunho. A versão viva (actions/trigger/goal_filters)
+    // só muda via publishWorkflow. Toggle de enabled/name/entity é aplicado direto, sem mexer em status.
+    const updatePayload = {
       name: data.name,
       entity: data.entity,
       enabled: data.enabled,
       draft_trigger: data.trigger,
       draft_actions: data.actions,
       draft_goal_filters: (data.trigger as unknown as WorkflowTrigger).goal_filters ?? [],
-      status: "draft",
     } as never;
     if (data.id) {
-      const { error } = await supabase.from("workflows").update(basePayload).eq("id", data.id);
+      const { error } = await supabase.from("workflows").update(updatePayload).eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
-    // Novo workflow: precisa também de trigger/actions não-nulos por causa do NOT NULL DEFAULT.
+    // Novo workflow: começa como 'draft' até primeira publicação.
     const insertPayload = {
-      ...(basePayload as Record<string, unknown>),
+      ...(updatePayload as Record<string, unknown>),
+      owner_id: userId,
+      status: "draft",
       trigger: {},
       actions: [],
       goal_filters: [],
