@@ -197,7 +197,8 @@ export function useReferenceLabels() {
       const m = userByIdMembers.get(id)?.full_name?.trim();
       if (m) return m;
       const resolved = resolvedRef.current.user.get(id);
-      if (resolved) return resolved;
+      if (resolved && resolved.length > 0) return resolved;
+      if (resolved === "") return "Usuário removido";
       enqueue("user", id);
       // fallback enquanto resolve: nome curto original do hook
       const fallback = nameForUser(id);
@@ -210,6 +211,14 @@ export function useReferenceLabels() {
       const resolved = resolvedRef.current.company.get(id);
       if (resolved) return resolved;
       enqueue("company", id);
+      return LOADING_LABEL;
+    },
+    labelForContact: (id: string | null | undefined) => {
+      if (!id) return "—";
+      const resolved = resolvedRef.current.contact.get(id);
+      if (resolved && resolved.length > 0) return resolved;
+      if (resolved === "") return "Contato removido";
+      enqueue("contact", id);
       return LOADING_LABEL;
     },
     labelForPipeline: (id: string | null | undefined) => {
