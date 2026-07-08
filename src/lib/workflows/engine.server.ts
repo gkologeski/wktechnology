@@ -949,9 +949,11 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
         owner_id: wf.owner_id,
         workflow_id: wf.id,
         event_id: event.id,
+        entity: event.entity,
+        entity_id: event.entity_id,
         status: "running",
         started_at: new Date().toISOString(),
-      })
+      } as never)
       .select("id")
       .single();
     if (insErr || !run) continue;
