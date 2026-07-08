@@ -70,6 +70,72 @@ function renderTokens(input: unknown, after: AnyRow | null, vars?: AnyRow): unkn
   });
 }
 
+/**
+ * Resolve tokens em valores de `extra_fields` de ações create_*.
+ * Strings passam por renderTokens; objetos são percorridos recursivamente
+ * (para casos como `custom_fields: { key: "{{campo}}" }`). Demais tipos
+ * (number/boolean/null) são preservados.
+ */
+function resolveExtraFields(
+  extra: Record<string, unknown> | undefined,
+  after: AnyRow | null,
+  vars?: AnyRow,
+): Record<string, unknown> {
+  if (!extra || typeof extra !== "object") return {};
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(extra)) {
+    if (v == null) {
+      out[k] = null;
+      continue;
+    }
+    if (typeof v === "string") {
+      const resolved = renderTokens(v, after, vars);
+      out[k] = resolved === "" ? null : resolved;
+    } else if (Array.isArray(v)) {
+      out[k] = v.map((item) =>
+        typeof item === "string" ? renderTokens(item, after, vars) : item,
+      );
+    } else if (typeof v === "object") {
+      out[k] = resolveExtraFields(v as Record<string, unknown>, after, vars);
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
+}
+
+/**
+ * Mescla payload principal com extra_fields, dando precedência ao principal.
+ * Se ambos tiverem `custom_fields` (objeto), faz merge em vez de sobrescrever.
+ */
+function mergeExtra(
+  base: Record<string, unknown>,
+  extra: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...extra };
+  for (const [k, v] of Object.entries(base)) {
+    if (v === null || v === undefined) continue;
+    merged[k] = v;
+  }
+  const baseCf = base.custom_fields;
+  const extraCf = extra.custom_fields;
+  if (
+    baseCf &&
+    extraCf &&
+    typeof baseCf === "object" &&
+    !Array.isArray(baseCf) &&
+    typeof extraCf === "object" &&
+    !Array.isArray(extraCf)
+  ) {
+    merged.custom_fields = {
+      ...(extraCf as Record<string, unknown>),
+      ...(baseCf as Record<string, unknown>),
+    };
+  }
+  return merged;
+}
+
+
 function evalFilter(f: WorkflowFilter, after: AnyRow | null, before: AnyRow | null): boolean {
   const v = getField(after, f.field);
   switch (f.op) {
