@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
-import { searchCompanies, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
+import { searchCompanies, searchContacts, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
 
 type Pipeline = { id: string; name: string; stages: unknown };
 
