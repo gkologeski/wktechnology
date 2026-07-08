@@ -97,20 +97,23 @@ export function useReferenceLabels() {
     company: Set<string>;
     pipeline: Set<string>;
     user: Set<string>;
-  }>({ company: new Set(), pipeline: new Set(), user: new Set() });
+    contact: Set<string>;
+  }>({ company: new Set(), pipeline: new Set(), user: new Set(), contact: new Set() });
   const resolvedRef = useRef<{
     company: Map<string, string>;
     pipeline: Map<string, string>;
     user: Map<string, string>;
-  }>({ company: new Map(), pipeline: new Map(), user: new Map() });
+    contact: Map<string, string>;
+  }>({ company: new Map(), pipeline: new Map(), user: new Map(), contact: new Map() });
   const requestedRef = useRef<{
     company: Set<string>;
     pipeline: Set<string>;
     user: Set<string>;
-  }>({ company: new Set(), pipeline: new Set(), user: new Set() });
+    contact: Set<string>;
+  }>({ company: new Set(), pipeline: new Set(), user: new Set(), contact: new Set() });
   const [tick, setTick] = useState(0);
 
-  function enqueue(kind: "company" | "pipeline" | "user", id: string) {
+  function enqueue(kind: "company" | "pipeline" | "user" | "contact", id: string) {
     if (!id) return;
     if (resolvedRef.current[kind].has(id)) return;
     if (requestedRef.current[kind].has(id)) return;
@@ -124,19 +127,24 @@ export function useReferenceLabels() {
 
   useEffect(() => {
     const hasWork =
-      pending.company.size > 0 || pending.pipeline.size > 0 || pending.user.size > 0;
+      pending.company.size > 0 ||
+      pending.pipeline.size > 0 ||
+      pending.user.size > 0 ||
+      pending.contact.size > 0;
     if (!hasWork) return;
     const t = setTimeout(async () => {
       const batches = {
         company: Array.from(pending.company),
         pipeline: Array.from(pending.pipeline),
         user: Array.from(pending.user),
+        contact: Array.from(pending.contact),
       };
       // marcar como requested para evitar reenvios enquanto in-flight
       batches.company.forEach((id) => requestedRef.current.company.add(id));
       batches.pipeline.forEach((id) => requestedRef.current.pipeline.add(id));
       batches.user.forEach((id) => requestedRef.current.user.add(id));
-      setPending({ company: new Set(), pipeline: new Set(), user: new Set() });
+      batches.contact.forEach((id) => requestedRef.current.contact.add(id));
+      setPending({ company: new Set(), pipeline: new Set(), user: new Set(), contact: new Set() });
 
       await Promise.all([
         batches.company.length > 0 &&
@@ -154,14 +162,21 @@ export function useReferenceLabels() {
         batches.user.length > 0 &&
           fetchUsers({ data: { ids: batches.user } })
             .then((rows) => {
-              rows.forEach((r) => resolvedRef.current.user.set(r.id, r.name));
+              // Grava mesmo com nome vazio para sinalizar "resolvido sem nome"
+              rows.forEach((r) => resolvedRef.current.user.set(r.id, r.name ?? ""));
+            })
+            .catch(() => {}),
+        batches.contact.length > 0 &&
+          fetchContacts({ data: { ids: batches.contact } })
+            .then((rows) => {
+              rows.forEach((r) => resolvedRef.current.contact.set(r.id, r.name));
             })
             .catch(() => {}),
       ]);
       setTick((v) => v + 1);
     }, 120);
     return () => clearTimeout(t);
-  }, [pending, fetchCompanies, fetchPipelines, fetchUsers]);
+  }, [pending, fetchCompanies, fetchContacts, fetchPipelines, fetchUsers]);
 
   // Silence unused-variable warning: tick is only used to force re-render.
   void tick;
