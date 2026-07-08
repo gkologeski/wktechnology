@@ -198,6 +198,44 @@ export type WorkflowAction =
       field: string; // campo tipo data no registro
       offset_amount?: number; // pode ser negativo
       offset_unit?: "minutes" | "hours" | "days";
+    }
+  // Fase 5 — Utilitários avançados
+  | {
+      type: "format_data";
+      op:
+        | "upper"
+        | "lower"
+        | "trim"
+        | "date_add"
+        | "date_format"
+        | "number_round"
+        | "template_string";
+      /** Campo do registro para ler o valor de entrada (ex: "name" ou "created_at"). Ignorado quando op=template_string. */
+      source_field?: string;
+      /** Nome da variável do run onde o resultado é armazenado (acessível via {{vars.NAME}}). */
+      target_var: string;
+      /** Para template_string: template com tokens {{field}} / {{vars.X}}. */
+      template?: string;
+      /** Para date_format. Ex: "yyyy-MM-dd" ou "dd/MM/yyyy HH:mm". */
+      format?: string;
+      /** Para date_add / number_round: quantidade / precisão. */
+      amount?: number;
+      /** Para date_add. */
+      unit?: "minutes" | "hours" | "days";
+    }
+  | {
+      type: "send_slack";
+      /** ID do canal Slack (C0…). Se vazio, usa default_channel_id da integração. */
+      channel?: string;
+      /** Texto (aceita tokens {{field}} / {{vars.X}}). */
+      text: string;
+    }
+  | {
+      type: "send_teams";
+      /** Incoming webhook URL do Teams (configurável por ação; fica no workflow). */
+      webhook_url: string;
+      title?: string;
+      text: string;
     };
 
 
