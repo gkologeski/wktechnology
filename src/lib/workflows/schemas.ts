@@ -141,7 +141,46 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     due_in_days: z.number().int().min(0).max(365).optional(),
     assignee_id: z.string().uuid().optional(),
   }),
+  // Fase 2 — CRM avançado
+  z.object({
+    type: z.literal("copy_field_from_association"),
+    association: z.string().min(1).max(60),
+    source_field: z.string().min(1).max(100),
+    target_field: z.string().min(1).max(100),
+  }),
+  z.object({
+    type: z.literal("associate_records"),
+    association: z.string().min(1).max(60),
+    target_id: z.string().min(1).max(200),
+  }),
+  z.object({
+    type: z.literal("disassociate_records"),
+    association: z.string().min(1).max(60),
+  }),
+  z.object({
+    type: z.literal("clear_field"),
+    field: z.string().min(1).max(100),
+  }),
+  z.object({
+    type: z.literal("increment_field"),
+    field: z.string().min(1).max(100),
+    amount: z.number().int().min(-1_000_000).max(1_000_000),
+  }),
+  z.object({
+    type: z.literal("send_email"),
+    template_id: z.string().uuid().optional(),
+    subject: z.string().min(1).max(300),
+    body: z.string().min(1).max(20_000),
+    to_field: z.string().max(100).optional(),
+  }),
+  z.object({
+    type: z.literal("send_whatsapp"),
+    template_name: z.string().max(200).optional(),
+    body: z.string().max(4000).optional(),
+    to_field: z.string().max(100).optional(),
+  }),
 ]);
+
 
 const MAX_BRANCH_DEPTH = 3;
 

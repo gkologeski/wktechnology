@@ -39,7 +39,14 @@ import {
   Ticket,
   CheckSquare,
   Contact,
+  Copy,
+  Link2,
+  Link2Off,
+  Eraser,
+  Plus as PlusIcon,
+  MessageCircle,
 } from "lucide-react";
+
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -131,7 +138,15 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   create_deal: Handshake,
   create_ticket: Ticket,
   create_task: CheckSquare,
+  copy_field_from_association: Copy,
+  associate_records: Link2,
+  disassociate_records: Link2Off,
+  clear_field: Eraser,
+  increment_field: PlusIcon,
+  send_email: Mail,
+  send_whatsapp: MessageCircle,
 };
+
 
 function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
   switch (type) {
@@ -173,8 +188,23 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, subject: "" };
     case "create_task":
       return { type, subject: "" };
+    case "copy_field_from_association":
+      return { type, association: "", source_field: "", target_field: "" };
+    case "associate_records":
+      return { type, association: "", target_id: "" };
+    case "disassociate_records":
+      return { type, association: "" };
+    case "clear_field":
+      return { type, field: "" };
+    case "increment_field":
+      return { type, field: "score", amount: 1 };
+    case "send_email":
+      return { type, subject: "Assunto", body: "Corpo do email" };
+    case "send_whatsapp":
+      return { type, body: "" };
   }
 }
+
 
 // ============================================================================
 // Path: um passo é endereçado por um array de índices (branches criam níveis).
@@ -480,11 +510,13 @@ export function WorkflowBuilder({
                 ) : selection && selectedAction ? (
                   <StepConfigPanel
                     action={selectedAction}
+                    entity={state.entity}
                     entityFields={fieldOptions}
                     onChange={(na) =>
                       setActions((prev) => updateStep(prev, selection, () => na))
                     }
                   />
+
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     Selecione um passo no canvas para configurar.
@@ -1102,10 +1134,12 @@ function FilterRow({
 // ============================================================================
 function StepConfigPanel({
   action,
+  entity,
   entityFields,
   onChange,
 }: {
   action: WorkflowAction;
+  entity: WorkflowEntity;
   entityFields: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
@@ -1115,17 +1149,19 @@ function StepConfigPanel({
         <h3 className="text-sm font-semibold">{ACTION_LABELS[action.type]}</h3>
         <p className="text-xs text-muted-foreground mt-1">Configure os detalhes deste passo.</p>
       </div>
-      <StepConfigForm action={action} entityFields={entityFields} onChange={onChange} />
+      <StepConfigForm action={action} entity={entity} entityFields={entityFields} onChange={onChange} />
     </div>
   );
 }
 
 function StepConfigForm({
   action,
+  entity,
   entityFields,
   onChange,
 }: {
   action: WorkflowAction;
+  entity: WorkflowEntity;
   entityFields: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
@@ -1141,6 +1177,7 @@ function StepConfigForm({
     () => ("title" in action ? (action.title ?? "") : ""),
     (v) => onChange({ ...action, title: v } as WorkflowAction),
   );
+
 
   switch (action.type) {
     case "set_field":
@@ -1793,6 +1830,117 @@ function StepConfigForm({
           </div>
         </div>
       );
+    case "copy_field_from_association":
+      return <CopyFromAssociationForm entity={entity} action={action} onChange={onChange} />;
+    case "associate_records":
+      return <AssociateRecordsForm entity={entity} action={action} onChange={onChange} />;
+    case "disassociate_records":
+      return <DisassociateRecordsForm entity={entity} action={action} onChange={onChange} />;
+    case "clear_field":
+      return (
+        <div className="space-y-2">
+          <Label className="text-xs">Campo a limpar</Label>
+          <FieldSelect
+            entity={entity}
+            value={action.field}
+            onChange={(v) => onChange({ ...action, field: v })}
+          />
+        </div>
+      );
+    case "increment_field":
+      return (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Campo numérico</Label>
+            <FieldSelect
+              entity={entity}
+              value={action.field}
+              onChange={(v) => onChange({ ...action, field: v })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Incrementar em</Label>
+            <Input
+              type="number"
+              value={action.amount}
+              onChange={(e) => onChange({ ...action, amount: Number(e.target.value) || 0 })}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">Use valores negativos para decrementar.</p>
+          </div>
+        </div>
+      );
+    case "send_email":
+      return (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Fica na caixa de saída (email_messages) como outbound; a entrega ocorre pela conta de email configurada.
+          </p>
+          <div>
+            <Label className="text-xs">Template (opcional)</Label>
+            <EmailTemplatePicker
+              value={action.template_id ?? ""}
+              onChange={(v) => onChange({ ...action, template_id: v || undefined })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Assunto *</Label>
+            <Input
+              value={action.subject}
+              onChange={(e) => onChange({ ...action, subject: e.target.value })}
+              placeholder="Olá {{first_name}}"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Corpo *</Label>
+            <Textarea
+              value={action.body}
+              onChange={(e) => onChange({ ...action, body: e.target.value })}
+              rows={5}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Campo com email do destinatário</Label>
+            <Input
+              value={action.to_field ?? ""}
+              onChange={(e) => onChange({ ...action, to_field: e.target.value })}
+              placeholder="email"
+            />
+          </div>
+        </div>
+      );
+    case "send_whatsapp":
+      return (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Enfileira em whatsapp_messages (outbound, status queued). Entrega depende do provedor configurado.
+          </p>
+          <div>
+            <Label className="text-xs">Template (opcional)</Label>
+            <Input
+              value={action.template_name ?? ""}
+              onChange={(e) => onChange({ ...action, template_name: e.target.value || undefined })}
+              placeholder="nome_do_template_aprovado"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Corpo (se não usar template)</Label>
+            <Textarea
+              value={action.body ?? ""}
+              onChange={(e) => onChange({ ...action, body: e.target.value })}
+              rows={3}
+              placeholder="Olá {{first_name}}, ..."
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Campo com telefone do destinatário</Label>
+            <Input
+              value={action.to_field ?? ""}
+              onChange={(e) => onChange({ ...action, to_field: e.target.value })}
+              placeholder="phone"
+            />
+          </div>
+        </div>
+      );
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
@@ -1800,6 +1948,207 @@ function StepConfigForm({
     }
   }
 }
+
+// ============================================================================
+// Fase 2 — helpers de UI para associações/campos/templates
+// ============================================================================
+function AssociationSelect({
+  entity,
+  value,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [assocs, setAssocs] = useState<Array<{ key: string; label: string; target_table: string }>>([]);
+  useEffect(() => {
+    let alive = true;
+    import("@/lib/workflows/associations").then((m) => {
+      if (alive) {
+        setAssocs(
+          (m.ENTITY_ASSOCIATIONS[entity] ?? []).map((a) => ({
+            key: a.key,
+            label: a.label,
+            target_table: a.target_table,
+          })),
+        );
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [entity]);
+  if (assocs.length === 0) {
+    return <p className="text-xs text-muted-foreground">Esta entidade não tem associações configuráveis.</p>;
+  }
+  return (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Escolha a associação" />
+      </SelectTrigger>
+      <SelectContent>
+        {assocs.map((a) => (
+          <SelectItem key={a.key} value={a.key}>
+            {a.label} <span className="text-muted-foreground text-xs">({a.target_table})</span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function FieldSelect({
+  entity,
+  value,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const fields = useEntityFieldOptions(entity);
+  if (fields.length === 0) {
+    return <Input value={value} onChange={(e) => onChange(e.target.value)} />;
+  }
+  return (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Escolha um campo" />
+      </SelectTrigger>
+      <SelectContent>
+        {fields.map((f) => (
+          <SelectItem key={f.name} value={f.name}>
+            {f.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function CopyFromAssociationForm({
+  entity,
+  action,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  action: Extract<WorkflowAction, { type: "copy_field_from_association" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div>
+        <Label className="text-xs">Associação de origem</Label>
+        <AssociationSelect
+          entity={entity}
+          value={action.association}
+          onChange={(v) => onChange({ ...action, association: v })}
+        />
+      </div>
+      <div>
+        <Label className="text-xs">Campo de origem</Label>
+        <Input
+          value={action.source_field}
+          onChange={(e) => onChange({ ...action, source_field: e.target.value })}
+          placeholder="ex: industry"
+        />
+      </div>
+      <div>
+        <Label className="text-xs">Campo de destino (nesta entidade)</Label>
+        <FieldSelect
+          entity={entity}
+          value={action.target_field}
+          onChange={(v) => onChange({ ...action, target_field: v })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AssociateRecordsForm({
+  entity,
+  action,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  action: Extract<WorkflowAction, { type: "associate_records" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div>
+        <Label className="text-xs">Associação</Label>
+        <AssociationSelect
+          entity={entity}
+          value={action.association}
+          onChange={(v) => onChange({ ...action, association: v })}
+        />
+      </div>
+      <div>
+        <Label className="text-xs">ID do registro alvo</Label>
+        <Input
+          value={action.target_id}
+          onChange={(e) => onChange({ ...action, target_id: e.target.value })}
+          placeholder="uuid ou {{company_id}}"
+        />
+      </div>
+    </div>
+  );
+}
+
+function DisassociateRecordsForm({
+  entity,
+  action,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  action: Extract<WorkflowAction, { type: "disassociate_records" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div>
+      <Label className="text-xs">Associação a remover</Label>
+      <AssociationSelect
+        entity={entity}
+        value={action.association}
+        onChange={(v) => onChange({ ...action, association: v })}
+      />
+    </div>
+  );
+}
+
+function EmailTemplatePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: templates = [] } = useQuery({
+    queryKey: ["email-templates-picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string }>;
+    },
+  });
+  if (templates.length === 0) {
+    return <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="UUID do template" />;
+  }
+  return (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Nenhum (assunto/corpo abaixo)" />
+      </SelectTrigger>
+      <SelectContent>
+        {templates.map((t) => (
+          <SelectItem key={t.id} value={t.id}>
+            {t.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 
 // ============================================================================
 // Entity picker
@@ -1995,10 +2344,25 @@ function describeAction(a: WorkflowAction): string {
       return `ticket: ${a.subject || "—"}`;
     case "create_task":
       return `tarefa: ${a.subject || "—"}`;
+    case "copy_field_from_association":
+      return `${a.association}.${a.source_field} → ${a.target_field}`;
+    case "associate_records":
+      return `${a.association} = ${a.target_id.slice(0, 8)}…`;
+    case "disassociate_records":
+      return `remover ${a.association}`;
+    case "clear_field":
+      return `limpar ${a.field}`;
+    case "increment_field":
+      return `${a.field} += ${a.amount}`;
+    case "send_email":
+      return `email: ${a.subject || "—"}`;
+    case "send_whatsapp":
+      return `whatsapp: ${a.template_name || a.body?.slice(0, 30) || "—"}`;
     default:
       return "";
   }
 }
+
 
 // Silence unused-import in case memo helper not used elsewhere.
 void useMemo;

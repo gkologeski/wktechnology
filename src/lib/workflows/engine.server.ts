@@ -575,11 +575,131 @@ async function runAction(
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_task", detail: { subject } };
       }
+      case "copy_field_from_association": {
+        const { findAssociation } = await import("./associations");
+        const assoc = findAssociation(ctx.entity, action.association);
+        if (!assoc) throw new Error(`associação desconhecida: ${action.association}`);
+        const targetId = ctx.after ? (ctx.after[assoc.fk_column] as string | null) : null;
+        if (!targetId) throw new Error(`sem valor em ${assoc.fk_column}`);
+        const { data: assocRow, error: readErr } = await supabase
+          .from(assoc.target_table)
+          .select(action.source_field)
+          .eq("id", targetId)
+          .maybeSingle();
+        if (readErr) throw new Error(readErr.message);
+        const value = (assocRow as AnyRow | null)?.[action.source_field] ?? null;
+        const { error } = await supabase
+          .from(ctx.entity)
+          .update({ [action.target_field]: value })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "copy_field_from_association",
+          detail: { from: `${assoc.target_table}.${action.source_field}`, target: action.target_field, value },
+        };
+      }
+      case "associate_records": {
+        const { findAssociation } = await import("./associations");
+        const assoc = findAssociation(ctx.entity, action.association);
+        if (!assoc) throw new Error(`associação desconhecida: ${action.association}`);
+        const targetId = (renderTokens(action.target_id, ctx.after) as string).trim();
+        if (!targetId) throw new Error("target_id vazio");
+        const { error } = await supabase
+          .from(ctx.entity)
+          .update({ [assoc.fk_column]: targetId })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "associate_records", detail: { [assoc.fk_column]: targetId } };
+      }
+      case "disassociate_records": {
+        const { findAssociation } = await import("./associations");
+        const assoc = findAssociation(ctx.entity, action.association);
+        if (!assoc) throw new Error(`associação desconhecida: ${action.association}`);
+        const { error } = await supabase
+          .from(ctx.entity)
+          .update({ [assoc.fk_column]: null })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "disassociate_records", detail: { [assoc.fk_column]: null } };
+      }
+      case "clear_field": {
+        const { error } = await supabase
+          .from(ctx.entity)
+          .update({ [action.field]: null })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "clear_field", detail: { field: action.field } };
+      }
+      case "increment_field": {
+        const current = Number(ctx.after?.[action.field] ?? 0) || 0;
+        const next = current + (Number(action.amount) || 0);
+        const { error } = await supabase
+          .from(ctx.entity)
+          .update({ [action.field]: next })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "increment_field", detail: { field: action.field, from: current, to: next } };
+      }
+      case "send_email": {
+        const toField = action.to_field || "email";
+        const to = (ctx.after?.[toField] as string | null) ?? null;
+        if (!to) throw new Error(`sem destinatário em ${toField}`);
+        let subject = action.subject;
+        let body = action.body;
+        if (action.template_id) {
+          const { data: tpl } = await supabase
+            .from("email_templates")
+            .select("subject, body_html, body_text")
+            .eq("id", action.template_id)
+            .maybeSingle();
+          if (tpl) {
+            subject = (tpl.subject as string) || subject;
+            body = (tpl.body_html as string) || (tpl.body_text as string) || body;
+          }
+        }
+        subject = renderTokens(subject, ctx.after) as string;
+        body = renderTokens(body, ctx.after) as string;
+        const { error } = await supabase.from("email_messages").insert({
+          owner_id: ctx.ownerId,
+          direction: "outbound",
+          to_emails: [to],
+          subject,
+          body_html: body,
+          body_text: body.replace(/<[^>]+>/g, ""),
+        } as never);
+        if (error) throw new Error(error.message);
+        return { at, ok: true, action: "send_email", detail: { to, subject, queued: true } };
+      }
+      case "send_whatsapp": {
+        const toField = action.to_field || "phone";
+        const to = (ctx.after?.[toField] as string | null) ?? null;
+        if (!to) throw new Error(`sem destinatário em ${toField}`);
+        const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
+        const { error } = await supabase.from("whatsapp_messages").insert({
+          owner_id: ctx.ownerId,
+          direction: "outbound",
+          to_number: to,
+          body,
+          template_name: action.template_name ?? null,
+          is_template: !!action.template_name,
+          status: "queued",
+        } as never);
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "send_whatsapp",
+          detail: { to, template: action.template_name ?? null, queued: true },
+        };
+      }
       default: {
         const _exhaustive: never = action;
         void _exhaustive;
         return { at, ok: false, action: "unknown", error: "Ação não suportada" };
       }
+
     }
   } catch (e) {
     return {

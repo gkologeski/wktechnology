@@ -134,7 +134,39 @@ export type WorkflowAction =
       body?: string;
       due_in_days?: number;
       assignee_id?: string;
+    }
+  // Fase 2 — CRM avançado
+  | {
+      type: "copy_field_from_association";
+      association: string; // chave em ENTITY_ASSOCIATIONS
+      source_field: string;
+      target_field: string;
+    }
+  | {
+      type: "associate_records";
+      association: string;
+      target_id: string; // uuid ou {{token}}
+    }
+  | {
+      type: "disassociate_records";
+      association: string;
+    }
+  | { type: "clear_field"; field: string }
+  | { type: "increment_field"; field: string; amount: number }
+  | {
+      type: "send_email";
+      template_id?: string;
+      subject: string;
+      body: string;
+      to_field?: string; // default: "email"
+    }
+  | {
+      type: "send_whatsapp";
+      template_name?: string;
+      body?: string;
+      to_field?: string; // default: "phone"
     };
+
 
 
 export type WorkflowActionType = WorkflowAction["type"];
@@ -187,12 +219,31 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   create_deal: "Criar negócio",
   create_ticket: "Criar ticket",
   create_task: "Criar tarefa",
+  copy_field_from_association: "Copiar campo de associação",
+  associate_records: "Associar registro",
+  disassociate_records: "Desassociar registro",
+  clear_field: "Limpar campo",
+  increment_field: "Incrementar campo",
+  send_email: "Enviar email",
+  send_whatsapp: "Enviar WhatsApp",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
 export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionType[] }> = [
   { label: "Controle de fluxo", actions: ["delay", "branch_if"] },
-  { label: "CRM", actions: ["set_field", "assign_to", "rotate_assign"] },
+  {
+    label: "CRM",
+    actions: [
+      "set_field",
+      "clear_field",
+      "increment_field",
+      "copy_field_from_association",
+      "associate_records",
+      "disassociate_records",
+      "assign_to",
+      "rotate_assign",
+    ],
+  },
   {
     label: "Criar registro",
     actions: [
@@ -204,7 +255,10 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "create_task",
     ],
   },
-  { label: "Comunicação", actions: ["create_activity", "send_notification"] },
+  {
+    label: "Comunicação",
+    actions: ["create_activity", "send_notification", "send_email", "send_whatsapp"],
+  },
   { label: "Sequências", actions: ["add_to_sequence"] },
   {
     label: "Recrutamento (ATS)",
@@ -217,6 +271,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
   },
   { label: "Externo", actions: ["webhook"] },
 ];
+
 
 
 // Common fields by entity, used in filter dropdowns and set_field actions
