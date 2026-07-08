@@ -32,6 +32,7 @@ export const TriggerSchema = z.object({
       events: z.array(EventEnum).max(3).optional(),
     })
     .optional(),
+  goal_filters: z.array(FilterSchema).max(20).optional(),
 });
 
 type ActionInput = Record<string, unknown>;
