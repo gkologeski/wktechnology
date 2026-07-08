@@ -49,6 +49,9 @@ import {
   GitFork,
   CalendarClock,
   Target,
+  Wand2,
+  Hash,
+  MessageSquare,
 } from "lucide-react";
 
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
