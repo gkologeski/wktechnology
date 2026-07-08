@@ -17,6 +17,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 
+type DiscountType = "pct" | "amount";
+
 type LineItem = {
   id: string;
   owner_id: string;
@@ -27,6 +29,8 @@ type LineItem = {
   quantity: number;
   unit_price: number;
   discount_pct: number;
+  discount_amount: number;
+  discount_type: DiscountType;
   tax_rate: number;
   position: number;
 };
@@ -35,13 +39,34 @@ function n(v: unknown) {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
 }
+function lineDiscount(li: {
+  quantity?: number | null;
+  unit_price?: number | null;
+  discount_pct?: number | null;
+  discount_amount?: number | null;
+  discount_type?: DiscountType | string | null;
+}) {
+  const qty = n(li.quantity);
+  const price = n(li.unit_price);
+  const gross = qty * price;
+  if ((li.discount_type ?? "pct") === "amount") {
+    const raw = n(li.discount_amount) * qty;
+    return Math.min(Math.max(raw, 0), gross);
+  }
+  return gross * (n(li.discount_pct) / 100);
+}
+function lineSubtotalAfterDiscount(li: Parameters<typeof lineDiscount>[0]) {
+  return n(li.quantity) * n(li.unit_price) - lineDiscount(li);
+}
 function lineTotal(li: {
   quantity?: number | null;
   unit_price?: number | null;
   discount_pct?: number | null;
+  discount_amount?: number | null;
+  discount_type?: DiscountType | string | null;
   tax_rate?: number | null;
 }) {
-  const sub = n(li.quantity) * n(li.unit_price) * (1 - n(li.discount_pct) / 100);
+  const sub = lineSubtotalAfterDiscount(li);
   return sub * (1 + n(li.tax_rate) / 100);
 }
 
@@ -181,6 +206,8 @@ function LineItemsEditorBody({
         quantity: 1,
         unit_price: 0,
         discount_pct: 0,
+        discount_amount: 0,
+        discount_type: "pct",
         tax_rate: 0,
         position: items.length,
       })
@@ -214,6 +241,8 @@ function LineItemsEditorBody({
         quantity: 1,
         unit_price: p.unit_price,
         discount_pct: 0,
+        discount_amount: 0,
+        discount_type: "pct",
         tax_rate: p.tax_rate,
         position: items.length,
       })
@@ -257,14 +286,11 @@ function LineItemsEditorBody({
 
 
   const subtotal = items.reduce((s, li) => s + n(li.quantity) * n(li.unit_price), 0);
-  const discount = items.reduce(
-    (s, li) => s + n(li.quantity) * n(li.unit_price) * (n(li.discount_pct) / 100),
+  const discount = items.reduce((s, li) => s + lineDiscount(li), 0);
+  const tax = items.reduce(
+    (s, li) => s + lineSubtotalAfterDiscount(li) * (n(li.tax_rate) / 100),
     0,
   );
-  const tax = items.reduce((s, li) => {
-    const base = n(li.quantity) * n(li.unit_price) * (1 - n(li.discount_pct) / 100);
-    return s + base * (n(li.tax_rate) / 100);
-  }, 0);
   const total = items.reduce((s, li) => s + lineTotal(li), 0);
 
   return (
@@ -334,12 +360,67 @@ function LineItemsEditorBody({
                     onValueChange={(v) => update(li.id, { unit_price: v ?? 0 })}
                   />
                 </div>
-                <LabeledNumber
-                  label="Desc %"
-                  value={n(li.discount_pct)}
-                  step="0.01"
-                  onCommit={(v) => update(li.id, { discount_pct: v })}
-                />
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Desconto
+                    </span>
+                    <div className="inline-flex rounded-md border overflow-hidden text-[10px]">
+                      <button
+                        type="button"
+                        className={`px-1.5 py-0.5 ${
+                          (li.discount_type ?? "pct") === "pct"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-transparent text-muted-foreground"
+                        }`}
+                        onClick={() => {
+                          if ((li.discount_type ?? "pct") !== "pct") {
+                            update(li.id, { discount_type: "pct", discount_amount: 0 });
+                          }
+                        }}
+                        aria-label="Desconto em porcentagem"
+                      >
+                        %
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-1.5 py-0.5 border-l ${
+                          li.discount_type === "amount"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-transparent text-muted-foreground"
+                        }`}
+                        onClick={() => {
+                          if (li.discount_type !== "amount") {
+                            update(li.id, { discount_type: "amount", discount_pct: 0 });
+                          }
+                        }}
+                        aria-label="Desconto em valor"
+                      >
+                        R$
+                      </button>
+                    </div>
+                  </div>
+                  {(li.discount_type ?? "pct") === "amount" ? (
+                    <CurrencyInput
+                      currency={currency}
+                      value={n(li.discount_amount)}
+                      onValueChange={(v) => update(li.id, { discount_amount: v ?? 0 })}
+                    />
+                  ) : (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      defaultValue={String(n(li.discount_pct))}
+                      key={`pct-${li.id}-${n(li.discount_pct)}`}
+                      onBlur={(e) => {
+                        const num = Number(e.currentTarget.value);
+                        if (!Number.isNaN(num) && num !== n(li.discount_pct)) {
+                          update(li.id, { discount_pct: num });
+                        }
+                      }}
+                    />
+                  )}
+                </div>
                 <LabeledNumber
                   label="Imp %"
                   value={n(li.tax_rate)}

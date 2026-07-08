@@ -4665,7 +4665,9 @@ export type Database = {
           created_at: string
           deal_id: string
           description: string | null
+          discount_amount: number
           discount_pct: number
+          discount_type: string
           id: string
           name: string
           owner_id: string
@@ -4681,7 +4683,9 @@ export type Database = {
           created_at?: string
           deal_id: string
           description?: string | null
+          discount_amount?: number
           discount_pct?: number
+          discount_type?: string
           id?: string
           name: string
           owner_id: string
@@ -4697,7 +4701,9 @@ export type Database = {
           created_at?: string
           deal_id?: string
           description?: string | null
+          discount_amount?: number
           discount_pct?: number
+          discount_type?: string
           id?: string
           name?: string
           owner_id?: string
