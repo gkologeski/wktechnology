@@ -2680,6 +2680,12 @@ function describeAction(a: WorkflowAction): string {
       return `email: ${a.subject || "—"}`;
     case "send_whatsapp":
       return `whatsapp: ${a.template_name || a.body?.slice(0, 30) || "—"}`;
+    case "switch_by_value":
+      return `switch ${a.field} · ${a.cases.length} case(s)`;
+    case "branch_multi":
+      return `${a.branches.length} ramo(s) + senão`;
+    case "delay_until_date":
+      return `até ${a.field}${a.offset_amount ? ` ${a.offset_amount > 0 ? "+" : ""}${a.offset_amount}${(a.offset_unit ?? "days")[0]}` : ""}`;
     default:
       return "";
   }
