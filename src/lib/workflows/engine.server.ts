@@ -168,6 +168,102 @@ async function runActions(
       continue;
     }
 
+    // Switch por valor: escolhe primeiro case cujo value bate, ou default.
+    if (action.type === "switch_by_value") {
+      const v = getField(ctx.after, action.field);
+      const matched = action.cases.find((c) => c.value === v);
+      const branchActions = matched ? matched.actions : action.default ?? [];
+      log.push({
+        at: new Date().toISOString(),
+        ok: true,
+        action: "switch_by_value",
+        detail: {
+          field: action.field,
+          value: v,
+          matched: matched ? (matched.label ?? String(matched.value)) : "default",
+        },
+      });
+      const branchRes = await runActions(supabase, branchActions, ctx);
+      log.push(...branchRes.log);
+      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.suspendedAt) {
+        log.push({
+          at: new Date().toISOString(),
+          ok: false,
+          action: "delay",
+          error: "Delays dentro de switch_by_value ainda não são retomáveis",
+        });
+        return { log, hadError: true };
+      }
+      continue;
+    }
+
+    // Ramificação múltipla: executa 1ª branch cujos filtros passam, ou else.
+    if (action.type === "branch_multi") {
+      const matched = action.branches.find((b) =>
+        (b.filters ?? []).every((f) => evalFilter(f, ctx.after, ctx.before)),
+      );
+      const branchActions = matched ? matched.actions : action.else ?? [];
+      log.push({
+        at: new Date().toISOString(),
+        ok: true,
+        action: "branch_multi",
+        detail: { matched: matched ? (matched.label ?? "branch") : "else" },
+      });
+      const branchRes = await runActions(supabase, branchActions, ctx);
+      log.push(...branchRes.log);
+      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.suspendedAt) {
+        log.push({
+          at: new Date().toISOString(),
+          ok: false,
+          action: "delay",
+          error: "Delays dentro de branch_multi ainda não são retomáveis",
+        });
+        return { log, hadError: true };
+      }
+      continue;
+    }
+
+    // Delay até data específica (campo do registro + offset).
+    if (action.type === "delay_until_date") {
+      const raw = getField(ctx.after, action.field);
+      const base = raw ? new Date(String(raw)) : null;
+      if (!base || Number.isNaN(base.getTime())) {
+        log.push({
+          at: new Date().toISOString(),
+          ok: false,
+          action: "delay_until_date",
+          error: `campo ${action.field} não é uma data válida`,
+        });
+        return { log, hadError: true };
+      }
+      const mult =
+        action.offset_unit === "minutes"
+          ? 60_000
+          : action.offset_unit === "hours"
+            ? 3_600_000
+            : 86_400_000;
+      const target = new Date(base.getTime() + (action.offset_amount ?? 0) * mult);
+      if (target.getTime() <= Date.now()) {
+        log.push({
+          at: new Date().toISOString(),
+          ok: true,
+          action: "delay_until_date",
+          detail: { target: target.toISOString(), skipped: "já no passado" },
+        });
+        continue;
+      }
+      const runAtIso = target.toISOString();
+      log.push({
+        at: new Date().toISOString(),
+        ok: true,
+        action: "delay_until_date",
+        detail: { field: action.field, resume_at: runAtIso },
+      });
+      return { log, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
+    }
+
     const step = await runAction(supabase, action, ctx);
     log.push(step);
     if (!step.ok) return { log, hadError: true };
@@ -177,7 +273,14 @@ async function runActions(
 
 async function runAction(
   supabase: SupabaseClient,
-  action: Exclude<WorkflowAction, { type: "delay" } | { type: "branch_if" }>,
+  action: Exclude<
+    WorkflowAction,
+    | { type: "delay" }
+    | { type: "branch_if" }
+    | { type: "switch_by_value" }
+    | { type: "branch_multi" }
+    | { type: "delay_until_date" }
+  >,
   ctx: RunCtx,
 ): Promise<LogStep> {
   const at = new Date().toISOString();
@@ -729,6 +832,7 @@ interface WorkflowRow {
   entity: WorkflowEntity;
   trigger: WorkflowTrigger;
   actions: WorkflowAction[];
+  goal_filters?: WorkflowFilter[] | null;
 }
 
 async function alreadyEnrolled(
@@ -755,7 +859,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   if (event.resume_workflow_id && typeof event.resume_cursor === "number") {
     const { data: wf } = await supabase
       .from("workflows")
-      .select("id, owner_id, entity, trigger, actions")
+      .select("id, owner_id, entity, trigger, actions, goal_filters")
       .eq("id", event.resume_workflow_id)
       .maybeSingle();
     if (wf) {
@@ -797,7 +901,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   // Caso 2: evento normal (created/updated/stage_changed).
   const { data: workflows } = await supabase
     .from("workflows")
-    .select("id, owner_id, entity, trigger, actions")
+    .select("id, owner_id, entity, trigger, actions, goal_filters")
     .eq("owner_id", event.owner_id)
     .eq("entity", event.entity)
     .eq("enabled", true);
@@ -808,6 +912,17 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     const filters = trig.filters ?? [];
     const passes = filters.every((f) => evalFilter(f, event.after, event.before));
     if (!passes) continue;
+
+    // Fase 3 — critérios de meta: se todos passam, o registro já atingiu o objetivo
+    // e é removido do workflow (sem novas execuções).
+    const goalFilters = trig.goal_filters ?? wf.goal_filters ?? [];
+    if (
+      goalFilters.length > 0 &&
+      goalFilters.every((f) => evalFilter(f, event.after, event.before))
+    ) {
+      continue;
+    }
+
 
     // Re-enrollment: se desabilitado e já existe run bem-sucedido, pula.
     // Se habilitado, só reprocessa quando o evento atual está na lista permitida.

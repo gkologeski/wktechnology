@@ -35,6 +35,21 @@ export interface WorkflowTrigger {
     enabled: boolean;
     events?: WorkflowEventType[];
   };
+  /** Fase 3 — critérios de meta. Se todos passarem no processamento do evento,
+   *  o registro sai do workflow sem executar novas ações. */
+  goal_filters?: WorkflowFilter[];
+}
+
+export interface SwitchCase {
+  label?: string;
+  value: unknown;
+  actions: WorkflowAction[];
+}
+
+export interface MultiBranch {
+  label?: string;
+  filters: WorkflowFilter[];
+  actions: WorkflowAction[];
 }
 
 export type WorkflowAction =
@@ -165,6 +180,24 @@ export type WorkflowAction =
       template_name?: string;
       body?: string;
       to_field?: string; // default: "phone"
+    }
+  // Fase 3 — Fluxo avançado
+  | {
+      type: "switch_by_value";
+      field: string;
+      cases: SwitchCase[];
+      default: WorkflowAction[];
+    }
+  | {
+      type: "branch_multi";
+      branches: MultiBranch[];
+      else: WorkflowAction[];
+    }
+  | {
+      type: "delay_until_date";
+      field: string; // campo tipo data no registro
+      offset_amount?: number; // pode ser negativo
+      offset_unit?: "minutes" | "hours" | "days";
     };
 
 
@@ -226,11 +259,14 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   increment_field: "Incrementar campo",
   send_email: "Enviar email",
   send_whatsapp: "Enviar WhatsApp",
+  switch_by_value: "Ramificar por valor (switch)",
+  branch_multi: "Ramificação múltipla",
+  delay_until_date: "Esperar até data",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
 export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionType[] }> = [
-  { label: "Controle de fluxo", actions: ["delay", "branch_if"] },
+  { label: "Controle de fluxo", actions: ["delay", "delay_until_date", "branch_if", "switch_by_value", "branch_multi"] },
   {
     label: "CRM",
     actions: [

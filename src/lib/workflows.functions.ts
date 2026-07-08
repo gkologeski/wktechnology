@@ -14,7 +14,7 @@ export const listWorkflows = createServerFn({ method: "GET" })
     const { supabase } = context;
     const { data, error } = await supabase
       .from("workflows")
-      .select("id, name, entity, enabled, trigger, actions, updated_at")
+      .select("id, name, entity, enabled, trigger, actions, goal_filters, updated_at")
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
 
