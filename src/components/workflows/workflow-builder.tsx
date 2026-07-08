@@ -34,6 +34,11 @@ import {
   Sparkles,
   ChevronLeft,
   Repeat,
+  Building2,
+  Handshake,
+  Ticket,
+  CheckSquare,
+  Contact,
 } from "lucide-react";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
