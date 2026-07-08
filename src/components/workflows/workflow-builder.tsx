@@ -155,6 +155,9 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   switch_by_value: SplitSquareHorizontal,
   branch_multi: GitFork,
   delay_until_date: CalendarClock,
+  format_data: Wand2,
+  send_slack: Hash,
+  send_teams: MessageSquare,
 };
 
 
