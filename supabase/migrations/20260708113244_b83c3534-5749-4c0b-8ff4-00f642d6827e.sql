@@ -1,0 +1,1 @@
+ALTER TABLE public.workflows ADD COLUMN IF NOT EXISTS goal_filters jsonb;
