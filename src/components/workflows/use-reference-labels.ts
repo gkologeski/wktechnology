@@ -2,7 +2,7 @@
 // regra de rotação) para nomes amigáveis. Faz pré-carregamento leve dos
 // primeiros N registros e resolve IDs desconhecidos sob demanda via server
 // functions autenticadas (respeitando RLS).
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,6 @@ const LOADING_LABEL = "Carregando…";
 
 export function useReferenceLabels() {
   const { nameFor: nameForUser, byId: userByIdMembers } = useWorkspaceMembers();
-  const queryClient = useQueryClient();
   const fetchCompanies = useServerFn(searchCompanies);
   const fetchPipelines = useServerFn(searchPipelines);
   const fetchUsers = useServerFn(searchUsers);
