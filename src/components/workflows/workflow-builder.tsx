@@ -125,6 +125,12 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   advance_ats_application_stage: ArrowRight,
   create_ats_candidate: UserPlus,
   assign_recruiter: UserPlus,
+  create_lead: Sparkles,
+  create_contact: Contact,
+  create_company: Building2,
+  create_deal: Handshake,
+  create_ticket: Ticket,
+  create_task: CheckSquare,
 };
 
 function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
@@ -155,6 +161,18 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, full_name: "{{full_name}}" };
     case "assign_recruiter":
       return { type, user_id: "", target: "auto" };
+    case "create_lead":
+      return { type, first_name: "" };
+    case "create_contact":
+      return { type, first_name: "" };
+    case "create_company":
+      return { type, name: "" };
+    case "create_deal":
+      return { type, name: "Novo negócio", currency: "BRL" };
+    case "create_ticket":
+      return { type, subject: "" };
+    case "create_task":
+      return { type, subject: "" };
   }
 }
 
