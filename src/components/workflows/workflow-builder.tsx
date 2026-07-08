@@ -52,6 +52,9 @@ import {
   Wand2,
   Hash,
   MessageSquare,
+  GripVertical,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
