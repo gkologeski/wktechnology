@@ -98,7 +98,7 @@ export const saveWorkflow = createServerFn({ method: "POST" })
       enabled: data.enabled,
       draft_trigger: data.trigger,
       draft_actions: data.actions,
-      draft_goal_filters: (data.trigger as WorkflowTrigger).goal_filters ?? [],
+      draft_goal_filters: (data.trigger as unknown as WorkflowTrigger).goal_filters ?? [],
       status: "draft",
     } as never;
     if (data.id) {
@@ -268,7 +268,7 @@ export const testWorkflow = createServerFn({ method: "POST" })
     if (!rec) throw new Error("Registro não encontrado");
 
     const actions = ((data.useDraft ? wf.draft_actions : wf.actions) ?? []) as WorkflowAction[];
-    const trigger = ((data.useDraft ? wf.draft_trigger : wf.trigger) ?? {}) as WorkflowTrigger;
+    const trigger = ((data.useDraft ? wf.draft_trigger : wf.trigger) ?? {}) as unknown as WorkflowTrigger;
 
     // Log simulado: filtros do trigger + lista linear das ações (branches expandidos).
     const log: Array<{ step: string; ok: boolean; note?: string }> = [];
@@ -345,7 +345,7 @@ export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
     if (!wf) throw new Error("Workflow não encontrado");
     if (wf.status !== "published") throw new Error("Publique o workflow antes de aplicar aos existentes");
 
-    const trigger = (wf.trigger ?? {}) as WorkflowTrigger;
+    const trigger = (wf.trigger ?? {}) as unknown as WorkflowTrigger;
     const filters = trigger.filters ?? [];
 
     const { data: records, error: recErr } = await supabase
