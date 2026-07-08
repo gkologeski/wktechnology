@@ -66,6 +66,8 @@ import { WORKFLOW_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
+import { ExtraFieldsEditor } from "./extra-fields-editor";
+
 
 type FieldOpt = {
   name: string;
