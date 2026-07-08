@@ -1823,6 +1823,117 @@ function StepConfigForm({
           </div>
         </div>
       );
+    case "copy_field_from_association":
+      return <CopyFromAssociationForm entity={entity} action={action} onChange={onChange} />;
+    case "associate_records":
+      return <AssociateRecordsForm entity={entity} action={action} onChange={onChange} />;
+    case "disassociate_records":
+      return <DisassociateRecordsForm entity={entity} action={action} onChange={onChange} />;
+    case "clear_field":
+      return (
+        <div className="space-y-2">
+          <Label className="text-xs">Campo a limpar</Label>
+          <FieldSelect
+            entity={entity}
+            value={action.field}
+            onChange={(v) => onChange({ ...action, field: v })}
+          />
+        </div>
+      );
+    case "increment_field":
+      return (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Campo numérico</Label>
+            <FieldSelect
+              entity={entity}
+              value={action.field}
+              onChange={(v) => onChange({ ...action, field: v })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Incrementar em</Label>
+            <Input
+              type="number"
+              value={action.amount}
+              onChange={(e) => onChange({ ...action, amount: Number(e.target.value) || 0 })}
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">Use valores negativos para decrementar.</p>
+          </div>
+        </div>
+      );
+    case "send_email":
+      return (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Fica na caixa de saída (email_messages) como outbound; a entrega ocorre pela conta de email configurada.
+          </p>
+          <div>
+            <Label className="text-xs">Template (opcional)</Label>
+            <EmailTemplatePicker
+              value={action.template_id ?? ""}
+              onChange={(v) => onChange({ ...action, template_id: v || undefined })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Assunto *</Label>
+            <Input
+              value={action.subject}
+              onChange={(e) => onChange({ ...action, subject: e.target.value })}
+              placeholder="Olá {{first_name}}"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Corpo *</Label>
+            <Textarea
+              value={action.body}
+              onChange={(e) => onChange({ ...action, body: e.target.value })}
+              rows={5}
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Campo com email do destinatário</Label>
+            <Input
+              value={action.to_field ?? ""}
+              onChange={(e) => onChange({ ...action, to_field: e.target.value })}
+              placeholder="email"
+            />
+          </div>
+        </div>
+      );
+    case "send_whatsapp":
+      return (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Enfileira em whatsapp_messages (outbound, status queued). Entrega depende do provedor configurado.
+          </p>
+          <div>
+            <Label className="text-xs">Template (opcional)</Label>
+            <Input
+              value={action.template_name ?? ""}
+              onChange={(e) => onChange({ ...action, template_name: e.target.value || undefined })}
+              placeholder="nome_do_template_aprovado"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Corpo (se não usar template)</Label>
+            <Textarea
+              value={action.body ?? ""}
+              onChange={(e) => onChange({ ...action, body: e.target.value })}
+              rows={3}
+              placeholder="Olá {{first_name}}, ..."
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Campo com telefone do destinatário</Label>
+            <Input
+              value={action.to_field ?? ""}
+              onChange={(e) => onChange({ ...action, to_field: e.target.value })}
+              placeholder="phone"
+            />
+          </div>
+        </div>
+      );
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
@@ -1830,6 +1941,207 @@ function StepConfigForm({
     }
   }
 }
+
+// ============================================================================
+// Fase 2 — helpers de UI para associações/campos/templates
+// ============================================================================
+function AssociationSelect({
+  entity,
+  value,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [assocs, setAssocs] = useState<Array<{ key: string; label: string; target_table: string }>>([]);
+  useEffect(() => {
+    let alive = true;
+    import("@/lib/workflows/associations").then((m) => {
+      if (alive) {
+        setAssocs(
+          (m.ENTITY_ASSOCIATIONS[entity] ?? []).map((a) => ({
+            key: a.key,
+            label: a.label,
+            target_table: a.target_table,
+          })),
+        );
+      }
+    });
+    return () => {
+      alive = false;
+    };
+  }, [entity]);
+  if (assocs.length === 0) {
+    return <p className="text-xs text-muted-foreground">Esta entidade não tem associações configuráveis.</p>;
+  }
+  return (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Escolha a associação" />
+      </SelectTrigger>
+      <SelectContent>
+        {assocs.map((a) => (
+          <SelectItem key={a.key} value={a.key}>
+            {a.label} <span className="text-muted-foreground text-xs">({a.target_table})</span>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function FieldSelect({
+  entity,
+  value,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const fields = useEntityFieldOptions(entity);
+  if (fields.length === 0) {
+    return <Input value={value} onChange={(e) => onChange(e.target.value)} />;
+  }
+  return (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Escolha um campo" />
+      </SelectTrigger>
+      <SelectContent>
+        {fields.map((f) => (
+          <SelectItem key={f.name} value={f.name}>
+            {f.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function CopyFromAssociationForm({
+  entity,
+  action,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  action: Extract<WorkflowAction, { type: "copy_field_from_association" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div>
+        <Label className="text-xs">Associação de origem</Label>
+        <AssociationSelect
+          entity={entity}
+          value={action.association}
+          onChange={(v) => onChange({ ...action, association: v })}
+        />
+      </div>
+      <div>
+        <Label className="text-xs">Campo de origem</Label>
+        <Input
+          value={action.source_field}
+          onChange={(e) => onChange({ ...action, source_field: e.target.value })}
+          placeholder="ex: industry"
+        />
+      </div>
+      <div>
+        <Label className="text-xs">Campo de destino (nesta entidade)</Label>
+        <FieldSelect
+          entity={entity}
+          value={action.target_field}
+          onChange={(v) => onChange({ ...action, target_field: v })}
+        />
+      </div>
+    </div>
+  );
+}
+
+function AssociateRecordsForm({
+  entity,
+  action,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  action: Extract<WorkflowAction, { type: "associate_records" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div>
+        <Label className="text-xs">Associação</Label>
+        <AssociationSelect
+          entity={entity}
+          value={action.association}
+          onChange={(v) => onChange({ ...action, association: v })}
+        />
+      </div>
+      <div>
+        <Label className="text-xs">ID do registro alvo</Label>
+        <Input
+          value={action.target_id}
+          onChange={(e) => onChange({ ...action, target_id: e.target.value })}
+          placeholder="uuid ou {{company_id}}"
+        />
+      </div>
+    </div>
+  );
+}
+
+function DisassociateRecordsForm({
+  entity,
+  action,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  action: Extract<WorkflowAction, { type: "disassociate_records" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  return (
+    <div>
+      <Label className="text-xs">Associação a remover</Label>
+      <AssociationSelect
+        entity={entity}
+        value={action.association}
+        onChange={(v) => onChange({ ...action, association: v })}
+      />
+    </div>
+  );
+}
+
+function EmailTemplatePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { data: templates = [] } = useQuery({
+    queryKey: ["email-templates-picker"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("email_templates")
+        .select("id, name")
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; name: string }>;
+    },
+  });
+  if (templates.length === 0) {
+    return <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="UUID do template" />;
+  }
+  return (
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger>
+        <SelectValue placeholder="Nenhum (assunto/corpo abaixo)" />
+      </SelectTrigger>
+      <SelectContent>
+        {templates.map((t) => (
+          <SelectItem key={t.id} value={t.id}>
+            {t.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 
 // ============================================================================
 // Entity picker
