@@ -12673,10 +12673,13 @@ export type Database = {
       workflow_runs: {
         Row: {
           created_at: string
+          entity: string | null
+          entity_id: string | null
           error: string | null
           event_id: string
           finished_at: string | null
           id: string
+          is_test: boolean
           log: Json
           owner_id: string
           started_at: string | null
@@ -12686,10 +12689,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          entity?: string | null
+          entity_id?: string | null
           error?: string | null
           event_id: string
           finished_at?: string | null
           id?: string
+          is_test?: boolean
           log?: Json
           owner_id: string
           started_at?: string | null
@@ -12699,10 +12705,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          entity?: string | null
+          entity_id?: string | null
           error?: string | null
           event_id?: string
           finished_at?: string | null
           id?: string
+          is_test?: boolean
           log?: Json
           owner_id?: string
           started_at?: string | null
@@ -12738,12 +12747,18 @@ export type Database = {
         Row: {
           actions: Json
           created_at: string
+          draft_actions: Json | null
+          draft_goal_filters: Json | null
+          draft_trigger: Json | null
           enabled: boolean
           entity: string
           goal_filters: Json | null
           id: string
+          last_published_at: string | null
           name: string
           owner_id: string
+          published_version: number
+          status: string
           trigger: Json
           updated_at: string
           workspace_id: string
@@ -12751,12 +12766,18 @@ export type Database = {
         Insert: {
           actions?: Json
           created_at?: string
+          draft_actions?: Json | null
+          draft_goal_filters?: Json | null
+          draft_trigger?: Json | null
           enabled?: boolean
           entity: string
           goal_filters?: Json | null
           id?: string
+          last_published_at?: string | null
           name: string
           owner_id?: string
+          published_version?: number
+          status?: string
           trigger?: Json
           updated_at?: string
           workspace_id?: string
@@ -12764,12 +12785,18 @@ export type Database = {
         Update: {
           actions?: Json
           created_at?: string
+          draft_actions?: Json | null
+          draft_goal_filters?: Json | null
+          draft_trigger?: Json | null
           enabled?: boolean
           entity?: string
           goal_filters?: Json | null
           id?: string
+          last_published_at?: string | null
           name?: string
           owner_id?: string
+          published_version?: number
+          status?: string
           trigger?: Json
           updated_at?: string
           workspace_id?: string
