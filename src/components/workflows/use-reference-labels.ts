@@ -164,7 +164,6 @@ export function useReferenceLabels() {
 
   // Silence unused-variable warning: tick is only used to force re-render.
   void tick;
-  void queryClient;
 
   function short(id: string | null | undefined, prefix: string) {
     if (!id) return "—";
