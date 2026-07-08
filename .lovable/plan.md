@@ -1,83 +1,69 @@
-## Objetivo
+## Diagnóstico
 
-1. Permitir inserir variáveis (`{{token}}`) como pills clicáveis em **todos** os campos de texto do construtor de Workflows (não apenas nos poucos que hoje têm `TokenPills`).
-2. Corrigir a exibição de referências (usuário, empresa, pipeline, etapa, sequência, regra) que hoje mostram o hash do UUID em vez do nome amigável.
+**1) Hash aparecendo em "Responsável" (`933274f6-…`)**
+`FkPicker` (kind=`user`) monta a lista a partir de `useReferenceLabels().userById`, que vem de `listWorkspaceMembers` (`src/lib/rotation.functions.ts`). Essa função só devolve membros do workspace ativo (via `workspace_members` + fallback legado `team_members`). O usuário `Grasiele Magalhães` **existe em `profiles` com `full_name`** mas não está em `workspace_members` desse workspace — provavelmente foi assignee de algum registro migrado/de outro workspace. Como não está no mapa, `nameFor()` cai no fallback `id.slice(0,8)…` e a UI mostra o hash.
 
-Escopo restrito a UI/apresentação no builder de workflows. Não altera engine, schemas, RLS ou lógica de negócio.
+**2) Combobox de Empresa mostra só ~10 nomes e "Citel Software" não aparece**
+`use-reference-labels.ts` faz `supabase.from("companies").select("id,name").order("name").limit(2000)`. A base tem **31.924 empresas**. PostgREST corta em `max-rows` (1000 por padrão), então só as ~1000 primeiras chegam ao cliente. O `Command` (cmdk) filtra apenas o que já foi carregado — por isso "Citel Software" (que existe) não aparece na busca. Mesmo problema afeta pipelines/sequências/regras quando o workspace cresce, e degrada a resolução de rótulos (empresas fora dos 1000 primeiros aparecem como `empresa xxxxxxxx…`).
 
-## Mudanças
+**3) "Citel Software" não é achado na busca**
+Verifiquei as policies de `companies`: existe `ws_select_companies` que permite SELECT a qualquer membro do workspace (`workspace_id IN current_user_workspaces()`). Ou seja, **o usuário atual TEM permissão de visualização sobre Citel Software** por RLS — o problema é 100% cliente (limite de 1000 linhas). Uma busca server-side com o próprio cliente autenticado do usuário (que respeita RLS naturalmente) resolve o caso sem alterar policy nenhuma.
 
-### 1. Componente único de input com pills
+---
 
-Criar `src/components/workflows/token-input.tsx`:
-- `TokenInput` e `TokenTextarea` (wrappers de `Input`/`Textarea` do shadcn).
-- Rastreiam a posição do cursor via `ref` e `onSelect`.
-- Renderizam um botão discreto `{ }` (ícone `Braces`) no canto do campo → abre `Popover` com `TokenPills` agrupadas + busca (`Command`).
-- Ao clicar em um token, inserem `{{token}}` na posição do cursor (ou substituem a seleção) e disparam `onChange`.
-- Aceitam prop `tokens: MessageToken[]` (default `WORKFLOW_TOKENS`) e todas as props padrão de `Input`/`Textarea`.
-- Suportam também abrir o popover via atalho: digitar `{{` abre o picker inline (opcional; se aumentar risco, fica só o botão).
+## Correções (respeitam RLS/permissões existentes — nada de bypass)
 
-### 2. Substituir campos de texto do workflow
+### A. Busca server-side com resolução por ID
 
-Em `src/components/workflows/workflow-builder.tsx`, trocar `Input`/`Textarea` por `TokenInput`/`TokenTextarea` nos campos de conteúdo que aceitam tokens hoje (todos os `placeholder="... {{...}}"` já mapeados):
+Novo arquivo `src/lib/workflow-refs.functions.ts` com server functions autenticadas (`requireSupabaseAuth`). Todas usam o `context.supabase` (cliente com o token do usuário) — RLS aplica igualzinho ao que o usuário vê em outras telas. Retorno máximo de 50 itens por chamada.
 
-- `create_ats_job.title`
-- `create_ats_candidate.full_name`
-- `create_lead` (first_name, last_name, company, email...)
-- `create_contact` (first_name, last_name, email...)
-- `create_company.name`
-- `create_deal.name`
-- `create_ticket.subject`
-- `create_task.subject`, `description`
-- `send_notification.title`, `text`
-- `webhook.text` (Teams/Slack)
-- `approval.title`, `note`
-- `format_data.template`
-- `set_field.value`
-- `associate_records.target_id`
-- Demais campos textuais das ações que hoje mostram `placeholder` com `{{...}}`.
+- `searchCompanies({ q?, ids? }) → [{id,name}]`
+  - Se `ids` presente: `.in('id', ids)` para hidratar rótulos de valores já salvos.
+  - Se `q` presente: `.ilike('name', %q%).order('name').limit(50)`.
+  - Se ambos vazios: retorna primeiras 50 alfabéticas.
+- `searchPipelines({ q?, ids? })` — idem em `pipelines`.
+- `searchUsers({ q?, ids? })` — resolução mais rica: junta membros correntes do workspace (via `listWorkspaceMembers` interno) e, se `ids` referenciar usuários fora dessa lista, carrega `profiles.full_name` + `auth.users.email` via `supabaseAdmin` **apenas para os IDs recebidos** (não é busca livre — evita vazar diretório completo). Isso resolve especificamente o caso Grasiele (nome real em vez do hash) sem expor lista de outros workspaces.
 
-### 3. Pills no editor de "Mais campos"
+Como o usuário atual só pode salvar como `Responsável` alguém do próprio workspace, a **lista de sugestões** de `searchUsers({ q })` continua restrita aos membros do workspace (o `supabaseAdmin` é usado só para hidratar IDs pré-existentes).
 
-Em `src/components/workflows/extra-fields-editor.tsx`:
-- Trocar os `Input`/`Textarea` de tipo `text`/long-text por `TokenInput`/`TokenTextarea`.
-- Fazer o mesmo no `CustomFieldsEditor` (coluna de valor).
-- Campos `number`, `boolean`, `date`, `select` seguem inalterados.
+### B. `FkPicker` (`extra-fields-editor.tsx`) passa a ser assíncrono
 
-### 4. Referências passam a exibir nomes, não UUIDs
+- `Command` com `CommandInput` controlado dispara `searchXxx({ q })` via `useQuery` (`queryKey: ['wf-ref-search', kind, q]`, `keepPreviousData`, debounce 200 ms).
+- Ao abrir com um `id` já salvo, `useQuery` paralelo chama `searchXxx({ ids: [value] })` para exibir o nome correto — nunca mais hash.
+- Estados: `carregando…`, `nenhum resultado`, `erro ao buscar`.
+- Mantém o slot lateral para inserir token `{{…}}` como fallback.
 
-Criar hook leve `useReferenceLabels()` em `src/components/workflows/use-reference-labels.ts`:
-- Uma única `useQuery` (staleTime 5min) que carrega em paralelo:
-  - `profiles` (id, full_name, email) — usuários do workspace.
-  - `companies` (id, name).
-  - `pipelines` (id, name, stages) — para mapear `stage`.
-  - `sequences` (id, name).
-  - `rotation_rules` (id, name).
-- Devolve helpers: `labelForUser(id)`, `labelForCompany(id)`, `labelForPipeline(id)`, `labelForStage(pipelineId, stageValue)`, `labelForSequence(id)`, `labelForRule(id)`.
-- Fallback: se não encontrar, retorna string curta amigável (`"usuário removido"` ou os 8 primeiros chars).
+### C. `useReferenceLabels` resolve rótulos sob demanda
 
-Usar o hook em:
-- `describeAction` (linhas ~3263-3310 e vizinhas) para `assign_to`, `rotate_assign`, `add_to_sequence`, `assign_recruiter`, `associate_records`, `create_activity` (assignee) etc. — trocar o `slice(0,8)+"…"` pelos nomes reais.
-- Chip/resumo do passo na barra lateral e cabeçalho do card de ação (quando exibe um subtítulo com hash).
-- `ExtraFieldsEditor`: quando o campo for FK conhecido (`company_id`, `owner_id`, `assigned_user_id`, `pipeline_id`, `parent_company_id`), renderizar um `Combobox` de busca com os nomes já resolvidos, em vez de `Input` de UUID. Continua permitindo colar `{{token}}` via botão de "usar variável".
+- Continua pré-carregando membros do workspace e primeiras N empresas/pipelines para uso comum (chips, `describeAction`).
+- `labelForCompany` / `labelForUser` / `labelForPipeline`: quando o ID não estiver no cache, enfileiram em um Set e disparam `searchXxx({ ids })` batched; enquanto resolve, mostram `Carregando…`. Resultado é memoizado no `queryClient`.
 
-Como `describeAction` é uma função pura hoje, refatorar a assinatura para `describeAction(a, labels)` e passar o objeto de helpers a partir do componente que já é React (o `StepChip`/renderer do builder). Nenhum caller server-side.
+### D. Ajuste de pré-carregamento
 
-### 5. Não escopo
+- Reduzir o `limit` de empresas de 2000 para 200 (era enganoso — PostgREST já devolvia só 1000). A lista inicial do popover mostra as 200 primeiras alfabéticas; qualquer busca real cai no server-side.
+- Pipelines/sequências/regras normalmente cabem no cap atual; deixar como está.
 
-- Não altera `engine.server.ts` (resolução de tokens continua idêntica).
-- Não altera schema/tipos das ações.
-- Não altera RLS nem catálogo de tokens (mantém `WORKFLOW_TOKENS`); ampliar catálogo pode ser feito em passo futuro se o usuário pedir.
+### E. Fallback amigável quando `full_name` estiver vazio
+
+- Em `listWorkspaceMembers` (`rotation.functions.ts`): se `profiles.full_name` for `NULL`/vazio, buscar `email` em `auth.users` via `supabaseAdmin` e usar `email` como rótulo (em vez de `id.slice(0,8)`). Aplica-se apenas aos IDs já pertencentes ao workspace — sem alargar visibilidade.
+
+---
+
+## Segurança / RLS
+
+- **Nenhuma alteração** em policies, GRANTs, esquema ou lógica de negócio.
+- `context.supabase` respeita as policies existentes: `ws_select_companies`, `pipelines`, `profiles` etc. Se o usuário não tiver permissão de visualizar determinada empresa, ela continua invisível — comportamento correto.
+- `supabaseAdmin` é usado **exclusivamente** para hidratar rótulos de IDs que o próprio usuário já tem salvos no workflow (não expõe listagem completa).
+
+## Arquivos afetados
+
+- **Novo:** `src/lib/workflow-refs.functions.ts`
+- **Editados:** `src/components/workflows/use-reference-labels.ts`, `src/components/workflows/extra-fields-editor.tsx` (apenas `FkPicker`), `src/lib/rotation.functions.ts` (fallback email).
 
 ## Validação
 
 - `bunx tsgo --noEmit`.
-- Manual no `/settings/workflows`:
-  - Abrir uma ação, clicar no botão `{}` em cada campo de texto, escolher uma variável, ver o token aparecer no cursor.
-  - Confirmar que o `describeAction` do passo (chip lateral) mostra "João Silva" em vez de `f3a4b2c1…`.
-  - Em "Mais campos", adicionar `company_id` e ver combobox com nomes das empresas.
-
-## Riscos
-
-- `TokenInput` precisa preservar `ref`, `onSelect`, `onBlur` sem quebrar formulários existentes — mitigado repassando todas as props e usando `forwardRef`.
-- `describeAction` hoje é usada em outros locais? Verificar antes de alterar assinatura; se sim, manter overload sem `labels` retornando o comportamento atual (fallback UUID curto).
+- Teste manual em `/settings/workflows` → editar workflow → ação "Criar negócio" → **Mais campos**:
+  - **Responsável**: confirmar que Grasiele aparece com o nome real (não hash) ao abrir a lista e ao reabrir o workflow salvo.
+  - **Empresa**: buscar por "Citel Software" (deve aparecer), "Fundação Matias" (deve continuar aparecendo), rolar até uma empresa começada com "Z" (deve encontrar via busca).
+  - **Pipeline**: validar continuidade.

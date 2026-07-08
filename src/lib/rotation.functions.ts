@@ -148,13 +148,29 @@ export const listWorkspaceMembers = createServerFn({ method: "GET" })
       .in("id", idList);
 
     const nameById = new Map(
-      (profiles ?? []).map((p) => [p.id as string, (p.full_name as string | null) ?? ""]),
+      (profiles ?? []).map((p) => [p.id as string, ((p.full_name as string | null) ?? "").trim()]),
     );
+
+    // Fallback: buscar e-mail em auth.users apenas para IDs sem full_name.
+    const missing = idList.filter((id) => !nameById.get(id));
+    const emailById = new Map<string, string>();
+    if (missing.length > 0) {
+      const lookups = await Promise.all(
+        missing.map((id) => supabaseAdmin.auth.admin.getUserById(id).catch(() => null)),
+      );
+      lookups.forEach((res, i) => {
+        const email = res?.data?.user?.email;
+        if (email) emailById.set(missing[i], email);
+      });
+    }
+
     return idList
       .map((id) => ({
         user_id: id,
         full_name:
-          nameById.get(id) || (id === workspaceOwnerId ? "Workspace (admin)" : id.slice(0, 8)),
+          nameById.get(id) ||
+          emailById.get(id) ||
+          (id === workspaceOwnerId ? "Workspace (admin)" : `${id.slice(0, 8)}…`),
         is_owner: id === workspaceOwnerId || id === legacyOwnerId,
         is_me: id === userId,
       }))

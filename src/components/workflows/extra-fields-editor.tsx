@@ -1,7 +1,7 @@
 // Editor de "Mais campos" para ações create_* do workflow.
 // Permite adicionar qualquer campo da entidade alvo além dos já
 // cobertos no formulário principal da ação. Persiste em action.extra_fields.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown } from "lucide-react";
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
+import { searchCompanies, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
@@ -266,6 +267,7 @@ function FieldInput({
 }
 
 // Combobox de busca para FKs conhecidas (usuário / empresa / pipeline).
+// Busca é server-side com debounce, respeitando as RLS policies do usuário.
 // Aceita valor bruto (UUID) ou token {{...}} — o TokenInput continua no fallback.
 function FkPicker({
   kind,
@@ -277,16 +279,31 @@ function FkPicker({
   onChange: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [rawQ, setRawQ] = useState("");
+  const [q, setQ] = useState("");
   const labels = useReferenceLabels();
-  const items =
-    kind === "user"
-      ? Array.from(labels.userById.entries()).map(([id, u]) => ({
-          id,
-          label: u.full_name ?? id,
-        }))
-      : kind === "company"
-        ? labels.companies.map((c) => ({ id: c.id, label: c.name }))
-        : labels.pipelines.map((p) => ({ id: p.id, label: p.name }));
+  const fetchCompanies = useServerFn(searchCompanies);
+  const fetchPipelines = useServerFn(searchPipelines);
+  const fetchUsers = useServerFn(searchUsers);
+
+  // debounce 200ms sobre o input
+  useEffect(() => {
+    const t = setTimeout(() => setQ(rawQ.trim()), 200);
+    return () => clearTimeout(t);
+  }, [rawQ]);
+
+  const searchQuery = useQuery({
+    queryKey: ["wf-ref-search", kind, q],
+    enabled: open,
+    staleTime: 30_000,
+    placeholderData: (prev) => prev,
+    queryFn: async () => {
+      if (kind === "company") return await fetchCompanies({ data: { q: q || undefined } });
+      if (kind === "pipeline") return await fetchPipelines({ data: { q: q || undefined } });
+      const rows = await fetchUsers({ data: { q: q || undefined } });
+      return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
+    },
+  });
 
   const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
   const currentLabel = !value
@@ -298,6 +315,9 @@ function FkPicker({
         : kind === "company"
           ? labels.labelForCompany(value)
           : labels.labelForPipeline(value);
+
+  const items = (searchQuery.data ?? []) as Array<{ id: string; name: string }>;
+  const isLoading = searchQuery.isFetching;
 
   return (
     <div className="grid grid-cols-[1fr_auto] gap-1">
@@ -316,15 +336,31 @@ function FkPicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-          <Command>
-            <CommandInput placeholder="Buscar..." />
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Buscar por nome..."
+              value={rawQ}
+              onValueChange={setRawQ}
+            />
             <CommandList>
-              <CommandEmpty>Nenhum resultado.</CommandEmpty>
+              {isLoading && items.length === 0 && (
+                <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                  Buscando…
+                </div>
+              )}
+              {!isLoading && searchQuery.isError && (
+                <div className="px-3 py-6 text-center text-xs text-destructive">
+                  Erro ao buscar.
+                </div>
+              )}
+              {!isLoading && !searchQuery.isError && items.length === 0 && (
+                <CommandEmpty>Nenhum resultado.</CommandEmpty>
+              )}
               <CommandGroup>
                 {items.map((it) => (
                   <CommandItem
                     key={it.id}
-                    value={`${it.label} ${it.id}`}
+                    value={`${it.name} ${it.id}`}
                     onSelect={() => {
                       onChange(it.id);
                       setOpen(false);
@@ -336,7 +372,7 @@ function FkPicker({
                         value === it.id ? "opacity-100" : "opacity-0",
                       )}
                     />
-                    <span className="truncate">{it.label}</span>
+                    <span className="truncate">{it.name}</span>
                   </CommandItem>
                 ))}
               </CommandGroup>
