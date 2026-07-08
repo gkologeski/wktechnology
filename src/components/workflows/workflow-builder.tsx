@@ -449,6 +449,44 @@ export function WorkflowBuilder({
     // Como cálculo exato é chato, apenas fecha a biblioteca — usuário pode clicar no card.
   };
 
+  const handleDropAt = (to: { parentPath: StepPath; index: number }) => {
+    if (!dragging) return;
+    const from = dragging;
+    setDragging(null);
+    setState((s) => {
+      const res = moveStepTo(s.actions, from, to);
+      if (!res) return s;
+      // Ajusta seleção se o passo movido estava selecionado ou dentro dele.
+      setSelection((sel) => {
+        if (Array.isArray(sel) && isDescendantOrSelf(sel, from)) {
+          const rest = sel.slice(from.length);
+          return [...res.newPath, ...rest];
+        }
+        return sel;
+      });
+      return { ...s, actions: res.actions };
+    });
+  };
+
+  const handleMove = (path: StepPath, dir: -1 | 1) => {
+    const idx = path[path.length - 1] as number;
+    const parentPath = path.slice(0, -1) as StepPath;
+    setState((s) => {
+      const target = dir < 0 ? idx - 1 : idx + 2;
+      const res = moveStepTo(s.actions, path, { parentPath, index: target });
+      if (!res) return s;
+      setSelection((sel) => {
+        if (Array.isArray(sel) && isDescendantOrSelf(sel, path)) {
+          const rest = sel.slice(path.length);
+          return [...res.newPath, ...rest];
+        }
+        return sel;
+      });
+      return { ...s, actions: res.actions };
+    });
+  };
+
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-none w-screen h-screen max-h-screen p-0 gap-0 rounded-none border-0 flex flex-col sm:rounded-none [&>button.absolute]:hidden">
