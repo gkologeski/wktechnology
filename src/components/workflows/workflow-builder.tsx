@@ -209,6 +209,12 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, subject: "Assunto", body: "Corpo do email" };
     case "send_whatsapp":
       return { type, body: "" };
+    case "switch_by_value":
+      return { type, field: "status", cases: [], default: [] };
+    case "branch_multi":
+      return { type, branches: [], else: [] };
+    case "delay_until_date":
+      return { type, field: "expected_close_date", offset_amount: 0, offset_unit: "days" };
   }
 }
 
