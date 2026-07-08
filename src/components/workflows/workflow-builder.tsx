@@ -2024,6 +2024,12 @@ function StepConfigForm({
       return (
         <DelayUntilDateForm entity={entity} action={action} onChange={onChange} />
       );
+    case "format_data":
+      return <FormatDataForm action={action} onChange={onChange} />;
+    case "send_slack":
+      return <SendSlackForm action={action} onChange={onChange} />;
+    case "send_teams":
+      return <SendTeamsForm action={action} onChange={onChange} />;
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
