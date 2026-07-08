@@ -266,7 +266,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
 export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionType[] }> = [
-  { label: "Controle de fluxo", actions: ["delay", "branch_if"] },
+  { label: "Controle de fluxo", actions: ["delay", "delay_until_date", "branch_if", "switch_by_value", "branch_multi"] },
   {
     label: "CRM",
     actions: [
