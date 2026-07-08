@@ -275,7 +275,7 @@ function FkPicker({
   value,
   onChange,
 }: {
-  kind: "user" | "company" | "pipeline";
+  kind: "user" | "company" | "pipeline" | "contact";
   value: string;
   onChange: (v: string) => void;
 }) {
@@ -284,6 +284,7 @@ function FkPicker({
   const [q, setQ] = useState("");
   const labels = useReferenceLabels();
   const fetchCompanies = useServerFn(searchCompanies);
+  const fetchContacts = useServerFn(searchContacts);
   const fetchPipelines = useServerFn(searchPipelines);
   const fetchUsers = useServerFn(searchUsers);
 
@@ -300,6 +301,7 @@ function FkPicker({
     placeholderData: (prev) => prev,
     queryFn: async () => {
       if (kind === "company") return await fetchCompanies({ data: { q: q || undefined } });
+      if (kind === "contact") return await fetchContacts({ data: { q: q || undefined } });
       if (kind === "pipeline") return await fetchPipelines({ data: { q: q || undefined } });
       const rows = await fetchUsers({ data: { q: q || undefined } });
       return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
@@ -315,7 +317,9 @@ function FkPicker({
         ? labels.labelForUser(value)
         : kind === "company"
           ? labels.labelForCompany(value)
-          : labels.labelForPipeline(value);
+          : kind === "contact"
+            ? labels.labelForContact(value)
+            : labels.labelForPipeline(value);
 
   const items = (searchQuery.data ?? []) as Array<{ id: string; name: string }>;
   const isLoading = searchQuery.isFetching;
@@ -336,7 +340,11 @@ function FkPicker({
             <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <PopoverContent
+          className="w-[min(360px,90vw)] min-w-[--radix-popover-trigger-width] p-0"
+          align="start"
+          sideOffset={6}
+        >
           <Command shouldFilter={false}>
             <CommandInput
               placeholder="Buscar por nome..."
