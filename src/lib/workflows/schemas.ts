@@ -180,6 +180,12 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     body: z.string().max(4000).optional(),
     to_field: z.string().max(100).optional(),
   }),
+  z.object({
+    type: z.literal("delay_until_date"),
+    field: z.string().min(1).max(100),
+    offset_amount: z.number().int().min(-100_000).max(100_000).optional(),
+    offset_unit: z.enum(["minutes", "hours", "days"]).optional(),
+  }),
 ]);
 
 
@@ -192,13 +198,46 @@ export function parseActionsAtDepth(input: unknown, depth: number): ActionInput[
 }
 
 export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
-  if (raw && typeof raw === "object" && (raw as ActionInput).type === "branch_if") {
-    if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima de branch_if excedida");
+  if (raw && typeof raw === "object") {
     const src = raw as ActionInput;
-    const filters = z.array(FilterSchema).max(20).parse(src.filters ?? []);
-    const thenActions = parseActionsAtDepth(src.then ?? [], depth + 1);
-    const elseActions = parseActionsAtDepth(src.else ?? [], depth + 1);
-    return { type: "branch_if", filters, then: thenActions, else: elseActions };
+    if (src.type === "branch_if") {
+      if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima de branch_if excedida");
+      const filters = z.array(FilterSchema).max(20).parse(src.filters ?? []);
+      const thenActions = parseActionsAtDepth(src.then ?? [], depth + 1);
+      const elseActions = parseActionsAtDepth(src.else ?? [], depth + 1);
+      return { type: "branch_if", filters, then: thenActions, else: elseActions };
+    }
+    if (src.type === "switch_by_value") {
+      if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima excedida");
+      const field = z.string().min(1).max(100).parse(src.field);
+      const rawCases = Array.isArray(src.cases) ? src.cases : [];
+      if (rawCases.length > 20) throw new Error("máximo 20 cases");
+      const cases = rawCases.map((c) => {
+        const co = (c ?? {}) as ActionInput;
+        return {
+          label: typeof co.label === "string" ? co.label : undefined,
+          value: co.value,
+          actions: parseActionsAtDepth(co.actions ?? [], depth + 1),
+        };
+      });
+      const def = parseActionsAtDepth(src.default ?? [], depth + 1);
+      return { type: "switch_by_value", field, cases, default: def };
+    }
+    if (src.type === "branch_multi") {
+      if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima excedida");
+      const rawBranches = Array.isArray(src.branches) ? src.branches : [];
+      if (rawBranches.length > 10) throw new Error("máximo 10 branches");
+      const branches = rawBranches.map((b) => {
+        const bo = (b ?? {}) as ActionInput;
+        return {
+          label: typeof bo.label === "string" ? bo.label : undefined,
+          filters: z.array(FilterSchema).max(20).parse(bo.filters ?? []),
+          actions: parseActionsAtDepth(bo.actions ?? [], depth + 1),
+        };
+      });
+      const elseActions = parseActionsAtDepth(src.else ?? [], depth + 1);
+      return { type: "branch_multi", branches, else: elseActions };
+    }
   }
   return SimpleActionSchema.parse(raw) as unknown as ActionInput;
 }
