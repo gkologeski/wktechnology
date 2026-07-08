@@ -35,6 +35,21 @@ export interface WorkflowTrigger {
     enabled: boolean;
     events?: WorkflowEventType[];
   };
+  /** Fase 3 — critérios de meta. Se todos passarem no processamento do evento,
+   *  o registro sai do workflow sem executar novas ações. */
+  goal_filters?: WorkflowFilter[];
+}
+
+export interface SwitchCase {
+  label?: string;
+  value: unknown;
+  actions: WorkflowAction[];
+}
+
+export interface MultiBranch {
+  label?: string;
+  filters: WorkflowFilter[];
+  actions: WorkflowAction[];
 }
 
 export type WorkflowAction =
