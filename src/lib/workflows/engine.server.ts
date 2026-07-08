@@ -61,9 +61,13 @@ function toStr(v: unknown): string {
   return JSON.stringify(v);
 }
 
-function renderTokens(input: unknown, after: AnyRow | null): unknown {
+function renderTokens(input: unknown, after: AnyRow | null, vars?: AnyRow): unknown {
   if (typeof input !== "string") return input;
-  return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key) => toStr(getField(after, String(key))));
+  return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key) => {
+    const path = String(key);
+    if (path.startsWith("vars.")) return toStr(getField(vars ?? null, path.slice(5)));
+    return toStr(getField(after, path));
+  });
 }
 
 function evalFilter(f: WorkflowFilter, after: AnyRow | null, before: AnyRow | null): boolean {
