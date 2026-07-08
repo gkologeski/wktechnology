@@ -335,6 +335,10 @@ function LabeledNumber({
   onCommit: (v: number) => void;
 }) {
   const [v, setV] = useState(String(value));
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) setV(String(value));
+  }, [value, focused]);
   return (
     <div className="space-y-1">
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
@@ -342,15 +346,49 @@ function LabeledNumber({
         type="number"
         step={step}
         value={v}
+        onFocus={() => setFocused(true)}
         onChange={(e) => setV(e.target.value)}
         onBlur={() => {
-          const n = Number(v);
-          if (!Number.isNaN(n) && n !== Number(value)) onCommit(n);
+          setFocused(false);
+          const num = Number(v);
+          if (!Number.isNaN(num) && num !== Number(value)) onCommit(num);
         }}
       />
     </div>
   );
 }
+
+function TextField({
+  value,
+  placeholder,
+  className,
+  onCommit,
+}: {
+  value: string;
+  placeholder?: string;
+  className?: string;
+  onCommit: (v: string) => void;
+}) {
+  const [v, setV] = useState(value);
+  const [focused, setFocused] = useState(false);
+  useEffect(() => {
+    if (!focused) setV(value);
+  }, [value, focused]);
+  return (
+    <Input
+      className={className}
+      placeholder={placeholder}
+      value={v}
+      onFocus={() => setFocused(true)}
+      onChange={(e) => setV(e.target.value)}
+      onBlur={() => {
+        setFocused(false);
+        onCommit(v);
+      }}
+    />
+  );
+}
+
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
