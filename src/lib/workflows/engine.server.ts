@@ -913,6 +913,17 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     const passes = filters.every((f) => evalFilter(f, event.after, event.before));
     if (!passes) continue;
 
+    // Fase 3 — critérios de meta: se todos passam, o registro já atingiu o objetivo
+    // e é removido do workflow (sem novas execuções).
+    const goalFilters = trig.goal_filters ?? wf.goal_filters ?? [];
+    if (
+      goalFilters.length > 0 &&
+      goalFilters.every((f) => evalFilter(f, event.after, event.before))
+    ) {
+      continue;
+    }
+
+
     // Re-enrollment: se desabilitado e já existe run bem-sucedido, pula.
     // Se habilitado, só reprocessa quando o evento atual está na lista permitida.
     const reenroll = trig.reenroll;
