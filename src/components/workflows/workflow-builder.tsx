@@ -1983,6 +1983,18 @@ function describeAction(a: WorkflowAction): string {
       return a.full_name;
     case "assign_recruiter":
       return `${a.target ?? "auto"} · ${a.user_id ? a.user_id.slice(0, 8) + "…" : "—"}`;
+    case "create_lead":
+      return `lead: ${a.first_name || "—"}`;
+    case "create_contact":
+      return `contato: ${a.first_name || "—"}`;
+    case "create_company":
+      return `empresa: ${a.name || "—"}`;
+    case "create_deal":
+      return `negócio: ${a.name || "—"}`;
+    case "create_ticket":
+      return `ticket: ${a.subject || "—"}`;
+    case "create_task":
+      return `tarefa: ${a.subject || "—"}`;
     default:
       return "";
   }
