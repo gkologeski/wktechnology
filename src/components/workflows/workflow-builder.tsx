@@ -510,11 +510,13 @@ export function WorkflowBuilder({
                 ) : selection && selectedAction ? (
                   <StepConfigPanel
                     action={selectedAction}
+                    entity={state.entity}
                     entityFields={fieldOptions}
                     onChange={(na) =>
                       setActions((prev) => updateStep(prev, selection, () => na))
                     }
                   />
+
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     Selecione um passo no canvas para configurar.
