@@ -211,10 +211,6 @@ function LineItemsEditorBody({
         tax_rate: 0,
         position: items.length,
       })
-        discount_pct: 0,
-        tax_rate: 0,
-        position: items.length,
-      })
       .select("*")
       .single();
     if (error) return toast.error(error.message);
