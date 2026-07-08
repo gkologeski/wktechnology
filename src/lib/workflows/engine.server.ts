@@ -273,7 +273,14 @@ async function runActions(
 
 async function runAction(
   supabase: SupabaseClient,
-  action: Exclude<WorkflowAction, { type: "delay" } | { type: "branch_if" }>,
+  action: Exclude<
+    WorkflowAction,
+    | { type: "delay" }
+    | { type: "branch_if" }
+    | { type: "switch_by_value" }
+    | { type: "branch_multi" }
+    | { type: "delay_until_date" }
+  >,
   ctx: RunCtx,
 ): Promise<LogStep> {
   const at = new Date().toISOString();
