@@ -305,6 +305,7 @@ function LineItemsEditorBody({
       <div className="flex gap-2 flex-wrap">
         <div className="w-[260px]">
           <EntityCombobox
+            key={`product-picker-${productPickerKey}`}
             entity="products"
             select="id, name, unit_price, currency"
             searchColumns={["name", "sku", "description"]}
