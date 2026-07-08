@@ -187,8 +187,10 @@ function LineItemsEditorBody({
     qc.invalidateQueries({ queryKey: lineItemsQueryKey(dealId) });
   };
 
-  function notifyChanged() {
-    refreshItems();
+  function notifyDealsChanged() {
+    // Do NOT invalidate lineItemsQueryKey here — optimistic cache is the source of truth.
+    // Invalidating the local key mid-flight causes the just-appended row to disappear
+    // until the refetch resolves.
     qc.invalidateQueries({ queryKey: ["deals"] });
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("deal:line-items-changed", { detail: { dealId } }));
@@ -215,12 +217,13 @@ function LineItemsEditorBody({
       .single();
     if (error) return toast.error(error.message);
     if (data) {
-      await qc.cancelQueries({ queryKey: lineItemsQueryKey(dealId) });
       setItemsCache((current) =>
-        [...current, data as LineItem].sort((a, b) => n(a.position) - n(b.position)),
+        [...current.filter((it) => it.id !== (data as LineItem).id), data as LineItem].sort(
+          (a, b) => n(a.position) - n(b.position),
+        ),
       );
     }
-    notifyChanged();
+    notifyDealsChanged();
   }
   async function addFromProduct(pid: string) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -250,17 +253,20 @@ function LineItemsEditorBody({
       .single();
     if (error) return toast.error(error.message);
     if (data) {
-      await qc.cancelQueries({ queryKey: lineItemsQueryKey(dealId) });
       setItemsCache((current) =>
-        [...current, data as LineItem].sort((a, b) => n(a.position) - n(b.position)),
+        [...current.filter((it) => it.id !== (data as LineItem).id), data as LineItem].sort(
+          (a, b) => n(a.position) - n(b.position),
+        ),
       );
+      setProductPickerKey((k) => k + 1);
     }
-    notifyChanged();
+    notifyDealsChanged();
   }
   async function update(id: string, patch: Partial<LineItem>) {
-    await qc.cancelQueries({ queryKey: lineItemsQueryKey(dealId) });
     const previous = qc.getQueryData<LineItem[]>(lineItemsQueryKey(dealId));
-    setItemsCache((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+    setItemsCache((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    );
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("deal_line_items").update(patch).eq("id", id);
     if (error) {
@@ -268,10 +274,9 @@ function LineItemsEditorBody({
       refreshItems();
       return toast.error(error.message);
     }
-    notifyChanged();
+    notifyDealsChanged();
   }
   async function remove(id: string) {
-    await qc.cancelQueries({ queryKey: lineItemsQueryKey(dealId) });
     const previous = qc.getQueryData<LineItem[]>(lineItemsQueryKey(dealId));
     setItemsCache((current) => current.filter((item) => item.id !== id));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -281,8 +286,10 @@ function LineItemsEditorBody({
       refreshItems();
       return toast.error(error.message);
     }
-    notifyChanged();
+    notifyDealsChanged();
   }
+
+  const [productPickerKey, setProductPickerKey] = useState(0);
 
 
   const subtotal = items.reduce((s, li) => s + n(li.quantity) * n(li.unit_price), 0);
