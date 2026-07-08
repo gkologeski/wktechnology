@@ -832,6 +832,7 @@ interface WorkflowRow {
   entity: WorkflowEntity;
   trigger: WorkflowTrigger;
   actions: WorkflowAction[];
+  goal_filters?: WorkflowFilter[] | null;
 }
 
 async function alreadyEnrolled(
