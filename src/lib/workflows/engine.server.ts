@@ -168,6 +168,102 @@ async function runActions(
       continue;
     }
 
+    // Switch por valor: escolhe primeiro case cujo value bate, ou default.
+    if (action.type === "switch_by_value") {
+      const v = getField(ctx.after, action.field);
+      const matched = action.cases.find((c) => c.value === v);
+      const branchActions = matched ? matched.actions : action.default ?? [];
+      log.push({
+        at: new Date().toISOString(),
+        ok: true,
+        action: "switch_by_value",
+        detail: {
+          field: action.field,
+          value: v,
+          matched: matched ? (matched.label ?? String(matched.value)) : "default",
+        },
+      });
+      const branchRes = await runActions(supabase, branchActions, ctx);
+      log.push(...branchRes.log);
+      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.suspendedAt) {
+        log.push({
+          at: new Date().toISOString(),
+          ok: false,
+          action: "delay",
+          error: "Delays dentro de switch_by_value ainda não são retomáveis",
+        });
+        return { log, hadError: true };
+      }
+      continue;
+    }
+
+    // Ramificação múltipla: executa 1ª branch cujos filtros passam, ou else.
+    if (action.type === "branch_multi") {
+      const matched = action.branches.find((b) =>
+        (b.filters ?? []).every((f) => evalFilter(f, ctx.after, ctx.before)),
+      );
+      const branchActions = matched ? matched.actions : action.else ?? [];
+      log.push({
+        at: new Date().toISOString(),
+        ok: true,
+        action: "branch_multi",
+        detail: { matched: matched ? (matched.label ?? "branch") : "else" },
+      });
+      const branchRes = await runActions(supabase, branchActions, ctx);
+      log.push(...branchRes.log);
+      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.suspendedAt) {
+        log.push({
+          at: new Date().toISOString(),
+          ok: false,
+          action: "delay",
+          error: "Delays dentro de branch_multi ainda não são retomáveis",
+        });
+        return { log, hadError: true };
+      }
+      continue;
+    }
+
+    // Delay até data específica (campo do registro + offset).
+    if (action.type === "delay_until_date") {
+      const raw = getField(ctx.after, action.field);
+      const base = raw ? new Date(String(raw)) : null;
+      if (!base || Number.isNaN(base.getTime())) {
+        log.push({
+          at: new Date().toISOString(),
+          ok: false,
+          action: "delay_until_date",
+          error: `campo ${action.field} não é uma data válida`,
+        });
+        return { log, hadError: true };
+      }
+      const mult =
+        action.offset_unit === "minutes"
+          ? 60_000
+          : action.offset_unit === "hours"
+            ? 3_600_000
+            : 86_400_000;
+      const target = new Date(base.getTime() + (action.offset_amount ?? 0) * mult);
+      if (target.getTime() <= Date.now()) {
+        log.push({
+          at: new Date().toISOString(),
+          ok: true,
+          action: "delay_until_date",
+          detail: { target: target.toISOString(), skipped: "já no passado" },
+        });
+        continue;
+      }
+      const runAtIso = target.toISOString();
+      log.push({
+        at: new Date().toISOString(),
+        ok: true,
+        action: "delay_until_date",
+        detail: { field: action.field, resume_at: runAtIso },
+      });
+      return { log, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
+    }
+
     const step = await runAction(supabase, action, ctx);
     log.push(step);
     if (!step.ok) return { log, hadError: true };
