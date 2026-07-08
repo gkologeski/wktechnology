@@ -900,7 +900,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   // Caso 2: evento normal (created/updated/stage_changed).
   const { data: workflows } = await supabase
     .from("workflows")
-    .select("id, owner_id, entity, trigger, actions")
+    .select("id, owner_id, entity, trigger, actions, goal_filters")
     .eq("owner_id", event.owner_id)
     .eq("entity", event.entity)
     .eq("enabled", true);
