@@ -29,12 +29,12 @@ Cada ação suporta **mapping via placeholder** `{{field.xxx}}` resolvido pelo e
 - `delay_until_date` — espera até campo tipo data (± offset).
 - `goal` / `exit_criteria` — remove enrollment ao atingir. Novo `goal_filters` no workflow.
 
-## Fase 4 — Governança
+## Fase 4 — Governança ✅
 
-- **Draft vs. publicado**: colunas `workflows.status`, `published_version`, `draft_actions`. Editor salva em draft; "Publicar" copia para prod. Runs sempre em versão publicada.
-- **Testar com registro** — dry-run em memória, log passo-a-passo, sem persistir.
-- **Enrollment history por registro** — view em `record-layout` sobre `workflow_runs` por `entity_id`.
-- **Bulk enroll** ao publicar — opção "aplicar aos registros existentes que batem no critério" (eventos sintéticos enfileirados).
+- **Draft vs. publicado**: colunas `workflows.status`, `published_version`, `draft_actions`, `draft_trigger`, `draft_goal_filters`, `last_published_at`. Editor salva sempre em rascunho; "Publicar" copia para produção e incrementa versão. Engine só executa `status='published'`.
+- **Testar com registro** — dry-run em memória (walk das ações + resolução de filtros no snapshot), registrado como `workflow_runs.is_test=true` para aparecer no histórico do registro.
+- **Enrollment history por registro** — `workflow_runs.entity_id`+`entity` indexado; server fn `listRecordEnrollments` pronto para plugar no record-layout.
+- **Bulk enroll** ao publicar — server fn `bulkEnrollWorkflow` enfileira eventos sintéticos `created` para registros que batem no filtro do gatilho e chama o tick.
 
 ## Fase 5 — Avançado
 

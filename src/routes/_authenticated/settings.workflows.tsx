@@ -6,7 +6,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, Trash2, Pencil, Zap } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, Trash2, Pencil, Zap, Upload, TestTube2, Users } from "lucide-react";
 import { toast } from "sonner";
 import {
   listWorkflows,
@@ -14,6 +23,10 @@ import {
   deleteWorkflow,
   listRecentRuns,
   triggerTickNow,
+  publishWorkflow,
+  discardDraft,
+  testWorkflow,
+  bulkEnrollWorkflow,
 } from "@/lib/workflows.functions";
 import {
   WorkflowBuilder,
@@ -38,8 +51,13 @@ type WorkflowRow = {
   name: string;
   entity: WorkflowEntity;
   enabled: boolean;
+  status: string;
+  published_version: number;
+  has_draft_changes: boolean;
   trigger: WorkflowTrigger;
   actions: WorkflowAction[];
+  draft_trigger: WorkflowTrigger;
+  draft_actions: WorkflowAction[];
   updated_at: string;
   runs_24h: number;
   errors_24h: number;
@@ -51,11 +69,19 @@ function WorkflowsPage() {
   const deleteFn = useServerFn(deleteWorkflow);
   const runsFn = useServerFn(listRecentRuns);
   const tickFn = useServerFn(triggerTickNow);
+  const publishFn = useServerFn(publishWorkflow);
+  const discardFn = useServerFn(discardDraft);
+  const testFn = useServerFn(testWorkflow);
+  const bulkFn = useServerFn(bulkEnrollWorkflow);
 
   const [rows, setRows] = useState<WorkflowRow[]>([]);
   const [runs, setRuns] = useState<Awaited<ReturnType<typeof listRecentRuns>>>([]);
   const [draft, setDraft] = useState<WorkflowDraft | null>(null);
   const [loading, setLoading] = useState(true);
+  const [testTarget, setTestTarget] = useState<WorkflowRow | null>(null);
+  const [testEntityId, setTestEntityId] = useState("");
+  const [testResult, setTestResult] = useState<Awaited<ReturnType<typeof testWorkflow>> | null>(null);
+  const [testing, setTesting] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -75,7 +101,7 @@ function WorkflowsPage() {
   const handleSave = async (d: WorkflowDraft) => {
     try {
       await saveFn({ data: d });
-      toast.success("Workflow salvo");
+      toast.success("Rascunho salvo");
       setDraft(null);
       refresh();
     } catch (e) {
@@ -102,8 +128,8 @@ function WorkflowsPage() {
           name: row.name,
           entity: row.entity,
           enabled,
-          trigger: row.trigger,
-          actions: row.actions,
+          trigger: row.draft_trigger ?? row.trigger ?? { event: "created", filters: [] },
+          actions: row.draft_actions ?? row.actions ?? [],
         },
       });
       refresh();
@@ -119,6 +145,64 @@ function WorkflowsPage() {
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  };
+
+  const handlePublish = async (row: WorkflowRow) => {
+    try {
+      const r = await publishFn({ data: { id: row.id } });
+      toast.success(`Publicado — v${r.version}`);
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao publicar");
+    }
+  };
+
+  const handleDiscard = async (row: WorkflowRow) => {
+    if (!confirm("Descartar alterações do rascunho e voltar para a versão publicada?")) return;
+    try {
+      await discardFn({ data: { id: row.id } });
+      toast.success("Rascunho descartado");
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  };
+
+  const handleBulk = async (row: WorkflowRow) => {
+    if (
+      !confirm(
+        `Aplicar "${row.name}" aos registros existentes de ${ENTITY_LABELS[row.entity]} que batem no gatilho? (limite 200)`,
+      )
+    )
+      return;
+    try {
+      const r = await bulkFn({ data: { workflowId: row.id, limit: 200 } });
+      toast.success(`${r.enqueued} registro(s) inscrito(s), ${r.processed} processado(s)`);
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  };
+
+  const runTest = async () => {
+    if (!testTarget || !testEntityId) return;
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const r = await testFn({
+        data: {
+          workflowId: testTarget.id,
+          entity: testTarget.entity,
+          entityId: testEntityId,
+          useDraft: true,
+        },
+      });
+      setTestResult(r);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro no teste");
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -158,46 +242,86 @@ function WorkflowsPage() {
               </CardContent>
             </Card>
           )}
-          {rows.map((row) => (
-            <Card key={row.id}>
-              <CardHeader className="flex-row items-start justify-between space-y-0">
-                <div>
-                  <CardTitle className="text-base flex items-center gap-2">
-                    {row.name}
-                    {row.errors_24h > 0 && (
-                      <Badge variant="destructive">{row.errors_24h} erro(s) hoje</Badge>
+          {rows.map((row) => {
+            const isPublished = row.status === "published" && !row.has_draft_changes;
+            const draftTrigger = row.draft_trigger ?? row.trigger ?? { event: "created", filters: [] };
+            const draftActions = row.draft_actions ?? row.actions ?? [];
+            return (
+              <Card key={row.id}>
+                <CardHeader className="flex-row items-start justify-between space-y-0">
+                  <div className="min-w-0">
+                    <CardTitle className="text-base flex items-center gap-2 flex-wrap">
+                      {row.name}
+                      {isPublished ? (
+                        <Badge variant="secondary">Publicado v{row.published_version}</Badge>
+                      ) : row.published_version > 0 ? (
+                        <Badge variant="outline">Rascunho pendente (publicado v{row.published_version})</Badge>
+                      ) : (
+                        <Badge variant="outline">Rascunho</Badge>
+                      )}
+                      {row.errors_24h > 0 && (
+                        <Badge variant="destructive">{row.errors_24h} erro(s) hoje</Badge>
+                      )}
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[draftTrigger.event ?? "created"]} ·{" "}
+                      {draftActions.length} ação(ões) · {row.runs_24h} exec / 24h
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 flex-wrap justify-end">
+                    <Switch checked={row.enabled} onCheckedChange={(v) => handleToggle(row, v)} />
+                    {row.has_draft_changes && (
+                      <>
+                        <Button size="sm" variant="default" onClick={() => handlePublish(row)}>
+                          <Upload className="h-3.5 w-3.5 mr-1" /> Publicar
+                        </Button>
+                        {row.published_version > 0 && (
+                          <Button size="sm" variant="ghost" onClick={() => handleDiscard(row)}>
+                            Descartar
+                          </Button>
+                        )}
+                      </>
                     )}
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[row.trigger?.event ?? "created"]} ·{" "}
-                    {row.actions?.length ?? 0} ação(ões) · {row.runs_24h} exec / 24h
-                  </p>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Switch checked={row.enabled} onCheckedChange={(v) => handleToggle(row, v)} />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() =>
-                      setDraft({
-                        id: row.id,
-                        name: row.name,
-                        entity: row.entity,
-                        enabled: row.enabled,
-                        trigger: row.trigger ?? { event: "created", filters: [] },
-                        actions: row.actions ?? [],
-                      })
-                    }
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setTestTarget(row);
+                        setTestEntityId("");
+                        setTestResult(null);
+                      }}
+                    >
+                      <TestTube2 className="h-3.5 w-3.5 mr-1" /> Testar
+                    </Button>
+                    {row.published_version > 0 && (
+                      <Button size="sm" variant="ghost" onClick={() => handleBulk(row)}>
+                        <Users className="h-3.5 w-3.5 mr-1" /> Aplicar existentes
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() =>
+                        setDraft({
+                          id: row.id,
+                          name: row.name,
+                          entity: row.entity,
+                          enabled: row.enabled,
+                          trigger: draftTrigger,
+                          actions: draftActions,
+                        })
+                      }
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+              </Card>
+            );
+          })}
         </TabsContent>
 
         <TabsContent value="runs" className="mt-3">
@@ -211,6 +335,57 @@ function WorkflowsPage() {
         onClose={() => setDraft(null)}
         onSave={handleSave}
       />
+
+      <Dialog
+        open={!!testTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setTestTarget(null);
+            setTestResult(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Testar workflow com registro</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Executa a versão <strong>rascunho</strong> contra um registro de{" "}
+              <strong>{testTarget ? ENTITY_LABELS[testTarget.entity] : ""}</strong>. Nenhuma ação real é executada — apenas simulada e registrada no histórico como teste.
+            </p>
+            <div className="space-y-1">
+              <Label>ID do registro</Label>
+              <Input
+                placeholder="uuid do registro"
+                value={testEntityId}
+                onChange={(e) => setTestEntityId(e.target.value)}
+              />
+            </div>
+            {testResult && (
+              <div className="rounded-md border p-3 space-y-1 max-h-64 overflow-auto bg-muted/40">
+                <p className="text-xs font-medium">
+                  Gatilho: {testResult.triggerOk ? "✓ passa" : "✗ não passa"}
+                </p>
+                {testResult.log.map((l, i) => (
+                  <div key={i} className="text-xs font-mono whitespace-pre">
+                    {l.ok ? "· " : "✗ "}{l.step}{l.note ? ` — ${l.note}` : ""}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setTestTarget(null)}>
+              Fechar
+            </Button>
+            <Button onClick={runTest} disabled={!testEntityId || testing}>
+              {testing ? "Executando…" : "Executar teste"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

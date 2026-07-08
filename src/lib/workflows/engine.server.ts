@@ -870,9 +870,11 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
           owner_id: wfr.owner_id,
           workflow_id: wfr.id,
           event_id: event.id,
+          entity: event.entity,
+          entity_id: event.entity_id,
           status: "running",
           started_at: new Date().toISOString(),
-        })
+        } as never)
         .select("id")
         .single();
       if (run) {
@@ -904,7 +906,8 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     .select("id, owner_id, entity, trigger, actions, goal_filters")
     .eq("owner_id", event.owner_id)
     .eq("entity", event.entity)
-    .eq("enabled", true);
+    .eq("enabled", true)
+    .eq("status", "published");
 
   for (const wf of (workflows ?? []) as WorkflowRow[]) {
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
@@ -946,9 +949,11 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
         owner_id: wf.owner_id,
         workflow_id: wf.id,
         event_id: event.id,
+        entity: event.entity,
+        entity_id: event.entity_id,
         status: "running",
         started_at: new Date().toISOString(),
-      })
+      } as never)
       .select("id")
       .single();
     if (insErr || !run) continue;
