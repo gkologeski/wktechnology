@@ -206,6 +206,12 @@ function LineItemsEditorBody({
         quantity: 1,
         unit_price: 0,
         discount_pct: 0,
+        discount_amount: 0,
+        discount_type: "pct",
+        tax_rate: 0,
+        position: items.length,
+      })
+        discount_pct: 0,
         tax_rate: 0,
         position: items.length,
       })
