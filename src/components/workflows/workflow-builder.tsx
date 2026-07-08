@@ -61,12 +61,11 @@ import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { TokenPills } from "@/components/ui/token-pills";
-import { WORKFLOW_TOKENS } from "@/lib/message-tokens-catalog";
-import { useTokenInserter } from "@/lib/token-insert";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
 import { ExtraFieldsEditor } from "./extra-fields-editor";
+import { TokenInput, TokenTextarea } from "./token-input";
+import { useReferenceLabels } from "./use-reference-labels";
 
 
 type FieldOpt = {
@@ -924,6 +923,13 @@ function DragHandle({
   );
 }
 
+function StepCardDescription({ action }: { action: WorkflowAction }) {
+  const labels = useReferenceLabels();
+  return (
+    <p className="text-xs text-muted-foreground truncate">{describeAction(action, labels)}</p>
+  );
+}
+
 function StepCard({
   action,
   index,
@@ -983,7 +989,7 @@ function StepCard({
                 Passo {index}
               </p>
               <p className="text-sm font-medium truncate">{ACTION_LABELS[action.type]}</p>
-              <p className="text-xs text-muted-foreground truncate">{describeAction(action)}</p>
+              <StepCardDescription action={action} />
             </div>
           </div>
         </button>
@@ -1727,18 +1733,8 @@ function StepConfigForm({
   entityFields: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
-  const subjectInserter = useTokenInserter<HTMLInputElement>(
-    () => ("subject" in action ? (action.subject ?? "") : ""),
-    (v) => onChange({ ...action, subject: v } as WorkflowAction),
-  );
-  const bodyInserter = useTokenInserter<HTMLTextAreaElement>(
-    () => ("body" in action ? (action.body ?? "") : ""),
-    (v) => onChange({ ...action, body: v } as WorkflowAction),
-  );
-  const titleInserter = useTokenInserter<HTMLInputElement>(
-    () => ("title" in action ? (action.title ?? "") : ""),
-    (v) => onChange({ ...action, title: v } as WorkflowAction),
-  );
+
+
 
 
   switch (action.type) {
@@ -1757,9 +1753,9 @@ function StepConfigForm({
               ))}
             </SelectContent>
           </Select>
-          <Input
+          <TokenInput
             value={String(action.value ?? "")}
-            onChange={(e) => onChange({ ...action, value: e.target.value })}
+            onValueChange={(v) => onChange({ ...action, value: v })}
             placeholder="novo valor"
           />
         </div>
@@ -1768,10 +1764,9 @@ function StepConfigForm({
       return (
         <div className="space-y-2">
           <div className="grid grid-cols-[1fr_120px] gap-2">
-            <Input
-              ref={subjectInserter.ref}
+            <TokenInput
               value={action.subject}
-              onChange={(e) => onChange({ ...action, subject: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, subject: v })}
               placeholder="Assunto"
             />
             <Select
@@ -1790,20 +1785,11 @@ function StepConfigForm({
               </SelectContent>
             </Select>
           </div>
-          <Textarea
-            ref={bodyInserter.ref}
+          <TokenTextarea
             value={action.body ?? ""}
-            onChange={(e) => onChange({ ...action, body: e.target.value })}
+            onValueChange={(v) => onChange({ ...action, body: v })}
             placeholder="Descrição (opcional)"
             rows={3}
-          />
-          <TokenPills
-            tokens={WORKFLOW_TOKENS}
-            onInsert={(t) => {
-              const active = typeof document !== "undefined" ? document.activeElement : null;
-              if (active === bodyInserter.ref.current) bodyInserter.insert(t);
-              else subjectInserter.insert(t);
-            }}
           />
           <div className="flex items-center gap-2">
             <Label className="text-xs">Vence em (dias)</Label>
@@ -1849,26 +1835,16 @@ function StepConfigForm({
     case "send_notification":
       return (
         <div className="space-y-2">
-          <Input
-            ref={titleInserter.ref}
+          <TokenInput
             value={action.title}
-            onChange={(e) => onChange({ ...action, title: e.target.value })}
+            onValueChange={(v) => onChange({ ...action, title: v })}
             placeholder="Título"
           />
-          <Textarea
-            ref={bodyInserter.ref}
+          <TokenTextarea
             value={action.body ?? ""}
-            onChange={(e) => onChange({ ...action, body: e.target.value })}
+            onValueChange={(v) => onChange({ ...action, body: v })}
             placeholder="Corpo (opcional)"
             rows={2}
-          />
-          <TokenPills
-            tokens={WORKFLOW_TOKENS}
-            onInsert={(t) => {
-              const active = typeof document !== "undefined" ? document.activeElement : null;
-              if (active === bodyInserter.ref.current) bodyInserter.insert(t);
-              else titleInserter.insert(t);
-            }}
           />
           <div>
             <Label className="text-xs">Notificar (opcional — padrão: você)</Label>
@@ -1988,14 +1964,10 @@ function StepConfigForm({
         <div className="space-y-2">
           <div>
             <Label className="text-xs">Título da vaga</Label>
-            <Input
+            <TokenInput
               value={action.title}
-              onChange={(e) => onChange({ ...action, title: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, title: v })}
               placeholder="Vaga para {{name}}"
-            />
-            <TokenPills
-              tokens={WORKFLOW_TOKENS}
-              onInsert={(t) => onChange({ ...action, title: (action.title ?? "") + t })}
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -2040,9 +2012,9 @@ function StepConfigForm({
       return (
         <div className="space-y-2">
           <Label className="text-xs">Novo stage_value</Label>
-          <Input
+          <TokenInput
             value={action.stage_value}
-            onChange={(e) => onChange({ ...action, stage_value: e.target.value })}
+            onValueChange={(v) => onChange({ ...action, stage_value: v })}
             placeholder="ex: entrevista, contratado, rejeitado"
           />
         </div>
@@ -2052,33 +2024,33 @@ function StepConfigForm({
         <div className="space-y-2">
           <div>
             <Label className="text-xs">Nome completo</Label>
-            <Input
+            <TokenInput
               value={action.full_name}
-              onChange={(e) => onChange({ ...action, full_name: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, full_name: v })}
               placeholder="{{full_name}}"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Email</Label>
-              <Input
+              <TokenInput
                 value={action.email ?? ""}
-                onChange={(e) => onChange({ ...action, email: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, email: v })}
               />
             </div>
             <div>
               <Label className="text-xs">Telefone</Label>
-              <Input
+              <TokenInput
                 value={action.phone ?? ""}
-                onChange={(e) => onChange({ ...action, phone: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, phone: v })}
               />
             </div>
           </div>
           <div>
             <Label className="text-xs">Origem</Label>
-            <Input
+            <TokenInput
               value={action.source ?? ""}
-              onChange={(e) => onChange({ ...action, source: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, source: v })}
               placeholder="workflow"
             />
           </div>
@@ -2121,49 +2093,49 @@ function StepConfigForm({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Nome *</Label>
-              <Input
+              <TokenInput
                 value={action.first_name}
-                onChange={(e) => onChange({ ...action, first_name: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, first_name: v })}
                 placeholder="{{first_name}}"
               />
             </div>
             <div>
               <Label className="text-xs">Sobrenome</Label>
-              <Input
+              <TokenInput
                 value={action.last_name ?? ""}
-                onChange={(e) => onChange({ ...action, last_name: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, last_name: v })}
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Email</Label>
-              <Input
+              <TokenInput
                 value={action.email ?? ""}
-                onChange={(e) => onChange({ ...action, email: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, email: v })}
               />
             </div>
             <div>
               <Label className="text-xs">Telefone</Label>
-              <Input
+              <TokenInput
                 value={action.phone ?? ""}
-                onChange={(e) => onChange({ ...action, phone: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, phone: v })}
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Empresa</Label>
-              <Input
+              <TokenInput
                 value={action.company_name ?? ""}
-                onChange={(e) => onChange({ ...action, company_name: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, company_name: v })}
               />
             </div>
             <div>
               <Label className="text-xs">Origem</Label>
-              <Input
+              <TokenInput
                 value={action.source ?? ""}
-                onChange={(e) => onChange({ ...action, source: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, source: v })}
                 placeholder="workflow"
               />
             </div>
@@ -2198,49 +2170,49 @@ function StepConfigForm({
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Nome *</Label>
-              <Input
+              <TokenInput
                 value={action.first_name}
-                onChange={(e) => onChange({ ...action, first_name: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, first_name: v })}
                 placeholder="{{first_name}}"
               />
             </div>
             <div>
               <Label className="text-xs">Sobrenome</Label>
-              <Input
+              <TokenInput
                 value={action.last_name ?? ""}
-                onChange={(e) => onChange({ ...action, last_name: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, last_name: v })}
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Email</Label>
-              <Input
+              <TokenInput
                 value={action.email ?? ""}
-                onChange={(e) => onChange({ ...action, email: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, email: v })}
               />
             </div>
             <div>
               <Label className="text-xs">Telefone</Label>
-              <Input
+              <TokenInput
                 value={action.phone ?? ""}
-                onChange={(e) => onChange({ ...action, phone: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, phone: v })}
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Cargo</Label>
-              <Input
+              <TokenInput
                 value={action.job_title ?? ""}
-                onChange={(e) => onChange({ ...action, job_title: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, job_title: v })}
               />
             </div>
             <div>
               <Label className="text-xs">Empresa</Label>
-              <Input
+              <TokenInput
                 value={action.company_name ?? ""}
-                onChange={(e) => onChange({ ...action, company_name: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, company_name: v })}
               />
             </div>
           </div>
@@ -2265,26 +2237,26 @@ function StepConfigForm({
         <div className="space-y-2">
           <div>
             <Label className="text-xs">Nome *</Label>
-            <Input
+            <TokenInput
               value={action.name}
-              onChange={(e) => onChange({ ...action, name: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, name: v })}
               placeholder="{{company_name}}"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Domínio</Label>
-              <Input
+              <TokenInput
                 value={action.domain ?? ""}
-                onChange={(e) => onChange({ ...action, domain: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, domain: v })}
                 placeholder="exemplo.com"
               />
             </div>
             <div>
               <Label className="text-xs">Setor</Label>
-              <Input
+              <TokenInput
                 value={action.industry ?? ""}
-                onChange={(e) => onChange({ ...action, industry: e.target.value })}
+                onValueChange={(v) => onChange({ ...action, industry: v })}
               />
             </div>
           </div>
@@ -2301,9 +2273,9 @@ function StepConfigForm({
         <div className="space-y-2">
           <div>
             <Label className="text-xs">Nome do negócio *</Label>
-            <Input
+            <TokenInput
               value={action.name}
-              onChange={(e) => onChange({ ...action, name: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, name: v })}
               placeholder="Negócio com {{name}}"
             />
           </div>
@@ -2353,17 +2325,17 @@ function StepConfigForm({
         <div className="space-y-2">
           <div>
             <Label className="text-xs">Assunto *</Label>
-            <Input
+            <TokenInput
               value={action.subject}
-              onChange={(e) => onChange({ ...action, subject: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, subject: v })}
               placeholder="Chamado sobre {{name}}"
             />
           </div>
           <div>
             <Label className="text-xs">Descrição</Label>
-            <Textarea
+            <TokenTextarea
               value={action.description ?? ""}
-              onChange={(e) => onChange({ ...action, description: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, description: v })}
               rows={3}
             />
           </div>
@@ -2412,17 +2384,17 @@ function StepConfigForm({
         <div className="space-y-2">
           <div>
             <Label className="text-xs">Assunto *</Label>
-            <Input
+            <TokenInput
               value={action.subject}
-              onChange={(e) => onChange({ ...action, subject: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, subject: v })}
               placeholder="Ligar para {{first_name}}"
             />
           </div>
           <div>
             <Label className="text-xs">Descrição</Label>
-            <Textarea
+            <TokenTextarea
               value={action.body ?? ""}
-              onChange={(e) => onChange({ ...action, body: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, body: v })}
               rows={2}
             />
           </div>
@@ -2523,17 +2495,17 @@ function StepConfigForm({
           </div>
           <div>
             <Label className="text-xs">Assunto *</Label>
-            <Input
+            <TokenInput
               value={action.subject}
-              onChange={(e) => onChange({ ...action, subject: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, subject: v })}
               placeholder="Olá {{first_name}}"
             />
           </div>
           <div>
             <Label className="text-xs">Corpo *</Label>
-            <Textarea
+            <TokenTextarea
               value={action.body}
-              onChange={(e) => onChange({ ...action, body: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, body: v })}
               rows={5}
             />
           </div>
@@ -2563,9 +2535,9 @@ function StepConfigForm({
           </div>
           <div>
             <Label className="text-xs">Corpo (se não usar template)</Label>
-            <Textarea
+            <TokenTextarea
               value={action.body ?? ""}
-              onChange={(e) => onChange({ ...action, body: e.target.value })}
+              onValueChange={(v) => onChange({ ...action, body: v })}
               rows={3}
               placeholder="Olá {{first_name}}, ..."
             />
@@ -2746,9 +2718,9 @@ function AssociateRecordsForm({
       </div>
       <div>
         <Label className="text-xs">ID do registro alvo</Label>
-        <Input
+        <TokenInput
           value={action.target_id}
-          onChange={(e) => onChange({ ...action, target_id: e.target.value })}
+          onValueChange={(v) => onChange({ ...action, target_id: v })}
           placeholder="uuid ou {{company_id}}"
         />
       </div>
@@ -3260,18 +3232,38 @@ function countSteps(actions: WorkflowAction[]): number {
   return n;
 }
 
-function describeAction(a: WorkflowAction): string {
+type DescribeLabels = {
+  labelForUser: (id: string | null | undefined) => string;
+  labelForCompany: (id: string | null | undefined) => string;
+  labelForPipeline: (id: string | null | undefined) => string;
+  labelForSequence: (id: string | null | undefined) => string;
+  labelForRule: (id: string | null | undefined) => string;
+};
+
+function describeAction(a: WorkflowAction, labels?: DescribeLabels): string {
+  // Fallback quando labels não é passado: hash curto.
+  const short = (id: string | null | undefined, prefix: string) =>
+    id ? `${prefix} ${id.slice(0, 8)}…` : "—";
+  const L: DescribeLabels =
+    labels ?? {
+      labelForUser: (id) => (id ? `usuário ${id.slice(0, 8)}…` : "—"),
+      labelForCompany: (id) => short(id, "empresa"),
+      labelForPipeline: (id) => short(id, "pipeline"),
+      labelForSequence: (id) => short(id, "sequência"),
+      labelForRule: (id) => short(id, "regra"),
+    };
+
   switch (a.type) {
     case "set_field":
       return `${a.field} = ${String(a.value ?? "")}`;
     case "create_activity":
       return `${a.activity_type ?? "task"}: ${a.subject}`;
     case "assign_to":
-      return a.user_id ? `usuário ${a.user_id.slice(0, 8)}…` : "—";
+      return a.user_id ? L.labelForUser(a.user_id) : "—";
     case "rotate_assign":
-      return a.rule_id ? `regra ${a.rule_id.slice(0, 8)}…` : "—";
+      return a.rule_id ? L.labelForRule(a.rule_id) : "—";
     case "add_to_sequence":
-      return a.sequence_id ? `sequência ${a.sequence_id.slice(0, 8)}…` : "—";
+      return a.sequence_id ? L.labelForSequence(a.sequence_id) : "—";
     case "send_notification":
       return a.title;
     case "webhook":
@@ -3287,7 +3279,7 @@ function describeAction(a: WorkflowAction): string {
     case "create_ats_candidate":
       return a.full_name;
     case "assign_recruiter":
-      return `${a.target ?? "auto"} · ${a.user_id ? a.user_id.slice(0, 8) + "…" : "—"}`;
+      return `${a.target ?? "auto"} · ${a.user_id ? L.labelForUser(a.user_id) : "—"}`;
     case "create_lead":
       return `lead: ${a.first_name || "—"}`;
     case "create_contact":
@@ -3303,7 +3295,10 @@ function describeAction(a: WorkflowAction): string {
     case "copy_field_from_association":
       return `${a.association}.${a.source_field} → ${a.target_field}`;
     case "associate_records":
-      return `${a.association} = ${a.target_id.slice(0, 8)}…`;
+      // target_id pode ser UUID ou token {{...}} — só encurta se parecer UUID.
+      return `${a.association} = ${
+        /^[0-9a-f-]{36}$/i.test(a.target_id) ? a.target_id.slice(0, 8) + "…" : a.target_id
+      }`;
     case "disassociate_records":
       return `remover ${a.association}`;
     case "clear_field":
@@ -3371,9 +3366,9 @@ function FormatDataForm({
       {showTemplate && (
         <div className="space-y-1">
           <Label>Template</Label>
-          <Textarea
+          <TokenTextarea
             value={action.template ?? ""}
-            onChange={(e) => onChange({ ...action, template: e.target.value })}
+            onValueChange={(v) => onChange({ ...action, template: v })}
             placeholder="Ex: {{first_name}} <{{email}}> — score {{vars.score_pct}}"
             rows={3}
           />
@@ -3450,9 +3445,9 @@ function SendSlackForm({
       </div>
       <div className="space-y-1">
         <Label>Mensagem</Label>
-        <Textarea
+        <TokenTextarea
           value={action.text}
-          onChange={(e) => onChange({ ...action, text: e.target.value })}
+          onValueChange={(v) => onChange({ ...action, text: v })}
           rows={4}
           placeholder="Aceita tokens {{campo}} e {{vars.NOME}}"
         />
@@ -3486,16 +3481,16 @@ function SendTeamsForm({
       </div>
       <div className="space-y-1">
         <Label>Título (opcional)</Label>
-        <Input
+        <TokenInput
           value={action.title ?? ""}
-          onChange={(e) => onChange({ ...action, title: e.target.value })}
+          onValueChange={(v) => onChange({ ...action, title: v })}
         />
       </div>
       <div className="space-y-1">
         <Label>Mensagem</Label>
-        <Textarea
+        <TokenTextarea
           value={action.text}
-          onChange={(e) => onChange({ ...action, text: e.target.value })}
+          onValueChange={(v) => onChange({ ...action, text: v })}
           rows={4}
           placeholder="Aceita tokens {{campo}} e {{vars.NOME}}"
         />
@@ -3515,17 +3510,17 @@ function ApprovalStepForm({
     <div className="space-y-3">
       <div className="space-y-1">
         <Label>Título da aprovação</Label>
-        <Input
+        <TokenInput
           value={action.title}
-          onChange={(e) => onChange({ ...action, title: e.target.value })}
+          onValueChange={(v) => onChange({ ...action, title: v })}
           placeholder="Aprovar desconto de {{name}}"
         />
       </div>
       <div className="space-y-1">
         <Label>Contexto para o aprovador (opcional)</Label>
-        <Textarea
+        <TokenTextarea
           value={action.note ?? ""}
-          onChange={(e) => onChange({ ...action, note: e.target.value })}
+          onValueChange={(v) => onChange({ ...action, note: v })}
           rows={3}
           placeholder="Detalhes que o aprovador precisa ver."
         />

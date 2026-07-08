@@ -4,12 +4,11 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Select,
@@ -29,6 +28,8 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
+import { TokenInput, TokenTextarea } from "./token-input";
+import { useReferenceLabels } from "./use-reference-labels";
 
 type EntityName =
   | "leads"
@@ -104,11 +105,11 @@ function CustomFieldsEditor({
               onChange(Object.keys(next).length ? next : null);
             }}
           />
-          <Input
+          <TokenInput
             value={v}
             placeholder="valor (aceita {{tokens}})"
-            onChange={(e) => {
-              const next = { ...obj, [k]: e.target.value };
+            onValueChange={(nv) => {
+              const next = { ...obj, [k]: nv };
               onChange(next);
             }}
           />
@@ -221,23 +222,135 @@ function FieldInput({
     );
   }
 
+  // FKs conhecidas → combobox com nomes resolvidos.
+  const FK_KIND: Record<string, "user" | "company" | "pipeline"> = {
+    owner_id: "user",
+    assigned_user_id: "user",
+    assignee_id: "user",
+    approver_user_id: "user",
+    hiring_manager_id: "user",
+    notify_user_id: "user",
+    company_id: "company",
+    parent_company_id: "company",
+    primary_contact_id: "company", // fallback lookup
+    pipeline_id: "pipeline",
+  };
+  if (FK_KIND[field.name]) {
+    return (
+      <FkPicker
+        kind={FK_KIND[field.name]}
+        value={strVal}
+        onChange={(v) => onChange(v)}
+      />
+    );
+  }
+
   if (LONG_TEXT_FIELDS.has(field.name)) {
     return (
-      <Textarea
+      <TokenTextarea
         rows={2}
         value={strVal}
-        onChange={(e) => onChange(e.target.value)}
+        onValueChange={(v) => onChange(v)}
         placeholder="Aceita {{tokens}}"
       />
     );
   }
 
   return (
-    <Input
+    <TokenInput
       value={strVal}
-      onChange={(e) => onChange(e.target.value)}
+      onValueChange={(v) => onChange(v)}
       placeholder="Aceita {{tokens}}"
     />
+  );
+}
+
+// Combobox de busca para FKs conhecidas (usuário / empresa / pipeline).
+// Aceita valor bruto (UUID) ou token {{...}} — o TokenInput continua no fallback.
+function FkPicker({
+  kind,
+  value,
+  onChange,
+}: {
+  kind: "user" | "company" | "pipeline";
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const labels = useReferenceLabels();
+  const items =
+    kind === "user"
+      ? Array.from(labels.userById.entries()).map(([id, u]) => ({
+          id,
+          label: u.full_name ?? id,
+        }))
+      : kind === "company"
+        ? labels.companies.map((c) => ({ id: c.id, label: c.name }))
+        : labels.pipelines.map((p) => ({ id: p.id, label: p.name }));
+
+  const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
+  const currentLabel = !value
+    ? ""
+    : isToken
+      ? value
+      : kind === "user"
+        ? labels.labelForUser(value)
+        : kind === "company"
+          ? labels.labelForCompany(value)
+          : labels.labelForPipeline(value);
+
+  return (
+    <div className="grid grid-cols-[1fr_auto] gap-1">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            role="combobox"
+            className="h-9 justify-between text-left font-normal"
+          >
+            <span className={cn("truncate", !value && "text-muted-foreground")}>
+              {currentLabel || "Selecionar..."}
+            </span>
+            <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Buscar..." />
+            <CommandList>
+              <CommandEmpty>Nenhum resultado.</CommandEmpty>
+              <CommandGroup>
+                {items.map((it) => (
+                  <CommandItem
+                    key={it.id}
+                    value={`${it.label} ${it.id}`}
+                    onSelect={() => {
+                      onChange(it.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-3.5 w-3.5",
+                        value === it.id ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    <span className="truncate">{it.label}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      <TokenInput
+        value={isToken ? value : ""}
+        onValueChange={(v) => onChange(v)}
+        placeholder="{{token}}"
+        className="w-32"
+      />
+    </div>
   );
 }
 

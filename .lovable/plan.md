@@ -1,64 +1,83 @@
 ## Objetivo
 
-Permitir que cada ação `create_*` do builder de workflows exponha **todos os campos da entidade alvo**, não apenas o subconjunto atualmente hardcoded (ex.: em "Criar negócio" só há Nome, Valor, Moeda).
+1. Permitir inserir variáveis (`{{token}}`) como pills clicáveis em **todos** os campos de texto do construtor de Workflows (não apenas nos poucos que hoje têm `TokenPills`).
+2. Corrigir a exibição de referências (usuário, empresa, pipeline, etapa, sequência, regra) que hoje mostram o hash do UUID em vez do nome amigável.
 
-## Escopo
-
-As 6 ações `create_*`: `create_lead`, `create_contact`, `create_company`, `create_deal`, `create_ticket`, `create_task`.
+Escopo restrito a UI/apresentação no builder de workflows. Não altera engine, schemas, RLS ou lógica de negócio.
 
 ## Mudanças
 
-### 1. Tipos e schemas (`src/lib/workflows/types.ts`, `schemas.ts`)
-- Adicionar `extra_fields?: Record<string, unknown>` em cada uma das 6 ações `create_*`.
-- Zod: `extra_fields: z.record(z.string(), z.unknown()).optional()`.
+### 1. Componente único de input com pills
 
-### 2. Engine (`src/lib/workflows/engine.server.ts`)
-- Em cada `case "create_*"`, montar payload principal, resolver tokens `{{campo}}` em `extra_fields` (recursivo para strings) e mesclar antes do `insert`.
-- Precedência: chaves do payload principal ganham de `extra_fields`, evitando sobrescrita acidental.
-- Se `extra_fields` contiver `custom_fields` (objeto), fazer merge com o `custom_fields` já existente do payload principal em vez de sobrescrever.
-- Erros do banco (coluna inexistente, tipo inválido) ficam no `run_log` normalmente.
+Criar `src/components/workflows/token-input.tsx`:
+- `TokenInput` e `TokenTextarea` (wrappers de `Input`/`Textarea` do shadcn).
+- Rastreiam a posição do cursor via `ref` e `onSelect`.
+- Renderizam um botão discreto `{ }` (ícone `Braces`) no canto do campo → abre `Popover` com `TokenPills` agrupadas + busca (`Command`).
+- Ao clicar em um token, inserem `{{token}}` na posição do cursor (ou substituem a seleção) e disparam `onChange`.
+- Aceitam prop `tokens: MessageToken[]` (default `WORKFLOW_TOKENS`) e todas as props padrão de `Input`/`Textarea`.
+- Suportam também abrir o popover via atalho: digitar `{{` abre o picker inline (opcional; se aumentar risco, fica só o botão).
 
-### 3. Catálogo de entidade (`src/lib/entity-fields.functions.ts`)
-- Estender `getEntityFieldCatalog` para aceitar a entidade sintética `activities` (usada por `create_task`). Ela chama o mesmo RPC `get_entity_field_catalog` com `p_table = 'activities'`.
-- Manter HIDDEN existente; adicionar `custom_fields` como visível (renderizado como editor JSON no builder — ver abaixo).
+### 2. Substituir campos de texto do workflow
 
-### 4. Builder (`src/components/workflows/workflow-builder.tsx`)
-- Novo componente `ExtraFieldsEditor({ entity, action, onChange, hiddenKeys })`:
-  - Carrega catálogo via TanStack Query (`queryKey: ['entity-field-catalog', entity]`).
-  - `hiddenKeys` = chaves já cobertas pelo formulário principal da ação (ex.: `create_deal` → `name`, `value`, `currency`, `pipeline_id`, `stage_id`, `owner_id`).
-  - Lista de linhas: seletor de campo (Combobox agrupado por tipo) + input tipado:
-    - `text` → Input (aceita tokens `{{campo}}`)
-    - `text` longo (description/notes/body) → Textarea
-    - `number` → Input numérico
-    - `date` → DatePicker (mantém string ISO; aceita tokens)
-    - `boolean` → Switch
-    - `select` → Select com `options` do catálogo
-    - `custom_fields` → editor de pares chave/valor (mini-tabela) que persiste como objeto
-  - Botão "Adicionar campo" abre popover com campos ainda não usados.
-  - Botão lixeira remove a chave.
-  - Dica visível sobre uso de tokens.
-- Seção colapsável **"Mais campos"** ao final de cada `case "create_*"` do `ActionEditor`, passando `entity` correspondente:
-  - `create_lead` → `leads`
-  - `create_contact` → `contacts`
-  - `create_company` → `companies`
-  - `create_deal` → `deals`
-  - `create_ticket` → `tickets`
-  - `create_task` → `activities`
+Em `src/components/workflows/workflow-builder.tsx`, trocar `Input`/`Textarea` por `TokenInput`/`TokenTextarea` nos campos de conteúdo que aceitam tokens hoje (todos os `placeholder="... {{...}}"` já mapeados):
 
-### 5. Validação de tipo no cliente
-- Coerção mínima ao gravar em `extra_fields`:
-  - `number` → `Number(v)` ou `undefined` se vazio.
-  - `boolean` → `true`/`false`.
-  - `date` → string ISO ou token literal.
-  - `select` → string exata do `options[].value`.
-  - `text` → string bruta (preserva tokens).
-- Sem bloqueios agressivos: se o usuário quer usar um token em campo numérico, ok — o engine tenta e o erro aparece no log.
+- `create_ats_job.title`
+- `create_ats_candidate.full_name`
+- `create_lead` (first_name, last_name, company, email...)
+- `create_contact` (first_name, last_name, email...)
+- `create_company.name`
+- `create_deal.name`
+- `create_ticket.subject`
+- `create_task.subject`, `description`
+- `send_notification.title`, `text`
+- `webhook.text` (Teams/Slack)
+- `approval.title`, `note`
+- `format_data.template`
+- `set_field.value`
+- `associate_records.target_id`
+- Demais campos textuais das ações que hoje mostram `placeholder` com `{{...}}`.
+
+### 3. Pills no editor de "Mais campos"
+
+Em `src/components/workflows/extra-fields-editor.tsx`:
+- Trocar os `Input`/`Textarea` de tipo `text`/long-text por `TokenInput`/`TokenTextarea`.
+- Fazer o mesmo no `CustomFieldsEditor` (coluna de valor).
+- Campos `number`, `boolean`, `date`, `select` seguem inalterados.
+
+### 4. Referências passam a exibir nomes, não UUIDs
+
+Criar hook leve `useReferenceLabels()` em `src/components/workflows/use-reference-labels.ts`:
+- Uma única `useQuery` (staleTime 5min) que carrega em paralelo:
+  - `profiles` (id, full_name, email) — usuários do workspace.
+  - `companies` (id, name).
+  - `pipelines` (id, name, stages) — para mapear `stage`.
+  - `sequences` (id, name).
+  - `rotation_rules` (id, name).
+- Devolve helpers: `labelForUser(id)`, `labelForCompany(id)`, `labelForPipeline(id)`, `labelForStage(pipelineId, stageValue)`, `labelForSequence(id)`, `labelForRule(id)`.
+- Fallback: se não encontrar, retorna string curta amigável (`"usuário removido"` ou os 8 primeiros chars).
+
+Usar o hook em:
+- `describeAction` (linhas ~3263-3310 e vizinhas) para `assign_to`, `rotate_assign`, `add_to_sequence`, `assign_recruiter`, `associate_records`, `create_activity` (assignee) etc. — trocar o `slice(0,8)+"…"` pelos nomes reais.
+- Chip/resumo do passo na barra lateral e cabeçalho do card de ação (quando exibe um subtítulo com hash).
+- `ExtraFieldsEditor`: quando o campo for FK conhecido (`company_id`, `owner_id`, `assigned_user_id`, `pipeline_id`, `parent_company_id`), renderizar um `Combobox` de busca com os nomes já resolvidos, em vez de `Input` de UUID. Continua permitindo colar `{{token}}` via botão de "usar variável".
+
+Como `describeAction` é uma função pura hoje, refatorar a assinatura para `describeAction(a, labels)` e passar o objeto de helpers a partir do componente que já é React (o `StepChip`/renderer do builder). Nenhum caller server-side.
+
+### 5. Não escopo
+
+- Não altera `engine.server.ts` (resolução de tokens continua idêntica).
+- Não altera schema/tipos das ações.
+- Não altera RLS nem catálogo de tokens (mantém `WORKFLOW_TOKENS`); ampliar catálogo pode ser feito em passo futuro se o usuário pedir.
 
 ## Validação
 
 - `bunx tsgo --noEmit`.
-- Preview manual: em cada uma das 6 ações, abrir "Mais campos", adicionar 2-3 campos (um com literal, um com token, um select/boolean/date quando disponível), salvar e disparar workflow de teste; conferir no registro criado que os campos extras foram preenchidos.
+- Manual no `/settings/workflows`:
+  - Abrir uma ação, clicar no botão `{}` em cada campo de texto, escolher uma variável, ver o token aparecer no cursor.
+  - Confirmar que o `describeAction` do passo (chip lateral) mostra "João Silva" em vez de `f3a4b2c1…`.
+  - Em "Mais campos", adicionar `company_id` e ver combobox com nomes das empresas.
 
-## Fora do escopo
+## Riscos
 
-Nada — os 3 itens antes excluídos foram incorporados (catálogo de `activities`, editor de `custom_fields`, coerção de tipo no cliente).
+- `TokenInput` precisa preservar `ref`, `onSelect`, `onBlur` sem quebrar formulários existentes — mitigado repassando todas as props e usando `forwardRef`.
+- `describeAction` hoje é usada em outros locais? Verificar antes de alterar assinatura; se sim, manter overload sem `labels` retornando o comportamento atual (fallback UUID curto).
