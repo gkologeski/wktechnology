@@ -39,7 +39,14 @@ import {
   Ticket,
   CheckSquare,
   Contact,
+  Copy,
+  Link2,
+  Link2Off,
+  Eraser,
+  Plus as PlusIcon,
+  MessageCircle,
 } from "lucide-react";
+
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
