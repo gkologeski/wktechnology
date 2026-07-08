@@ -38,16 +38,22 @@ Cada ação suporta **mapping via placeholder** `{{field.xxx}}` resolvido pelo e
 
 ## Fase 5 — Avançado
 
-- `approval_step` — pausa run, cria notificação, retoma ao decidir. Nova tabela `workflow_approvals`.
-- `custom_code` — JS server-side sandbox restrito, timeout 5s, apenas admins. Risco documentado; se sandbox inviável no Worker, restringe a DSL limitada.
-- `format_data` — upper/lower/trim/date_add/date_format/number_round/template_string em variáveis do run.
-- `send_slack` / `send_teams` — via `slack_integrations` existente + connector Teams.
-- **Triggers baseados em tempo** (novo — HubSpot: "time-based enrollment"):
-  - `time_since_field` — dispara N minutos/horas/dias após valor de campo data (ex: `created_at + 7d`, `last_activity_at + 30d`, `expected_close_date - 3d`).
-  - `no_activity_for` — dispara quando registro fica N dias sem atividade (nenhuma linha nova em `activities` para aquele `entity_id`).
-  - `stuck_in_stage_for` — dispara quando registro fica N dias na mesma stage (usa `stage_entries.entered_at`).
-  - `field_unchanged_for` — dispara quando campo não muda por N dias (usa `property_history`).
-  - Implementação: cron `workflows-time-triggers-tick` (a cada 15 min) varre workflows com trigger temporal e enfileira eventos sintéticos em `workflow_events` para o tick regular processar. Novo tipo de trigger `time_based` com config `{ kind, field?, amount, unit }` além dos `event`s atuais.
+**5a — Utilitários (concluído ✅)**
+- `format_data` — upper/lower/trim/date_add/date_format/number_round/template_string. Resultado vai em `ctx.vars` do run, acessível via `{{vars.NOME}}` nas ações seguintes.
+- `send_slack` — usa `slack_integrations.access_token` do workspace + `chat.postMessage`.
+- `send_teams` — Incoming Webhook URL configurada por ação.
+
+**5b — Aprovações (pendente)**
+- `approval_step` — pausa run, cria linha em `workflow_approvals` + notificação para o aprovador, retoma via endpoint de decisão.
+
+**5c — Triggers baseados em tempo (pendente)**
+- `time_since_field`, `no_activity_for`, `stuck_in_stage_for`, `field_unchanged_for`.
+- Cron `workflows-time-triggers-tick` a cada 15 min → varre workflows com trigger temporal e enfileira eventos sintéticos em `workflow_events`.
+- Tabela `workflow_time_cursors` para não redisparar.
+- Nova variante `trigger.type='time_based'` retrocompatível.
+
+**5d — Fora do escopo desta fase (removido)**
+- `custom_code` — sandbox seguro inviável no Cloudflare Worker sem lib dedicada; a nova ação `format_data` cobre a maior parte dos casos de uso (concatenação, formatação, aritmética simples).
 
 ## Detalhes técnicos
 
