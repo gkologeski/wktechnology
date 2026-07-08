@@ -2175,6 +2175,21 @@ function StepConfigForm({
               onChange={(v) => onChange({ ...action, owner_id: v })}
             />
           </div>
+          <ExtraFieldsEditor
+            entity="leads"
+            extraFields={action.extra_fields}
+            hiddenKeys={[
+              "first_name",
+              "last_name",
+              "email",
+              "phone",
+              "company_name",
+              "source",
+              "owner_id",
+              "status",
+            ]}
+            onChange={(v) => onChange({ ...action, extra_fields: v })}
+          />
         </div>
       );
     case "create_contact":
@@ -2229,6 +2244,20 @@ function StepConfigForm({
               />
             </div>
           </div>
+          <ExtraFieldsEditor
+            entity="contacts"
+            extraFields={action.extra_fields}
+            hiddenKeys={[
+              "first_name",
+              "last_name",
+              "email",
+              "phone",
+              "job_title",
+              "company_name",
+              "owner_id",
+            ]}
+            onChange={(v) => onChange({ ...action, extra_fields: v })}
+          />
         </div>
       );
     case "create_company":
@@ -2259,6 +2288,12 @@ function StepConfigForm({
               />
             </div>
           </div>
+          <ExtraFieldsEditor
+            entity="companies"
+            extraFields={action.extra_fields}
+            hiddenKeys={["name", "domain", "industry", "owner_id"]}
+            onChange={(v) => onChange({ ...action, extra_fields: v })}
+          />
         </div>
       );
     case "create_deal":
@@ -2298,6 +2333,19 @@ function StepConfigForm({
             Pipeline padrão será usado se não for especificado. Contato/empresa são associados
             automaticamente quando o workflow dispara neles.
           </p>
+          <ExtraFieldsEditor
+            entity="deals"
+            extraFields={action.extra_fields}
+            hiddenKeys={[
+              "name",
+              "value",
+              "currency",
+              "pipeline_id",
+              "stage_id",
+              "owner_id",
+            ]}
+            onChange={(v) => onChange({ ...action, extra_fields: v })}
+          />
         </div>
       );
     case "create_ticket":
@@ -2345,6 +2393,18 @@ function StepConfigForm({
               />
             </div>
           </div>
+          <ExtraFieldsEditor
+            entity="tickets"
+            extraFields={action.extra_fields}
+            hiddenKeys={[
+              "subject",
+              "description",
+              "priority",
+              "pipeline_id",
+              "assignee_id",
+            ]}
+            onChange={(v) => onChange({ ...action, extra_fields: v })}
+          />
         </div>
       );
     case "create_task":
@@ -2390,8 +2450,25 @@ function StepConfigForm({
               />
             </div>
           </div>
+          <ExtraFieldsEditor
+            entity="activities"
+            extraFields={action.extra_fields}
+            hiddenKeys={[
+              "subject",
+              "body",
+              "type",
+              "due_date",
+              "owner_id",
+              "related_lead_id",
+              "related_contact_id",
+              "related_company_id",
+              "related_deal_id",
+            ]}
+            onChange={(v) => onChange({ ...action, extra_fields: v })}
+          />
         </div>
       );
+
     case "copy_field_from_association":
       return <CopyFromAssociationForm entity={entity} action={action} onChange={onChange} />;
     case "associate_records":
