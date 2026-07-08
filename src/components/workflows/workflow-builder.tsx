@@ -149,6 +149,9 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   increment_field: PlusIcon,
   send_email: Mail,
   send_whatsapp: MessageCircle,
+  switch_by_value: SplitSquareHorizontal,
+  branch_multi: GitFork,
+  delay_until_date: CalendarClock,
 };
 
 
