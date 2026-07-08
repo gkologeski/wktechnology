@@ -2344,10 +2344,25 @@ function describeAction(a: WorkflowAction): string {
       return `ticket: ${a.subject || "—"}`;
     case "create_task":
       return `tarefa: ${a.subject || "—"}`;
+    case "copy_field_from_association":
+      return `${a.association}.${a.source_field} → ${a.target_field}`;
+    case "associate_records":
+      return `${a.association} = ${a.target_id.slice(0, 8)}…`;
+    case "disassociate_records":
+      return `remover ${a.association}`;
+    case "clear_field":
+      return `limpar ${a.field}`;
+    case "increment_field":
+      return `${a.field} += ${a.amount}`;
+    case "send_email":
+      return `email: ${a.subject || "—"}`;
+    case "send_whatsapp":
+      return `whatsapp: ${a.template_name || a.body?.slice(0, 30) || "—"}`;
     default:
       return "";
   }
 }
+
 
 // Silence unused-import in case memo helper not used elsewhere.
 void useMemo;
