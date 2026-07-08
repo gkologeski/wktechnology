@@ -1,7 +1,7 @@
 // Editor de "Mais campos" para ações create_* do workflow.
 // Permite adicionar qualquer campo da entidade alvo além dos já
 // cobertos no formulário principal da ação. Persiste em action.extra_fields.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown } from "lucide-react";
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
+import { searchCompanies, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
