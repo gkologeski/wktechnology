@@ -134,7 +134,39 @@ export type WorkflowAction =
       body?: string;
       due_in_days?: number;
       assignee_id?: string;
+    }
+  // Fase 2 — CRM avançado
+  | {
+      type: "copy_field_from_association";
+      association: string; // chave em ENTITY_ASSOCIATIONS
+      source_field: string;
+      target_field: string;
+    }
+  | {
+      type: "associate_records";
+      association: string;
+      target_id: string; // uuid ou {{token}}
+    }
+  | {
+      type: "disassociate_records";
+      association: string;
+    }
+  | { type: "clear_field"; field: string }
+  | { type: "increment_field"; field: string; amount: number }
+  | {
+      type: "send_email";
+      template_id?: string;
+      subject: string;
+      body: string;
+      to_field?: string; // default: "email"
+    }
+  | {
+      type: "send_whatsapp";
+      template_name?: string;
+      body?: string;
+      to_field?: string; // default: "phone"
     };
+
 
 
 export type WorkflowActionType = WorkflowAction["type"];
