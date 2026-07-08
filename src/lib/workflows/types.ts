@@ -259,6 +259,9 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   increment_field: "Incrementar campo",
   send_email: "Enviar email",
   send_whatsapp: "Enviar WhatsApp",
+  switch_by_value: "Ramificar por valor (switch)",
+  branch_multi: "Ramificação múltipla",
+  delay_until_date: "Esperar até data",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
