@@ -262,20 +262,19 @@ function LineItemsEditorBody({
           {items.map((li) => (
             <div key={li.id} className="rounded-md border p-3 space-y-2">
               <div className="flex items-center gap-2">
-                <Input
-                  key={`${li.id}-name`}
+                <TextField
                   className="flex-1"
-                  defaultValue={li.name ?? ""}
+                  value={li.name ?? ""}
                   placeholder="Nome do item"
-                  onBlur={(e) =>
-                    e.target.value !== (li.name ?? "") &&
-                    update(li.id, { name: e.target.value })
-                  }
+                  onCommit={(v) => {
+                    if (v !== (li.name ?? "")) update(li.id, { name: v });
+                  }}
                 />
                 <Button variant="ghost" size="icon" onClick={() => remove(li.id)}>
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
+
               <div className="grid grid-cols-4 gap-2">
                 <LabeledNumber
                   label="Qtd"
