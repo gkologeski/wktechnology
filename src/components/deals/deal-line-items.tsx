@@ -188,7 +188,10 @@ function LineItemsEditorBody({
       .single();
     if (error) return toast.error(error.message);
     if (data) {
-      setItemsCache((current) => [...current, data as LineItem].sort((a, b) => n(a.position) - n(b.position)));
+      await qc.cancelQueries({ queryKey: lineItemsQueryKey(dealId) });
+      setItemsCache((current) =>
+        [...current, data as LineItem].sort((a, b) => n(a.position) - n(b.position)),
+      );
     }
     notifyChanged();
   }
@@ -218,11 +221,15 @@ function LineItemsEditorBody({
       .single();
     if (error) return toast.error(error.message);
     if (data) {
-      setItemsCache((current) => [...current, data as LineItem].sort((a, b) => n(a.position) - n(b.position)));
+      await qc.cancelQueries({ queryKey: lineItemsQueryKey(dealId) });
+      setItemsCache((current) =>
+        [...current, data as LineItem].sort((a, b) => n(a.position) - n(b.position)),
+      );
     }
     notifyChanged();
   }
   async function update(id: string, patch: Partial<LineItem>) {
+    await qc.cancelQueries({ queryKey: lineItemsQueryKey(dealId) });
     const previous = qc.getQueryData<LineItem[]>(lineItemsQueryKey(dealId));
     setItemsCache((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -235,6 +242,7 @@ function LineItemsEditorBody({
     notifyChanged();
   }
   async function remove(id: string) {
+    await qc.cancelQueries({ queryKey: lineItemsQueryKey(dealId) });
     const previous = qc.getQueryData<LineItem[]>(lineItemsQueryKey(dealId));
     setItemsCache((current) => current.filter((item) => item.id !== id));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
