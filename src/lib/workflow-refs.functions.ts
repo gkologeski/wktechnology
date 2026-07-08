@@ -147,15 +147,16 @@ export const searchUsers = createServerFn({ method: "POST" })
     const missingName = idList.filter((id) => !nameById.get(id));
     const emailById = new Map<string, string>();
     if (missingName.length > 0) {
-      // supabaseAdmin.auth.admin.listUsers não permite filtro por id-set —
-      // fazemos uma consulta direta na tabela auth.users via rpc-safe select.
-      const { data: users } = await supabaseAdmin
-        .schema("auth" as never)
-        .from("users" as never)
-        .select("id, email")
-        .in("id", missingName);
-      ((users ?? []) as Array<{ id: string; email: string | null }>).forEach((u) => {
-        if (u.email) emailById.set(u.id, u.email);
+      // getUserById um a um — a Admin API não suporta filtro por id-set.
+      // Lista sempre pequena (usuários fora do workspace referenciados no workflow).
+      const lookups = await Promise.all(
+        missingName.map((id) =>
+          supabaseAdmin.auth.admin.getUserById(id).catch(() => null),
+        ),
+      );
+      lookups.forEach((res, i) => {
+        const email = res?.data?.user?.email;
+        if (email) emailById.set(missingName[i], email);
       });
     }
 
