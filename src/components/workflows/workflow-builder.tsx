@@ -1954,6 +1954,18 @@ function StepConfigForm({
           </div>
         </div>
       );
+    case "switch_by_value":
+      return (
+        <SwitchByValueForm entity={entity} action={action} onChange={onChange} />
+      );
+    case "branch_multi":
+      return (
+        <BranchMultiForm entity={entity} entityFields={entityFields} action={action} onChange={onChange} />
+      );
+    case "delay_until_date":
+      return (
+        <DelayUntilDateForm entity={entity} action={action} onChange={onChange} />
+      );
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
