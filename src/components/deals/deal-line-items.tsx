@@ -360,12 +360,67 @@ function LineItemsEditorBody({
                     onValueChange={(v) => update(li.id, { unit_price: v ?? 0 })}
                   />
                 </div>
-                <LabeledNumber
-                  label="Desc %"
-                  value={n(li.discount_pct)}
-                  step="0.01"
-                  onCommit={(v) => update(li.id, { discount_pct: v })}
-                />
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                      Desconto
+                    </span>
+                    <div className="inline-flex rounded-md border overflow-hidden text-[10px]">
+                      <button
+                        type="button"
+                        className={`px-1.5 py-0.5 ${
+                          (li.discount_type ?? "pct") === "pct"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-transparent text-muted-foreground"
+                        }`}
+                        onClick={() => {
+                          if ((li.discount_type ?? "pct") !== "pct") {
+                            update(li.id, { discount_type: "pct", discount_amount: 0 });
+                          }
+                        }}
+                        aria-label="Desconto em porcentagem"
+                      >
+                        %
+                      </button>
+                      <button
+                        type="button"
+                        className={`px-1.5 py-0.5 border-l ${
+                          li.discount_type === "amount"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-transparent text-muted-foreground"
+                        }`}
+                        onClick={() => {
+                          if (li.discount_type !== "amount") {
+                            update(li.id, { discount_type: "amount", discount_pct: 0 });
+                          }
+                        }}
+                        aria-label="Desconto em valor"
+                      >
+                        R$
+                      </button>
+                    </div>
+                  </div>
+                  {(li.discount_type ?? "pct") === "amount" ? (
+                    <CurrencyInput
+                      currency={currency}
+                      value={n(li.discount_amount)}
+                      onValueChange={(v) => update(li.id, { discount_amount: v ?? 0 })}
+                    />
+                  ) : (
+                    <Input
+                      type="number"
+                      step="0.01"
+                      defaultValue={String(n(li.discount_pct))}
+                      key={`pct-${li.id}-${n(li.discount_pct)}`}
+                      onBlur={(e) => {
+                        const num = Number(e.currentTarget.value);
+                        if (!Number.isNaN(num) && num !== n(li.discount_pct)) {
+                          update(li.id, { discount_pct: num });
+                        }
+                      }}
+                    />
+                  )}
+                </div>
                 <LabeledNumber
                   label="Imp %"
                   value={n(li.tax_rate)}
