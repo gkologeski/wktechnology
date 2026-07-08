@@ -92,6 +92,58 @@ const SimpleActionSchema = z.discriminatedUnion("type", [
     user_id: z.string().uuid(),
     target: z.enum(["auto", "job", "candidate", "application", "interview"]).optional(),
   }),
+  // Fase 1 — Criar entidade
+  z.object({
+    type: z.literal("create_lead"),
+    first_name: z.string().min(1).max(120),
+    last_name: z.string().max(120).optional(),
+    email: z.string().max(200).optional(),
+    phone: z.string().max(50).optional(),
+    company_name: z.string().max(200).optional(),
+    source: z.string().max(80).optional(),
+    owner_id: z.string().uuid().optional(),
+  }),
+  z.object({
+    type: z.literal("create_contact"),
+    first_name: z.string().min(1).max(120),
+    last_name: z.string().max(120).optional(),
+    email: z.string().max(200).optional(),
+    phone: z.string().max(50).optional(),
+    job_title: z.string().max(120).optional(),
+    company_name: z.string().max(200).optional(),
+    owner_id: z.string().uuid().optional(),
+  }),
+  z.object({
+    type: z.literal("create_company"),
+    name: z.string().min(1).max(200),
+    domain: z.string().max(200).optional(),
+    industry: z.string().max(120).optional(),
+    owner_id: z.string().uuid().optional(),
+  }),
+  z.object({
+    type: z.literal("create_deal"),
+    name: z.string().min(1).max(200),
+    value: z.number().nonnegative().optional(),
+    currency: z.string().max(10).optional(),
+    pipeline_id: z.string().uuid().optional(),
+    stage_id: z.string().uuid().optional(),
+    owner_id: z.string().uuid().optional(),
+  }),
+  z.object({
+    type: z.literal("create_ticket"),
+    subject: z.string().min(1).max(300),
+    description: z.string().max(5000).optional(),
+    priority: z.enum(["low", "normal", "high", "urgent"]).optional(),
+    pipeline_id: z.string().uuid().optional(),
+    assignee_id: z.string().uuid().optional(),
+  }),
+  z.object({
+    type: z.literal("create_task"),
+    subject: z.string().min(1).max(300),
+    body: z.string().max(5000).optional(),
+    due_in_days: z.number().int().min(0).max(365).optional(),
+    assignee_id: z.string().uuid().optional(),
+  }),
 ]);
 
 // Limita profundidade da recursão para evitar payloads abusivos.
