@@ -1,38 +1,36 @@
-## Objetivo
-Permitir escolher entre desconto por percentual (%) ou por valor absoluto (moeda) em cada item de linha do modal de negócios.
+## Contexto
+Ao selecionar um produto no combobox do modal de itens de linha, o servidor persiste o item corretamente (confirmado no banco: `name`, `quantity=1`, `unit_price` do produto), mas a linha renderizada no modal aparece vazia (`Nome do item` placeholder, `QTD=0`, `PREÇO=R$ 0,00`). Somente ao fechar e reabrir o modal a linha aparece com dados. Ao adicionar de novo, o combobox insere um segundo registro no banco (não é duplicação — é uma segunda inserção real feita pelo usuário), reforçando que o fluxo depende de reabrir o modal para ler o estado real.
 
-## Mudanças
+## Causa raiz
+O fluxo de inserção em `src/components/deals/deal-line-items.tsx` combina:
+1. Optimistic append no cache (`setItemsCache`).
+2. Em seguida `notifyChanged()` chama `qc.invalidateQueries` na MESMA chave (`lineItemsQueryKey`) e também em `["deals"]`.
+3. A invalidação em `["deals"]` faz a rota do negócio revalidar e re-renderizar, o que reprocessa o subtree onde o `Dialog` está montado. O `LineItemsEditorBody` sofre re-render antes da refetch de `lineItemsQueryKey` completar, e a combinação `cancelQueries` + `invalidateQueries` deixa a query em estado transitório que descarta o item recém-adicionado no cache visível ao componente.
 
-### 1. Banco (`deal_line_items`)
-Migration aditiva:
-- Nova coluna `discount_amount numeric NOT NULL DEFAULT 0` (valor absoluto por unidade, na moeda do negócio).
-- Nova coluna `discount_type text NOT NULL DEFAULT 'pct'` com CHECK `IN ('pct','amount')`.
-- Mantém `discount_pct` para retrocompatibilidade (não remove nada). Registros existentes ficam como `discount_type='pct'` usando `discount_pct` atual.
-- Sem alterações em RLS/GRANT (colunas herdam da tabela).
+Além disso, o `EntityCombobox` permanece com `value={null}` mas nunca é forçado a resetar após inserir, o que impede reusar o mesmo produto na mesma sessão do modal e mascara o problema.
 
-### 2. Cálculo (`src/components/deals/deal-line-items.tsx`)
-`lineTotal` e agregados (`subtotal`, `discount`, `total`) passam a considerar o tipo:
-- `pct`: subtotal * (1 − discount_pct/100)
-- `amount`: (unit_price − discount_amount) * quantity, com clamp em 0
-- Imposto continua aplicado sobre o subtotal com desconto.
+## Correções
 
-### 3. UI do item
-Substituir o campo único "Desc %" por dois controles lado a lado:
-- Um toggle compacto `%` / `R$` (`ToggleGroup` ou dois botões pequenos) que altera `discount_type`.
-- Um input numérico cujo rótulo e formato mudam conforme o tipo:
-  - `pct`: `LabeledNumber` (0–100).
-  - `amount`: `CurrencyInput` na moeda do negócio.
-- Ao trocar o tipo, mantém o outro valor zerado (não converte automaticamente).
-- Layout do grid ajustado para caber Qtd / Preço / Desconto (tipo+valor) / Imposto sem quebrar em telas menores.
+### 1. `deal-line-items.tsx` — não invalidar a query local após mutation
+- `notifyChanged()` deixa de chamar `refreshItems()` (invalidação da chave `deal_line_items:<dealId>`). O cache otimista já contém a verdade retornada pelo `.select("*").single()`.
+- Continua invalidando `["deals"]` para atualizar totais no restante da UI, mas de forma que não force o subtree do modal a re-fetch da lista.
+- `addBlank`, `addFromProduct`, `update`, `remove` passam a chamar `setQueryData` diretamente (sem `cancelQueries` prévio), garantindo que a escrita otimista sobreviva a re-renders.
+- Em `update` e `remove`, manter rollback do cache em caso de erro (mantém comportamento atual, apenas sem invalidação global da chave).
 
-### 4. Persistência
-`update()` aceita e envia `discount_type`, `discount_amount`, `discount_pct` conforme edição. Inserts novos (produto e em branco) definem `discount_type: 'pct'`, `discount_amount: 0`, `discount_pct: 0`.
+### 2. Reset do `EntityCombobox` após inserir
+- Após `addFromProduct(id)` bem-sucedido, forçar o combobox a limpar a seleção (via `key` incrementado ou controlando `value` explicitamente) para permitir escolher o mesmo produto novamente e evitar estados residuais.
 
-## Fora do escopo
-- Desconto no cabeçalho da proposta (permanece apenas por item).
-- Alterar tela de propostas/impressão (será feito em tarefa dedicada se necessário).
-- Migrar dados históricos entre pct/amount.
+### 3. Sincronização defensiva dos inputs
+- Confirmar que `LabeledNumber`, `TextField` e `CurrencyInput` refletem imediatamente o item recém-inserido: os dois primeiros já sincronizam via `useEffect` quando `!focused`; adicionar um `key={li.id}` no card da linha garante que uma linha recém-criada monte com os valores certos e não reutilize instância anterior.
+
+### 4. Sem mudanças de schema, RLS, rotas ou lógica de negócio
+Apenas ajustes de fluxo de cache/UX no componente.
 
 ## Validação
 - `bunx tsgo --noEmit`.
-- Manual: adicionar item, alternar entre % e R$, verificar total, subtotal e "Descontos" agregando corretamente; recarregar modal e conferir persistência.
+- Manual: abrir modal em negócio vazio via botão "Editar", selecionar um produto do catálogo, confirmar imediatamente `nome`, `qtd=1`, `preço` corretos, `total` da linha e "Total" agregado; adicionar segundo produto e verificar; fechar e reabrir para confirmar persistência sem duplicação.
+
+## Fora do escopo
+- Remover ou reestruturar o branch empty/non-empty em `DealLineItems`.
+- Alterar `EntityCombobox` internamente.
+- Alterar server functions ou RLS.
