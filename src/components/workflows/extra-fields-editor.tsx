@@ -301,7 +301,7 @@ function FkPicker({
       if (kind === "company") return await fetchCompanies({ data: { q: q || undefined } });
       if (kind === "pipeline") return await fetchPipelines({ data: { q: q || undefined } });
       const rows = await fetchUsers({ data: { q: q || undefined } });
-      return rows.map((r) => ({ id: r.id, name: r.name }));
+      return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
     },
   });
 
