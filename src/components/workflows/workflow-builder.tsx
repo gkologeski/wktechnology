@@ -221,6 +221,12 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, branches: [], else: [] };
     case "delay_until_date":
       return { type, field: "expected_close_date", offset_amount: 0, offset_unit: "days" };
+    case "format_data":
+      return { type, op: "upper", source_field: "name", target_var: "formatted" };
+    case "send_slack":
+      return { type, text: "Notificação de workflow: {{name}}" };
+    case "send_teams":
+      return { type, webhook_url: "https://outlook.office.com/webhook/...", text: "Notificação de workflow: {{name}}" };
   }
 }
 
