@@ -138,7 +138,15 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   create_deal: Handshake,
   create_ticket: Ticket,
   create_task: CheckSquare,
+  copy_field_from_association: Copy,
+  associate_records: Link2,
+  disassociate_records: Link2Off,
+  clear_field: Eraser,
+  increment_field: PlusIcon,
+  send_email: Mail,
+  send_whatsapp: MessageCircle,
 };
+
 
 function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
   switch (type) {
