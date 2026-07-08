@@ -16,6 +16,7 @@ const LOADING_LABEL = "Carregando…";
 export function useReferenceLabels() {
   const { nameFor: nameForUser, byId: userByIdMembers } = useWorkspaceMembers();
   const fetchCompanies = useServerFn(searchCompanies);
+  const fetchContacts = useServerFn(searchContacts);
   const fetchPipelines = useServerFn(searchPipelines);
   const fetchUsers = useServerFn(searchUsers);
 
