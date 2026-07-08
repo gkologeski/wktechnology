@@ -334,7 +334,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
   },
   {
     label: "Comunicação",
-    actions: ["create_activity", "send_notification", "send_email", "send_whatsapp"],
+    actions: ["create_activity", "send_notification", "send_email", "send_whatsapp", "send_slack", "send_teams"],
   },
   { label: "Sequências", actions: ["add_to_sequence"] },
   {
@@ -346,6 +346,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "assign_recruiter",
     ],
   },
+  { label: "Utilitários", actions: ["format_data"] },
   { label: "Externo", actions: ["webhook"] },
 ];
 
