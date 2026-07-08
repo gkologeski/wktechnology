@@ -1,108 +1,79 @@
-# Workflows — Implementação completa (Fases 1–5)
+# Reordenar passos do workflow com drag-and-drop
 
-Escopo aprovado: todas as 5 fases entram. Execução incremental, uma fase por vez, cada uma validada antes de avançar.
+Permitir reordenar passos arrastando, incluindo mover entre níveis diferentes (raiz ↔ ramo `then`/`else` de um `branch_if`, e entre ramos distintos).
 
-## Fase 1 — Ações "Criar entidade" (crítica)
+## Escopo
 
-Novas ações no engine + builder + validador:
-- `create_lead` — first_name, last_name, email?, phone?, company_name?, source?, owner_id?
-- `create_contact` — first_name, last_name, email?, phone?, company_id?, owner_id?
-- `create_company` — name, domain?, industry?, owner_id?
-- `create_deal` — name, value?, currency?, pipeline_id?, stage_id?, owner_id?, contact_id?, company_id?
-- `create_ticket` — subject, description?, priority?, pipeline_id?, assignee_id?, contact_id?
-- `create_task` — subject, body?, due_in_days?, assignee_id? (atalho tipado sobre `create_activity`)
+- Somente UI do builder (`src/components/workflows/workflow-builder.tsx`).
+- Sem alterações no engine, schemas, tipos ou banco — a ordem persistida é a posição no array `actions`.
+- HTML5 Drag and Drop nativo (mesmo padrão já usado em `src/components/entity-board.tsx`), sem novas dependências.
 
-Cada ação suporta **mapping via placeholder** `{{field.xxx}}` resolvido pelo engine antes do insert. `owner_id` herda do workflow por padrão.
+## Comportamento
 
-## Fase 2 — CRM avançado
+- Cada passo (`StepCard` e `BranchCard`) fica arrastável (`draggable`), com um handle visual (ícone `GripVertical`) que aparece ao passar o mouse ou receber foco.
+- Drop targets:
+  - **Entre passos** — os `Connector` existentes viram zonas de drop; ao arrastar por cima, ficam destacados e aceitam o drop naquela posição.
+  - **Início da lista raiz** e **início de cada ramo** (`then`/`else`) — novo drop-slot no topo de cada `StepsList` para permitir colocar o passo como primeiro item daquele nível.
+- Movimentação entre níveis:
+  - Raiz → dentro de um ramo `then`/`else` e vice-versa.
+  - Entre `then` e `else` do mesmo (ou de outro) `branch_if`.
+  - Reordenar dentro do mesmo nível.
+- Restrição: um `branch_if` **não pode ser solto dentro de si mesmo** (nem em nenhum descendente) — evita ciclo. O drop target fica desabilitado visualmente nesse caso.
+- Feedback: cursor `grabbing`, opacidade reduzida no card arrastado, borda/realce no drop target ativo.
+- Acessibilidade: além do drag, mantemos os botões ↑/↓ em cada card para reordenar via teclado dentro do mesmo nível (fallback acessível — drag-and-drop HTML5 é limitado para teclado).
+- Seleção atual acompanha o passo movido (o `selection` é reapontado para o novo `StepPath`).
 
-- `copy_field_from_association` — copia valor de registro associado (ex: `company.industry` → `deal.industry`).
-- `associate_records` / `disassociate_records`.
-- `clear_field`, `increment_field`.
-- `send_email` (usa `email_templates` + `email_messages`).
-- `send_whatsapp` (usa `wa_templates` + fila `whatsapp_messages`).
+## Implementação técnica
 
-## Fase 3 — Fluxo avançado
+1. **Helper novo** ao lado dos existentes (`getStep`/`removeStep`/`insertStepAt`):
+   ```ts
+   function moveStepTo(
+     actions: WorkflowAction[],
+     from: StepPath,
+     to: { parentPath: StepPath; index: number }
+   ): { actions: WorkflowAction[]; newPath: StepPath } | null
+   ```
+   - Verifica se `to.parentPath` começa com `from` (impede drop dentro de si mesmo).
+   - Faz `removeStep` do path de origem e depois `insertStepAt` no destino, ajustando `to.index` quando o remove aconteceu no mesmo pai em índice anterior.
+   - Retorna a nova lista e o novo `StepPath` para atualizar a seleção.
 
-- `switch_by_value` — múltiplos cases + default.
-- `branch_multi` — até N ramos paralelos com filtros próprios.
-- `delay_until_date` — espera até campo tipo data (± offset).
-- `goal` / `exit_criteria` — remove enrollment ao atingir. Novo `goal_filters` no workflow.
+2. **Estado de arrasto** no componente principal do builder:
+   ```ts
+   const [dragging, setDragging] = useState<StepPath | null>(null);
+   const [dropTarget, setDropTarget] = useState<{ parentPath: StepPath; index: number } | null>(null);
+   ```
 
-## Fase 4 — Governança ✅
+3. **StepCard / BranchCard**:
+   - `draggable`, `onDragStart` seta `dragging` (e `e.dataTransfer.effectAllowed = "move"`), `onDragEnd` limpa.
+   - Handle `GripVertical` visível no hover/focus, sem sobrepor o botão remover.
+   - Botões ↑/↓ (accessibility fallback) usando helper `moveStepTo` para o mesmo pai.
 
-- **Draft vs. publicado**: colunas `workflows.status`, `published_version`, `draft_actions`, `draft_trigger`, `draft_goal_filters`, `last_published_at`. Editor salva sempre em rascunho; "Publicar" copia para produção e incrementa versão. Engine só executa `status='published'`.
-- **Testar com registro** — dry-run em memória (walk das ações + resolução de filtros no snapshot), registrado como `workflow_runs.is_test=true` para aparecer no histórico do registro.
-- **Enrollment history por registro** — `workflow_runs.entity_id`+`entity` indexado; server fn `listRecordEnrollments` pronto para plugar no record-layout.
-- **Bulk enroll** ao publicar — server fn `bulkEnrollWorkflow` enfileira eventos sintéticos `created` para registros que batem no filtro do gatilho e chama o tick.
+4. **Drop slots** (novo componente `DropSlot`) usados em:
+   - Topo de cada `StepsList` (índice 0).
+   - Entre cada par de passos (substitui o `Connector` atual, ou envolve ele).
+   - Dentro dos ramos `then` e `else` do `BranchCard` (mesmo `StepsList` já é recursivo).
+   - Handlers: `onDragOver` chama `preventDefault` e seta `dropTarget`; `onDragLeave` limpa; `onDrop` chama `moveStepTo`, atualiza `state.actions` e ajusta `selection`.
+   - Se `dragging` é um `branch_if` e o `parentPath` do slot começa com `dragging` (ciclo), o slot rejeita: sem highlight, `dropEffect = "none"`.
 
-## Fase 5 — Avançado
+5. **Props novas** propagadas por `StepsList` / `StepCard` / `BranchCard`:
+   - `dragging`, `dropTarget`, `onDragStartStep(path)`, `onDragEndStep()`, `onDropAt({parentPath,index})`, `onHoverSlot({parentPath,index} | null)`, `onMove(path, dir)`.
 
-**5a — Utilitários (concluído ✅)**
-- `format_data` — upper/lower/trim/date_add/date_format/number_round/template_string. Resultado vai em `ctx.vars` do run, acessível via `{{vars.NOME}}` nas ações seguintes.
-- `send_slack` — usa `slack_integrations.access_token` do workspace + `chat.postMessage`.
-- `send_teams` — Incoming Webhook URL configurada por ação.
+6. **Estilo**: usar tokens semânticos existentes (`border-primary`, `bg-primary/5`, `ring-primary/20`) — nada de cores hardcoded. Handle e slots respeitam dark mode.
 
-**5b — Aprovações (pendente)**
-- `approval_step` — pausa run, cria linha em `workflow_approvals` + notificação para o aprovador, retoma via endpoint de decisão.
+## Validação
 
-**5c — Triggers baseados em tempo (pendente)**
-- `time_since_field`, `no_activity_for`, `stuck_in_stage_for`, `field_unchanged_for`.
-- Cron `workflows-time-triggers-tick` a cada 15 min → varre workflows com trigger temporal e enfileira eventos sintéticos em `workflow_events`.
-- Tabela `workflow_time_cursors` para não redisparar.
-- Nova variante `trigger.type='time_based'` retrocompatível.
-
-**5d — Fora do escopo desta fase (removido)**
-- `custom_code` — sandbox seguro inviável no Cloudflare Worker sem lib dedicada; a nova ação `format_data` cobre a maior parte dos casos de uso (concatenação, formatação, aritmética simples).
-
-## Detalhes técnicos
-
-**Schema (uma migração por fase):**
-
-- Fase 1: sem migração; extensão do JSON `actions` + validador + engine.
-- Fase 3–4: `workflows` ganha `status`, `published_version`, `draft_actions jsonb`, `goal_filters jsonb`.
-- Fase 4: `workflow_runs` ganha `entity_id uuid` indexado (verificar antes).
-- Fase 5:
-  - Nova tabela `workflow_approvals (id, run_id, workflow_id, requested_by, approver_user_id, status, decided_at, comment)` + GRANTs + RLS.
-  - `workflows.trigger` passa a aceitar variante `{ type: 'time_based', kind, field?, amount, unit, filters[] }` (retrocompatível).
-  - Cron novo: `SELECT cron.schedule('workflows-time-triggers-tick', '*/15 * * * *', ...)` chamando `/api/public/hooks/workflows-time-triggers-tick` com `apikey`.
-  - Tabela auxiliar `workflow_time_cursors (workflow_id, entity_id, last_fired_at)` para não redisparar.
-
-**Arquivos impactados:**
-
-- `src/lib/workflows/types.ts` — novos tipos de ação e triggers, categorias, labels.
-- `src/lib/workflows/engine.server.ts` — handlers por tipo, resolver `{{field.x}}`/`{{ctx.x}}`.
-- `src/lib/workflows.functions.ts` — Zod schemas; novas fns `publishWorkflow`, `testWorkflow`, `bulkEnroll`, `decideApproval`, `listRecordEnrollments`.
-- `src/components/workflows/workflow-builder.tsx` — forms por tipo, toggle Draft/Publicado, botão Testar, seletor de trigger temporal.
-- `src/components/workflows/workflow-runs-list.tsx` — status `waiting_approval`, `waiting_until`.
-- Novo `src/components/workflows/record-enrollments.tsx`.
-- Novo `src/lib/workflows/template-resolver.server.ts`.
-- Novo `src/routes/api/public/hooks/workflows-time-triggers-tick.ts`.
-
-**Segurança:**
-
-- Ações `create_*` respeitam `requireTool(userId, "manage_workflows")` na config; owner do registro criado = owner do workflow (RLS preservada).
-- `custom_code` restrito a admin; sandbox via lib compatível com Worker ou DSL limitada.
-- Cron temporal usa `apikey` no header (padrão do projeto).
-
-**Validação por fase:**
-
-- `bunx tsgo --noEmit`
-- Testar cada ação no builder + "Rodar agora"
-- Verificar `workflow_runs` e log
-- Fase 4: editar draft não afeta runs ativas
-- Fase 5: fluxo aprovação end-to-end; triggers temporais disparando no horário certo sem duplicar
-
-## Ordem de execução
-
-1. Fase 1
-2. Fase 2
-3. Fase 3
-4. Fase 4
-5. Fase 5 (triggers temporais como último item — dependem de cron novo)
+- `bunx tsgo --noEmit`.
+- Manual:
+  - Reordenar dentro da raiz por drag.
+  - Arrastar um passo da raiz para dentro do `then` de um `branch_if`.
+  - Arrastar de volta do ramo para a raiz.
+  - Mover entre `then` e `else` do mesmo `branch_if`.
+  - Confirmar que soltar um `branch_if` dentro de si mesmo é impedido.
+  - Reordenar via teclado com ↑/↓.
+  - Salvar e reabrir — ordem persiste.
 
 ## Fora do escopo
 
-- A/B testing de workflow.
-- Alterações em RLS/auth/schemas fora do necessário.
-- Redesign visual das telas existentes.
+- Biblioteca de DnD (dnd-kit, react-dnd) — HTML5 nativo cobre o caso.
+- Multi-seleção (arrastar vários passos de uma vez).
+- Reordenar ramos `then`/`else` entre si (eles são fixos dentro de um `branch_if`).
