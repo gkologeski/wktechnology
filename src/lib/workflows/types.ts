@@ -180,6 +180,24 @@ export type WorkflowAction =
       template_name?: string;
       body?: string;
       to_field?: string; // default: "phone"
+    }
+  // Fase 3 — Fluxo avançado
+  | {
+      type: "switch_by_value";
+      field: string;
+      cases: SwitchCase[];
+      default: WorkflowAction[];
+    }
+  | {
+      type: "branch_multi";
+      branches: MultiBranch[];
+      else: WorkflowAction[];
+    }
+  | {
+      type: "delay_until_date";
+      field: string; // campo tipo data no registro
+      offset_amount?: number; // pode ser negativo
+      offset_unit?: "minutes" | "hours" | "days";
     };
 
 
