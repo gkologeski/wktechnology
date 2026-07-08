@@ -1513,6 +1513,286 @@ function StepConfigForm({
           </Select>
         </div>
       );
+    case "create_lead":
+      return (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Use <code className="text-[11px]">{`{{campo}}`}</code> para puxar valores do registro que disparou o workflow.
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Nome *</Label>
+              <Input
+                value={action.first_name}
+                onChange={(e) => onChange({ ...action, first_name: e.target.value })}
+                placeholder="{{first_name}}"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Sobrenome</Label>
+              <Input
+                value={action.last_name ?? ""}
+                onChange={(e) => onChange({ ...action, last_name: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Email</Label>
+              <Input
+                value={action.email ?? ""}
+                onChange={(e) => onChange({ ...action, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Telefone</Label>
+              <Input
+                value={action.phone ?? ""}
+                onChange={(e) => onChange({ ...action, phone: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Empresa</Label>
+              <Input
+                value={action.company_name ?? ""}
+                onChange={(e) => onChange({ ...action, company_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Origem</Label>
+              <Input
+                value={action.source ?? ""}
+                onChange={(e) => onChange({ ...action, source: e.target.value })}
+                placeholder="workflow"
+              />
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Responsável (opcional)</Label>
+            <UserPicker
+              value={action.owner_id ?? ""}
+              onChange={(v) => onChange({ ...action, owner_id: v })}
+            />
+          </div>
+        </div>
+      );
+    case "create_contact":
+      return (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Nome *</Label>
+              <Input
+                value={action.first_name}
+                onChange={(e) => onChange({ ...action, first_name: e.target.value })}
+                placeholder="{{first_name}}"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Sobrenome</Label>
+              <Input
+                value={action.last_name ?? ""}
+                onChange={(e) => onChange({ ...action, last_name: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Email</Label>
+              <Input
+                value={action.email ?? ""}
+                onChange={(e) => onChange({ ...action, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Telefone</Label>
+              <Input
+                value={action.phone ?? ""}
+                onChange={(e) => onChange({ ...action, phone: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Cargo</Label>
+              <Input
+                value={action.job_title ?? ""}
+                onChange={(e) => onChange({ ...action, job_title: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Empresa</Label>
+              <Input
+                value={action.company_name ?? ""}
+                onChange={(e) => onChange({ ...action, company_name: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    case "create_company":
+      return (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Nome *</Label>
+            <Input
+              value={action.name}
+              onChange={(e) => onChange({ ...action, name: e.target.value })}
+              placeholder="{{company_name}}"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Domínio</Label>
+              <Input
+                value={action.domain ?? ""}
+                onChange={(e) => onChange({ ...action, domain: e.target.value })}
+                placeholder="exemplo.com"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Setor</Label>
+              <Input
+                value={action.industry ?? ""}
+                onChange={(e) => onChange({ ...action, industry: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    case "create_deal":
+      return (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Nome do negócio *</Label>
+            <Input
+              value={action.name}
+              onChange={(e) => onChange({ ...action, name: e.target.value })}
+              placeholder="Negócio com {{name}}"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Valor</Label>
+              <Input
+                type="number"
+                value={action.value ?? ""}
+                onChange={(e) =>
+                  onChange({
+                    ...action,
+                    value: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Moeda</Label>
+              <Input
+                value={action.currency ?? "BRL"}
+                onChange={(e) => onChange({ ...action, currency: e.target.value })}
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Pipeline padrão será usado se não for especificado. Contato/empresa são associados
+            automaticamente quando o workflow dispara neles.
+          </p>
+        </div>
+      );
+    case "create_ticket":
+      return (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Assunto *</Label>
+            <Input
+              value={action.subject}
+              onChange={(e) => onChange({ ...action, subject: e.target.value })}
+              placeholder="Chamado sobre {{name}}"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Descrição</Label>
+            <Textarea
+              value={action.description ?? ""}
+              onChange={(e) => onChange({ ...action, description: e.target.value })}
+              rows={3}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Prioridade</Label>
+              <Select
+                value={action.priority ?? "normal"}
+                onValueChange={(v) => onChange({ ...action, priority: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Baixa</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="high">Alta</SelectItem>
+                  <SelectItem value="urgent">Urgente</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Responsável</Label>
+              <UserPicker
+                value={action.assignee_id ?? ""}
+                onChange={(v) => onChange({ ...action, assignee_id: v })}
+              />
+            </div>
+          </div>
+        </div>
+      );
+    case "create_task":
+      return (
+        <div className="space-y-2">
+          <div>
+            <Label className="text-xs">Assunto *</Label>
+            <Input
+              value={action.subject}
+              onChange={(e) => onChange({ ...action, subject: e.target.value })}
+              placeholder="Ligar para {{first_name}}"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Descrição</Label>
+            <Textarea
+              value={action.body ?? ""}
+              onChange={(e) => onChange({ ...action, body: e.target.value })}
+              rows={2}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Vence em (dias)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={365}
+                value={action.due_in_days ?? ""}
+                onChange={(e) =>
+                  onChange({
+                    ...action,
+                    due_in_days: e.target.value ? Number(e.target.value) : undefined,
+                  })
+                }
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Responsável</Label>
+              <UserPicker
+                value={action.assignee_id ?? ""}
+                onChange={(v) => onChange({ ...action, assignee_id: v })}
+              />
+            </div>
+          </div>
+        </div>
+      );
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
