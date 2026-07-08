@@ -1134,10 +1134,12 @@ function FilterRow({
 // ============================================================================
 function StepConfigPanel({
   action,
+  entity,
   entityFields,
   onChange,
 }: {
   action: WorkflowAction;
+  entity: WorkflowEntity;
   entityFields: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
@@ -1147,17 +1149,19 @@ function StepConfigPanel({
         <h3 className="text-sm font-semibold">{ACTION_LABELS[action.type]}</h3>
         <p className="text-xs text-muted-foreground mt-1">Configure os detalhes deste passo.</p>
       </div>
-      <StepConfigForm action={action} entityFields={entityFields} onChange={onChange} />
+      <StepConfigForm action={action} entity={entity} entityFields={entityFields} onChange={onChange} />
     </div>
   );
 }
 
 function StepConfigForm({
   action,
+  entity,
   entityFields,
   onChange,
 }: {
   action: WorkflowAction;
+  entity: WorkflowEntity;
   entityFields: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
@@ -1173,6 +1177,7 @@ function StepConfigForm({
     () => ("title" in action ? (action.title ?? "") : ""),
     (v) => onChange({ ...action, title: v } as WorkflowAction),
   );
+
 
   switch (action.type) {
     case "set_field":
