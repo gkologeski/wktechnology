@@ -858,7 +858,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   if (event.resume_workflow_id && typeof event.resume_cursor === "number") {
     const { data: wf } = await supabase
       .from("workflows")
-      .select("id, owner_id, entity, trigger, actions")
+      .select("id, owner_id, entity, trigger, actions, goal_filters")
       .eq("id", event.resume_workflow_id)
       .maybeSingle();
     if (wf) {
