@@ -906,7 +906,8 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     .select("id, owner_id, entity, trigger, actions, goal_filters")
     .eq("owner_id", event.owner_id)
     .eq("entity", event.entity)
-    .eq("enabled", true);
+    .eq("enabled", true)
+    .eq("status", "published");
 
   for (const wf of (workflows ?? []) as WorkflowRow[]) {
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
