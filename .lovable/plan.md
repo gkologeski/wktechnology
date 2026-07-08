@@ -1,28 +1,38 @@
-## Plano
+## Objetivo
+Permitir escolher entre desconto por percentual (%) ou por valor absoluto (moeda) em cada item de linha do modal de negócios.
 
-Corrigir o modal de **Itens de linha** para que selecionar produto, digitar nome, alterar quantidade, desconto, imposto ou preço não “zere” a interface nem perca os dados carregados.
+## Mudanças
 
-### 1. Atualização otimista dos itens no cache
-- Em `src/components/deals/deal-line-items.tsx`, após inserir item do catálogo ou item em branco, atualizar imediatamente o cache `deal_line_items` com o item retornado pelo banco.
-- Trocar os inserts para usar `.select("*").single()` para ter o registro completo recém-criado, incluindo nome, preço, imposto e id.
-- Evitar depender apenas de `invalidateQueries`, que hoje causa um intervalo onde o modal renderiza estado vazio/zerado.
+### 1. Banco (`deal_line_items`)
+Migration aditiva:
+- Nova coluna `discount_amount numeric NOT NULL DEFAULT 0` (valor absoluto por unidade, na moeda do negócio).
+- Nova coluna `discount_type text NOT NULL DEFAULT 'pct'` com CHECK `IN ('pct','amount')`.
+- Mantém `discount_pct` para retrocompatibilidade (não remove nada). Registros existentes ficam como `discount_type='pct'` usando `discount_pct` atual.
+- Sem alterações em RLS/GRANT (colunas herdam da tabela).
 
-### 2. Patches otimistas ao editar campos
-- Ao editar nome, quantidade, preço, desconto ou imposto, aplicar o patch no cache local antes/junto da persistência.
-- Manter o refetch em background para confirmar o estado final, mas sem desmontar/limpar visualmente os campos durante a digitação.
-- Em caso de erro, exibir toast e refazer a query para voltar ao dado real.
+### 2. Cálculo (`src/components/deals/deal-line-items.tsx`)
+`lineTotal` e agregados (`subtotal`, `discount`, `total`) passam a considerar o tipo:
+- `pct`: subtotal * (1 − discount_pct/100)
+- `amount`: (unit_price − discount_amount) * quantity, com clamp em 0
+- Imposto continua aplicado sobre o subtotal com desconto.
 
-### 3. Evitar reset desnecessário da combobox do catálogo
-- Separar a ação de adicionar produto da renderização do formulário para impedir que a seleção no catálogo reinicialize os campos da linha recém-criada.
-- Manter o `EntityCombobox` sem valor selecionado depois da inserção, mas sem interferir nos itens já exibidos.
+### 3. UI do item
+Substituir o campo único "Desc %" por dois controles lado a lado:
+- Um toggle compacto `%` / `R$` (`ToggleGroup` ou dois botões pequenos) que altera `discount_type`.
+- Um input numérico cujo rótulo e formato mudam conforme o tipo:
+  - `pct`: `LabeledNumber` (0–100).
+  - `amount`: `CurrencyInput` na moeda do negócio.
+- Ao trocar o tipo, mantém o outro valor zerado (não converte automaticamente).
+- Layout do grid ajustado para caber Qtd / Preço / Desconto (tipo+valor) / Imposto sem quebrar em telas menores.
 
-### 4. Preservar inputs controlados já corrigidos
-- Manter `LabeledNumber` e `TextField` sincronizados com `value` quando não estão focados.
-- Ajustar `TextField` para só chamar `onCommit` quando o texto realmente mudou, evitando updates/refetchs redundantes.
+### 4. Persistência
+`update()` aceita e envia `discount_type`, `discount_amount`, `discount_pct` conforme edição. Inserts novos (produto e em branco) definem `discount_type: 'pct'`, `discount_amount: 0`, `discount_pct: 0`.
 
-### 5. Validação
-- Rodar verificação TypeScript.
-- Teste manual no fluxo atual: abrir negócio, abrir modal de itens, adicionar primeiro produto do catálogo, confirmar que nome/preço/imposto aparecem imediatamente e que editar imposto/desconto recalcula o total sem zerar o modal.
+## Fora do escopo
+- Desconto no cabeçalho da proposta (permanece apenas por item).
+- Alterar tela de propostas/impressão (será feito em tarefa dedicada se necessário).
+- Migrar dados históricos entre pct/amount.
 
-### Fora do escopo
-- Não alterar schema, RLS, regras de negócio, catálogo de produtos, propostas/cotações ou layout geral do modal.
+## Validação
+- `bunx tsgo --noEmit`.
+- Manual: adicionar item, alternar entre % e R$, verificar total, subtotal e "Descontos" agregando corretamente; recarregar modal e conferir persistência.
