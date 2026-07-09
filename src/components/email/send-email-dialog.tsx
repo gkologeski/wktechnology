@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mail, Send, FileText } from "lucide-react";
+import { Mail, Send, FileText, Paperclip, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { sendGmailEmail } from "@/lib/email-send.functions";
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isEmail } from "@/lib/validators";
 import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import {
   Dialog,
   DialogContent,
@@ -62,6 +64,7 @@ export function SendEmailDialog({
   onOpenChange,
 }: Props) {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
   const setOpen = onOpenChange ?? setOpenState;
@@ -70,6 +73,58 @@ export function SendEmailDialog({
   const [cc, setCc] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  type Attachment = { path: string; filename: string; content_type: string; size: number };
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_TOTAL = 25 * 1024 * 1024;
+  const MAX_FILES = 10;
+
+  const handleFilesSelected = async (files: FileList | null) => {
+    if (!files || !files.length || !user) return;
+    const currentBytes = attachments.reduce((s, a) => s + a.size, 0);
+    const newFiles = Array.from(files);
+    if (attachments.length + newFiles.length > MAX_FILES) {
+      toast.error(`Máximo de ${MAX_FILES} anexos.`);
+      return;
+    }
+    const addBytes = newFiles.reduce((s, f) => s + f.size, 0);
+    if (currentBytes + addBytes > MAX_TOTAL) {
+      toast.error("Total de anexos excede 25 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const uploaded: Attachment[] = [];
+      for (const f of newFiles) {
+        const safeName = f.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+        const { error } = await supabase.storage
+          .from("email-attachments")
+          .upload(path, f, { contentType: f.type || "application/octet-stream", upsert: false });
+        if (error) throw new Error(`${f.name}: ${error.message}`);
+        uploaded.push({
+          path,
+          filename: f.name,
+          content_type: f.type || "application/octet-stream",
+          size: f.size,
+        });
+      }
+      setAttachments((prev) => [...prev, ...uploaded]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao enviar anexo");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removeAttachment = async (idx: number) => {
+    const a = attachments[idx];
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+    await supabase.storage.from("email-attachments").remove([a.path]).catch(() => {});
+  };
 
   const subjectInserter = useTokenInserter<HTMLInputElement>(() => subject, setSubject);
   const insertBodyToken = (token: string) => {
@@ -155,6 +210,7 @@ export function SendEmailDialog({
           lead_id: leadId,
           deal_id: dealId,
           company_id: companyId,
+          attachments: attachments.length ? attachments : undefined,
         },
       }),
     onSuccess: (res) => {
@@ -163,11 +219,18 @@ export function SendEmailDialog({
       setSubject("");
       setBody("");
       setCc("");
+      setAttachments([]);
       qc.invalidateQueries({ queryKey: ["email_threads"] });
       onSent?.(res.thread_id);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const formatSize = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -269,6 +332,58 @@ export function SendEmailDialog({
               <TokenPills className="mt-2" tokens={EMAIL_TOKENS} onInsert={insertBodyToken} />
 
             </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <Label>Anexos</Label>
+                <span className="text-xs text-muted-foreground">
+                  {attachments.length}/{MAX_FILES} · máx. 25 MB no total
+                </span>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => handleFilesSelected(e.target.files)}
+              />
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || attachments.length >= MAX_FILES}
+                >
+                  {uploading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="mr-2 h-4 w-4" />
+                  )}
+                  {uploading ? "Enviando…" : "Anexar arquivo"}
+                </Button>
+                {attachments.map((a, i) => (
+                  <div
+                    key={a.path}
+                    className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 text-xs"
+                  >
+                    <Paperclip className="h-3 w-3" />
+                    <span className="max-w-[180px] truncate" title={a.filename}>
+                      {a.filename}
+                    </span>
+                    <span className="text-muted-foreground">({formatSize(a.size)})</span>
+                    <button
+                      type="button"
+                      className="ml-1 rounded p-0.5 hover:bg-background"
+                      onClick={() => removeAttachment(i)}
+                      aria-label={`Remover ${a.filename}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -294,7 +409,12 @@ export function SendEmailDialog({
               sendMut.mutate();
             }}
             disabled={
-              !account || !to || !finalSubject.trim() || !finalBodyText.trim() || sendMut.isPending
+              !account ||
+              !to ||
+              !finalSubject.trim() ||
+              !finalBodyText.trim() ||
+              sendMut.isPending ||
+              uploading
             }
           >
             <Send className="mr-2 h-4 w-4" />

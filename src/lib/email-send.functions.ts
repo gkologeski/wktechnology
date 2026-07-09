@@ -16,6 +16,13 @@ const emailListSchema = z
   .transform((v) => (Array.isArray(v) ? v : v.split(/[,;]\s*/).filter(Boolean)))
   .pipe(z.array(z.string().email()).max(50));
 
+const attachmentSchema = z.object({
+  path: z.string().min(1).max(500),
+  filename: z.string().min(1).max(255),
+  content_type: z.string().min(1).max(255),
+  size: z.number().int().nonnegative().max(25 * 1024 * 1024),
+});
+
 const inputSchema = z.object({
   account_id: z.string().uuid().optional(),
   to: emailListSchema,
@@ -28,6 +35,7 @@ const inputSchema = z.object({
   lead_id: z.string().uuid().optional(),
   deal_id: z.string().uuid().optional(),
   company_id: z.string().uuid().optional(),
+  attachments: z.array(attachmentSchema).max(10).optional(),
 });
 
 export const sendGmailEmail = createServerFn({ method: "POST" })
@@ -58,6 +66,26 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       bodyText: data.body_text,
     });
 
+    // Download attachments from storage (each path must live under the user's folder)
+    const attachmentInputs = data.attachments ?? [];
+    const mimeAttachments: { filename: string; contentType: string; data: Buffer }[] = [];
+    const attachmentMeta: { filename: string; content_type: string; size: number; path: string }[] = [];
+    let totalBytes = 0;
+    for (const a of attachmentInputs) {
+      if (!a.path.startsWith(`${context.userId}/`)) {
+        throw new Error("Anexo inválido: caminho fora da pasta do usuário");
+      }
+      const { data: file, error: dErr } = await supabaseAdmin.storage
+        .from("email-attachments")
+        .download(a.path);
+      if (dErr || !file) throw new Error(`Falha ao ler anexo ${a.filename}: ${dErr?.message ?? "arquivo não encontrado"}`);
+      const buf = Buffer.from(await file.arrayBuffer());
+      totalBytes += buf.length;
+      if (totalBytes > 25 * 1024 * 1024) throw new Error("Total de anexos excede 25 MB");
+      mimeAttachments.push({ filename: a.filename, contentType: a.content_type, data: buf });
+      attachmentMeta.push({ filename: a.filename, content_type: a.content_type, size: buf.length, path: a.path });
+    }
+
     const raw = buildRawMime({
       from: account.email,
       to: data.to,
@@ -66,6 +94,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       subject: data.subject,
       bodyHtml: tracked.html,
       bodyText: tracked.text,
+      attachments: mimeAttachments.length ? mimeAttachments : undefined,
     });
 
     const sent = await gmailSendRaw(accessToken, raw);
@@ -135,8 +164,18 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       body_text: tracked.text,
       snippet,
       sent_at: nowIso,
+      has_attachments: attachmentMeta.length > 0,
+      attachments: attachmentMeta.length ? attachmentMeta : [],
     });
     if (mErr) throw new Error(mErr.message);
+
+    // Best-effort cleanup of temporary uploads (files are safely stored in the sent message metadata)
+    if (attachmentMeta.length) {
+      await supabaseAdmin.storage
+        .from("email-attachments")
+        .remove(attachmentMeta.map((a) => a.path))
+        .catch((e) => console.error("[sendGmailEmail] attachment cleanup failed", e));
+    }
 
     // Bump message_count
     const { count } = await supabaseAdmin

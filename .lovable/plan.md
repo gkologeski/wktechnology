@@ -1,42 +1,68 @@
 ## Objetivo
-Permitir editar uma cotação enquanto ela ainda estiver com status `draft` (rascunho), reaproveitando o mesmo dialog usado hoje para criação.
+
+Permitir anexar documentos ao enviar e-mails a partir das entidades (contato, lead, negócio, empresa) via `SendEmailDialog`, mantendo o restante do fluxo intacto.
 
 ## Escopo
-- Componente: `src/components/deals/deal-quotes.tsx` (única superfície onde as cotações são geridas hoje).
-- Campos editáveis (os mesmos que já existem no dialog de criação e no server fn `updateQuote`):
-  - Modelo de cotação (`template_id`)
-  - Título (`title`)
-  - Válida até (`valid_until`)
-  - Observações (`notes`)
-  - Termos e condições (`terms`)
-- Fora do escopo: itens de linha da cotação, moeda, número, itens copiados do negócio (o usuário não pediu).
 
-## Mudanças
+- Somente o dialog de envio de e-mail (`src/components/email/send-email-dialog.tsx`) e a cadeia server-side que ele usa (`sendGmailEmail` + `buildRawMime`).
+- Sem mudanças em templates, workflows, ATS emails ou outras superfícies de envio.
 
-1. **Dialog em modo dual (criar/editar)** em `deal-quotes.tsx`:
-   - Adicionar estado `editingId: string | null` além do `draft`.
-   - Título do dialog dinâmico: "Nova cotação" ou "Editar cotação".
-   - Botão principal chama `createMut` quando `editingId` é null, senão chama `updateMut`.
-   - Ao fechar, resetar `editingId` e `draft`.
+## UX
 
-2. **Ação "Editar" no dropdown do card**:
-   - Aparece apenas quando `status === "draft"` (cotações enviadas/aceitas/recusadas/expiradas permanecem imutáveis).
-   - Ao clicar, popula `draft` com os valores atuais da cotação (`title`, `valid_until`, `notes`, `terms`, `template_id`) e abre o dialog em modo edição.
+No `SendEmailDialog`, abaixo do editor de mensagem, adicionar:
 
-3. **Mutation de update**:
-   - `updateMut` usando o `useServerFn(updateQuote)` já importado, enviando `{ id: editingId, patch: { title, valid_until, notes, terms, template_id } }`.
-   - `valid_until` normalizado: string vazia vira `null`.
-   - `template_id`: string vazia vira `null`.
-   - Em `onSuccess`: toast "Cotação atualizada.", fechar dialog, invalidar `["deal-quotes", dealId]`.
+- Botão "Anexar arquivo" (ícone `Paperclip`) que abre `<input type="file" multiple>`.
+- Lista dos anexos selecionados com nome, tamanho formatado e botão remover.
+- Limites: até 10 arquivos, 20 MB por arquivo, 25 MB no total (limite do Gmail). Validação client-side com toast em caso de erro.
+- Estado de upload por arquivo (enviando / pronto / erro) enquanto sobe para o Storage.
+- Botão "Enviar" desabilitado enquanto houver upload pendente.
 
-4. **UX**:
-   - Não alterar comportamento existente (criar, marcar enviada/aceita, gerar link etc.).
-   - Não expor "Editar" quando a cotação já saiu do rascunho, para evitar mudar termos após envio ao cliente.
+## Armazenamento
+
+- Novo bucket privado `email-attachments` (via `supabase--storage_create_bucket`).
+- Path: `{owner_id}/{yyyy}/{mm}/{uuid}-{filename-sanitizado}`.
+- Upload feito no cliente com o Supabase client autenticado (RLS: `owner_id = auth.uid()` para insert/select/delete no `storage.objects` do bucket).
+- Os anexos são temporários para envio; sem UI de gerenciamento nesta fase.
+
+## Server function
+
+Estender `sendGmailEmail` (`src/lib/email-send.functions.ts`):
+
+- Novo campo opcional `attachments: { path: string; filename: string; content_type: string; size: number }[]` (Zod: max 10, size total ≤ 25 MB).
+- Antes de montar o MIME, baixar cada arquivo do bucket via `supabaseAdmin.storage.from("email-attachments").download(path)`, validando que o path começa com `${context.userId}/` (defesa em profundidade contra path forjado).
+- Passar os buffers para `buildRawMime`.
+- Após envio bem-sucedido, best-effort remove os arquivos do bucket (não bloqueia o retorno em caso de falha).
+- Persistir metadados dos anexos em `email_messages.attachments` (JSONB `[{ filename, content_type, size }]`) — nova coluna via migration; RLS/GRANT já existentes na tabela.
+
+## MIME
+
+Refatorar `buildRawMime` em `src/lib/gmail.server.ts` para suportar anexos:
+
+- Quando houver anexos, envelope externo `multipart/mixed` contendo:
+  - parte `multipart/alternative` (text + html — igual hoje);
+  - uma parte por anexo com `Content-Type: {mime}; name="..."`, `Content-Disposition: attachment; filename="..."`, `Content-Transfer-Encoding: base64` e payload base64 quebrado em linhas de 76 chars.
+- Sem anexos, comportamento atual permanece (multipart/alternative direto).
+- Sanitização básica do filename no header (RFC 2047 encoded-word para não-ASCII, reuso do `encodeHeader`).
+
+## Detalhes técnicos
+
+Arquivos a alterar:
+- `src/components/email/send-email-dialog.tsx` — UI, upload, validação, envio dos paths.
+- `src/lib/email-send.functions.ts` — schema Zod + download dos anexos + persistência.
+- `src/lib/gmail.server.ts` — `buildRawMime` com suporte a `attachments: { filename; contentType; data: Buffer }[]`.
+
+Migrations:
+- Criar bucket privado `email-attachments` (via tool) + policies em `storage.objects` para `authenticated` restritas a `bucket_id = 'email-attachments' AND (storage.foldername(name))[1] = auth.uid()::text`.
+- `ALTER TABLE public.email_messages ADD COLUMN IF NOT EXISTS attachments jsonb NOT NULL DEFAULT '[]'::jsonb;`
+
+Fora do escopo:
+- Preview/download de anexos recebidos (inbound) na timeline.
+- Reuso de arquivos entre múltiplos envios.
+- Anexos em envios ATS/workflow/templates.
 
 ## Validação manual
-- Abrir um negócio com cotação em rascunho → menu "…" → "Editar" → alterar título/observações/termos → salvar → card reflete mudança e reabrir mostra valores persistidos.
-- Cotações com status `sent`/`accepted`/`declined`/`expired` não devem exibir a opção "Editar".
-- Criar uma nova cotação continua funcionando exatamente como antes.
 
-## Riscos
-- Baixo: alteração restrita a um componente de UI + reuso de server fn já existente (`updateQuote`), sem tocar em RLS, schema ou lógica de negócio.
+1. Abrir um contato → botão E-mail → anexar 1–3 arquivos (PDF/imagem) → enviar → verificar caixa de saída do Gmail com anexos íntegros.
+2. Tentar anexar >25 MB total → erro amigável; envio bloqueado.
+3. Anexar, remover antes de enviar → arquivo removido do bucket (ou expira sem lixo).
+4. Enviar sem anexos → fluxo atual inalterado.
