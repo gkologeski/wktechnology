@@ -332,6 +332,58 @@ export function SendEmailDialog({
               <TokenPills className="mt-2" tokens={EMAIL_TOKENS} onInsert={insertBodyToken} />
 
             </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <Label>Anexos</Label>
+                <span className="text-xs text-muted-foreground">
+                  {attachments.length}/{MAX_FILES} · máx. 25 MB no total
+                </span>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => handleFilesSelected(e.target.files)}
+              />
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading || attachments.length >= MAX_FILES}
+                >
+                  {uploading ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Paperclip className="mr-2 h-4 w-4" />
+                  )}
+                  {uploading ? "Enviando…" : "Anexar arquivo"}
+                </Button>
+                {attachments.map((a, i) => (
+                  <div
+                    key={a.path}
+                    className="flex items-center gap-1.5 rounded-md border bg-muted/40 px-2 py-1 text-xs"
+                  >
+                    <Paperclip className="h-3 w-3" />
+                    <span className="max-w-[180px] truncate" title={a.filename}>
+                      {a.filename}
+                    </span>
+                    <span className="text-muted-foreground">({formatSize(a.size)})</span>
+                    <button
+                      type="button"
+                      className="ml-1 rounded p-0.5 hover:bg-background"
+                      onClick={() => removeAttachment(i)}
+                      aria-label={`Remover ${a.filename}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
@@ -357,7 +409,12 @@ export function SendEmailDialog({
               sendMut.mutate();
             }}
             disabled={
-              !account || !to || !finalSubject.trim() || !finalBodyText.trim() || sendMut.isPending
+              !account ||
+              !to ||
+              !finalSubject.trim() ||
+              !finalBodyText.trim() ||
+              sendMut.isPending ||
+              uploading
             }
           >
             <Send className="mr-2 h-4 w-4" />
