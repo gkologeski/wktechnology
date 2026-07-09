@@ -73,6 +73,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const listTemplates = useServerFn(listQuoteTemplates);
 
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{
     title: string;
     validUntil: string;
@@ -100,8 +101,40 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const defaultTemplateId = templates.find((t) => t.is_default)?.id ?? "";
 
   function openDialog() {
-    setDraft((d) => ({ ...d, templateId: defaultTemplateId }));
+    setEditingId(null);
+    setDraft({
+      title: "",
+      validUntil: "",
+      notes: "",
+      terms: "",
+      templateId: defaultTemplateId,
+    });
     setOpen(true);
+  }
+
+  function openEditDialog(q: {
+    id: string;
+    title: string | null;
+    valid_until: string | null;
+    notes: string | null;
+    terms: string | null;
+    template_id: string | null;
+  }) {
+    setEditingId(q.id);
+    setDraft({
+      title: q.title ?? "",
+      validUntil: q.valid_until ? String(q.valid_until).slice(0, 10) : "",
+      notes: q.notes ?? "",
+      terms: q.terms ?? "",
+      templateId: q.template_id ?? "",
+    });
+    setOpen(true);
+  }
+
+  function resetDialog() {
+    setOpen(false);
+    setEditingId(null);
+    setDraft({ title: "", validUntil: "", notes: "", terms: "", templateId: "" });
   }
 
   const { data: lineItems = [] } = useQuery({
