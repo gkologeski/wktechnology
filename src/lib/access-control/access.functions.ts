@@ -133,11 +133,11 @@ export const getAccessBundle = createServerFn({ method: "GET" })
         supabase
           .from("user_job_roles")
           .select("user_id, role_id, is_primary")
-          .eq("workspace_id", userId),
+          .eq("owner_id", userId),
         supabase
           .from("user_permission_sets")
           .select("user_id, set_id")
-          .eq("workspace_id", userId),
+          .eq("owner_id", userId),
         supabase.from("profiles").select("id, full_name").in("id", memberUserIds),
       ]);
 
