@@ -210,6 +210,7 @@ export function SendEmailDialog({
           lead_id: leadId,
           deal_id: dealId,
           company_id: companyId,
+          attachments: attachments.length ? attachments : undefined,
         },
       }),
     onSuccess: (res) => {
@@ -218,11 +219,18 @@ export function SendEmailDialog({
       setSubject("");
       setBody("");
       setCc("");
+      setAttachments([]);
       qc.invalidateQueries({ queryKey: ["email_threads"] });
       onSent?.(res.thread_id);
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const formatSize = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
