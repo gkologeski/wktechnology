@@ -6227,10 +6227,10 @@ export type Database = {
           id: string
           is_system: boolean
           mode: Database["public"]["Enums"]["field_mode"]
+          owner_id: string | null
           resource: string
           role_id: string | null
           set_id: string | null
-          workspace_id: string | null
         }
         Insert: {
           created_at?: string
@@ -6238,10 +6238,10 @@ export type Database = {
           id?: string
           is_system?: boolean
           mode: Database["public"]["Enums"]["field_mode"]
+          owner_id?: string | null
           resource: string
           role_id?: string | null
           set_id?: string | null
-          workspace_id?: string | null
         }
         Update: {
           created_at?: string
@@ -6249,10 +6249,10 @@ export type Database = {
           id?: string
           is_system?: boolean
           mode?: Database["public"]["Enums"]["field_mode"]
+          owner_id?: string | null
           resource?: string
           role_id?: string | null
           set_id?: string | null
-          workspace_id?: string | null
         }
         Relationships: [
           {
@@ -6679,8 +6679,8 @@ export type Database = {
           id: string
           is_system: boolean
           name: string
+          owner_id: string | null
           updated_at: string
-          workspace_id: string | null
         }
         Insert: {
           color?: string | null
@@ -6691,8 +6691,8 @@ export type Database = {
           id?: string
           is_system?: boolean
           name: string
+          owner_id?: string | null
           updated_at?: string
-          workspace_id?: string | null
         }
         Update: {
           color?: string | null
@@ -6703,8 +6703,8 @@ export type Database = {
           id?: string
           is_system?: boolean
           name?: string
+          owner_id?: string | null
           updated_at?: string
-          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -8084,8 +8084,8 @@ export type Database = {
           is_system: boolean
           module: string
           name: string
+          owner_id: string | null
           updated_at: string
-          workspace_id: string | null
         }
         Insert: {
           created_at?: string
@@ -8094,8 +8094,8 @@ export type Database = {
           is_system?: boolean
           module: string
           name: string
+          owner_id?: string | null
           updated_at?: string
-          workspace_id?: string | null
         }
         Update: {
           created_at?: string
@@ -8104,8 +8104,8 @@ export type Database = {
           is_system?: boolean
           module?: string
           name?: string
+          owner_id?: string | null
           updated_at?: string
-          workspace_id?: string | null
         }
         Relationships: []
       }
@@ -11639,25 +11639,25 @@ export type Database = {
           created_at: string
           id: string
           is_primary: boolean
+          owner_id: string
           role_id: string
           user_id: string
-          workspace_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           is_primary?: boolean
+          owner_id: string
           role_id: string
           user_id: string
-          workspace_id: string
         }
         Update: {
           created_at?: string
           id?: string
           is_primary?: boolean
+          owner_id?: string
           role_id?: string
           user_id?: string
-          workspace_id?: string
         }
         Relationships: [
           {
@@ -11673,23 +11673,23 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          owner_id: string
           set_id: string
           user_id: string
-          workspace_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          owner_id: string
           set_id: string
           user_id: string
-          workspace_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          owner_id?: string
           set_id?: string
           user_id?: string
-          workspace_id?: string
         }
         Relationships: [
           {
