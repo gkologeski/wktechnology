@@ -439,25 +439,92 @@ export function ActivityTimeline({
           .filter(Boolean) as string[],
       ),
     ];
+    const nextEmailMeta = new Map<string, EmailMeta>();
     if (emailMessageIds.length > 0) {
-      const { data: messages } = await supabase
-        .from("email_messages")
-        .select("id, body_html, body_text")
-        .in("id", emailMessageIds);
+      const [{ data: messages }, { data: events }] = await Promise.all([
+        supabase
+          .from("email_messages")
+          .select(
+            "id, direction, from_email, from_name, to_emails, cc_emails, body_html, body_text, sent_at, received_at, open_count, click_count, first_opened_at, has_attachments, attachments",
+          )
+          .in("id", emailMessageIds),
+        supabase
+          .from("email_tracking_events")
+          .select("message_id, event_type, url, occurred_at")
+          .in("message_id", emailMessageIds)
+          .order("occurred_at", { ascending: false }),
+      ]);
+      type MsgRow = {
+        id: string;
+        direction: string | null;
+        from_email: string | null;
+        from_name: string | null;
+        to_emails: string[] | null;
+        cc_emails: string[] | null;
+        body_html: string | null;
+        body_text: string | null;
+        sent_at: string | null;
+        received_at: string | null;
+        open_count: number | null;
+        click_count: number | null;
+        first_opened_at: string | null;
+        has_attachments: boolean | null;
+        attachments: unknown;
+      };
       const messageById = new Map(
-        ((messages ?? []) as Array<{ id: string; body_html: string | null; body_text: string | null }>).map(
-          (message) => [message.id, message],
-        ),
+        ((messages ?? []) as MsgRow[]).map((m) => [m.id, m]),
       );
+      type EvRow = { message_id: string; event_type: string; url: string | null; occurred_at: string };
+      const lastOpen = new Map<string, string>();
+      const lastClick = new Map<string, { at: string; url: string | null }>();
+      for (const e of (events ?? []) as EvRow[]) {
+        if (e.event_type === "open" && !lastOpen.has(e.message_id)) {
+          lastOpen.set(e.message_id, e.occurred_at);
+        } else if (e.event_type === "click" && !lastClick.has(e.message_id)) {
+          lastClick.set(e.message_id, { at: e.occurred_at, url: e.url });
+        }
+      }
       baseRows = baseRows.map((row) => {
         if (row.type !== "email") return row;
         const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
         const messageId = typeof ext.email_message_id === "string" ? ext.email_message_id : null;
         const message = messageId ? messageById.get(messageId) : null;
-        const html = message?.body_html?.trim() ? message.body_html : message?.body_text;
+        if (!message) return row;
+        const attachmentsRaw = Array.isArray(message.attachments)
+          ? (message.attachments as Array<Record<string, unknown>>)
+          : [];
+        const attachments = attachmentsRaw.map((a) => ({
+          path: typeof a.path === "string" ? a.path : undefined,
+          filename: typeof a.filename === "string" ? a.filename : "arquivo",
+          content_type: typeof a.content_type === "string" ? a.content_type : undefined,
+          size: typeof a.size === "number" ? a.size : undefined,
+        }));
+        const click = lastClick.get(message.id);
+        const dir = message.direction === "inbound" || message.direction === "outbound" ? message.direction : null;
+        nextEmailMeta.set(row.id, {
+          direction: dir,
+          from_email: message.from_email,
+          from_name: message.from_name,
+          to_emails: message.to_emails ?? [],
+          cc_emails: message.cc_emails ?? [],
+          body_html: message.body_html,
+          body_text: message.body_text,
+          sent_at: message.sent_at,
+          received_at: message.received_at,
+          open_count: Number(message.open_count ?? 0),
+          click_count: Number(message.click_count ?? 0),
+          first_opened_at: message.first_opened_at,
+          last_opened_at: lastOpen.get(message.id) ?? null,
+          last_clicked_at: click?.at ?? null,
+          last_clicked_url: click?.url ?? null,
+          has_attachments: Boolean(message.has_attachments),
+          attachments,
+        });
+        const html = message.body_html?.trim() ? message.body_html : message.body_text;
         return html ? ({ ...row, body: html } as Activity) : row;
       });
     }
+    setEmailMeta(nextEmailMeta);
 
     // Mirror Google Calendar events via the unified `get_entity_timeline` RPC.
     // The RPC resolves the relationship graph (Deal → Contacts → Company, etc.)
