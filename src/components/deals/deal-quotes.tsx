@@ -423,12 +423,18 @@ export function DealQuotes({ dealId }: { dealId: string }) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={resetDialog}>
               Cancelar
             </Button>
-            <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
-              {createMut.isPending ? "Gerando…" : "Gerar"}
-            </Button>
+            {editingId ? (
+              <Button onClick={() => updateMut.mutate()} disabled={updateMut.isPending}>
+                {updateMut.isPending ? "Salvando…" : "Salvar"}
+              </Button>
+            ) : (
+              <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
+                {createMut.isPending ? "Gerando…" : "Gerar"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
