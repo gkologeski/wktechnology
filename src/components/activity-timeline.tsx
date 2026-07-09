@@ -1771,7 +1771,113 @@ export function ActivityTimeline({
                         </div>
                       </div>
                     </div>
-                  ) : (
+                  ) : a.type === "email" && emailMeta.has(a.id) ? (() => {
+                    const meta = emailMeta.get(a.id)!;
+                    const expanded = expandedEmails.has(a.id);
+                    const isOut = meta.direction === "outbound";
+                    return (
+                      <div className="mt-1 space-y-2">
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          {isOut ? (
+                            <div>
+                              <span className="text-foreground/70">Para: </span>
+                              {(meta.to_emails ?? []).join(", ") || "—"}
+                            </div>
+                          ) : (
+                            <div>
+                              <span className="text-foreground/70">De: </span>
+                              {meta.from_name
+                                ? `${meta.from_name} <${meta.from_email ?? ""}>`
+                                : (meta.from_email ?? "—")}
+                            </div>
+                          )}
+                          {meta.cc_emails.length > 0 && (
+                            <div>
+                              <span className="text-foreground/70">Cc: </span>
+                              {meta.cc_emails.join(", ")}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="text-xs text-primary hover:underline"
+                          onClick={() =>
+                            setExpandedEmails((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(a.id)) next.delete(a.id);
+                              else next.add(a.id);
+                              return next;
+                            })
+                          }
+                        >
+                          {expanded ? "Ocultar e-mail" : "Ver e-mail"}
+                        </button>
+                        {expanded && (
+                          <div className="rounded-md border border-border/60 bg-background/40 p-3">
+                            {a.body ? (
+                              <HtmlContent
+                                html={a.body}
+                                className="text-sm text-foreground/90 max-h-[480px] overflow-auto"
+                              />
+                            ) : (
+                              <p className="text-xs text-muted-foreground">(sem conteúdo)</p>
+                            )}
+                          </div>
+                        )}
+                        {meta.attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {meta.attachments.map((att, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => openEmailAttachment(att.path)}
+                                disabled={!att.path}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-xs hover:bg-muted disabled:opacity-60 disabled:cursor-not-allowed"
+                                title={att.path ? "Baixar anexo" : "Anexo indisponível"}
+                              >
+                                <Paperclip className="h-3 w-3" />
+                                <span className="truncate max-w-[200px]">{att.filename}</span>
+                                {att.size ? (
+                                  <span className="text-muted-foreground">
+                                    · {formatBytes(att.size)}
+                                  </span>
+                                ) : null}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {isOut && (meta.open_count > 0 || meta.click_count > 0) && (
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                            <Badge
+                              variant={meta.open_count > 0 ? "default" : "outline"}
+                              className="gap-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              {meta.open_count} abertura{meta.open_count === 1 ? "" : "s"}
+                            </Badge>
+                            <Badge
+                              variant={meta.click_count > 0 ? "default" : "outline"}
+                              className="gap-1"
+                            >
+                              <MousePointerClick className="h-3 w-3" />
+                              {meta.click_count} clique{meta.click_count === 1 ? "" : "s"}
+                            </Badge>
+                            {meta.last_opened_at && (
+                              <span className="text-muted-foreground">
+                                Última abertura: {formatDateTime(meta.last_opened_at)}
+                              </span>
+                            )}
+                            {meta.last_clicked_at && (
+                              <span className="text-muted-foreground truncate max-w-[280px]">
+                                Último clique: {formatDateTime(meta.last_clicked_at)}
+                                {meta.last_clicked_url ? ` · ${meta.last_clicked_url}` : ""}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })() : (
                     a.body &&
                     !(a.type === "call" && /Tipo de Chamada\s*:/i.test(a.body)) && (
                       <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
