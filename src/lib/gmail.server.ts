@@ -72,6 +72,12 @@ function encodeHeader(value: string): string {
   return `=?UTF-8?B?${Buffer.from(value, "utf8").toString("base64")}?=`;
 }
 
+export type MimeAttachment = {
+  filename: string;
+  contentType: string;
+  data: Buffer;
+};
+
 export function buildRawMime(opts: {
   from: string;
   fromName?: string | null;
@@ -83,6 +89,7 @@ export function buildRawMime(opts: {
   bodyText?: string;
   inReplyTo?: string;
   references?: string;
+  attachments?: MimeAttachment[];
 }): string {
   const fromHeader = opts.fromName ? `${encodeHeader(opts.fromName)} <${opts.from}>` : opts.from;
   const headers: string[] = [`From: ${fromHeader}`, `To: ${opts.to.join(", ")}`];
@@ -96,28 +103,52 @@ export function buildRawMime(opts: {
   const text = opts.bodyText ?? (opts.bodyHtml ? stripHtml(opts.bodyHtml) : "");
   const html = opts.bodyHtml ?? `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`;
 
-  const boundary = `bnd_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
-  headers.push(`Content-Type: multipart/alternative; boundary="${boundary}"`);
-
-  const body = [
+  const altBoundary = `alt_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
+  const altPart = [
+    `Content-Type: multipart/alternative; boundary="${altBoundary}"`,
     "",
-    `--${boundary}`,
+    `--${altBoundary}`,
     "Content-Type: text/plain; charset=UTF-8",
     "Content-Transfer-Encoding: 7bit",
     "",
     text,
     "",
-    `--${boundary}`,
+    `--${altBoundary}`,
     "Content-Type: text/html; charset=UTF-8",
     "Content-Transfer-Encoding: 7bit",
     "",
     html,
     "",
-    `--${boundary}--`,
+    `--${altBoundary}--`,
     "",
   ].join("\r\n");
 
-  return headers.join("\r\n") + "\r\n" + body;
+  const attachments = opts.attachments ?? [];
+  if (attachments.length === 0) {
+    return headers.join("\r\n") + "\r\n" + altPart;
+  }
+
+  const mixedBoundary = `mix_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
+  headers.push(`Content-Type: multipart/mixed; boundary="${mixedBoundary}"`);
+
+  const parts: string[] = ["", `--${mixedBoundary}`, altPart, `--${mixedBoundary}`];
+  for (let i = 0; i < attachments.length; i++) {
+    const a = attachments[i];
+    const b64 = a.data.toString("base64").replace(/(.{76})/g, "$1\r\n");
+    const fname = encodeHeader(a.filename);
+    parts.push(
+      `Content-Type: ${a.contentType || "application/octet-stream"}; name="${fname}"`,
+      `Content-Disposition: attachment; filename="${fname}"`,
+      "Content-Transfer-Encoding: base64",
+      "",
+      b64,
+      "",
+      i === attachments.length - 1 ? `--${mixedBoundary}--` : `--${mixedBoundary}`,
+    );
+  }
+  parts.push("");
+
+  return headers.join("\r\n") + "\r\n" + parts.join("\r\n");
 }
 
 function stripHtml(s: string) {
