@@ -992,9 +992,6 @@ export function ActivityTimeline({
 
   return (
     <div className="space-y-6">
-      {relatedKey !== "related_ticket_id" && (
-        <EmailEngagementCard relatedKey={relatedKey} relatedId={relatedId} />
-      )}
       {/* Composer */}
       <div
         className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden"
