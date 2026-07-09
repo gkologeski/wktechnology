@@ -63,7 +63,46 @@ import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
-import { EmailEngagementCard } from "@/components/email/email-engagement-card";
+import { Eye, MousePointerClick } from "lucide-react";
+
+type EmailMeta = {
+  direction: "inbound" | "outbound" | null;
+  from_email: string | null;
+  from_name: string | null;
+  to_emails: string[];
+  cc_emails: string[];
+  body_html: string | null;
+  body_text: string | null;
+  sent_at: string | null;
+  received_at: string | null;
+  open_count: number;
+  click_count: number;
+  first_opened_at: string | null;
+  last_opened_at: string | null;
+  last_clicked_at: string | null;
+  last_clicked_url: string | null;
+  has_attachments: boolean;
+  attachments: Array<{ path?: string; filename: string; content_type?: string; size?: number }>;
+};
+
+function formatBytes(n: number | undefined): string {
+  if (!n || n <= 0) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function openEmailAttachment(path: string | undefined) {
+  if (!path) return;
+  const { data, error } = await supabase.storage
+    .from("email-attachments")
+    .createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl) {
+    toast.error(error?.message ?? "Falha ao abrir anexo");
+    return;
+  }
+  window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+}
 
 const ICONS: Record<ActivityType, ReactNode> = {
   note: <StickyNote className="h-4 w-4" />,
