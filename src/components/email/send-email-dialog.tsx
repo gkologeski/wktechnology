@@ -64,6 +64,7 @@ export function SendEmailDialog({
   onOpenChange,
 }: Props) {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
   const setOpen = onOpenChange ?? setOpenState;
@@ -72,6 +73,58 @@ export function SendEmailDialog({
   const [cc, setCc] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  type Attachment = { path: string; filename: string; content_type: string; size: number };
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_TOTAL = 25 * 1024 * 1024;
+  const MAX_FILES = 10;
+
+  const handleFilesSelected = async (files: FileList | null) => {
+    if (!files || !files.length || !user) return;
+    const currentBytes = attachments.reduce((s, a) => s + a.size, 0);
+    const newFiles = Array.from(files);
+    if (attachments.length + newFiles.length > MAX_FILES) {
+      toast.error(`Máximo de ${MAX_FILES} anexos.`);
+      return;
+    }
+    const addBytes = newFiles.reduce((s, f) => s + f.size, 0);
+    if (currentBytes + addBytes > MAX_TOTAL) {
+      toast.error("Total de anexos excede 25 MB.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const uploaded: Attachment[] = [];
+      for (const f of newFiles) {
+        const safeName = f.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+        const { error } = await supabase.storage
+          .from("email-attachments")
+          .upload(path, f, { contentType: f.type || "application/octet-stream", upsert: false });
+        if (error) throw new Error(`${f.name}: ${error.message}`);
+        uploaded.push({
+          path,
+          filename: f.name,
+          content_type: f.type || "application/octet-stream",
+          size: f.size,
+        });
+      }
+      setAttachments((prev) => [...prev, ...uploaded]);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao enviar anexo");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const removeAttachment = async (idx: number) => {
+    const a = attachments[idx];
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+    await supabase.storage.from("email-attachments").remove([a.path]).catch(() => {});
+  };
 
   const subjectInserter = useTokenInserter<HTMLInputElement>(() => subject, setSubject);
   const insertBodyToken = (token: string) => {
