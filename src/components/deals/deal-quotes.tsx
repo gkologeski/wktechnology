@@ -73,6 +73,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const listTemplates = useServerFn(listQuoteTemplates);
 
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{
     title: string;
     validUntil: string;
@@ -100,8 +101,40 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const defaultTemplateId = templates.find((t) => t.is_default)?.id ?? "";
 
   function openDialog() {
-    setDraft((d) => ({ ...d, templateId: defaultTemplateId }));
+    setEditingId(null);
+    setDraft({
+      title: "",
+      validUntil: "",
+      notes: "",
+      terms: "",
+      templateId: defaultTemplateId,
+    });
     setOpen(true);
+  }
+
+  function openEditDialog(q: {
+    id: string;
+    title: string | null;
+    valid_until: string | null;
+    notes: string | null;
+    terms: string | null;
+    template_id: string | null;
+  }) {
+    setEditingId(q.id);
+    setDraft({
+      title: q.title ?? "",
+      validUntil: q.valid_until ? String(q.valid_until).slice(0, 10) : "",
+      notes: q.notes ?? "",
+      terms: q.terms ?? "",
+      templateId: q.template_id ?? "",
+    });
+    setOpen(true);
+  }
+
+  function resetDialog() {
+    setOpen(false);
+    setEditingId(null);
+    setDraft({ title: "", validUntil: "", notes: "", terms: "", templateId: "" });
   }
 
   const { data: lineItems = [] } = useQuery({
@@ -131,8 +164,29 @@ export function DealQuotes({ dealId }: { dealId: string }) {
       }),
     onSuccess: () => {
       toast.success("Cotação criada.");
-      setOpen(false);
-      setDraft({ title: "", validUntil: "", notes: "", terms: "", templateId: "" });
+      resetDialog();
+      qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: () =>
+      update({
+        data: {
+          id: editingId!,
+          patch: {
+            title: draft.title || null,
+            valid_until: draft.validUntil || null,
+            notes: draft.notes || null,
+            terms: draft.terms || null,
+            template_id: draft.templateId ? draft.templateId : null,
+          },
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Cotação atualizada.");
+      resetDialog();
       qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -252,6 +306,11 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {status === "draft" && (
+                        <DropdownMenuItem onSelect={() => openEditDialog(q)}>
+                          Editar
+                        </DropdownMenuItem>
+                      )}
+                      {status === "draft" && (
                         <DropdownMenuItem onSelect={() => markSent(q.id)}>
                           Marcar como enviada
                         </DropdownMenuItem>
@@ -302,10 +361,10 @@ export function DealQuotes({ dealId }: { dealId: string }) {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : resetDialog())}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nova cotação</DialogTitle>
+            <DialogTitle>{editingId ? "Editar cotação" : "Nova cotação"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
@@ -364,12 +423,18 @@ export function DealQuotes({ dealId }: { dealId: string }) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>
+            <Button variant="outline" onClick={resetDialog}>
               Cancelar
             </Button>
-            <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
-              {createMut.isPending ? "Gerando…" : "Gerar"}
-            </Button>
+            {editingId ? (
+              <Button onClick={() => updateMut.mutate()} disabled={updateMut.isPending}>
+                {updateMut.isPending ? "Salvando…" : "Salvar"}
+              </Button>
+            ) : (
+              <Button onClick={() => createMut.mutate()} disabled={createMut.isPending}>
+                {createMut.isPending ? "Gerando…" : "Gerar"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
