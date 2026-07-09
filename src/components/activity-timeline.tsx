@@ -358,8 +358,6 @@ export function ActivityTimeline({
   // indexados pelo id da atividade correspondente.
   const [emailMeta, setEmailMeta] = useState<Map<string, EmailMeta>>(new Map());
   const [expandedEmails, setExpandedEmails] = useState<Set<string>>(new Set());
-  // Substitui a referência antiga (declarada abaixo) — mantida por retrocompat.
-  void items;
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
