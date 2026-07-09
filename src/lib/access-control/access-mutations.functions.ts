@@ -188,7 +188,7 @@ export const upsertPermissionSet = createServerFn({ method: "POST" })
       const { data: row, error } = await supabase
         .from("permission_sets")
         .insert({
-          workspace_id: userId,
+          owner_id: userId,
           module: data.module,
           name: data.name,
           description: data.description ?? null,
