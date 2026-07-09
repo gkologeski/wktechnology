@@ -361,10 +361,10 @@ export function DealQuotes({ dealId }: { dealId: string }) {
         </div>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : resetDialog())}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nova cotação</DialogTitle>
+            <DialogTitle>{editingId ? "Editar cotação" : "Nova cotação"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
