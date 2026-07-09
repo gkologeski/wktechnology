@@ -7,8 +7,12 @@ type: feature
 
 ## Workspace data
 - Tudo workspace-escopado via `workspace_id` + `current_user_workspaces()` (RLS `ws_*`). Não criar policies legadas comparando `owner_id` com `workspace UUID`.
+- Tabelas core de CRM (activities, companies, contacts, deals, leads, pipelines, products, proposals, quotes, tickets, workflows) usam APENAS o conjunto canônico `ws_*`. Não recriar policies `*_admin_*`/`*_team_*` — foram removidas por consolidarem união permissiva com o conjunto novo.
 - Toda `CREATE TABLE public.*` na mesma migration: `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated`, `GRANT ALL TO service_role`.
 - Nenhuma leitura `anon` em tabelas de negócio.
+
+## Tabelas de controle de acesso (owner-scoped)
+- `job_roles`, `permission_sets`, `user_permission_sets`, `field_permission_rules`, `user_job_roles` usam a coluna `owner_id` (auth.uid do dono do workspace). Não renomear de volta para `workspace_id` e não comparar `owner_id` com `workspaces.id`. Policies: `*_read` (is_system OR owner_id = auth.uid() OR shares_workspace_with(owner_id)); `*_write` FOR ALL restrita a `owner_id = auth.uid()`.
 
 ## Tabelas com segredos de integração
 - `slack_integrations`: SELECT/INSERT/UPDATE/DELETE apenas para `is_workspace_admin_v2`. Não recriar policy ALL permissiva.
@@ -29,6 +33,7 @@ type: feature
 - `/quote/$token`, `/sign/$token`, `/portal/$token`, `/book/$slug`, `/wa/$slug`, `/lp/$slug`, `/kb`, `/sales`, `/terms`, `/privacy`, `/dpa`, `/refund` são públicas por design.
 - `/api/public/forms/*`, `/api/public/widget/*`, `/api/public/booking/*` aceitam input não-autenticado mas validam com Zod e rate-limit no handler.
 - `live_chat_sessions`: sem policy INSERT por autenticados — sessões são criadas exclusivamente via `/api/public/widget/session` com service_role. Aceitável e intencional; não adicionar policy INSERT cliente.
+- `landing_page_events`: sem policy `INSERT` para `anon`/`authenticated`. Toda ingestão passa pelo server function `trackLpEvent` (supabaseAdmin + Zod com limites de keys/tamanho em `utm` e `metadata`). Não recriar `lpe_anon_insert`.
 
 ## Varreduras automáticas (Release pós-6)
 - Cron `security-scan-tick` (diário 03:00 UTC) chama `/api/public/hooks/security-scan-tick`.

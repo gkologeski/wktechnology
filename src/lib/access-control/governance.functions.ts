@@ -131,12 +131,12 @@ export const simulateUser = createServerFn({ method: "POST" })
       supabase
         .from("user_job_roles")
         .select("role_id")
-        .eq("workspace_id", workspaceId)
+        .eq("owner_id", workspaceId)
         .eq("user_id", data.user_id),
       supabase
         .from("user_permission_sets")
         .select("set_id")
-        .eq("workspace_id", workspaceId)
+        .eq("owner_id", workspaceId)
         .eq("user_id", data.user_id),
     ]);
     const roleIds = ((rolesRes.data ?? []) as Array<{ role_id: string }>).map((r) => r.role_id);
@@ -195,7 +195,7 @@ export const getGovernanceReport = createServerFn({ method: "GET" })
       supabase
         .from("user_job_roles")
         .select("user_id, role_id")
-        .eq("workspace_id", workspaceId),
+        .eq("owner_id", workspaceId),
     ]);
 
     const members = (membersRes.data ?? []) as Array<{ user_id: string }>;

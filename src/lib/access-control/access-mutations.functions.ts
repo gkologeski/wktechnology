@@ -114,7 +114,7 @@ export const upsertJobRole = createServerFn({ method: "POST" })
       const { data: row, error } = await supabase
         .from("job_roles")
         .insert({
-          workspace_id: userId,
+          owner_id: userId,
           name: data.name,
           description: data.description ?? null,
           color: data.color ?? null,
@@ -188,7 +188,7 @@ export const upsertPermissionSet = createServerFn({ method: "POST" })
       const { data: row, error } = await supabase
         .from("permission_sets")
         .insert({
-          workspace_id: userId,
+          owner_id: userId,
           module: data.module,
           name: data.name,
           description: data.description ?? null,
@@ -252,7 +252,7 @@ export const upsertFieldRule = createServerFn({ method: "POST" })
       throw new Error("Selecione um cargo ou pacote para aplicar a regra.");
     }
     const payload = {
-      workspace_id: userId,
+      owner_id: userId,
       resource: data.resource,
       field: data.field,
       mode: data.mode,
@@ -339,17 +339,17 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
       throw new Error("Usuário não é membro deste workspace.");
     }
 
-    // Rebuild user_job_roles (owner-scoped: workspace_id = auth.uid() per RLS)
+    // Rebuild user_job_roles (owner-scoped: owner_id = auth.uid() per RLS)
     const { error: dr } = await supabase
       .from("user_job_roles")
       .delete()
-      .eq("workspace_id", userId)
+      .eq("owner_id", userId)
       .eq("user_id", data.user_id);
     if (dr) throw new Error(dr.message);
 
     const roleRows: Array<{
       user_id: string;
-      workspace_id: string;
+      owner_id: string;
       role_id: string;
       is_primary: boolean;
     }> = [];
@@ -357,7 +357,7 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
     if (data.primary_role_id) {
       roleRows.push({
         user_id: data.user_id,
-        workspace_id: userId,
+        owner_id: userId,
         role_id: data.primary_role_id,
         is_primary: true,
       });
@@ -367,7 +367,7 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
       if (seen.has(rid)) continue;
       roleRows.push({
         user_id: data.user_id,
-        workspace_id: userId,
+        owner_id: userId,
         role_id: rid,
         is_primary: false,
       });
@@ -382,14 +382,14 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
     const { error: ds } = await supabase
       .from("user_permission_sets")
       .delete()
-      .eq("workspace_id", userId)
+      .eq("owner_id", userId)
       .eq("user_id", data.user_id);
     if (ds) throw new Error(ds.message);
     if (data.extra_set_ids.length > 0) {
       const { error } = await supabase.from("user_permission_sets").insert(
         data.extra_set_ids.map((sid) => ({
           user_id: data.user_id,
-          workspace_id: userId,
+          owner_id: userId,
           set_id: sid,
         })),
       );

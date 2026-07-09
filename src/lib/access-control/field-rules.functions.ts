@@ -69,12 +69,12 @@ export const getMyFieldRules = createServerFn({ method: "GET" })
       supabase
         .from("user_job_roles")
         .select("role_id")
-        .eq("workspace_id", workspaceId)
+        .eq("owner_id", workspaceId)
         .eq("user_id", userId),
       supabase
         .from("user_permission_sets")
         .select("set_id")
-        .eq("workspace_id", workspaceId)
+        .eq("owner_id", workspaceId)
         .eq("user_id", userId),
     ]);
     const roleIds = ((rolesRes.data ?? []) as Array<{ role_id: string }>).map((r) => r.role_id);

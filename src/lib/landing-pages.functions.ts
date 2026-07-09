@@ -107,6 +107,13 @@ export const getPublishedBySlug = createServerFn({ method: "GET" })
     return { page: row };
   });
 
+const LpMetadataSchema = z
+  .record(z.union([z.string().max(500), z.number(), z.boolean(), z.null()]))
+  .refine((o) => Object.keys(o).length <= 20, { message: "metadata: too many keys" });
+const LpUtmSchema = z
+  .record(z.string().max(200))
+  .refine((o) => Object.keys(o).length <= 10, { message: "utm: too many keys" });
+
 export const trackLpEvent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
@@ -115,8 +122,8 @@ export const trackLpEvent = createServerFn({ method: "POST" })
         event_type: z.enum(["view", "conversion", "click"]),
         visitor_id: z.string().max(100).optional(),
         variant_id: z.string().uuid().optional(),
-        utm: z.record(z.string()).optional(),
-        metadata: z.record(z.any()).optional(),
+        utm: LpUtmSchema.optional(),
+        metadata: LpMetadataSchema.optional(),
       })
       .parse(d),
   )
