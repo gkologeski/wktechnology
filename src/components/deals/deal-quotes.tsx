@@ -164,8 +164,29 @@ export function DealQuotes({ dealId }: { dealId: string }) {
       }),
     onSuccess: () => {
       toast.success("Cotação criada.");
-      setOpen(false);
-      setDraft({ title: "", validUntil: "", notes: "", terms: "", templateId: "" });
+      resetDialog();
+      qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateMut = useMutation({
+    mutationFn: () =>
+      update({
+        data: {
+          id: editingId!,
+          patch: {
+            title: draft.title || null,
+            valid_until: draft.validUntil || null,
+            notes: draft.notes || null,
+            terms: draft.terms || null,
+            template_id: draft.templateId ? draft.templateId : null,
+          },
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Cotação atualizada.");
+      resetDialog();
       qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
     },
     onError: (e: Error) => toast.error(e.message),
