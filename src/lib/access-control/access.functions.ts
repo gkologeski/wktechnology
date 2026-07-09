@@ -15,7 +15,7 @@ export type PermissionRow = {
 
 export type PermissionSetRow = {
   id: string;
-  workspace_id: string | null;
+  owner_id: string | null;
   module: string;
   name: string;
   description: string | null;
@@ -27,7 +27,7 @@ export type DataScope = "own" | "team" | "workspace" | "custom";
 
 export type JobRoleRow = {
   id: string;
-  workspace_id: string | null;
+  owner_id: string | null;
   name: string;
   description: string | null;
   color: string | null;
@@ -39,7 +39,7 @@ export type JobRoleRow = {
 
 export type FieldRuleRow = {
   id: string;
-  workspace_id: string | null;
+  owner_id: string | null;
   role_id: string | null;
   set_id: string | null;
   resource: string;
