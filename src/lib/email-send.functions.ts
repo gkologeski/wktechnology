@@ -169,13 +169,8 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     });
     if (mErr) throw new Error(mErr.message);
 
-    // Best-effort cleanup of temporary uploads (files are safely stored in the sent message metadata)
-    if (attachmentMeta.length) {
-      await supabaseAdmin.storage
-        .from("email-attachments")
-        .remove(attachmentMeta.map((a) => a.path))
-        .catch((e) => console.error("[sendGmailEmail] attachment cleanup failed", e));
-    }
+    // Anexos permanecem no bucket privado `email-attachments` para que a timeline
+    // possa gerar signed URLs de download depois do envio (RLS restringe leitura ao owner).
 
     // Bump message_count
     const { count } = await supabaseAdmin

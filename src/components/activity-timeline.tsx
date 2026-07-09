@@ -63,7 +63,46 @@ import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
-import { EmailEngagementCard } from "@/components/email/email-engagement-card";
+import { Eye, MousePointerClick } from "lucide-react";
+
+type EmailMeta = {
+  direction: "inbound" | "outbound" | null;
+  from_email: string | null;
+  from_name: string | null;
+  to_emails: string[];
+  cc_emails: string[];
+  body_html: string | null;
+  body_text: string | null;
+  sent_at: string | null;
+  received_at: string | null;
+  open_count: number;
+  click_count: number;
+  first_opened_at: string | null;
+  last_opened_at: string | null;
+  last_clicked_at: string | null;
+  last_clicked_url: string | null;
+  has_attachments: boolean;
+  attachments: Array<{ path?: string; filename: string; content_type?: string; size?: number }>;
+};
+
+function formatBytes(n: number | undefined): string {
+  if (!n || n <= 0) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function openEmailAttachment(path: string | undefined) {
+  if (!path) return;
+  const { data, error } = await supabase.storage
+    .from("email-attachments")
+    .createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl) {
+    toast.error(error?.message ?? "Falha ao abrir anexo");
+    return;
+  }
+  window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+}
 
 const ICONS: Record<ActivityType, ReactNode> = {
   note: <StickyNote className="h-4 w-4" />,
@@ -315,6 +354,10 @@ export function ActivityTimeline({
 }) {
   const { user } = useAuth();
   const [items, setItems] = useState<Activity[]>([]);
+  // Metadados enriquecidos de e-mails (corpo, anexos, aberturas, cliques),
+  // indexados pelo id da atividade correspondente.
+  const [emailMeta, setEmailMeta] = useState<Map<string, EmailMeta>>(new Map());
+  const [expandedEmails, setExpandedEmails] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -396,25 +439,92 @@ export function ActivityTimeline({
           .filter(Boolean) as string[],
       ),
     ];
+    const nextEmailMeta = new Map<string, EmailMeta>();
     if (emailMessageIds.length > 0) {
-      const { data: messages } = await supabase
-        .from("email_messages")
-        .select("id, body_html, body_text")
-        .in("id", emailMessageIds);
+      const [{ data: messages }, { data: events }] = await Promise.all([
+        supabase
+          .from("email_messages")
+          .select(
+            "id, direction, from_email, from_name, to_emails, cc_emails, body_html, body_text, sent_at, received_at, open_count, click_count, first_opened_at, has_attachments, attachments",
+          )
+          .in("id", emailMessageIds),
+        supabase
+          .from("email_tracking_events")
+          .select("message_id, event_type, url, occurred_at")
+          .in("message_id", emailMessageIds)
+          .order("occurred_at", { ascending: false }),
+      ]);
+      type MsgRow = {
+        id: string;
+        direction: string | null;
+        from_email: string | null;
+        from_name: string | null;
+        to_emails: string[] | null;
+        cc_emails: string[] | null;
+        body_html: string | null;
+        body_text: string | null;
+        sent_at: string | null;
+        received_at: string | null;
+        open_count: number | null;
+        click_count: number | null;
+        first_opened_at: string | null;
+        has_attachments: boolean | null;
+        attachments: unknown;
+      };
       const messageById = new Map(
-        ((messages ?? []) as Array<{ id: string; body_html: string | null; body_text: string | null }>).map(
-          (message) => [message.id, message],
-        ),
+        ((messages ?? []) as MsgRow[]).map((m) => [m.id, m]),
       );
+      type EvRow = { message_id: string; event_type: string; url: string | null; occurred_at: string };
+      const lastOpen = new Map<string, string>();
+      const lastClick = new Map<string, { at: string; url: string | null }>();
+      for (const e of (events ?? []) as EvRow[]) {
+        if (e.event_type === "open" && !lastOpen.has(e.message_id)) {
+          lastOpen.set(e.message_id, e.occurred_at);
+        } else if (e.event_type === "click" && !lastClick.has(e.message_id)) {
+          lastClick.set(e.message_id, { at: e.occurred_at, url: e.url });
+        }
+      }
       baseRows = baseRows.map((row) => {
         if (row.type !== "email") return row;
         const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
         const messageId = typeof ext.email_message_id === "string" ? ext.email_message_id : null;
         const message = messageId ? messageById.get(messageId) : null;
-        const html = message?.body_html?.trim() ? message.body_html : message?.body_text;
+        if (!message) return row;
+        const attachmentsRaw = Array.isArray(message.attachments)
+          ? (message.attachments as Array<Record<string, unknown>>)
+          : [];
+        const attachments = attachmentsRaw.map((a) => ({
+          path: typeof a.path === "string" ? a.path : undefined,
+          filename: typeof a.filename === "string" ? a.filename : "arquivo",
+          content_type: typeof a.content_type === "string" ? a.content_type : undefined,
+          size: typeof a.size === "number" ? a.size : undefined,
+        }));
+        const click = lastClick.get(message.id);
+        const dir = message.direction === "inbound" || message.direction === "outbound" ? message.direction : null;
+        nextEmailMeta.set(row.id, {
+          direction: dir,
+          from_email: message.from_email,
+          from_name: message.from_name,
+          to_emails: message.to_emails ?? [],
+          cc_emails: message.cc_emails ?? [],
+          body_html: message.body_html,
+          body_text: message.body_text,
+          sent_at: message.sent_at,
+          received_at: message.received_at,
+          open_count: Number(message.open_count ?? 0),
+          click_count: Number(message.click_count ?? 0),
+          first_opened_at: message.first_opened_at,
+          last_opened_at: lastOpen.get(message.id) ?? null,
+          last_clicked_at: click?.at ?? null,
+          last_clicked_url: click?.url ?? null,
+          has_attachments: Boolean(message.has_attachments),
+          attachments,
+        });
+        const html = message.body_html?.trim() ? message.body_html : message.body_text;
         return html ? ({ ...row, body: html } as Activity) : row;
       });
     }
+    setEmailMeta(nextEmailMeta);
 
     // Mirror Google Calendar events via the unified `get_entity_timeline` RPC.
     // The RPC resolves the relationship graph (Deal → Contacts → Company, etc.)
@@ -953,9 +1063,6 @@ export function ActivityTimeline({
 
   return (
     <div className="space-y-6">
-      {relatedKey !== "related_ticket_id" && (
-        <EmailEngagementCard relatedKey={relatedKey} relatedId={relatedId} />
-      )}
       {/* Composer */}
       <div
         className="bg-card rounded-2xl shadow-sm border border-border/60 overflow-hidden"
@@ -1664,7 +1771,113 @@ export function ActivityTimeline({
                         </div>
                       </div>
                     </div>
-                  ) : (
+                  ) : a.type === "email" && emailMeta.has(a.id) ? (() => {
+                    const meta = emailMeta.get(a.id)!;
+                    const expanded = expandedEmails.has(a.id);
+                    const isOut = meta.direction === "outbound";
+                    return (
+                      <div className="mt-1 space-y-2">
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          {isOut ? (
+                            <div>
+                              <span className="text-foreground/70">Para: </span>
+                              {(meta.to_emails ?? []).join(", ") || "—"}
+                            </div>
+                          ) : (
+                            <div>
+                              <span className="text-foreground/70">De: </span>
+                              {meta.from_name
+                                ? `${meta.from_name} <${meta.from_email ?? ""}>`
+                                : (meta.from_email ?? "—")}
+                            </div>
+                          )}
+                          {meta.cc_emails.length > 0 && (
+                            <div>
+                              <span className="text-foreground/70">Cc: </span>
+                              {meta.cc_emails.join(", ")}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className="text-xs text-primary hover:underline"
+                          onClick={() =>
+                            setExpandedEmails((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(a.id)) next.delete(a.id);
+                              else next.add(a.id);
+                              return next;
+                            })
+                          }
+                        >
+                          {expanded ? "Ocultar e-mail" : "Ver e-mail"}
+                        </button>
+                        {expanded && (
+                          <div className="rounded-md border border-border/60 bg-background/40 p-3">
+                            {a.body ? (
+                              <HtmlContent
+                                html={a.body}
+                                className="text-sm text-foreground/90 max-h-[480px] overflow-auto"
+                              />
+                            ) : (
+                              <p className="text-xs text-muted-foreground">(sem conteúdo)</p>
+                            )}
+                          </div>
+                        )}
+                        {meta.attachments.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {meta.attachments.map((att, i) => (
+                              <button
+                                key={i}
+                                type="button"
+                                onClick={() => openEmailAttachment(att.path)}
+                                disabled={!att.path}
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-muted/40 px-2 py-1 text-xs hover:bg-muted disabled:opacity-60 disabled:cursor-not-allowed"
+                                title={att.path ? "Baixar anexo" : "Anexo indisponível"}
+                              >
+                                <Paperclip className="h-3 w-3" />
+                                <span className="truncate max-w-[200px]">{att.filename}</span>
+                                {att.size ? (
+                                  <span className="text-muted-foreground">
+                                    · {formatBytes(att.size)}
+                                  </span>
+                                ) : null}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {isOut && (meta.open_count > 0 || meta.click_count > 0) && (
+                          <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                            <Badge
+                              variant={meta.open_count > 0 ? "default" : "outline"}
+                              className="gap-1"
+                            >
+                              <Eye className="h-3 w-3" />
+                              {meta.open_count} abertura{meta.open_count === 1 ? "" : "s"}
+                            </Badge>
+                            <Badge
+                              variant={meta.click_count > 0 ? "default" : "outline"}
+                              className="gap-1"
+                            >
+                              <MousePointerClick className="h-3 w-3" />
+                              {meta.click_count} clique{meta.click_count === 1 ? "" : "s"}
+                            </Badge>
+                            {meta.last_opened_at && (
+                              <span className="text-muted-foreground">
+                                Última abertura: {formatDateTime(meta.last_opened_at)}
+                              </span>
+                            )}
+                            {meta.last_clicked_at && (
+                              <span className="text-muted-foreground truncate max-w-[280px]">
+                                Último clique: {formatDateTime(meta.last_clicked_at)}
+                                {meta.last_clicked_url ? ` · ${meta.last_clicked_url}` : ""}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })() : (
                     a.body &&
                     !(a.type === "call" && /Tipo de Chamada\s*:/i.test(a.body)) && (
                       <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
