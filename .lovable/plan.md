@@ -1,36 +1,42 @@
-## Contexto
-Ao selecionar um produto no combobox do modal de itens de linha, o servidor persiste o item corretamente (confirmado no banco: `name`, `quantity=1`, `unit_price` do produto), mas a linha renderizada no modal aparece vazia (`Nome do item` placeholder, `QTD=0`, `PREÇO=R$ 0,00`). Somente ao fechar e reabrir o modal a linha aparece com dados. Ao adicionar de novo, o combobox insere um segundo registro no banco (não é duplicação — é uma segunda inserção real feita pelo usuário), reforçando que o fluxo depende de reabrir o modal para ler o estado real.
+## Objetivo
+Permitir editar uma cotação enquanto ela ainda estiver com status `draft` (rascunho), reaproveitando o mesmo dialog usado hoje para criação.
 
-## Causa raiz
-O fluxo de inserção em `src/components/deals/deal-line-items.tsx` combina:
-1. Optimistic append no cache (`setItemsCache`).
-2. Em seguida `notifyChanged()` chama `qc.invalidateQueries` na MESMA chave (`lineItemsQueryKey`) e também em `["deals"]`.
-3. A invalidação em `["deals"]` faz a rota do negócio revalidar e re-renderizar, o que reprocessa o subtree onde o `Dialog` está montado. O `LineItemsEditorBody` sofre re-render antes da refetch de `lineItemsQueryKey` completar, e a combinação `cancelQueries` + `invalidateQueries` deixa a query em estado transitório que descarta o item recém-adicionado no cache visível ao componente.
+## Escopo
+- Componente: `src/components/deals/deal-quotes.tsx` (única superfície onde as cotações são geridas hoje).
+- Campos editáveis (os mesmos que já existem no dialog de criação e no server fn `updateQuote`):
+  - Modelo de cotação (`template_id`)
+  - Título (`title`)
+  - Válida até (`valid_until`)
+  - Observações (`notes`)
+  - Termos e condições (`terms`)
+- Fora do escopo: itens de linha da cotação, moeda, número, itens copiados do negócio (o usuário não pediu).
 
-Além disso, o `EntityCombobox` permanece com `value={null}` mas nunca é forçado a resetar após inserir, o que impede reusar o mesmo produto na mesma sessão do modal e mascara o problema.
+## Mudanças
 
-## Correções
+1. **Dialog em modo dual (criar/editar)** em `deal-quotes.tsx`:
+   - Adicionar estado `editingId: string | null` além do `draft`.
+   - Título do dialog dinâmico: "Nova cotação" ou "Editar cotação".
+   - Botão principal chama `createMut` quando `editingId` é null, senão chama `updateMut`.
+   - Ao fechar, resetar `editingId` e `draft`.
 
-### 1. `deal-line-items.tsx` — não invalidar a query local após mutation
-- `notifyChanged()` deixa de chamar `refreshItems()` (invalidação da chave `deal_line_items:<dealId>`). O cache otimista já contém a verdade retornada pelo `.select("*").single()`.
-- Continua invalidando `["deals"]` para atualizar totais no restante da UI, mas de forma que não force o subtree do modal a re-fetch da lista.
-- `addBlank`, `addFromProduct`, `update`, `remove` passam a chamar `setQueryData` diretamente (sem `cancelQueries` prévio), garantindo que a escrita otimista sobreviva a re-renders.
-- Em `update` e `remove`, manter rollback do cache em caso de erro (mantém comportamento atual, apenas sem invalidação global da chave).
+2. **Ação "Editar" no dropdown do card**:
+   - Aparece apenas quando `status === "draft"` (cotações enviadas/aceitas/recusadas/expiradas permanecem imutáveis).
+   - Ao clicar, popula `draft` com os valores atuais da cotação (`title`, `valid_until`, `notes`, `terms`, `template_id`) e abre o dialog em modo edição.
 
-### 2. Reset do `EntityCombobox` após inserir
-- Após `addFromProduct(id)` bem-sucedido, forçar o combobox a limpar a seleção (via `key` incrementado ou controlando `value` explicitamente) para permitir escolher o mesmo produto novamente e evitar estados residuais.
+3. **Mutation de update**:
+   - `updateMut` usando o `useServerFn(updateQuote)` já importado, enviando `{ id: editingId, patch: { title, valid_until, notes, terms, template_id } }`.
+   - `valid_until` normalizado: string vazia vira `null`.
+   - `template_id`: string vazia vira `null`.
+   - Em `onSuccess`: toast "Cotação atualizada.", fechar dialog, invalidar `["deal-quotes", dealId]`.
 
-### 3. Sincronização defensiva dos inputs
-- Confirmar que `LabeledNumber`, `TextField` e `CurrencyInput` refletem imediatamente o item recém-inserido: os dois primeiros já sincronizam via `useEffect` quando `!focused`; adicionar um `key={li.id}` no card da linha garante que uma linha recém-criada monte com os valores certos e não reutilize instância anterior.
+4. **UX**:
+   - Não alterar comportamento existente (criar, marcar enviada/aceita, gerar link etc.).
+   - Não expor "Editar" quando a cotação já saiu do rascunho, para evitar mudar termos após envio ao cliente.
 
-### 4. Sem mudanças de schema, RLS, rotas ou lógica de negócio
-Apenas ajustes de fluxo de cache/UX no componente.
+## Validação manual
+- Abrir um negócio com cotação em rascunho → menu "…" → "Editar" → alterar título/observações/termos → salvar → card reflete mudança e reabrir mostra valores persistidos.
+- Cotações com status `sent`/`accepted`/`declined`/`expired` não devem exibir a opção "Editar".
+- Criar uma nova cotação continua funcionando exatamente como antes.
 
-## Validação
-- `bunx tsgo --noEmit`.
-- Manual: abrir modal em negócio vazio via botão "Editar", selecionar um produto do catálogo, confirmar imediatamente `nome`, `qtd=1`, `preço` corretos, `total` da linha e "Total" agregado; adicionar segundo produto e verificar; fechar e reabrir para confirmar persistência sem duplicação.
-
-## Fora do escopo
-- Remover ou reestruturar o branch empty/non-empty em `DealLineItems`.
-- Alterar `EntityCombobox` internamente.
-- Alterar server functions ou RLS.
+## Riscos
+- Baixo: alteração restrita a um componente de UI + reuso de server fn já existente (`updateQuote`), sem tocar em RLS, schema ou lógica de negócio.
