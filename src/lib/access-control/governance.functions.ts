@@ -195,7 +195,7 @@ export const getGovernanceReport = createServerFn({ method: "GET" })
       supabase
         .from("user_job_roles")
         .select("user_id, role_id")
-        .eq("workspace_id", workspaceId),
+        .eq("owner_id", workspaceId),
     ]);
 
     const members = (membersRes.data ?? []) as Array<{ user_id: string }>;
