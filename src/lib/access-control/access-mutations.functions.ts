@@ -252,7 +252,7 @@ export const upsertFieldRule = createServerFn({ method: "POST" })
       throw new Error("Selecione um cargo ou pacote para aplicar a regra.");
     }
     const payload = {
-      workspace_id: userId,
+      owner_id: userId,
       resource: data.resource,
       field: data.field,
       mode: data.mode,
