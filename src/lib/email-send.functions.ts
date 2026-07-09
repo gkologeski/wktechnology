@@ -164,8 +164,18 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       body_text: tracked.text,
       snippet,
       sent_at: nowIso,
+      has_attachments: attachmentMeta.length > 0,
+      attachments: attachmentMeta.length ? attachmentMeta : [],
     });
     if (mErr) throw new Error(mErr.message);
+
+    // Best-effort cleanup of temporary uploads (files are safely stored in the sent message metadata)
+    if (attachmentMeta.length) {
+      await supabaseAdmin.storage
+        .from("email-attachments")
+        .remove(attachmentMeta.map((a) => a.path))
+        .catch((e) => console.error("[sendGmailEmail] attachment cleanup failed", e));
+    }
 
     // Bump message_count
     const { count } = await supabaseAdmin
