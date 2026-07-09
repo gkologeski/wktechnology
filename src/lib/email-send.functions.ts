@@ -16,6 +16,13 @@ const emailListSchema = z
   .transform((v) => (Array.isArray(v) ? v : v.split(/[,;]\s*/).filter(Boolean)))
   .pipe(z.array(z.string().email()).max(50));
 
+const attachmentSchema = z.object({
+  path: z.string().min(1).max(500),
+  filename: z.string().min(1).max(255),
+  content_type: z.string().min(1).max(255),
+  size: z.number().int().nonnegative().max(25 * 1024 * 1024),
+});
+
 const inputSchema = z.object({
   account_id: z.string().uuid().optional(),
   to: emailListSchema,
@@ -28,6 +35,7 @@ const inputSchema = z.object({
   lead_id: z.string().uuid().optional(),
   deal_id: z.string().uuid().optional(),
   company_id: z.string().uuid().optional(),
+  attachments: z.array(attachmentSchema).max(10).optional(),
 });
 
 export const sendGmailEmail = createServerFn({ method: "POST" })
