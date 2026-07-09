@@ -114,7 +114,7 @@ export const upsertJobRole = createServerFn({ method: "POST" })
       const { data: row, error } = await supabase
         .from("job_roles")
         .insert({
-          workspace_id: userId,
+          owner_id: userId,
           name: data.name,
           description: data.description ?? null,
           color: data.color ?? null,
