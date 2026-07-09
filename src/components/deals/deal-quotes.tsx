@@ -301,10 +301,12 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                       >
                         Detalhes
                       </DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => copyLink(q.public_token)}>
-                        Copiar link
-                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
+                      {status === "draft" && (
+                        <DropdownMenuItem onSelect={() => openEditDialog(q)}>
+                          Editar
+                        </DropdownMenuItem>
+                      )}
                       {status === "draft" && (
                         <DropdownMenuItem onSelect={() => markSent(q.id)}>
                           Marcar como enviada
