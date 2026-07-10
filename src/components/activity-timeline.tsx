@@ -2120,7 +2120,7 @@ export function ActivityTimeline({
                   })()}
 
 
-                  {a.type === "email" && (a.email_direction || a.email_status) && (
+                  {a.type === "email" && !emailMeta.has(a.id) && (a.email_direction || a.email_status) && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                       {a.email_direction && (
                         <Badge variant="outline" className="text-[10px] capitalize">
