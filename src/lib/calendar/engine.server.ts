@@ -100,17 +100,20 @@ async function matchContactForAttendees(
   accountEmail?: string | null,
 ): Promise<string | null> {
   if (!attendees || attendees.length === 0) return null;
-  // Determine internal domain(s) from self/organizer attendees — these are
-  // colleagues and must NEVER be picked as the "external client" contact.
+  // Determine internal domain(s) only from the connected account and self=true
+  // attendees. NOTE: we intentionally do NOT treat `organizer` as internal —
+  // when the client (external) creates the invite, the organizer is external
+  // and must remain eligible as the matched contact.
   const internalDomains = new Set<string>();
   const accountDomain = accountEmail?.split("@")[1]?.toLowerCase();
   if (accountDomain) internalDomains.add(accountDomain);
   for (const a of attendees) {
-    if ((a.self || a.organizer) && a.email) {
+    if (a.self && a.email) {
       const d = a.email.split("@")[1]?.toLowerCase();
       if (d) internalDomains.add(d);
     }
   }
+
   const emails = attendees
     .filter((a) => a.email)
     .map((a) => a.email.toLowerCase())
