@@ -1,62 +1,74 @@
-## Causas
+## Diagnóstico
 
-1. **Itens não aparecem** — o `<tr>` do template `Prosposta 001` não está dentro de `{{#each items}}…{{/each}}`, então os campos por linha (`{{name}}`, `{{quantity}}`, `{{unit_price}}`, `{{discount_pct}}`, `{{tax_rate}}`, `{{line_total}}`) são resolvidos no contexto raiz — onde não existem — e a linha sai vazia (só sobra `%` fixo em Desc./Imp., idêntico ao print).
-2. **Acentuação quebrada** — o HTML salvo em `quote_templates.html` contém sequências mojibake (`CotaÃ§Ã£o`, `VÃ¡lida`, `DestinatÃ¡rio`, `ReferÃªncia`, `ResponsÃ¡vel`, `NÂº`, `DescriÃ§Ã£o`, `PreÃ§o`, `TÃ©cnica`, etc.) — bytes UTF‑8 interpretados como Latin‑1 e regravados. É por isso que o print mostra "COTAÃŠCO Nº", "VÁLIDA ATÉ", "REFERÊNCIA" bagunçados. O `<meta charset="utf-8">` está correto; o dano está no conteúdo.
+A timeline do negócio busca reuniões via RPC `get_entity_timeline`, que espelha `calendar_events` em Deals/Companies pelo campo `calendar_events.related_contact_id`. Se esse campo estiver NULL, o evento não aparece em nenhum deal — mesmo que o e-mail do contato esteja em `attendees`.
 
-Nenhum dos dois problemas está no código do renderer — os dois são no HTML do template `01a2c7aa-f235-4cd9-8b86-f3e7d380ebf8` ("Prosposta 001").
+### Caso concreto (leonardo.castro@ipstrack.com.br)
 
-## Correção (única migration `UPDATE` em `quote_templates`)
+- Eventos: `WK Technology <> DIP TRACK...` (10/07 17:00) e `REUNIÃO TÉCNICA / ... DIP TRACK...` (13/07 22:00).
+- `attendees` contém `leonardo.castro@ipstrack.com.br` corretamente.
+- Contato `f83dcf0d... / Leonardo Castro` existe com esse e-mail e o mesmo `owner_id` da conta do Google.
+- Ambos os eventos estão com **`related_contact_id = NULL`**.
 
-1. Envolver a linha da tabela de itens com `{{#each items}}…{{/each}}`:
+**Causa raiz:** ordem temporal.
+- Eventos sincronizados em `2026-07-10 17:15` e `17:30`.
+- Contato criado em `2026-07-10 17:37:58` (depois).
 
-   ```text
-   <tbody>
-     {{#each items}}
-     <tr>
-       <td>
-         <div class="it-name">{{name}}</div>
-         <div class="it-desc">{{description}}</div>
-       </td>
-       <td class="r">{{quantity}}</td>
-       <td class="r">{{unit_price}}</td>
-       <td class="r">{{discount_pct}}%</td>
-       <td class="r">{{tax_rate}}%</td>
-       <td class="r"><strong>{{line_total}}</strong></td>
-     </tr>
-     {{/each}}
-   </tbody>
-   ```
+No momento do sync, o `matchContactForAttendees` rodou, não achou contato com aquele e-mail e gravou `related_contact_id = NULL`. A partir daí:
+- O sync do Google é incremental (`syncToken`) → eventos que não mudam no Google **não voltam** nas próximas execuções.
+- "Sincronizar agora" → 0 atualizações → o vínculo com contato **nunca é recalculado**.
+- "Sincronizar gravações" só busca vídeos no Drive; não mexe em `related_contact_id`.
 
-   Removo `<div class="it-pill">{{category}}</div>` porque `category` não existe no contexto de itens do renderer (`items` traz apenas `name/description/quantity/unit_price/discount_pct/tax_rate/line_total`) — hoje já sai vazio. Se quiser um selo, me diga qual campo (SKU, unidade, etc.).
+Resultado: qualquer contato criado **depois** do evento (fluxo comum: cria a reunião, depois cadastra o lead/contato) fica invisível na timeline do deal, para sempre.
 
-2. Recodificar todos os textos afetados para UTF‑8 correto, incluindo (não limitado a):
+### Bug secundário (já reportado antes)
 
-   | Antes (mojibake) | Depois |
-   |---|---|
-   | `CotaÃ§Ã£o NÂº` | `Cotação Nº` |
-   | `VÃ¡lida atÃ©` | `Válida até` |
-   | `DestinatÃ¡rio` | `Destinatário` |
-   | `ResponsÃ¡vel` | `Responsável` |
-   | `ReferÃªncia` | `Referência` |
-   | `NÂº` | `Nº` |
-   | `Item / DescriÃ§Ã£o` | `Item / Descrição` |
-   | `PreÃ§o Unit.` | `Preço Unit.` |
-   | `ObservaÃ§Ãµes` | `Observações` |
-   | `Termos e CondiÃ§Ãµes` | `Termos e Condições` |
-   | `AssinaÃ§Ã£o Digital` (se houver) | `Assinatura Digital` |
+Em `src/lib/calendar/engine.server.ts`, `matchContactForAttendees` trata `organizer=true` como "interno", o que exclui o próprio cliente quando ele foi quem criou o convite. Deve ser mantida a correção no mesmo edit.
 
-   Aplico via `convert_from(convert_to(html,'LATIN1'),'UTF8')` restrito a esse `id`, o que reverte o mojibake de forma determinística e preserva CSS/JS/marcações válidas. Depois faço `UPDATE` do trecho da tabela para inserir o `{{#each items}}`.
+---
 
-3. Nenhum outro modelo é tocado. Nenhum código-fonte é alterado. O renderer (`src/lib/quote-template-renderer.ts`) continua igual.
+## Correção proposta
 
-## Validação
+### 1. `src/lib/calendar/engine.server.ts` — corrigir regra de "interno"
 
-- Reabrir `https://crm.wktechnology.com.br/quote/5a09e4174e33e1e38856abb5da083ef4cd604604525ca335` e conferir:
-  - a linha da tabela lista o item real (`Consultoria Técnica … Vibe Code / Lovable`);
-  - cabeçalhos e cards mostram acentuação correta ("Cotação Nº", "Válida até", "Destinatário", "Responsável", "Referência", "Item / Descrição", "Preço Unit.", "Observações", "Termos e Condições");
-  - totais permanecem iguais (Subtotal / Descontos / Impostos / Total Geral).
+Trocar o loop de detecção de domínios internos para considerar apenas `self=true` (mais `accountDomain` como fallback). `organizer` deixa de implicar interno.
 
-## Fora de escopo
+### 2. Reconciliação automática quando um contato é criado
 
-- Não altero outros templates. Se houver outros com o mesmo defeito, posso auditar em seguida.
-- Não mexo em RLS, no wizard, no editor visual (`quote-template-blocks.ts`) nem no renderer.
+Nova serverFn `reconcileCalendarContactMatches` em `src/lib/calendar/engine.server.ts` (e wrapper em `.functions.ts`), que recebe `contactId` e:
+- Lê `owner_id`, `workspace_id` e `email` do contato.
+- Faz `UPDATE calendar_events SET related_contact_id = <id> WHERE workspace_id=? AND owner_id=? AND related_contact_id IS NULL AND attendees::text ILIKE '%<email>%'` (com re-validação em memória do e-mail e da regra de "interno" para evitar falso positivo).
+
+Gatilho: chamar essa função ao **criar** e ao **atualizar e-mail** de contato, no fluxo existente de contatos (hook onSuccess da mutation), de forma "fire and forget" para não bloquear a UX. Se houver criação de contato via CSV/importador, chamar em batch ao final da importação.
+
+### 3. Rematch no "Sincronizar agora"
+
+Após o loop de sync incremental por conta, rodar uma passada de reconciliação: selecionar `calendar_events` daquela `calendar_account_id` com `related_contact_id IS NULL` e `attendees` não-vazio dos últimos 90 dias (janela suficiente para reuniões atuais e futuras), reaplicar `matchContactForAttendees` e atualizar quando houver match. Isso conserta:
+- Eventos históricos afetados pelo bug do organizer.
+- Eventos cujos contatos foram criados depois.
+- Reexecuções após correções em contatos.
+
+Somar essas linhas ao contador retornado ("N atualizações"), para que o botão pare de reportar 0 quando efetivamente atualizar vínculos.
+
+### 4. Backfill único do estado atual
+
+Rota temporária protegida `src/routes/api/public/hooks/backfill-calendar-contacts.ts` (padrão `reschedule-cron.ts`, autenticada por `CRON_SECRET`), executa a mesma reconciliação da etapa 3 para **todos** os eventos do workspace sem `related_contact_id`. Rodar via `curl`, medir e **remover a rota + limpar `routeTree.gen.ts`** ao final.
+
+### 5. Validação
+
+- Confirmar que os dois eventos DIP TRACK passaram a ter `related_contact_id = f83dcf0d...`.
+- Abrir o deal correspondente e ver as reuniões na timeline.
+- Executar `typecheck`.
+
+---
+
+## Fora do escopo
+
+- Não vou alterar `get_entity_timeline` — está correta; o problema é a origem de dados.
+- Não vou mexer na UI da timeline nem nos botões.
+- Não vou introduzir migration de schema (a solução usa colunas existentes).
+
+## Riscos
+
+- Baixo. O `UPDATE` só preenche onde está NULL e usa o mesmo matcher (owner+workspace+e-mail exato, exclui domínios internos).
+- A passada extra no "Sincronizar agora" tem custo O(eventos_sem_contato_90d) por conta, aceitável para o volume atual.
+- Se um contato mudar de e-mail, a reconciliação por criação/atualização cobre; eventos vinculados anteriormente ao e-mail antigo continuam apontando para o contato — comportamento desejado.
