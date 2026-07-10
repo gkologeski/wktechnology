@@ -651,6 +651,18 @@ export async function syncCalendarAccount(
     const push = pull.partial
       ? { created: 0, updated: 0 }
       : await pushPendingMeetings(account as CalendarAccountRow);
+    // Reconcilia eventos antigos que ficaram sem contato vinculado (evento
+    // sincronizado antes do contato existir). Roda só quando a paginação
+    // terminou para não estourar subrequests do Worker.
+    if (!pull.partial) {
+      try {
+        await reconcileCalendarContactMatches(account.owner_id, { accountId: account.id });
+      } catch (e) {
+        // reconciliação é best-effort; não deve falhar o sync
+        console.warn("reconcileCalendarContactMatches failed", e);
+      }
+    }
+
     return {
       imported: pull.imported,
       deleted: pull.deleted,
