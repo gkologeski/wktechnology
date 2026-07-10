@@ -70,7 +70,7 @@ function lineTotal(li: {
   return sub * (1 + n(li.tax_rate) / 100);
 }
 
-const lineItemsQueryKey = (dealId: string) => ["deal_line_items", dealId] as const;
+const lineItemsQueryKey = (dealId: string) => ["deal_line_items", dealId, "full"] as const;
 
 function useLineItems(dealId: string) {
   return useQuery({
