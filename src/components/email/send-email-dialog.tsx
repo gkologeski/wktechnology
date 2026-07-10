@@ -38,6 +38,8 @@ import { useTokenInserter } from "@/lib/token-insert";
 
 type Props = {
   defaultTo?: string;
+  defaultSubject?: string;
+  defaultBody?: string;
   contactId?: string;
   leadId?: string;
   dealId?: string;
@@ -49,6 +51,7 @@ type Props = {
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
 };
+
 
 export function SendEmailDialog({
   defaultTo = "",
