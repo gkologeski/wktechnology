@@ -100,17 +100,20 @@ async function matchContactForAttendees(
   accountEmail?: string | null,
 ): Promise<string | null> {
   if (!attendees || attendees.length === 0) return null;
-  // Determine internal domain(s) from self/organizer attendees — these are
-  // colleagues and must NEVER be picked as the "external client" contact.
+  // Determine internal domain(s) only from the connected account and self=true
+  // attendees. NOTE: we intentionally do NOT treat `organizer` as internal —
+  // when the client (external) creates the invite, the organizer is external
+  // and must remain eligible as the matched contact.
   const internalDomains = new Set<string>();
   const accountDomain = accountEmail?.split("@")[1]?.toLowerCase();
   if (accountDomain) internalDomains.add(accountDomain);
   for (const a of attendees) {
-    if ((a.self || a.organizer) && a.email) {
+    if (a.self && a.email) {
       const d = a.email.split("@")[1]?.toLowerCase();
       if (d) internalDomains.add(d);
     }
   }
+
   const emails = attendees
     .filter((a) => a.email)
     .map((a) => a.email.toLowerCase())
@@ -138,6 +141,68 @@ async function matchContactForAttendees(
   });
   return ranked[0]?.id ?? null;
 }
+
+/**
+ * Re-run the contact matcher against calendar_events with related_contact_id NULL
+ * for the given owner, covering events in a recent window. This closes the gap
+ * where an event was synced BEFORE the corresponding contact was created — since
+ * Google's incremental sync (syncToken) won't resend unchanged events, those
+ * rows would otherwise stay unlinked forever.
+ */
+export async function reconcileCalendarContactMatches(
+  ownerId: string,
+  opts: { accountId?: string; sinceDays?: number; untilDays?: number } = {},
+): Promise<{ scanned: number; linked: number }> {
+  const sinceDays = opts.sinceDays ?? 90;
+  const untilDays = opts.untilDays ?? 90;
+  const now = Date.now();
+  const since = new Date(now - sinceDays * 86400_000).toISOString();
+  const until = new Date(now + untilDays * 86400_000).toISOString();
+
+  let q = supabaseAdmin
+    .from("calendar_events")
+    .select("id, calendar_account_id, attendees, start_at")
+    .eq("owner_id", ownerId)
+    .is("related_contact_id", null)
+    .gte("start_at", since)
+    .lte("start_at", until)
+    .limit(500);
+  if (opts.accountId) q = q.eq("calendar_account_id", opts.accountId);
+  const { data: rows, error } = await q;
+  if (error || !rows) return { scanned: 0, linked: 0 };
+
+  // Cache account email per calendar_account_id
+  const accountEmailCache = new Map<string, string | null>();
+  const getAccountEmail = async (accId: string | null): Promise<string | null> => {
+    if (!accId) return null;
+    if (accountEmailCache.has(accId)) return accountEmailCache.get(accId) ?? null;
+    const { data } = await supabaseAdmin
+      .from("calendar_accounts")
+      .select("email")
+      .eq("id", accId)
+      .maybeSingle();
+    const em = (data?.email as string | null) ?? null;
+    accountEmailCache.set(accId, em);
+    return em;
+  };
+
+  let linked = 0;
+  for (const r of rows) {
+    const attendees = (r.attendees ?? []) as GCalEvent["attendees"];
+    const accEmail = await getAccountEmail(r.calendar_account_id as string | null);
+    const contactId = await matchContactForAttendees(ownerId, attendees, accEmail);
+    if (!contactId) continue;
+    const { error: updErr } = await supabaseAdmin
+      .from("calendar_events")
+      .update({ related_contact_id: contactId })
+      .eq("id", r.id);
+    if (!updErr) linked++;
+  }
+  return { scanned: rows.length, linked };
+}
+
+
+
 
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 
@@ -586,6 +651,18 @@ export async function syncCalendarAccount(
     const push = pull.partial
       ? { created: 0, updated: 0 }
       : await pushPendingMeetings(account as CalendarAccountRow);
+    // Reconcilia eventos antigos que ficaram sem contato vinculado (evento
+    // sincronizado antes do contato existir). Roda só quando a paginação
+    // terminou para não estourar subrequests do Worker.
+    if (!pull.partial) {
+      try {
+        await reconcileCalendarContactMatches(account.owner_id, { accountId: account.id });
+      } catch (e) {
+        // reconciliação é best-effort; não deve falhar o sync
+        console.warn("reconcileCalendarContactMatches failed", e);
+      }
+    }
+
     return {
       imported: pull.imported,
       deleted: pull.deleted,
