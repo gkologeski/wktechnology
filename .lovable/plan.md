@@ -1,47 +1,51 @@
 ## Objetivo
-Remover o card agregado "E-mails enviados" do topo e, na própria timeline, fazer cada e-mail (inbound e outbound) aparecer como um item com corpo formatado, anexos, badges de aberturas/cliques e última abertura (mesmos controles do card atual).
+Deixar o e-mail na timeline com aparência próxima à do Gmail: aberto por padrão, cabeçalho estruturado, corpo formatado fielmente (HTML rico do provedor, sem distorção do `.prose`), anexos como cards de download e métricas discretas — igual ou melhor que o print de referência.
 
 ## Diagnóstico
-- `src/components/activity-timeline.tsx` renderiza `<EmailEngagementCard />` no topo (linha 957) — precisa sair.
-- Cada e-mail já vira uma `activity` (`type = "email"`) na timeline, mas hoje:
-  - o corpo mostrado é o snippet salvo em `activity.body`, sem anexos nem métricas;
-  - o side-load em `load()` (linhas 389-417) puxa apenas `body_html/body_text`, ignorando `attachments`, contadores e eventos.
-- `email_messages` já persiste `direction`, `body_html`, `body_text`, `attachments`, `has_attachments`, `open_count`, `click_count`, `first_opened_at`, `sent_at`, `received_at`.
-- `email_tracking_events` guarda `last_opened_at` / `last_clicked_at` / `last_clicked_url`.
-- Atividades inbound: verificar se o sync do inbox cria `activities` para e-mails recebidos. Se não criar, os inbound não aparecem hoje na timeline — precisará ser tratado (ver item 4).
-- `email-send.functions.ts` remove os anexos do bucket após envio, impedindo download posterior a partir da timeline.
+Em `src/components/activity-timeline.tsx` (bloco `type === "email"`, ~L1774-1879):
+- O corpo fica escondido atrás de "Ver e-mail" e, quando aberto, renderiza via `<HtmlContent />` (usa classes `prose prose-sm`) — isso reformata cabeçalhos, listas, tabelas e tipografia do e-mail original, o que faz textos plain com `\n` colapsarem em um bloco único e HTML de marketing perder layout.
+- Quando o outbound veio só como `body_text` (composer sem HTML), a timeline não converte quebras de linha para `<br>`, então aparece como texto cru contínuo.
+- Cabeçalho atual é apenas "Para:/De:" em texto pequeno, sem avatar/nome, sem toggle de cc/bcc, sem hora relativa.
+- Anexos são chips pequenos em linha; queremos cards mais legíveis com ícone por extensão, nome e tamanho.
+- Métricas usam `Badge` "default" grande (visível demais); precisam virar chips discretos.
 
-## Mudanças
+## Mudanças (apenas UI/apresentação)
 
-### 1. `src/components/activity-timeline.tsx`
-- Remover o bloco `{relatedKey !== "related_ticket_id" && <EmailEngagementCard ... />}` (linhas 956-958) e o import associado.
-- Estender o side-load de `email_messages` em `load()`:
-  - `select("id, direction, from_email, from_name, to_emails, cc_emails, body_html, body_text, sent_at, received_at, open_count, click_count, first_opened_at, has_attachments, attachments")`;
-  - buscar em paralelo `email_tracking_events` (`message_id, event_type, url, occurred_at`) para os mesmos IDs, para derivar `last_opened_at`, `last_clicked_at`, `last_clicked_url`;
-  - anexar tudo em uma propriedade privada de cada activity de e-mail (`_email`) usada apenas no render.
-- No render do item de atividade (`type === "email"`, bloco perto da linha 1667):
-  - substituir o `HtmlContent` do snippet pelo `HtmlContent` do `body_html || body_text` já hidratado;
-  - abaixo do corpo, adicionar bloco de anexos (chip com Paperclip + nome + tamanho); clique gera signed URL via `supabase.storage.from("email-attachments").createSignedUrl(path, 3600)` e abre em nova aba;
-  - adicionar linha de métricas somente para outbound: badges "N aberturas", "N cliques", texto "Última abertura: …", "Último clique: … · URL".
-- Manter a chip de direção existente ("Enviado" / "Recebido"). Adaptar o cabeçalho para exibir `De:`/`Para:` conforme direção usando `_email.from_email`/`_email.to_emails`.
+### `src/components/activity-timeline.tsx` — reescrever o bloco `type === "email"`
 
-### 2. `src/lib/email-engagement.functions.ts`
-- Manter `getEmailEngagementReport` (Analytics ainda usa).
-- Marcar `listEntityEmailEngagement` como deprecated internamente ou remover se não houver mais consumidores. Verificar imports antes de excluir; se só o card usar, remover a função junto com o card.
+1. **Aberto por padrão.** Trocar o modelo de "clicar em Ver e-mail" por uma pré-visualização sempre visível. Manter estado `expandedEmails` só como flag "ver conteúdo completo" quando o corpo passar de ~420 px de altura (colapsa com máscara/gradient e botão "Ver mensagem completa"). Corpos curtos aparecem inteiros sem toggle.
 
-### 3. `src/components/email/email-engagement-card.tsx`
-- Excluir o arquivo (sem outros consumidores além da timeline).
+2. **Cabeçalho estilo Gmail:**
+   - Avatar circular (Avatar do shadcn) com iniciais de `from_name`/`from_email` (inbound) ou do owner (outbound). Cor de fundo derivada por hash simples do email para consistência.
+   - Linha 1: `from_name` em negrito + `<email>` em muted; à direita, hora relativa (`formatDateTime` já usado). Ícone `Paperclip` pequeno ao lado da hora se houver anexos.
+   - Linha 2 colapsada: "para {primeiro destinatário} +N" com chevron; ao clicar, expande painel com `De`, `Para` (lista completa) e `Cc` quando existir. Mesmo padrão do Gmail.
 
-### 4. Inbound na timeline
-- Verificar (durante implementação) se o sync de inbox cria `activities` para e-mails inbound relacionadas à entidade. Duas hipóteses:
-  - **Já cria**: nenhum ajuste extra; o novo render passa a exibi-los com corpo/anexos.
-  - **Não cria**: incluir passo adicional no `load()` da timeline para buscar `email_messages` inbound cujos `thread_id` pertençam a threads da entidade (`email_threads` com `contact_id/lead_id/deal_id/company_id` = entidade) e "virtualizá-los" como itens de timeline (mesmo padrão já usado para eventos de calendário via `calendarVirtuals`).
-- Escolher o caminho com base na descoberta; documentar no PR o que foi feito.
+3. **Corpo com fidelidade visual:**
+   - Renderizar o HTML em um `<iframe sandbox="allow-popups allow-popups-to-escape-sandbox" srcDoc={...} referrerPolicy="no-referrer">` com altura auto-ajustada (medir `scrollHeight` no `onLoad` e setar via ref). Isso isola o CSS do e-mail do `.prose` da app e evita reformatação — é o padrão que clientes de e-mail usam.
+   - `srcDoc` = `sanitizeHtml(body_html)` já existente + um `<base target="_blank">` e um wrapper com fonte/tamanho neutros e `word-wrap: break-word; max-width:100%; img{max-width:100%;height:auto}`.
+   - Fallback: se só houver `body_text`, gerar HTML a partir dele escapando entidades e trocando `\n` por `<br>` antes de mandar ao iframe.
+   - Fallback do fallback: se o iframe falhar (SSR / ambiente sem `srcDoc`), cair para `<HtmlContent />` como hoje.
+   - `max-height` inicial 420 px com máscara de fade e botão "Ver mensagem completa" / "Recolher".
 
-### 5. `src/lib/email-send.functions.ts`
-- Remover o bloco `storage.remove(...)` de anexos após envio (linhas 172-178). Anexos permanecem no bucket para download futuro; a RLS já restringe a leitura ao owner.
+4. **Anexos como cards:**
+   - Grid (`flex flex-wrap gap-2`) com cards ~260 px: ícone por extensão (PDF/DOC/XLS/IMG/ZIP/genérico com `FileText`, `FileSpreadsheet`, `Image`, `Archive`, `File`), nome truncado, tamanho em muted, botão `Download` alinhado à direita. Reaproveita `openEmailAttachment` para gerar signed URL.
+   - Se `att.path` ausente, card fica em estado desabilitado com tooltip "Anexo indisponível".
+
+5. **Métricas discretas (só outbound com envio bem-sucedido):**
+   - Rodapé em `text-xs text-muted-foreground` com ícones inline `Eye`/`MousePointerClick`: "14 aberturas · 0 cliques · Última abertura em {data}". Sem `Badge default` chamativo; usar `Badge variant="secondary"` apenas quando > 0.
+   - Ocultar linha inteira quando não houver eventos ainda.
+
+6. **Container:**
+   - Envelope em `rounded-lg border bg-card` com padding uniforme, alinhado ao padrão dos demais itens da timeline (usar tokens semânticos, sem cores fixas).
+   - Remover badges duplicados "Enviado"/"Sent" que aparecem embaixo (bloco `~L1953`): quando `type === "email"` e há `emailMeta`, suprimir os badges genéricos de `email_direction`/`email_status` para evitar redundância vista no print.
 
 ## Fora do escopo
-- Redesign visual amplo dos demais itens da timeline.
-- Mudanças em RLS/schema, no bucket ou no pipeline de sync do Gmail.
-- Analytics de e-mail (relatório agregado permanece).
+- Alterar sync/ingestão de e-mails, RLS, schema, edge functions ou o sanitizer global.
+- Rerender do card do topo (já removido) ou de `email-engagement-card.tsx` (analytics).
+- Composer, envio ou anexos do lado do backend.
+
+## Verificação manual
+1. Abrir um deal com e-mail outbound recente + anexo PDF: cabeçalho mostra avatar/nome/hora, corpo formatado como no Gmail, anexo como card, métricas em rodapé discreto.
+2. Abrir e-mail inbound: header mostra "De: nome <email>", corpo preserva HTML rico (imagens, tabelas), sem métricas.
+3. E-mail com corpo longo: colapsa com fade e botão "Ver mensagem completa"; expandir mostra tudo.
+4. E-mail só com `body_text` (\n): renderiza com quebras de linha corretas.
