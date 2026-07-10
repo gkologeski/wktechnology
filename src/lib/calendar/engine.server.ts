@@ -142,6 +142,65 @@ async function matchContactForAttendees(
   return ranked[0]?.id ?? null;
 }
 
+/**
+ * Re-run the contact matcher against calendar_events with related_contact_id NULL
+ * for the given owner, covering events in a recent window. This closes the gap
+ * where an event was synced BEFORE the corresponding contact was created — since
+ * Google's incremental sync (syncToken) won't resend unchanged events, those
+ * rows would otherwise stay unlinked forever.
+ */
+export async function reconcileCalendarContactMatches(
+  ownerId: string,
+  opts: { accountId?: string; sinceDays?: number; untilDays?: number } = {},
+): Promise<{ scanned: number; linked: number }> {
+  const sinceDays = opts.sinceDays ?? 90;
+  const untilDays = opts.untilDays ?? 90;
+  const now = Date.now();
+  const since = new Date(now - sinceDays * 86400_000).toISOString();
+  const until = new Date(now + untilDays * 86400_000).toISOString();
+
+  let q = supabaseAdmin
+    .from("calendar_events")
+    .select("id, calendar_account_id, attendees, start_at")
+    .eq("owner_id", ownerId)
+    .is("related_contact_id", null)
+    .gte("start_at", since)
+    .lte("start_at", until)
+    .limit(500);
+  if (opts.accountId) q = q.eq("calendar_account_id", opts.accountId);
+  const { data: rows, error } = await q;
+  if (error || !rows) return { scanned: 0, linked: 0 };
+
+  // Cache account email per calendar_account_id
+  const accountEmailCache = new Map<string, string | null>();
+  const getAccountEmail = async (accId: string | null): Promise<string | null> => {
+    if (!accId) return null;
+    if (accountEmailCache.has(accId)) return accountEmailCache.get(accId) ?? null;
+    const { data } = await supabaseAdmin
+      .from("calendar_accounts")
+      .select("email")
+      .eq("id", accId)
+      .maybeSingle();
+    const em = (data?.email as string | null) ?? null;
+    accountEmailCache.set(accId, em);
+    return em;
+  };
+
+  let linked = 0;
+  for (const r of rows) {
+    const attendees = (r.attendees ?? []) as GCalEvent["attendees"];
+    const accEmail = await getAccountEmail(r.calendar_account_id as string | null);
+    const contactId = await matchContactForAttendees(ownerId, attendees, accEmail);
+    if (!contactId) continue;
+    const { error: updErr } = await supabaseAdmin
+      .from("calendar_events")
+      .update({ related_contact_id: contactId })
+      .eq("id", r.id);
+    if (!updErr) linked++;
+  }
+  return { scanned: rows.length, linked };
+
+
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 
 async function driveSearch(
