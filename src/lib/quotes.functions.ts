@@ -159,6 +159,8 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
       quantity: li.quantity,
       unit_price: li.unit_price,
       discount_pct: li.discount_pct,
+      discount_amount: li.discount_amount ?? 0,
+      discount_type: li.discount_type ?? "pct",
       tax_rate: li.tax_rate,
       position: idx,
     }));
