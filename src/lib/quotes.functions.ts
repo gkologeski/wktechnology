@@ -8,22 +8,44 @@ function token() {
   return randomBytes(24).toString("hex");
 }
 
-function recompute(
-  items: Array<{ quantity: number; unit_price: number; discount_pct: number; tax_rate: number }>,
-) {
+type LineForTotals = {
+  quantity: number | string | null;
+  unit_price: number | string | null;
+  discount_pct?: number | string | null;
+  discount_amount?: number | string | null;
+  discount_type?: string | null;
+  tax_rate?: number | string | null;
+};
+
+function nn(v: unknown): number {
+  const x = Number(v);
+  return Number.isFinite(x) ? x : 0;
+}
+
+// Mirror of frontend `lineDiscount` in components/deals/deal-line-items.tsx.
+// When discount_type === 'amount', discount is discount_amount * quantity,
+// capped at the gross line total.
+function lineDiscountServer(li: LineForTotals) {
+  const qty = nn(li.quantity);
+  const price = nn(li.unit_price);
+  const gross = qty * price;
+  if ((li.discount_type ?? "pct") === "amount") {
+    const raw = nn(li.discount_amount) * qty;
+    return Math.min(Math.max(raw, 0), gross);
+  }
+  return gross * (nn(li.discount_pct) / 100);
+}
+
+function recompute(items: LineForTotals[]) {
   let subtotal = 0,
     discount = 0,
     tax = 0,
     total = 0;
   for (const li of items) {
-    const q = Number(li.quantity),
-      p = Number(li.unit_price),
-      d = Number(li.discount_pct),
-      t = Number(li.tax_rate);
-    const sub = q * p;
-    const disc = sub * (d / 100);
+    const sub = nn(li.quantity) * nn(li.unit_price);
+    const disc = lineDiscountServer(li);
     const base = sub - disc;
-    const tx = base * (t / 100);
+    const tx = base * (nn(li.tax_rate) / 100);
     subtotal += sub;
     discount += disc;
     tax += tx;
