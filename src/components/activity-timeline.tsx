@@ -1,9 +1,4 @@
-import { useEffect, useState, useRef, useMemo, type ReactNode } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { RichHtmlEditor as _RHE, HtmlContent as _HC } from "@/components/rich-html-editor";
-import { sanitizeHtml as sanitizeEmailHtml } from "@/components/rich-html-editor";
-import { ChevronDown as ChevronDownIcon, ChevronUp as ChevronUpIcon, FileText as FileTextIcon, FileSpreadsheet as FileSpreadsheetIcon, Image as ImageIcon, Archive as ArchiveIcon, File as FileIcon, Download as DownloadIcon } from "lucide-react";
-void _RHE; void _HC;
+import { useEffect, useState, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
