@@ -170,8 +170,13 @@ export function SendEmailDialog({
   });
 
   useEffect(() => {
-    if (open) setTo(defaultTo);
-  }, [open, defaultTo]);
+    if (open) {
+      setTo(defaultTo);
+      setSubject(defaultSubject);
+      setBody(defaultBody);
+    }
+  }, [open, defaultTo, defaultSubject, defaultBody]);
+
 
   const account = accountsQ.data?.items?.find((a) => a.status === "connected");
 
