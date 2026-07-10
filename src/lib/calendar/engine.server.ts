@@ -297,13 +297,15 @@ async function findDriveRecording(
     }
   }
 
-  // Se sabemos o código do Meet, descartar candidatos cujo nome contenha um
-  // código de Meet diferente — evita bater com gravação de outra reunião.
+  // Se sabemos o código do Meet, EXIGIR que o nome do arquivo contenha esse
+  // código. Arquivos sem código no nome (renomeados, exportados, etc.) são
+  // rejeitados — vincular só pela janela de tempo causa cross-linking entre
+  // reuniões consecutivas. Usuário pode revincular manualmente pela timeline.
   if (conferenceId && candidates.length > 0) {
     const filtered = candidates.filter((f) => {
       const name = (f.name ?? "").toLowerCase();
       const codes = name.match(meetCodeRe);
-      if (!codes || codes.length === 0) return true; // nome sem código: aceitar
+      if (!codes || codes.length === 0) return false; // sem código: rejeitar
       return codes.includes(conferenceId);
     });
     if (filtered.length === 0) {

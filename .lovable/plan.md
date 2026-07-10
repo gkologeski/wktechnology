@@ -1,74 +1,92 @@
 ## Diagnóstico
 
-A timeline do negócio busca reuniões via RPC `get_entity_timeline`, que espelha `calendar_events` em Deals/Companies pelo campo `calendar_events.related_contact_id`. Se esse campo estiver NULL, o evento não aparece em nenhum deal — mesmo que o e-mail do contato esteja em `attendees`.
+Vínculo cruzado de gravações **não é caso isolado**. Varredura no banco:
 
-### Caso concreto (leonardo.castro@ipstrack.com.br)
+```sql
+SELECT recording_drive_file_id, COUNT(*), array_agg(conference_id), array_agg(title)
+FROM calendar_events
+WHERE recording_drive_file_id IS NOT NULL
+GROUP BY recording_drive_file_id
+HAVING COUNT(*) > 1;
+```
 
-- Eventos: `WK Technology <> DIP TRACK...` (10/07 17:00) e `REUNIÃO TÉCNICA / ... DIP TRACK...` (13/07 22:00).
-- `attendees` contém `leonardo.castro@ipstrack.com.br` corretamente.
-- Contato `f83dcf0d... / Leonardo Castro` existe com esse e-mail e o mesmo `owner_id` da conta do Google.
-- Ambos os eventos estão com **`related_contact_id = NULL`**.
+Resultado: **6 arquivos do Drive vinculados a mais de um evento com códigos de Meet diferentes**, cobrindo **20 eventos** ao total:
 
-**Causa raiz:** ordem temporal.
-- Eventos sincronizados em `2026-07-10 17:15` e `17:30`.
-- Contato criado em `2026-07-10 17:37:58` (depois).
+| file_id | eventos | reuniões envolvidas |
+|---|---|---|
+| `1fN5BafPFdakiWAmwkSVh1OEX18K0ifAy` | **8** | Reunião WK/NotExt, IN FORMA, LRB Solution, LRB SOLUTIONS (2x), captação wk studio, Brooks/Solver, MAYA TECH |
+| `1OTxl5DzGsZokYjB5HJiJbwMG5UrvxF0U` | 4 | Adv Integra, Mateus Brooks, Programação Diária, Guilherme/Hugo |
+| `13MT1gAZ1R-pmVhCz3J-fuYvvwueR6MwH` | 2 | Reposicionamento WK, LUMINA/NORA |
+| `19fjP2o7mEKLuPLqPLbP4zunPD7TGCQZT` | 2 | Teste de Reunião, WK & ADV Integra |
+| `1d9LIv-PGkazvgjEq2b2qLVkxcUjKd9ub` | 2 | **GRALHA, NEXID** (caso reportado) |
+| `1vQbwHQQfy2bCtniw0yu68p-vNKUQse3K` | 2 | MOBICONN, Primo |
 
-No momento do sync, o `matchContactForAttendees` rodou, não achou contato com aquele e-mail e gravou `related_contact_id = NULL`. A partir daí:
-- O sync do Google é incremental (`syncToken`) → eventos que não mudam no Google **não voltam** nas próximas execuções.
-- "Sincronizar agora" → 0 atualizações → o vínculo com contato **nunca é recalculado**.
-- "Sincronizar gravações" só busca vídeos no Drive; não mexe em `related_contact_id`.
+**Causa raiz** — `findDriveRecording` em `src/lib/calendar/engine.server.ts` (linhas 300-313): quando o evento tem `conference_id`, o filtro só rejeita candidatos cujo nome contém um código de Meet **diferente**. Arquivos sem código no nome (renomeados, exportados manualmente, ou de eventos sem código detectado) passam livremente, e o candidato mais próximo em tempo vence. Reuniões próximas no mesmo dia acabam competindo pelo mesmo MP4.
 
-Resultado: qualquer contato criado **depois** do evento (fluxo comum: cria a reunião, depois cadastra o lead/contato) fica invisível na timeline do deal, para sempre.
+## Correção
 
-### Bug secundário (já reportado antes)
+### 1. `src/lib/calendar/engine.server.ts` (linhas 300-313) — endurecer o filtro
 
-Em `src/lib/calendar/engine.server.ts`, `matchContactForAttendees` trata `organizer=true` como "interno", o que exclui o próprio cliente quando ele foi quem criou o convite. Deve ser mantida a correção no mesmo edit.
+Quando `conference_id` do evento está definido, exigir que o nome do arquivo contenha exatamente esse código. Sem código no nome → rejeitar. Eventos sem `conference_id` (sem Meet) continuam fora do auto-scan (`syncPastRecordings` já filtra em linha 355).
 
----
+```ts
+if (conferenceId && candidates.length > 0) {
+  const filtered = candidates.filter((f) => {
+    const name = (f.name ?? "").toLowerCase();
+    const codes = name.match(meetCodeRe);
+    if (!codes || codes.length === 0) return false; // sem código: rejeitar
+    return codes.includes(conferenceId);
+  });
+  if (filtered.length === 0) {
+    return { ok: false, reason: `nenhuma gravação com o código do Meet '${conferenceId}' na janela de busca` };
+  }
+  candidates = filtered;
+}
+```
 
-## Correção proposta
+### 2. Limpeza em massa (SQL pontual, sem migration)
 
-### 1. `src/lib/calendar/engine.server.ts` — corrigir regra de "interno"
+Zerar recording em **todos os eventos que compartilham file_id com outro evento**, e resetar `recording_attempts` para permitir reprocessamento pelo tick:
 
-Trocar o loop de detecção de domínios internos para considerar apenas `self=true` (mais `accountDomain` como fallback). `organizer` deixa de implicar interno.
+```sql
+UPDATE calendar_events
+SET recording_drive_file_id = NULL,
+    recording_url            = NULL,
+    recording_mime_type      = NULL,
+    recording_status         = NULL,
+    recording_last_error     = NULL,
+    recording_attempts       = 0,
+    recording_synced_at      = NULL
+WHERE recording_drive_file_id IN (
+  SELECT recording_drive_file_id
+  FROM calendar_events
+  WHERE recording_drive_file_id IS NOT NULL
+  GROUP BY recording_drive_file_id
+  HAVING COUNT(*) > 1
+);
+```
 
-### 2. Reconciliação automática quando um contato é criado
+Isso desvincula os 20 eventos afetados. Em seguida, o `calendar-recordings-tick` (cron) — ou o botão "Sincronizar gravações" — reexecuta `syncPastRecordings` com o filtro corrigido. Só o evento cujo `conference_id` bate com o código no nome do arquivo será revinculado; os demais ficarão como `not_found` (correto — a gravação nunca foi daquela reunião) e o botão manual da timeline permanece disponível para casos legítimos de arquivo renomeado.
 
-Nova serverFn `reconcileCalendarContactMatches` em `src/lib/calendar/engine.server.ts` (e wrapper em `.functions.ts`), que recebe `contactId` e:
-- Lê `owner_id`, `workspace_id` e `email` do contato.
-- Faz `UPDATE calendar_events SET related_contact_id = <id> WHERE workspace_id=? AND owner_id=? AND related_contact_id IS NULL AND attendees::text ILIKE '%<email>%'` (com re-validação em memória do e-mail e da regra de "interno" para evitar falso positivo).
+### 3. Rodar o tick de gravações uma vez após a correção
 
-Gatilho: chamar essa função ao **criar** e ao **atualizar e-mail** de contato, no fluxo existente de contatos (hook onSuccess da mutation), de forma "fire and forget" para não bloquear a UX. Se houver criação de contato via CSV/importador, chamar em batch ao final da importação.
+Após deploy do fix e limpeza dos dados, disparar `POST /api/public/hooks/calendar-recordings-tick` (via `curl` autenticado com `CRON_SECRET`) para reprocessar imediatamente em vez de esperar o próximo ciclo do pg_cron.
 
-### 3. Rematch no "Sincronizar agora"
+### 4. Validação
 
-Após o loop de sync incremental por conta, rodar uma passada de reconciliação: selecionar `calendar_events` daquela `calendar_account_id` com `related_contact_id IS NULL` e `attendees` não-vazio dos últimos 90 dias (janela suficiente para reuniões atuais e futuras), reaplicar `matchContactForAttendees` e atualizar quando houver match. Isso conserta:
-- Eventos históricos afetados pelo bug do organizer.
-- Eventos cujos contatos foram criados depois.
-- Reexecuções após correções em contatos.
-
-Somar essas linhas ao contador retornado ("N atualizações"), para que o botão pare de reportar 0 quando efetivamente atualizar vínculos.
-
-### 4. Backfill único do estado atual
-
-Rota temporária protegida `src/routes/api/public/hooks/backfill-calendar-contacts.ts` (padrão `reschedule-cron.ts`, autenticada por `CRON_SECRET`), executa a mesma reconciliação da etapa 3 para **todos** os eventos do workspace sem `related_contact_id`. Rodar via `curl`, medir e **remover a rota + limpar `routeTree.gen.ts`** ao final.
-
-### 5. Validação
-
-- Confirmar que os dois eventos DIP TRACK passaram a ter `related_contact_id = f83dcf0d...`.
-- Abrir o deal correspondente e ver as reuniões na timeline.
-- Executar `typecheck`.
-
----
+- Rerodar o `SELECT ... GROUP BY recording_drive_file_id HAVING COUNT(*) > 1` — deve retornar 0 linhas.
+- Abrir deal NEXID (`f6c61100-…`) — gravação da Gralha sumiu.
+- Abrir deal da Gralha — gravação continua vinculada ao evento `b02e2726` (o filtro corrigido aceita `uqz-jgsx-qww` no nome do arquivo).
+- Amostrar 2-3 dos outros deals afetados (LUMINA, MOBICONN, LRB) e confirmar que só o evento correto ficou com a gravação.
+- `typecheck`.
 
 ## Fora do escopo
 
-- Não vou alterar `get_entity_timeline` — está correta; o problema é a origem de dados.
-- Não vou mexer na UI da timeline nem nos botões.
-- Não vou introduzir migration de schema (a solução usa colunas existentes).
+- Não vou mexer no matcher de contatos (`matchContactForAttendees`).
+- Não vou mexer no `get_entity_timeline`.
+- Não vou criar migration — é dado, não schema. Fica em `supabase--insert` (UPDATE).
+- Não vou tentar identificar programaticamente "qual evento é o dono correto" quando o nome do arquivo não tem código de Meet: sem sinal confiável, deixar como `not_found` e permitir vínculo manual é mais seguro do que adivinhar.
 
-## Riscos
+## Risco
 
-- Baixo. O `UPDATE` só preenche onde está NULL e usa o mesmo matcher (owner+workspace+e-mail exato, exclui domínios internos).
-- A passada extra no "Sincronizar agora" tem custo O(eventos_sem_contato_90d) por conta, aceitável para o volume atual.
-- Se um contato mudar de e-mail, a reconciliação por criação/atualização cobre; eventos vinculados anteriormente ao e-mail antigo continuam apontando para o contato — comportamento desejado.
+Baixo, mas com efeito colateral consciente: eventos legítimos cuja gravação foi renomeada removendo o meet-code deixam de auto-vincular. Como não temos como distinguir esses do caso ruim, o custo é usar o botão manual da timeline para revincular quando o usuário identificar. Nenhum dado do Drive é apagado — só a referência no `calendar_events`.
