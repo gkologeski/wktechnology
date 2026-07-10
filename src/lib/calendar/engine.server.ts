@@ -199,6 +199,9 @@ export async function reconcileCalendarContactMatches(
     if (!updErr) linked++;
   }
   return { scanned: rows.length, linked };
+}
+
+
 
 
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
