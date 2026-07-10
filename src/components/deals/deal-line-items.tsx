@@ -293,7 +293,6 @@ function LineItemsEditorBody({
 
   const [productPickerKey, setProductPickerKey] = useState(0);
 
-
   const subtotal = items.reduce((s, li) => s + n(li.quantity) * n(li.unit_price), 0);
   const discount = items.reduce((s, li) => s + lineDiscount(li), 0);
   const tax = items.reduce(
@@ -363,7 +362,9 @@ function LineItemsEditorBody({
                   onCommit={(v) => update(li.id, { quantity: v })}
                 />
                 <div className="space-y-1">
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Preço</div>
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Preço
+                  </div>
                   <CurrencyInput
                     currency={currency}
                     value={n(li.unit_price)}
@@ -371,14 +372,36 @@ function LineItemsEditorBody({
                   />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                      Desconto
-                    </span>
-                    <div className="inline-flex rounded-md border overflow-hidden text-[10px]">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Desconto
+                  </div>
+                  <div className="relative">
+                    {(li.discount_type ?? "pct") === "amount" ? (
+                      <CurrencyInput
+                        className="pr-14"
+                        currency={currency}
+                        value={n(li.discount_amount)}
+                        onValueChange={(v) => update(li.id, { discount_amount: v ?? 0 })}
+                      />
+                    ) : (
+                      <Input
+                        type="number"
+                        step="0.01"
+                        className="pr-14"
+                        defaultValue={String(n(li.discount_pct))}
+                        key={`pct-${li.id}-${n(li.discount_pct)}`}
+                        onBlur={(e) => {
+                          const num = Number(e.currentTarget.value);
+                          if (!Number.isNaN(num) && num !== n(li.discount_pct)) {
+                            update(li.id, { discount_pct: num });
+                          }
+                        }}
+                      />
+                    )}
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 inline-flex rounded-md border overflow-hidden text-[10px] h-5">
                       <button
                         type="button"
-                        className={`px-1.5 py-0.5 ${
+                        className={`px-1.5 ${
                           (li.discount_type ?? "pct") === "pct"
                             ? "bg-primary text-primary-foreground"
                             : "bg-transparent text-muted-foreground"
@@ -394,7 +417,7 @@ function LineItemsEditorBody({
                       </button>
                       <button
                         type="button"
-                        className={`px-1.5 py-0.5 border-l ${
+                        className={`px-1.5 border-l ${
                           li.discount_type === "amount"
                             ? "bg-primary text-primary-foreground"
                             : "bg-transparent text-muted-foreground"
@@ -410,26 +433,6 @@ function LineItemsEditorBody({
                       </button>
                     </div>
                   </div>
-                  {(li.discount_type ?? "pct") === "amount" ? (
-                    <CurrencyInput
-                      currency={currency}
-                      value={n(li.discount_amount)}
-                      onValueChange={(v) => update(li.id, { discount_amount: v ?? 0 })}
-                    />
-                  ) : (
-                    <Input
-                      type="number"
-                      step="0.01"
-                      defaultValue={String(n(li.discount_pct))}
-                      key={`pct-${li.id}-${n(li.discount_pct)}`}
-                      onBlur={(e) => {
-                        const num = Number(e.currentTarget.value);
-                        if (!Number.isNaN(num) && num !== n(li.discount_pct)) {
-                          update(li.id, { discount_pct: num });
-                        }
-                      }}
-                    />
-                  )}
                 </div>
                 <LabeledNumber
                   label="Imp %"
@@ -523,7 +526,6 @@ function TextField({
     />
   );
 }
-
 
 function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
