@@ -42,6 +42,12 @@ import {
   User,
   Video,
   Zap,
+  ChevronDown,
+  FileText,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  Archive,
+  File as FileIcon,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
