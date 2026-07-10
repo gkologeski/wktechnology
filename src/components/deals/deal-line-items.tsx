@@ -188,10 +188,12 @@ function LineItemsEditorBody({
   };
 
   function notifyDealsChanged() {
-    // Do NOT invalidate lineItemsQueryKey here — optimistic cache is the source of truth.
-    // Invalidating the local key mid-flight causes the just-appended row to disappear
-    // until the refetch resolves.
+    // Do NOT invalidate the editor's "full" cache here — optimistic cache is
+    // the source of truth during editing. Invalidating mid-flight would race
+    // with sibling queries (e.g. the "count" query used by DealQuotes) and
+    // could wipe unit_price/name/etc. from the editor.
     qc.invalidateQueries({ queryKey: ["deals"] });
+    qc.invalidateQueries({ queryKey: ["deal_line_items", dealId, "count"] });
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("deal:line-items-changed", { detail: { dealId } }));
     }
