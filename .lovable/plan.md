@@ -1,51 +1,62 @@
-## Objetivo
-Deixar o e-mail na timeline com aparência próxima à do Gmail: aberto por padrão, cabeçalho estruturado, corpo formatado fielmente (HTML rico do provedor, sem distorção do `.prose`), anexos como cards de download e métricas discretas — igual ou melhor que o print de referência.
+## Diagnóstico — modal de Itens de Linha
 
-## Diagnóstico
-Em `src/components/activity-timeline.tsx` (bloco `type === "email"`, ~L1774-1879):
-- O corpo fica escondido atrás de "Ver e-mail" e, quando aberto, renderiza via `<HtmlContent />` (usa classes `prose prose-sm`) — isso reformata cabeçalhos, listas, tabelas e tipografia do e-mail original, o que faz textos plain com `\n` colapsarem em um bloco único e HTML de marketing perder layout.
-- Quando o outbound veio só como `body_text` (composer sem HTML), a timeline não converte quebras de linha para `<br>`, então aparece como texto cru contínuo.
-- Cabeçalho atual é apenas "Para:/De:" em texto pequeno, sem avatar/nome, sem toggle de cc/bcc, sem hora relativa.
-- Anexos são chips pequenos em linha; queremos cards mais legíveis com ícone por extensão, nome e tamanho.
-- Métricas usam `Badge` "default" grande (visível demais); precisam virar chips discretos.
+Após auditar `deal-line-items.tsx`, `deal-quotes.tsx` e `quotes.functions.ts`, identifiquei **quatro gaps** que explicam por que os valores continuam zerando/desaparecendo e por que o desconto em R$ não é refletido nas cotações.
 
-## Mudanças (apenas UI/apresentação)
+### Gap 1 (raiz do "zera o modal") — colisão de cache entre dois `useQuery` com a mesma `queryKey` e `select` diferentes
 
-### `src/components/activity-timeline.tsx` — reescrever o bloco `type === "email"`
+Dois componentes usam **exatamente** `queryKey: ["deal_line_items", dealId]`:
 
-1. **Aberto por padrão.** Trocar o modelo de "clicar em Ver e-mail" por uma pré-visualização sempre visível. Manter estado `expandedEmails` só como flag "ver conteúdo completo" quando o corpo passar de ~420 px de altura (colapsa com máscara/gradient e botão "Ver mensagem completa"). Corpos curtos aparecem inteiros sem toggle.
+- `DealLineItems` / `LineItemsEditorBody` → `.select("*")` (todos os campos)
+- `DealQuotes` (`deal-quotes.tsx:140-150`) → `.select("id")` (só id)
 
-2. **Cabeçalho estilo Gmail:**
-   - Avatar circular (Avatar do shadcn) com iniciais de `from_name`/`from_email` (inbound) ou do owner (outbound). Cor de fundo derivada por hash simples do email para consistência.
-   - Linha 1: `from_name` em negrito + `<email>` em muted; à direita, hora relativa (`formatDateTime` já usado). Ícone `Paperclip` pequeno ao lado da hora se houver anexos.
-   - Linha 2 colapsada: "para {primeiro destinatário} +N" com chevron; ao clicar, expande painel com `De`, `Para` (lista completa) e `Cc` quando existir. Mesmo padrão do Gmail.
+Como a chave é a mesma, o React Query compartilha o cache. Sempre que o `DealQuotes` (que fica montado no drawer do negócio) refaz o fetch — por foco na janela, invalidação de `["deals"]`, ou remount do drawer — ele **sobrescreve o cache** com linhas contendo apenas `{id}`, e o editor renderiza tudo como `0`/vazio. Foi por isso que abrir/fechar "resolvia" (o editor tornava a chamar com `select("*")`).
 
-3. **Corpo com fidelidade visual:**
-   - Renderizar o HTML em um `<iframe sandbox="allow-popups allow-popups-to-escape-sandbox" srcDoc={...} referrerPolicy="no-referrer">` com altura auto-ajustada (medir `scrollHeight` no `onLoad` e setar via ref). Isso isola o CSS do e-mail do `.prose` da app e evita reformatação — é o padrão que clientes de e-mail usam.
-   - `srcDoc` = `sanitizeHtml(body_html)` já existente + um `<base target="_blank">` e um wrapper com fonte/tamanho neutros e `word-wrap: break-word; max-width:100%; img{max-width:100%;height:auto}`.
-   - Fallback: se só houver `body_text`, gerar HTML a partir dele escapando entidades e trocando `\n` por `<br>` antes de mandar ao iframe.
-   - Fallback do fallback: se o iframe falhar (SSR / ambiente sem `srcDoc`), cair para `<HtmlContent />` como hoje.
-   - `max-height` inicial 420 px com máscara de fade e botão "Ver mensagem completa" / "Recolher".
+### Gap 2 — server `recompute` ignora `discount_amount` e `discount_type`
 
-4. **Anexos como cards:**
-   - Grid (`flex flex-wrap gap-2`) com cards ~260 px: ícone por extensão (PDF/DOC/XLS/IMG/ZIP/genérico com `FileText`, `FileSpreadsheet`, `Image`, `Archive`, `File`), nome truncado, tamanho em muted, botão `Download` alinhado à direita. Reaproveita `openEmailAttachment` para gerar signed URL.
-   - Se `att.path` ausente, card fica em estado desabilitado com tooltip "Anexo indisponível".
+`quotes.functions.ts:11-34` só usa `discount_pct`. Consequência: cotação gerada a partir de um deal com desconto em R$ tem `discount_total` e `total` errados.
 
-5. **Métricas discretas (só outbound com envio bem-sucedido):**
-   - Rodapé em `text-xs text-muted-foreground` com ícones inline `Eye`/`MousePointerClick`: "14 aberturas · 0 cliques · Última abertura em {data}". Sem `Badge default` chamativo; usar `Badge variant="secondary"` apenas quando > 0.
-   - Ocultar linha inteira quando não houver eventos ainda.
+### Gap 3 — insert em `quote_line_items` perde campos
 
-6. **Container:**
-   - Envelope em `rounded-lg border bg-card` com padding uniforme, alinhado ao padrão dos demais itens da timeline (usar tokens semânticos, sem cores fixas).
-   - Remover badges duplicados "Enviado"/"Sent" que aparecem embaixo (bloco `~L1953`): quando `type === "email"` e há `emailMeta`, suprimir os badges genéricos de `email_direction`/`email_status` para evitar redundância vista no print.
+`quotes.functions.ts:132-142` não copia `discount_amount`, `discount_type` nem `description`. A cotação nasce sem esses dados.
+
+### Gap 4 — `CurrencyInput` do desconto por valor não re-sincroniza com prop
+
+O input de `%` usa `defaultValue` + `key` (recria ao mudar), mas o `CurrencyInput` de `discount_amount` é controlado por `value`. Ele já tem `useEffect` interno, então tende a atualizar; porém após o Gap 1 zerar o cache, o valor mostrado fica "0,00" mesmo com o usuário tendo digitado — reforça a percepção do bug.
+
+---
+
+## Correções propostas
+
+### 1. Isolar o cache do editor (frontend, `deal-line-items.tsx` + `deal-quotes.tsx`)
+- Alterar a `queryKey` do editor para `["deal_line_items", dealId, "full"]` e do `DealQuotes` para `["deal_line_items", dealId, "count"]` (ou trocar o count por `select("id", { count: "exact", head: true })`).
+- Ajustar `notifyDealsChanged` para invalidar ambas as variantes com um prefixo (`["deal_line_items", dealId]`) via `predicate`, mantendo o cache otimista intacto durante o mutation (só invalida em `onSettled` do último update).
+
+### 2. Server-side de cotações (`src/lib/quotes.functions.ts`)
+- `recompute` passa a aceitar `discount_amount` e `discount_type` e replicar a fórmula do frontend (`lineDiscount`): quando `type === 'amount'`, usa `min(discount_amount * qty, sub)`.
+- Payload de `quote_line_items` inclui `description`, `discount_amount`, `discount_type`.
+- Idem no `regenerateQuoteFromDeal`/`updateQuote` se replicarem lógica (verificar no momento da edição).
+
+### 3. Robustez do editor
+- `TextField` e `LabeledNumber`: em `onBlur`, se o valor não mudou não chamar `update` (já feito) — reforçar comparando com string normalizada para evitar disparos por reformatação numérica.
+- Após `addFromProduct`, garantir que o produto selecionado propague `description` e `tax_rate` corretos (já ok) e limpar apenas o combobox, mantendo foco no novo item.
+
+### 4. Consistência semântica do desconto em R$
+- Confirmar contrato: hoje `discount_amount * quantity`. Vou manter (retrocompatível) mas deixar comentário no server e no editor documentando a fórmula, para evitar divergência futura.
+
+---
+
+## Arquivos a alterar
+- `src/components/deals/deal-line-items.tsx` — nova queryKey, ajuste do `notifyDealsChanged`.
+- `src/components/deals/deal-quotes.tsx` — queryKey do contador separada.
+- `src/lib/quotes.functions.ts` — `recompute` completa + payload completo de `quote_line_items`.
 
 ## Fora do escopo
-- Alterar sync/ingestão de e-mails, RLS, schema, edge functions ou o sanitizer global.
-- Rerender do card do topo (já removido) ou de `email-engagement-card.tsx` (analytics).
-- Composer, envio ou anexos do lado do backend.
+- Migração de banco (colunas já existem).
+- Redesign visual do modal.
+- Alterações em RLS.
 
-## Verificação manual
-1. Abrir um deal com e-mail outbound recente + anexo PDF: cabeçalho mostra avatar/nome/hora, corpo formatado como no Gmail, anexo como card, métricas em rodapé discreto.
-2. Abrir e-mail inbound: header mostra "De: nome <email>", corpo preserva HTML rico (imagens, tabelas), sem métricas.
-3. E-mail com corpo longo: colapsa com fade e botão "Ver mensagem completa"; expandir mostra tudo.
-4. E-mail só com `body_text` (\n): renderiza com quebras de linha corretas.
+## Como validar
+1. Abrir um deal → itens de linha → adicionar produto do catálogo: nome, preço, imposto e desconto do produto aparecem sem reabrir o modal.
+2. Alterar desconto em % e depois trocar para R$: valor persiste, total recalcula.
+3. Fechar e reabrir o modal: mesmos valores.
+4. Gerar cotação a partir do deal: totais e linhas espelham exatamente o editor (inclusive descontos em R$ e descrição).
