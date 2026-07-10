@@ -1,54 +1,62 @@
-# Wizard de Cotação
+## Causas
 
-Substituir o `Dialog` atual de "Nova cotação" (`src/components/deals/deal-quotes.tsx`) por um wizard em várias telas, que salva progressivamente a cada avanço e, na etapa final, oferece três ações: **Salvar como rascunho**, **Publicar** ou **Publicar e enviar**.
+1. **Itens não aparecem** — o `<tr>` do template `Prosposta 001` não está dentro de `{{#each items}}…{{/each}}`, então os campos por linha (`{{name}}`, `{{quantity}}`, `{{unit_price}}`, `{{discount_pct}}`, `{{tax_rate}}`, `{{line_total}}`) são resolvidos no contexto raiz — onde não existem — e a linha sai vazia (só sobra `%` fixo em Desc./Imp., idêntico ao print).
+2. **Acentuação quebrada** — o HTML salvo em `quote_templates.html` contém sequências mojibake (`CotaÃ§Ã£o`, `VÃ¡lida`, `DestinatÃ¡rio`, `ReferÃªncia`, `ResponsÃ¡vel`, `NÂº`, `DescriÃ§Ã£o`, `PreÃ§o`, `TÃ©cnica`, etc.) — bytes UTF‑8 interpretados como Latin‑1 e regravados. É por isso que o print mostra "COTAÃŠCO Nº", "VÁLIDA ATÉ", "REFERÊNCIA" bagunçados. O `<meta charset="utf-8">` está correto; o dano está no conteúdo.
 
-## Fluxo (etapas)
+Nenhum dos dois problemas está no código do renderer — os dois são no HTML do template `01a2c7aa-f235-4cd9-8b86-f3e7d380ebf8` ("Prosposta 001").
 
-1. **Modelo & Identificação** — modelo de cotação, título, validade.
-2. **Itens de linha** — reaproveitar o editor existente (`DealLineItems`) embutido como passo, exibindo subtotal/impostos/desconto/total calculados.
-3. **Observações & Termos** — `RichHtmlEditor` para observações e termos e condições.
-4. **Revisão & Publicação** — resumo (cliente/empresa, validade, totais, link público após publicação) e três ações finais.
+## Correção (única migration `UPDATE` em `quote_templates`)
 
-Barra de progresso no topo (steps clicáveis apenas para etapas já visitadas). Botões `Voltar` / `Avançar` no rodapé. `Cancelar` fecha mantendo o que já foi salvo.
+1. Envolver a linha da tabela de itens com `{{#each items}}…{{/each}}`:
 
-## Autosave
+   ```text
+   <tbody>
+     {{#each items}}
+     <tr>
+       <td>
+         <div class="it-name">{{name}}</div>
+         <div class="it-desc">{{description}}</div>
+       </td>
+       <td class="r">{{quantity}}</td>
+       <td class="r">{{unit_price}}</td>
+       <td class="r">{{discount_pct}}%</td>
+       <td class="r">{{tax_rate}}%</td>
+       <td class="r"><strong>{{line_total}}</strong></td>
+     </tr>
+     {{/each}}
+   </tbody>
+   ```
 
-- Ao clicar **Avançar** na etapa 1, se ainda não existe cotação para a sessão do wizard, cria via `createQuoteFromDeal` (status `draft`) e guarda `quoteId` no estado local. As etapas seguintes usam `updateQuote` (patch parcial) ao avançar.
-- Etapa 2 (itens) já persiste imediatamente através das mutations existentes de `deal_line_items`; ao avançar, chama uma nova função `recomputeQuoteTotals({ id })` para sincronizar totais do quote com os itens atuais do deal.
-- Etapa 3 salva `notes`/`terms` via `updateQuote` ao avançar.
-- Debounce/indicador "Salvando…" ao lado do título do wizard; falha exibe toast e mantém o usuário na etapa.
+   Removo `<div class="it-pill">{{category}}</div>` porque `category` não existe no contexto de itens do renderer (`items` traz apenas `name/description/quantity/unit_price/discount_pct/tax_rate/line_total`) — hoje já sai vazio. Se quiser um selo, me diga qual campo (SKU, unidade, etc.).
 
-## Ações finais (etapa 4)
+2. Recodificar todos os textos afetados para UTF‑8 correto, incluindo (não limitado a):
 
-- **Salvar como rascunho**: fecha o wizard, mantém `status = draft`.
-- **Publicar**: `updateQuote` → `status = 'sent'`, `sent_at = now()`, copia link público para clipboard e mostra toast com o link.
-- **Publicar e enviar**: publica (idem acima) e abre em seguida o `SendEmailDialog` já existente pré-preenchido com destinatário do contato principal do deal, assunto `"Cotação {number} — {title}"` e corpo contendo o link público. Após o envio, fecha o wizard.
+   | Antes (mojibake) | Depois |
+   |---|---|
+   | `CotaÃ§Ã£o NÂº` | `Cotação Nº` |
+   | `VÃ¡lida atÃ©` | `Válida até` |
+   | `DestinatÃ¡rio` | `Destinatário` |
+   | `ResponsÃ¡vel` | `Responsável` |
+   | `ReferÃªncia` | `Referência` |
+   | `NÂº` | `Nº` |
+   | `Item / DescriÃ§Ã£o` | `Item / Descrição` |
+   | `PreÃ§o Unit.` | `Preço Unit.` |
+   | `ObservaÃ§Ãµes` | `Observações` |
+   | `Termos e CondiÃ§Ãµes` | `Termos e Condições` |
+   | `AssinaÃ§Ã£o Digital` (se houver) | `Assinatura Digital` |
 
-## Edição
+   Aplico via `convert_from(convert_to(html,'LATIN1'),'UTF8')` restrito a esse `id`, o que reverte o mojibake de forma determinística e preserva CSS/JS/marcações válidas. Depois faço `UPDATE` do trecho da tabela para inserir o `{{#each items}}`.
 
-Editar uma cotação em `draft` (item já existente no menu) reabre o mesmo wizard começando na etapa 1 com `quoteId` pré-carregado (nenhum insert é feito; apenas patches). Cotações não-draft permanecem somente-leitura como hoje.
-
-## Detalhes técnicos
-
-- Novo arquivo `src/components/deals/quote-wizard.tsx` contendo:
-  - `QuoteWizard({ dealId, quoteId?, onClose })` renderizado dentro de um `Dialog` largo (`sm:max-w-3xl`).
-  - Componente interno `Stepper` (usa tokens semânticos do design system).
-  - Sub-componentes por etapa: `StepBasics`, `StepItems`, `StepNotes`, `StepReview`.
-- `src/lib/quotes.functions.ts`: adicionar `recomputeQuoteTotals` (recebe `id`, lê `quote_line_items`, aplica `recompute`, dá `update` no `quotes`). Permitir `updateQuote` também atualizar itens via ID já é desnecessário — usar a função nova.
-- `src/components/deals/deal-quotes.tsx`: remover o `Dialog` inline atual e trocar `openDialog` / `openEditDialog` por abrir o `QuoteWizard`. Botão "Adicionar" e item "Editar" (draft) passam a acionar o wizard.
-- Não alterar RLS, schema (nenhuma migration necessária), nem o modal de itens de linha em si — apenas incorporá-lo como passo.
-- Manter os states loading/error/empty já presentes no editor de itens.
-- Acessibilidade: `role="dialog"`, foco no primeiro campo de cada etapa, `aria-current="step"` no stepper, botões com labels claras.
-- Responsividade: stepper vertical em telas <640px.
-
-## Fora de escopo
-
-- Não alterar templates de cotação, nem função pública `getQuoteByToken`.
-- Não mexer em pagamento (Stripe) — segue disponível no menu de contexto do card.
-- Não redesenhar o card de cotação na lateral do deal.
+3. Nenhum outro modelo é tocado. Nenhum código-fonte é alterado. O renderer (`src/lib/quote-template-renderer.ts`) continua igual.
 
 ## Validação
 
-- `bunx tsc --noEmit`
-- `bun run build:dev`
-- Verificação manual: criar cotação em um deal com itens, avançar pelas 4 etapas confirmando autosave em cada uma, testar as 3 ações finais e reabrir para editar um rascunho.
+- Reabrir `https://crm.wktechnology.com.br/quote/5a09e4174e33e1e38856abb5da083ef4cd604604525ca335` e conferir:
+  - a linha da tabela lista o item real (`Consultoria Técnica … Vibe Code / Lovable`);
+  - cabeçalhos e cards mostram acentuação correta ("Cotação Nº", "Válida até", "Destinatário", "Responsável", "Referência", "Item / Descrição", "Preço Unit.", "Observações", "Termos e Condições");
+  - totais permanecem iguais (Subtotal / Descontos / Impostos / Total Geral).
+
+## Fora de escopo
+
+- Não altero outros templates. Se houver outros com o mesmo defeito, posso auditar em seguida.
+- Não mexo em RLS, no wizard, no editor visual (`quote-template-blocks.ts`) nem no renderer.
