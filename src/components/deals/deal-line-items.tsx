@@ -167,7 +167,7 @@ export function DealLineItemsCount({ dealId }: { dealId: string }) {
   return <>{items.length}</>;
 }
 
-function LineItemsEditorBody({
+export function LineItemsEditorBody({
   dealId,
   ownerId,
   currency,
@@ -176,6 +176,7 @@ function LineItemsEditorBody({
   ownerId: string;
   currency: string;
 }) {
+
   const qc = useQueryClient();
   const { data: items = [], isLoading } = useLineItems(dealId);
 

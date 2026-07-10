@@ -195,6 +195,54 @@ export const updateQuote = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const resyncQuoteLineItems = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: quote, error: qErr } = await supabase
+      .from("quotes")
+      .select("id, deal_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (qErr || !quote?.deal_id) throw new Error("Cotação não encontrada");
+    const { data: lines, error: lErr } = await supabase
+      .from("deal_line_items")
+      .select("*")
+      .eq("deal_id", quote.deal_id)
+      .order("position");
+    if (lErr) throw lErr;
+    const items = lines ?? [];
+    const totals = recompute(items);
+    // Replace snapshot
+    const { error: dErr } = await supabase
+      .from("quote_line_items")
+      .delete()
+      .eq("quote_id", data.id);
+    if (dErr) throw dErr;
+    if (items.length) {
+      const payload = items.map((li, idx) => ({
+        owner_id: userId,
+        quote_id: data.id,
+        name: li.name,
+        description: li.description,
+        quantity: li.quantity,
+        unit_price: li.unit_price,
+        discount_pct: li.discount_pct,
+        discount_amount: li.discount_amount ?? 0,
+        discount_type: li.discount_type ?? "pct",
+        tax_rate: li.tax_rate,
+        position: idx,
+      }));
+      const { error: insErr } = await supabase.from("quote_line_items").insert(payload);
+      if (insErr) throw insErr;
+    }
+    const { error: uErr } = await supabase.from("quotes").update(totals).eq("id", data.id);
+    if (uErr) throw uErr;
+    return { ok: true, totals };
+  });
+
+
 export const deleteQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))

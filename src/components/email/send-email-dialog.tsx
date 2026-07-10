@@ -38,6 +38,8 @@ import { useTokenInserter } from "@/lib/token-insert";
 
 type Props = {
   defaultTo?: string;
+  defaultSubject?: string;
+  defaultBody?: string;
   contactId?: string;
   leadId?: string;
   dealId?: string;
@@ -50,8 +52,11 @@ type Props = {
   onOpenChange?: (v: boolean) => void;
 };
 
+
 export function SendEmailDialog({
   defaultTo = "",
+  defaultSubject = "",
+  defaultBody = "",
   contactId,
   leadId,
   dealId,
@@ -71,8 +76,9 @@ export function SendEmailDialog({
 
   const [to, setTo] = useState(defaultTo);
   const [cc, setCc] = useState("");
-  const [subject, setSubject] = useState("");
-  const [body, setBody] = useState("");
+  const [subject, setSubject] = useState(defaultSubject);
+  const [body, setBody] = useState(defaultBody);
+
   type Attachment = { path: string; filename: string; content_type: string; size: number };
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -164,8 +170,13 @@ export function SendEmailDialog({
   });
 
   useEffect(() => {
-    if (open) setTo(defaultTo);
-  }, [open, defaultTo]);
+    if (open) {
+      setTo(defaultTo);
+      setSubject(defaultSubject);
+      setBody(defaultBody);
+    }
+  }, [open, defaultTo, defaultSubject, defaultBody]);
+
 
   const account = accountsQ.data?.items?.find((a) => a.status === "connected");
 
