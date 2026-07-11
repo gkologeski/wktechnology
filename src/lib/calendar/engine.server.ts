@@ -233,6 +233,38 @@ async function driveSearch(
   return { files: json.files ?? [] };
 }
 
+async function findRecordingFileConflict(
+  fileId: string,
+  eventId: string | null | undefined,
+  conferenceId: string,
+): Promise<{ id: string; title: string | null; conference_id: string | null } | null> {
+  let query = supabaseAdmin
+    .from("calendar_events")
+    .select("id, title, conference_id")
+    .eq("recording_drive_file_id", fileId)
+    .not("conference_id", "is", null)
+    .limit(5);
+
+  if (eventId) query = query.neq("id", eventId);
+
+  const { data, error } = await query;
+  if (error) {
+    console.warn("[drive recording] falha ao verificar conflito de arquivo", {
+      file_id: fileId,
+      event_id: eventId,
+      error: error.message,
+    });
+    return null;
+  }
+
+  return (
+    data?.find((row) => {
+      const otherConferenceId = (row.conference_id ?? "").trim().toLowerCase();
+      return otherConferenceId.length > 0 && otherConferenceId !== conferenceId;
+    }) ?? null
+  );
+}
+
 /**
  * Look up a Meet recording in Drive for the given event.
  * Meet stores recordings in the organizer's "Meet Recordings" folder and shares
@@ -242,7 +274,7 @@ async function driveSearch(
  */
 async function findDriveRecording(
   token: string,
-  ev: { title: string | null; end_at: string | null; start_at?: string | null; conference_id?: string | null },
+  ev: { id?: string | null; title: string | null; end_at: string | null; start_at?: string | null; conference_id?: string | null },
 ): Promise<
   | { ok: true; file_id: string; url: string; mime_type: string; matched_by: string }
   | { ok: false; reason: string }
@@ -325,13 +357,33 @@ async function findDriveRecording(
     const db = Math.abs(new Date(b.createdTime ?? 0).getTime() - endMs);
     return da - db;
   });
-  const file = candidates[0];
+
+  const conflictReasons: string[] = [];
+  for (const file of candidates) {
+    if (conferenceId) {
+      const conflict = await findRecordingFileConflict(file.id, ev.id, conferenceId);
+      if (conflict) {
+        conflictReasons.push(
+          `${file.id} já vinculado ao evento ${conflict.id} (${conflict.conference_id ?? "sem código"})`,
+        );
+        continue;
+      }
+    }
+
+    return {
+      ok: true,
+      file_id: file.id,
+      url: file.webViewLink ?? `https://drive.google.com/file/d/${file.id}/view`,
+      mime_type: file.mimeType,
+      matched_by: matchedBy,
+    };
+  }
+
   return {
-    ok: true,
-    file_id: file.id,
-    url: file.webViewLink ?? `https://drive.google.com/file/d/${file.id}/view`,
-    mime_type: file.mimeType,
-    matched_by: matchedBy,
+    ok: false,
+    reason: conflictReasons.length
+      ? `gravação rejeitada por vínculo cruzado: ${conflictReasons.join(" | ")}`
+      : "nenhuma gravação segura correspondente no Drive",
   };
 }
 
@@ -366,7 +418,12 @@ export async function syncPastRecordings(
   for (const ev of events ?? []) {
     const attempts = ((ev as { recording_attempts?: number }).recording_attempts ?? 0) + 1;
     try {
-      const rec = await findDriveRecording(token, { title: ev.title, end_at: ev.end_at, conference_id: ev.conference_id as string | null });
+      const rec = await findDriveRecording(token, {
+        id: ev.id as string,
+        title: ev.title,
+        end_at: ev.end_at,
+        conference_id: ev.conference_id as string | null,
+      });
       if (rec.ok) {
         const { error: upErr } = await supabaseAdmin
           .from("calendar_events")
@@ -863,6 +920,7 @@ export async function syncRecordingForEvent(eventId: string): Promise<
   const token = await ensureAccessToken(acct as CalendarAccountRow);
   const attempts = ((ev.recording_attempts as number | null) ?? 0) + 1;
   const rec = await findDriveRecording(token, {
+    id: ev.id as string,
     title: ev.title as string | null,
     end_at: ev.end_at as string | null,
     conference_id: ev.conference_id as string | null,
