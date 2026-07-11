@@ -794,13 +794,15 @@ function ContactsHubspotView() {
                               >
                                 Abrir
                               </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => removeOne(c.id)}
-                              >
-                                Excluir
-                              </DropdownMenuItem>
+                              <Can permission="techsales.contacts.delete.workspace">
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => removeOne(c.id)}
+                                >
+                                  Excluir
+                                </DropdownMenuItem>
+                              </Can>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </Td>

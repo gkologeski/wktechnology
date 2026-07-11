@@ -1167,13 +1167,15 @@ function LeadsHubspotView() {
                                   <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Converter
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive"
-                                onClick={() => removeOne(lead.id)}
-                              >
-                                Excluir
-                              </DropdownMenuItem>
+                              <Can any={["techsales.leads.delete.own", "techsales.leads.delete.workspace"]}>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => removeOne(lead.id)}
+                                >
+                                  Excluir
+                                </DropdownMenuItem>
+                              </Can>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </Td>
