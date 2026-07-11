@@ -133,9 +133,12 @@ export const disconnectIntegration = createServerFn({ method: "POST" })
     z.object({ provider: z.string().min(1).max(40) }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
     const { error } = await supabase.from("integrations").delete().eq("provider", data.provider);
     if (error) throw new Error(error.message);
+
     return { ok: true };
   });
 
