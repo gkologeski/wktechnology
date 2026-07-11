@@ -55,6 +55,8 @@ export const updateWorkspaceSecurity = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await activeWorkspace(supabase, userId);
+    await assertPermission(supabase, userId, ws, "system.settings.manage.workspace");
+
     const { data: current } = await supabase
       .from("workspaces")
       .select("security_settings")
