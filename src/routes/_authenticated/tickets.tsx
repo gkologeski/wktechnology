@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { usePipelines, defaultTicketStages, type Pipeline } from "@/lib/pipelines";
 import { useMyTools } from "@/lib/use-my-tools";
