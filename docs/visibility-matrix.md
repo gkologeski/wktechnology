@@ -30,7 +30,7 @@ Marcações:
 - ⛔ negado.
 - 🟡 condicional — leia a coluna "Regra".
 
-Onde existem policies duplicadas (`ws_*` + `*_admin_*` + `*_team_*`), o Postgres aplica o **OR** entre elas: basta uma retornar `true` para liberar a ação. Isso significa que o filtro efetivo em SELECT/UPDATE/DELETE é **o mais permissivo** — normalmente a policy `ws_*` que só verifica o workspace.
+Onde existiam policies duplicadas (`ws_*` + `*_admin_*` + `*_team_*`) em UPDATE/DELETE, elas foram consolidadas (jul/2026) em uma única regra `*_write_update` / `*_write_delete` que exige `is_workspace_admin_of(owner_id, uid) OR can_write_owner(owner_id, uid)`. SELECT e INSERT permaneceram como `ws_*` (workspace inteiro). Isso vale para: `calendar_events`, `meetings`, `email_threads`, `email_messages`, `email_broadcasts`, `whatsapp_conversations`, `whatsapp_messages`, `whatsapp_campaigns`, `quote_line_items`, `quote_templates`.
 
 ---
 
