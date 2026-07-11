@@ -253,13 +253,15 @@ function DealsPage() {
             >
               <Play className="h-4 w-4 mr-1" /> Iniciar fila
             </Button>
-            <Button
-              size="sm"
-              onClick={openNew}
-              className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
-            >
-              <Plus className="h-4 w-4 mr-1" /> Criar negócio
-            </Button>
+            <Can permission="techsales.deals.create.own">
+              <Button
+                size="sm"
+                onClick={openNew}
+                className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+              >
+                <Plus className="h-4 w-4 mr-1" /> Criar negócio
+              </Button>
+            </Can>
           </div>
         }
       />
