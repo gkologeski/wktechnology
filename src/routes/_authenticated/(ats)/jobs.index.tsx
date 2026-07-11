@@ -582,8 +582,9 @@ function AtsJobsPage() {
           </Button>
           <Button onClick={handleCreate}>Criar vaga</Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </Can>
   );
 
   return (
