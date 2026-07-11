@@ -3,8 +3,31 @@
 Auditoria das políticas RLS ativas no schema `public` para responder: **o que outros usuários enxergam e podem fazer sobre as minhas tarefas e entidades?**
 
 > Fonte: `pg_policies` do banco de produção (consultado nesta auditoria).
-> Escopo: núcleo CRM, atividades/tarefas e comunicação.
+> Escopo: núcleo CRM, atividades/tarefas, comunicação e ATS/TechHire.
 > Esta auditoria não altera nenhuma policy — é apenas descritiva.
+
+## Resumo executivo (jul/2026)
+
+Estado após as Ondas 3–8 de endurecimento RBAC.
+
+**O que mudou no que "os outros veem/podem sobre você":**
+
+- **RLS restrictive por permissão granular.** Núcleo CRM (`contacts`, `companies`, `deals`, `leads`, `tickets`) e módulos operacionais (`activities`, `meetings`, `quotes`, `quote_line_items`, `deal_line_items`) só aceitam INSERT/UPDATE/DELETE quando o usuário tem a chave de permissão correspondente (`user_can_act(<módulo>, <ação>, owner, assigned)`) **e** está no workspace. Sem a permissão, a operação falha no banco — não só na UI.
+- **ATS/TechHire endurecido (Onda 5).** `ats_jobs`, `ats_candidates`, `ats_applications`, `ats_interviews`, `ats_offers`, `ats_job_postings`, `ats_sourcing_sequences` e `ats_sourcing_enrollments` usam `techhire_rbac_gate` como policy RESTRICTIVE. Membro sem chave `techhire.*` não escreve, mesmo estando no workspace.
+- **Settings / Integrações / Webhooks (Onda 6).** Server functions críticas (`updateWorkspaceSecurity`, `updateDataRegion`, `upsertWebhook`, `deleteWebhook`, `retryWebhookDelivery`, `upsertIntegration`, `disconnectIntegration`, `setCreditLimit`) chamam `assertPermission` antes de qualquer efeito colateral. Nenhum atalho via cliente burla o gate.
+- **Consolidação de policies duplicadas.** UPDATE/DELETE em `calendar_events`, `meetings`, `email_threads`, `email_messages`, `email_broadcasts`, `whatsapp_conversations/messages/campaigns`, `quote_line_items` e `quote_templates` foram unificados em `is_workspace_admin_of(owner, uid) OR can_write_owner(owner, uid)`. Membro comum não edita/apaga registro alheio nessas tabelas.
+- **Bug reports (chamado interno)** permanecem estritamente privados ao autor; admins acessam só via server function com `supabaseAdmin`.
+
+**Novas funcionalidades de transparência (Ondas 7–8):**
+
+- **Tela "Minhas permissões"** (`/settings/my-permissions`) — lista, agrupada por módulo e pesquisável, tudo o que o cargo atual permite fazer, com labels em PT-BR, descrição e escopo (`own`/`team`/`workspace`). Server function: `getMyPermissionsDetailed`.
+- **Auditoria de bloqueios** — todo `assertPermission` que nega registra em `access_audit_log` (workspace_id, actor_id, chave da permissão). Base para relatório "quem tentou fazer o quê".
+- **Toast amigável** — `handlePermissionError` intercepta o erro do servidor e mostra mensagem orientando a procurar o administrador, em vez do erro cru.
+- **Governança em `/home/access`** — CRUD completo de cargos customizados, pacotes de permissões, matriz cargos × permissões e atribuição por usuário. Cargos padrão (Super Admin, Admin, Workspace Owner/Admin, TechSales/TechHire Admin/Manager, Membro, Somente leitura) já vêm provisionados com as 56+ chaves granulares.
+
+**Riscos remanescentes** (detalhe na seção 6): SELECT amplo em núcleo CRM (leitura ainda é workspace-inteiro; escrita não é), `activities` com UPDATE/DELETE amplo, e alguns policies marcadas como `public` por herança (sem risco anônimo real, mas convém padronizar em `authenticated`).
+
+---
 
 ## Papéis considerados
 
