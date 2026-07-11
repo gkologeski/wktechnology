@@ -30,8 +30,24 @@ export async function assertPermission(
     _permission_key: permissionKey,
   });
   if (error) throw new Error(`Falha ao verificar permissão: ${error.message}`);
-  if (!data) throw new PermissionDeniedError(permissionKey);
+  if (!data) {
+    // Registro de auditoria — best-effort, não bloqueia o fluxo se falhar.
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.from("access_audit_log").insert({
+        workspace_id: workspaceId,
+        actor_id: userId,
+        action: "permission_denied",
+        entity_type: "permission",
+        details: { permission_key: permissionKey } as never,
+      } as never);
+    } catch {
+      /* ignore audit failures */
+    }
+    throw new PermissionDeniedError(permissionKey);
+  }
 }
+
 
 /**
  * Retorna true/false sem lançar. Útil para lógica condicional server-side.
