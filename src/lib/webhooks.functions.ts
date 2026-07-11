@@ -105,9 +105,12 @@ export const deleteWebhook = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
     await supabase.from("outbound_webhooks").delete().eq("id", data.id).eq("owner_id", userId);
     return { ok: true };
   });
+
 
 export const listWebhookDeliveries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
