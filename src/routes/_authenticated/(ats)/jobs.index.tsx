@@ -61,6 +61,7 @@ import {
   type JobStatus,
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
+import { Can, usePermissions } from "@/lib/access-control/use-permissions";
 import { DealPicker } from "@/components/ats/deal-picker";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
