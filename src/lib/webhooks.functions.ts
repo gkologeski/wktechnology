@@ -4,6 +4,10 @@ import { z } from "zod";
 import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runWebhookDispatch } from "@/lib/webhooks/dispatcher.server";
+import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+
+const WEBHOOK_MANAGE = "system.webhooks.manage.workspace";
+
 
 export const WEBHOOK_EVENTS = [
   "lead.created",
