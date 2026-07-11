@@ -673,14 +673,16 @@ function CompaniesHubspotView() {
                   <MapPin className="mr-1 h-3.5 w-3.5" /> Buscar CEP
                 </Button>
                 {can("bulk_delete") && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-destructive hover:text-destructive"
-                    onClick={bulkDelete}
-                  >
-                    Excluir
-                  </Button>
+                  <Can permission="techsales.companies.manage.workspace">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-destructive hover:text-destructive"
+                      onClick={bulkDelete}
+                    >
+                      Excluir
+                    </Button>
+                  </Can>
                 )}
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
