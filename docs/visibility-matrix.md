@@ -30,7 +30,7 @@ Marcações:
 - ⛔ negado.
 - 🟡 condicional — leia a coluna "Regra".
 
-Onde existem policies duplicadas (`ws_*` + `*_admin_*` + `*_team_*`), o Postgres aplica o **OR** entre elas: basta uma retornar `true` para liberar a ação. Isso significa que o filtro efetivo em SELECT/UPDATE/DELETE é **o mais permissivo** — normalmente a policy `ws_*` que só verifica o workspace.
+Onde existiam policies duplicadas (`ws_*` + `*_admin_*` + `*_team_*`) em UPDATE/DELETE, elas foram consolidadas (jul/2026) em uma única regra `*_write_update` / `*_write_delete` que exige `is_workspace_admin_of(owner_id, uid) OR can_write_owner(owner_id, uid)`. SELECT e INSERT permaneceram como `ws_*` (workspace inteiro). Isso vale para: `calendar_events`, `meetings`, `email_threads`, `email_messages`, `email_broadcasts`, `whatsapp_conversations`, `whatsapp_messages`, `whatsapp_campaigns`, `quote_line_items`, `quote_templates`.
 
 ---
 
@@ -78,8 +78,9 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 |--------|-------|---|---|---|---|---|-------|
 | `activities` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. **Não há filtro por dono ou assigned.** |
 | `calendar_events` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (via `ws_select_calendar_events`). |
-| `calendar_events` | Editar / Excluir | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (`ws_update/delete` libera; policies `admin/team` são redundantes). |
-| `meetings` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `calendar_events` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado: admin do workspace **ou** `can_write_owner` (dono / mesmo `user_group` com `data_scope`≥team). |
+| `meetings` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `meetings` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
 | `meeting_participants` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
 | `meeting_summaries` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
 | `task_queues` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
@@ -91,7 +92,7 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 | `notifications` | Todos | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | Só o destinatário (`user_id = uid`). |
 | `timeline_pins` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Qualquer membro do workspace. |
 
-**Alerta 2** — `activities` e `calendar_events` liberam **UPDATE/DELETE** para qualquer membro do workspace, sem checar `owner_id` nem `user_can_act`. Um usuário sem privilégios pode editar/apagar tarefas e eventos criados por colegas.
+**Alerta 2** — `activities` continua liberando **UPDATE/DELETE** para qualquer membro do workspace (fora do escopo desta consolidação). `calendar_events` foi ajustado (jul/2026): só dono, admin ou líder de time editam/apagam.
 
 ---
 
@@ -102,10 +103,11 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 | Tabela | Verbo | O | M | L | A | P | Regra |
 |--------|-------|---|---|---|---|---|-------|
 | `email_threads` | Ver | ✅ | 🟡 | 🟡 | ✅ | ✅ | Membro do workspace vê **apenas** threads com `contact_id` preenchido. Threads sem contato só o dono da `email_accounts` vê. |
-| `email_threads` | Editar / Excluir | ✅ | ✅ | ✅ | ✅ | ✅ | `ws_update/delete` libera para todo o workspace. |
+| `email_threads` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team (jul/2026). |
 | `email_messages` | Ver | ✅ | 🟡 | 🟡 | ✅ | ✅ | Herda do thread: com `contact_id` vazam para o workspace; sem contato só o dono da conta. |
-| `email_messages` | Editar / Excluir | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (`ws_update/delete`). |
-| `email_broadcasts` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `email_messages` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
+| `email_broadcasts` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `email_broadcasts` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
 | `email_tracking_events` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (abertos, cliques). |
 | `email_send_log` | Todos | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | Só `service_role` (jobs internos). |
 
@@ -115,10 +117,12 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 
 | Tabela | Verbo | O | M | L | A | P | Regra |
 |--------|-------|---|---|---|---|---|-------|
-| `whatsapp_conversations` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `whatsapp_conversations` | Editar / Excluir | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace (as policies `_admin_*` e `_team_*` existem, mas o OR com `ws_*` libera todos). |
-| `whatsapp_messages` | Idem | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `whatsapp_campaigns` | Idem | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `whatsapp_conversations` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `whatsapp_conversations` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team (jul/2026). |
+| `whatsapp_messages` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `whatsapp_messages` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
+| `whatsapp_campaigns` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `whatsapp_campaigns` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
 
 ### 3.3 Chat interno
 
