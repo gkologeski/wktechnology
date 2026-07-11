@@ -106,7 +106,10 @@ export const upsertIntegration = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
     const { data: row, error } = await supabase
+
       .from("integrations")
       .upsert(
         {
