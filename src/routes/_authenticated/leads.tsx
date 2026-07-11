@@ -788,9 +788,11 @@ function LeadsHubspotView() {
           >
             <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
           </Button>
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" /> Criar lead
-          </Button>
+          <Can permission="techsales.leads.create.own">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-1.5 h-4 w-4" /> Criar lead
+            </Button>
+          </Can>
         </div>
       </div>
 
