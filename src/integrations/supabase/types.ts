@@ -13547,6 +13547,10 @@ export type Database = {
       shares_workspace_with: { Args: { _other: string }; Returns: boolean }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      techhire_rbac_gate: {
+        Args: { _perm: string; _user: string }
+        Returns: boolean
+      }
       user_can_act: {
         Args: {
           _action: string
