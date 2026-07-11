@@ -226,7 +226,10 @@ export const setCreditLimit = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
     const { error } = await supabase.from("credit_limits").upsert(
+
       {
         owner_id: userId,
         provider: data.provider,
