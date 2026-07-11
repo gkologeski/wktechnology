@@ -705,7 +705,7 @@ async function pushPendingMeetings(
     .limit(100);
 
   let created = 0;
-  let updated = 0;
+  const updated = 0;
   for (const a of activities ?? []) {
     const ext = (a.external_ids ?? {}) as Record<string, string>;
     const existingEventId = ext[`gcal_${account.id}`];
