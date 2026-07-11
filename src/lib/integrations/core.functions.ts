@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import type { ProviderSlug } from "./registry";
+
+const INTEGRATIONS_MANAGE = "system.integrations.manage.workspace";
+
 
 const TRANSIENT_DB_MESSAGES = [
   "could not query the database for the schema cache",
