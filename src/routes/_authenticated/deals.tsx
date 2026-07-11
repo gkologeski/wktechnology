@@ -20,6 +20,7 @@ import { DealsForecast } from "@/components/deals/deals-forecast";
 import { DealsHubspotTable } from "@/components/deals/deals-hubspot-table";
 import { DealDetailDrawer } from "@/components/deals/deal-detail-drawer";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
+import { Can } from "@/lib/access-control/use-permissions";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   component: DealsRoute,
@@ -252,13 +253,15 @@ function DealsPage() {
             >
               <Play className="h-4 w-4 mr-1" /> Iniciar fila
             </Button>
-            <Button
-              size="sm"
-              onClick={openNew}
-              className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
-            >
-              <Plus className="h-4 w-4 mr-1" /> Criar negócio
-            </Button>
+            <Can permission="techsales.deals.create.own">
+              <Button
+                size="sm"
+                onClick={openNew}
+                className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+              >
+                <Plus className="h-4 w-4 mr-1" /> Criar negócio
+              </Button>
+            </Can>
           </div>
         }
       />

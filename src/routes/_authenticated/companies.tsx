@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -537,9 +538,11 @@ function CompaniesHubspotView() {
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" /> Criar empresa
-          </Button>
+          <Can permission="techsales.companies.manage.workspace">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-1.5 h-4 w-4" /> Criar empresa
+            </Button>
+          </Can>
         </div>
       </div>
 

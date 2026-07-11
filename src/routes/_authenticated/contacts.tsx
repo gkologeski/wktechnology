@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import type { Contact, Company } from "@/lib/db-types";
@@ -530,9 +531,11 @@ function ContactsHubspotView() {
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" /> Criar contato
-          </Button>
+          <Can permission="techsales.contacts.create.own">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-1.5 h-4 w-4" /> Criar contato
+            </Button>
+          </Can>
         </div>
       </div>
 

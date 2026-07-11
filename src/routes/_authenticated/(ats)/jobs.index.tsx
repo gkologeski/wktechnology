@@ -61,6 +61,7 @@ import {
   type JobStatus,
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
+import { Can } from "@/lib/access-control/use-permissions";
 import { DealPicker } from "@/components/ats/deal-picker";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
@@ -421,12 +422,13 @@ function AtsJobsPage() {
   }, [rows]);
 
   const newJobButton = (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="mr-1.5 h-4 w-4" /> Nova vaga
-        </Button>
-      </DialogTrigger>
+    <Can permission="techhire.jobs.create.own">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button size="sm">
+            <Plus className="mr-1.5 h-4 w-4" /> Nova vaga
+          </Button>
+        </DialogTrigger>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Nova vaga</DialogTitle>
@@ -580,8 +582,9 @@ function AtsJobsPage() {
           </Button>
           <Button onClick={handleCreate}>Criar vaga</Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </Can>
   );
 
   return (
