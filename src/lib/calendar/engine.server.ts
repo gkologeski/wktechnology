@@ -408,7 +408,7 @@ export async function syncPastRecordings(
     .eq("calendar_account_id", account.id)
     .not("conference_id", "is", null)
     .is("recording_drive_file_id", null)
-    .lt("recording_attempts", RECORDING_MAX_AUTO_ATTEMPTS)
+    .or(`recording_attempts.lt.${RECORDING_MAX_AUTO_ATTEMPTS},recording_status.eq.cross_link_blocked`)
     .gte("end_at", since)
     .lte("end_at", until)
     .limit(20);
