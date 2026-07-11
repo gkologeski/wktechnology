@@ -79,6 +79,8 @@ export const updateDataRegion = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await activeWorkspace(supabase, userId);
+    await assertPermission(supabase, userId, ws, "system.settings.manage.workspace");
+
     const { error } = await (supabase.from("workspaces") as any)
       .update({ data_region: data.region })
       .eq("id", ws);
