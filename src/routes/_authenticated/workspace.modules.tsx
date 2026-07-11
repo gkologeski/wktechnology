@@ -14,8 +14,8 @@ import {
   toggleWorkspaceModule,
   type WorkspaceModuleRow,
 } from "@/lib/workspace/modules.functions";
-import { buildModuleUrl, isCrossHostUrl } from "@/lib/hosts";
-import type { ModuleId } from "@/lib/modules/registry";
+import { buildModuleUrl } from "@/lib/hosts";
+import { MODULES, type ModuleId } from "@/lib/modules/registry";
 
 export const Route = createFileRoute("/_authenticated/workspace/modules")({
   component: WorkspaceModules,
@@ -32,12 +32,9 @@ function iconFor(name: string | null) {
 }
 
 function openModule(moduleId: ModuleId) {
-  const url = buildModuleUrl(moduleId, "/");
-  if (isCrossHostUrl(url)) {
-    window.open(url, "_blank", "noopener,noreferrer");
-  } else {
-    window.location.assign(url);
-  }
+  const target = MODULES[moduleId]?.defaultRoute ?? "/";
+  const url = buildModuleUrl(moduleId, target);
+  window.location.assign(url);
 }
 
 function WorkspaceModules() {
