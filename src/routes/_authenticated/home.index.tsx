@@ -21,7 +21,7 @@ import {
   type WorkspaceModuleRow,
 } from "@/lib/workspace/modules.functions";
 import { buildModuleUrl, isCrossHostUrl } from "@/lib/hosts";
-import type { ModuleId } from "@/lib/modules/registry";
+import { MODULES, type ModuleId } from "@/lib/modules/registry";
 import {
   PageHeader,
   SectionHeader,
@@ -47,12 +47,12 @@ const MODULE_ICONS: Record<string, React.ComponentType<{ className?: string }>> 
 };
 
 function openModule(moduleId: ModuleId) {
-  const url = buildModuleUrl(moduleId, "/");
-  if (isCrossHostUrl(url)) {
-    window.open(url, "_blank", "noopener,noreferrer");
-  } else {
-    window.location.assign(url);
-  }
+  const target = MODULES[moduleId]?.defaultRoute ?? "/";
+  const url = buildModuleUrl(moduleId, target);
+  // Sempre navegar na mesma aba — cross-host ou SPA — para evitar
+  // bloqueio de popup e garantir que o usuário chegue ao módulo.
+  window.location.assign(url);
+  void isCrossHostUrl;
 }
 
 function ModulesGrid() {
