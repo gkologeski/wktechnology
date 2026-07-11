@@ -150,7 +150,10 @@ export const retryWebhookDelivery = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
     const { error } = await supabase
+
       .from("webhook_deliveries")
       .update({
         status: "pending",
