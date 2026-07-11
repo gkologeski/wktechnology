@@ -117,10 +117,12 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 
 | Tabela | Verbo | O | M | L | A | P | Regra |
 |--------|-------|---|---|---|---|---|-------|
-| `whatsapp_conversations` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `whatsapp_conversations` | Editar / Excluir | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace (as policies `_admin_*` e `_team_*` existem, mas o OR com `ws_*` libera todos). |
-| `whatsapp_messages` | Idem | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `whatsapp_campaigns` | Idem | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `whatsapp_conversations` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `whatsapp_conversations` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team (jul/2026). |
+| `whatsapp_messages` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `whatsapp_messages` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
+| `whatsapp_campaigns` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `whatsapp_campaigns` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
 
 ### 3.3 Chat interno
 
