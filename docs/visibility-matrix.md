@@ -103,10 +103,11 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 | Tabela | Verbo | O | M | L | A | P | Regra |
 |--------|-------|---|---|---|---|---|-------|
 | `email_threads` | Ver | ✅ | 🟡 | 🟡 | ✅ | ✅ | Membro do workspace vê **apenas** threads com `contact_id` preenchido. Threads sem contato só o dono da `email_accounts` vê. |
-| `email_threads` | Editar / Excluir | ✅ | ✅ | ✅ | ✅ | ✅ | `ws_update/delete` libera para todo o workspace. |
+| `email_threads` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team (jul/2026). |
 | `email_messages` | Ver | ✅ | 🟡 | 🟡 | ✅ | ✅ | Herda do thread: com `contact_id` vazam para o workspace; sem contato só o dono da conta. |
-| `email_messages` | Editar / Excluir | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (`ws_update/delete`). |
-| `email_broadcasts` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `email_messages` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
+| `email_broadcasts` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
+| `email_broadcasts` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
 | `email_tracking_events` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (abertos, cliques). |
 | `email_send_log` | Todos | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | Só `service_role` (jobs internos). |
 
