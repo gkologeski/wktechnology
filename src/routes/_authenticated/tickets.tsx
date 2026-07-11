@@ -335,13 +335,15 @@ function TicketsIndex() {
         title="Tickets"
         description="Help desk estilo HubSpot."
         actions={
-          <Button
-            size="sm"
-            onClick={openNew}
-            className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
-          >
-            <Plus className="h-4 w-4 mr-1" /> Adicionar tickets
-          </Button>
+          <Can permission="techsales.tickets.manage.workspace">
+            <Button
+              size="sm"
+              onClick={openNew}
+              className="bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+            >
+              <Plus className="h-4 w-4 mr-1" /> Adicionar tickets
+            </Button>
+          </Can>
         }
       />
 
