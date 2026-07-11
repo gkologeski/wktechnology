@@ -530,9 +530,11 @@ function ContactsHubspotView() {
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" /> Criar contato
-          </Button>
+          <Can permission="techsales.contacts.create.own">
+            <Button size="sm" onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-1.5 h-4 w-4" /> Criar contato
+            </Button>
+          </Can>
         </div>
       </div>
 
