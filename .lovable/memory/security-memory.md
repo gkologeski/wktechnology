@@ -10,6 +10,7 @@ type: feature
 - Tabelas core de CRM (activities, companies, contacts, deals, leads, pipelines, products, proposals, quotes, tickets, workflows) usam APENAS o conjunto canônico `ws_*`. Não recriar policies `*_admin_*`/`*_team_*` — foram removidas por consolidarem união permissiva com o conjunto novo.
 - Toda `CREATE TABLE public.*` na mesma migration: `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated`, `GRANT ALL TO service_role`.
 - Nenhuma leitura `anon` em tabelas de negócio.
+- Consolidação de writes (jul/2026) em `calendar_events`, `meetings`, `email_threads`, `email_messages`, `email_broadcasts`, `whatsapp_conversations`, `whatsapp_messages`, `whatsapp_campaigns`, `quote_line_items`, `quote_templates`: **uma única** policy `*_write_update` + `*_write_delete` = `is_workspace_admin_of(owner_id, auth.uid()) OR can_write_owner(owner_id, auth.uid())`. SELECT/INSERT permanecem `ws_*` (workspace inteiro). Não recriar `ws_update_*`/`ws_delete_*`/`*_admin_update`/`*_team_update` para essas tabelas.
 
 ## Tabelas de controle de acesso (owner-scoped)
 - `job_roles`, `permission_sets`, `user_permission_sets`, `field_permission_rules`, `user_job_roles` usam a coluna `owner_id` (auth.uid do dono do workspace). Não renomear de volta para `workspace_id` e não comparar `owner_id` com `workspaces.id`. Policies: `*_read` (is_system OR owner_id = auth.uid() OR shares_workspace_with(owner_id)); `*_write` FOR ALL restrita a `owner_id = auth.uid()`.
