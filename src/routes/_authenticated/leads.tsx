@@ -753,16 +753,20 @@ function LeadsHubspotView() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {can("import") && (
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/leads/import-hubspot">
-                <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
-              </Link>
-            </Button>
+            <Can permission="techsales.leads.create.own">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/leads/import-hubspot">
+                  <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
+                </Link>
+              </Button>
+            </Can>
           )}
           {can("export") && (
-            <Button variant="outline" size="sm" onClick={exportCsv}>
-              <Download className="mr-1.5 h-4 w-4" /> Exportar
-            </Button>
+            <Can permission="techsales.leads.export.workspace">
+              <Button variant="outline" size="sm" onClick={exportCsv}>
+                <Download className="mr-1.5 h-4 w-4" /> Exportar
+              </Button>
+            </Can>
           )}
           <Button
             variant="outline"
