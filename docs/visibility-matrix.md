@@ -92,7 +92,7 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 | `notifications` | Todos | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | Só o destinatário (`user_id = uid`). |
 | `timeline_pins` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Qualquer membro do workspace. |
 
-**Alerta 2** — `activities` e `calendar_events` liberam **UPDATE/DELETE** para qualquer membro do workspace, sem checar `owner_id` nem `user_can_act`. Um usuário sem privilégios pode editar/apagar tarefas e eventos criados por colegas.
+**Alerta 2** — `activities` continua liberando **UPDATE/DELETE** para qualquer membro do workspace (fora do escopo desta consolidação). `calendar_events` foi ajustado (jul/2026): só dono, admin ou líder de time editam/apagam.
 
 ---
 
