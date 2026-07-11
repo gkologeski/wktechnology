@@ -1,0 +1,3 @@
+CREATE UNIQUE INDEX IF NOT EXISTS calendar_events_unique_recording_file_per_account_idx
+ON public.calendar_events (calendar_account_id, recording_drive_file_id)
+WHERE recording_drive_file_id IS NOT NULL;
