@@ -122,6 +122,7 @@ import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_au
 import { Route as AuthenticatedSettingsPaymentsRouteImport } from './routes/_authenticated/settings.payments'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedSettingsNfseRouteImport } from './routes/_authenticated/settings.nfse'
+import { Route as AuthenticatedSettingsMyPermissionsRouteImport } from './routes/_authenticated/settings.my-permissions'
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMediaRouteImport } from './routes/_authenticated/settings.media'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
@@ -906,6 +907,12 @@ const AuthenticatedSettingsNfseRoute =
   AuthenticatedSettingsNfseRouteImport.update({
     id: '/nfse',
     path: '/nfse',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsMyPermissionsRoute =
+  AuthenticatedSettingsMyPermissionsRouteImport.update({
+    id: '/my-permissions',
+    path: '/my-permissions',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsMobileRoute =
@@ -2006,6 +2013,7 @@ export interface FileRoutesByFullPath {
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
+  '/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
@@ -2283,6 +2291,7 @@ export interface FileRoutesByTo {
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
+  '/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
@@ -2565,6 +2574,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
+  '/_authenticated/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
   '/_authenticated/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/_authenticated/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
@@ -2848,6 +2858,7 @@ export interface FileRouteTypes {
     | '/settings/macros'
     | '/settings/media'
     | '/settings/mobile'
+    | '/settings/my-permissions'
     | '/settings/nfse'
     | '/settings/notifications'
     | '/settings/payments'
@@ -3125,6 +3136,7 @@ export interface FileRouteTypes {
     | '/settings/macros'
     | '/settings/media'
     | '/settings/mobile'
+    | '/settings/my-permissions'
     | '/settings/nfse'
     | '/settings/notifications'
     | '/settings/payments'
@@ -3406,6 +3418,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/media'
     | '/_authenticated/settings/mobile'
+    | '/_authenticated/settings/my-permissions'
     | '/_authenticated/settings/nfse'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/payments'
@@ -4454,6 +4467,13 @@ declare module '@tanstack/react-router' {
       path: '/nfse'
       fullPath: '/settings/nfse'
       preLoaderRoute: typeof AuthenticatedSettingsNfseRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/my-permissions': {
+      id: '/_authenticated/settings/my-permissions'
+      path: '/my-permissions'
+      fullPath: '/settings/my-permissions'
+      preLoaderRoute: typeof AuthenticatedSettingsMyPermissionsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/mobile': {
@@ -5811,6 +5831,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsMediaRoute: typeof AuthenticatedSettingsMediaRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
+  AuthenticatedSettingsMyPermissionsRoute: typeof AuthenticatedSettingsMyPermissionsRoute
   AuthenticatedSettingsNfseRoute: typeof AuthenticatedSettingsNfseRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRouteWithChildren
   AuthenticatedSettingsPaymentsRoute: typeof AuthenticatedSettingsPaymentsRoute
@@ -5891,6 +5912,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsMediaRoute: AuthenticatedSettingsMediaRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
+  AuthenticatedSettingsMyPermissionsRoute:
+    AuthenticatedSettingsMyPermissionsRoute,
   AuthenticatedSettingsNfseRoute: AuthenticatedSettingsNfseRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRouteWithChildren,
