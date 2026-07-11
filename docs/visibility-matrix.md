@@ -78,7 +78,7 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 |--------|-------|---|---|---|---|---|-------|
 | `activities` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. **Não há filtro por dono ou assigned.** |
 | `calendar_events` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (via `ws_select_calendar_events`). |
-| `calendar_events` | Editar / Excluir | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (`ws_update/delete` libera; policies `admin/team` são redundantes). |
+| `calendar_events` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado: admin do workspace **ou** `can_write_owner` (dono / mesmo `user_group` com `data_scope`≥team). |
 | `meetings` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
 | `meeting_participants` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
 | `meeting_summaries` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
