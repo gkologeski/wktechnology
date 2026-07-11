@@ -753,16 +753,20 @@ function LeadsHubspotView() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {can("import") && (
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/leads/import-hubspot">
-                <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
-              </Link>
-            </Button>
+            <Can permission="techsales.leads.create.own">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/leads/import-hubspot">
+                  <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
+                </Link>
+              </Button>
+            </Can>
           )}
           {can("export") && (
-            <Button variant="outline" size="sm" onClick={exportCsv}>
-              <Download className="mr-1.5 h-4 w-4" /> Exportar
-            </Button>
+            <Can permission="techsales.leads.export.workspace">
+              <Button variant="outline" size="sm" onClick={exportCsv}>
+                <Download className="mr-1.5 h-4 w-4" /> Exportar
+              </Button>
+            </Can>
           )}
           <Button
             variant="outline"
@@ -1038,14 +1042,16 @@ function LeadsHubspotView() {
                 >
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-destructive hover:text-destructive"
-                  onClick={bulkDelete}
-                >
-                  Excluir
-                </Button>
+                <Can any={["techsales.leads.delete.own", "techsales.leads.delete.workspace"]}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-destructive hover:text-destructive"
+                    onClick={bulkDelete}
+                  >
+                    Excluir
+                  </Button>
+                </Can>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
