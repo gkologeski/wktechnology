@@ -50,3 +50,23 @@ export async function hasPermission(
   if (error) return false;
   return Boolean(data);
 }
+
+/**
+ * Resolve o workspace ativo do usuário atual a partir do perfil.
+ * Usado por gates de permissão que precisam do workspace_id.
+ */
+export async function getActiveWorkspaceId(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<string> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("active_workspace_id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw new Error(`Falha ao resolver workspace ativo: ${error.message}`);
+  const ws = (data as { active_workspace_id?: string } | null)?.active_workspace_id;
+  if (!ws) throw new Error("Workspace ativo não encontrado");
+  return ws;
+}
+
