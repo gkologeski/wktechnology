@@ -2,6 +2,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPermission } from "@/lib/access-control/enforce.server";
+
 
 const SecuritySchema = z.object({
   ip_allowlist: z.array(z.string().min(1).max(64)).max(50).optional(),
@@ -53,6 +55,8 @@ export const updateWorkspaceSecurity = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await activeWorkspace(supabase, userId);
+    await assertPermission(supabase, userId, ws, "system.settings.manage.workspace");
+
     const { data: current } = await supabase
       .from("workspaces")
       .select("security_settings")
@@ -75,6 +79,8 @@ export const updateDataRegion = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const ws = await activeWorkspace(supabase, userId);
+    await assertPermission(supabase, userId, ws, "system.settings.manage.workspace");
+
     const { error } = await (supabase.from("workspaces") as any)
       .update({ data_region: data.region })
       .eq("id", ws);

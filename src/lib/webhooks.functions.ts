@@ -4,6 +4,10 @@ import { z } from "zod";
 import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runWebhookDispatch } from "@/lib/webhooks/dispatcher.server";
+import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+
+const WEBHOOK_MANAGE = "system.webhooks.manage.workspace";
+
 
 export const WEBHOOK_EVENTS = [
   "lead.created",
@@ -66,7 +70,10 @@ export const upsertWebhook = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
     if (data.id) {
+
       const { error } = await supabase
         .from("outbound_webhooks")
         .update({
@@ -98,9 +105,12 @@ export const deleteWebhook = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
     await supabase.from("outbound_webhooks").delete().eq("id", data.id).eq("owner_id", userId);
     return { ok: true };
   });
+
 
 export const listWebhookDeliveries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -140,7 +150,10 @@ export const retryWebhookDelivery = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
     const { error } = await supabase
+
       .from("webhook_deliveries")
       .update({
         status: "pending",

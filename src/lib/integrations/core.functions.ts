@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import type { ProviderSlug } from "./registry";
+
+const INTEGRATIONS_MANAGE = "system.integrations.manage.workspace";
+
 
 const TRANSIENT_DB_MESSAGES = [
   "could not query the database for the schema cache",
@@ -102,7 +106,10 @@ export const upsertIntegration = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
     const { data: row, error } = await supabase
+
       .from("integrations")
       .upsert(
         {
@@ -126,9 +133,12 @@ export const disconnectIntegration = createServerFn({ method: "POST" })
     z.object({ provider: z.string().min(1).max(40) }).parse(input),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
     const { error } = await supabase.from("integrations").delete().eq("provider", data.provider);
     if (error) throw new Error(error.message);
+
     return { ok: true };
   });
 
@@ -216,7 +226,10 @@ export const setCreditLimit = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
     const { error } = await supabase.from("credit_limits").upsert(
+
       {
         owner_id: userId,
         provider: data.provider,
