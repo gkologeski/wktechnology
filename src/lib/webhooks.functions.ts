@@ -70,7 +70,10 @@ export const upsertWebhook = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const ws = await getActiveWorkspaceId(supabase, userId);
+    await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
     if (data.id) {
+
       const { error } = await supabase
         .from("outbound_webhooks")
         .update({
