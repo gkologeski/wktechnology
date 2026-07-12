@@ -310,7 +310,7 @@ async function ensureActivityForCalendarEvent(event: {
     });
 
   if (matchingActivity?.id) {
-    const ext = ((matchingActivity.external_ids ?? {}) as Record<string, unknown>) ?? {};
+    const ext = (matchingActivity.external_ids ?? {}) as Record<string, unknown>;
     await supabaseAdmin
       .from("activities")
       .update({
