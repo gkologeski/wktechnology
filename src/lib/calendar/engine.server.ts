@@ -289,20 +289,41 @@ async function ensureActivityForCalendarEvent(event: {
 
   const { data: existing } = await supabaseAdmin
     .from("activities")
-    .select("id, due_date, external_ids")
+    .select("id, due_date, created_at, external_ids")
     .eq("workspace_id", event.workspace_id)
     .eq("type", "meeting")
     .eq("related_deal_id", deal.id)
-    .gte("due_date", from)
-    .lte("due_date", until)
-    .limit(10);
+    .eq("related_contact_id", event.related_contact_id)
+    .order("created_at", { ascending: false })
+    .limit(25);
 
-  const matchingActivity = (existing ?? []).find((activity) => {
-    const ext = (activity.external_ids ?? {}) as Record<string, unknown>;
-    return ext.calendar_event_id === event.id || ext.provider_event_id === event.provider_event_id;
-  }) ?? existing?.[0];
+  const matchingActivity =
+    (existing ?? []).find((activity) => {
+      const ext = (activity.external_ids ?? {}) as Record<string, unknown>;
+      return ext.calendar_event_id === event.id || ext.provider_event_id === event.provider_event_id;
+    }) ??
+    (existing ?? []).find((activity) => {
+      const referenceIso = (activity.due_date as string | null) ?? (activity.created_at as string | null);
+      if (!referenceIso) return false;
+      const referenceMs = new Date(referenceIso).getTime();
+      return Number.isFinite(referenceMs) && referenceMs >= new Date(from).getTime() && referenceMs <= new Date(until).getTime();
+    });
 
   if (matchingActivity?.id) {
+    const ext = ((matchingActivity.external_ids ?? {}) as Record<string, unknown>) ?? {};
+    await supabaseAdmin
+      .from("activities")
+      .update({
+        external_ids: {
+          ...ext,
+          source: ext.source ?? "google_calendar",
+          calendar_event_id: event.id,
+          provider_event_id: event.provider_event_id,
+          gcal_html_link: event.html_link,
+          meet_link: event.hangout_link,
+        },
+      } as never)
+      .eq("id", matchingActivity.id);
     return { activityId: matchingActivity.id as string, created: false };
   }
 
@@ -738,13 +759,13 @@ export async function syncPastRecordings(
   const until = new Date(Date.now() - 10 * 60_000).toISOString();
   const { data: events } = await supabaseAdmin
     .from("calendar_events")
-    .select("id, title, end_at, conference_id, recording_attempts")
+    .select("id, title, start_at, end_at, conference_id, recording_attempts")
     .eq("owner_id", account.owner_id)
     .eq("calendar_account_id", account.id)
     .not("conference_id", "is", null)
     .is("recording_drive_file_id", null)
     .or(
-      `recording_attempts.lt.${RECORDING_MAX_AUTO_ATTEMPTS},recording_status.eq.cross_link_blocked`,
+      `recording_attempts.lt.${RECORDING_MAX_AUTO_ATTEMPTS},recording_status.eq.cross_link_blocked,and(recording_status.eq.not_found,recording_last_error.ilike.%código do Meet%)`,
     )
     .gte("end_at", since)
     .lte("end_at", until)
@@ -1080,9 +1101,10 @@ export async function syncCalendarAccount(accountId: string): Promise<{
     if (!pull.partial) {
       try {
         await reconcileCalendarContactMatches(account.owner_id, { accountId: account.id });
+        await reconcileCalendarActivityLinks(account.owner_id, { accountId: account.id });
       } catch (e) {
         // reconciliação é best-effort; não deve falhar o sync
-        console.warn("reconcileCalendarContactMatches failed", e);
+        console.warn("calendar reconciliation failed", e);
       }
     }
 
@@ -1259,7 +1281,7 @@ export async function syncRecordingForEvent(
   const { data: ev, error } = await supabaseAdmin
     .from("calendar_events")
     .select(
-      "id, title, end_at, conference_id, calendar_account_id, recording_attempts, recording_drive_file_id, recording_url",
+      "id, title, start_at, end_at, conference_id, calendar_account_id, recording_attempts, recording_drive_file_id, recording_url",
     )
     .eq("id", eventId)
     .maybeSingle();
@@ -1284,6 +1306,7 @@ export async function syncRecordingForEvent(
   const rec = await findDriveRecording(token, {
     id: ev.id as string,
     title: ev.title as string | null,
+    start_at: ev.start_at as string | null,
     end_at: ev.end_at as string | null,
     conference_id: ev.conference_id as string | null,
     organizer_email: (acct as CalendarAccountRow).email,
