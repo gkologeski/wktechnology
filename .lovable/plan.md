@@ -1,61 +1,32 @@
-## Diagnóstico
+## Problema
 
-- A reunião existe no banco como evento de calendário:
-  - `calendar_events.id = 6fc9a4b2-0291-4427-9f61-28ab127bac1e`
-  - título: `WK Technology <> MOBICONN-TI SOFTWARE LTDA`
-  - Meet: `eim-xejq-etq`
-  - contato: Samuel Portel (`related_contact_id = 155a2b79...`)
-- Ela não aparece no deal porque `calendar_events.related_activity_id` está `NULL`.
-- O deal `54c49367...` tem Samuel como `primary_contact_id`, mas a função da timeline só espelha calendário para o deal via contato quando a consulta/RPC retorna esse evento; na prática, o evento ficou órfão de activity e sem gravação.
-- A gravação também não foi reprocessada após 15 min porque o evento já está em `recording_attempts = 12`, que é o limite automático. O cron ignora eventos `not_found` que já chegaram nesse limite.
-- O erro atual ainda é: `nenhuma gravação com o código do Meet 'eim-xejq-etq' na janela de busca`, indicando que o patch publicado não reprocessou esse evento específico ou a busca ampla ainda não encontrou candidato.
+Após a Fase de reconciliação (`reconcileCalendarActivityLinks`), cada evento de calendário vinculado a um deal passou a existir em duas formas simultâneas na timeline:
 
-## Plano de correção
+- uma `activity` real (type=meeting) com `external_ids.calendar_event_id = <id>` e `related_deal_id` preenchido;
+- um item virtual `cal_<id>` construído em `src/components/activity-timeline.tsx` (linhas ~803–864) a partir do RPC `get_entity_timeline`, que continua espelhando `calendar_events` pelo contato.
 
-### 1. Restauração pontual do deal Samuel Portel
+Resultado: o mesmo evento aparece duas vezes (o card "cheio" da activity + o card "simples" do espelhamento).
 
-- Atualizar somente o evento `6fc9a4b2...` para sair do limite automático:
-  - zerar/reduzir `recording_attempts`;
-  - limpar `recording_last_error` quando apropriado;
-  - manter `recording_status` apto para reprocessamento.
-- Reprocessar a gravação desse evento de forma controlada.
-- Se o matcher encontrar a gravação, persistir:
-  - `recording_drive_file_id`;
-  - `recording_url`;
-  - `recording_mime_type`;
-  - `recording_status = available`;
-  - `recording_synced_at`.
+## Correção proposta (somente frontend, escopo mínimo)
 
-### 2. Corrigir o vínculo da reunião com a timeline do deal
+Em `src/components/activity-timeline.tsx`, ao montar `calendarVirtuals`, filtrar fora todo `calendar_event_id` que já esteja representado por uma activity real já carregada na mesma timeline.
 
-- Criar/atualizar o vínculo seguro entre o evento de calendário e a timeline:
-  - localizar a activity de reunião já existente do deal no mesmo horário/contato, ou
-  - criar uma activity mínima do tipo `meeting` vinculada ao deal/contact/company, se não houver uma activity compatível.
-- Atualizar `calendar_events.related_activity_id` para apontar para essa activity.
-- Garantir que isso preserve o histórico existente e não duplique cards indevidamente.
+Passos:
 
-### 3. Correção estrutural para novos casos
+1. Antes de construir `calendarVirtuals`, coletar em um `Set<string>` os `calendar_event_id` presentes em `external_ids` das activities reais já carregadas nesta timeline (as que a query base retornou).
+2. Ao mapear `events` para `calendarVirtuals`, descartar todo evento cujo `e.id` esteja nesse Set.
+3. Manter o restante do fluxo intacto (ordenação, filtros de data, agrupamento por dia, e-mails, etc).
 
-- Ajustar o fluxo de ingestão/reconciliação de calendário para eventos importados que tenham `related_contact_id` e cujo contato esteja vinculado a um deal:
-  - criar ou ligar uma activity de reunião correspondente;
-  - preencher `related_activity_id`;
-  - evitar duplicidade por `calendar_event_id`/`provider_event_id` e janela de tempo.
-- Ajustar o cron de gravações para não deixar eventos permanentemente presos em `not_found` quando o motivo for o matcher antigo:
-  - reprocessar seletivamente eventos recentes com erro de “nenhuma gravação com o código do Meet”;
-  - manter o limite automático para erros reais e evitar loop infinito.
+Sem mudanças em backend, RLS, RPC, engine de calendário, ou na criação de activities pela reconciliação. Sem alterar o card "cheio" (activity real) que é o preferido para exibição.
 
-### 4. Validação
+## Validação
 
-- Confirmar no banco que o evento `6fc9a4b2...` ficou com:
-  - `related_activity_id` preenchido;
-  - `recording_status = available` se a gravação for encontrada;
-  - `recording_url` preenchida.
-- Abrir `/deals/54c49367-9744-4254-9687-b7fc4b476a7e` e validar que a reunião aparece na timeline.
-- Se a gravação ainda não for encontrada, retornar o motivo exato do Drive/matcher e deixar o evento visível no deal mesmo sem gravação.
+- Abrir o deal `54c49367-9744-4254-9687-b7fc4b476a7e` (MOBICONN) e confirmar que a reunião "Reunião Técnica - WK Technology <> MOBICO..." aparece apenas uma vez, no card completo com participantes e "Acessar reunião".
+- Abrir um deal cuja reunião ainda não tenha activity espelhada (só existe `calendar_events`): o card virtual `cal_*` deve continuar aparecendo normalmente (sem regressão).
+- Em telas de contato/empresa (sem activity espelhada pelo deal), garantir que reuniões continuam aparecendo.
 
-## Fora do escopo
+## Fora de escopo
 
-- Não alterar regras gerais de associação de contatos/empresas/deals fora de reuniões de calendário.
-- Não alterar RLS/permissões.
-- Não alterar UI além do necessário para refletir a reunião já carregada pela timeline.
-- Não mexer no cron schedule já configurado.
+- Não alterar `reconcileCalendarActivityLinks` nem o motor `src/lib/calendar/engine.server.ts`.
+- Não alterar o RPC `get_entity_timeline`.
+- Não mexer em RLS/permissões.
