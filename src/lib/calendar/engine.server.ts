@@ -551,6 +551,7 @@ export async function syncPastRecordings(
         title: ev.title,
         end_at: ev.end_at,
         conference_id: ev.conference_id as string | null,
+        organizer_email: account.email,
       });
       if (rec.ok) {
         const { error: upErr } = await supabaseAdmin
