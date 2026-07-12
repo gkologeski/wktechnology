@@ -84,32 +84,16 @@ export const Route = createFileRoute("/api/public/hooks/diag-drive-recording")({
 
         const results = await Promise.all([
           runQuery(
-            "meet-code strict",
-            `name contains 'guh-vibx-qrp' and trashed=false`,
+            "Reposicionamento title",
+            `name contains 'Reposicionamento' and ${videoMime} and createdTime > '${dayStart}' and createdTime < '${dayEnd}' and trashed=false`,
           ),
           runQuery(
-            "meet-code fragments",
-            `(name contains 'guh' or name contains 'vibx' or name contains 'qrp') and ${videoMime} and createdTime > '${dayStart}' and createdTime < '${dayEnd}' and trashed=false`,
+            "ATS title",
+            `name contains 'ATS' and ${videoMime} and createdTime > '${dayStart}' and createdTime < '${dayEnd}' and trashed=false`,
           ),
           runQuery(
-            "title fragments",
-            `(name contains 'LUMINA' or name contains 'NORA' or name contains 'WK Technology') and ${videoMime} and createdTime > '${dayStart}' and createdTime < '${dayEnd}' and trashed=false`,
-          ),
-          runQuery(
-            "any video on 2026-07-07",
+            "all videos 07/07",
             `${videoMime} and createdTime > '${dayStart}' and createdTime < '${dayEnd}' and trashed=false`,
-          ),
-          runQuery(
-            "sharedWithMe videos 07/07",
-            `${videoMime} and sharedWithMe=true and createdTime > '${dayStart}' and createdTime < '${dayEnd}' and trashed=false`,
-          ),
-          runQuery(
-            "Meet Recordings folder listing",
-            `name='Meet Recordings' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
-          ),
-          runQuery(
-            "all guh-vibx-qrp anywhere",
-            `fullText contains 'guh-vibx-qrp' and trashed=false`,
           ),
         ]);
 
