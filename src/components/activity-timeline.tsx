@@ -825,13 +825,24 @@ export function ActivityTimeline({
         .map((r) => r.id.replace(/^cal_/, ""))
         .filter(Boolean);
       if (calIds.length > 0) {
+        const existingCalIds = new Set(
+          baseRows
+            .map((row) => {
+              const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+              return typeof ext.calendar_event_id === "string" ? ext.calendar_event_id : null;
+            })
+            .filter(Boolean) as string[],
+        );
         const selectCols =
           "id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at";
         const { data: events } = await supabase
           .from("calendar_events")
           .select(selectCols)
           .in("id", calIds);
-        calendarVirtuals = ((events ?? []) as Array<Record<string, unknown>>).map((e) => {
+        calendarVirtuals = ((events ?? []) as Array<Record<string, unknown>>)
+          .filter((e) => !existingCalIds.has(e.id as string))
+          .map((e) => {
+
           const atts = calendarAttendees(e.attendees);
           return {
             id: `cal_${e.id as string}`,
