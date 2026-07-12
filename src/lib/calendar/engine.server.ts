@@ -232,12 +232,13 @@ async function driveSearch(
     mimeType: string;
     webViewLink?: string;
     createdTime?: string;
+    owners?: { emailAddress?: string }[];
   }[];
   error?: string;
 }> {
   const params = new URLSearchParams({
     q,
-    fields: "files(id,name,mimeType,webViewLink,createdTime)",
+    fields: "files(id,name,mimeType,webViewLink,createdTime,owners(emailAddress))",
     pageSize: "10",
     orderBy: "createdTime desc",
     includeItemsFromAllDrives: "true",
@@ -258,9 +259,49 @@ async function driveSearch(
       mimeType: string;
       webViewLink?: string;
       createdTime?: string;
+      owners?: { emailAddress?: string }[];
     }[];
   };
   return { files: json.files ?? [] };
+}
+
+// Extract fuzzy title tokens (length ≥ 4, alphanumeric, no stopwords) so we can
+// match Meet recordings whose filename dropped the meet code but preserved the
+// event title (e.g. "WK Technology <> LUMINA-NORA (2026-07-07 ...).mp4").
+const TITLE_STOPWORDS = new Set([
+  "meet",
+  "meeting",
+  "reuniao",
+  "reunião",
+  "call",
+  "com",
+  "with",
+  "and",
+  "the",
+  "para",
+  "recording",
+  "gravacao",
+  "gravação",
+  "google",
+  "hangouts",
+  "microsoft",
+  "teams",
+  "zoom",
+  "tecnologia",
+  "ltda",
+]);
+function extractTitleTokens(title: string | null | undefined): string[] {
+  if (!title) return [];
+  return Array.from(
+    new Set(
+      title
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .split(/[^a-z0-9]+/)
+        .filter((t) => t.length >= 4 && !TITLE_STOPWORDS.has(t)),
+    ),
+  );
 }
 
 async function findRecordingFileConflict(
@@ -310,9 +351,16 @@ async function findDriveRecording(
     end_at: string | null;
     start_at?: string | null;
     conference_id?: string | null;
+    organizer_email?: string | null;
   },
 ): Promise<
-  | { ok: true; file_id: string; url: string; mime_type: string; matched_by: string }
+  | {
+      ok: true;
+      file_id: string;
+      url: string;
+      mime_type: string;
+      matched_by: string;
+    }
   | { ok: false; reason: string }
 > {
   if (!ev.end_at) return { ok: false, reason: "evento sem horário de término" };
@@ -328,6 +376,8 @@ async function findDriveRecording(
   const rawTitle = (ev.title ?? "").trim();
   const titleFragment = rawTitle.slice(0, 40).replace(/'/g, "\\'");
   const conferenceId = (ev.conference_id ?? "").trim().toLowerCase();
+  const organizerEmail = (ev.organizer_email ?? "").trim().toLowerCase();
+  const titleTokens = extractTitleTokens(rawTitle);
   const meetCodeRe = /[a-z]{3}-[a-z]{4}-[a-z]{3}/g;
 
   type DriveFile = {
@@ -336,6 +386,7 @@ async function findDriveRecording(
     mimeType: string;
     webViewLink?: string;
     createdTime?: string;
+    owners?: { emailAddress?: string }[];
   };
   const strategies: { label: string; q: string }[] = [];
   if (conferenceId) {
@@ -374,24 +425,51 @@ async function findDriveRecording(
     }
   }
 
-  // Se sabemos o código do Meet, EXIGIR que o nome do arquivo contenha esse
-  // código. Arquivos sem código no nome (renomeados, exportados, etc.) são
-  // rejeitados — vincular só pela janela de tempo causa cross-linking entre
-  // reuniões consecutivas. Usuário pode revincular manualmente pela timeline.
+  // Se sabemos o código do Meet, preferir arquivos com o código no nome.
+  // Fallback "dual-signal" (Fase A.1): quando o Meet gera arquivo sem o
+  // código (renomeado/exportado), aceitar SOMENTE se o arquivo for de
+  // propriedade do organizador da reunião E o nome contiver algum token
+  // significativo do título do evento. Isso evita cross-linking com
+  // gravações consecutivas de outras reuniões.
   if (conferenceId && candidates.length > 0) {
-    const filtered = candidates.filter((f) => {
+    const strict = candidates.filter((f) => {
       const name = (f.name ?? "").toLowerCase();
       const codes = name.match(meetCodeRe);
-      if (!codes || codes.length === 0) return false; // sem código: rejeitar
-      return codes.includes(conferenceId);
+      return codes ? codes.includes(conferenceId) : false;
     });
-    if (filtered.length === 0) {
+    if (strict.length > 0) {
+      candidates = strict;
+    } else if (organizerEmail && titleTokens.length > 0) {
+      const dual = candidates.filter((f) => {
+        const ownedByOrganizer = (f.owners ?? []).some(
+          (o) => (o.emailAddress ?? "").toLowerCase() === organizerEmail,
+        );
+        if (!ownedByOrganizer) return false;
+        const normName = (f.name ?? "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+        // Ignora nomes que carregam código de OUTRO Meet no arquivo.
+        const otherCodes = (normName.match(meetCodeRe) ?? []).filter(
+          (c) => c !== conferenceId,
+        );
+        if (otherCodes.length > 0) return false;
+        return titleTokens.some((tok) => normName.includes(tok));
+      });
+      if (dual.length === 0) {
+        return {
+          ok: false,
+          reason: `nenhuma gravação com o código do Meet '${conferenceId}' e nenhum arquivo do organizador com o título correspondente na janela de busca`,
+        };
+      }
+      candidates = dual;
+      matchedBy = `dual-signal (organizador + título)`;
+    } else {
       return {
         ok: false,
         reason: `nenhuma gravação com o código do Meet '${conferenceId}' na janela de busca`,
       };
     }
-    candidates = filtered;
   }
 
   if (candidates.length === 0) {
@@ -435,6 +513,7 @@ async function findDriveRecording(
   };
 }
 
+
 // Skip auto-retry after this many attempts (~1h of every-5-min cron). User
 // can still force a lookup from the timeline button.
 const RECORDING_MAX_AUTO_ATTEMPTS = 12;
@@ -472,6 +551,7 @@ export async function syncPastRecordings(
         title: ev.title,
         end_at: ev.end_at,
         conference_id: ev.conference_id as string | null,
+        organizer_email: account.email,
       });
       if (rec.ok) {
         const { error: upErr } = await supabaseAdmin
@@ -996,6 +1076,7 @@ export async function syncRecordingForEvent(
     title: ev.title as string | null,
     end_at: ev.end_at as string | null,
     conference_id: ev.conference_id as string | null,
+    organizer_email: (acct as CalendarAccountRow).email,
   });
 
   if (rec.ok) {
