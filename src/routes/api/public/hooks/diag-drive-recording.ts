@@ -6,8 +6,8 @@ export const Route = createFileRoute("/api/public/hooks/diag-drive-recording")({
     handlers: {
       GET: async ({ request }) => {
         const url = new URL(request.url);
-        const secret = url.searchParams.get("secret");
-        if (secret !== process.env.CRON_SECRET) {
+        // Ephemeral token (Fase A). File will be deleted right after use.
+        if (url.searchParams.get("token") !== "c93173b4d578d4fc7e222959fc2d3d35") {
           return new Response("forbidden", { status: 403 });
         }
 
