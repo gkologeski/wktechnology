@@ -1,149 +1,47 @@
+## Fase A — Diagnóstico da gravação ausente
 
-## Objetivo
+**Alvo:** evento `c2124ade-99d8-4f75-87c6-71c40b5722ed` — "WK Technology <> LUMINA/NORA TECNOLOGIA LTDA", Meet `guh-vibx-qrp`, 07/07/2026 14:30 BRT, organizador `guilherme@wktechnology.com.br`.
 
-Entregar um controle de acesso mínimo viável, funcionalmente equivalente ao HubSpot: cada Cargo (Role) concede um conjunto explícito de permissões — visualizar, criar, editar, excluir, exportar, aprovar, atribuir — por objeto (Contatos, Empresas, Negócios, Leads, Tickets, Vagas, Candidatos, Ofertas, etc.) e por ferramenta transversal (Comunicar, Importar, Exportar, Excluir em massa, Workflows, Pipelines, Propriedades, Integrações, Billing, Usuários).
+Estado atual no banco: `recording_status = not_found`, 13 tentativas, erro "nenhuma gravação com o código do Meet 'guh-vibx-qrp' na janela de busca". O matcher exige, por segurança, que o nome do arquivo no Drive contenha `guh-vibx-qrp` dentro da janela `end_at −1h … +6h`.
 
-Escopo confirmado pelo usuário:
-1. Consolidar tudo no modelo novo (`permission_sets` + `user_permission_sets`).
-2. Bloqueio em server functions + esconder/desabilitar na UI. RLS atual (workspace + owner/admin) permanece como perímetro de segurança.
-3. Semear o pacote HubSpot-like completo (9 cargos).
+### Passos (sem alterar código)
 
-Fora de escopo (fica para depois): reescrever RLS por scope (own/team/workspace), field-level rules, permissões em `custom_objects`, delegação temporária, SCIM auto-role.
+1. **Confirmar se a reunião foi gravada**
+   - Abrir Google Meet / histórico do organizador (`guilherme@wktechnology.com.br`) para 07/07 14:30.
+   - Se ninguém clicou em "Gravar reunião", encerrar Fase A — não existe gravação a associar. Marcar o evento como "sem gravação" na timeline.
 
-## Espelho do modelo HubSpot
+2. **Se foi gravada, localizar o arquivo no Drive**
+   - No Drive do organizador, procurar em "Meu Drive → Meet Recordings" por qualquer arquivo criado entre 07/07 14:30 e 07/07 21:00 (janela ampla).
+   - Verificar o nome do arquivo. Padrão esperado do Meet: `guh-vibx-qrp (2026-07-07 …).mp4`.
 
-HubSpot expõe, por usuário: (a) uma "Preset role" opcional, (b) permissões por objeto CRM com escopos View/Edit/Delete = Everything | Team only | Owned only | None, (c) toggles de tools (Communicate, Bulk delete, Import, Export, Edit property settings, Workflows, etc.), e (d) permissões de conta (Users, Integrations, Billing, Reports). Estamos replicando essa forma: `permissions` (36 chaves `module.resource.action.scope`) → `permission_sets` (Cargo) → `user_permission_sets` (atribuição). Já temos toda essa estrutura no banco; falta popular, atribuir e usar.
+3. **Diagnóstico do nome**
+   - **(a) Nome já contém `guh-vibx-qrp`** e mesmo assim não foi achado → possíveis causas: arquivo fora do "Meu Drive" do organizador (foi movido para Drive compartilhado sem permissão para a conta conectada) OU criado fora da janela `end_at +6h` (reunião muito longa / upload atrasado). Ação: mover para o Meu Drive do organizador e rodar reconcile manual.
+   - **(b) Nome foi renomeado** (perdeu o código) → o matcher rejeita por design (evita cross-linking). Ação: renomear o arquivo de volta contendo `guh-vibx-qrp` ou usar o botão manual de vínculo (Fase C).
+   - **(c) Arquivo está em Drive de outro participante** que não tem conta conectada no CRM → nada a fazer sem conectar essa conta.
 
-## Fase 1 — Seed dos 9 Cargos preset
+4. **Ampliar a janela de busca (diagnóstico via servidor)**
+   Rodar uma varredura ampla no Drive do organizador para descartar hipóteses (a) e (c) — nenhum arquivo de mídia criado no dia 07/07 na faixa 14:00–22:00 BRT com "LUMINA", "NORA", "guh", "vibx" ou "qrp" no nome. Se aparecer algo, decidir se é a gravação e vincular manualmente. Essa varredura será feita chamando a `driveSearch` existente (sem novo código; apenas um script de diagnóstico descartável executado no ambiente do agente com o token do `calendar_accounts` do organizador).
 
-Migration idempotente que garante, no schema `public`, um `permission_set` `is_system=true` por Cargo, com os `permission_set_items` corretos. Se já existir com o mesmo nome, apenas ressincroniza os itens.
+5. **Se localizado, forçar reconcile do evento**
+   Chamar a função existente que vincula recording para um evento específico (a mesma usada pelo botão "sincronizar gravações" da UI) passando `event_id = c2124ade-…`. Isso reseta `recording_attempts` e reprocessa. Confirmado o vínculo, a gravação aparece na timeline do contato Janderson (e, com a Fase B/C, no card do deal).
 
-```text
-Super Admin      → todas as 36 permissions
-Admin            → tudo exceto system.billing.manage e system.roles.manage
-Sales Manager    → techsales.* view.workspace / update.team / delete.workspace / export / approve.team
-                  + system.members.view + system.audit.view
-Sales Rep        → techsales.* view.team / create.own / update.own
-                  (sem delete, sem export, sem approve)
-Marketing        → techsales.contacts/companies/leads view.workspace + create.own + update.own
-                  + system.integrations.manage
-Service Rep      → techsales.tickets view.workspace / create.own / update.own
-                  + techsales.contacts view.workspace
-Recruiter        → techhire.jobs view.own / create.own / update.own
-                  + techhire.candidates view.workspace / create.own / update.workspace
-                  + techhire.interviews view.workspace / schedule / score
-Hiring Manager   → techhire.jobs view.workspace / update.workspace / publish
-                  + techhire.candidates view.workspace / assign
-                  + techhire.offers view.workspace / create / approve
-Read-Only        → todas as *.view.* e nada mais
-```
+### Entregáveis da Fase A
 
-Também popula `access_profiles` correspondentes (mesmo nome, `is_system=true`) para as telas antigas ficarem coerentes até serem removidas na Fase 5.
+- Relatório curto do que foi encontrado (foi gravada? nome do arquivo? em qual Drive?), com o diagnóstico final entre (a)/(b)/(c) ou "não gravada".
+- Se aplicável, o evento `c2124ade` fica com `recording_status = available` e `recording_url` preenchido.
+- Lista de outras reuniões do mesmo dia (`dnv-mwpv-vpe`, `oog-uvqa-rrh`) que provavelmente compartilham a mesma causa raiz, para o usuário aplicar o mesmo tratamento em lote.
 
-## Fase 2 — Migração dos usuários existentes
+### Fora do escopo desta fase
 
-Migration: para cada linha de `team_members` com `access_profile_id` preenchido, insere `user_permission_sets(user_id, owner_id, set_id)` mapeando o profile atual para o preset mais próximo (Admin/Sales Rep/Read-Only conforme `base_role`). Nunca sobrescreve atribuições já existentes. O workspace owner é considerado Super Admin implícito — não recebe linha, o `assertPermission` já retorna `true` para ele.
+- Nenhuma mudança em `engine.server.ts`, RLS, RPCs ou UI.
+- Nada de alterar `related_deal_id` do evento (isso é a **Fase B**).
+- Nada de adicionar bloco "Reuniões via contato/empresa" no card do deal (**Fase C**).
 
-Também backfill: quem estiver em `workspace_members` mas não em `user_permission_sets` recebe "Read-Only" para evitar downgrade acidental de acesso amplo.
+### Como validar manualmente ao final
 
-## Fase 3 — Enforcement em server functions
+- Abrir `/deals/288e0f30-edfb-474e-97f4-0432da9e6b63` → timeline do contato Janderson deve mostrar a reunião de 07/07 com o player de vídeo se a gravação foi localizada.
+- `SELECT recording_status, recording_url FROM calendar_events WHERE id='c2124ade-…'` deve retornar `available` + URL do Drive (ou permanecer `not_found` com a razão clara).
 
-Auditar todas as `src/lib/*.functions.ts` que fazem `insert/update/delete/export/import` sobre os recursos cobertos por `permissions`. Adicionar no topo do `.handler`, depois do `requireSupabaseAuth`:
+### Próximo passo (não executar automaticamente)
 
-```ts
-await assertPermission(context.supabase, context.userId, workspaceId,
-  "techsales.deals.update.workspace");
-```
-
-Mapa alvo (arquivos-chave):
-
-```text
-contacts.functions.ts          → techsales.contacts.{create,update,delete,export}
-companies.functions.ts         → techsales.companies.{view,manage}
-deals.functions.ts             → techsales.deals.{create,update,delete,export,approve}
-leads.functions.ts             → techsales.leads.{create,update,delete,export}
-tickets.functions.ts           → techsales.tickets.{create,update,delete}
-ats/jobs.functions.ts          → techhire.jobs.{create,update,delete,publish}
-ats/candidates.functions.ts    → techhire.candidates.{create,update,delete,assign,export}
-ats/interviews.functions.ts    → techhire.interviews.{schedule,score}
-ats/offers.functions.ts        → techhire.offers.{create,approve}
-csv-import.functions.ts        → *.create.* (já parcial, revisar)
-scheduled-exports.functions.ts → *.export.* (já parcial, revisar)
-workflows.functions.ts         → mantém requireTool atual, ajustar chave
-custom-fields.functions.ts     → system.settings.manage
-pipelines.functions.ts         → system.settings.manage
-integrations/*.functions.ts    → system.integrations.manage
-billing.functions.ts           → system.billing.manage
-team-members.functions.ts      → system.members.manage
-```
-
-Para escopos `own`/`team`, usar o RPC existente `user_can_act(user_id, resource, action, row_owner_id, row_assignee_id)` antes de mutations em linha específica. Se o usuário só tem `.own`, um update em registro de outro assignee dispara `PermissionDeniedError`.
-
-Erro padrão: `PermissionDeniedError` (status 403), traduzido no client para toast "Permissão negada: seu Cargo não permite [ação] em [recurso]. Peça ao admin do workspace para revisar."
-
-## Fase 4 — Gate visual na UI
-
-Criar `src/components/access-control/Can.tsx`:
-
-```tsx
-<Can perm="techsales.deals.delete.workspace">
-  <Button variant="destructive">Excluir</Button>
-</Can>
-
-<Can anyOf={["techsales.deals.update.own","techsales.deals.update.workspace"]}>
-  <Button>Editar</Button>
-</Can>
-```
-
-Usa o hook `usePermissions()` que já existe. Enquanto carrega, renderiza `null` (não flasheia botão). Variante `<Can mode="disable">` para desabilitar em vez de esconder — útil em barras de ferramentas.
-
-Aplicar em:
-- `contacts.tsx`, `companies.tsx`, `deals.tsx`, `leads.tsx`, `tickets.tsx` (botões Novo, Excluir, Exportar, Importar, ações em massa)
-- `ats.jobs.tsx`, `ats.candidates.tsx` (Nova vaga, Publicar, Excluir, Atribuir)
-- `settings.*` sensíveis (Billing, Integrations, Members, Custom properties, Workflows, Pipelines)
-- Menu lateral: itens que exigem `system.settings.manage` ou `system.billing.manage` ficam ocultos para quem não tem
-
-Nenhuma rota é bloqueada por `beforeLoad` neste MVP (evita loop de redirect) — a rota carrega e mostra `EmptyState` com "Você não tem permissão para ver este recurso" quando `getMyPermissions()` retorna vazio para o módulo.
-
-## Fase 5 — Centro de Acesso `/home/access`
-
-A tela já existe. Ajustes:
-- Aba **Cargos**: destaca os 9 presets `is_system` (badge "Padrão"), não permite deletar; permite duplicar como base para cargos custom.
-- Aba **Pacotes de Permissão**: passa a ser opcional (avançado). Um Cargo simples = 1 permission_set com itens diretos; o "Pacote" fica como agrupador reutilizável entre cargos custom.
-- Aba **Membros**: passa a atribuir Cargo (permission_set) em vez de `access_profile`. Grava em `user_permission_sets` e mantém `team_members.access_profile_id` sincronizado por trigger para compat.
-- Aba **Simulação**: já existe, apenas garantir que aponta para o novo RPC.
-- Aba **Auditoria**: já existe; nada a mudar.
-
-Rotas legadas `/settings/roles/*` continuam redirecionando para `/home/access`.
-
-## Fase 6 — Documentação e QA
-
-- Atualizar `docs/visibility-matrix.md` com a nova matriz por Cargo.
-- Novo `docs/rbac-guide.md` com os 9 presets, o que cada um enxerga/faz, e como criar Cargos custom.
-- Checklist manual de QA: logar como cada preset e conferir 3 fluxos-chave (criar, editar linha de outra pessoa, excluir, exportar, acessar Settings).
-
-## Detalhes técnicos
-
-- Todas as migrations são idempotentes (`ON CONFLICT DO UPDATE`) e reversíveis (down script comentado).
-- `assertPermission` já resolve workspace pelo `owner_id` do membro; não muda contrato.
-- Cache: `usePermissions` invalida em `SIGNED_IN`/atualização de Cargo (adicionar `queryClient.invalidateQueries(["my-permissions"])` no `saveMemberAssignment`).
-- Sem novas dependências npm. Sem edição de client.ts/types.ts (types regeneram automático após migration).
-- Nenhuma alteração em RLS, auth, storage, edge functions ou schemas protegidos.
-
-## Riscos e mitigação
-
-- **Rebaixamento acidental de acesso** de usuários hoje "livres" via RLS ampla → mitigado por backfill Read-Only + comunicado no changelog + botão "Ver como" (Simulação) antes de aplicar.
-- **Regressão em fluxos que hoje passam sem checar permissão** → enforcement é aditivo: se `assertPermission` lançar, o toast identifica exatamente a chave faltante para o admin ajustar o Cargo.
-- **Dessincronia entre `access_profiles` e `permission_sets`** durante a transição → trigger unidirecional (permission_set → access_profile) e telas legadas em read-only.
-
-## Entregáveis
-
-- 2 migrations (seed presets + backfill usuários + trigger de sync).
-- 1 componente `<Can>` e ajustes no hook `usePermissions` para expor `can(key)`.
-- ~20 `assertPermission` distribuídos nas server functions listadas.
-- Ajustes em `/home/access` (aba Membros e badges).
-- 2 docs.
-
-## Próximo passo
-
-Ao aprovar, começo pela Fase 1 (seed dos presets) e Fase 2 (backfill) em migrations separadas, seguido do `<Can>` e do enforcement — nessa ordem, para nenhum usuário perder acesso a algo que já usava antes das checagens entrarem no ar.
+Após concluída a Fase A, decidir se seguimos para **Fase B** (mostrar reuniões do contato/empresa no card do deal) e **Fase C** (bloco dedicado com status da gravação e ação manual de re-vincular).
