@@ -752,6 +752,11 @@ export async function syncPastRecordings(
   account: CalendarAccountRow,
 ): Promise<{ scanned: number; found: number; missing: number; errors: number }> {
   const token = await ensureAccessToken(account);
+  try {
+    await reconcileCalendarActivityLinks(account.owner_id, { accountId: account.id });
+  } catch (e) {
+    console.warn("reconcileCalendarActivityLinks failed before recordings sync", e);
+  }
   // Meet typically publishes the MP4 to Drive 10-30 min after the meeting
   // ends, so searching earlier wastes attempts. Look back 30 days to cover
   // re-imported / late-synced events.
