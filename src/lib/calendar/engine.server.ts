@@ -1076,6 +1076,7 @@ export async function syncRecordingForEvent(
     title: ev.title as string | null,
     end_at: ev.end_at as string | null,
     conference_id: ev.conference_id as string | null,
+    organizer_email: (acct as CalendarAccountRow).email,
   });
 
   if (rec.ok) {
