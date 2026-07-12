@@ -220,6 +220,202 @@ export async function reconcileCalendarContactMatches(
   return { scanned: rows.length, linked };
 }
 
+type CalendarActivityLinkResult = { scanned: number; linked: number; created: number };
+
+async function resolveDealForCalendarContact(
+  workspaceId: string,
+  contactId: string,
+): Promise<{ id: string; company_id: string | null } | null> {
+  const { data: primaryDeal } = await supabaseAdmin
+    .from("deals")
+    .select("id, company_id, updated_at")
+    .eq("workspace_id", workspaceId)
+    .eq("primary_contact_id", contactId)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (primaryDeal?.id) {
+    return { id: primaryDeal.id as string, company_id: (primaryDeal.company_id as string | null) ?? null };
+  }
+
+  const { data: dealLinks } = await supabaseAdmin
+    .from("deal_contacts")
+    .select("deal_id")
+    .eq("contact_id", contactId)
+    .limit(10);
+  const dealIds = (dealLinks ?? []).map((row) => row.deal_id).filter(Boolean) as string[];
+  if (dealIds.length === 0) return null;
+
+  const { data: linkedDeal } = await supabaseAdmin
+    .from("deals")
+    .select("id, company_id, updated_at")
+    .eq("workspace_id", workspaceId)
+    .in("id", dealIds)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return linkedDeal?.id
+    ? { id: linkedDeal.id as string, company_id: (linkedDeal.company_id as string | null) ?? null }
+    : null;
+}
+
+async function ensureActivityForCalendarEvent(event: {
+  id: string;
+  owner_id: string;
+  workspace_id: string;
+  provider_event_id: string | null;
+  title: string | null;
+  description: string | null;
+  location: string | null;
+  start_at: string | null;
+  end_at: string | null;
+  html_link: string | null;
+  hangout_link: string | null;
+  related_contact_id: string | null;
+}): Promise<{ activityId: string | null; created: boolean }> {
+  if (!event.workspace_id || !event.related_contact_id || !event.start_at) {
+    return { activityId: null, created: false };
+  }
+
+  const deal = await resolveDealForCalendarContact(event.workspace_id, event.related_contact_id);
+  if (!deal) return { activityId: null, created: false };
+
+  const startMs = new Date(event.start_at).getTime();
+  const endMs = event.end_at ? new Date(event.end_at).getTime() : startMs + 60 * 60_000;
+  if (!Number.isFinite(startMs)) return { activityId: null, created: false };
+  const from = new Date(startMs - 2 * 3600_000).toISOString();
+  const until = new Date((Number.isFinite(endMs) ? endMs : startMs) + 2 * 3600_000).toISOString();
+
+  const { data: existing } = await supabaseAdmin
+    .from("activities")
+    .select("id, due_date, created_at, external_ids")
+    .eq("workspace_id", event.workspace_id)
+    .eq("type", "meeting")
+    .eq("related_deal_id", deal.id)
+    .eq("related_contact_id", event.related_contact_id)
+    .order("created_at", { ascending: false })
+    .limit(25);
+
+  const matchingActivity =
+    (existing ?? []).find((activity) => {
+      const ext = (activity.external_ids ?? {}) as Record<string, unknown>;
+      return ext.calendar_event_id === event.id || ext.provider_event_id === event.provider_event_id;
+    }) ??
+    (existing ?? []).find((activity) => {
+      const referenceIso = (activity.due_date as string | null) ?? (activity.created_at as string | null);
+      if (!referenceIso) return false;
+      const referenceMs = new Date(referenceIso).getTime();
+      return Number.isFinite(referenceMs) && referenceMs >= new Date(from).getTime() && referenceMs <= new Date(until).getTime();
+    });
+
+  if (matchingActivity?.id) {
+    const ext = (matchingActivity.external_ids ?? {}) as Record<string, unknown>;
+    await supabaseAdmin
+      .from("activities")
+      .update({
+        external_ids: {
+          ...ext,
+          source: ext.source ?? "google_calendar",
+          calendar_event_id: event.id,
+          provider_event_id: event.provider_event_id,
+          gcal_html_link: event.html_link,
+          meet_link: event.hangout_link,
+        },
+      } as never)
+      .eq("id", matchingActivity.id);
+    return { activityId: matchingActivity.id as string, created: false };
+  }
+
+  const externalIds = {
+    source: "google_calendar",
+    calendar_event_id: event.id,
+    provider_event_id: event.provider_event_id,
+    gcal_html_link: event.html_link,
+    meet_link: event.hangout_link,
+  };
+  const attachments = {
+    end_at: event.end_at,
+    meet_link: event.hangout_link,
+    calendar_html_link: event.html_link,
+  };
+
+  const { data: inserted, error } = await supabaseAdmin
+    .from("activities")
+    .insert({
+      owner_id: event.owner_id,
+      workspace_id: event.workspace_id,
+      type: "meeting",
+      subject: event.title || "Reunião (Google Calendar)",
+      body: event.description ?? null,
+      due_date: event.start_at,
+      meeting_location: event.location ?? event.hangout_link ?? null,
+      related_contact_id: event.related_contact_id,
+      related_deal_id: deal.id,
+      related_company_id: deal.company_id,
+      external_ids: externalIds,
+      attachments,
+      completed: false,
+    } as never)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[calendar activity link] falha ao criar activity", {
+      event_id: event.id,
+      error: error.message,
+    });
+    return { activityId: null, created: false };
+  }
+
+  return { activityId: (inserted?.id as string | null) ?? null, created: true };
+}
+
+export async function reconcileCalendarActivityLinks(
+  ownerId: string,
+  opts: { accountId?: string; sinceDays?: number; untilDays?: number } = {},
+): Promise<CalendarActivityLinkResult> {
+  const sinceDays = opts.sinceDays ?? 90;
+  const untilDays = opts.untilDays ?? 90;
+  const now = Date.now();
+  const since = new Date(now - sinceDays * 86400_000).toISOString();
+  const until = new Date(now + untilDays * 86400_000).toISOString();
+
+  let query = supabaseAdmin
+    .from("calendar_events")
+    .select(
+      "id, owner_id, workspace_id, provider_event_id, title, description, location, start_at, end_at, html_link, hangout_link, related_contact_id",
+    )
+    .eq("owner_id", ownerId)
+    .is("related_activity_id", null)
+    .not("related_contact_id", "is", null)
+    .gte("start_at", since)
+    .lte("start_at", until)
+    .order("start_at", { ascending: false })
+    .limit(100);
+  if (opts.accountId) query = query.eq("calendar_account_id", opts.accountId);
+
+  const { data: events, error } = await query;
+  if (error || !events) return { scanned: 0, linked: 0, created: 0 };
+
+  let linked = 0;
+  let created = 0;
+  for (const event of events) {
+    const result = await ensureActivityForCalendarEvent(event as never);
+    if (!result.activityId) continue;
+    const { error: updateError } = await supabaseAdmin
+      .from("calendar_events")
+      .update({ related_activity_id: result.activityId } as never)
+      .eq("id", event.id);
+    if (!updateError) {
+      linked++;
+      if (result.created) created++;
+    }
+  }
+
+  return { scanned: events.length, linked, created };
+}
+
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 
 async function driveSearch(
@@ -366,10 +562,13 @@ async function findDriveRecording(
   if (!ev.end_at) return { ok: false, reason: "evento sem horário de término" };
   const endMs = new Date(ev.end_at).getTime();
   if (!Number.isFinite(endMs)) return { ok: false, reason: "horário de término inválido" };
-  const after = new Date(endMs - 1 * 3600_000).toISOString();
-  // Meet publica a gravação em minutos/horas. Reduzir a janela de +7d para
-  // +6h evita casar com gravação de outra reunião com título parecido.
-  const before = new Date(endMs + 6 * 3600_000).toISOString();
+  const startMs = ev.start_at ? new Date(ev.start_at).getTime() : NaN;
+  const baseMs = Number.isFinite(startMs) ? startMs : endMs;
+  const after = new Date(baseMs - 2 * 3600_000).toISOString();
+  // Meet publica a gravação em minutos/horas. A janela parte do início da reunião
+  // para cobrir arquivos criados durante/ao final do Meet sem voltar ao range amplo
+  // de dias, que já causou vínculos cruzados.
+  const before = new Date(baseMs + 8 * 3600_000).toISOString();
   const baseTime = `createdTime > '${after}' and createdTime < '${before}' and trashed = false`;
   const videoMime = "(mimeType='video/mp4' or mimeType contains 'video/')";
 
@@ -553,6 +752,11 @@ export async function syncPastRecordings(
   account: CalendarAccountRow,
 ): Promise<{ scanned: number; found: number; missing: number; errors: number }> {
   const token = await ensureAccessToken(account);
+  try {
+    await reconcileCalendarActivityLinks(account.owner_id, { accountId: account.id });
+  } catch (e) {
+    console.warn("reconcileCalendarActivityLinks failed before recordings sync", e);
+  }
   // Meet typically publishes the MP4 to Drive 10-30 min after the meeting
   // ends, so searching earlier wastes attempts. Look back 30 days to cover
   // re-imported / late-synced events.
@@ -560,13 +764,13 @@ export async function syncPastRecordings(
   const until = new Date(Date.now() - 10 * 60_000).toISOString();
   const { data: events } = await supabaseAdmin
     .from("calendar_events")
-    .select("id, title, end_at, conference_id, recording_attempts")
+    .select("id, title, start_at, end_at, conference_id, recording_attempts")
     .eq("owner_id", account.owner_id)
     .eq("calendar_account_id", account.id)
     .not("conference_id", "is", null)
     .is("recording_drive_file_id", null)
     .or(
-      `recording_attempts.lt.${RECORDING_MAX_AUTO_ATTEMPTS},recording_status.eq.cross_link_blocked`,
+      `recording_attempts.lt.${RECORDING_MAX_AUTO_ATTEMPTS},recording_status.eq.cross_link_blocked,and(recording_status.eq.not_found,recording_last_error.ilike.%código do Meet%)`,
     )
     .gte("end_at", since)
     .lte("end_at", until)
@@ -580,6 +784,7 @@ export async function syncPastRecordings(
       const rec = await findDriveRecording(token, {
         id: ev.id as string,
         title: ev.title,
+        start_at: (ev as { start_at?: string | null }).start_at ?? null,
         end_at: ev.end_at,
         conference_id: ev.conference_id as string | null,
         organizer_email: account.email,
@@ -901,9 +1106,10 @@ export async function syncCalendarAccount(accountId: string): Promise<{
     if (!pull.partial) {
       try {
         await reconcileCalendarContactMatches(account.owner_id, { accountId: account.id });
+        await reconcileCalendarActivityLinks(account.owner_id, { accountId: account.id });
       } catch (e) {
         // reconciliação é best-effort; não deve falhar o sync
-        console.warn("reconcileCalendarContactMatches failed", e);
+        console.warn("calendar reconciliation failed", e);
       }
     }
 
@@ -1080,7 +1286,7 @@ export async function syncRecordingForEvent(
   const { data: ev, error } = await supabaseAdmin
     .from("calendar_events")
     .select(
-      "id, title, end_at, conference_id, calendar_account_id, recording_attempts, recording_drive_file_id, recording_url",
+      "id, title, start_at, end_at, conference_id, calendar_account_id, recording_attempts, recording_drive_file_id, recording_url",
     )
     .eq("id", eventId)
     .maybeSingle();
@@ -1105,6 +1311,7 @@ export async function syncRecordingForEvent(
   const rec = await findDriveRecording(token, {
     id: ev.id as string,
     title: ev.title as string | null,
+    start_at: ev.start_at as string | null,
     end_at: ev.end_at as string | null,
     conference_id: ev.conference_id as string | null,
     organizer_email: (acct as CalendarAccountRow).email,
