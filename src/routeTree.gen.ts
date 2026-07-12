@@ -243,6 +243,7 @@ import { Route as ApiPublicHooksLinkedinApplicantsSyncRouteImport } from './rout
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
+import { Route as ApiPublicHooksDiagDriveRecordingRouteImport } from './routes/api/public/hooks/diag-drive-recording'
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicHooksCalendarRecordingsTickRouteImport } from './routes/api/public/hooks/calendar-recordings-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
@@ -1611,6 +1612,12 @@ const ApiPublicHooksEmailBroadcastTickRoute =
     path: '/api/public/hooks/email-broadcast-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksDiagDriveRecordingRoute =
+  ApiPublicHooksDiagDriveRecordingRouteImport.update({
+    id: '/api/public/hooks/diag-drive-recording',
+    path: '/api/public/hooks/diag-drive-recording',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksCalendarTickRoute =
   ApiPublicHooksCalendarTickRouteImport.update({
     id: '/api/public/hooks/calendar-tick',
@@ -2097,6 +2104,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/diag-drive-recording': typeof ApiPublicHooksDiagDriveRecordingRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -2374,6 +2382,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/diag-drive-recording': typeof ApiPublicHooksDiagDriveRecordingRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -2658,6 +2667,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/diag-drive-recording': typeof ApiPublicHooksDiagDriveRecordingRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -2942,6 +2952,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/diag-drive-recording'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -3219,6 +3230,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/diag-drive-recording'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -3502,6 +3514,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/diag-drive-recording'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -3618,6 +3631,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarRecordingsTickRoute: typeof ApiPublicHooksCalendarRecordingsTickRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
+  ApiPublicHooksDiagDriveRecordingRoute: typeof ApiPublicHooksDiagDriveRecordingRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
@@ -5316,6 +5330,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEmailBroadcastTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/diag-drive-recording': {
+      id: '/api/public/hooks/diag-drive-recording'
+      path: '/api/public/hooks/diag-drive-recording'
+      fullPath: '/api/public/hooks/diag-drive-recording'
+      preLoaderRoute: typeof ApiPublicHooksDiagDriveRecordingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/calendar-tick': {
       id: '/api/public/hooks/calendar-tick'
       path: '/api/public/hooks/calendar-tick'
@@ -6331,6 +6352,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksCalendarRecordingsTickRoute:
     ApiPublicHooksCalendarRecordingsTickRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
+  ApiPublicHooksDiagDriveRecordingRoute: ApiPublicHooksDiagDriveRecordingRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
