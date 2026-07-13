@@ -104,19 +104,9 @@ export function DealLineItems({
   }
   if (items.length === 0) {
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">Nenhum item adicionado.</p>
-        <DealLineItemsEditor
-          dealId={dealId}
-          ownerId={ownerId}
-          currency={currency}
-          trigger={
-            <Button size="sm" variant="outline">
-              <Plus className="h-4 w-4 mr-1" /> Adicionar item
-            </Button>
-          }
-        />
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Nenhum item adicionado. Clique em "Editar" para adicionar.
+      </p>
     );
   }
 
