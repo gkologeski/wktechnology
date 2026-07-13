@@ -1,40 +1,48 @@
-## Diagnóstico
+## Objetivo
 
-Confirmei no banco:
-- Deal `288e0f30...` (Janderson) tem 1 reunião ligada (`activity 0a6d8ea1`, calendar_event `c2124ade`, Meet `guh-vibx-qrp`, 07/07 14:30).
-- `calendar_events.recording_url` está preenchido com o link do Drive (a gravação FOI encontrada).
-- Porém `activities.recording_url` está `NULL` e `activities.attachments.recording_url` também.
+Criar no CRM a reunião "WK Technology <> AV ECO WELLNESS HUB LTDA" ocorrida em 02/07, vinculada ao deal `4803d5df-ced0-41de-b8da-a1a6ccbd8e22`, sem sincronizar toda a agenda de terceiros e sem duplicar a reunião de 13/07 já existente.
 
-O card de reunião na timeline (`src/components/activity-timeline.tsx` linhas 1756–1786) só considera "tem gravação" quando o link está em `attachments.recording_url` ou `external_ids.recording_url` da própria activity. Como a activity espelho dos calendar_events já existe e a deduplicação descarta o card virtual, o link do Drive nunca aparece.
+## Escopo
 
-## Causa raiz
+Restrito a uma única inserção de dados. Nenhuma alteração de código, schema, RLS, permissões ou motor de sincronização.
 
-`syncDriveRecordings` em `src/lib/calendar/engine.server.ts` (~L847) grava `recording_url` apenas em `calendar_events`. Nunca propaga para a activity vinculada (`related_activity_id`). Ou seja: a gravação existe no evento do calendário, mas nunca é copiada para a atividade que a timeline renderiza.
+## O que preciso confirmar antes de inserir
 
-## Correção proposta
+Para não gerar um card genérico, preciso destes campos da reunião de 02/07 (só o que você souber — o que faltar eu preencho com valores conservadores):
 
-1. **Propagação no motor de sync** (`src/lib/calendar/engine.server.ts`)
-   - Após atualizar `calendar_events.recording_url`, se o evento tiver `related_activity_id`, atualizar na `activities` correspondente:
-     - `recording_url` (coluna direta)
-     - `attachments.recording_url` (merge preservando demais chaves)
-     - `external_ids.recording_url` (idem)
-   - Mesmo comportamento quando a gravação vem via `ensureRecordingForEvent` (função em ~L1337) — cobre tanto o sync em lote quanto o "sincronizar agora" pontual.
+1. **Data e horário exatos** (início e término, com fuso). Ex.: 02/07/2026 15:00–16:00 (America/Sao_Paulo).
+2. **Título** — mantenho "WK Technology <> AV ECO WELLNESS HUB LTDA" se não vier outro.
+3. **Organizador/dono no CRM** — por padrão uso o `owner_id` do deal (`1c237fbe…`, Guilherme). Confirma?
+4. **Link do Google Meet** da reunião de 02/07 (se houver — ex.: `meet.google.com/xxx-xxxx-xxx`). Sem isso a reunião entra sem `conference_id`.
+5. **Participantes** (opcional) — lista de e-mails.
+6. **Notas/resumo** (opcional).
+7. **Gravação** — se existir link no Drive, informo depois; não é obrigatório para importar.
 
-2. **Backfill único** (SQL/insert)
-   - Para todos os `calendar_events` com `recording_url` não-nulo e `related_activity_id` preenchido cuja activity ainda esteja sem `recording_url`, copiar o valor da gravação para a activity (coluna direta + `attachments` + `external_ids`, sem sobrescrever outros campos). Corrige imediatamente o deal do Janderson e qualquer outro caso equivalente já presente no banco.
+## Como será feita a importação
 
-3. **Defesa em profundidade na timeline** (`src/components/activity-timeline.tsx`)
-   - No cálculo de `recordingUrl` do card de reunião (L1772), consultar também o `calendar_events.recording_url` já carregado no fetch de virtuals: manter um mapa `calendar_event_id → recording_url` construído no bloco de virtuals (L836–841) e usar como fallback quando a activity real (mesmo `calendar_event_id`) não tiver gravação preenchida. Isso protege contra qualquer futura falha de propagação e garante que a UI nunca "esconda" uma gravação existente.
+Uma única operação de dados (via `supabase--insert`) que:
 
-Escopo restrito ao problema reportado. Nada de RLS, permissões, schema, ou lógica de negócio fora do sync de gravações.
+- Insere uma linha em `public.activities` com:
+  - `type = "meeting"`, `completed = true`, `owner_id` = dono do deal (ou o informado),
+  - `related_deal_id = 4803d5df-ced0-41de-b8da-a1a6ccbd8e22`,
+  - `subject/title`, `due_date` = início da reunião, `meta.end_at` = término,
+  - `meeting_key` distinta da de 13/07 para não colidir com o índice único parcial:
+    - se você fornecer o link do Meet: `meet:<code>`,
+    - senão: `manual:av-eco-wellness-2026-07-02` (prefixo `manual:` para não conflitar com `meet:`/`gcal:`/`title:`).
+  - `attachments/meta` com participantes e notas, quando fornecidos.
+- **Não** insere nada em `calendar_events` (evitamos criar um evento "fantasma" que o próximo sync poderia tentar reconciliar com Google e falhar). A timeline renderiza cards de reunião a partir de `activities` normalmente — o card virtual de `calendar_events` é opcional.
 
 ## Como validar
 
-- Após o build, abrir `/deals/288e0f30-edfb-474e-97f4-0432da9e6b63` → o card da reunião "WK Technology <> LUMINA/NORA TECNOLOGIA LTDA" deve exibir o botão/link "Abrir gravação" apontando para o arquivo no Drive.
-- Rodar o sync de gravações novamente em outro deal recente e verificar que a activity passa a ter `recording_url` preenchido imediatamente após o `calendar_events` ser atualizado.
+- Abrir `/deals/4803d5df-ced0-41de-b8da-a1a6ccbd8e22` e conferir que a timeline mostra **duas** reuniões: 02/07 (nova) e 13/07 (existente), sem duplicações.
+- Rodar novamente "Sincronizar agora" em Calendários e confirmar que não aparece um terceiro card nem a reunião de 02/07 é sobrescrita.
 
-## Arquivos impactados
+## Fora do escopo
 
-- `src/lib/calendar/engine.server.ts` (propagação → activity)
-- `src/components/activity-timeline.tsx` (fallback de leitura)
-- Migration/insert de backfill único das activities existentes
+- Não expandir sync para agendas de terceiros.
+- Não mexer no matcher, no `meeting_key`, na deduplicação de timeline, nem em RLS.
+- Não incluir gravação — se existir, tratamos em passo separado depois de importar.
+
+## Próximo passo
+
+Você me envia data/hora, link do Meet (se houver) e participantes; eu executo o insert único e devolvo o resultado com o `id` da activity criada para conferência.
