@@ -557,43 +557,11 @@ async function driveSearch(
 }
 
 // Extract fuzzy title tokens (length ≥ 4, alphanumeric, no stopwords) so we can
-// match Meet recordings whose filename dropped the meet code but preserved the
-// event title (e.g. "WK Technology <> LUMINA-NORA (2026-07-07 ...).mp4").
-const TITLE_STOPWORDS = new Set([
-  "meet",
-  "meeting",
-  "reuniao",
-  "reunião",
-  "call",
-  "com",
-  "with",
-  "and",
-  "the",
-  "para",
-  "recording",
-  "gravacao",
-  "gravação",
-  "google",
-  "hangouts",
-  "microsoft",
-  "teams",
-  "zoom",
-  "tecnologia",
-  "ltda",
-]);
-function extractTitleTokens(title: string | null | undefined): string[] {
-  if (!title) return [];
-  return Array.from(
-    new Set(
-      title
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .split(/[^a-z0-9]+/)
-        .filter((t) => t.length >= 4 && !TITLE_STOPWORDS.has(t)),
-    ),
-  );
-}
+// (removido) TITLE_STOPWORDS + extractTitleTokens — usados por fallbacks
+// "dual-signal" / "permissivo (título ≥2 tokens)" que causaram cross-links
+// entre reuniões diferentes do mesmo organizador. Somente o meet-code é usado
+// como chave hoje. Não reintroduzir.
+
 
 async function findRecordingFileConflict(
   fileId: string,
@@ -659,20 +627,23 @@ async function findDriveRecording(
   if (!Number.isFinite(endMs)) return { ok: false, reason: "horário de término inválido" };
   const startMs = ev.start_at ? new Date(ev.start_at).getTime() : NaN;
   const baseMs = Number.isFinite(startMs) ? startMs : endMs;
-  const after = new Date(baseMs - 2 * 3600_000).toISOString();
-  // Meet publica a gravação em minutos/horas. A janela parte do início da reunião
-  // para cobrir arquivos criados durante/ao final do Meet sem voltar ao range amplo
-  // de dias, que já causou vínculos cruzados.
-  const before = new Date(baseMs + 8 * 3600_000).toISOString();
+  // Janela estreita: 15 min antes do início até 6h após, o suficiente para o
+  // Meet publicar o MP4 sem colidir com reuniões próximas no mesmo dia.
+  const after = new Date(baseMs - 15 * 60_000).toISOString();
+  const before = new Date(baseMs + 6 * 3600_000).toISOString();
   const baseTime = `createdTime > '${after}' and createdTime < '${before}' and trashed = false`;
   const videoMime = "(mimeType='video/mp4' or mimeType contains 'video/')";
 
-  const rawTitle = (ev.title ?? "").trim();
-  const titleFragment = rawTitle.slice(0, 40).replace(/'/g, "\\'");
   const conferenceId = (ev.conference_id ?? "").trim().toLowerCase();
-  const organizerEmail = (ev.organizer_email ?? "").trim().toLowerCase();
-  const titleTokens = extractTitleTokens(rawTitle);
   const meetCodeRe = /[a-z]{3}-[a-z]{4}-[a-z]{3}/g;
+
+  // REGRA ÚNICA: só casamos gravações cujo nome contém o code do Meet do evento.
+  // NÃO reintroduzir fallbacks "dual-signal", "permissivo (título ≥2 tokens)"
+  // nem "organizador (fallback amplo)" — todos já causaram cross-links entre
+  // reuniões diferentes do mesmo organizador (ver deals NEXID, Samuel, Janderson).
+  if (!conferenceId) {
+    return { ok: false, reason: "evento sem código do Meet — não é possível casar gravação com segurança" };
+  }
 
   type DriveFile = {
     id: string;
@@ -682,119 +653,29 @@ async function findDriveRecording(
     createdTime?: string;
     owners?: { emailAddress?: string }[];
   };
-  const strategies: { label: string; q: string }[] = [];
-  if (conferenceId) {
-    // Meet nomeia o arquivo começando pelo código do Meet (ex.: "eim-xejq-etq (2026-07-06 ...).mp4").
-    strategies.push({
-      label: "meet code",
-      q: `name contains '${conferenceId.replace(/'/g, "\\'")}' and ${videoMime} and ${baseTime}`,
-    });
-  }
-  if (titleFragment) {
-    strategies.push({
-      label: "título",
-      q: `name contains '${titleFragment}' and ${videoMime} and ${baseTime}`,
-    });
-  }
-  strategies.push({
-    label: "compartilhado comigo",
-    q: `${videoMime} and sharedWithMe = true and ${baseTime}`,
-  });
-  strategies.push({ label: "meu drive", q: `${videoMime} and ${baseTime}` });
 
   const errors: string[] = [];
   let candidates: DriveFile[] = [];
-  let matchedBy = "";
-  for (const s of strategies) {
-    const r = await driveSearch(token, s.q);
-    if (r.error) {
-      errors.push(`${s.label}: ${r.error}`);
-      if (/^drive 40[13]/.test(r.error)) break;
-      continue;
-    }
-    if (r.files.length > 0) {
-      candidates = r.files;
-      matchedBy = s.label;
-      break;
-    }
+  const matchedBy = "meet-code";
+  const searchResult = await driveSearch(
+    token,
+    `name contains '${conferenceId.replace(/'/g, "\\'")}' and ${videoMime} and ${baseTime}`,
+  );
+  if (searchResult.error) {
+    errors.push(`meet code: ${searchResult.error}`);
+  } else {
+    candidates = searchResult.files;
   }
 
-  // Fase 2: se nenhuma estratégia trouxe candidatos, tenta uma busca ampla
-  // por proprietário (organizador) + janela de tempo, para casos em que o
-  // arquivo do Meet foi renomeado e não contém mais o código nem o título.
-  if (candidates.length === 0 && organizerEmail) {
-    const broad = await driveSearch(
-      token,
-      `${videoMime} and '${organizerEmail.replace(/'/g, "\\'")}' in owners and ${baseTime}`,
-    );
-    if (!broad.error && broad.files.length > 0) {
-      candidates = broad.files;
-      matchedBy = "organizador (fallback amplo)";
-    } else if (broad.error) {
-      errors.push(`organizador amplo: ${broad.error}`);
-    }
-  }
-
-  // Filtro em cascata quando temos código do Meet:
-  //  1) strict: arquivos com o código do Meet no nome.
-  //  2) dual-signal: proprietário == organizador E nome contém algum token
-  //     significativo do título, sem código de outro Meet.
-  //  3) permissivo: nome sem código de outro Meet E contém ≥2 tokens do título
-  //     (independe de propriedade — cobre gravações reenviadas/renomeadas).
-  if (conferenceId && candidates.length > 0) {
-    const withoutOtherMeetCode = (name: string) => {
-      const codes = (name.match(meetCodeRe) ?? []).filter((c) => c !== conferenceId);
-      return codes.length === 0;
-    };
-    const normalize = (s: string) =>
-      s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-    const strict = candidates.filter((f) => {
+  // Filtro rígido: exigir o código do Meet no nome do arquivo (regex).
+  if (candidates.length > 0) {
+    candidates = candidates.filter((f) => {
       const name = (f.name ?? "").toLowerCase();
       const codes = name.match(meetCodeRe);
       return codes ? codes.includes(conferenceId) : false;
     });
-    if (strict.length > 0) {
-      candidates = strict;
-      matchedBy = matchedBy || "meet code";
-    } else {
-      const dual = (organizerEmail && titleTokens.length > 0)
-        ? candidates.filter((f) => {
-            const ownedByOrganizer = (f.owners ?? []).some(
-              (o) => (o.emailAddress ?? "").toLowerCase() === organizerEmail,
-            );
-            if (!ownedByOrganizer) return false;
-            const normName = normalize(f.name ?? "");
-            if (!withoutOtherMeetCode(normName)) return false;
-            return titleTokens.some((tok) => normName.includes(tok));
-          })
-        : [];
-      if (dual.length > 0) {
-        candidates = dual;
-        matchedBy = "dual-signal (organizador + título)";
-      } else if (titleTokens.length >= 2) {
-        const permissive = candidates.filter((f) => {
-          const normName = normalize(f.name ?? "");
-          if (!withoutOtherMeetCode(normName)) return false;
-          const hits = titleTokens.filter((tok) => normName.includes(tok)).length;
-          return hits >= 2;
-        });
-        if (permissive.length === 0) {
-          return {
-            ok: false,
-            reason: `nenhuma gravação com o código do Meet '${conferenceId}', do organizador ou com múltiplos tokens do título na janela de busca`,
-          };
-        }
-        candidates = permissive;
-        matchedBy = "permissivo (título ≥2 tokens)";
-      } else {
-        return {
-          ok: false,
-          reason: `nenhuma gravação com o código do Meet '${conferenceId}' na janela de busca`,
-        };
-      }
-    }
   }
+
 
 
   if (candidates.length === 0) {
@@ -895,6 +776,7 @@ export async function syncPastRecordings(
             recording_status: "available",
             recording_last_error: null,
             recording_attempts: attempts,
+            recording_matched_by: rec.matched_by,
           } as never)
           .eq("id", ev.id);
         if (upErr) {
@@ -1432,6 +1314,7 @@ export async function syncRecordingForEvent(
         recording_status: "available",
         recording_last_error: null,
         recording_attempts: attempts,
+        recording_matched_by: rec.matched_by,
       } as never)
       .eq("id", eventId);
     try {
