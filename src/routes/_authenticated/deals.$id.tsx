@@ -4,6 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
@@ -79,6 +86,29 @@ function DealDetail() {
     void load();
   };
 
+  const setPipeline = async (pipelineId: string) => {
+    const next = pipelines.find((p) => p.id === pipelineId);
+    const firstStage = next?.stages[0]?.value ?? "new";
+    const legacyEnum = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
+    const payload: Record<string, unknown> = {
+      pipeline_id: pipelineId,
+      stage_id: firstStage,
+    };
+    if (legacyEnum.includes(firstStage)) payload.stage = firstStage;
+    else {
+      const type = next?.stages[0]?.type;
+      payload.stage = type === "won" ? "won" : type === "lost" ? "lost" : "new";
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("deals").update(payload).eq("id", deal.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Funil atualizado");
+    void load();
+  };
+
   const remove = async () => {
     if (!confirm("Excluir negócio?")) return;
     await supabase.from("deals").delete().eq("id", deal.id);
@@ -116,14 +146,30 @@ function DealDetail() {
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-          onClick={remove}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {pipelines.length > 0 && (
+            <Select value={dealPipeline?.id ?? ""} onValueChange={setPipeline}>
+              <SelectTrigger className="h-9 w-[200px]">
+                <SelectValue placeholder="Selecione o funil" />
+              </SelectTrigger>
+              <SelectContent>
+                {pipelines.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+            onClick={remove}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       <StageTracker stages={stages} current={currentStage} onChange={setStage} />
     </div>
