@@ -438,7 +438,7 @@ export async function reconcileCalendarActivityLinks(
   let query = supabaseAdmin
     .from("calendar_events")
     .select(
-      "id, owner_id, workspace_id, provider_event_id, title, description, location, start_at, end_at, html_link, hangout_link, related_contact_id",
+      "id, owner_id, workspace_id, provider_event_id, conference_id, title, description, location, start_at, end_at, html_link, hangout_link, related_contact_id",
     )
     .eq("owner_id", ownerId)
     .is("related_activity_id", null)
