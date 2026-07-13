@@ -1,123 +1,40 @@
 ## Diagnóstico
 
-Hoje o `ensureActivityForCalendarEvent` (src/lib/calendar/engine.server.ts:263–372) usa **janela de tempo ±2h** como fallback de matching, o que:
+Confirmei no banco:
+- Deal `288e0f30...` (Janderson) tem 1 reunião ligada (`activity 0a6d8ea1`, calendar_event `c2124ade`, Meet `guh-vibx-qrp`, 07/07 14:30).
+- `calendar_events.recording_url` está preenchido com o link do Drive (a gravação FOI encontrada).
+- Porém `activities.recording_url` está `NULL` e `activities.attachments.recording_url` também.
 
-- gera falsos positivos entre reuniões distintas próximas (30 em 30 min);
-- gera duplicidade quando a reunião passa da janela;
-- não representa a semântica real (a mesma reunião = mesmo Meet ou mesmo evento no Google).
+O card de reunião na timeline (`src/components/activity-timeline.tsx` linhas 1756–1786) só considera "tem gravação" quando o link está em `attachments.recording_url` ou `external_ids.recording_url` da própria activity. Como a activity espelho dos calendar_events já existe e a deduplicação descarta o card virtual, o link do Drive nunca aparece.
 
-O deal `54c61...` tem 2 activities porque os dois `calendar_events` têm `conference_id` diferentes (`eim-xejq-etq` e `tns-qqun-fwh`) — são reuniões distintas mesmo. O trabalho aqui é garantir que **nunca mais** duas activities apareçam para a mesma reunião real, sem usar tempo.
+## Causa raiz
 
-## Estratégia — igual ao HubSpot: chave canônica estável
+`syncDriveRecordings` em `src/lib/calendar/engine.server.ts` (~L847) grava `recording_url` apenas em `calendar_events`. Nunca propaga para a activity vinculada (`related_activity_id`). Ou seja: a gravação existe no evento do calendário, mas nunca é copiada para a atividade que a timeline renderiza.
 
-No sync HubSpot a chave é `hs_object_id` (id imutável do objeto). Para Google, adotar a mesma ideia com **chave composta determinística**:
+## Correção proposta
 
-```
-meeting_key =
-  1) 'meet:'   + conference_id                              (quando existir)
-  2) 'gcal:'   + recurring_event_id                          (série recorrente)
-  3) 'gcal:'   + base_event_id (provider_event_id sem sufixo _YYYYMMDDTHHMMSSZ)
-  4) 'title:'  + normalize(title) + '@' + organizer_email    (último recurso, sem tempo)
-```
+1. **Propagação no motor de sync** (`src/lib/calendar/engine.server.ts`)
+   - Após atualizar `calendar_events.recording_url`, se o evento tiver `related_activity_id`, atualizar na `activities` correspondente:
+     - `recording_url` (coluna direta)
+     - `attachments.recording_url` (merge preservando demais chaves)
+     - `external_ids.recording_url` (idem)
+   - Mesmo comportamento quando a gravação vem via `ensureRecordingForEvent` (função em ~L1337) — cobre tanto o sync em lote quanto o "sincronizar agora" pontual.
 
-Cada nível é testado em ordem; o primeiro que existir vira a chave. **Nenhum critério envolve start_at/end_at.**
+2. **Backfill único** (SQL/insert)
+   - Para todos os `calendar_events` com `recording_url` não-nulo e `related_activity_id` preenchido cuja activity ainda esteja sem `recording_url`, copiar o valor da gravação para a activity (coluna direta + `attachments` + `external_ids`, sem sobrescrever outros campos). Corrige imediatamente o deal do Janderson e qualquer outro caso equivalente já presente no banco.
 
-## Plano
+3. **Defesa em profundidade na timeline** (`src/components/activity-timeline.tsx`)
+   - No cálculo de `recordingUrl` do card de reunião (L1772), consultar também o `calendar_events.recording_url` já carregado no fetch de virtuals: manter um mapa `calendar_event_id → recording_url` construído no bloco de virtuals (L836–841) e usar como fallback quando a activity real (mesmo `calendar_event_id`) não tiver gravação preenchida. Isso protege contra qualquer futura falha de propagação e garante que a UI nunca "esconda" uma gravação existente.
 
-### 1. Migration — coluna canônica + índice único + backfill + merge
+Escopo restrito ao problema reportado. Nada de RLS, permissões, schema, ou lógica de negócio fora do sync de gravações.
 
-- Nova coluna `activities.meeting_key text` (nullable).
-- Backfill para activities com `external_ids.source = 'google_calendar'`:
-  - Recomputa `meeting_key` a partir do `calendar_events` linkado.
-- **Merge determinístico** de duplicatas por `(workspace_id, meeting_key)`:
-  - Mantém a activity mais antiga (menor `created_at`).
-  - Faz coalesce nos campos `recording_url`, `body`, `attachments`, `meeting_location`, `subject` (só copia quando o destino estiver null/vazio).
-  - Aponta `calendar_events.related_activity_id` dos órfãos para a sobrevivente.
-  - Deleta a duplicata.
-- Índice único parcial:
-  ```sql
-  CREATE UNIQUE INDEX activities_meeting_key_unique
-    ON public.activities (workspace_id, meeting_key)
-    WHERE meeting_key IS NOT NULL AND type = 'meeting';
-  ```
-- **Sem CHECK constraint** envolvendo tempo. Sem trigger que use `now()`.
+## Como validar
 
-### 2. Helper `computeMeetingKey(event)` (novo, em `engine.server.ts`)
+- Após o build, abrir `/deals/288e0f30-edfb-474e-97f4-0432da9e6b63` → o card da reunião "WK Technology <> LUMINA/NORA TECNOLOGIA LTDA" deve exibir o botão/link "Abrir gravação" apontando para o arquivo no Drive.
+- Rodar o sync de gravações novamente em outro deal recente e verificar que a activity passa a ter `recording_url` preenchido imediatamente após o `calendar_events` ser atualizado.
 
-Função pura que recebe `{ conference_id, provider_event_id, recurring_event_id, title, organizer_email }` e devolve a chave conforme a cascata acima. `normalize(title)` = `title.trim().toLowerCase().replace(/\s+/g,' ')`.
+## Arquivos impactados
 
-### 3. Reescrita de `ensureActivityForCalendarEvent`
-
-Substituir o bloco atual (linhas 290–328) por match **apenas por chave**:
-
-```ts
-const meeting_key = computeMeetingKey(event);
-if (!meeting_key) { /* fallback: cria activity nova, sem tentar deduplicar */ }
-
-const { data: existing } = await supabaseAdmin
-  .from("activities")
-  .select("id, external_ids")
-  .eq("workspace_id", event.workspace_id)
-  .eq("type", "meeting")
-  .eq("meeting_key", meeting_key)
-  .maybeSingle();
-
-if (existing) {
-  // atualiza metadados (calendar_event_id atual, meet_link, html_link,
-  // due_date da instância mais recente, subject se veio null antes)
-  return { activityId: existing.id, created: false };
-}
-
-// INSERT ... com meeting_key preenchido. Usar upsert onConflict=(workspace_id,meeting_key)
-// para eliminar corrida.
-```
-
-- Zero uso de `start_at`/`end_at`/janela.
-- Zero busca por `related_deal_id` ou `related_contact_id` como filtro de dedup (a chave é global no workspace — o link com deal/contact é aplicado depois).
-
-### 4. Ajuste em `reconcileCalendarActivityLinks`
-
-- Mantém o loop, mas o critério de "linkado" passa a ser `related_activity_id IS NOT NULL`.
-- Antes de chamar `ensureActivityForCalendarEvent`, pré-computa `meeting_key` para logar/diagnóstico.
-
-### 5. Timeline (`src/components/activity-timeline.tsx`)
-
-Complementar o filtro atual (que hoje só filtra por `calendar_event_id`):
-
-- Coletar dos `baseRows` também o conjunto de `meeting_key`s (via `external_ids.meeting_key` ou recalculado a partir do que a activity já tem).
-- Filtrar do `calendarVirtuals` qualquer evento cujo `meeting_key` computado esteja nesse conjunto.
-- Assim, mesmo que a activity real esteja linkada a uma instância diferente da série (ou a nenhuma), o card virtual da mesma reunião não aparece em dobro.
-
-### 6. Push (Google → CRM criando reuniões novas)
-
-Ao criar reunião no Google via CRM, gravar `meeting_key` desde a inserção da activity (usando `conference_id` retornado pelo Google ou o `provider_event_id`). Garante que a próxima varredura não crie sósia.
-
-### 7. Correção pontual do deal atual
-
-- Recomputar `meeting_key` para `707538b3` e `2d57c562`:
-  - `707538b3` → `meet:eim-xejq-etq`
-  - `2d57c562` → `meet:tns-qqun-fwh`
-- Chaves diferentes → **não são duplicatas**; ambas permanecem (correto). O usuário verá 2 cards porque são 2 reuniões reais distintas — indicar isso no card com o Meet code visível, para o usuário identificar.
-
-### 8. Observabilidade
-
-- Log estruturado no engine: `[meeting-dedup] key=<...> action=matched|created|skipped_no_key`.
-- Contador simples em memória agregado no retorno de `syncCalendarNow` (`matched`, `created`, `skipped_no_key`) exibido na tela `/settings/calendars`.
-
-## Detalhes técnicos
-
-- Arquivos:
-  - `supabase/migrations/<ts>_activities_meeting_key.sql`
-  - `src/lib/calendar/engine.server.ts` (helper + reescrita do match)
-  - `src/components/activity-timeline.tsx` (filtro por meeting_key)
-  - `src/routes/_authenticated/settings.calendars.tsx` (exibir métricas retornadas)
-- `activities.external_ids` continua guardando `calendar_event_id` e `provider_event_id` para rastreabilidade; a chave canônica vai em coluna própria e no índice único.
-- Sem mudanças em RLS/roles: a coluna herda as policies existentes.
-- Sem alterações no comportamento de HubSpot (continua usando `hs_object_id`).
-
-## Riscos e mitigação
-
-- **Título homônimo em reuniões distintas** (nível 4 da cascata): mitigado porque só é usado quando não há `conference_id` **nem** `provider_event_id` — cenário raríssimo (eventos manuais sem Meet, mesmo organizador, mesmo título exato).
-- **Recorrência com Meet renovado** (Google gera novo `conference_id` por instância): nesse caso o nível 2 (`recurring_event_id`) mantém a chave estável.
-- **Corrida em sync paralelo**: `upsert onConflict` no índice único cobre.
-- **Migração sem downtime**: coluna nullable + backfill idempotente + merge dentro de transação por `(workspace_id, meeting_key)`.
+- `src/lib/calendar/engine.server.ts` (propagação → activity)
+- `src/components/activity-timeline.tsx` (fallback de leitura)
+- Migration/insert de backfill único das activities existentes
