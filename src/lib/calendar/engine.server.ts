@@ -113,12 +113,24 @@ const FREE_EMAIL_DOMAINS = new Set([
   "terra.com.br",
 ]);
 
+const WK_INTERNAL_DOMAINS = new Set(["wktechnology.com.br", "wkconsultoria.com.br"]);
+
 async function matchContactForAttendees(
   ownerId: string,
   attendees: GCalEvent["attendees"],
   accountEmail?: string | null,
 ): Promise<string | null> {
   if (!attendees || attendees.length === 0) return null;
+  // A calendar event is only a WK↔client meeting when WK actually participates.
+  // Require at least one attendee on a WK internal domain — otherwise we treat
+  // it as a client-only internal event that just happens to invite our contact
+  // and skip the linkage entirely (no time-window fallback).
+  const hasWkAttendee = attendees.some((a) => {
+    const d = a.email?.split("@")[1]?.toLowerCase();
+    return d ? WK_INTERNAL_DOMAINS.has(d) : false;
+  });
+  if (!hasWkAttendee) return null;
+
   // Determine internal domain(s) only from the connected account and self=true
   // attendees. NOTE: we intentionally do NOT treat `organizer` as internal —
   // when the client (external) creates the invite, the organizer is external
