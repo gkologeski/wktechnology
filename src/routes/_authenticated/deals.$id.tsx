@@ -86,6 +86,29 @@ function DealDetail() {
     void load();
   };
 
+  const setPipeline = async (pipelineId: string) => {
+    const next = pipelines.find((p) => p.id === pipelineId);
+    const firstStage = next?.stages[0]?.value ?? "new";
+    const legacyEnum = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
+    const payload: Record<string, unknown> = {
+      pipeline_id: pipelineId,
+      stage_id: firstStage,
+    };
+    if (legacyEnum.includes(firstStage)) payload.stage = firstStage;
+    else {
+      const type = next?.stages[0]?.type;
+      payload.stage = type === "won" ? "won" : type === "lost" ? "lost" : "new";
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from("deals").update(payload).eq("id", deal.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Funil atualizado");
+    void load();
+  };
+
   const remove = async () => {
     if (!confirm("Excluir negócio?")) return;
     await supabase.from("deals").delete().eq("id", deal.id);
