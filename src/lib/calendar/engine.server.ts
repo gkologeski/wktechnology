@@ -1434,7 +1434,16 @@ export async function syncRecordingForEvent(
         recording_attempts: attempts,
       } as never)
       .eq("id", eventId);
+    try {
+      await propagateRecordingToActivity(eventId, rec.url);
+    } catch (propErr) {
+      console.warn("[drive recording] propagação para activity falhou", {
+        event_id: eventId,
+        error: propErr instanceof Error ? propErr.message : String(propErr),
+      });
+    }
     return { ok: true, recording_url: rec.url, recording_status: "available" };
+
   }
   await supabaseAdmin
     .from("calendar_events")
