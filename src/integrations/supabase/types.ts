@@ -267,6 +267,7 @@ export type Database = {
           hs_raw: Json | null
           hubspot_owner_id: string | null
           id: string
+          meeting_key: string | null
           meeting_location: string | null
           meeting_outcome: string | null
           mentions: string[]
@@ -313,6 +314,7 @@ export type Database = {
           hs_raw?: Json | null
           hubspot_owner_id?: string | null
           id?: string
+          meeting_key?: string | null
           meeting_location?: string | null
           meeting_outcome?: string | null
           mentions?: string[]
@@ -359,6 +361,7 @@ export type Database = {
           hs_raw?: Json | null
           hubspot_owner_id?: string | null
           id?: string
+          meeting_key?: string | null
           meeting_location?: string | null
           meeting_outcome?: string | null
           mentions?: string[]
@@ -13394,6 +13397,10 @@ export type Database = {
           _pipeline: string
           _priority: Database["public"]["Enums"]["ticket_priority"]
         }
+        Returns: string
+      }
+      gcal_base_event_id: {
+        Args: { provider_event_id: string }
         Returns: string
       }
       generate_referral_slug: { Args: never; Returns: string }
