@@ -277,6 +277,47 @@ function computeMeetingKey(input: {
   return null;
 }
 
+async function propagateRecordingToActivity(
+  eventId: string,
+  recordingUrl: string,
+): Promise<void> {
+  const { data: ev } = await supabaseAdmin
+    .from("calendar_events")
+    .select("related_activity_id")
+    .eq("id", eventId)
+    .maybeSingle();
+  const activityId = (ev?.related_activity_id as string | null) ?? null;
+  if (!activityId) return;
+
+  const { data: act } = await supabaseAdmin
+    .from("activities")
+    .select("recording_url, attachments, external_ids")
+    .eq("id", activityId)
+    .maybeSingle();
+  if (!act) return;
+
+  const attachments = { ...((act.attachments ?? {}) as Record<string, unknown>) };
+  const externalIds = { ...((act.external_ids ?? {}) as Record<string, unknown>) };
+  const alreadySynced =
+    act.recording_url === recordingUrl &&
+    attachments.recording_url === recordingUrl &&
+    externalIds.recording_url === recordingUrl;
+  if (alreadySynced) return;
+
+  attachments.recording_url = recordingUrl;
+  externalIds.recording_url = recordingUrl;
+
+  await supabaseAdmin
+    .from("activities")
+    .update({
+      recording_url: recordingUrl,
+      attachments,
+      external_ids: externalIds,
+    } as never)
+    .eq("id", activityId);
+}
+
+
 async function ensureActivityForCalendarEvent(event: {
   id: string;
   owner_id: string;
