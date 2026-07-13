@@ -1,39 +1,32 @@
-## Contexto
+## Diagnóstico
 
-O negócio `a3f7fed6-7677-45e2-bea2-21248e83d71a` tem `pipeline_id = NULL` e `stage_id = "1017586011"` (id herdado do HubSpot). Como não está vinculado a nenhum pipeline atual, o drawer não consegue resolver os estágios e o usuário fica sem edição.
+No banco o deal continua com `pipeline_id = NULL` (`stage_id = 1017586011`). Ou seja, apesar do print mostrar "Serviços" no combo, a gravação nunca aconteceu.
 
-No arquivo `src/components/deals/deal-detail-drawer.tsx` (linha 274), o seletor de **Funil** só é renderizado quando `isNew`. Para negócios existentes, o pipeline aparece só implicitamente pelo prop `pipeline` recebido da tela pai.
+Causa em `src/routes/_authenticated/deals.$id.tsx`:
 
-## Escopo
+- `dealPipeline` (linhas 50–59) faz fallback: quando `deal.pipeline_id` é nulo, resolve para o `is_default` (Serviços) ou o primeiro pipeline.
+- O `<Select value={dealPipeline?.id ?? ""}>` (linha 151) fica com "Serviços" já selecionado visualmente, mesmo o DB estando `NULL`.
+- Ao clicar em "Serviços", o Radix Select não dispara `onValueChange` porque o valor não mudou — logo `setPipeline` nunca roda e nada é salvo.
 
-Alterar apenas a UI/edição do drawer de negócios. Sem mudanças em schema, RLS, workflows, cotações ou timeline.
+Como o board (`deals.tsx:196`) filtra por `d.pipeline_id !== selected.id`, o deal com `pipeline_id = NULL` continua invisível.
 
-### Mudanças
+## Correção
 
-1. **`src/components/deals/deal-detail-drawer.tsx`**
-   - Renderizar o seletor "Funil" também quando o negócio já existe (`!isNew`), acima do seletor "Estágio", usando o mesmo padrão do fluxo de criação.
-   - Ao trocar de pipeline, resetar `stage_id`/`stage` para o primeiro estágio do pipeline escolhido (mesma lógica já existente no branch `isNew`).
-   - Ajustar `activePipeline` para derivar de `v.pipeline_id` também no fluxo de edição, e não somente de `pipeline` recebido por prop, para que a mudança fique refletida em tela antes do save.
-   - No `persist`, continuar salvando `pipeline_id: activePipeline?.id ?? null` (já faz isso — apenas confirmar).
-   - Quando o pipeline atual do negócio for `null` ou não estiver na lista carregada (caso do a3f7fed6), pré-selecionar automaticamente o primeiro pipeline disponível no `useEffect` inicial, sinalizando via placeholder "Selecione um funil" no `SelectTrigger`, sem salvar automaticamente — o usuário precisa confirmar clicando em "Salvar".
+`src/routes/_authenticated/deals.$id.tsx`:
 
-2. **Sem migração de dados em massa.** O usuário poderá corrigir o deal problemático abrindo o drawer, escolhendo o funil "Serviços" (ou o desejado), o estágio adequado e salvando.
+- Ler o valor real do combo direto do deal (`deal.pipeline_id ?? ""`), não do `dealPipeline` (que já aplica fallback).
+- Manter `dealPipeline` só para calcular os estágios do StageTracker.
+- Assim o Select mostra placeholder "Selecione o funil" quando `pipeline_id` é nulo e disparar "Serviços" gera `onValueChange` → `setPipeline` → update no banco.
 
-## Detalhes técnicos
-
-- `activePipeline` passa a ser: `pipelines.find(p => p.id === v.pipeline_id) ?? pipeline ?? null`.
-- O `Select` do funil compartilha o mesmo `onValueChange` do branch `isNew`; extrair para uma função local `changePipeline(val)` para evitar duplicação.
-- Preservar o comportamento de `stage_id` legado (`stageKey` no `persist`) para deals HubSpot.
+Sem mudanças em RLS, board, schema ou drawer.
 
 ## Validação manual
 
-1. Abrir o negócio `a3f7fed6-...` em `/deals`.
-2. Selecionar o funil "Serviços" (ou outro), escolher um estágio e salvar.
-3. Confirmar que o deal aparece no board/kanban do funil escolhido.
-4. Repetir com um deal já vinculado a um pipeline para garantir que trocar de funil re-mapeia o estágio para o primeiro do novo funil e não quebra a listagem.
+1. Recarregar `/deals/a3f7fed6-...`; combo de funil deve exibir "Selecione o funil".
+2. Escolher "Serviços" e confirmar toast "Funil atualizado".
+3. Voltar em `/deals` (aba Quadro, funil Serviços) e conferir que o deal aparece na coluna do primeiro estágio.
+4. Ajustar o estágio no StageTracker se necessário.
 
 ## Fora de escopo
 
-- Backfill automático dos negócios sem `pipeline_id`.
-- Mudanças na criação rápida (`QuickCreateDealDialog`) — já foi ajustada em turno anterior.
-- Alterações no kanban/lista.
+- Backfill em massa de deals sem `pipeline_id` (fica para tarefa separada).
