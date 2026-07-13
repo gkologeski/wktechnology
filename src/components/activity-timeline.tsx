@@ -821,59 +821,89 @@ export function ActivityTimeline({
       const calRows = ((tl ?? []) as Array<{ id: string; source: string }>).filter(
         (r) => r.source === "calendar_event",
       );
-      const calIds = calRows
+      const calIdsFromRpc = calRows
         .map((r) => r.id.replace(/^cal_/, ""))
         .filter(Boolean);
+      const existingCalIds = new Set(
+        baseRows
+          .map((row) => {
+            const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+            return typeof ext.calendar_event_id === "string" ? ext.calendar_event_id : null;
+          })
+          .filter(Boolean) as string[],
+      );
+      // Fetch calendar_events referenced by RPC virtuals AND by real activities in baseRows.
+      // Real activities may be missing recording_url when the recording was found after the
+      // activity was created; we use the event as fallback.
+      const calIds = Array.from(new Set([...calIdsFromRpc, ...existingCalIds]));
       if (calIds.length > 0) {
-        const existingCalIds = new Set(
-          baseRows
-            .map((row) => {
-              const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
-              return typeof ext.calendar_event_id === "string" ? ext.calendar_event_id : null;
-            })
-            .filter(Boolean) as string[],
-        );
         const selectCols =
           "id, title, description, start_at, end_at, location, html_link, hangout_link, attendees, recording_url, related_contact_id, created_at";
         const { data: events } = await supabase
           .from("calendar_events")
           .select(selectCols)
           .in("id", calIds);
-        calendarVirtuals = ((events ?? []) as Array<Record<string, unknown>>)
+        const eventsById = new Map<string, Record<string, unknown>>();
+        for (const e of (events ?? []) as Array<Record<string, unknown>>) {
+          eventsById.set(e.id as string, e);
+        }
+        // Enrich real activities that already exist in baseRows with recording_url fallback.
+        for (const row of baseRows) {
+          const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+          const cid = typeof ext.calendar_event_id === "string" ? (ext.calendar_event_id as string) : null;
+          if (!cid) continue;
+          const ev = eventsById.get(cid);
+          if (!ev) continue;
+          const evRec = (ev.recording_url as string | null) ?? null;
+          if (!evRec) continue;
+          const r = row as unknown as {
+            recording_url?: string | null;
+            attachments?: Record<string, unknown> | null;
+            external_ids?: Record<string, unknown> | null;
+          };
+          const atts = { ...((r.attachments ?? {}) as Record<string, unknown>) };
+          const ex = { ...((r.external_ids ?? {}) as Record<string, unknown>) };
+          if (!atts.recording_url) atts.recording_url = evRec;
+          if (!ex.recording_url) ex.recording_url = evRec;
+          r.attachments = atts;
+          r.external_ids = ex;
+          if (!r.recording_url) r.recording_url = evRec;
+        }
+        calendarVirtuals = Array.from(eventsById.values())
           .filter((e) => !existingCalIds.has(e.id as string))
           .map((e) => {
-
-          const atts = calendarAttendees(e.attendees);
-          return {
-            id: `cal_${e.id as string}`,
-            type: "meeting",
-            subject: (e.title as string) ?? "Reunião (Google Calendar)",
-            body: (e.description as string) ?? "",
-            due_date: (e.start_at as string) ?? null,
-            created_at: (e.start_at as string) ?? (e.created_at as string),
-            hs_createdate: (e.start_at as string) ?? (e.created_at as string),
-            meeting_location: (e.location as string) ?? (e.hangout_link as string) ?? null,
-            external_ids: {
-              source: "google_calendar",
-              calendar_event_id: e.id,
-              gcal_html_link: e.html_link ?? null,
-              recording_url: e.recording_url ?? null,
-            },
-            attachments: {
-              end_at: e.end_at ?? null,
-              meet_link: e.hangout_link ?? null,
-              calendar_html_link: e.html_link ?? null,
-              recording_url: e.recording_url ?? null,
-              attendees: atts
-                .filter((a) => a.email)
-                .map((a) => ({ email: a.email, name: a.displayName })),
-            },
-            completed: false,
-            owner_id: null,
-            [relatedKey]: relatedId,
-          } as unknown as Activity;
-        });
+            const atts = calendarAttendees(e.attendees);
+            return {
+              id: `cal_${e.id as string}`,
+              type: "meeting",
+              subject: (e.title as string) ?? "Reunião (Google Calendar)",
+              body: (e.description as string) ?? "",
+              due_date: (e.start_at as string) ?? null,
+              created_at: (e.start_at as string) ?? (e.created_at as string),
+              hs_createdate: (e.start_at as string) ?? (e.created_at as string),
+              meeting_location: (e.location as string) ?? (e.hangout_link as string) ?? null,
+              external_ids: {
+                source: "google_calendar",
+                calendar_event_id: e.id,
+                gcal_html_link: e.html_link ?? null,
+                recording_url: e.recording_url ?? null,
+              },
+              attachments: {
+                end_at: e.end_at ?? null,
+                meet_link: e.hangout_link ?? null,
+                calendar_html_link: e.html_link ?? null,
+                recording_url: e.recording_url ?? null,
+                attendees: atts
+                  .filter((a) => a.email)
+                  .map((a) => ({ email: a.email, name: a.displayName })),
+              },
+              completed: false,
+              owner_id: null,
+              [relatedKey]: relatedId,
+            } as unknown as Activity;
+          });
       }
+
     } catch (e) {
       console.error("[timeline] mirrored events load", e);
     }
