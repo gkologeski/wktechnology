@@ -260,11 +260,29 @@ async function resolveDealForCalendarContact(
     : null;
 }
 
+function computeMeetingKey(input: {
+  conference_id: string | null;
+  provider_event_id: string | null;
+  title: string | null;
+}): string | null {
+  const conf = (input.conference_id ?? "").trim().toLowerCase();
+  if (conf) return `meet:${conf}`;
+  const pev = (input.provider_event_id ?? "").trim();
+  if (pev) {
+    const base = pev.replace(/_\d{8}T\d{6}Z?$/, "");
+    if (base) return `gcal:${base}`;
+  }
+  const title = (input.title ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+  if (title) return `title:${title}`;
+  return null;
+}
+
 async function ensureActivityForCalendarEvent(event: {
   id: string;
   owner_id: string;
   workspace_id: string;
   provider_event_id: string | null;
+  conference_id: string | null;
   title: string | null;
   description: string | null;
   location: string | null;
@@ -281,50 +299,73 @@ async function ensureActivityForCalendarEvent(event: {
   const deal = await resolveDealForCalendarContact(event.workspace_id, event.related_contact_id);
   if (!deal) return { activityId: null, created: false };
 
-  const startMs = new Date(event.start_at).getTime();
-  const endMs = event.end_at ? new Date(event.end_at).getTime() : startMs + 60 * 60_000;
-  if (!Number.isFinite(startMs)) return { activityId: null, created: false };
-  const from = new Date(startMs - 2 * 3600_000).toISOString();
-  const until = new Date((Number.isFinite(endMs) ? endMs : startMs) + 2 * 3600_000).toISOString();
+  const meetingKey = computeMeetingKey({
+    conference_id: event.conference_id,
+    provider_event_id: event.provider_event_id,
+    title: event.title,
+  });
 
-  const { data: existing } = await supabaseAdmin
-    .from("activities")
-    .select("id, due_date, created_at, external_ids")
-    .eq("workspace_id", event.workspace_id)
-    .eq("type", "meeting")
-    .eq("related_deal_id", deal.id)
-    .eq("related_contact_id", event.related_contact_id)
-    .order("created_at", { ascending: false })
-    .limit(25);
+  // Canonical match: single activity per (workspace_id, meeting_key) — no time windows.
+  let matchingActivity: { id: string; external_ids: Record<string, unknown> | null } | null = null;
 
-  const matchingActivity =
-    (existing ?? []).find((activity) => {
+  if (meetingKey) {
+    const { data: byKey } = await supabaseAdmin
+      .from("activities")
+      .select("id, external_ids")
+      .eq("workspace_id", event.workspace_id)
+      .eq("type", "meeting")
+      .eq("meeting_key", meetingKey)
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (byKey?.id) {
+      matchingActivity = {
+        id: byKey.id as string,
+        external_ids: (byKey.external_ids ?? null) as Record<string, unknown> | null,
+      };
+    }
+  }
+
+  // Fallback: legacy activities without meeting_key linked by calendar_event_id / provider_event_id.
+  if (!matchingActivity) {
+    const { data: legacy } = await supabaseAdmin
+      .from("activities")
+      .select("id, external_ids")
+      .eq("workspace_id", event.workspace_id)
+      .eq("type", "meeting")
+      .eq("related_deal_id", deal.id)
+      .order("created_at", { ascending: false })
+      .limit(25);
+    const found = (legacy ?? []).find((activity) => {
       const ext = (activity.external_ids ?? {}) as Record<string, unknown>;
       return ext.calendar_event_id === event.id || ext.provider_event_id === event.provider_event_id;
-    }) ??
-    (existing ?? []).find((activity) => {
-      const referenceIso = (activity.due_date as string | null) ?? (activity.created_at as string | null);
-      if (!referenceIso) return false;
-      const referenceMs = new Date(referenceIso).getTime();
-      return Number.isFinite(referenceMs) && referenceMs >= new Date(from).getTime() && referenceMs <= new Date(until).getTime();
     });
+    if (found?.id) {
+      matchingActivity = {
+        id: found.id as string,
+        external_ids: (found.external_ids ?? null) as Record<string, unknown> | null,
+      };
+    }
+  }
 
   if (matchingActivity?.id) {
     const ext = (matchingActivity.external_ids ?? {}) as Record<string, unknown>;
+    const patch: Record<string, unknown> = {
+      external_ids: {
+        ...ext,
+        source: ext.source ?? "google_calendar",
+        calendar_event_id: event.id,
+        provider_event_id: event.provider_event_id,
+        gcal_html_link: event.html_link,
+        meet_link: event.hangout_link,
+      },
+    };
+    if (meetingKey) patch.meeting_key = meetingKey;
     await supabaseAdmin
       .from("activities")
-      .update({
-        external_ids: {
-          ...ext,
-          source: ext.source ?? "google_calendar",
-          calendar_event_id: event.id,
-          provider_event_id: event.provider_event_id,
-          gcal_html_link: event.html_link,
-          meet_link: event.hangout_link,
-        },
-      } as never)
+      .update(patch as never)
       .eq("id", matchingActivity.id);
-    return { activityId: matchingActivity.id as string, created: false };
+    return { activityId: matchingActivity.id, created: false };
   }
 
   const externalIds = {
@@ -355,12 +396,24 @@ async function ensureActivityForCalendarEvent(event: {
       related_company_id: deal.company_id,
       external_ids: externalIds,
       attachments,
+      meeting_key: meetingKey,
       completed: false,
     } as never)
     .select("id")
     .maybeSingle();
 
   if (error) {
+    // Unique-key race: another concurrent worker created the row. Fetch and reuse it.
+    if (meetingKey && (error.code === "23505" || /duplicate key/i.test(error.message))) {
+      const { data: raced } = await supabaseAdmin
+        .from("activities")
+        .select("id")
+        .eq("workspace_id", event.workspace_id)
+        .eq("type", "meeting")
+        .eq("meeting_key", meetingKey)
+        .maybeSingle();
+      if (raced?.id) return { activityId: raced.id as string, created: false };
+    }
     console.warn("[calendar activity link] falha ao criar activity", {
       event_id: event.id,
       error: error.message,
@@ -370,6 +423,7 @@ async function ensureActivityForCalendarEvent(event: {
 
   return { activityId: (inserted?.id as string | null) ?? null, created: true };
 }
+
 
 export async function reconcileCalendarActivityLinks(
   ownerId: string,
