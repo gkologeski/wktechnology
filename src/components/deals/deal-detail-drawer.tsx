@@ -58,9 +58,7 @@ export function DealDetailDrawer({
   const { pipelines } = usePipelines("deal");
 
   const activePipeline: Pipeline | null =
-    (isNew
-      ? (pipelines.find((p) => p.id === (v.pipeline_id as string)) ?? pipeline)
-      : pipeline) ?? pipeline;
+    pipelines.find((p) => p.id === (v.pipeline_id as string)) ?? pipeline ?? null;
 
   useEffect(() => {
     setV(
@@ -73,6 +71,17 @@ export function DealDetailDrawer({
       },
     );
   }, [deal, pipeline]);
+
+  const changePipeline = (val: string) => {
+    const next = pipelines.find((p) => p.id === val);
+    const firstStage = next?.stages[0]?.value ?? "new";
+    setV((s) => ({
+      ...s,
+      pipeline_id: val,
+      stage_id: firstStage,
+      stage: firstStage,
+    }));
+  };
 
   const set = (k: string, val: unknown) => setV((s) => ({ ...s, [k]: val }));
 
@@ -271,23 +280,14 @@ export function DealDetailDrawer({
                   />
                 </Field>
               </div>
-              {isNew && pipelines.length > 0 && (
+              {pipelines.length > 0 && (
                 <Field label="Funil">
                   <Select
                     value={String(v.pipeline_id ?? activePipeline?.id ?? "")}
-                    onValueChange={(val) => {
-                      const next = pipelines.find((p) => p.id === val);
-                      const firstStage = next?.stages[0]?.value ?? "new";
-                      setV((s) => ({
-                        ...s,
-                        pipeline_id: val,
-                        stage_id: firstStage,
-                        stage: firstStage,
-                      }));
-                    }}
+                    onValueChange={changePipeline}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione um funil" />
                     </SelectTrigger>
                     <SelectContent>
                       {pipelines.map((p) => (
