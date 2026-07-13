@@ -1226,7 +1226,7 @@ export async function tickAllRecordings(): Promise<{
   const { data: accounts } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
-      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at",
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at, meet_index_cursor",
     )
     .eq("sync_enabled", true)
     .eq("provider", "google")
