@@ -146,14 +146,30 @@ function DealDetail() {
             </p>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-          onClick={remove}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          {pipelines.length > 0 && (
+            <Select value={dealPipeline?.id ?? ""} onValueChange={setPipeline}>
+              <SelectTrigger className="h-9 w-[200px]">
+                <SelectValue placeholder="Selecione o funil" />
+              </SelectTrigger>
+              <SelectContent>
+                {pipelines.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
+            onClick={remove}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       <StageTracker stages={stages} current={currentStage} onChange={setStage} />
     </div>
