@@ -557,43 +557,11 @@ async function driveSearch(
 }
 
 // Extract fuzzy title tokens (length ≥ 4, alphanumeric, no stopwords) so we can
-// match Meet recordings whose filename dropped the meet code but preserved the
-// event title (e.g. "WK Technology <> LUMINA-NORA (2026-07-07 ...).mp4").
-const TITLE_STOPWORDS = new Set([
-  "meet",
-  "meeting",
-  "reuniao",
-  "reunião",
-  "call",
-  "com",
-  "with",
-  "and",
-  "the",
-  "para",
-  "recording",
-  "gravacao",
-  "gravação",
-  "google",
-  "hangouts",
-  "microsoft",
-  "teams",
-  "zoom",
-  "tecnologia",
-  "ltda",
-]);
-function extractTitleTokens(title: string | null | undefined): string[] {
-  if (!title) return [];
-  return Array.from(
-    new Set(
-      title
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .split(/[^a-z0-9]+/)
-        .filter((t) => t.length >= 4 && !TITLE_STOPWORDS.has(t)),
-    ),
-  );
-}
+// (removido) TITLE_STOPWORDS + extractTitleTokens — usados por fallbacks
+// "dual-signal" / "permissivo (título ≥2 tokens)" que causaram cross-links
+// entre reuniões diferentes do mesmo organizador. Somente o meet-code é usado
+// como chave hoje. Não reintroduzir.
+
 
 async function findRecordingFileConflict(
   fileId: string,
