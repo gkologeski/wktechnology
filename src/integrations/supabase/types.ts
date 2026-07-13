@@ -3373,6 +3373,7 @@ export type Database = {
           recording_attempts: number
           recording_drive_file_id: string | null
           recording_last_error: string | null
+          recording_matched_by: string | null
           recording_mime_type: string | null
           recording_status: string | null
           recording_synced_at: string | null
@@ -3408,6 +3409,7 @@ export type Database = {
           recording_attempts?: number
           recording_drive_file_id?: string | null
           recording_last_error?: string | null
+          recording_matched_by?: string | null
           recording_mime_type?: string | null
           recording_status?: string | null
           recording_synced_at?: string | null
@@ -3443,6 +3445,7 @@ export type Database = {
           recording_attempts?: number
           recording_drive_file_id?: string | null
           recording_last_error?: string | null
+          recording_matched_by?: string | null
           recording_mime_type?: string | null
           recording_status?: string | null
           recording_synced_at?: string | null
