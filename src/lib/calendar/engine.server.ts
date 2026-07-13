@@ -910,7 +910,16 @@ export async function syncPastRecordings(
             file_id: rec.file_id,
             matched_by: rec.matched_by,
           });
+          try {
+            await propagateRecordingToActivity(ev.id as string, rec.url);
+          } catch (propErr) {
+            console.warn("[drive recording] propagação para activity falhou", {
+              event_id: ev.id,
+              error: propErr instanceof Error ? propErr.message : String(propErr),
+            });
+          }
         }
+
       } else {
         missing++;
         console.warn("[drive recording] não encontrada", {
