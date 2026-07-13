@@ -1346,6 +1346,7 @@ export async function syncRecordingForEvent(
         recording_status: "available",
         recording_last_error: null,
         recording_attempts: attempts,
+        recording_matched_by: rec.matched_by,
       } as never)
       .eq("id", eventId);
     try {
