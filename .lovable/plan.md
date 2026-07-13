@@ -1,43 +1,39 @@
-## Objetivo
-
-Padronizar o modal "Criar negócio" aberto a partir da empresa (e demais entidades) para exibir os campos pertinentes do negócio, alinhado ao `DealDetailDrawer`.
-
 ## Contexto
 
-- Ao clicar em "Criar" no card de Negócios em uma empresa/contato/lead, é aberto `QuickCreateDealDialog` (`src/components/record/quick-create-dialogs.tsx`), que hoje mostra apenas **Nome** e **Valor**.
-- O padrão de campos do negócio (usado no `DealDetailDrawer`) inclui: pipeline, etapa, responsável, empresa, contato principal, valor + moeda, data prevista de fechamento.
-- O mesmo dialog é reutilizado pelo card de contatos/leads → a padronização beneficia todos os pontos.
+O negócio `a3f7fed6-7677-45e2-bea2-21248e83d71a` tem `pipeline_id = NULL` e `stage_id = "1017586011"` (id herdado do HubSpot). Como não está vinculado a nenhum pipeline atual, o drawer não consegue resolver os estágios e o usuário fica sem edição.
+
+No arquivo `src/components/deals/deal-detail-drawer.tsx` (linha 274), o seletor de **Funil** só é renderizado quando `isNew`. Para negócios existentes, o pipeline aparece só implicitamente pelo prop `pipeline` recebido da tela pai.
 
 ## Escopo
 
-Editar apenas `QuickCreateDealDialog` em `src/components/record/quick-create-dialogs.tsx`. Nenhuma alteração de RLS, schema ou lógica de negócio.
+Alterar apenas a UI/edição do drawer de negócios. Sem mudanças em schema, RLS, workflows, cotações ou timeline.
 
-### Campos do modal padronizado
+### Mudanças
 
-1. **Nome** *(obrigatório, autofocus)*
-2. **Pipeline** — via `usePipelines("deal")`; default = primeiro pipeline
-3. **Etapa** — dependente do pipeline selecionado; default = primeira etapa
-4. **Responsável** — `OwnerField` (default: usuário atual)
-5. **Empresa** — pré-preenchida quando `defaultCompanyId` vier do contexto; editável via combobox (mesma UX usada no drawer)
-6. **Contato principal** — pré-preenchido quando `defaultContactId` vier do contexto; editável
-7. **Valor + Moeda** — `CurrencyInput` (default BRL)
-8. **Data prevista de fechamento** — input `date`
+1. **`src/components/deals/deal-detail-drawer.tsx`**
+   - Renderizar o seletor "Funil" também quando o negócio já existe (`!isNew`), acima do seletor "Estágio", usando o mesmo padrão do fluxo de criação.
+   - Ao trocar de pipeline, resetar `stage_id`/`stage` para o primeiro estágio do pipeline escolhido (mesma lógica já existente no branch `isNew`).
+   - Ajustar `activePipeline` para derivar de `v.pipeline_id` também no fluxo de edição, e não somente de `pipeline` recebido por prop, para que a mudança fique refletida em tela antes do save.
+   - No `persist`, continuar salvando `pipeline_id: activePipeline?.id ?? null` (já faz isso — apenas confirmar).
+   - Quando o pipeline atual do negócio for `null` ou não estiver na lista carregada (caso do a3f7fed6), pré-selecionar automaticamente o primeiro pipeline disponível no `useEffect` inicial, sinalizando via placeholder "Selecione um funil" no `SelectTrigger`, sem salvar automaticamente — o usuário precisa confirmar clicando em "Salvar".
 
-### Comportamento
-
-- Ao submeter, insere em `deals` os campos acima + `stage`/`stage_id` derivados do pipeline (mesma lógica do `DealDetailDrawer`, incluindo o mapeamento `won/lost/new` para o enum legado `stage`).
-- Se houver `defaultContactId`, mantém o insert em `deal_contacts` já existente.
-- Após criar, toast + callback `onCreated(dealId)` mantidos.
-- Reset do formulário ao fechar.
-- Layout: 2 colunas em `sm:` (Pipeline/Etapa, Responsável/Data, Valor/Moeda) para não estourar a altura; largura `sm:max-w-lg`.
+2. **Sem migração de dados em massa.** O usuário poderá corrigir o deal problemático abrindo o drawer, escolhendo o funil "Serviços" (ou o desejado), o estágio adequado e salvando.
 
 ## Detalhes técnicos
 
-- Reaproveitar: `usePipelines`, `OwnerField` (`src/components/entity/owner-field.tsx`), `CurrencyInput`, combobox de empresa/contato usado no `DealDetailDrawer` (extrair via import direto se já for componente isolado; caso contrário, usar `Select`/`Command` simples com queries `companies`/`contacts` limitadas a 50 + busca por `ilike`).
-- Preservar o payload atual (owner_id, currency, stage, stage_id, company_id, primary_contact_id) e adicionar `pipeline_id` e `expected_close_date`.
-- Sem migrações, sem mudanças em outros arquivos.
+- `activePipeline` passa a ser: `pipelines.find(p => p.id === v.pipeline_id) ?? pipeline ?? null`.
+- O `Select` do funil compartilha o mesmo `onValueChange` do branch `isNew`; extrair para uma função local `changePipeline(val)` para evitar duplicação.
+- Preservar o comportamento de `stage_id` legado (`stageKey` no `persist`) para deals HubSpot.
+
+## Validação manual
+
+1. Abrir o negócio `a3f7fed6-...` em `/deals`.
+2. Selecionar o funil "Serviços" (ou outro), escolher um estágio e salvar.
+3. Confirmar que o deal aparece no board/kanban do funil escolhido.
+4. Repetir com um deal já vinculado a um pipeline para garantir que trocar de funil re-mapeia o estágio para o primeiro do novo funil e não quebra a listagem.
 
 ## Fora de escopo
 
-- Custom fields do negócio no quick-create (permanecem apenas no drawer completo).
-- Alterar `CreateDealFromLeadDialog` (já tem seu próprio fluxo mais rico).
+- Backfill automático dos negócios sem `pipeline_id`.
+- Mudanças na criação rápida (`QuickCreateDealDialog`) — já foi ajustada em turno anterior.
+- Alterações no kanban/lista.
