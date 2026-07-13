@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -22,6 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { usePipelines } from "@/lib/pipelines";
+import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
+import { Building2, User } from "lucide-react";
+
+const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
 type BaseProps = {
   open: boolean;
