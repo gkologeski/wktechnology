@@ -3288,6 +3288,7 @@ export type Database = {
           last_error: string | null
           last_status: string | null
           last_synced_at: string | null
+          meet_index_cursor: string | null
           owner_id: string
           primary_calendar_id: string | null
           provider: string
@@ -3310,6 +3311,7 @@ export type Database = {
           last_error?: string | null
           last_status?: string | null
           last_synced_at?: string | null
+          meet_index_cursor?: string | null
           owner_id: string
           primary_calendar_id?: string | null
           provider: string
@@ -3332,6 +3334,7 @@ export type Database = {
           last_error?: string | null
           last_status?: string | null
           last_synced_at?: string | null
+          meet_index_cursor?: string | null
           owner_id?: string
           primary_calendar_id?: string | null
           provider?: string
@@ -7330,6 +7333,56 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      meet_recording_index: {
+        Row: {
+          created_at: string
+          discovered_by: string | null
+          drive_file_id: string
+          drive_url: string
+          file_created_at: string | null
+          file_name: string | null
+          id: string
+          meet_code: string
+          mime_type: string | null
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discovered_by?: string | null
+          drive_file_id: string
+          drive_url: string
+          file_created_at?: string | null
+          file_name?: string | null
+          id?: string
+          meet_code: string
+          mime_type?: string | null
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discovered_by?: string | null
+          drive_file_id?: string
+          drive_url?: string
+          file_created_at?: string | null
+          file_name?: string | null
+          id?: string
+          meet_code?: string
+          mime_type?: string | null
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meet_recording_index_discovered_by_fkey"
+            columns: ["discovered_by"]
+            isOneToOne: false
+            referencedRelation: "calendar_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meeting_participants: {
         Row: {

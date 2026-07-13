@@ -1,46 +1,106 @@
-## Diagnóstico
+## Objetivo
 
-Deal `f6c61100…` (NEXID) exibe 2 eventos com gravação:
+Trocar o casamento atual (busca no Drive com **janela de tempo** + filtro do meet-code) por uma associação **determinística baseada apenas no `conference_id`** (código do Meet). Sem janela, sem heurística temporal, sem fallback por título/organizador.
 
-| Meet code | Data | Drive file | Tentativas |
-|---|---|---|---|
-| `fwd-kvmw-mmj` | 08/07 16:00 | `1d9LIv-…` | 13 |
-| `jyd-jhce-jut` | 09/07 14:00 | `17i6r9n_…` | 13 |
+## Por que abandonar a janela
 
-`recording_attempts = 13` em ambos indica que a estratégia estrita ("nome contém o código do Meet") falhou repetidas vezes e o match final veio de um fallback mais permissivo. O engine em `src/lib/calendar/engine.server.ts` ainda tem 3 fallbacks depois do meet-code:
+A janela `[start−15min, start+6h]` foi introduzida para reduzir o custo da busca no Drive, mas gera dois problemas:
 
-1. **dual-signal** — arquivo do organizador + 1 token do título.
-2. **permissivo** — nome contém ≥2 tokens do título (independe de dono).
-3. **organizador (fallback amplo)** — qualquer vídeo do organizador na janela de tempo.
+- **Falsos negativos**: Meet publica o MP4 até 24h depois; reprocessamentos tardios / re-imports caem fora da janela e ficam como `not_found`.
+- **Falsos positivos históricos**: qualquer relaxamento do filtro dentro da janela volta a cruzar reuniões distintas do mesmo organizador (NEXID, Samuel, Janderson).
 
-Como o título é genérico (`WK Technology <> NEXID LTDA`), qualquer gravação de outra reunião do Guilherme na janela que contenha "wk" + "technology" no nome (padrão default do Meet) é aceita. Foi exatamente esse padrão que gerou os cross-links já corrigidos no deal do Samuel e do Janderson — a solução anterior tratou casos pontuais mas manteve os fallbacks vivos.
+O `conference_id` (formato `xxx-xxxx-xxx`) é único por reunião e o Meet **sempre** grava com esse código no nome do arquivo. Basta usá-lo como chave.
 
-## Correção
+## Abordagem: índice reverso `meet_code → drive_file`
 
-### 1. Endurecer o matcher (`src/lib/calendar/engine.server.ts`)
+Em vez de perguntar ao Drive "quais gravações combinam com este evento?", perguntamos "quais gravações Meet existem?" uma vez e mantemos um índice. O evento então faz um **lookup O(1) pelo `conference_id`**.
 
-- Remover as estratégias **dual-signal** e **permissivo (título ≥2 tokens)** do filtro em cascata.
-- Remover o **fallback amplo por organizador** (fase 2).
-- Manter apenas: buscar candidatos por `name contains <conference_id>` e aceitar somente arquivos cujo nome contenha o `conference_id` (regex `meetCodeRe`). Sem código do Meet no nome ⇒ não há match — grava `recording_status = 'not_found'` e mantém o evento sem gravação. Isso alinha o comportamento com a decisão já tomada em conversas anteriores ("não usar janelas de horário como chave, use código ou título" — na prática, só código).
-- Reduzir a janela de `createdTime` para `[start − 15min, start + 6h]`, suficiente pra Meet publicar e evita colidir com reuniões próximas.
+### 1. Nova tabela `meet_recording_index`
 
-### 2. Rastreabilidade
+```
+meet_recording_index
+  meet_code          text  primary key (parte central: xxx-xxxx-xxx, lowercase)
+  drive_file_id      text  not null
+  drive_url          text  not null
+  mime_type          text
+  file_name          text
+  file_created_at    timestamptz
+  discovered_by      uuid  references calendar_accounts(id)  -- quem viu o arquivo
+  owner_id           uuid  not null                          -- workspace owner
+  created_at, updated_at
+```
 
-- Ao vincular gravação, gravar `recording_matched_by = 'meet-code'` (novo campo em `calendar_events`) para termos auditoria futura. Qualquer registro histórico com `recording_matched_by IS NULL` fica marcado como "legado, revisar".
+- RLS `owner_id = auth.uid()` (leitura) + `service_role` (escrita).
+- Constraint única em `(owner_id, meet_code)` para permitir a mesma gravação vista por múltiplas contas do mesmo workspace sem duplicar.
 
-### 3. Backfill / limpeza
+### 2. Novo passo no sync: `indexMeetRecordings(account)`
 
-- Migration + script único que zera `recording_url`, `recording_drive_file_id`, `recording_mime_type`, `recording_synced_at`, define `recording_status = 'pending'` e `recording_attempts = 0` em todos os `calendar_events` onde o nome do arquivo do Drive **não** contém o `conference_id`. Como não temos o nome do arquivo salvo, o critério prático será: `recording_attempts >= 3 AND recording_status = 'available' AND recording_matched_by IS NULL` — assume-se legado incerto. Depois, o próximo tick do cron tenta novamente com o matcher estrito; se o arquivo real do Meet estiver no Drive ele será encontrado, senão fica sem gravação (comportamento correto).
-- Corrigir manualmente os 2 eventos NEXID (`a3197b39…`, `44f7cb9e…`) no mesmo migration.
-- Propagar a limpeza para `activities` via helper `propagateRecordingToActivity` (mesmo caminho já existente).
+Executado no mesmo tick do `syncPastRecordings`, uma vez por `calendar_account`:
 
-### 4. Prevenção de regressão
+- Lista arquivos no Drive do usuário com `mimeType contains 'video/'` **e** `name matches` regex do meet-code (`[a-z]{3}-[a-z]{4}-[a-z]{3}`).
+- Sem filtro de tempo. Usa `pageToken` + `modifiedTime > last_indexed_at` (armazenado em `calendar_accounts.meet_index_cursor`) para varredura incremental — só re-lê arquivos novos/modificados desde a última passada.
+- Para cada arquivo, extrai o meet-code do nome via regex e faz `upsert` em `meet_recording_index`.
+- Custo: 1 chamada Drive por conta por tick, paginada; após o backfill inicial só traz deltas.
 
-- Teste unitário em `src/lib/calendar/__tests__/engine.matcher.test.ts` cobrindo: (a) arquivo com meet-code correto casa; (b) arquivo sem meet-code nunca casa, mesmo com título idêntico e organizador correto; (c) arquivo com outro meet-code nunca casa.
-- Comentário `// DO NOT reintroduce dual-signal/permissive fallback — cross-links (ver deals NEXID, Samuel, Janderson)` acima da função `findRecordingForEvent`.
-- Atualizar `mem://security-memory` não se aplica; criar `mem://calendar/recording-matcher` documentando a regra "somente meet-code, sem fallback".
+### 3. Novo matcher `matchRecordingByCode(event)`
 
-## Fora do escopo
+Substitui `findDriveRecording`:
 
-- Reunião do meet-code = null (agendas sem Meet): continuam sem gravação automática, como hoje.
-- UI da timeline: sem alterações; a mudança é 100% server-side + backfill.
+```
+if (!event.conference_id) → not_found ("evento sem código")
+row = SELECT * FROM meet_recording_index
+      WHERE owner_id = event.owner_id
+        AND meet_code = event.conference_id
+      LIMIT 1
+if (row) → vincula (recording_matched_by = "meet-code-index")
+else     → not_found ("gravação ainda não indexada")
+```
+
+Sem janela, sem `driveSearch` por evento, sem conflito por arquivo (a constraint da tabela já garante 1 arquivo por meet-code por workspace).
+
+### 4. Ciclo de reconciliação
+
+- `syncPastRecordings` passa a ser: (a) `indexMeetRecordings` → (b) para cada `calendar_event` sem gravação, roda `matchRecordingByCode`.
+- Eventos com `recording_status = 'not_found'` **não** ganham mais o corte de tentativas (`RECORDING_MAX_AUTO_ATTEMPTS`): como o lookup é O(1) no banco, tentar de novo é barato e cobre o caso "Meet publicou o MP4 depois". Mantém-se `recording_attempts` só para telemetria.
+- Botão "Buscar gravação" existente na timeline continua funcionando; passa a chamar o mesmo matcher.
+
+### 5. Backfill único
+
+Migration + script one-shot:
+
+- Reset de `recording_status='not_found'` para reprocessar após primeiro index.
+- Não mexe em eventos já com `recording_drive_file_id` válido.
+
+### 6. Guarda-corpo (não regride)
+
+- Regex do meet-code continua a única regra de vínculo.
+- `findRecordingFileConflict` é substituído pela `UNIQUE(owner_id, meet_code)` da tabela — impossível duas reuniões diferentes reclamarem o mesmo arquivo.
+- Comentários no `engine.server.ts` proibindo reintrodução de dual-signal/título/organizador permanecem.
+
+## Detalhes técnicos
+
+- **Nova coluna** `calendar_accounts.meet_index_cursor timestamptz` (nullable) para paginação incremental.
+- **Regex** para extrair o code: `/(?<![a-z])([a-z]{3}-[a-z]{4}-[a-z]{3})(?![a-z])/i` sobre `file.name`.
+- Drive query da varredura: `mimeType contains 'video/' and trashed=false and (modifiedTime > 'cursor' or 'cursor' is null)` — o filtro por regex do code é feito **em memória** após a listagem, evitando `name contains` frágil.
+- `matched_by` = `"meet-code-index"` (novo valor) para distinguir dos vínculos legados.
+- Sem alteração de scopes OAuth (usa o `drive.readonly` já concedido).
+
+## Arquivos afetados (previsão)
+
+- `supabase/migrations/*_meet_recording_index.sql` (nova)
+- `src/lib/calendar/engine.server.ts`: remove `findDriveRecording` / `findRecordingFileConflict` e janela; adiciona `indexMeetRecordings` + `matchRecordingByCode`.
+- `src/integrations/supabase/types.ts`: regen após migration.
+
+## Fora de escopo
+
+- Google Meet REST API v2 (`meet.googleapis.com/v2/conferenceRecords`) — exigiria novo scope `meetings.space.readonly` e reconsent de todas as contas. Fica registrado como evolução futura se um dia quisermos eliminar o Drive do caminho.
+- UI de vincular gravação manualmente (colar link do Drive).
+- Reprocessamento em lote sob demanda por deal.
+
+## Validação manual
+
+1. Rodar migration; conferir tabela vazia.
+2. Disparar `syncPastRecordings` em uma conta → conferir `meet_recording_index` populado.
+3. Escolher 3 eventos que hoje estão `not_found` mas cuja gravação existe no Drive → confirmar vínculo após o próximo tick.
+4. Conferir NEXID (deal `f6c61100`) → gravações permanecem apenas nos eventos com meet-code correspondente.
+5. Renomear (no Drive) um arquivo removendo o code → próximo re-index deve remover a linha e o evento volta a `not_found` (sem vínculo espúrio).

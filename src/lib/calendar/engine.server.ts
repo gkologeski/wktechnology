@@ -513,29 +513,60 @@ export async function reconcileCalendarActivityLinks(
 
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 
-async function driveSearch(
-  token: string,
-  q: string,
-): Promise<{
+// (removido) driveSearch por evento — substituído por indexMeetRecordings
+// (varredura paginada + cursor) + matchRecordingByCode (lookup O(1) no índice).
+
+// ============================================================
+// Meet recording index (meet_code -> Drive file)
+// ============================================================
+// Nova estratégia: em vez de buscar no Drive por evento (o que exigia janela
+// de tempo e trazia falsos positivos com títulos parecidos), varremos o Drive
+// UMA vez por conta e mantemos um índice reverso `meet_code -> drive_file_id`
+// em `public.meet_recording_index`. O matcher por evento vira lookup O(1)
+// pelo `conference_id`, sem janela.
+//
+// NÃO reintroduzir fallbacks por título, organizador ou "dual-signal": todos
+// já causaram cross-links entre reuniões diferentes (ver deals NEXID, Samuel,
+// Janderson). Apenas o meet-code (extraído por regex do nome do arquivo) é
+// aceito como chave de vínculo.
+
+const MEET_CODE_RE = /(?<![a-z0-9])([a-z]{3}-[a-z]{4}-[a-z]{3})(?![a-z0-9])/i;
+
+function extractMeetCode(name: string | null | undefined): string | null {
+  if (!name) return null;
+  const m = name.match(MEET_CODE_RE);
+  return m ? m[1].toLowerCase() : null;
+}
+
+type DriveListPage = {
   files: {
     id: string;
     name: string;
     mimeType: string;
     webViewLink?: string;
     createdTime?: string;
-    owners?: { emailAddress?: string }[];
+    modifiedTime?: string;
   }[];
+  nextPageToken?: string;
   error?: string;
-}> {
+};
+
+async function driveListVideos(
+  token: string,
+  q: string,
+  pageToken?: string,
+): Promise<DriveListPage> {
   const params = new URLSearchParams({
     q,
-    fields: "files(id,name,mimeType,webViewLink,createdTime,owners(emailAddress))",
-    pageSize: "10",
-    orderBy: "createdTime desc",
+    fields:
+      "nextPageToken,files(id,name,mimeType,webViewLink,createdTime,modifiedTime)",
+    pageSize: "200",
+    orderBy: "modifiedTime desc",
     includeItemsFromAllDrives: "true",
     supportsAllDrives: "true",
     corpora: "allDrives",
   });
+  if (pageToken) params.set("pageToken", pageToken);
   const res = await fetch(`${DRIVE_API}/files?${params.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -544,199 +575,165 @@ async function driveSearch(
     return { files: [], error: `drive ${res.status}: ${txt.slice(0, 200)}` };
   }
   const json = (await res.json()) as {
-    files?: {
-      id: string;
-      name: string;
-      mimeType: string;
-      webViewLink?: string;
-      createdTime?: string;
-      owners?: { emailAddress?: string }[];
-    }[];
+    files?: DriveListPage["files"];
+    nextPageToken?: string;
   };
-  return { files: json.files ?? [] };
+  return { files: json.files ?? [], nextPageToken: json.nextPageToken };
 }
 
-// Extract fuzzy title tokens (length ≥ 4, alphanumeric, no stopwords) so we can
-// (removido) TITLE_STOPWORDS + extractTitleTokens — usados por fallbacks
-// "dual-signal" / "permissivo (título ≥2 tokens)" que causaram cross-links
-// entre reuniões diferentes do mesmo organizador. Somente o meet-code é usado
-// como chave hoje. Não reintroduzir.
+// Máximo de páginas por tick para evitar estourar subrequests do Worker.
+const MEET_INDEX_MAX_PAGES = 4;
 
+/**
+ * Varre o Drive da conta em busca de vídeos com nome contendo um meet-code
+ * (padrão xxx-xxxx-xxx). Faz upsert em `meet_recording_index` para cada
+ * meet-code encontrado. Avança um cursor incremental (`meet_index_cursor`)
+ * baseado em `modifiedTime` para não re-ler arquivos já vistos.
+ */
+export async function indexMeetRecordings(
+  account: CalendarAccountRow & { meet_index_cursor?: string | null },
+): Promise<{ scanned: number; upserted: number; pages: number; error?: string }> {
+  const token = await ensureAccessToken(account);
 
-async function findRecordingFileConflict(
-  fileId: string,
-  eventId: string | null | undefined,
-  conferenceId: string,
-): Promise<{ id: string; title: string | null; conference_id: string | null } | null> {
-  let query = supabaseAdmin
-    .from("calendar_events")
-    .select("id, title, conference_id")
-    .eq("recording_drive_file_id", fileId)
-    .not("conference_id", "is", null)
-    .limit(5);
+  const cursor = account.meet_index_cursor ?? null;
+  const clauses: string[] = ["mimeType contains 'video/'", "trashed = false"];
+  if (cursor) clauses.push(`modifiedTime > '${cursor}'`);
+  const q = clauses.join(" and ");
 
-  if (eventId) query = query.neq("id", eventId);
+  let pageToken: string | undefined;
+  let pages = 0;
+  let scanned = 0;
+  let upserted = 0;
+  let latestModified: string | null = cursor;
+  let lastError: string | undefined;
 
-  const { data, error } = await query;
-  if (error) {
-    console.warn("[drive recording] falha ao verificar conflito de arquivo", {
-      file_id: fileId,
-      event_id: eventId,
-      error: error.message,
-    });
-    return null;
+  do {
+    const page = await driveListVideos(token, q, pageToken);
+    if (page.error) {
+      lastError = page.error;
+      break;
+    }
+    pages += 1;
+    for (const file of page.files) {
+      scanned += 1;
+      if (file.modifiedTime && (!latestModified || file.modifiedTime > latestModified)) {
+        latestModified = file.modifiedTime;
+      }
+      const code = extractMeetCode(file.name);
+      if (!code) continue;
+
+      const url = file.webViewLink ?? `https://drive.google.com/file/d/${file.id}/view`;
+      const { error: upErr } = await supabaseAdmin
+        .from("meet_recording_index")
+        .upsert(
+          {
+            owner_id: account.owner_id,
+            meet_code: code,
+            drive_file_id: file.id,
+            drive_url: url,
+            mime_type: file.mimeType,
+            file_name: file.name,
+            file_created_at: file.createdTime ?? null,
+            discovered_by: account.id,
+          } as never,
+          { onConflict: "owner_id,meet_code" },
+        );
+      if (upErr) {
+        console.warn("[meet-index] upsert falhou", {
+          code,
+          file_id: file.id,
+          error: upErr.message,
+        });
+      } else {
+        upserted += 1;
+      }
+    }
+    pageToken = page.nextPageToken;
+  } while (pageToken && pages < MEET_INDEX_MAX_PAGES);
+
+  if (latestModified && latestModified !== cursor) {
+    await supabaseAdmin
+      .from("calendar_accounts")
+      .update({ meet_index_cursor: latestModified } as never)
+      .eq("id", account.id);
   }
 
-  return (
-    data?.find((row) => {
-      const otherConferenceId = (row.conference_id ?? "").trim().toLowerCase();
-      return otherConferenceId.length > 0 && otherConferenceId !== conferenceId;
-    }) ?? null
-  );
+  return { scanned, upserted, pages, error: lastError };
 }
 
 /**
- * Look up a Meet recording in Drive for the given event.
- * Meet stores recordings in the organizer's "Meet Recordings" folder and shares
- * them with attendees. We search across all drives the authenticated user can
- * see (own + shared) so non-organizers also find their recordings, then we
- * match on the event title and time window.
+ * Lookup determinístico pelo meet-code do evento — O(1) no índice, sem janela
+ * de tempo.
  */
-async function findDriveRecording(
-  token: string,
-  ev: {
-    id?: string | null;
-    title: string | null;
-    end_at: string | null;
-    start_at?: string | null;
-    conference_id?: string | null;
-    organizer_email?: string | null;
-  },
+async function matchRecordingByCode(
+  ownerId: string,
+  conferenceId: string | null | undefined,
 ): Promise<
   | {
       ok: true;
       file_id: string;
       url: string;
-      mime_type: string;
+      mime_type: string | null;
       matched_by: string;
     }
   | { ok: false; reason: string }
 > {
-  if (!ev.end_at) return { ok: false, reason: "evento sem horário de término" };
-  const endMs = new Date(ev.end_at).getTime();
-  if (!Number.isFinite(endMs)) return { ok: false, reason: "horário de término inválido" };
-  const startMs = ev.start_at ? new Date(ev.start_at).getTime() : NaN;
-  const baseMs = Number.isFinite(startMs) ? startMs : endMs;
-  // Janela estreita: 15 min antes do início até 6h após, o suficiente para o
-  // Meet publicar o MP4 sem colidir com reuniões próximas no mesmo dia.
-  const after = new Date(baseMs - 15 * 60_000).toISOString();
-  const before = new Date(baseMs + 6 * 3600_000).toISOString();
-  const baseTime = `createdTime > '${after}' and createdTime < '${before}' and trashed = false`;
-  const videoMime = "(mimeType='video/mp4' or mimeType contains 'video/')";
-
-  const conferenceId = (ev.conference_id ?? "").trim().toLowerCase();
-  const meetCodeRe = /[a-z]{3}-[a-z]{4}-[a-z]{3}/g;
-
-  // REGRA ÚNICA: só casamos gravações cujo nome contém o code do Meet do evento.
-  // NÃO reintroduzir fallbacks "dual-signal", "permissivo (título ≥2 tokens)"
-  // nem "organizador (fallback amplo)" — todos já causaram cross-links entre
-  // reuniões diferentes do mesmo organizador (ver deals NEXID, Samuel, Janderson).
-  if (!conferenceId) {
+  const code = (conferenceId ?? "").trim().toLowerCase();
+  if (!code) {
     return { ok: false, reason: "evento sem código do Meet — não é possível casar gravação com segurança" };
   }
-
-  type DriveFile = {
-    id: string;
-    name: string;
-    mimeType: string;
-    webViewLink?: string;
-    createdTime?: string;
-    owners?: { emailAddress?: string }[];
-  };
-
-  const errors: string[] = [];
-  let candidates: DriveFile[] = [];
-  const matchedBy = "meet-code";
-  const searchResult = await driveSearch(
-    token,
-    `name contains '${conferenceId.replace(/'/g, "\\'")}' and ${videoMime} and ${baseTime}`,
-  );
-  if (searchResult.error) {
-    errors.push(`meet code: ${searchResult.error}`);
-  } else {
-    candidates = searchResult.files;
-  }
-
-  // Filtro rígido: exigir o código do Meet no nome do arquivo (regex).
-  if (candidates.length > 0) {
-    candidates = candidates.filter((f) => {
-      const name = (f.name ?? "").toLowerCase();
-      const codes = name.match(meetCodeRe);
-      return codes ? codes.includes(conferenceId) : false;
-    });
-  }
-
-
-
-  if (candidates.length === 0) {
-    const reason = errors.length
-      ? `nenhuma gravação encontrada (${errors.join(" | ")})`
-      : "nenhuma gravação correspondente no Drive na janela de busca";
-    return { ok: false, reason };
-  }
-  candidates.sort((a, b) => {
-    const da = Math.abs(new Date(a.createdTime ?? 0).getTime() - endMs);
-    const db = Math.abs(new Date(b.createdTime ?? 0).getTime() - endMs);
-    return da - db;
-  });
-
-  const conflictReasons: string[] = [];
-  for (const file of candidates) {
-    if (conferenceId) {
-      const conflict = await findRecordingFileConflict(file.id, ev.id, conferenceId);
-      if (conflict) {
-        conflictReasons.push(
-          `${file.id} já vinculado ao evento ${conflict.id} (${conflict.conference_id ?? "sem código"})`,
-        );
-        continue;
-      }
-    }
-
-    return {
-      ok: true,
-      file_id: file.id,
-      url: file.webViewLink ?? `https://drive.google.com/file/d/${file.id}/view`,
-      mime_type: file.mimeType,
-      matched_by: matchedBy,
-    };
-  }
-
+  const { data, error } = await supabaseAdmin
+    .from("meet_recording_index")
+    .select("drive_file_id, drive_url, mime_type")
+    .eq("owner_id", ownerId)
+    .eq("meet_code", code)
+    .maybeSingle();
+  if (error) return { ok: false, reason: `índice indisponível: ${error.message}` };
+  if (!data) return { ok: false, reason: "gravação ainda não indexada" };
   return {
-    ok: false,
-    reason: conflictReasons.length
-      ? `gravação rejeitada por vínculo cruzado: ${conflictReasons.join(" | ")}`
-      : "nenhuma gravação segura correspondente no Drive",
+    ok: true,
+    file_id: data.drive_file_id as string,
+    url: data.drive_url as string,
+    mime_type: (data.mime_type as string | null) ?? "video/mp4",
+    matched_by: "meet-code-index",
   };
 }
 
 
-// Skip auto-retry after this many attempts (~1h of every-5-min cron). User
-// can still force a lookup from the timeline button.
-const RECORDING_MAX_AUTO_ATTEMPTS = 12;
+// (removido) cap de tentativas — o lookup é O(1) contra o índice, então
+// re-tentar em cada tick é barato e cobre o caso "MP4 publicado depois".
 
 export async function syncPastRecordings(
-  account: CalendarAccountRow,
+  account: CalendarAccountRow & { meet_index_cursor?: string | null },
 ): Promise<{ scanned: number; found: number; missing: number; errors: number }> {
-  const token = await ensureAccessToken(account);
   try {
     await reconcileCalendarActivityLinks(account.owner_id, { accountId: account.id });
   } catch (e) {
     console.warn("reconcileCalendarActivityLinks failed before recordings sync", e);
   }
-  // Meet typically publishes the MP4 to Drive 10-30 min after the meeting
-  // ends, so searching earlier wastes attempts. Look back 30 days to cover
-  // re-imported / late-synced events.
-  const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+  // (a) Atualiza o índice reverso meet_code -> arquivo do Drive.
+  try {
+    const idx = await indexMeetRecordings(account);
+    if (idx.error) {
+      console.warn("[meet-index] varredura parcial", { account_id: account.id, error: idx.error });
+    } else if (idx.upserted > 0) {
+      console.log("[meet-index] atualizado", {
+        account_id: account.id,
+        scanned: idx.scanned,
+        upserted: idx.upserted,
+        pages: idx.pages,
+      });
+    }
+  } catch (e) {
+    console.warn("[meet-index] falha", {
+      account_id: account.id,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  // (b) Reprocessa eventos sem gravação — lookup determinístico O(1) no índice,
+  // sem janela de tempo. Cobrimos 60 dias para pegar re-imports tardios.
+  const since = new Date(Date.now() - 60 * 86400_000).toISOString();
   const until = new Date(Date.now() - 10 * 60_000).toISOString();
   const { data: events } = await supabaseAdmin
     .from("calendar_events")
@@ -745,26 +742,19 @@ export async function syncPastRecordings(
     .eq("calendar_account_id", account.id)
     .not("conference_id", "is", null)
     .is("recording_drive_file_id", null)
-    .or(
-      `recording_attempts.lt.${RECORDING_MAX_AUTO_ATTEMPTS},recording_status.eq.cross_link_blocked,and(recording_status.eq.not_found,recording_last_error.ilike.%código do Meet%)`,
-    )
     .gte("end_at", since)
     .lte("end_at", until)
-    .limit(20);
+    .limit(50);
   let found = 0;
   let missing = 0;
   let errors = 0;
   for (const ev of events ?? []) {
     const attempts = ((ev as { recording_attempts?: number }).recording_attempts ?? 0) + 1;
     try {
-      const rec = await findDriveRecording(token, {
-        id: ev.id as string,
-        title: ev.title,
-        start_at: (ev as { start_at?: string | null }).start_at ?? null,
-        end_at: ev.end_at,
-        conference_id: ev.conference_id as string | null,
-        organizer_email: account.email,
-      });
+      const rec = await matchRecordingByCode(
+        account.owner_id,
+        ev.conference_id as string | null,
+      );
       if (rec.ok) {
         const { error: upErr } = await supabaseAdmin
           .from("calendar_events")
@@ -1236,7 +1226,7 @@ export async function tickAllRecordings(): Promise<{
   const { data: accounts } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
-      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at",
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at, meet_index_cursor",
     )
     .eq("sync_enabled", true)
     .eq("provider", "google")
@@ -1287,21 +1277,25 @@ export async function syncRecordingForEvent(
   const { data: acct } = await supabaseAdmin
     .from("calendar_accounts")
     .select(
-      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at",
+      "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at, meet_index_cursor",
     )
     .eq("id", ev.calendar_account_id as string)
     .maybeSingle();
   if (!acct) throw new Error("Conta de calendário não encontrada");
-  const token = await ensureAccessToken(acct as CalendarAccountRow);
   const attempts = ((ev.recording_attempts as number | null) ?? 0) + 1;
-  const rec = await findDriveRecording(token, {
-    id: ev.id as string,
-    title: ev.title as string | null,
-    start_at: ev.start_at as string | null,
-    end_at: ev.end_at as string | null,
-    conference_id: ev.conference_id as string | null,
-    organizer_email: (acct as CalendarAccountRow).email,
-  });
+  // Atualiza o índice antes do lookup para pegar gravações recém-publicadas.
+  try {
+    await indexMeetRecordings(acct as CalendarAccountRow & { meet_index_cursor?: string | null });
+  } catch (e) {
+    console.warn("[meet-index] refresh sob demanda falhou", {
+      account_id: (acct as { id: string }).id,
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+  const rec = await matchRecordingByCode(
+    (acct as CalendarAccountRow).owner_id,
+    ev.conference_id as string | null,
+  );
 
   if (rec.ok) {
     await supabaseAdmin
