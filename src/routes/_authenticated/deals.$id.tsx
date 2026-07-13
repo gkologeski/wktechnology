@@ -148,7 +148,12 @@ function DealDetail() {
         </div>
         <div className="flex items-center gap-2">
           {pipelines.length > 0 && (
-            <Select value={dealPipeline?.id ?? ""} onValueChange={setPipeline}>
+            <Select
+              value={
+                (deal as unknown as { pipeline_id?: string | null }).pipeline_id ?? ""
+              }
+              onValueChange={setPipeline}
+            >
               <SelectTrigger className="h-9 w-[200px]">
                 <SelectValue placeholder="Selecione o funil" />
               </SelectTrigger>
