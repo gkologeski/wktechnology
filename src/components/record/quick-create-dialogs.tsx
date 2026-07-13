@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -22,6 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { usePipelines } from "@/lib/pipelines";
+import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
+import { Building2, User } from "lucide-react";
+
+const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
 type BaseProps = {
   open: boolean;
@@ -119,6 +127,8 @@ export function QuickCreateCompanyDialog({
 }
 
 /* ───────────── Deal ───────────── */
+const CURRENCIES = ["BRL", "USD", "EUR", "GBP"] as const;
+
 export function QuickCreateDealDialog({
   open,
   onOpenChange,
@@ -128,44 +138,106 @@ export function QuickCreateDealDialog({
 }: BaseProps & { defaultCompanyId?: string | null; defaultContactId?: string | null }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
+  const { pipelines } = usePipelines("deal");
+
+  const listTeamFn = useServerFn(listWorkspaceTeam);
+  const team = useQuery({
+    queryKey: ["workspace-team", "quick-create-deal"],
+    queryFn: () => listTeamFn(),
+    staleTime: 60_000,
+    enabled: open,
+  });
+  const members = team.data?.members ?? [];
+
   const [name, setName] = useState("");
-  const [value, setValue] = useState("0");
+  const [value, setValue] = useState<string>("0");
+  const [currency, setCurrency] = useState<string>("BRL");
+  const [pipelineId, setPipelineId] = useState<string>("");
+  const [stageId, setStageId] = useState<string>("");
+  const [ownerId, setOwnerId] = useState<string>("");
+  const [companyId, setCompanyId] = useState<string | null>(defaultCompanyId ?? null);
+  const [contactId, setContactId] = useState<string | null>(defaultContactId ?? null);
+  const [closeDate, setCloseDate] = useState<string>("");
   const [saving, setSaving] = useState(false);
+
+  // Inicializa defaults quando o diálogo abre
+  useEffect(() => {
+    if (!open) return;
+    setName("");
+    setValue("0");
+    setCurrency("BRL");
+    setCloseDate("");
+    setCompanyId(defaultCompanyId ?? null);
+    setContactId(defaultContactId ?? null);
+    setOwnerId(user?.id ?? "");
+  }, [open, defaultCompanyId, defaultContactId, user?.id]);
+
+  // Seleciona pipeline default quando carregado
+  useEffect(() => {
+    if (!open || pipelines.length === 0) return;
+    if (pipelineId && pipelines.some((p) => p.id === pipelineId)) return;
+    const servicos = pipelines.find((p) => (p.name ?? "").trim().toLowerCase() === "serviços");
+    const def = servicos ?? pipelines.find((p) => p.is_default) ?? pipelines[0];
+    setPipelineId(def.id);
+    setStageId(def.stages[0]?.value ?? "new");
+  }, [open, pipelines, pipelineId]);
+
+  const activePipeline = useMemo(
+    () => pipelines.find((p) => p.id === pipelineId) ?? null,
+    [pipelines, pipelineId],
+  );
+
+  const onPipelineChange = (id: string) => {
+    setPipelineId(id);
+    const p = pipelines.find((x) => x.id === id);
+    setStageId(p?.stages[0]?.value ?? "new");
+  };
 
   const submit = async () => {
     if (!user) return;
     if (!name.trim()) return toast.error("Informe o nome");
     setSaving(true);
     try {
+      const stageKey = stageId || activePipeline?.stages[0]?.value || "new";
+      const stageType = activePipeline?.stages.find((s) => s.value === stageKey)?.type;
+      const legacyStage = LEGACY_ENUM.includes(stageKey)
+        ? stageKey
+        : stageType === "won"
+          ? "won"
+          : stageType === "lost"
+            ? "lost"
+            : "new";
+
+      const payload: Record<string, unknown> = {
+        owner_id: ownerId || user.id,
+        name: name.trim(),
+        value: Number(value || 0),
+        currency,
+        stage: legacyStage,
+        stage_id: stageKey,
+        pipeline_id: activePipeline?.id ?? null,
+        company_id: companyId,
+        primary_contact_id: contactId,
+        expected_close_date: closeDate || null,
+      };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("deals")
-        .insert({
-          owner_id: user.id,
-          name: name.trim(),
-          value: Number(value || 0),
-          currency: "BRL",
-          stage: "new",
-          stage_id: "new",
-          company_id: defaultCompanyId ?? null,
-          primary_contact_id: defaultContactId ?? null,
-        })
+        .insert(payload)
         .select("id")
         .single();
       if (error) throw error;
       const dealId = data.id as string;
-      if (defaultContactId) {
+      if (contactId) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         await (supabase as any)
           .from("deal_contacts")
-          .insert({ deal_id: dealId, contact_id: defaultContactId });
+          .insert({ deal_id: dealId, contact_id: contactId });
       }
       toastCreated("Negócio criado", "Ir para o negócio", (nav) =>
         nav({ to: "/deals/$id", params: { id: dealId } }),
       );
       onOpenChange(false);
-      setName("");
-      setValue("0");
       onCreated?.(dealId);
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao criar");
@@ -181,10 +253,12 @@ export function QuickCreateDealDialog({
         if (!saving) onOpenChange(v);
       }}
     >
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Criar negócio</DialogTitle>
-          <DialogDescription>Você poderá editar os detalhes depois.</DialogDescription>
+          <DialogDescription>
+            Preencha as informações principais. Você poderá editar os detalhes depois.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 py-2">
           <div className="space-y-1.5">
@@ -194,16 +268,136 @@ export function QuickCreateDealDialog({
               value={name}
               onChange={(e) => setName(e.target.value)}
               autoFocus
+              placeholder="Ex.: Projeto - Cliente X"
             />
           </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="qc-d-pipeline">Pipeline</Label>
+              <Select value={pipelineId} onValueChange={onPipelineChange}>
+                <SelectTrigger id="qc-d-pipeline" className="h-9">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pipelines.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="qc-d-stage">Etapa</Label>
+              <Select
+                value={stageId}
+                onValueChange={setStageId}
+                disabled={!activePipeline}
+              >
+                <SelectTrigger id="qc-d-stage" className="h-9">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activePipeline?.stages.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="qc-d-owner">Responsável</Label>
+              <Select value={ownerId} onValueChange={setOwnerId}>
+                <SelectTrigger id="qc-d-owner" className="h-9">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {members.map((m) => (
+                    <SelectItem key={m.user_id} value={m.user_id}>
+                      {m.full_name || m.email || m.user_id.slice(0, 8)}
+                      {m.user_id === user?.id ? " (eu)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="qc-d-close">Data prevista de fechamento</Label>
+              <Input
+                id="qc-d-close"
+                type="date"
+                value={closeDate}
+                onChange={(e) => setCloseDate(e.target.value)}
+              />
+            </div>
+          </div>
+
           <div className="space-y-1.5">
-            <Label htmlFor="qc-d-value">Valor (BRL)</Label>
-            <CurrencyInput
-              id="qc-d-value"
-              currency="BRL"
-              value={value === "" ? null : Number(value)}
-              onValueChange={(n) => setValue(n === null ? "" : String(n))}
+            <Label>Empresa</Label>
+            <EntityCombobox
+              entity="companies"
+              select="id,name,domain"
+              searchColumn="name"
+              labelFrom={(row) => String(row.name ?? "")}
+              hintFrom={(row) => (row.domain ? String(row.domain) : null)}
+              value={companyId}
+              onChange={(id) => setCompanyId(id)}
+              placeholder="Buscar empresa…"
+              emptyLabel="Nenhuma empresa encontrada"
+              icon={Building2}
             />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Contato principal</Label>
+            <EntityCombobox
+              entity="contacts"
+              select="id,first_name,last_name,email"
+              searchColumn="first_name"
+              searchColumns={["first_name", "last_name", "email"]}
+              labelFrom={(row) =>
+                `${String(row.first_name ?? "")} ${String(row.last_name ?? "")}`.trim() ||
+                String(row.email ?? "")
+              }
+              hintFrom={(row) => (row.email ? String(row.email) : null)}
+              value={contactId}
+              onChange={(id) => setContactId(id)}
+              placeholder="Buscar contato…"
+              emptyLabel="Nenhum contato encontrado"
+              icon={User}
+            />
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-[1fr_120px]">
+            <div className="space-y-1.5">
+              <Label htmlFor="qc-d-value">Valor</Label>
+              <CurrencyInput
+                id="qc-d-value"
+                currency={currency}
+                value={value === "" ? null : Number(value)}
+                onValueChange={(n) => setValue(n === null ? "" : String(n))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="qc-d-currency">Moeda</Label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger id="qc-d-currency" className="h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CURRENCIES.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         <DialogFooter>
