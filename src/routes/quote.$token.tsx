@@ -60,6 +60,17 @@ function PublicQuotePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const printedRef = useRef(false);
+  useEffect(() => {
+    if (printedRef.current || isLoading || error || !data) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("print") !== "1") return;
+    printedRef.current = true;
+    const t = window.setTimeout(() => window.print(), 600);
+    return () => window.clearTimeout(t);
+  }, [isLoading, error, data]);
+
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
   if (error || !data)
     return <div className="p-8 text-sm text-destructive">Cotação não encontrada.</div>;
