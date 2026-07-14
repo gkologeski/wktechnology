@@ -45,8 +45,9 @@ export async function downloadQuotePdf(el: HTMLElement, filename: string) {
 
   // Aguarda fontes e um frame para garantir layout estável antes de rasterizar.
   try {
-    if (typeof document !== "undefined" && (document as Document).fonts?.ready) {
-      await (document as Document).fonts.ready;
+    const fonts = typeof document !== "undefined" ? (document as Document).fonts : undefined;
+    if (fonts && typeof fonts.ready?.then === "function") {
+      await fonts.ready;
     }
   } catch {
     /* ignore */
