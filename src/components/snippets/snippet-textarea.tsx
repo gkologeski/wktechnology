@@ -59,7 +59,7 @@ export const SnippetTextarea = forwardRef<HTMLTextAreaElement, BaseProps>(functi
 });
 
 export const SnippetInput = forwardRef<HTMLInputElement, BaseProps>(function SnippetInput(
-  { value, onChange, placeholder, className, disabled, id, name, ...rest },
+  { value, onChange, placeholder, className, disabled, id, name, onKeyDown, ...rest },
   fwdRef,
 ) {
   const ref = useRef<HTMLInputElement>(null);
@@ -73,7 +73,10 @@ export const SnippetInput = forwardRef<HTMLInputElement, BaseProps>(function Sni
         name={name}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onKeyDown={trigger.onKeyDown}
+        onKeyDown={(e) => {
+          trigger.onKeyDown(e);
+          if (!e.defaultPrevented) onKeyDown?.(e);
+        }}
         onBlur={() => setTimeout(trigger.close, 150)}
         placeholder={placeholder}
         className={className}
