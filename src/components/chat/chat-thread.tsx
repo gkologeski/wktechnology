@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { SnippetTextarea } from "@/components/snippets/snippet-textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { listMessages, sendMessage } from "@/lib/chat.functions";
 import { supabase } from "@/integrations/supabase/client";
