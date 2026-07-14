@@ -63,7 +63,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
-import { ExtraFieldsEditor } from "./extra-fields-editor";
+import { ExtraFieldsEditor, FkPicker } from "./extra-fields-editor";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
