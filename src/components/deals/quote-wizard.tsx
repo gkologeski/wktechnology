@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ExternalLink, Loader2, Slash } from "lucide-react";
 import { toast } from "sonner";
 import {
   createQuoteFromDeal,
@@ -495,6 +495,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                   onChange={(html) => setDraft({ ...draft, notes: html })}
                   minHeight={140}
                 />
+                <SnippetHint />
               </div>
               <div className="space-y-1.5">
                 <Label>Termos e condições</Label>
@@ -503,6 +504,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                   onChange={(html) => setDraft({ ...draft, terms: html })}
                   minHeight={180}
                 />
+                <SnippetHint />
               </div>
             </div>
           )}
