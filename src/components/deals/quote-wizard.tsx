@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, ExternalLink, Loader2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, ExternalLink, Loader2, Slash } from "lucide-react";
 import { toast } from "sonner";
 import {
   createQuoteFromDeal,
@@ -74,6 +74,15 @@ const STEPS = [
   { key: "notes", label: "Observações & Termos" },
   { key: "review", label: "Revisão & Publicação" },
 ] as const;
+
+function SnippetHint() {
+  return (
+    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-text-tertiary">
+      <Slash className="h-3 w-3" aria-hidden="true" />
+      <span>Digite "/" para inserir um snippet</span>
+    </p>
+  );
+}
 
 export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props) {
   const qc = useQueryClient();
@@ -495,6 +504,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                   onChange={(html) => setDraft({ ...draft, notes: html })}
                   minHeight={140}
                 />
+                <SnippetHint />
               </div>
               <div className="space-y-1.5">
                 <Label>Termos e condições</Label>
@@ -503,6 +513,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                   onChange={(html) => setDraft({ ...draft, terms: html })}
                   minHeight={180}
                 />
+                <SnippetHint />
               </div>
             </div>
           )}
