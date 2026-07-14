@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import createDOMPurify from "dompurify";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Bold,
   Italic,
@@ -10,8 +12,14 @@ import {
   Code,
   Eraser,
   AtSign,
+  Slash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  listSnippets as listSnippetsFn,
+  incrementSnippetUsage as incrementSnippetUsageFn,
+  type SnippetRow,
+} from "@/lib/snippets.functions";
 
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
@@ -79,6 +87,14 @@ const ALLOWED_ATTR_SET = new Set(SANITIZE_CONFIG.ALLOWED_ATTR);
 
 function escapeAttr(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>");
 }
 
 function isSafeUrl(value: string): boolean {
@@ -185,6 +201,32 @@ export function RichHtmlEditor({
   const [mentionPos, setMentionPos] = useState<{ top: number; left: number } | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
 
+  // Snippets ("/atalho") detection
+  const listSnippetsCall = useServerFn(listSnippetsFn);
+  const incSnippet = useServerFn(incrementSnippetUsageFn);
+  const snippetsQ = useQuery({
+    queryKey: ["snippets", "picker"],
+    queryFn: () => listSnippetsCall({ data: { visibility: "all" } }),
+    staleTime: 30_000,
+  });
+  const [snipQuery, setSnipQuery] = useState<string | null>(null);
+  const [snipPos, setSnipPos] = useState<{ top: number; left: number } | null>(null);
+  const [snipActiveIdx, setSnipActiveIdx] = useState(0);
+
+  const snippetResults = useMemo(() => {
+    if (snipQuery === null) return [] as SnippetRow[];
+    const items = snippetsQ.data?.items ?? [];
+    const needle = snipQuery.toLowerCase();
+    const filteredSnips = needle
+      ? items.filter(
+          (s) =>
+            s.shortcut.toLowerCase().includes(needle) ||
+            s.name.toLowerCase().includes(needle),
+        )
+      : items;
+    return filteredSnips.slice(0, 8);
+  }, [snipQuery, snippetsQ.data]);
+
   // Keep DOM in sync when value changes externally (e.g. cleared after submit)
   useEffect(() => {
     const el = ref.current;
@@ -284,6 +326,73 @@ export function RichHtmlEditor({
     closeMentions();
   };
 
+  const closeSnippets = useCallback(() => {
+    setSnipQuery(null);
+    setSnipPos(null);
+    setSnipActiveIdx(0);
+  }, []);
+
+  const detectSnippet = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !ref.current) {
+      closeSnippets();
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    if (!ref.current.contains(range.startContainer)) {
+      closeSnippets();
+      return;
+    }
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) {
+      closeSnippets();
+      return;
+    }
+    const textBefore = (node.textContent ?? "").slice(0, range.startOffset);
+    const match = /(^|\s)\/([a-zA-Z0-9_\-/]*)$/.exec(textBefore);
+    if (!match) {
+      closeSnippets();
+      return;
+    }
+    setSnipQuery(match[2]);
+    setSnipActiveIdx(0);
+    const rect = range.getBoundingClientRect();
+    const editorRect = ref.current.getBoundingClientRect();
+    setSnipPos({ top: rect.bottom - editorRect.top + 4, left: rect.left - editorRect.left });
+  }, [closeSnippets]);
+
+  const insertSnippet = (s: SnippetRow) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !ref.current) return;
+    const range = sel.getRangeAt(0);
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const text = node.textContent ?? "";
+    const before = text.slice(0, range.startOffset);
+    const after = text.slice(range.startOffset);
+    const match = /(^|\s)\/([a-zA-Z0-9_\-/]*)$/.exec(before);
+    if (!match) return;
+    // Preserve the leading whitespace/BOL group; remove only "/xxx"
+    const removeLen = match[0].length - match[1].length;
+    const start = before.length - removeLen;
+    (node as Text).textContent = before.slice(0, start) + after;
+    const newRange = document.createRange();
+    newRange.setStart(node, start);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+    // Insert snippet body as sanitized HTML at caret
+    const html = sanitizeHtml(s.body_html || (s.body_text ? escapeHtml(s.body_text) : ""));
+    document.execCommand("insertHTML", false, html);
+    onChange(sanitizeHtml(ref.current.innerHTML));
+    void incSnippet({ data: { id: s.id } }).catch(() => {
+      /* silencioso */
+    });
+    closeSnippets();
+  };
+
+
+
   const filtered =
     mentionQuery !== null && mentions
       ? mentions
@@ -329,8 +438,31 @@ export function RichHtmlEditor({
         onInput={(e) => {
           onChange(sanitizeHtml((e.target as HTMLDivElement).innerHTML));
           detectMention();
+          detectSnippet();
         }}
         onKeyDown={(e) => {
+          if (snipQuery !== null && snippetResults.length > 0) {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setSnipActiveIdx((i) => (i + 1) % snippetResults.length);
+              return;
+            }
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setSnipActiveIdx((i) => (i - 1 + snippetResults.length) % snippetResults.length);
+              return;
+            }
+            if (e.key === "Enter" || e.key === "Tab") {
+              e.preventDefault();
+              insertSnippet(snippetResults[snipActiveIdx]);
+              return;
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              closeSnippets();
+              return;
+            }
+          }
           if (mentionQuery !== null && filtered.length > 0) {
             if (e.key === "ArrowDown") {
               e.preventDefault();
@@ -354,9 +486,18 @@ export function RichHtmlEditor({
             }
           }
         }}
-        onKeyUp={() => detectMention()}
-        onMouseUp={() => detectMention()}
-        onBlur={() => setTimeout(closeMentions, 150)}
+        onKeyUp={() => {
+          detectMention();
+          detectSnippet();
+        }}
+        onMouseUp={() => {
+          detectMention();
+          detectSnippet();
+        }}
+        onBlur={() => {
+          setTimeout(closeMentions, 150);
+          setTimeout(closeSnippets, 150);
+        }}
         onPaste={(e) => {
           setTimeout(() => {
             if (ref.current) onChange(sanitizeHtml(ref.current.innerHTML));
@@ -381,6 +522,39 @@ export function RichHtmlEditor({
             >
               <AtSign className="h-3 w-3 text-muted-foreground" />
               {m.name}
+            </button>
+          ))}
+        </div>
+      )}
+      {snipQuery !== null && snippetResults.length > 0 && snipPos && (
+        <div
+          className="absolute z-50 w-80 max-h-72 overflow-y-auto rounded-md border bg-popover p-1 shadow-md"
+          style={{ top: snipPos.top + 36, left: snipPos.left }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {snippetResults.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => insertSnippet(s)}
+              onMouseEnter={() => setSnipActiveIdx(i)}
+              className={`flex w-full items-start gap-2 rounded px-2 py-1.5 text-left text-sm ${i === snipActiveIdx ? "bg-muted" : "hover:bg-muted/60"}`}
+            >
+              <Slash className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate font-medium">/{s.shortcut}</span>
+                  <span className="truncate text-xs text-muted-foreground">{s.name}</span>
+                  {s.visibility === "shared" && (
+                    <span className="ml-auto rounded bg-primary/10 px-1 text-[10px] text-primary">
+                      compartilhado
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                  {s.body_text || (s.body_html ? s.body_html.replace(/<[^>]+>/g, " ") : "")}
+                </p>
+              </div>
             </button>
           ))}
         </div>

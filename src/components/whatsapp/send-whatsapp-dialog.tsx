@@ -13,6 +13,7 @@ import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SnippetTextarea } from "@/components/snippets/snippet-textarea";
 import {
   Dialog,
   DialogContent,
@@ -231,10 +232,10 @@ export function SendWhatsAppDialog({
                   onApply={setBody}
                 />
               </div>
-              <Textarea
+              <SnippetTextarea
                 ref={bodyInserter.ref}
                 value={body}
-                onChange={(e) => setBody(e.target.value)}
+                onChange={setBody}
                 rows={4}
               />
               <TokenPills

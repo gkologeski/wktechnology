@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { SnippetTextarea } from "@/components/snippets/snippet-textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { listMessages, sendMessage } from "@/lib/chat.functions";
 import { supabase } from "@/integrations/supabase/client";
@@ -248,9 +249,9 @@ export function ChatThread({
               <Paperclip className="h-4 w-4" />
             </span>
           </label>
-          <Textarea
+          <SnippetTextarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
             onKeyDown={onKey}
             placeholder="Escreva uma mensagem… (Enter envia, Shift+Enter quebra linha)"
             className="min-h-[40px] max-h-32 resize-none"
