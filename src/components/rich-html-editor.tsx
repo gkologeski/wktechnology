@@ -89,6 +89,14 @@ function escapeAttr(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\n/g, "<br>");
+}
+
 function isSafeUrl(value: string): boolean {
   const trimmed = value.trim().replace(/[\u0000-\u001F\u007F\s]+/g, "");
   return /^(https?:|mailto:|tel:|\/|#)/i.test(trimmed);
