@@ -73,7 +73,8 @@ function PublicQuotePage() {
       await downloadQuotePdf(paperRef.current, pdfFilename);
     } catch (e) {
       console.error(e);
-      toast.error("Falha ao gerar PDF.");
+      const msg = e instanceof Error ? e.message : "erro desconhecido";
+      toast.error(`Falha ao gerar PDF: ${msg}`);
     }
   };
 
