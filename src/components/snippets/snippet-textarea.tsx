@@ -20,7 +20,7 @@ type BaseProps = {
 };
 
 export const SnippetTextarea = forwardRef<HTMLTextAreaElement, BaseProps>(function SnippetTextarea(
-  { value, onChange, placeholder, className, disabled, id, name, rows, ...rest },
+  { value, onChange, placeholder, className, disabled, id, name, rows, onKeyDown, ...rest },
   fwdRef,
 ) {
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -35,7 +35,10 @@ export const SnippetTextarea = forwardRef<HTMLTextAreaElement, BaseProps>(functi
         rows={rows}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        onKeyDown={trigger.onKeyDown}
+        onKeyDown={(e) => {
+          trigger.onKeyDown(e);
+          if (!e.defaultPrevented) onKeyDown?.(e);
+        }}
         onBlur={() => setTimeout(trigger.close, 150)}
         placeholder={placeholder}
         className={className}
