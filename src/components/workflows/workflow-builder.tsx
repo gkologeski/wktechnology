@@ -63,7 +63,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
-import { ExtraFieldsEditor } from "./extra-fields-editor";
+import { ExtraFieldsEditor, FkPicker } from "./extra-fields-editor";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
@@ -2381,6 +2381,19 @@ function StepConfigForm({
                 onChange={(v) => onChange({ ...action, assignee_id: v })}
               />
             </div>
+          </div>
+          <div>
+            <Label className="text-xs">Pipeline</Label>
+            <FkPicker
+              kind="pipeline"
+              value={(action.extra_fields?.pipeline_id as string) ?? ""}
+              onChange={(v) =>
+                onChange({
+                  ...action,
+                  extra_fields: { ...(action.extra_fields ?? {}), pipeline_id: v || undefined },
+                })
+              }
+            />
           </div>
           <ExtraFieldsEditor
             entity="tickets"

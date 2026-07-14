@@ -270,7 +270,7 @@ function FieldInput({
 // Combobox de busca para FKs conhecidas (usuário / empresa / pipeline).
 // Busca é server-side com debounce, respeitando as RLS policies do usuário.
 // Aceita valor bruto (UUID) ou token {{...}} — o TokenInput continua no fallback.
-function FkPicker({
+export function FkPicker({
   kind,
   value,
   onChange,

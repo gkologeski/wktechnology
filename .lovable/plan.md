@@ -1,16 +1,38 @@
-## Corrigir default de priority no create_ticket do engine de workflows
+## Objetivo
+Expor todos os campos de ticket no builder de workflows e traduzir rótulos para pt-BR.
 
-**Causa raiz**: em `src/lib/workflows/engine.server.ts:776`, a ação `create_ticket` faz `priority: action.priority ?? "normal"`. O enum `ticket_priority` do banco é `{low, medium, high, urgent}` — não existe `normal`. Toda execução do workflow "Criar contrato" (e qualquer outro `create_ticket` sem `priority` explícito) falha com `invalid input value for enum ticket_priority: "normal"`.
+## Mudanças
 
-### Alteração
+### 1. `src/components/workflows/workflow-builder.tsx`
+- Adicionar campo **Pipeline** (via `FkPicker` apontando para `pipelines`, filtrado por `entity='ticket'`) no formulário principal da ação `create_ticket`, ao lado de Prioridade e Responsável.
+- Ajustar `hiddenKeys` de `create_ticket` para remover `pipeline_id` (já exposto no form principal) mas manter apenas IDs de sistema ocultos (`id`, `owner_id`, `workspace_id`, `created_at`, `updated_at`, `deleted_at`, `subject`, `description`, `priority`, `assignee_id`, `pipeline_id`).
+- Resultado: seção "Mais campos" mostra todos os demais campos da tabela `tickets` (status, source, due_at, sla_policy_id, contact_id, company_id, deal_id, tags, etc.).
 
-- `src/lib/workflows/engine.server.ts` linha 776: trocar `"normal"` por `"medium"` (equivalente semântico dentro do enum válido).
+### 2. `src/lib/entity-fields.functions.ts`
+- Ampliar o mapa `LABELS` com rótulos pt-BR para campos de `tickets` e afins:
+  - `subject` → "Assunto"
+  - `priority` → "Prioridade"
+  - `assignee_id` → "Responsável"
+  - `due_at` → "Vence em"
+  - `sla_policy_id` → "Política de SLA"
+  - `first_response_at` → "Primeira resposta em"
+  - `resolved_at` → "Resolvido em"
+  - `closed_at` → "Fechado em"
+  - `reopened_at` → "Reaberto em"
+  - `contact_id` → "Contato"
+  - `deal_id` → "Negócio"
+  - `tags` → "Tags"
+  - `channel` → "Canal"
+  - `category` → "Categoria"
+  - `subcategory` → "Subcategoria"
+  - `resolution` → "Resolução"
+  - `satisfaction_score` → "Nota de satisfação"
+  - + demais campos remanescentes de `tickets` que existirem.
 
-Nenhuma migration, nenhuma alteração de schema/RLS, nenhuma mudança no builder ou UI. Ações `create_ticket` que já definem `priority` explicitamente continuam intactas.
+### 3. Escopo fora
+- Sem mudanças no engine (`engine.server.ts`), RLS, schema ou lógica de negócio.
+- Aplicável apenas ao painel do builder; execução do workflow permanece inalterada.
 
-### Validação manual
-
-1. Mover um deal para a etapa "(AC) Assinatura de Contrato" do funil "Análises e Consultorias".
-2. Aguardar ≤ 60s (tick do engine).
-3. Verificar em `workflow_runs` que o run mais recente do workflow `1d204901-...` tem `status='success'`.
-4. Conferir no pipeline "FI - Solicitações" um novo chamado "Criar contrato" atribuído a Sabrina Maciel com `priority='medium'`.
+## Validação
+- Abrir workflow "Criar contrato" → ação "Criar ticket" → confirmar campo Pipeline visível e populável.
+- Seção "Mais campos" lista rótulos em pt-BR e permite adicionar qualquer coluna da tabela `tickets`.
