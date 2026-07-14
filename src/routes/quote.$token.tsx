@@ -147,12 +147,12 @@ function PublicQuotePage() {
             {quote.status === "declined" && "Recusada"}
             {quote.status === "expired" && "Expirada"}
           </Badge>
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
-            <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
+          <Button size="sm" variant="outline" onClick={() => void triggerDownload()}>
+            <Download className="h-4 w-4 mr-1" /> Baixar PDF
           </Button>
         </div>
 
-        <Card className="print:shadow-none print:border-0">
+        <Card ref={paperRef} className="print:shadow-none print:border-0 bg-white">
           <CardContent className="p-8 space-y-6">
             <div className="flex items-start justify-between gap-6">
               <div>
