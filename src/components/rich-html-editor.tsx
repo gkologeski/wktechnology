@@ -526,6 +526,39 @@ export function RichHtmlEditor({
           ))}
         </div>
       )}
+      {snipQuery !== null && snippetResults.length > 0 && snipPos && (
+        <div
+          className="absolute z-50 w-80 max-h-72 overflow-y-auto rounded-md border bg-popover p-1 shadow-md"
+          style={{ top: snipPos.top + 36, left: snipPos.left }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {snippetResults.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => insertSnippet(s)}
+              onMouseEnter={() => setSnipActiveIdx(i)}
+              className={`flex w-full items-start gap-2 rounded px-2 py-1.5 text-left text-sm ${i === snipActiveIdx ? "bg-muted" : "hover:bg-muted/60"}`}
+            >
+              <Slash className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="truncate font-medium">/{s.shortcut}</span>
+                  <span className="truncate text-xs text-muted-foreground">{s.name}</span>
+                  {s.visibility === "shared" && (
+                    <span className="ml-auto rounded bg-primary/10 px-1 text-[10px] text-primary">
+                      compartilhado
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
+                  {s.body_text || (s.body_html ? s.body_html.replace(/<[^>]+>/g, " ") : "")}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
