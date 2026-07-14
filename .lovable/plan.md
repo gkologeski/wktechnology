@@ -1,71 +1,115 @@
-## Diagnóstico
 
-O deal `a663fb77…` (CT/Brooks Ambiental) mostra reuniões até 2040 porque:
+## Escopo
 
-1. O contato principal do deal (Sergio, `1bad118c…`) foi convidado em eventos recorrentes internos do próprio cliente — principalmente **"Brooks - Programação Diária"** (recorrência semanal, 727 instâncias até **2040-05-31**), além de compromissos pessoais como "Academia", "Massagem", "Noripurum".
-2. A sincronização com o Google Calendar armazena cada instância recorrente como uma linha em `public.calendar_events` já com `related_contact_id` populado apontando para o Sergio (porque o e-mail dele bate com um contato do workspace).
-3. A função `public.get_entity_timeline` tem um `UNION` que espelha na timeline do deal **qualquer** `calendar_event` cujo `related_contact_id` esteja entre os contatos do deal, sem qualificar se é uma reunião WK↔cliente.
+Criar um sistema de **Snippets** no estilo HubSpot: textos curtos pré-prontos, inseridos em qualquer campo de texto via `/atalho`. Escopo global no workspace (sem filtro por módulo), com visibilidade pessoal ou compartilhada. Gestão em Configurações. Disponível em Email, Notas/Timeline, Tickets, Chat interno, WhatsApp e Cotações.
 
-Resultado: 727+ ocorrências futuras do calendário particular do cliente aparecem como "reuniões" do deal até 2040.
+## Modelo de dados
 
-Nenhuma dessas instâncias é uma reunião WK↔cliente real — nenhuma tem `hangout_link`/`conference_id` da WK e nenhum atendente do domínio interno (`@wktechnology.com.br`) participa.
+Tabela nova `public.snippets` (não reaproveitar `email_snippets` — permanece intacta para não quebrar o compose atual, com migração leve descrita abaixo):
 
-## O que vou fazer
+- `name` (rótulo humano)
+- `shortcut` (ex.: `assinatura`, `condicoes-pagamento`) — único por `(owner_id, visibility, workspace_id)`
+- `body_html` (rich text sanitizado) e `body_text` (fallback plain)
+- `visibility` enum: `personal` | `shared`
+- `workspace_id`, `owner_id`
+- `folder` (texto opcional, para organizar)
+- `usage_count` (contador para ordenar por mais usados)
+- timestamps + trigger `updated_at`
 
-Sem qualquer regra baseada em janela de tempo. O filtro é 100% semântico: só é reunião do deal se a WK estiver dentro.
+RLS:
+- SELECT: dono OU (`shared` e mesmo workspace).
+- INSERT/UPDATE/DELETE: dono; snippets `shared` só admin/gerente do workspace podem editar/apagar (via `has_role`).
+- GRANT autenticado + service_role.
 
-### 1. Corrigir o espelhamento na timeline (`public.get_entity_timeline`)
+Migração de dados: copiar entradas existentes de `email_snippets` para `snippets` como `personal`, marcando `folder = 'Email (legado)'`. `email_snippets` continua funcionando lado a lado até deprecar em fase futura.
 
-Migration com `CREATE OR REPLACE FUNCTION` que altera os dois `UNION` de `calendar_events` (o de contato e o de espelhamento em deal/company via `related_contact_id`) para exigir que o evento seja "WK-facing":
+## Backend
 
-- Existir pelo menos um atendente cujo e-mail termine em `@wktechnology.com.br` no JSON `attendees`, **ou**
-- O `owner_id` do evento ser um usuário interno da WK (membro do workspace com e-mail do domínio interno).
+Novo arquivo `src/lib/snippets.functions.ts`:
+- `listSnippets({ q?, visibility? })` — lista visíveis pelo usuário, ordenados por `usage_count desc, shortcut asc`.
+- `upsertSnippet(payload)` — cria/edita respeitando visibilidade.
+- `deleteSnippet(id)`.
+- `incrementSnippetUsage(id)` — chamado quando um snippet é inserido.
 
-Eventos sem nenhum sinal de participação da WK deixam de aparecer na timeline do deal/contato/company, independentemente da data.
+Todos com `requireSupabaseAuth`.
 
-### 2. Corrigir a heurística de ingest (`src/lib/calendar/engine.server.ts`)
+## Componentes de UI
 
-Ao popular `related_contact_id` no upsert de `calendar_events`, aplicar a mesma regra: só marcar o evento como cliente-facing quando houver ao menos um atendente do domínio interno da WK. Eventos que só têm contato do cliente + domínios externos ficam com `related_contact_id = NULL`.
+### 1. Hook central `useSnippetTrigger`
+Arquivo novo `src/hooks/use-snippet-trigger.ts`. Detecta `/atalho` em:
+- `<input>` / `<textarea>` (via ref + eventos de seleção)
+- `RichHtmlEditor` (via detecção no `contentEditable`, mesmo padrão da menção `@` já existente)
 
-### 3. Backfill
+Retorna estado do popover (query, posição, ativo) + função `insertSnippet(snippet)` que substitui o `/atalho` pelo conteúdo do snippet e chama `incrementSnippetUsage`.
 
-Migration única para limpar dados atuais, sem filtro temporal:
+### 2. Popover `SnippetPicker`
+Novo componente `src/components/snippets/snippet-picker.tsx`:
+- Lista filtrada por texto após `/`
+- Mostra `shortcut`, `name`, preview do body
+- Navegação por ↑ ↓, Enter/Tab para inserir, Esc para fechar
+- Segue tokens semânticos e mesmo padrão visual do popover de menções existente
 
-```sql
-UPDATE calendar_events
-SET related_contact_id = NULL
-WHERE related_contact_id IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1
-    FROM jsonb_array_elements(attendees) att
-    WHERE lower(att->>'email') LIKE '%@wktechnology.com.br'
-  );
-```
+### 3. Adaptação dos campos alvo
+- `RichHtmlEditor` (`src/components/rich-html-editor.tsx`): adicionar detecção de `/` em paralelo à detecção `@` (compartilhando o algoritmo já existente). Renderizar `SnippetPicker` quando ativo. Ao inserir, colar HTML sanitizado do body.
+- `send-email-dialog.tsx`: substituir a lógica interna atual de `/atalho` (que hoje consulta `email_snippets`) pelo `useSnippetTrigger`. Comportamento externo idêntico.
+- Notas/timeline: `activity-timeline.tsx` já usa `RichHtmlEditor`, então ganha automaticamente.
+- Tickets: identificar campo de resposta (`components/tickets/*`) e usar `RichHtmlEditor` se ainda for `<Textarea>` puro, ou plugar `useSnippetTrigger` no textarea.
+- Chat interno (`components/chat/chat-thread.tsx`) e WhatsApp (`components/whatsapp/send-whatsapp-dialog.tsx`): `<Textarea>` puros — plugar `useSnippetTrigger` inserindo body_text (não HTML) para não quebrar canais que não suportam rich text.
+- Cotações: campos de descrição do wizard (`quote-wizard.tsx`) e descrição de line item — usar `useSnippetTrigger` com body_text.
 
-Nenhuma linha é deletada — apenas o vínculo indevido é quebrado. Eventos com atendente WK continuam ligados.
+### 4. Gestão em Configurações
+Nova rota `src/routes/_authenticated/settings.snippets.tsx`:
+- Header padrão (`PageHeader`), botão "Novo snippet"
+- FilterBar: busca por texto + tabs "Meus" / "Compartilhados"
+- Lista em `DataTable`: shortcut, nome, escopo, pasta, usos, atualizado em
+- Estados loading/empty/error obrigatórios
+- Modal de edição com form: name, shortcut (validação regex), folder, visibilidade (radio: pessoal/compartilhado — compartilhado só habilitado se admin), body via `RichHtmlEditor`
+- Ação de duplicar
 
-### 4. Validação
+Adicionar entrada no menu de Configurações (`settings-menu.tsx` ou equivalente).
 
-- Rodar `get_entity_timeline('deal', 'a663fb77…')` antes e depois e conferir que a contagem cai de 700+ para as poucas reuniões reais WK↔Brooks (ex.: "Alinhamento WK <> Brooks Ambiental" em 13/07/2026).
-- Conferir que deals com reuniões WK reais (ex.: NEXID) continuam com a timeline intacta.
-- Rodar `bun run typecheck`.
+## UX
 
-## Fora de escopo
+- Gatilho: `/atalho` no início de palavra (regex `(^|\s)\/([a-zA-Z0-9_\-/]*)$`)
+- Popover fecha em blur / Esc / clique fora
+- Se snippet é `body_html` e campo é plain, faz strip para texto simples
+- Toast de "Snippet inserido" só em campos plain para dar feedback (rich mostra visualmente)
 
-- Não vou mexer no matcher de gravações (`recording_matched_by`).
-- Não vou deletar linhas de `calendar_events` — só o vínculo com contato.
-- Não vou alterar RLS nem permissões.
-- Não vou aplicar cap por janela de tempo em lugar nenhum.
+## Segurança
 
-## Detalhes técnicos
+- Sanitização HTML já é feita pelo `RichHtmlEditor`; snippets HTML passam pela mesma pipeline
+- RLS conforme acima; sem alteração em outras policies
+- `shared` protegido no backend, não só na UI
 
-- Migration nova em `supabase/migrations/` com: (a) `CREATE OR REPLACE FUNCTION public.get_entity_timeline(...)` com o filtro "tem atendente WK OU owner interno" nos dois `UNION` de `calendar_events`; (b) `UPDATE` de backfill.
-- Edição em `src/lib/calendar/engine.server.ts` na função que resolve `related_contact_id` no upsert.
-- Domínio interno em constante única (`INTERNAL_EMAIL_DOMAINS = ['wktechnology.com.br']`), reutilizada onde já existir.
-- Sem mudanças em componentes React ou rotas.
+## Fora de escopo desta entrega
 
-## Como validar manualmente
+- Snippets por cargo/permission set (fica para futuro se necessário)
+- Placeholders/tokens dinâmicos dentro do snippet (`{{first_name}}`) — email já resolve isso via `email-tokens`; para os demais canais, os tokens são inseridos literalmente nesta fase
+- Migração/desativação definitiva de `email_snippets` (mantido para não regredir)
 
-1. Abrir `/deals/a663fb77-0f62-4140-bc81-68b0d4f52856` → aba Atividades → só devem aparecer reuniões reais WK↔Brooks.
-2. Abrir o contato do Sergio → não devem aparecer "Academia / Massagem / Programação Diária".
-3. Abrir um deal com reuniões WK reais (ex.: NEXID) e confirmar que a timeline continua igual.
+## Arquivos previstos
+
+Novos:
+- migration `snippets` + RLS + backfill leve
+- `src/lib/snippets.functions.ts`
+- `src/hooks/use-snippet-trigger.ts`
+- `src/components/snippets/snippet-picker.tsx`
+- `src/components/snippets/snippet-form-dialog.tsx`
+- `src/routes/_authenticated/settings.snippets.tsx`
+
+Alterados:
+- `src/components/rich-html-editor.tsx` (adiciona hook `/`)
+- `src/components/email/send-email-dialog.tsx` (troca fonte de snippets)
+- `src/components/tickets/*` (campo de resposta)
+- `src/components/chat/chat-thread.tsx`
+- `src/components/whatsapp/send-whatsapp-dialog.tsx`
+- `src/components/deals/quote-wizard.tsx` (campos textuais)
+- entrada no menu de Configurações
+
+## Validação manual
+
+1. Criar snippet pessoal `saudacao` = "Olá, tudo bem?"
+2. Em Compose Email digitar `/saudacao` → substitui pelo texto
+3. Repetir em nota de deal, resposta de ticket, chat interno, WhatsApp e descrição da cotação
+4. Criar snippet compartilhado como admin, logar como outro usuário do mesmo workspace e ver na lista
+5. Verificar que usuário de outro workspace **não** vê o snippet compartilhado
