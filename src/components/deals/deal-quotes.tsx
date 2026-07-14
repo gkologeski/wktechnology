@@ -196,7 +196,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onSelect={() =>
-                          window.open(`${publicUrl(q.public_token)}?print=1`, "_blank")
+                          window.open(`${publicUrl(q.public_token)}?download=pdf`, "_blank")
                         }
                       >
                         Baixar PDF

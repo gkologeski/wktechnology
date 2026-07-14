@@ -16,10 +16,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Printer, Check, X, CreditCard } from "lucide-react";
+import { Download, Check, X, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { renderQuoteTemplate, type QuoteRenderContext } from "@/lib/quote-template-renderer";
+import { downloadQuotePdf } from "@/lib/quote-pdf";
 
 export const Route = createFileRoute("/quote/$token")({
   component: PublicQuotePage,
@@ -60,15 +61,35 @@ function PublicQuotePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const printedRef = useRef(false);
+  const paperRef = useRef<HTMLDivElement>(null);
+  const pdfFilename = useMemo(() => {
+    const n = data?.quote?.number ?? token;
+    return `Proposta-${String(n).replace(/[^A-Za-z0-9_-]+/g, "_")}.pdf`;
+  }, [data, token]);
+
+  const triggerDownload = async () => {
+    if (!paperRef.current) return;
+    try {
+      await downloadQuotePdf(paperRef.current, pdfFilename);
+    } catch (e) {
+      console.error(e);
+      toast.error("Falha ao gerar PDF.");
+    }
+  };
+
+  const downloadedRef = useRef(false);
   useEffect(() => {
-    if (printedRef.current || isLoading || error || !data) return;
+    if (downloadedRef.current || isLoading || error || !data) return;
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("print") !== "1") return;
-    printedRef.current = true;
-    const t = window.setTimeout(() => window.print(), 600);
+    const wants = params.get("download") === "pdf" || params.get("print") === "1";
+    if (!wants) return;
+    downloadedRef.current = true;
+    const t = window.setTimeout(() => {
+      void triggerDownload();
+    }, 400);
     return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, error, data]);
 
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
@@ -93,6 +114,8 @@ function PublicQuotePage() {
         agent={agent}
         expired={!!expired}
         responded={responded}
+        paperRef={paperRef}
+        onDownload={triggerDownload}
         onAcceptClick={() => setAcceptOpen(true)}
         onDeclineClick={() => respondMut.mutate({ action: "decline" })}
         respondPending={respondMut.isPending}
@@ -126,12 +149,12 @@ function PublicQuotePage() {
             {quote.status === "declined" && "Recusada"}
             {quote.status === "expired" && "Expirada"}
           </Badge>
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
-            <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
+          <Button size="sm" variant="outline" onClick={() => void triggerDownload()}>
+            <Download className="h-4 w-4 mr-1" /> Baixar PDF
           </Button>
         </div>
 
-        <Card className="print:shadow-none print:border-0">
+        <Card ref={paperRef} className="print:shadow-none print:border-0 bg-white">
           <CardContent className="p-8 space-y-6">
             <div className="flex items-start justify-between gap-6">
               <div>
@@ -378,6 +401,8 @@ type TemplatedQuoteProps = {
   agent: { full_name?: string | null; email?: string | null } | null;
   expired: boolean;
   responded: boolean;
+  paperRef: React.RefObject<HTMLDivElement | null>;
+  onDownload: () => void;
   onAcceptClick: () => void;
   onDeclineClick: () => void;
   respondPending: boolean;
@@ -447,13 +472,14 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
   return (
     <div className="min-h-screen bg-muted/30 print:bg-white">
       <div className="w-full mx-auto p-4 sm:p-6 space-y-3">
-        <div className="flex items-center justify-end print:hidden">
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
-            <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
+        <div className="flex items-center justify-end print:hidden" data-pdf-hide>
+          <Button size="sm" variant="outline" onClick={props.onDownload}>
+            <Download className="h-4 w-4 mr-1" /> Baixar PDF
           </Button>
         </div>
 
         <div
+          ref={props.paperRef}
           className="rounded-md border bg-white overflow-hidden print:border-0"
           dangerouslySetInnerHTML={{
             __html: before + makeActionsHtml(props, !!after, expired, responded) + after,
