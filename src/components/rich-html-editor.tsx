@@ -193,6 +193,32 @@ export function RichHtmlEditor({
   const [mentionPos, setMentionPos] = useState<{ top: number; left: number } | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
 
+  // Snippets ("/atalho") detection
+  const listSnippetsCall = useServerFn(listSnippetsFn);
+  const incSnippet = useServerFn(incrementSnippetUsageFn);
+  const snippetsQ = useQuery({
+    queryKey: ["snippets", "picker"],
+    queryFn: () => listSnippetsCall({ data: { visibility: "all" } }),
+    staleTime: 30_000,
+  });
+  const [snipQuery, setSnipQuery] = useState<string | null>(null);
+  const [snipPos, setSnipPos] = useState<{ top: number; left: number } | null>(null);
+  const [snipActiveIdx, setSnipActiveIdx] = useState(0);
+
+  const snippetResults = useMemo(() => {
+    if (snipQuery === null) return [] as SnippetRow[];
+    const items = snippetsQ.data?.items ?? [];
+    const needle = snipQuery.toLowerCase();
+    const filteredSnips = needle
+      ? items.filter(
+          (s) =>
+            s.shortcut.toLowerCase().includes(needle) ||
+            s.name.toLowerCase().includes(needle),
+        )
+      : items;
+    return filteredSnips.slice(0, 8);
+  }, [snipQuery, snippetsQ.data]);
+
   // Keep DOM in sync when value changes externally (e.g. cleared after submit)
   useEffect(() => {
     const el = ref.current;
