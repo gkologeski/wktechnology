@@ -2382,6 +2382,19 @@ function StepConfigForm({
               />
             </div>
           </div>
+          <div>
+            <Label className="text-xs">Pipeline</Label>
+            <FkPicker
+              kind="pipeline"
+              value={(action.extra_fields?.pipeline_id as string) ?? ""}
+              onChange={(v) =>
+                onChange({
+                  ...action,
+                  extra_fields: { ...(action.extra_fields ?? {}), pipeline_id: v || undefined },
+                })
+              }
+            />
+          </div>
           <ExtraFieldsEditor
             entity="tickets"
             extraFields={action.extra_fields}
