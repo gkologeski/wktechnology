@@ -249,9 +249,9 @@ export function ChatThread({
               <Paperclip className="h-4 w-4" />
             </span>
           </label>
-          <Textarea
+          <SnippetTextarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={setBody}
             onKeyDown={onKey}
             placeholder="Escreva uma mensagem… (Enter envia, Shift+Enter quebra linha)"
             className="min-h-[40px] max-h-32 resize-none"
