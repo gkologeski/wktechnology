@@ -232,10 +232,10 @@ export function SendWhatsAppDialog({
                   onApply={setBody}
                 />
               </div>
-              <Textarea
+              <SnippetTextarea
                 ref={bodyInserter.ref}
                 value={body}
-                onChange={(e) => setBody(e.target.value)}
+                onChange={setBody}
                 rows={4}
               />
               <TokenPills
