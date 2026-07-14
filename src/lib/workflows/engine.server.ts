@@ -773,7 +773,7 @@ async function runAction(
           description: action.description
             ? (renderTokens(action.description, ctx.after) as string) || null
             : null,
-          priority: action.priority ?? "normal",
+          priority: action.priority ?? "medium",
           pipeline_id: pipelineId,
           assignee_id: action.assignee_id ?? null,
         };
