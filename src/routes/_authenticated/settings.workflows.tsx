@@ -368,14 +368,13 @@ function WorkflowsPage() {
               Executa a versão <strong>rascunho</strong> contra um registro de{" "}
               <strong>{testTarget ? ENTITY_LABELS[testTarget.entity] : ""}</strong>. Nenhuma ação real é executada — apenas simulada e registrada no histórico como teste.
             </p>
-            <div className="space-y-1">
-              <Label>ID do registro</Label>
-              <Input
-                placeholder="uuid do registro"
+            {testTarget && (
+              <RecordPicker
+                entity={testTarget.entity}
                 value={testEntityId}
-                onChange={(e) => setTestEntityId(e.target.value)}
+                onChange={setTestEntityId}
               />
-            </div>
+            )}
             {testResult && (
               <div className="rounded-md border p-3 space-y-1 max-h-64 overflow-auto bg-muted/40">
                 <p className="text-xs font-medium">
