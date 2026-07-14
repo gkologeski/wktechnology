@@ -75,6 +75,15 @@ const STEPS = [
   { key: "review", label: "Revisão & Publicação" },
 ] as const;
 
+function SnippetHint() {
+  return (
+    <p className="mt-1.5 flex items-center gap-1.5 text-xs text-text-tertiary">
+      <Slash className="h-3 w-3" aria-hidden="true" />
+      <span>Digite "/" para inserir um snippet</span>
+    </p>
+  );
+}
+
 export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props) {
   const qc = useQueryClient();
   const createFn = useServerFn(createQuoteFromDeal);
