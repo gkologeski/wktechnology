@@ -75,6 +75,19 @@ export function renderQuoteTemplate(html: string, ctx: QuoteRenderContext): stri
   return out;
 }
 
+/**
+ * Campos rich-text que sempre são emitidos como HTML cru, mesmo quando o
+ * template usa `{{campo}}` (double-brace). Necessário porque templates
+ * antigos foram criados antes do editor rich-text e do suporte a snippets.
+ */
+const RAW_HTML_PATHS = new Set<string>([
+  "quote.notes",
+  "quote.terms",
+  "quote.description",
+  "company.description",
+  "contact.notes",
+]);
+
 function renderInterpolations(src: string, ctx: QuoteRenderContext): string {
   // Preserve the special {{#actions/}} marker for downstream replacement.
   let out = src;
@@ -85,10 +98,13 @@ function renderInterpolations(src: string, ctx: QuoteRenderContext): string {
   });
   // {{ value }} — leaves {{#...}} blocks alone (they should have been processed)
   out = out.replace(/\{\{\s*([^#/{}][\w.]*)\s*\}\}/g, (_m, path: string) => {
-    return escapeHtml(getPath(ctx, path));
+    const v = getPath(ctx, path);
+    if (RAW_HTML_PATHS.has(path)) return v == null ? "" : String(v);
+    return escapeHtml(v);
   });
   return out;
 }
+
 
 /** Sample data used to preview templates inside the editor. */
 export function sampleQuoteContext(): QuoteRenderContext {

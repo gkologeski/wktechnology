@@ -1,34 +1,30 @@
-# Plano: indicador visual de snippets no QuoteWizard
+## Problema
 
-## Objetivo
-Na etapa 3 (Observações & Termos) do wizard de cotação, adicionar uma dica sutil abaixo de cada `RichHtmlEditor` indicando que o usuário pode digitar `/` para inserir snippets, igual já funciona em e-mails, notas e WhatsApp.
+Na proposta gerada, os campos **Observações** e **Termos e condições** aparecem com o HTML cru (`<p class="p1"><b>...</b></p>`, `<br>`) em vez do texto formatado.
 
-## Escopo
-- Apenas `src/components/deals/quote-wizard.tsx`, etapa `step === 2`.
-- Nenhuma mudança em `RichHtmlEditor`, lógica de snippets, banco, RLS ou server functions.
+Causa: o `RichHtmlEditor` (usado no wizard e agora com suporte a snippets) salva `notes` / `terms` como HTML, mas o renderizador do template (`src/lib/quote-template-renderer.ts`) só emite HTML cru quando o template usa `{{{quote.notes}}}` (triple-brace). Templates antigos armazenados no banco usam `{{quote.notes}}` / `{{quote.terms}}` (double-brace), então o HTML é escapado e vira texto visível. Snippets amplificam o efeito porque colam HTML com atributos (`class="p1"`).
 
-## Implementação
+## Correção
 
-### 1. Indicador abaixo dos editores
-- Inserir um elemento de hint logo após cada `<RichHtmlEditor>` na etapa 3.
-- Conteúdo: ícone `Slash` (Lucide) + texto "Digite `/` para inserir um snippet".
-- Estilo:
-  - `text-xs text-text-tertiary`
-  - `flex items-center gap-1.5`
-  - ícone `h-3 w-3`
-  - margem superior `mt-1.5`
-- Garantir que use tokens semânticos do design system para dark mode.
+Escopo mínimo, apenas no renderer — sem migrations, sem mexer no editor, sem mexer no wizard.
 
-### 2. Acessibilidade
-- Adicionar `aria-label` ou descrição implícita via texto visível; nenhuma informação importante apenas por cor/ícone.
-- Manter `htmlFor`/`id` dos labels existentes intactos.
+1. Em `src/lib/quote-template-renderer.ts`, dentro de `renderInterpolations`, tratar um conjunto fixo de campos rich-text como raw mesmo com double-brace:
+   - `quote.notes`
+   - `quote.terms`
+   - `quote.description` (por segurança, se existir)
+   - `company.description`, `contact.notes` (defensivo)
+   Lista whitelisted, hardcoded — não afeta demais campos.
+2. Não alterar o comportamento de `{{{...}}}` (continua raw) nem dos demais `{{...}}` (continuam escapados). Só a whitelist muda.
+3. Manter o escape padrão para tudo mais (segurança contra injeção em campos como `quote.title`, `company.name`, etc.).
 
-### 3. Validação
-- Verificar visualmente no preview que a dica aparece abaixo de "Observações" e "Termos e condições".
-- Confirmar que o popover de snippets ainda abre ao digitar `/` (funcionalidade já existente).
-- Validar dark mode e responsividade.
+## Validação
+
+- `tsgo` (typecheck).
+- Abrir uma cotação existente com notes em HTML e verificar que a página pública `/quote/$token` renderiza o texto formatado.
+- Verificar que campos não-rich (ex.: `quote.title`) continuam escapados — sem regressão de segurança.
 
 ## Fora de escopo
-- Criar componente genérico de hint (a menos que já exista um padrão no projeto; nesse caso, usá-lo).
-- Alterar comportamento do snippet picker ou adicionar novos gatilhos.
-- Persistir estado de "dismiss" da dica.
+
+- Não sanitizar HTML no servidor (o conteúdo já vem do `RichHtmlEditor` do próprio workspace autenticado; sanitização mais forte fica para outra tarefa se necessário).
+- Não migrar templates antigos no banco.
+- Não alterar `src/routes/quote.$token.tsx` (fallback sem template) — pode ser tratado depois se o usuário quiser.
