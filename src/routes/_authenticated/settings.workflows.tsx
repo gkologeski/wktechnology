@@ -31,6 +31,17 @@ import {
   listPendingApprovals,
   decideApproval,
 } from "@/lib/workflows.functions";
+import { searchEntityRecords } from "@/lib/workflow-refs.functions";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { ChevronsUpDown, Check } from "lucide-react";
 import {
   WorkflowBuilder,
   EMPTY_DRAFT,
