@@ -16,6 +16,7 @@ type BaseProps = {
   name?: string;
   "aria-label"?: string;
   rows?: number;
+  onKeyDown?: React.KeyboardEventHandler<HTMLTextAreaElement | HTMLInputElement>;
 };
 
 export const SnippetTextarea = forwardRef<HTMLTextAreaElement, BaseProps>(function SnippetTextarea(
