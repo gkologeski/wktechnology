@@ -31,6 +31,17 @@ import {
   listPendingApprovals,
   decideApproval,
 } from "@/lib/workflows.functions";
+import { searchEntityRecords } from "@/lib/workflow-refs.functions";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { ChevronsUpDown, Check } from "lucide-react";
 import {
   WorkflowBuilder,
   EMPTY_DRAFT,
@@ -368,14 +379,13 @@ function WorkflowsPage() {
               Executa a versão <strong>rascunho</strong> contra um registro de{" "}
               <strong>{testTarget ? ENTITY_LABELS[testTarget.entity] : ""}</strong>. Nenhuma ação real é executada — apenas simulada e registrada no histórico como teste.
             </p>
-            <div className="space-y-1">
-              <Label>ID do registro</Label>
-              <Input
-                placeholder="uuid do registro"
+            {testTarget && (
+              <RecordPicker
+                entity={testTarget.entity}
                 value={testEntityId}
-                onChange={(e) => setTestEntityId(e.target.value)}
+                onChange={setTestEntityId}
               />
-            </div>
+            )}
             {testResult && (
               <div className="rounded-md border p-3 space-y-1 max-h-64 overflow-auto bg-muted/40">
                 <p className="text-xs font-medium">
@@ -502,6 +512,170 @@ function PendingApprovalsList({
           </CardContent>
         </Card>
       ))}
+    </div>
+  );
+}
+
+function RecordPicker({
+  entity,
+  value,
+  onChange,
+}: {
+  entity: WorkflowEntity;
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  const searchFn = useServerFn(searchEntityRecords);
+  const [open, setOpen] = useState(false);
+  const [manual, setManual] = useState(false);
+  const [query, setQuery] = useState("");
+  const [items, setItems] = useState<{ id: string; label: string }[]>([]);
+  const [labelById, setLabelById] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+
+  // Reset when entity changes
+  useEffect(() => {
+    setItems([]);
+    setLabelById({});
+    setQuery("");
+  }, [entity]);
+
+  // Debounced search when open
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setLoading(true);
+    const t = setTimeout(async () => {
+      try {
+        const rows = (await searchFn({
+          data: { entity, q: query || undefined },
+        })) as { id: string; label: string }[];
+        if (cancelled) return;
+        setItems(rows);
+        setLabelById((prev) => {
+          const next = { ...prev };
+          for (const r of rows) next[r.id] = r.label;
+          return next;
+        });
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }, 220);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [open, query, entity, searchFn]);
+
+  // Resolve label for pre-selected id if missing
+  useEffect(() => {
+    if (!value || labelById[value]) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const rows = (await searchFn({ data: { entity, ids: [value] } })) as {
+          id: string;
+          label: string;
+        }[];
+        if (cancelled) return;
+        setLabelById((prev) => ({
+          ...prev,
+          ...Object.fromEntries(rows.map((r) => [r.id, r.label])),
+        }));
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [value, entity, searchFn, labelById]);
+
+  const displayLabel = value ? (labelById[value] ?? value) : "Selecione um registro…";
+
+  if (manual) {
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center justify-between">
+          <Label>ID do registro (UUID)</Label>
+          <button
+            type="button"
+            className="text-xs text-primary hover:underline"
+            onClick={() => setManual(false)}
+          >
+            Voltar para busca
+          </button>
+        </div>
+        <Input
+          placeholder="uuid do registro"
+          value={value}
+          onChange={(e) => onChange(e.target.value.trim())}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between">
+        <Label>Registro</Label>
+        <button
+          type="button"
+          className="text-xs text-muted-foreground hover:underline"
+          onClick={() => setManual(true)}
+        >
+          Colar UUID
+        </button>
+      </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="w-full justify-between font-normal"
+          >
+            <span className={value ? "" : "text-muted-foreground"}>{displayLabel}</span>
+            <ChevronsUpDown className="h-4 w-4 opacity-50 ml-2 shrink-0" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Buscar…"
+              value={query}
+              onValueChange={setQuery}
+            />
+            <CommandList>
+              {loading && (
+                <div className="px-3 py-2 text-xs text-muted-foreground">Buscando…</div>
+              )}
+              {!loading && items.length === 0 && (
+                <CommandEmpty>Nenhum registro encontrado.</CommandEmpty>
+              )}
+              <CommandGroup>
+                {items.map((it) => (
+                  <CommandItem
+                    key={it.id}
+                    value={it.id}
+                    onSelect={() => {
+                      onChange(it.id);
+                      setOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={
+                        "mr-2 h-4 w-4 " + (value === it.id ? "opacity-100" : "opacity-0")
+                      }
+                    />
+                    <span className="truncate">{it.label}</span>
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
