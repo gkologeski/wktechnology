@@ -73,6 +73,7 @@ type GCalEvent = {
   location?: string;
   htmlLink?: string;
   hangoutLink?: string;
+  recurringEventId?: string;
   start?: { dateTime?: string; date?: string; timeZone?: string };
   end?: { dateTime?: string; date?: string; timeZone?: string };
   attendees?: {
