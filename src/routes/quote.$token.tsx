@@ -114,6 +114,8 @@ function PublicQuotePage() {
         agent={agent}
         expired={!!expired}
         responded={responded}
+        paperRef={paperRef}
+        onDownload={triggerDownload}
         onAcceptClick={() => setAcceptOpen(true)}
         onDeclineClick={() => respondMut.mutate({ action: "decline" })}
         respondPending={respondMut.isPending}
