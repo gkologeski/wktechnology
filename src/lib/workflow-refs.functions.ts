@@ -212,3 +212,232 @@ export const searchUsers = createServerFn({ method: "POST" })
     filtered.sort((a, b) => a.name.localeCompare(b.name));
     return filtered.slice(0, LIMIT);
   });
+
+// ---------------------------------------------------------------------------
+// Busca de registros de qualquer entidade suportada por Workflows.
+// Usada pelo diálogo "Testar workflow" para permitir seleção de um registro
+// sem que o usuário precise digitar UUID. Respeita RLS (context.supabase).
+// ---------------------------------------------------------------------------
+
+const WorkflowEntityEnum = z.enum([
+  "leads",
+  "contacts",
+  "companies",
+  "deals",
+  "tickets",
+  "ats_jobs",
+  "ats_candidates",
+  "ats_applications",
+  "ats_interviews",
+]);
+
+const EntitySearchInput = z.object({
+  entity: WorkflowEntityEnum,
+  q: z.string().trim().max(120).optional(),
+  ids: z.array(z.string().uuid()).max(50).optional(),
+});
+
+type EntityRecord = { id: string; label: string };
+
+function fmtDate(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export const searchEntityRecords = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => EntitySearchInput.parse(i))
+  .handler(async ({ data, context }): Promise<EntityRecord[]> => {
+    const { supabase } = context;
+    const q = data.q?.trim();
+    const like = q ? `%${escapeLike(q)}%` : null;
+    const ids = data.ids && data.ids.length > 0 ? data.ids : null;
+
+    switch (data.entity) {
+      case "leads": {
+        let query = supabase
+          .from("leads")
+          .select("id, first_name, last_name, email, company_name, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(LIMIT);
+        if (ids) query = query.in("id", ids);
+        else if (like)
+          query = query.or(
+            `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},company_name.ilike.${like}`,
+          );
+        const { data: rows, error } = await query;
+        if (error) throw new Error(error.message);
+        return (rows ?? []).map((r) => {
+          const name = `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim();
+          const company = (r.company_name as string | null) ?? "";
+          const base = name || (r.email as string | null) || "";
+          return { id: r.id as string, label: company ? `${base} — ${company}` : base || "(sem nome)" };
+        });
+      }
+      case "contacts": {
+        let query = supabase
+          .from("contacts")
+          .select("id, first_name, last_name, email, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(LIMIT);
+        if (ids) query = query.in("id", ids);
+        else if (like)
+          query = query.or(
+            `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like}`,
+          );
+        const { data: rows, error } = await query;
+        if (error) throw new Error(error.message);
+        return (rows ?? []).map((r) => {
+          const name = `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim();
+          return {
+            id: r.id as string,
+            label: name || (r.email as string | null) || "(sem nome)",
+          };
+        });
+      }
+      case "companies": {
+        let query = supabase
+          .from("companies")
+          .select("id, name, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(LIMIT);
+        if (ids) query = query.in("id", ids);
+        else if (like) query = query.ilike("name", like);
+        const { data: rows, error } = await query;
+        if (error) throw new Error(error.message);
+        return (rows ?? []).map((r) => ({
+          id: r.id as string,
+          label: (r.name as string | null) || "(sem nome)",
+        }));
+      }
+      case "deals": {
+        let query = supabase
+          .from("deals")
+          .select("id, name, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(LIMIT);
+        if (ids) query = query.in("id", ids);
+        else if (like) query = query.ilike("name", like);
+        const { data: rows, error } = await query;
+        if (error) throw new Error(error.message);
+        return (rows ?? []).map((r) => ({
+          id: r.id as string,
+          label: (r.name as string | null) || "(sem nome)",
+        }));
+      }
+      case "tickets": {
+        let query = supabase
+          .from("tickets")
+          .select("id, subject, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(LIMIT);
+        if (ids) query = query.in("id", ids);
+        else if (like) query = query.ilike("subject", like);
+        const { data: rows, error } = await query;
+        if (error) throw new Error(error.message);
+        return (rows ?? []).map((r) => ({
+          id: r.id as string,
+          label: (r.subject as string | null) || "(sem assunto)",
+        }));
+      }
+      case "ats_jobs": {
+        let query = supabase
+          .from("ats_jobs")
+          .select("id, title, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(LIMIT);
+        if (ids) query = query.in("id", ids);
+        else if (like) query = query.ilike("title", like);
+        const { data: rows, error } = await query;
+        if (error) throw new Error(error.message);
+        return (rows ?? []).map((r) => ({
+          id: r.id as string,
+          label: (r.title as string | null) || "(sem título)",
+        }));
+      }
+      case "ats_candidates": {
+        let query = supabase
+          .from("ats_candidates")
+          .select("id, full_name, email, updated_at")
+          .order("updated_at", { ascending: false })
+          .limit(LIMIT);
+        if (ids) query = query.in("id", ids);
+        else if (like) query = query.or(`full_name.ilike.${like},email.ilike.${like}`);
+        const { data: rows, error } = await query;
+        if (error) throw new Error(error.message);
+        return (rows ?? []).map((r) => ({
+          id: r.id as string,
+          label:
+            ((r.full_name as string | null) ?? "").trim() ||
+            (r.email as string | null) ||
+            "(sem nome)",
+        }));
+      }
+      case "ats_applications": {
+        let query = supabase
+          .from("ats_applications")
+          .select(
+            "id, updated_at, candidate:ats_candidates(full_name, email), job:ats_jobs(title)",
+          )
+          .order("updated_at", { ascending: false })
+          .limit(LIMIT);
+        if (ids) query = query.in("id", ids);
+        const { data: rows, error } = await query;
+        if (error) throw new Error(error.message);
+        type Row = {
+          id: string;
+          candidate: { full_name: string | null; email: string | null } | null;
+          job: { title: string | null } | null;
+        };
+        let mapped = ((rows ?? []) as unknown as Row[]).map((r) => {
+          const cand =
+            (r.candidate?.full_name ?? "").trim() || r.candidate?.email || "Candidato";
+          const job = r.job?.title || "Vaga";
+          return { id: r.id, label: `${cand} — ${job}` };
+        });
+        if (!ids && q) {
+          const needle = q.toLowerCase();
+          mapped = mapped.filter((m) => m.label.toLowerCase().includes(needle));
+        }
+        return mapped;
+      }
+      case "ats_interviews": {
+        let query = supabase
+          .from("ats_interviews")
+          .select(
+            "id, scheduled_at, updated_at, candidate:ats_candidates(full_name, email), job:ats_jobs(title)",
+          )
+          .order("scheduled_at", { ascending: false, nullsFirst: false })
+          .limit(LIMIT);
+        if (ids) query = query.in("id", ids);
+        const { data: rows, error } = await query;
+        if (error) throw new Error(error.message);
+        type Row = {
+          id: string;
+          scheduled_at: string | null;
+          candidate: { full_name: string | null; email: string | null } | null;
+          job: { title: string | null } | null;
+        };
+        let mapped = ((rows ?? []) as unknown as Row[]).map((r) => {
+          const cand =
+            (r.candidate?.full_name ?? "").trim() || r.candidate?.email || "Candidato";
+          const when = fmtDate(r.scheduled_at);
+          const job = r.job?.title;
+          const parts = [cand, job, when].filter(Boolean);
+          return { id: r.id, label: parts.join(" — ") };
+        });
+        if (!ids && q) {
+          const needle = q.toLowerCase();
+          mapped = mapped.filter((m) => m.label.toLowerCase().includes(needle));
+        }
+        return mapped;
+      }
+    }
+  });
