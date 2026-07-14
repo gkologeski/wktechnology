@@ -194,6 +194,13 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                       <DropdownMenuItem onSelect={() => copyLink(q.public_token)}>
                         Copiar link
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() =>
+                          window.open(`${publicUrl(q.public_token)}?print=1`, "_blank")
+                        }
+                      >
+                        Baixar PDF
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {status === "draft" && (
                         <DropdownMenuItem onSelect={() => openEdit(q)}>
