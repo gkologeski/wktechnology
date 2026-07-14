@@ -13,6 +13,7 @@ import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { SnippetTextarea } from "@/components/snippets/snippet-textarea";
 import {
   Dialog,
   DialogContent,
