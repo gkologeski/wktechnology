@@ -318,6 +318,73 @@ export function RichHtmlEditor({
     closeMentions();
   };
 
+  const closeSnippets = useCallback(() => {
+    setSnipQuery(null);
+    setSnipPos(null);
+    setSnipActiveIdx(0);
+  }, []);
+
+  const detectSnippet = useCallback(() => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !ref.current) {
+      closeSnippets();
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    if (!ref.current.contains(range.startContainer)) {
+      closeSnippets();
+      return;
+    }
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) {
+      closeSnippets();
+      return;
+    }
+    const textBefore = (node.textContent ?? "").slice(0, range.startOffset);
+    const match = /(^|\s)\/([a-zA-Z0-9_\-/]*)$/.exec(textBefore);
+    if (!match) {
+      closeSnippets();
+      return;
+    }
+    setSnipQuery(match[2]);
+    setSnipActiveIdx(0);
+    const rect = range.getBoundingClientRect();
+    const editorRect = ref.current.getBoundingClientRect();
+    setSnipPos({ top: rect.bottom - editorRect.top + 4, left: rect.left - editorRect.left });
+  }, [closeSnippets]);
+
+  const insertSnippet = (s: SnippetRow) => {
+    const sel = window.getSelection();
+    if (!sel || sel.rangeCount === 0 || !ref.current) return;
+    const range = sel.getRangeAt(0);
+    const node = range.startContainer;
+    if (node.nodeType !== Node.TEXT_NODE) return;
+    const text = node.textContent ?? "";
+    const before = text.slice(0, range.startOffset);
+    const after = text.slice(range.startOffset);
+    const match = /(^|\s)\/([a-zA-Z0-9_\-/]*)$/.exec(before);
+    if (!match) return;
+    // Preserve the leading whitespace/BOL group; remove only "/xxx"
+    const removeLen = match[0].length - match[1].length;
+    const start = before.length - removeLen;
+    (node as Text).textContent = before.slice(0, start) + after;
+    const newRange = document.createRange();
+    newRange.setStart(node, start);
+    newRange.collapse(true);
+    sel.removeAllRanges();
+    sel.addRange(newRange);
+    // Insert snippet body as sanitized HTML at caret
+    const html = sanitizeHtml(s.body_html || (s.body_text ? escapeHtml(s.body_text) : ""));
+    document.execCommand("insertHTML", false, html);
+    onChange(sanitizeHtml(ref.current.innerHTML));
+    void incSnippet({ data: { id: s.id } }).catch(() => {
+      /* silencioso */
+    });
+    closeSnippets();
+  };
+
+
+
   const filtered =
     mentionQuery !== null && mentions
       ? mentions
