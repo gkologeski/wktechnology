@@ -99,6 +99,7 @@ import { Route as AuthenticatedSettingsTeamsRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsSurveysRouteImport } from './routes/_authenticated/settings.surveys'
 import { Route as AuthenticatedSettingsSubscriptionsRouteImport } from './routes/_authenticated/settings.subscriptions'
 import { Route as AuthenticatedSettingsSsoRouteImport } from './routes/_authenticated/settings.sso'
+import { Route as AuthenticatedSettingsSnippetsRouteImport } from './routes/_authenticated/settings.snippets'
 import { Route as AuthenticatedSettingsSlaRouteImport } from './routes/_authenticated/settings.sla'
 import { Route as AuthenticatedSettingsSequencesRouteImport } from './routes/_authenticated/settings.sequences'
 import { Route as AuthenticatedSettingsSegmentsRouteImport } from './routes/_authenticated/settings.segments'
@@ -769,6 +770,12 @@ const AuthenticatedSettingsSsoRoute =
   AuthenticatedSettingsSsoRouteImport.update({
     id: '/sso',
     path: '/sso',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsSnippetsRoute =
+  AuthenticatedSettingsSnippetsRouteImport.update({
+    id: '/snippets',
+    path: '/snippets',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsSlaRoute =
@@ -2037,6 +2044,7 @@ export interface FileRoutesByFullPath {
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
+  '/settings/snippets': typeof AuthenticatedSettingsSnippetsRoute
   '/settings/sso': typeof AuthenticatedSettingsSsoRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
@@ -2314,6 +2322,7 @@ export interface FileRoutesByTo {
   '/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/settings/sla': typeof AuthenticatedSettingsSlaRoute
+  '/settings/snippets': typeof AuthenticatedSettingsSnippetsRoute
   '/settings/sso': typeof AuthenticatedSettingsSsoRoute
   '/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
@@ -2598,6 +2607,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/segments': typeof AuthenticatedSettingsSegmentsRoute
   '/_authenticated/settings/sequences': typeof AuthenticatedSettingsSequencesRoute
   '/_authenticated/settings/sla': typeof AuthenticatedSettingsSlaRoute
+  '/_authenticated/settings/snippets': typeof AuthenticatedSettingsSnippetsRoute
   '/_authenticated/settings/sso': typeof AuthenticatedSettingsSsoRoute
   '/_authenticated/settings/subscriptions': typeof AuthenticatedSettingsSubscriptionsRoute
   '/_authenticated/settings/surveys': typeof AuthenticatedSettingsSurveysRoute
@@ -2882,6 +2892,7 @@ export interface FileRouteTypes {
     | '/settings/segments'
     | '/settings/sequences'
     | '/settings/sla'
+    | '/settings/snippets'
     | '/settings/sso'
     | '/settings/subscriptions'
     | '/settings/surveys'
@@ -3159,6 +3170,7 @@ export interface FileRouteTypes {
     | '/settings/segments'
     | '/settings/sequences'
     | '/settings/sla'
+    | '/settings/snippets'
     | '/settings/sso'
     | '/settings/subscriptions'
     | '/settings/surveys'
@@ -3442,6 +3454,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/segments'
     | '/_authenticated/settings/sequences'
     | '/_authenticated/settings/sla'
+    | '/_authenticated/settings/snippets'
     | '/_authenticated/settings/sso'
     | '/_authenticated/settings/subscriptions'
     | '/_authenticated/settings/surveys'
@@ -4306,6 +4319,13 @@ declare module '@tanstack/react-router' {
       path: '/sso'
       fullPath: '/settings/sso'
       preLoaderRoute: typeof AuthenticatedSettingsSsoRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/snippets': {
+      id: '/_authenticated/settings/snippets'
+      path: '/snippets'
+      fullPath: '/settings/snippets'
+      preLoaderRoute: typeof AuthenticatedSettingsSnippetsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/sla': {
@@ -5855,6 +5875,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsSegmentsRoute: typeof AuthenticatedSettingsSegmentsRoute
   AuthenticatedSettingsSequencesRoute: typeof AuthenticatedSettingsSequencesRoute
   AuthenticatedSettingsSlaRoute: typeof AuthenticatedSettingsSlaRoute
+  AuthenticatedSettingsSnippetsRoute: typeof AuthenticatedSettingsSnippetsRoute
   AuthenticatedSettingsSsoRoute: typeof AuthenticatedSettingsSsoRoute
   AuthenticatedSettingsSubscriptionsRoute: typeof AuthenticatedSettingsSubscriptionsRoute
   AuthenticatedSettingsSurveysRoute: typeof AuthenticatedSettingsSurveysRoute
@@ -5942,6 +5963,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsSegmentsRoute: AuthenticatedSettingsSegmentsRoute,
   AuthenticatedSettingsSequencesRoute: AuthenticatedSettingsSequencesRoute,
   AuthenticatedSettingsSlaRoute: AuthenticatedSettingsSlaRoute,
+  AuthenticatedSettingsSnippetsRoute: AuthenticatedSettingsSnippetsRoute,
   AuthenticatedSettingsSsoRoute: AuthenticatedSettingsSsoRoute,
   AuthenticatedSettingsSubscriptionsRoute:
     AuthenticatedSettingsSubscriptionsRoute,
@@ -6399,13 +6421,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

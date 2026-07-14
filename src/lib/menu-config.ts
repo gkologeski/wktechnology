@@ -249,6 +249,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/settings/sequences", label: "Sequências", icon: RouteIcon, need: "manager" },
       { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager" },
       { to: "/settings/macros", label: "Macros", icon: LayoutTemplate, need: "manager" },
+      { to: "/settings/snippets", label: "Snippets", icon: LayoutTemplate },
       { to: "/settings/kb", label: "Base de conhecimento", icon: BookOpen, need: "manager" },
     ],
   },

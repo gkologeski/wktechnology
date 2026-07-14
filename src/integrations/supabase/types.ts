@@ -10690,6 +10690,51 @@ export type Database = {
         }
         Relationships: []
       }
+      snippets: {
+        Row: {
+          body_html: string
+          body_text: string
+          created_at: string
+          folder: string | null
+          id: string
+          name: string
+          owner_id: string
+          shortcut: string
+          updated_at: string
+          usage_count: number
+          visibility: string
+          workspace_id: string | null
+        }
+        Insert: {
+          body_html?: string
+          body_text?: string
+          created_at?: string
+          folder?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          shortcut: string
+          updated_at?: string
+          usage_count?: number
+          visibility?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          body_html?: string
+          body_text?: string
+          created_at?: string
+          folder?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          shortcut?: string
+          updated_at?: string
+          usage_count?: number
+          visibility?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       stage_entries: {
         Row: {
           created_at: string
@@ -13521,6 +13566,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_snippet_usage: { Args: { _id: string }; Returns: undefined }
       is_chat_member: {
         Args: { _conv: string; _user: string }
         Returns: boolean
