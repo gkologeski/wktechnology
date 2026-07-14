@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import createDOMPurify from "dompurify";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Bold,
   Italic,
@@ -10,8 +12,14 @@ import {
   Code,
   Eraser,
   AtSign,
+  Slash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  listSnippets as listSnippetsFn,
+  incrementSnippetUsage as incrementSnippetUsageFn,
+  type SnippetRow,
+} from "@/lib/snippets.functions";
 
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
