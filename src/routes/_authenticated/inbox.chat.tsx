@@ -191,9 +191,9 @@ function LiveChatInbox() {
               </ScrollArea>
               {current.status !== "closed" && (
                 <div className="border-t p-2 flex items-end gap-2">
-                  <Textarea
+                  <SnippetTextarea
                     value={draft}
-                    onChange={(e) => setDraft(e.target.value)}
+                    onChange={setDraft}
                     rows={2}
                     placeholder="Responder…"
                     onKeyDown={(e) => {
