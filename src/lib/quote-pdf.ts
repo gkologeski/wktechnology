@@ -207,7 +207,7 @@ export async function downloadQuotePdf(el: HTMLElement, filename: string) {
     el.removeAttribute("data-quote-capturing");
   }
 
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageWidthMm = pdf.internal.pageSize.getWidth();
   const pageHeightMm = pdf.internal.pageSize.getHeight();
 
