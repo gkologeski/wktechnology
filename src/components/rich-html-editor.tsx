@@ -430,8 +430,31 @@ export function RichHtmlEditor({
         onInput={(e) => {
           onChange(sanitizeHtml((e.target as HTMLDivElement).innerHTML));
           detectMention();
+          detectSnippet();
         }}
         onKeyDown={(e) => {
+          if (snipQuery !== null && snippetResults.length > 0) {
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setSnipActiveIdx((i) => (i + 1) % snippetResults.length);
+              return;
+            }
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setSnipActiveIdx((i) => (i - 1 + snippetResults.length) % snippetResults.length);
+              return;
+            }
+            if (e.key === "Enter" || e.key === "Tab") {
+              e.preventDefault();
+              insertSnippet(snippetResults[snipActiveIdx]);
+              return;
+            }
+            if (e.key === "Escape") {
+              e.preventDefault();
+              closeSnippets();
+              return;
+            }
+          }
           if (mentionQuery !== null && filtered.length > 0) {
             if (e.key === "ArrowDown") {
               e.preventDefault();
@@ -455,9 +478,18 @@ export function RichHtmlEditor({
             }
           }
         }}
-        onKeyUp={() => detectMention()}
-        onMouseUp={() => detectMention()}
-        onBlur={() => setTimeout(closeMentions, 150)}
+        onKeyUp={() => {
+          detectMention();
+          detectSnippet();
+        }}
+        onMouseUp={() => {
+          detectMention();
+          detectSnippet();
+        }}
+        onBlur={() => {
+          setTimeout(closeMentions, 150);
+          setTimeout(closeSnippets, 150);
+        }}
         onPaste={(e) => {
           setTimeout(() => {
             if (ref.current) onChange(sanitizeHtml(ref.current.innerHTML));
