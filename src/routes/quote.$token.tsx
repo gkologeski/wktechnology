@@ -1,7 +1,7 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import { getQuoteByToken, respondToQuote } from "@/lib/quotes.functions";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,17 @@ function PublicQuotePage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  const printedRef = useRef(false);
+  useEffect(() => {
+    if (printedRef.current || isLoading || error || !data) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("print") !== "1") return;
+    printedRef.current = true;
+    const t = window.setTimeout(() => window.print(), 600);
+    return () => window.clearTimeout(t);
+  }, [isLoading, error, data]);
 
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
   if (error || !data)

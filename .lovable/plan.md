@@ -1,30 +1,25 @@
-## Problema
+## Objetivo
+Permitir ao usuário gerar/baixar a cotação em PDF a partir do card de cotações no detalhe do negócio.
 
-Na proposta gerada, os campos **Observações** e **Termos e condições** aparecem com o HTML cru (`<p class="p1"><b>...</b></p>`, `<br>`) em vez do texto formatado.
+## Abordagem
+Reaproveitar a página pública `/quote/$token` (já otimizada para impressão com classes `print:*` e botão "Imprimir / PDF"). Vamos:
 
-Causa: o `RichHtmlEditor` (usado no wizard e agora com suporte a snippets) salva `notes` / `terms` como HTML, mas o renderizador do template (`src/lib/quote-template-renderer.ts`) só emite HTML cru quando o template usa `{{{quote.notes}}}` (triple-brace). Templates antigos armazenados no banco usam `{{quote.notes}}` / `{{quote.terms}}` (double-brace), então o HTML é escapado e vira texto visível. Snippets amplificam o efeito porque colam HTML com atributos (`class="p1"`).
+1. Aceitar um query param `?print=1` na rota `src/routes/quote.$token.tsx` que, após o carregamento do conteúdo, dispara `window.print()` automaticamente (uma única vez, com pequeno delay para garantir render de imagens/estilos).
+2. Adicionar item **"Baixar PDF"** no `DropdownMenu` de cada cotação em `src/components/deals/deal-quotes.tsx`. A ação abre `${origin}/quote/{token}?print=1` em nova aba — o navegador exibe o diálogo de impressão, permitindo salvar como PDF.
 
-## Correção
+## Por que essa abordagem
+- Zero dependências novas (sem `jspdf`/`html2pdf`/servidor headless).
+- Fidelidade visual garantida: usa o mesmo template já validado com o cliente, incluindo a correção recente de HTML formatado em notes/terms.
+- Funciona igual para cotações em qualquer status (draft, sent, accepted…).
 
-Escopo mínimo, apenas no renderer — sem migrations, sem mexer no editor, sem mexer no wizard.
+## Arquivos a alterar
+- `src/routes/quote.$token.tsx` — ler `print` do `useSearch`/`URLSearchParams`; efeito que chama `window.print()` uma vez quando a cotação estiver carregada.
+- `src/components/deals/deal-quotes.tsx` — adicionar item "Baixar PDF" no menu (entre "Copiar link" e "Editar"), abrindo `publicUrl(token) + "?print=1"` em nova aba.
 
-1. Em `src/lib/quote-template-renderer.ts`, dentro de `renderInterpolations`, tratar um conjunto fixo de campos rich-text como raw mesmo com double-brace:
-   - `quote.notes`
-   - `quote.terms`
-   - `quote.description` (por segurança, se existir)
-   - `company.description`, `contact.notes` (defensivo)
-   Lista whitelisted, hardcoded — não afeta demais campos.
-2. Não alterar o comportamento de `{{{...}}}` (continua raw) nem dos demais `{{...}}` (continuam escapados). Só a whitelist muda.
-3. Manter o escape padrão para tudo mais (segurança contra injeção em campos como `quote.title`, `company.name`, etc.).
+## Fora do escopo
+- Geração server-side de PDF (Puppeteer/wkhtmltopdf) — não necessária para o pedido e incompatível com o runtime Worker.
+- Anexar PDF automaticamente ao e-mail — pode ser proposto depois.
 
 ## Validação
-
-- `tsgo` (typecheck).
-- Abrir uma cotação existente com notes em HTML e verificar que a página pública `/quote/$token` renderiza o texto formatado.
-- Verificar que campos não-rich (ex.: `quote.title`) continuam escapados — sem regressão de segurança.
-
-## Fora de escopo
-
-- Não sanitizar HTML no servidor (o conteúdo já vem do `RichHtmlEditor` do próprio workspace autenticado; sanitização mais forte fica para outra tarefa se necessário).
-- Não migrar templates antigos no banco.
-- Não alterar `src/routes/quote.$token.tsx` (fallback sem template) — pode ser tratado depois se o usuário quiser.
+- Typecheck.
+- Manual: abrir um deal com cotação → menu "Baixar PDF" → nova aba abre com diálogo de impressão pronto para salvar como PDF. Verificar que ao abrir a página pública sem `?print=1` o diálogo não dispara.
