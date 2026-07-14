@@ -1381,6 +1381,13 @@ function TriggerConfigPanel({
             ))}
           </SelectContent>
         </Select>
+        {trigger.event === "updated" &&
+          (trigger.filters ?? []).some((f) => f.field === "stage_id" || f.field === "stage") && (
+            <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+              Para reagir a mudanças de etapa do pipeline, use o evento <strong>Mudou de etapa</strong>.
+              O evento <em>Atualizado</em> não dispara em transições de etapa.
+            </p>
+          )}
       </div>
 
       <div className="rounded-md border p-3 space-y-2">
@@ -1689,7 +1696,17 @@ function FilterRow({
             className="h-8 text-xs"
             type={type === "number" ? "number" : type === "date" ? "date" : "text"}
             value={String(filter.value ?? "")}
-            onChange={(e) => onChange({ ...filter, value: e.target.value })}
+            onChange={(e) => {
+              const raw = e.target.value;
+              // Coerção de tipo: números só quando o campo é numérico.
+              // Filtros contra colunas text (ex.: stage_id) devem ser string
+              // — o engine usa comparação estrita (===).
+              const coerced: string | number =
+                type === "number" && raw !== "" && !Number.isNaN(Number(raw))
+                  ? Number(raw)
+                  : raw;
+              onChange({ ...filter, value: coerced });
+            }}
             placeholder="valor"
           />
         ))}

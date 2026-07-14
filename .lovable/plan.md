@@ -1,58 +1,87 @@
-## Objetivo
+# Diagnóstico
 
-No diálogo "Testar workflow com registro" (Settings → Workflows), substituir o input livre de UUID por um **combobox buscável** que lista registros da entidade do workflow (Leads, Contatos, Empresas, Negócios, Tickets, Vagas, Candidatos, Aplicações, Entrevistas), com nome amigável. O UUID continua sendo o valor enviado ao `testWorkflow`, mas o usuário nunca precisa vê-lo/digitá-lo.
+O workflow **"Criar contrato"** (`1d204901-faa5-4108-9a9a-89e5f4ed31dc`) está publicado e habilitado, mas nunca dispara em produção por **três defeitos combinados** na configuração do gatilho:
 
-## Escopo
+Trigger atual salvo no banco:
+```json
+{ "event": "updated", "filters": [{ "field": "stage", "op": "eq", "value": 1018009924 }] }
+```
 
-Somente a UX do teste. Nenhuma mudança na engine de workflows, no `testWorkflow`, RLS ou schema.
+Confrontado com os eventos reais gerados quando o deal muda para "Assinatura de Contrato" (verificado em `workflow_events`, ex. deal `a663fb77…`):
+- `event_type = "stage_changed"`
+- `after.stage_id = "1018009924"` (texto)
+- `after.stage = "new"` (enum, valor totalmente diferente)
 
-## Mudanças
+Falhas:
 
-### 1. Server function nova — `src/lib/workflow-refs.functions.ts`
+1. **Evento errado** — engine (linha 1130) compara `trig.event === event.event_type`. Como o gatilho é `updated`, todo evento `stage_changed` é ignorado. Movimentar etapa emite apenas `stage_changed`, nunca `updated`.
+2. **Campo errado** — o filtro usa `field: "stage"`, mas mudança de etapa afeta `stage_id`. O `stage` é um enum de status (`"new" | "won" | …`), então o filtro compara `"new" === 1018009924` → sempre falso.
+3. **Tipo do valor errado** — `stage_id` é `text` (ex.: `"1018009924"`), mas o filtro guardou `1018009924` como **number**. O `evalFilter` (`v === f.value`) trata `"1018009924" !== 1018009924` como falso — falharia mesmo se o campo estivesse certo.
 
-Adicionar `searchEntityRecords` (padrão dos `searchCompanies`/`searchContacts` já existentes):
+Isso também explica por que o modo de Teste retorna "não passa": ele avalia os mesmos filtros contra o `after` do registro atual.
 
-- Input: `{ entity: WorkflowEntity, q?: string, ids?: uuid[] }` validado por Zod.
-- Usa `context.supabase` (RLS aplica — só devolve o que o usuário enxerga).
-- Para cada `entity`, escolhe colunas e monta rótulo:
-  - `leads`: `first_name`, `last_name`, `company_name`, `email` → "Nome Sobrenome — Empresa".
-  - `contacts`: `first_name`, `last_name`, `email` → "Nome Sobrenome" (fallback e‑mail).
-  - `companies`: `name`.
-  - `deals`: `name`.
-  - `tickets`: `subject` (fallback `id`).
-  - `ats_jobs`: `title`.
-  - `ats_candidates`: `first_name`, `last_name`, `email`.
-  - `ats_applications`: join simples com candidato + vaga (`candidate:candidates(first_name,last_name)`, `job:ats_jobs(title)`) → "Candidato — Vaga".
-  - `ats_interviews`: usar `scheduled_at` + candidato → "Candidato — dd/mm HH:mm".
-- Busca livre: `ilike` nas colunas textuais relevantes via `.or(...)` (com `escapeLike`), ordenação por `updated_at desc` quando existir, senão por nome, `limit 20`.
-- Hidratação por `ids`: `.in("id", ids)` — usado para exibir o rótulo do valor já selecionado se o usuário reabrir o diálogo.
+# Correção
 
-Reaproveita helper `escapeLike` já existente no arquivo.
+## 1. Consertar o workflow existente (migration idempotente)
 
-### 2. UI — `src/routes/_authenticated/settings.workflows.tsx`
+Atualizar `trigger` e `draft_trigger` do workflow `1d204901-faa5-4108-9a9a-89e5f4ed31dc` (e reaplicar em `published_version`) para:
 
-Substituir o bloco atual do input UUID (linhas ~371‑378) por um combobox usando `Popover` + `Command` (padrão dos outros pickers do app, ex.: `FkPicker`/`OwnerField`):
+```json
+{
+  "event": "stage_changed",
+  "filters": [{ "field": "stage_id", "op": "changed_to", "value": "1018009924" }],
+  "reenroll": { "enabled": false, "events": [] }
+}
+```
 
-- Trigger: botão com o rótulo do registro selecionado ou placeholder "Selecionar registro…".
-- Ao abrir: chama `searchEntityRecords({ entity: testTarget.entity, q })` com debounce (~200 ms).
-- Ao selecionar: guarda `id` em `testEntityId` (estado já existente) e o rótulo em novo estado `testEntityLabel` para exibição.
-- Se o usuário quiser digitar o UUID manualmente (fallback avançado), oferecer link secundário "Colar UUID" que revela o `<Input>` atual — mantém a rota de escape.
-- Reset de `testEntityLabel` ao trocar de workflow / fechar diálogo (mesmo `onOpenChange` que já limpa `testEntityId`).
-- Botão "Executar teste" continua desabilitado enquanto `!testEntityId`.
+Justificativas:
+- `stage_changed` bate com o evento real emitido pelo trigger de banco.
+- `stage_id` é a coluna correta (text).
+- `changed_to` garante que só dispara na transição para a etapa, evitando reprocessar deals que já estão nela (mais fiel ao objetivo "quando entra em Assinatura de Contrato").
+- valor em **string**, casando com o tipo `text` do `after.stage_id`.
 
-Nenhuma outra parte do arquivo é alterada.
+## 2. Endurecer o Workflow Builder para evitar regressão
 
-## Fora de escopo
+Ajustes cirúrgicos em `src/components/workflows/workflow-builder.tsx`, sem mexer em lógica de negócio:
 
-- Alterar `testWorkflow` server fn.
-- Alterar builder de workflows, engine, filtros, RLS.
-- Suporte a entidades adicionais fora das 9 já em `WorkflowEntity`.
+- **`FilterRow` (linhas ~1670-1695):** coagir tipo do valor conforme o `type` do campo do catálogo:
+  - `type === "number"` → armazenar `Number(e.target.value)`;
+  - qualquer outro → armazenar `String(e.target.value)`;
+  - opções (select) já retornam string — manter.
+- **Catálogo de campos de `deals`** (`getEntityFieldCatalog` em `src/lib/workflow-refs.functions.ts` ou constante `ENTITY_FIELDS`): garantir que `stage_id` esteja marcado como `type: "select"` com options a partir dos estágios do pipeline (já resolvido via referências), e que o campo enum `stage` seja rotulado de forma distinta ("Status do deal") para não ser confundido com "Etapa do pipeline".
+- **Aviso quando `event = "updated"` e algum filtro é sobre `stage_id`:** exibir hint "Use o evento *Mudou de etapa* para reagir a mudanças de pipeline" abaixo do seletor de evento no `WorkflowTriggerEditor`. Sem bloqueio, apenas orientação.
 
-## Validação manual
+Nenhuma alteração no engine (`src/lib/workflows/engine.server.ts`), nas RLS, nem em outros workflows.
 
-1. Settings → Workflows → em um workflow de `deals`, clicar "Testar".
-2. Abrir o combobox: aparece lista de negócios recentes com nomes.
-3. Digitar "Grao" → filtra por `ilike`.
-4. Selecionar → "Executar teste" habilita; resultado (`triggerOk` + `log`) igual ao fluxo atual.
-5. Repetir para `contacts`, `companies`, `leads`, `tickets`, `ats_jobs`, `ats_candidates`, `ats_applications`, `ats_interviews`.
-6. Fluxo "Colar UUID" ainda funciona para casos avançados.
+## 3. Validação
+
+- Rodar `SELECT trigger FROM workflows WHERE id = '1d204901…'` e confirmar JSON esperado.
+- No módulo Deals, mover um deal de teste para a etapa `1018009924` e aguardar o próximo tick (≤ 60s):
+  - `workflow_events` recebe `stage_changed` (já observado).
+  - `workflow_runs` cria linha com `status='success'` para o workflow.
+  - `tickets` recebe o chamado "Criar Contrato [<title>]" atribuído a `d473eff9…`.
+- Testar no builder o modo Test com um deal já em `1018009924`: deve indicar "passa" e simular a criação do ticket.
+
+# Detalhes técnicos
+
+Arquivos a alterar:
+- `supabase/migrations/<timestamp>_fix_criar_contrato_workflow_trigger.sql` — UPDATE no registro do workflow.
+- `src/components/workflows/workflow-builder.tsx` — coerção de tipo no `FilterRow`, label do enum `stage`, hint condicional no editor do gatilho.
+- (Se necessário) `src/lib/workflow-refs.functions.ts` — enriquecer o field catalog de `deals` para diferenciar `stage` (enum de status) de `stage_id` (etapa do pipeline com options).
+
+Sem mudanças em: engine, RLS, schema de tabelas, outras rotas ou permissões.
+
+# Riscos e pendências
+
+- Outros workflows possivelmente afetados pelo mesmo padrão (event=updated + field=stage/stage_id + value numérico). Após corrigir este, farei uma varredura `SELECT` para listar candidatos e pedir sua confirmação antes de tocar em qualquer outro.
+- A coerção de tipos no builder é aditiva; workflows já salvos com valores numéricos continuam existindo até serem re-editados. O fix da migration cobre apenas este workflow — os demais serão listados para você decidir.
+
+# Como validar manualmente
+
+1. Após aplicação: em `/settings/workflows`, abrir "Criar contrato" e confirmar que o gatilho aparece como "Mudou de etapa" com filtro "Etapa mudou para (AC) Assinatura de Contrato".
+2. Mover um deal para essa etapa.
+3. Aguardar ~60s e verificar em `/tickets` a criação do chamado.
+
+# Próximo passo recomendado
+
+Após a correção deste workflow, rodar uma auditoria dos demais workflows salvos (`SELECT id, name, trigger FROM workflows WHERE trigger::text ILIKE '%"field":"stage"%' OR trigger::text ~ '"value":\s*[0-9]'`) e reportar antes de qualquer alteração adicional.
