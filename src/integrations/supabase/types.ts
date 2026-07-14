@@ -3381,6 +3381,7 @@ export type Database = {
           recording_status: string | null
           recording_synced_at: string | null
           recording_url: string | null
+          recurring_event_id: string | null
           related_activity_id: string | null
           related_contact_id: string | null
           start_at: string | null
@@ -3417,6 +3418,7 @@ export type Database = {
           recording_status?: string | null
           recording_synced_at?: string | null
           recording_url?: string | null
+          recurring_event_id?: string | null
           related_activity_id?: string | null
           related_contact_id?: string | null
           start_at?: string | null
@@ -3453,6 +3455,7 @@ export type Database = {
           recording_status?: string | null
           recording_synced_at?: string | null
           recording_url?: string | null
+          recurring_event_id?: string | null
           related_activity_id?: string | null
           related_contact_id?: string | null
           start_at?: string | null
@@ -13401,6 +13404,10 @@ export type Database = {
           p_interval: Database["public"]["Enums"]["billing_interval"]
         }
         Returns: string
+      }
+      _calendar_event_is_long_series: {
+        Args: { p_event_id: string }
+        Returns: boolean
       }
       anonymize_ats_candidate: {
         Args: { _candidate_id: string }

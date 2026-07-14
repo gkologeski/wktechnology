@@ -73,6 +73,7 @@ type GCalEvent = {
   location?: string;
   htmlLink?: string;
   hangoutLink?: string;
+  recurringEventId?: string;
   start?: { dateTime?: string; date?: string; timeZone?: string };
   end?: { dateTime?: string; date?: string; timeZone?: string };
   attendees?: {
@@ -939,6 +940,7 @@ async function pullGoogleEvents(
         hangout_link: hangoutLink,
         conference_id: conferenceId,
         related_contact_id: relatedContactId,
+        recurring_event_id: ev.recurringEventId ?? null,
         status: ev.status ?? "confirmed",
         last_synced_at: new Date().toISOString(),
       });
