@@ -401,6 +401,8 @@ type TemplatedQuoteProps = {
   agent: { full_name?: string | null; email?: string | null } | null;
   expired: boolean;
   responded: boolean;
+  paperRef: React.RefObject<HTMLDivElement | null>;
+  onDownload: () => void;
   onAcceptClick: () => void;
   onDeclineClick: () => void;
   respondPending: boolean;
@@ -470,13 +472,14 @@ function TemplatedQuote(props: TemplatedQuoteProps) {
   return (
     <div className="min-h-screen bg-muted/30 print:bg-white">
       <div className="w-full mx-auto p-4 sm:p-6 space-y-3">
-        <div className="flex items-center justify-end print:hidden">
-          <Button size="sm" variant="outline" onClick={() => window.print()}>
-            <Printer className="h-4 w-4 mr-1" /> Imprimir / PDF
+        <div className="flex items-center justify-end print:hidden" data-pdf-hide>
+          <Button size="sm" variant="outline" onClick={props.onDownload}>
+            <Download className="h-4 w-4 mr-1" /> Baixar PDF
           </Button>
         </div>
 
         <div
+          ref={props.paperRef}
           className="rounded-md border bg-white overflow-hidden print:border-0"
           dangerouslySetInnerHTML={{
             __html: before + makeActionsHtml(props, !!after, expired, responded) + after,
