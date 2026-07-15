@@ -293,8 +293,7 @@ async function renderPdfViaBrowserless(html: string, token: string): Promise<Arr
       gotoOptions: { waitUntil: "networkidle0", timeout: 30000 },
       // Cinto e suspensórios: as animações já foram zeradas via CSS acima; este
       // timeout garante que fontes externas (Google Fonts Inter) carreguem.
-      waitForTimeout: 1200,
-      waitForFunction: "window.__fitQuotePdfToSinglePage && document.body.classList.contains('__pdf_single_page_ready')",
+      waitForTimeout: 1600,
     }),
   });
   if (!res.ok) {
