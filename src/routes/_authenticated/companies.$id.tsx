@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Trash2, Building2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Trash2, Building2, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ActivityTimeline } from "@/components/activity-timeline";
@@ -9,6 +10,7 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { CompanyHierarchy } from "@/components/companies/company-hierarchy";
+import { enrichCompanyByCNPJ } from "@/lib/integrations/brasilapi-cnpj.functions";
 
 import type { Company } from "@/lib/db-types";
 import { toast } from "sonner";
@@ -21,6 +23,9 @@ function CompanyDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [company, setCompany] = useState<Company | null>(null);
+  const [enriching, setEnriching] = useState(false);
+  const runEnrich = useServerFn(enrichCompanyByCNPJ);
+
 
   const load = async () => {
     const { data } = await supabase.from("companies").select("*").eq("id", id).single();
@@ -37,6 +42,27 @@ function CompanyDetail() {
     await supabase.from("companies").delete().eq("id", company.id);
     toast.success("Excluído");
     navigate({ to: "/companies" });
+  };
+
+  const enrich = async () => {
+    if (!company?.cnpj) {
+      toast.error("Cadastre o CNPJ antes de enriquecer.");
+      return;
+    }
+    setEnriching(true);
+    try {
+      const res = await runEnrich({ data: { company_id: company.id } });
+      if (res?.ok) {
+        toast.success("Empresa enriquecida via BrasilAPI");
+        await load();
+      } else {
+        toast.error("CNPJ não encontrado nas bases públicas.");
+      }
+    } catch (e) {
+      toast.error((e as { message?: string })?.message ?? "Falha ao enriquecer");
+    } finally {
+      setEnriching(false);
+    }
   };
 
   const header = (
@@ -78,6 +104,16 @@ function CompanyDetail() {
         </div>
       </div>
       <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={enrich}
+          disabled={enriching || !(company as unknown as { cnpj?: string | null }).cnpj}
+          className="gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {enriching ? "Enriquecendo…" : "Enriquecer via CNPJ"}
+        </Button>
         <Button
           variant="ghost"
           size="icon"
