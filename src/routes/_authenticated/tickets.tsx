@@ -239,6 +239,7 @@ function TicketsIndex() {
       assignee_id: draft.assignee_id || user.id,
       due_at: draft.due_at || null,
       pipeline_id: pipeline?.id ?? null,
+      stage: editing?.stage ?? draft.status ?? "new",
       resolved_at:
         (draft.status ?? "new") === "resolved" || (draft.status ?? "new") === "closed"
           ? (editing?.resolved_at ?? new Date().toISOString())
@@ -246,9 +247,9 @@ function TicketsIndex() {
     };
     let error;
     if (editing) {
-      ({ error } = await supabase.from("tickets").update(payload).eq("id", editing.id));
+      ({ error } = await supabase.from("tickets").update(payload as never).eq("id", editing.id));
     } else {
-      ({ error } = await supabase.from("tickets").insert({ ...payload, owner_id: user.id }));
+      ({ error } = await supabase.from("tickets").insert({ ...payload, owner_id: user.id } as never));
     }
     if (error) {
       toast.error(error.message);

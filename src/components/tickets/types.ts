@@ -14,6 +14,7 @@ export type TicketRow = {
   company_id: string | null;
   deal_id: string | null;
   pipeline_id: string | null;
+  stage: string;
   due_at: string | null;
   resolved_at: string | null;
   created_at: string;

@@ -139,7 +139,7 @@ export const convertChatSessionToTicket = createServerFn({ method: "POST" })
         priority: "medium",
         source: "live_chat",
         assignee_id: context.userId,
-      })
+      } as never)
       .select("id")
       .single();
     if (tErr) throw new Error(tErr.message);

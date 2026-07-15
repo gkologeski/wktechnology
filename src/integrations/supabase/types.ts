@@ -11279,7 +11279,7 @@ export type Database = {
           hubspot_owner_id: string | null
           id: string
           owner_id: string
-          pipeline_id: string | null
+          pipeline_id: string
           priority: Database["public"]["Enums"]["ticket_priority"]
           resolved_at: string | null
           sla_first_response_at: string | null
@@ -11289,6 +11289,7 @@ export type Database = {
           sla_resolution_breached: boolean
           sla_resolution_due_at: string | null
           source: string | null
+          stage: string
           status: Database["public"]["Enums"]["ticket_status"]
           subject: string
           updated_at: string
@@ -11312,7 +11313,7 @@ export type Database = {
           hubspot_owner_id?: string | null
           id?: string
           owner_id: string
-          pipeline_id?: string | null
+          pipeline_id: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
           resolved_at?: string | null
           sla_first_response_at?: string | null
@@ -11322,6 +11323,7 @@ export type Database = {
           sla_resolution_breached?: boolean
           sla_resolution_due_at?: string | null
           source?: string | null
+          stage?: string
           status?: Database["public"]["Enums"]["ticket_status"]
           subject: string
           updated_at?: string
@@ -11345,7 +11347,7 @@ export type Database = {
           hubspot_owner_id?: string | null
           id?: string
           owner_id?: string
-          pipeline_id?: string | null
+          pipeline_id?: string
           priority?: Database["public"]["Enums"]["ticket_priority"]
           resolved_at?: string | null
           sla_first_response_at?: string | null
@@ -11355,6 +11357,7 @@ export type Database = {
           sla_resolution_breached?: boolean
           sla_resolution_due_at?: string | null
           source?: string | null
+          stage?: string
           status?: Database["public"]["Enums"]["ticket_status"]
           subject?: string
           updated_at?: string

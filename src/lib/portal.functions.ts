@@ -155,7 +155,7 @@ export const createPortalTicket = createServerFn({ method: "POST" })
         priority: data.priority,
         status: "new",
         source: "portal",
-      })
+      } as never)
       .select("id")
       .single();
     if (error) throw error;
