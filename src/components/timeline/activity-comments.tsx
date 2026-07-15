@@ -12,6 +12,7 @@ import {
 import { MessageCircle, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
 import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
+import { notifyActivityCommentEvent } from "@/lib/notifications.functions";
 
 type CommentRow = {
   id: string;
