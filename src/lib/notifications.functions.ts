@@ -337,3 +337,131 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
 
     return { ok: true, sent: targets.length };
   });
+
+// ============ Activity comment → notifications ============
+
+export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        commentId: z.string().uuid(),
+        activityId: z.string().uuid(),
+        mentionIds: z.array(z.string().uuid()).default([]),
+        previousMentionIds: z.array(z.string().uuid()).default([]),
+        bodySnippet: z.string().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+
+    const { data: activity, error: aerr } = await supabase
+      .from("activities")
+      .select(
+        "id, owner_id, workspace_id, created_by, subject, body, related_deal_id, related_contact_id, related_company_id, related_lead_id, related_ticket_id",
+      )
+      .eq("id", data.activityId)
+      .maybeSingle();
+    if (aerr || !activity) return { ok: false, reason: "not_found" };
+
+    const a = activity as unknown as {
+      id: string;
+      owner_id: string | null;
+      workspace_id: string;
+      created_by: string | null;
+      subject: string | null;
+      body: string | null;
+      related_deal_id: string | null;
+      related_contact_id: string | null;
+      related_company_id: string | null;
+      related_lead_id: string | null;
+      related_ticket_id: string | null;
+    };
+
+    const author = userId;
+    const { data: authorProf } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", author)
+      .maybeSingle();
+    const authorName = authorProf?.full_name ?? "Alguém";
+
+    const link = resolveLink(a);
+    const snippet = snippetFromHtml(data.bodySnippet ?? "");
+    const activityLabel = snippetFromHtml(a.subject ?? a.body ?? "", 80);
+
+    // Diff mentions vs previous (edits only notify new mentions)
+    const prev = new Set(data.previousMentionIds ?? []);
+    const newMentions = (data.mentionIds ?? []).filter(
+      (id) => id && id !== author && !prev.has(id),
+    );
+
+    type Target = { userId: string; category: NotificationCategory };
+    const seen = new Set<string>();
+    const targets: Target[] = [];
+    for (const id of newMentions) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      targets.push({ userId: id, category: "mention" });
+    }
+    // Only notify activity owner/creator on the first insert (no previous mentions)
+    const isFirstInsert = (data.previousMentionIds ?? []).length === 0;
+    if (isFirstInsert) {
+      const stakeholders = [a.owner_id, a.created_by].filter(
+        (id): id is string => !!id && id !== author,
+      );
+      for (const id of stakeholders) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+        targets.push({ userId: id, category: "message" });
+      }
+    }
+
+    if (targets.length === 0) return { ok: true, sent: 0 };
+
+    const uniqueIds = Array.from(new Set(targets.map((t) => t.userId)));
+    const { data: prefRows } = await supabase
+      .from("profiles")
+      .select("id, notification_preferences")
+      .in("id", uniqueIds);
+    const prefMap = new Map<string, NotificationPrefs>();
+    for (const row of prefRows ?? []) {
+      prefMap.set(
+        (row as { id: string }).id,
+        mergeWithDefaults(
+          (row as { notification_preferences: unknown }).notification_preferences,
+        ),
+      );
+    }
+
+    const inappRows: Array<Record<string, unknown>> = [];
+    for (const t of targets) {
+      const prefs = prefMap.get(t.userId) ?? DEFAULT_PREFS;
+      if (!prefs[t.category].inapp) continue;
+      const title =
+        t.category === "mention"
+          ? `${authorName} mencionou você em um comentário`
+          : `${authorName} comentou em ${activityLabel || "uma atividade"}`;
+      inappRows.push({
+        owner_id: a.workspace_id,
+        user_id: t.userId,
+        type: t.category,
+        title,
+        body: snippet || null,
+        link: link.link,
+        entity: link.entity,
+        entity_id: link.entity_id,
+      });
+    }
+
+    if (inappRows.length > 0) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { error: insertErr } = await supabaseAdmin
+        .from("notifications")
+        .insert(inappRows as never);
+      if (insertErr) console.error("notify comment insert failed", insertErr.message);
+    }
+
+    return { ok: true, sent: inappRows.length };
+  });
