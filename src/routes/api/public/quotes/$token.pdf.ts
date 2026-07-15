@@ -164,7 +164,9 @@ function wrapForPrint(inner: string): string {
   const hasHtmlTag = /<html[\s>]/i.test(inner);
   const pageStyle = `<style>@page { size: A4 landscape; margin: 0 } html, body { width: 297mm; height: 210mm; margin: 0; padding: 0; overflow: hidden; -webkit-print-color-adjust: exact; print-color-adjust: exact; }</style>`;
   const overrideStyle = `<style id="__pdf_overrides__">
+@page { size: A4 landscape; margin: 0; }
 *, *::before, *::after { animation: none !important; transition: none !important; }
+html, body { width: 1122px !important; height: 794px !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
 body.__pdf_single_page_ready { width: 1122px !important; height: 794px !important; overflow: hidden !important; }
 #__pdf_page__ { width: 1122px !important; height: 794px !important; overflow: hidden !important; position: relative !important; margin: 0 !important; padding: 0 !important; background: transparent !important; }
 #__pdf_scale__ { transform-origin: top left !important; margin: 0 !important; padding: 0 !important; }
@@ -200,6 +202,14 @@ body.__pdf_single_page_ready { width: 1122px !important; height: 794px !importan
     var rect = scale.getBoundingClientRect();
     var width = Math.max(scale.scrollWidth, rect.width, SOURCE_WIDTH);
     var height = Math.max(scale.scrollHeight, rect.height, 1);
+    var nodes = scale.querySelectorAll('*');
+    for (var i = 0; i < nodes.length; i += 1) {
+      var style = window.getComputedStyle(nodes[i]);
+      if (style.display === 'none' || style.visibility === 'hidden') continue;
+      var box = nodes[i].getBoundingClientRect();
+      width = Math.max(width, box.right - rect.left);
+      height = Math.max(height, box.bottom - rect.top);
+    }
     return { width: width, height: height };
   }
 
@@ -427,27 +437,29 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
           // Remove marcador de ações (não aplicável no PDF).
           html = wrapForPrint(rendered.replace(/\{\{#actions\/\}\}/g, ""));
         } else {
-          html = buildFallbackHtml({
-            title: String(quote.title ?? "Cotação"),
-            number: String(quote.number ?? ""),
-            createdAt: formatDateTimeBR(quote.created_at),
-            validUntil: quote.valid_until ? formatDateTimeBR(quote.valid_until) : "",
-            company: company?.name ?? "",
-            contact: contact
-              ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim()
-              : "",
-            contactEmail: contact?.email ?? "",
-            agent: agent?.full_name ?? "",
-            agentEmail: "",
-            currency,
-            items: itemsCtx,
-            subtotal: Number(quote.subtotal ?? 0),
-            discount_total: Number(quote.discount_total ?? 0),
-            tax_total: Number(quote.tax_total ?? 0),
-            total: Number(quote.total ?? 0),
-            notes: String(quote.notes ?? ""),
-            terms: String(quote.terms ?? ""),
-          });
+          html = wrapForPrint(
+            buildFallbackHtml({
+              title: String(quote.title ?? "Cotação"),
+              number: String(quote.number ?? ""),
+              createdAt: formatDateTimeBR(quote.created_at),
+              validUntil: quote.valid_until ? formatDateTimeBR(quote.valid_until) : "",
+              company: company?.name ?? "",
+              contact: contact
+                ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim()
+                : "",
+              contactEmail: contact?.email ?? "",
+              agent: agent?.full_name ?? "",
+              agentEmail: "",
+              currency,
+              items: itemsCtx,
+              subtotal: Number(quote.subtotal ?? 0),
+              discount_total: Number(quote.discount_total ?? 0),
+              tax_total: Number(quote.tax_total ?? 0),
+              total: Number(quote.total ?? 0),
+              notes: String(quote.notes ?? ""),
+              terms: String(quote.terms ?? ""),
+            }),
+          );
         }
 
         let pdf: ArrayBuffer;
