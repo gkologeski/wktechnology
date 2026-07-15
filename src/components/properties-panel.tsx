@@ -107,6 +107,7 @@ export type PropDef = {
     | "url"
     | "company"
     | "cep"
+    | "cnpj"
     | "currency"
     | "date"
     | "datetime";
