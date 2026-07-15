@@ -513,6 +513,38 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                     initial={String(row[p.key] ?? "")}
                     onSaved={onSaved}
                   />
+                ) : p.type === "cnpj" ? (
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={18}
+                    placeholder="00.000.000/0000-00"
+                    defaultValue={formatCNPJ(String(row[p.key] ?? ""))}
+                    onChange={(e) => {
+                      e.currentTarget.value = formatCnpjInput(e.currentTarget.value);
+                    }}
+                    onBlur={async (e) => {
+                      const raw = e.target.value;
+                      const digits = stripCNPJ(raw);
+                      const current = String(row[p.key] ?? "");
+                      const toSave = digits || null;
+                      if ((toSave ?? "") === current) return;
+                      if (digits && !isCNPJ(digits)) {
+                        toast.error("CNPJ inválido.");
+                        return;
+                      }
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const { error } = await (supabase as any)
+                        .from(table)
+                        .update({ [p.key]: toSave })
+                        .eq("id", row.id);
+                      if (error) toast.error(error.message);
+                      else {
+                        toast.success("Atualizado");
+                        onSaved?.();
+                      }
+                    }}
+                  />
                 ) : p.type === "cep" ? (
                   <Input
                     type="text"
