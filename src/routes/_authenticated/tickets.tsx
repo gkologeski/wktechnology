@@ -2,7 +2,7 @@ import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
@@ -112,6 +112,18 @@ function TicketsIndex() {
 
   const [view, setView] = useState<ViewKey>("all");
   const [layout, setLayout] = useState<Layout>("table");
+  const layoutTouchedRef = useRef(false);
+  const handleLayoutChange = (v: string) => {
+    layoutTouchedRef.current = true;
+    setLayout(v as Layout);
+  };
+  useEffect(() => {
+    if (layoutTouchedRef.current) return;
+    const dv = pipeline?.default_view;
+    if (dv === "board" || dv === "table" || dv === "split") {
+      setLayout(dv);
+    }
+  }, [pipeline?.id, pipeline?.default_view]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TicketRow | null>(null);
@@ -427,7 +439,7 @@ function TicketsIndex() {
       </div>
 
       {/* Layout tabs */}
-      <Tabs value={layout} onValueChange={(v) => setLayout(v as Layout)} className="mt-4">
+      <Tabs value={layout} onValueChange={handleLayoutChange} className="mt-4">
         <TabsList>
           <TabsTrigger value="table">
             <Rows3 className="h-3.5 w-3.5 mr-1" /> Tabela
