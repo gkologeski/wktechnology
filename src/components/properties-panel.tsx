@@ -398,6 +398,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               }
               if (p.type === "tel" && v) return formatBrPhone(String(v));
               if (p.type === "cep" && v) return formatCep(String(v));
+              if (p.type === "cnpj" && v) return formatCNPJ(String(v));
               const displayType = p.type ?? inferDisplayType(p.key);
               return formatDisplayValue(displayType, v, row as Record<string, unknown>);
             })()}
