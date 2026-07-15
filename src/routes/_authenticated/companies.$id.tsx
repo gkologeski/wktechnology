@@ -44,6 +44,27 @@ function CompanyDetail() {
     navigate({ to: "/companies" });
   };
 
+  const enrich = async () => {
+    if (!company?.cnpj) {
+      toast.error("Cadastre o CNPJ antes de enriquecer.");
+      return;
+    }
+    setEnriching(true);
+    try {
+      const res = await runEnrich({ data: { company_id: company.id } });
+      if (res?.ok) {
+        toast.success("Empresa enriquecida via BrasilAPI");
+        await load();
+      } else {
+        toast.error("CNPJ não encontrado nas bases públicas.");
+      }
+    } catch (e) {
+      toast.error((e as { message?: string })?.message ?? "Falha ao enriquecer");
+    } finally {
+      setEnriching(false);
+    }
+  };
+
   const header = (
     <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 flex items-center justify-between gap-4 flex-wrap">
       <div className="flex items-center gap-5 min-w-0">
