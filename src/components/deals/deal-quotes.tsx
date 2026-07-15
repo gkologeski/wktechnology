@@ -196,7 +196,10 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onSelect={() =>
-                          window.open(`${publicUrl(q.public_token)}?download=pdf`, "_blank")
+                          window.open(
+                            `${window.location.origin}/api/public/quotes/${q.public_token}/pdf`,
+                            "_blank",
+                          )
                         }
                       >
                         Baixar PDF

@@ -20,7 +20,7 @@ import { Download, Check, X, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { renderQuoteTemplate, type QuoteRenderContext } from "@/lib/quote-template-renderer";
-import { downloadQuotePdf } from "@/lib/quote-pdf";
+
 
 export const Route = createFileRoute("/quote/$token")({
   component: PublicQuotePage,
@@ -62,20 +62,10 @@ function PublicQuotePage() {
   });
 
   const paperRef = useRef<HTMLDivElement>(null);
-  const pdfFilename = useMemo(() => {
-    const n = data?.quote?.number ?? token;
-    return `Proposta-${String(n).replace(/[^A-Za-z0-9_-]+/g, "_")}.pdf`;
-  }, [data, token]);
 
-  const triggerDownload = async () => {
-    if (!paperRef.current) return;
-    try {
-      await downloadQuotePdf(paperRef.current, pdfFilename);
-    } catch (e) {
-      console.error(e);
-      const msg = e instanceof Error ? e.message : "erro desconhecido";
-      toast.error(`Falha ao gerar PDF: ${msg}`);
-    }
+  const triggerDownload = () => {
+    if (typeof window === "undefined") return;
+    window.location.assign(`${window.location.origin}/api/public/quotes/${token}/pdf`);
   };
 
   const downloadedRef = useRef(false);
@@ -86,12 +76,10 @@ function PublicQuotePage() {
     const wants = params.get("download") === "pdf" || params.get("print") === "1";
     if (!wants) return;
     downloadedRef.current = true;
-    const t = window.setTimeout(() => {
-      void triggerDownload();
-    }, 400);
-    return () => window.clearTimeout(t);
+    triggerDownload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, error, data]);
+
 
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
   if (error || !data)
