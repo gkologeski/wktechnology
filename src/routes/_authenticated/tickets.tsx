@@ -246,9 +246,9 @@ function TicketsIndex() {
     };
     let error;
     if (editing) {
-      ({ error } = await supabase.from("tickets").update(payload).eq("id", editing.id));
+      ({ error } = await supabase.from("tickets").update(payload as never).eq("id", editing.id));
     } else {
-      ({ error } = await supabase.from("tickets").insert({ ...payload, owner_id: user.id }));
+      ({ error } = await supabase.from("tickets").insert({ ...payload, owner_id: user.id } as never));
     }
     if (error) {
       toast.error(error.message);
