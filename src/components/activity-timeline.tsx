@@ -1048,6 +1048,7 @@ export function ActivityTimeline({
         .eq("id", user.id)
         .maybeSingle();
       const wsId = (profile as { active_workspace_id?: string } | null)?.active_workspace_id;
+      setCurrentWorkspaceId(wsId ?? null);
       if (wsId) {
         const { data: wm } = await supabase
           .from("workspace_members")
