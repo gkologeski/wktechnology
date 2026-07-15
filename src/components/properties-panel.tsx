@@ -410,7 +410,12 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             className="h-6 w-6 opacity-0 group-hover:opacity-100"
             onClick={() => {
               setEditing(p.key);
-              setValue(formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? ""));
+              const raw = String(row[p.key] ?? "");
+              setValue(
+                p.type === "cnpj"
+                  ? formatCNPJ(raw)
+                  : formatBrPhone(raw) || raw,
+              );
             }}
           >
             <Pencil className="h-3 w-3" />
