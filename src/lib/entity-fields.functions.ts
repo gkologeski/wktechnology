@@ -65,6 +65,8 @@ const LABELS: Record<string, string> = {
   address: "Endereço",
   website: "Site",
   domain: "Domínio",
+  cnpj: "CNPJ",
+  cnpj_enriched_at: "CNPJ enriquecido em",
   industry: "Setor",
   size: "Porte",
   annualrevenue: "Receita anual",
