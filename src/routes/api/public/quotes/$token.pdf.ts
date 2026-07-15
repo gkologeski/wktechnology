@@ -162,12 +162,96 @@ function wrapForPrint(inner: string): string {
   //    empurra o conteúdo para uma segunda página em branco.
   //  - Permitir que a tabela quebre de forma limpa entre páginas.
   const hasHtmlTag = /<html[\s>]/i.test(inner);
-  const pageStyle = `<style>@page { size: A4 landscape; margin: 0 } html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }</style>`;
+  const pageStyle = `<style>@page { size: A4 landscape; margin: 0 } html, body { width: 297mm; height: 210mm; margin: 0; padding: 0; overflow: hidden; -webkit-print-color-adjust: exact; print-color-adjust: exact; }</style>`;
   const overrideStyle = `<style id="__pdf_overrides__">
+@page { size: A4 landscape; margin: 0; }
 *, *::before, *::after { animation: none !important; transition: none !important; }
+html, body { width: 1122px !important; height: 794px !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; }
+body.__pdf_single_page_ready { width: 1122px !important; height: 794px !important; overflow: hidden !important; }
+#__pdf_page__ { width: 1122px !important; height: 794px !important; overflow: hidden !important; position: relative !important; margin: 0 !important; padding: 0 !important; background: transparent !important; }
+#__pdf_scale__ { transform-origin: top left !important; margin: 0 !important; padding: 0 !important; }
 .stage { min-height: 0 !important; padding: 24px 16px !important; }
-.tbl-outer, table, tr, td, th { break-inside: avoid; page-break-inside: avoid; }
 </style>`;
+  const fitScript = `<script id="__pdf_single_page_fit__">
+(function () {
+  var PAGE_WIDTH = 1122;
+  var PAGE_HEIGHT = 794;
+  var SOURCE_WIDTH = 1400;
+  var MAX_ATTEMPTS = 3;
+
+  function moveBodyIntoScale() {
+    if (document.getElementById('__pdf_page__')) return document.getElementById('__pdf_scale__');
+
+    var page = document.createElement('div');
+    page.id = '__pdf_page__';
+    var scale = document.createElement('div');
+    scale.id = '__pdf_scale__';
+    scale.style.width = SOURCE_WIDTH + 'px';
+
+    while (document.body.firstChild) {
+      scale.appendChild(document.body.firstChild);
+    }
+
+    page.appendChild(scale);
+    document.body.appendChild(page);
+    document.body.classList.add('__pdf_single_page_ready');
+    return scale;
+  }
+
+  function measureContent(scale) {
+    var rect = scale.getBoundingClientRect();
+    var width = Math.max(scale.scrollWidth, rect.width, SOURCE_WIDTH);
+    var height = Math.max(scale.scrollHeight, rect.height, 1);
+    var nodes = scale.querySelectorAll('*');
+    for (var i = 0; i < nodes.length; i += 1) {
+      var style = window.getComputedStyle(nodes[i]);
+      if (style.display === 'none' || style.visibility === 'hidden') continue;
+      var box = nodes[i].getBoundingClientRect();
+      width = Math.max(width, box.right - rect.left);
+      height = Math.max(height, box.bottom - rect.top);
+    }
+    return { width: width, height: height };
+  }
+
+  function fitToSinglePage() {
+    var scale = moveBodyIntoScale();
+    if (!scale) return;
+
+    scale.style.transform = 'none';
+    scale.style.width = SOURCE_WIDTH + 'px';
+
+    for (var i = 0; i < MAX_ATTEMPTS; i += 1) {
+      var size = measureContent(scale);
+      var ratio = Math.min(PAGE_WIDTH / size.width, PAGE_HEIGHT / size.height, 1);
+      scale.style.transform = 'scale(' + ratio.toFixed(4) + ')';
+      scale.style.width = SOURCE_WIDTH + 'px';
+      scale.style.height = Math.ceil(size.height) + 'px';
+    }
+
+    var finalSize = measureContent(scale);
+    var finalRatio = Math.min(PAGE_WIDTH / finalSize.width, PAGE_HEIGHT / finalSize.height, 1);
+    scale.style.transform = 'scale(' + finalRatio.toFixed(4) + ')';
+    document.documentElement.style.width = PAGE_WIDTH + 'px';
+    document.documentElement.style.height = PAGE_HEIGHT + 'px';
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.width = PAGE_WIDTH + 'px';
+    document.body.style.height = PAGE_HEIGHT + 'px';
+    document.body.style.overflow = 'hidden';
+  }
+
+  if (document.readyState === 'complete') {
+    fitToSinglePage();
+  } else {
+    window.addEventListener('load', fitToSinglePage, { once: true });
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(fitToSinglePage).catch(function () {});
+  }
+
+  window.__fitQuotePdfToSinglePage = fitToSinglePage;
+})();
+</script>`;
   if (hasHtmlTag) {
     // pageStyle logo após <head>; overrideStyle imediatamente antes de </head>
     // para vencer especificidade de qualquer <style> do template.
@@ -177,9 +261,14 @@ function wrapForPrint(inner: string): string {
     } else {
       out = out.replace(/<body(\s[^>]*)?>/i, (m) => `${overrideStyle}${m}`);
     }
+    if (/<\/body>/i.test(out)) {
+      out = out.replace(/<\/body>/i, `${fitScript}</body>`);
+    } else {
+      out = `${out}${fitScript}`;
+    }
     return out;
   }
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">${pageStyle}${overrideStyle}</head><body>${inner}</body></html>`;
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">${pageStyle}${overrideStyle}</head><body>${inner}${fitScript}</body></html>`;
 }
 
 async function renderPdfViaBrowserless(html: string, token: string): Promise<ArrayBuffer> {
@@ -204,7 +293,7 @@ async function renderPdfViaBrowserless(html: string, token: string): Promise<Arr
       gotoOptions: { waitUntil: "networkidle0", timeout: 30000 },
       // Cinto e suspensórios: as animações já foram zeradas via CSS acima; este
       // timeout garante que fontes externas (Google Fonts Inter) carreguem.
-      waitForTimeout: 1200,
+      waitForTimeout: 1600,
     }),
   });
   if (!res.ok) {
@@ -347,27 +436,29 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
           // Remove marcador de ações (não aplicável no PDF).
           html = wrapForPrint(rendered.replace(/\{\{#actions\/\}\}/g, ""));
         } else {
-          html = buildFallbackHtml({
-            title: String(quote.title ?? "Cotação"),
-            number: String(quote.number ?? ""),
-            createdAt: formatDateTimeBR(quote.created_at),
-            validUntil: quote.valid_until ? formatDateTimeBR(quote.valid_until) : "",
-            company: company?.name ?? "",
-            contact: contact
-              ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim()
-              : "",
-            contactEmail: contact?.email ?? "",
-            agent: agent?.full_name ?? "",
-            agentEmail: "",
-            currency,
-            items: itemsCtx,
-            subtotal: Number(quote.subtotal ?? 0),
-            discount_total: Number(quote.discount_total ?? 0),
-            tax_total: Number(quote.tax_total ?? 0),
-            total: Number(quote.total ?? 0),
-            notes: String(quote.notes ?? ""),
-            terms: String(quote.terms ?? ""),
-          });
+          html = wrapForPrint(
+            buildFallbackHtml({
+              title: String(quote.title ?? "Cotação"),
+              number: String(quote.number ?? ""),
+              createdAt: formatDateTimeBR(quote.created_at),
+              validUntil: quote.valid_until ? formatDateTimeBR(quote.valid_until) : "",
+              company: company?.name ?? "",
+              contact: contact
+                ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim()
+                : "",
+              contactEmail: contact?.email ?? "",
+              agent: agent?.full_name ?? "",
+              agentEmail: "",
+              currency,
+              items: itemsCtx,
+              subtotal: Number(quote.subtotal ?? 0),
+              discount_total: Number(quote.discount_total ?? 0),
+              tax_total: Number(quote.tax_total ?? 0),
+              total: Number(quote.total ?? 0),
+              notes: String(quote.notes ?? ""),
+              terms: String(quote.terms ?? ""),
+            }),
+          );
         }
 
         let pdf: ArrayBuffer;
