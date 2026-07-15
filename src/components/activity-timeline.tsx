@@ -14,6 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { signMeetingRecording, generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
 import { notifyActivityEvent } from "@/lib/notifications.functions";
 import { AttachmentPreview } from "@/components/timeline/attachment-preview";
+import { ActivityComments } from "@/components/timeline/activity-comments";
 import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
 import {
   StickyNote,
@@ -641,6 +642,7 @@ export function ActivityTimeline({
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<string | null>(null);
   const [mentions, setMentions] = useState<TeamMember[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBody, setEditingBody] = useState("");
@@ -1046,6 +1048,7 @@ export function ActivityTimeline({
         .eq("id", user.id)
         .maybeSingle();
       const wsId = (profile as { active_workspace_id?: string } | null)?.active_workspace_id;
+      setCurrentWorkspaceId(wsId ?? null);
       if (wsId) {
         const { data: wm } = await supabase
           .from("workspace_members")
@@ -2243,6 +2246,11 @@ export function ActivityTimeline({
                     );
                   })()}
 
+                  <ActivityComments
+                    activityId={a.id}
+                    workspaceId={(a as unknown as { workspace_id?: string }).workspace_id ?? currentWorkspaceId}
+                    team={team}
+                  />
                 </div>
               </li>
             );
