@@ -46,7 +46,7 @@ self.addEventListener("fetch", (event) => {
             .catch(() => {});
           return res;
         })
-        .catch(() => caches.match(req).then((c) => c || caches.match("/"))),
+        .catch(() => caches.match(req)),
     );
     return;
   }
