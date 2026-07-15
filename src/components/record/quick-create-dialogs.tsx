@@ -28,6 +28,7 @@ import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { usePipelines } from "@/lib/pipelines";
 import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
 import { Building2, User } from "lucide-react";
+import { isCNPJ, formatCNPJ } from "@/lib/validators";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
