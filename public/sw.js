@@ -1,8 +1,8 @@
 // Service worker v3: NetworkFirst para HTML, NetworkFirst para assets JS/CSS
 // (evita servir chunks lazy obsoletos após novo build), push notifications.
-const CACHE = "crm-v3";
-const RUNTIME = "crm-runtime-v3";
-const SHELL = ["/", "/favicon.ico", "/manifest.webmanifest"];
+const CACHE = "crm-v4";
+const RUNTIME = "crm-runtime-v4";
+const SHELL = ["/favicon.ico", "/manifest.webmanifest"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
