@@ -23,6 +23,9 @@ function CompanyDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [company, setCompany] = useState<Company | null>(null);
+  const [enriching, setEnriching] = useState(false);
+  const runEnrich = useServerFn(enrichCompanyByCNPJ);
+
 
   const load = async () => {
     const { data } = await supabase.from("companies").select("*").eq("id", id).single();
