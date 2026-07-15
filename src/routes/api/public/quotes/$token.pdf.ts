@@ -154,12 +154,32 @@ function wrapForPrint(inner: string): string {
   // Envolve o HTML do template em um documento completo, injetando @page para
   // que o Chromium respeite A4 paisagem sem margens (o template desenha os
   // próprios fundos).
+  //
+  // Também injeta CSS de override no FIM do <head> para:
+  //  - Neutralizar animações CSS `fadeUp/fadeIn/scaleIn` (com `both`) que deixariam
+  //    blocos em opacity:0 se o snapshot ocorresse antes da animação completar.
+  //  - Desligar `min-height:100vh` do `.stage` que, no viewport de print (~794px),
+  //    empurra o conteúdo para uma segunda página em branco.
+  //  - Permitir que a tabela quebre de forma limpa entre páginas.
   const hasHtmlTag = /<html[\s>]/i.test(inner);
   const pageStyle = `<style>@page { size: A4 landscape; margin: 0 } html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }</style>`;
+  const overrideStyle = `<style id="__pdf_overrides__">
+*, *::before, *::after { animation: none !important; transition: none !important; }
+.stage { min-height: 0 !important; padding: 24px 16px !important; }
+.tbl-outer, table, tr, td, th { break-inside: avoid; page-break-inside: avoid; }
+</style>`;
   if (hasHtmlTag) {
-    return inner.replace(/<head(\s[^>]*)?>/i, (m) => `${m}${pageStyle}`);
+    // pageStyle logo após <head>; overrideStyle imediatamente antes de </head>
+    // para vencer especificidade de qualquer <style> do template.
+    let out = inner.replace(/<head(\s[^>]*)?>/i, (m) => `${m}${pageStyle}`);
+    if (/<\/head>/i.test(out)) {
+      out = out.replace(/<\/head>/i, `${overrideStyle}</head>`);
+    } else {
+      out = out.replace(/<body(\s[^>]*)?>/i, (m) => `${overrideStyle}${m}`);
+    }
+    return out;
   }
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">${pageStyle}</head><body>${inner}</body></html>`;
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8">${pageStyle}${overrideStyle}</head><body>${inner}</body></html>`;
 }
 
 async function renderPdfViaBrowserless(html: string, token: string): Promise<ArrayBuffer> {
@@ -176,8 +196,15 @@ async function renderPdfViaBrowserless(html: string, token: string): Promise<Arr
         preferCSSPageSize: true,
         margin: { top: "0", right: "0", bottom: "0", left: "0" },
       },
+      // Viewport desktop: templates são desenhados para telas largas; sem isso o
+      // Chromium usa o viewport de print (~794px) e o grid de cards colapsa.
+      viewport: { width: 1400, height: 900, deviceScaleFactor: 2 },
+      // Mantém o layout de tela (o template não define @media print).
+      emulateMediaType: "screen",
       gotoOptions: { waitUntil: "networkidle0", timeout: 30000 },
-      waitForTimeout: 300,
+      // Cinto e suspensórios: as animações já foram zeradas via CSS acima; este
+      // timeout garante que fontes externas (Google Fonts Inter) carreguem.
+      waitForTimeout: 1200,
     }),
   });
   if (!res.ok) {

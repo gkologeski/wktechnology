@@ -1,76 +1,52 @@
 ## Diagnóstico
 
-O PDF anexado (Q-202607-1717) tem 1 página A4 paisagem, foi gerado pelo **jsPDF 4.2.1** (pipeline atual: `html2canvas` → `jsPDF.addImage`) e contém **apenas** os elementos decorativos do template — retângulo rosa no topo, faixa vermelha embaixo, moldura de notebook — e o título "ITENS DA PROPOSTA". Todo o restante (dados do cliente, tabela de itens, totais, notas) sumiu.
+Rodei `pdftotext` e `pdftoppm` nos 3 PDFs anexados. Eles **não** estão totalmente vazios: os cabeçalhos ("PROPOSTA COMERCIAL", número, vendedor, status, destinatário, "ITENS DA PROPOSTA") aparecem. O que some é tudo o que vem depois: tabela de itens, totais, observações, termos, footer. Página 2 é só a faixa vermelha e a base do notebook.
 
-Investiguei a cotação no banco: `template_id = 01a2c7aa-f235-4cd9-8b86-f3e7d380ebf8` ("Prosposta 001"), 22 KB de HTML, com:
+Duas causas somadas, ambas no lado da renderização — o template está OK, quem está errado é o pipeline em `src/routes/api/public/quotes/$token.pdf.ts`:
 
-- `transform: perspective(3200px) rotateX(1.8deg)` no wrapper `.nb` (o "notebook");
-- várias camadas `position:absolute` com `inset` e `z-index`;
-- `box-shadow` composto, `radial-gradient`/`linear-gradient` complexos;
-- Google Fonts carregadas por `<link>` externo;
-- todo o conteúdo dinâmico (`{{#each items}}`, dados do cliente, totais) é injetado **dentro** do elemento com `perspective + rotateX`.
+1. **Animações CSS ainda em `opacity:0` no momento do PDF.** O template `Prosposta 001` aplica `animation: fadeUp .Xs .Ys ease both` em quase todo o conteúdo (`.prop-cards` 0.8s total, `.tbl-outer` 0.9s, `.totals-section` 0.9s, `.notes-grid` 0.95s, `.prop-footer` 1.0s). O `both` mantém o estado inicial (`opacity:0; translateY(12px)`) até a animação rodar. Hoje o handler chama Browserless com `waitUntil: networkidle0` + `waitForTimeout: 300` — não sobra tempo pras animações completarem, então o Chromium tira o "snapshot" com metade dos blocos ainda invisíveis. É exatamente o padrão do que sumiu.
+2. **`.stage { min-height: 100vh }` + `@page A4 landscape margin:0`.** Em modo print o viewport tem ~794px de altura; o `.stage` fica travado nisso e centraliza o notebook, jogando o resto (tabela + totais + notas + footer) para além do primeiro `@page`. A página 2 herda os `absolute` splits vermelhos mas o conteúdo não flui — daí a segunda página "toda vermelha e vazia".
 
-Esse conjunto quebra o `html2canvas`. Ele consegue rasterizar o fundo (splits e a moldura), mas perde o conteúdo dentro do subtree transformado — exatamente o que o PDF mostra. Ajustar `useCORS`/`scale` não resolve; é limitação do próprio motor. E é frágil: qualquer template novo com `transform`, `filter`, `mask`, `backdrop-filter` ou fonte externa recai no mesmo bug.
+Confirmado inspecionando o HTML do template `01a2c7aa-f235-4cd9-8b86-f3e7d380ebf8` (linhas 424–438 são as animações; linhas 22–36 são o `.stage` com `min-height:100vh` e os splits `absolute`).
 
-O correto para PDF de documento com template HTML rico é renderizar no servidor via um navegador headless (Chromium) — foi assim que corrigimos casos parecidos antes e é o padrão dos concorrentes (Stripe, Ashby, HubSpot).
+## Correção
 
-## O que fazer
+Sem editar o template (que é do usuário e está correto para a página pública), reforçar o `wrapForPrint()` em `src/routes/api/public/quotes/$token.pdf.ts` para neutralizar os dois problemas apenas no PDF:
 
-### 1. Novo endpoint público de PDF (server-side, Chromium headless)
+1. Injetar CSS de print, **depois** de qualquer `<style>` do template, dentro de `@media print` e como fallback global:
+   ```css
+   *, *::before, *::after {
+     animation: none !important;
+     transition: none !important;
+   }
+   .stage { min-height: 0 !important; padding: 24px 16px !important; }
+   /* Deixa a tabela quebrar de forma limpa se passar de uma página */
+   .tbl-outer, table, tr, td, th { break-inside: avoid; page-break-inside: avoid; }
+   ```
+   Colocar num `<style>` no fim do `<head>` (não no início) para vencer especificidade sem reescrever o template.
 
-- Criar rota `src/routes/api/public/quotes/$token.pdf.ts` (server route, HTTP direto).
-- Autorização: mesmo mecanismo do `getQuoteByToken` — o `public_token` da cotação já é o segredo; apenas exige `q.status != 'draft'` (mesma regra da página pública).
-- Fluxo:
-  1. Buscar cotação, itens, empresa, contato, agente e template (mesmos dados que `getQuoteByToken`).
-  2. Montar o HTML **completo** aplicando `renderQuoteTemplate(template.html, ctx)` + `DOMPurify` (via `isomorphic-dompurify`, seguro em worker).
-  3. Renderizar com Chromium headless em formato A4 landscape, `printBackground: true`, aguardando `networkidle0` e `document.fonts.ready` (Google Fonts).
-  4. Retornar `application/pdf` com `Content-Disposition: attachment; filename="Proposta-<numero>.pdf"`.
+2. Ajustar a chamada ao Browserless em `renderPdfViaBrowserless`:
+   - Setar `viewport: { width: 1400, height: 900, deviceScaleFactor: 2 }` (o template foi desenhado para desktop; assim os grids `.prop-cards` e a tabela ficam com o layout de tela).
+   - `waitForTimeout: 1200` (folga acima dos ~1.0s de animação total, redundante já que o CSS acima zera as animações — cinto e suspensórios).
+   - Adicionar `emulateMediaType: "screen"` para o Chromium não trocar o media query e o layout do template continuar idêntico à visualização.
+   - Manter `printBackground:true`, `landscape:true`, `preferCSSPageSize:true`.
 
-- Runtime: o worker do Cloudflare **não** suporta Puppeteer/Chromium diretamente (é o que já está documentado em `<server-runtime>`). Opções, na ordem de preferência:
-  - **A. Browserless (recomendado):** chamar API HTTPS `https://chrome.browserless.io/pdf` com o HTML montado. Requer `BROWSERLESS_TOKEN` como secret. Sem dependência nativa, funciona no worker. Custo pago; free tier baixo.
-  - **B. Edge Function Supabase (Deno) usando `puppeteer` remoto ou `pdf-lib`+`playwright-aws-lambda`.** Mais operação, mais surface.
-  - **C. Chromium binário no worker.** Não suportado hoje neste runtime; descartar.
+3. Nada mais muda: `deal-quotes.tsx`, `quote.$token.tsx`, template no banco, secret `BROWSERLESS_TOKEN`, RLS e schema ficam intactos.
 
-  Vou seguir com a opção A e pedir o token via `secrets--add_secret` antes de codar o endpoint (não faço integração externa fake — sigo a regra "não fingir integração"). Se você preferir outra opção, me diz.
+## Validação
 
-### 2. Trocar o gatilho client-side pelo download server-side
-
-- `src/components/deals/deal-quotes.tsx`: item "Baixar PDF" passa a apontar para `/api/public/quotes/{token}.pdf` (link direto de download), em vez de `/quote/{token}?download=pdf`.
-- `src/routes/quote.$token.tsx`:
-  - botão "Baixar PDF" (ambos os layouts, com e sem template) chama o novo endpoint via `window.location.assign(...)` — download direto, sem passar por `html2canvas`.
-  - remove o efeito de auto-download com `?download=pdf` (fica redundante).
-- Manter `src/lib/quote-pdf.ts` apenas como fallback offline **ou** removê-lo. Prefiro remover para não deixar dois caminhos divergentes; se quiser manter como fallback, digo.
-
-### 3. Higiene do template
-
-Sem alterar a identidade visual do template "Prosposta 001", o Chromium headless renderiza tudo (transform, gradientes, sombras, fontes) fielmente. **Não** vou editar o template neste passo — o objetivo é que ele funcione como está.
-
-### 4. Validação
-
-- Testes automáticos existentes: `tests/e2e/quotes-smoke.spec.ts` (rodar).
-- Manual (na cotação Q-202607-1717): abrir menu ⋯ → "Baixar PDF" → confirmar que o PDF baixado tem:
-  - dados do destinatário (empresa, contato),
-  - tabela de itens completa,
-  - subtotal / descontos / impostos / total,
-  - notas e termos,
-  - moldura do notebook e faixas de fundo intactas,
-  - fontes Inter aplicadas.
-- Rodar em preview e em produção (preview usa mesmo banco / mesma cotação para reproduzir o caso real).
-
-## Detalhes técnicos
-
-- Endpoint como server route (`createFileRoute` + `server.handlers.GET`) sob `api/public/*` para permitir chamada direta do browser sem token de sessão; a autorização vem do `public_token` no path.
-- HTML montado no servidor inclui um `<style>` extra com `@page { size: A4 landscape; margin: 0 }` e `html,body { margin:0 }` para o Chromium respeitar as bordas do template.
-- Content-Type / Content-Disposition definidos manualmente. Sem cache (`Cache-Control: private, no-store`) para evitar servir PDF antigo após regeneração.
-- Sem alterações em RLS/schema.
-- Sem alterações em regras de negócio, permissões, autenticação, ou nos dados da cotação/template.
+- Typecheck do arquivo alterado.
+- Após o rebuild da preview: baixar o PDF da Q-202607-1717 pelo menu ⋯ → "Baixar PDF" e conferir com `pdftotext -layout` + `pdftoppm` que aparecem: cards de destinatário/responsável/referência preenchidos, tabela de itens completa, subtotal / descontos / impostos / total, notas, termos e footer com selo.
+- Rodar `tests/e2e/quotes-smoke.spec.ts` se aplicável.
 
 ## Fora do escopo
 
-- Refatorar/limpar o template "Prosposta 001".
-- Adicionar seleção de layout (retrato/paisagem) ou paginação inteligente.
+- Editar o template `Prosposta 001`.
+- Trocar de provedor de headless.
 - Cache de PDFs.
+- Retirar as animações da página pública em `/quote/$token`.
 
-## Pergunta antes de implementar
+## Riscos
 
-Confirma seguir com **Browserless** (opção A) usando um secret `BROWSERLESS_TOKEN`? Se preferir edge function Supabase (opção B) ou outro provedor (ex.: PDFShift, api2pdf, DocRaptor), me avise — a arquitetura é a mesma, só muda o cliente HTTP.
+- Se o template do usuário passar a depender de `@media print` explicitamente, o override de animação ainda vai valer (o CSS injetado é o último a entrar).
+- `emulateMediaType:"screen"` é o comportamento que o template já assume; nada regride.
