@@ -439,7 +439,7 @@ function TicketsIndex() {
       </div>
 
       {/* Layout tabs */}
-      <Tabs value={layout} onValueChange={(v) => setLayout(v as Layout)} className="mt-4">
+      <Tabs value={layout} onValueChange={handleLayoutChange} className="mt-4">
         <TabsList>
           <TabsTrigger value="table">
             <Rows3 className="h-3.5 w-3.5 mr-1" /> Tabela
