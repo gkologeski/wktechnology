@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Trash2, Building2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Trash2, Building2, ExternalLink, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ActivityTimeline } from "@/components/activity-timeline";
@@ -9,6 +10,7 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { CompanyHierarchy } from "@/components/companies/company-hierarchy";
+import { enrichCompanyByCNPJ } from "@/lib/integrations/brasilapi-cnpj.functions";
 
 import type { Company } from "@/lib/db-types";
 import { toast } from "sonner";
