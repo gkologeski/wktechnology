@@ -2,7 +2,7 @@ import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
