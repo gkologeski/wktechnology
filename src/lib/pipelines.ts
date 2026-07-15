@@ -163,8 +163,12 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
     if (selectedId === "__all__") return;
     if (selectedId && pipelines.some((p) => p.id === selectedId)) return;
     // Sem seleção persistida (1ª entrada) ou seleção inválida:
-    // preferimos o pipeline "Serviços" (regra de negócio), depois o is_default, depois o primeiro.
-    const servicos = pipelines.find((p) => (p.name ?? "").trim().toLowerCase() === "serviços");
+    // Em Negócios, preferimos "Serviços" (regra de negócio); nas demais entidades,
+    // usamos o is_default e depois o primeiro pipeline.
+    const servicos =
+      entity === "deal"
+        ? pipelines.find((p) => (p.name ?? "").trim().toLowerCase() === "serviços")
+        : undefined;
     const def = servicos ?? pipelines.find((p) => p.is_default) ?? pipelines[0];
     setSelectedIdState(def.id);
     try {
