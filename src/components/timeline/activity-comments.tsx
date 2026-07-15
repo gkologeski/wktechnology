@@ -12,6 +12,7 @@ import {
 import { MessageCircle, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
 import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
+import { notifyActivityCommentEvent } from "@/lib/notifications.functions";
 
 type CommentRow = {
   id: string;
@@ -114,12 +115,13 @@ export function ActivityComments({ activityId, workspaceId, team, disabled }: Pr
     if (!body) return;
     setPosting(true);
     try {
+      const mentions = extractMentionIds(body);
       const payload = {
         activity_id: activityId,
         workspace_id: workspaceId,
         author_id: user.id,
         body,
-        mentions: extractMentionIds(body),
+        mentions,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
@@ -136,6 +138,18 @@ export function ActivityComments({ activityId, workspaceId, team, disabled }: Pr
       setDraft("");
       setComposing(false);
       setExpanded(true);
+      // Fire-and-forget notifications (mentions + activity owner/creator)
+      notifyActivityCommentEvent({
+        data: {
+          commentId: (data as CommentRow).id,
+          activityId,
+          mentionIds: mentions,
+          previousMentionIds: [],
+          bodySnippet: body,
+        },
+      }).catch(() => {
+        /* silent */
+      });
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao comentar");
     } finally {
@@ -147,17 +161,34 @@ export function ActivityComments({ activityId, workspaceId, team, disabled }: Pr
     const body = editDraft.trim();
     if (!body) return;
     try {
+      const newMentions = extractMentionIds(body);
+      const prevMentions = c.mentions ?? [];
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any)
         .from("activity_comments")
-        .update({ body, mentions: extractMentionIds(body) })
+        .update({ body, mentions: newMentions })
         .eq("id", c.id);
       if (error) throw error;
       setItems((prev) =>
-        prev.map((r) => (r.id === c.id ? { ...r, body, mentions: extractMentionIds(body) } : r)),
+        prev.map((r) => (r.id === c.id ? { ...r, body, mentions: newMentions } : r)),
       );
       setEditingId(null);
       setEditDraft("");
+      // Notify only the newly-added mentions on edit
+      const added = newMentions.filter((id) => !prevMentions.includes(id));
+      if (added.length > 0) {
+        notifyActivityCommentEvent({
+          data: {
+            commentId: c.id,
+            activityId,
+            mentionIds: newMentions,
+            previousMentionIds: prevMentions,
+            bodySnippet: body,
+          },
+        }).catch(() => {
+          /* silent */
+        });
+      }
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao salvar");
     }
