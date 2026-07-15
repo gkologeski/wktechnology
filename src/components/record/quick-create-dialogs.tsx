@@ -59,12 +59,21 @@ export function QuickCreateCompanyDialog({
   const submit = async () => {
     if (!user) return;
     if (!name.trim()) return toast.error("Informe o nome");
+    const cnpjDigits = cnpj.replace(/\D/g, "");
+    if (cnpjDigits && !isCNPJ(cnpjDigits)) {
+      return toast.error("CNPJ inválido.");
+    }
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("companies")
-        .insert({ owner_id: user.id, name: name.trim(), domain: domain.trim() || null })
+        .insert({
+          owner_id: user.id,
+          name: name.trim(),
+          domain: domain.trim() || null,
+          cnpj: cnpjDigits || null,
+        })
         .select("id")
         .single();
       if (error) throw error;
@@ -74,6 +83,7 @@ export function QuickCreateCompanyDialog({
       onOpenChange(false);
       setName("");
       setDomain("");
+      setCnpj("");
       onCreated?.(data.id);
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao criar");
