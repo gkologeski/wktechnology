@@ -124,6 +124,33 @@ export function QuickCreateCompanyDialog({
               onChange={(e) => setDomain(e.target.value)}
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="qc-co-cnpj">CNPJ</Label>
+            <Input
+              id="qc-co-cnpj"
+              placeholder="00.000.000/0000-00"
+              inputMode="numeric"
+              maxLength={18}
+              value={cnpj}
+              onChange={(e) => {
+                const d = e.target.value.replace(/\D/g, "").slice(0, 14);
+                setCnpj(formatCNPJ(d.padEnd(14, "0")).slice(0, d.length + Math.floor(d.length / 2)));
+                setCnpj(
+                  d.length === 14
+                    ? formatCNPJ(d)
+                    : d.length > 12
+                      ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`
+                      : d.length > 8
+                        ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`
+                        : d.length > 5
+                          ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`
+                          : d.length > 2
+                            ? `${d.slice(0, 2)}.${d.slice(2)}`
+                            : d,
+                );
+              }}
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
