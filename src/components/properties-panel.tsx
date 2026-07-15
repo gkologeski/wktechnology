@@ -258,6 +258,14 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       }
       toSave = `${digits.slice(0, 5)}-${digits.slice(5)}`;
     }
+    if (def?.type === "cnpj" && toSave) {
+      const digits = stripCNPJ(toSave);
+      if (!isCNPJ(digits)) {
+        toast.error("CNPJ inválido.");
+        return;
+      }
+      toSave = digits;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from(table)
