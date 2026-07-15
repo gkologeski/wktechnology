@@ -112,6 +112,18 @@ function TicketsIndex() {
 
   const [view, setView] = useState<ViewKey>("all");
   const [layout, setLayout] = useState<Layout>("table");
+  const layoutTouchedRef = useRef(false);
+  const handleLayoutChange = (v: string) => {
+    layoutTouchedRef.current = true;
+    setLayout(v as Layout);
+  };
+  useEffect(() => {
+    if (layoutTouchedRef.current) return;
+    const dv = pipeline?.default_view;
+    if (dv === "board" || dv === "table" || dv === "split") {
+      setLayout(dv);
+    }
+  }, [pipeline?.id, pipeline?.default_view]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TicketRow | null>(null);
