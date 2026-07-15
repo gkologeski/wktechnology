@@ -34,7 +34,7 @@ import {
   type LayoutSection,
   type RecordEntity,
 } from "@/lib/record-layouts.functions";
-import { toE164, isEmail } from "@/lib/validators";
+import { toE164, isEmail, isCNPJ, formatCNPJ, stripCNPJ } from "@/lib/validators";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { formatCurrency, formatDateOnly, formatDateTime } from "@/lib/crm";
 import { OwnerField } from "@/components/entity/owner-field";
@@ -84,6 +84,15 @@ function formatCep(s: string): string {
   if (d.length <= 5) return d;
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
+// CNPJ: keep only digits (max 14) while typing, showing progressive mask.
+function formatCnpjInput(s: string): string {
+  const d = (s ?? "").replace(/\D/g, "").slice(0, 14);
+  if (d.length <= 2) return d;
+  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`;
+  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
+  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+}
 
 export type PropDef = {
   key: string;
@@ -98,6 +107,7 @@ export type PropDef = {
     | "url"
     | "company"
     | "cep"
+    | "cnpj"
     | "currency"
     | "date"
     | "datetime";
@@ -248,6 +258,14 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
       }
       toSave = `${digits.slice(0, 5)}-${digits.slice(5)}`;
     }
+    if (def?.type === "cnpj" && toSave) {
+      const digits = stripCNPJ(toSave);
+      if (!isCNPJ(digits)) {
+        toast.error("CNPJ inválido.");
+        return;
+      }
+      toSave = digits;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from(table)
@@ -322,7 +340,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             <Input
               autoFocus
               type={
-                p.type === "cep"
+                p.type === "cep" || p.type === "cnpj"
                   ? "text"
                   : p.type === "currency"
                     ? "number"
@@ -330,10 +348,22 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       ? "datetime-local"
                       : (p.type ?? "text")
               }
-              inputMode={p.type === "tel" ? "tel" : p.type === "cep" ? "numeric" : undefined}
-              maxLength={p.type === "cep" ? 9 : undefined}
+              inputMode={
+                p.type === "tel"
+                  ? "tel"
+                  : p.type === "cep" || p.type === "cnpj"
+                    ? "numeric"
+                    : undefined
+              }
+              maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
               placeholder={
-                p.type === "cep" ? "99999-999" : p.type === "tel" ? "(11) 99999-8888" : undefined
+                p.type === "cep"
+                  ? "99999-999"
+                  : p.type === "cnpj"
+                    ? "00.000.000/0000-00"
+                    : p.type === "tel"
+                      ? "(11) 99999-8888"
+                      : undefined
               }
               value={value}
               onChange={(e) =>
@@ -344,7 +374,9 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       ? sanitizeEmailInput(e.target.value)
                       : p.type === "cep"
                         ? formatCep(e.target.value)
-                        : e.target.value,
+                        : p.type === "cnpj"
+                          ? formatCnpjInput(e.target.value)
+                          : e.target.value,
                 )
               }
               onKeyDown={(e) => e.key === "Enter" && save(p.key)}
@@ -366,6 +398,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               }
               if (p.type === "tel" && v) return formatBrPhone(String(v));
               if (p.type === "cep" && v) return formatCep(String(v));
+              if (p.type === "cnpj" && v) return formatCNPJ(String(v));
               const displayType = p.type ?? inferDisplayType(p.key);
               return formatDisplayValue(displayType, v, row as Record<string, unknown>);
             })()}
@@ -377,7 +410,12 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             className="h-6 w-6 opacity-0 group-hover:opacity-100"
             onClick={() => {
               setEditing(p.key);
-              setValue(formatBrPhone(String(row[p.key] ?? "")) || String(row[p.key] ?? ""));
+              const raw = String(row[p.key] ?? "");
+              setValue(
+                p.type === "cnpj"
+                  ? formatCNPJ(raw)
+                  : formatBrPhone(raw) || raw,
+              );
             }}
           >
             <Pencil className="h-3 w-3" />
@@ -474,6 +512,38 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                     field={p.key}
                     initial={String(row[p.key] ?? "")}
                     onSaved={onSaved}
+                  />
+                ) : p.type === "cnpj" ? (
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={18}
+                    placeholder="00.000.000/0000-00"
+                    defaultValue={formatCNPJ(String(row[p.key] ?? ""))}
+                    onChange={(e) => {
+                      e.currentTarget.value = formatCnpjInput(e.currentTarget.value);
+                    }}
+                    onBlur={async (e) => {
+                      const raw = e.target.value;
+                      const digits = stripCNPJ(raw);
+                      const current = String(row[p.key] ?? "");
+                      const toSave = digits || null;
+                      if ((toSave ?? "") === current) return;
+                      if (digits && !isCNPJ(digits)) {
+                        toast.error("CNPJ inválido.");
+                        return;
+                      }
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      const { error } = await (supabase as any)
+                        .from(table)
+                        .update({ [p.key]: toSave })
+                        .eq("id", row.id);
+                      if (error) toast.error(error.message);
+                      else {
+                        toast.success("Atualizado");
+                        onSaved?.();
+                      }
+                    }}
                   />
                 ) : p.type === "cep" ? (
                   <Input

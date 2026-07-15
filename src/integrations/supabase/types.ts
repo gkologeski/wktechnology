@@ -3644,6 +3644,8 @@ export type Database = {
           assigned_user_id: string | null
           cep: string | null
           city: string | null
+          cnpj: string | null
+          cnpj_enriched_at: string | null
           country: string | null
           created_at: string
           custom_fields: Json
@@ -3685,6 +3687,8 @@ export type Database = {
           assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
+          cnpj?: string | null
+          cnpj_enriched_at?: string | null
           country?: string | null
           created_at?: string
           custom_fields?: Json
@@ -3726,6 +3730,8 @@ export type Database = {
           assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
+          cnpj?: string | null
+          cnpj_enriched_at?: string | null
           country?: string | null
           created_at?: string
           custom_fields?: Json

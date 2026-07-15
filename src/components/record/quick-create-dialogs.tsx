@@ -28,6 +28,7 @@ import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { usePipelines } from "@/lib/pipelines";
 import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
 import { Building2, User } from "lucide-react";
+import { isCNPJ, formatCNPJ } from "@/lib/validators";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -48,6 +49,7 @@ export function QuickCreateCompanyDialog({
   const toastCreated = useToastCreated();
   const [name, setName] = useState(initialName ?? "");
   const [domain, setDomain] = useState("");
+  const [cnpj, setCnpj] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Sincroniza quando o diálogo abre com um nome inicial novo
@@ -58,12 +60,21 @@ export function QuickCreateCompanyDialog({
   const submit = async () => {
     if (!user) return;
     if (!name.trim()) return toast.error("Informe o nome");
+    const cnpjDigits = cnpj.replace(/\D/g, "");
+    if (cnpjDigits && !isCNPJ(cnpjDigits)) {
+      return toast.error("CNPJ inválido.");
+    }
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("companies")
-        .insert({ owner_id: user.id, name: name.trim(), domain: domain.trim() || null })
+        .insert({
+          owner_id: user.id,
+          name: name.trim(),
+          domain: domain.trim() || null,
+          cnpj: cnpjDigits || null,
+        })
         .select("id")
         .single();
       if (error) throw error;
@@ -73,6 +84,7 @@ export function QuickCreateCompanyDialog({
       onOpenChange(false);
       setName("");
       setDomain("");
+      setCnpj("");
       onCreated?.(data.id);
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao criar");
@@ -110,6 +122,32 @@ export function QuickCreateCompanyDialog({
               placeholder="exemplo.com"
               value={domain}
               onChange={(e) => setDomain(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="qc-co-cnpj">CNPJ</Label>
+            <Input
+              id="qc-co-cnpj"
+              placeholder="00.000.000/0000-00"
+              inputMode="numeric"
+              maxLength={18}
+              value={cnpj}
+              onChange={(e) => {
+                const d = e.target.value.replace(/\D/g, "").slice(0, 14);
+                const masked =
+                  d.length === 14
+                    ? formatCNPJ(d)
+                    : d.length > 12
+                      ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`
+                      : d.length > 8
+                        ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`
+                        : d.length > 5
+                          ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`
+                          : d.length > 2
+                            ? `${d.slice(0, 2)}.${d.slice(2)}`
+                            : d;
+                setCnpj(masked);
+              }}
             />
           </div>
         </div>
