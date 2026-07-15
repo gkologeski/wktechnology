@@ -1,53 +1,48 @@
-## Diagnóstico
-
-O PDF ainda falha no Chrome porque o template padrão "Prosposta 001" (22 KB de HTML) usa recursos que o PDFium renderiza mal mesmo após o achatamento atual:
-
-- Blocos `.stage` com `100vh`, `position: absolute/fixed`, sobreposições e grids que dependem de altura de viewport — no PDF viram áreas em branco no topo (visível no screenshot: só a barra de metadados aparece).
-- `backdrop-filter`, `filter`, gradientes com `oklch` e camadas com `mix-blend-mode` que já sanitizamos, mas ainda deixam áreas invisíveis quando combinadas com transformações internas do template.
-- Layout pensado para tela (scroll + animações) e não para uma página A4 paisagem impressa.
-
-Preservação (Quartz/Preview) funciona porque é tolerante a esses operadores; PDFium não.
-
 ## Objetivo
 
-Manter o "desenho" (cabeçalho vermelho, faixa de metadados, tabela de itens, blocos de totais/observações/termos/assinatura) mas em um layout print-first que renderize idêntico em Chrome, Preview, Adobe e navegadores móveis, em 1 página A4 paisagem.
+Fazer com que o **Valor** exibido no detalhe do negócio seja o **valor líquido** (mesmo total mostrado no rodapé dos Itens de linha: subtotal − descontos + impostos), em vez de um valor bruto/manual descolado.
 
-## Escopo
+Hoje: `deals.value` é um campo independente, editado manualmente; a soma dos itens de linha aparece só no editor. Os dois divergem.
 
-Alterações ficam restritas a apresentação/print:
+## Estratégia
 
-1. Novo template `Proposta Print` (system, `is_default: true`) — HTML e CSS reescritos com foco em impressão:
-   - `@page { size: A4 landscape; margin: 12mm }`, sem `100vh`, sem `position: absolute` para o layout principal.
-   - Cabeçalho com faixa vermelha, número da cotação, título, cliente e status em `flex` simples.
-   - Barra de metadados (Emitida / Válida até / Referência) em linha única.
-   - Tabela `<table>` semântica para itens (ITEM/DESCRIÇÃO, QTD, PREÇO UNIT., DESC., IMP., TOTAL) com `border-collapse` e `page-break-inside: avoid` por linha.
-   - Blocos de Totais, Observações, Termos e Assinatura em grid de 2 colunas usando `display: table` (mais estável no PDFium que `grid`).
-   - Tipografia system-ui, cores em `rgb()` direto (sem `oklch`/`color-mix`), sem `backdrop-filter`, `filter`, `mask`, animações ou transições.
-   - Mesma paleta vermelha atual e mesma hierarquia visual do template Prosposta 001.
+Tornar `deals.value` derivado dos itens de linha sempre que existirem itens. Quando o negócio não tiver itens de linha, mantém o valor manual atual (retrocompatível).
 
-2. Migration para inserir o novo template como padrão do sistema e desmarcar `is_default` dos anteriores. Não deleta templates existentes — usuários que já customizaram continuam com o deles.
+### 1. Banco de dados (migration)
 
-3. Endpoint `GET /api/public/quotes/$token/pdf` (`src/routes/api/public/quotes/$token.pdf.ts`):
-   - Mantém sanitização `oklch → rgb` e overrides defensivos (para templates legados).
-   - Remove o script de `zoom` dinâmico quando o template já cabe em uma página (o novo template é dimensionado para caber por construção).
-   - Continua chamando Browserless com `A4 landscape`, `printBackground: true`, `emulateMediaType: "screen"`.
+Criar função e trigger em `public.deal_line_items` que, a cada `INSERT/UPDATE/DELETE`, recalcula o total líquido do deal correspondente e grava em `deals.value`:
 
-4. Renderer `src/lib/quote-template-renderer.ts` — sem mudança de contrato; apenas confirma que todos os campos usados pelo novo HTML (`{{quote.number}}`, `{{#each items}}`, totais, etc.) já são suportados. Adiciono os que faltarem, se algum.
+```
+total = Σ (quantity * unit_price
+           − (discount_type='amount' ? min(discount_amount*quantity, gross) : gross*discount_pct/100))
+       * (1 + tax_rate/100)
+```
 
-## Fora de escopo
+- Se a soma dos itens for `> 0` → atualiza `deals.value`.
+- Se o deal ficar sem itens (último removido) → **preserva** o `deals.value` atual (não zera), para não perder valores manuais em negócios sem catálogo.
+- Backfill único: recalcular `deals.value` para todos os deals que já tenham pelo menos um item de linha.
 
-- Wizard de edição, permissões, RLS, envio por e-mail, link público, status da cotação.
-- Templates customizados dos usuários (permanecem como estão; só o padrão do sistema muda).
-- Geração client-side de PDF (já removida).
+### 2. Frontend
 
-## Validação
+- `src/routes/_authenticated/deals.$id.tsx`: após `notifyDealsChanged` (evento `deal:line-items-changed`), o `load()` já é chamado — o header vai refletir o novo valor automaticamente. Nenhuma lógica de cálculo no cliente.
+- `PropertiesPanel` do negócio: tornar o campo **Valor** somente-leitura quando existirem itens de linha, com hint “Calculado a partir dos itens de linha”. Continua editável quando não houver itens.
+- Nenhuma alteração em cotações, faturas, pipeline board ou lista (eles já leem `deals.value`, que passará a estar sincronizado).
 
-- Gerar PDF de `Q-202607-1717` e `Q-202607-2416` via Browserless em preview.
-- Rasterizar com `pdftoppm` e conferir visualmente: sem faixa branca no topo, tabela completa, 1 página, cores corretas.
-- Abrir o PDF gerado no Chrome (via curl + `file://`) e no Preview do macOS — ambos devem exibir o mesmo conteúdo.
-- Rodar `bunx vitest run` e `bunx tsgo` para garantir que renderer/endpoint continuam tipados.
+### 3. Fora do escopo
 
-## Riscos
+- Não alterar regras de RLS, políticas, permissões, autenticação ou schema além do necessário para o trigger.
+- Não mexer no cálculo dentro do editor de itens (fórmula já está correta e será replicada no SQL).
+- Não mexer em `quote_line_items` / cotações.
 
-- Cotações que já usam explicitamente o template "Prosposta 001" continuam com o problema no Chrome. Mitigação: manter os overrides CSS atuais no endpoint para esses casos e documentar no relatório final.
-- Pequenas diferenças visuais entre o template antigo e o novo (mesma identidade, mas sem os efeitos decorativos que quebram no PDFium).
+## Detalhes técnicos
+
+- Trigger `AFTER INSERT OR UPDATE OR DELETE ON public.deal_line_items FOR EACH ROW`, `SECURITY DEFINER`, `search_path = public`, que faz um `UPDATE public.deals SET value = (SELECT ...) WHERE id = deal_id` guardado com `SET LOCAL` para não recursar.
+- A subquery usa `GREATEST(gross - discount, 0) * (1 + tax_rate/100)` para bater 1:1 com `lineTotal` do TypeScript.
+- Migration inclui `COMMENT ON COLUMN public.deals.value IS 'Auto-sincronizado com a soma líquida de deal_line_items quando houver itens.'`.
+
+## Validação manual
+
+1. Abrir um deal com itens de linha → header e “Total” do editor devem ser idênticos.
+2. Editar quantidade/preço/desconto/imposto de um item → header atualiza após fechar o editor.
+3. Remover todos os itens → valor permanece como estava (não zera).
+4. Deal sem itens → campo Valor continua editável manualmente.
