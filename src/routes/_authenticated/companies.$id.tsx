@@ -105,6 +105,16 @@ function CompanyDetail() {
       </div>
       <div className="flex items-center gap-2">
         <Button
+          variant="outline"
+          size="sm"
+          onClick={enrich}
+          disabled={enriching || !(company as unknown as { cnpj?: string | null }).cnpj}
+          className="gap-1.5"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          {enriching ? "Enriquecendo…" : "Enriquecer via CNPJ"}
+        </Button>
+        <Button
           variant="ghost"
           size="icon"
           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
