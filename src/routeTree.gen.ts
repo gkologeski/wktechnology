@@ -281,6 +281,7 @@ import { Route as ApiPublicV1AtsApplicationsRouteImport } from './routes/api/pub
 import { Route as ApiPublicScimV2UsersRouteImport } from './routes/api/public/scim/v2/Users'
 import { Route as ApiPublicScimV2GroupsRouteImport } from './routes/api/public/scim/v2/Groups'
 import { Route as ApiPublicReferSlugSubmitRouteImport } from './routes/api/public/refer/$slug.submit'
+import { Route as ApiPublicQuotesTokenPdfRouteImport } from './routes/api/public/quotes/$token.pdf'
 import { Route as ApiPublicPaymentsBrWebhookProviderRouteImport } from './routes/api/public/payments/br-webhook.$provider'
 import { Route as ApiPublicFormsSlugSubmitRouteImport } from './routes/api/public/forms/$slug.submit'
 import { Route as ApiPublicEmailUnsubscribeTokenRouteImport } from './routes/api/public/email/unsubscribe.$token'
@@ -1832,6 +1833,11 @@ const ApiPublicReferSlugSubmitRoute =
     path: '/submit',
     getParentRoute: () => ApiPublicReferSlugRoute,
   } as any)
+const ApiPublicQuotesTokenPdfRoute = ApiPublicQuotesTokenPdfRouteImport.update({
+  id: '/api/public/quotes/$token/pdf',
+  path: '/api/public/quotes/$token/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsBrWebhookProviderRoute =
   ApiPublicPaymentsBrWebhookProviderRouteImport.update({
     id: '/api/public/payments/br-webhook/$provider',
@@ -2165,6 +2171,7 @@ export interface FileRoutesByFullPath {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/quotes/$token/pdf': typeof ApiPublicQuotesTokenPdfRoute
   '/api/public/refer/$slug/submit': typeof ApiPublicReferSlugSubmitRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
@@ -2443,6 +2450,7 @@ export interface FileRoutesByTo {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/quotes/$token/pdf': typeof ApiPublicQuotesTokenPdfRoute
   '/api/public/refer/$slug/submit': typeof ApiPublicReferSlugSubmitRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
@@ -2728,6 +2736,7 @@ export interface FileRoutesById {
   '/api/public/email/unsubscribe/$token': typeof ApiPublicEmailUnsubscribeTokenRoute
   '/api/public/forms/$slug/submit': typeof ApiPublicFormsSlugSubmitRoute
   '/api/public/payments/br-webhook/$provider': typeof ApiPublicPaymentsBrWebhookProviderRoute
+  '/api/public/quotes/$token/pdf': typeof ApiPublicQuotesTokenPdfRoute
   '/api/public/refer/$slug/submit': typeof ApiPublicReferSlugSubmitRoute
   '/api/public/scim/v2/Groups': typeof ApiPublicScimV2GroupsRoute
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
@@ -3013,6 +3022,7 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/quotes/$token/pdf'
     | '/api/public/refer/$slug/submit'
     | '/api/public/scim/v2/Groups'
     | '/api/public/scim/v2/Users'
@@ -3291,6 +3301,7 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/quotes/$token/pdf'
     | '/api/public/refer/$slug/submit'
     | '/api/public/scim/v2/Groups'
     | '/api/public/scim/v2/Users'
@@ -3575,6 +3586,7 @@ export interface FileRouteTypes {
     | '/api/public/email/unsubscribe/$token'
     | '/api/public/forms/$slug/submit'
     | '/api/public/payments/br-webhook/$provider'
+    | '/api/public/quotes/$token/pdf'
     | '/api/public/refer/$slug/submit'
     | '/api/public/scim/v2/Groups'
     | '/api/public/scim/v2/Users'
@@ -3681,6 +3693,7 @@ export interface RootRouteChildren {
   ApiPublicEmailPixelMessageIdRoute: typeof ApiPublicEmailPixelMessageIdRoute
   ApiPublicEmailUnsubscribeTokenRoute: typeof ApiPublicEmailUnsubscribeTokenRoute
   ApiPublicPaymentsBrWebhookProviderRoute: typeof ApiPublicPaymentsBrWebhookProviderRoute
+  ApiPublicQuotesTokenPdfRoute: typeof ApiPublicQuotesTokenPdfRoute
   ApiPublicScimV2GroupsRoute: typeof ApiPublicScimV2GroupsRoute
   ApiPublicScimV2UsersRoute: typeof ApiPublicScimV2UsersRouteWithChildren
   ApiPublicV1AtsApplicationsRoute: typeof ApiPublicV1AtsApplicationsRouteWithChildren
@@ -5595,6 +5608,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicReferSlugSubmitRouteImport
       parentRoute: typeof ApiPublicReferSlugRoute
     }
+    '/api/public/quotes/$token/pdf': {
+      id: '/api/public/quotes/$token/pdf'
+      path: '/api/public/quotes/$token/pdf'
+      fullPath: '/api/public/quotes/$token/pdf'
+      preLoaderRoute: typeof ApiPublicQuotesTokenPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/br-webhook/$provider': {
       id: '/api/public/payments/br-webhook/$provider'
       path: '/api/public/payments/br-webhook/$provider'
@@ -6411,6 +6431,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicEmailUnsubscribeTokenRoute: ApiPublicEmailUnsubscribeTokenRoute,
   ApiPublicPaymentsBrWebhookProviderRoute:
     ApiPublicPaymentsBrWebhookProviderRoute,
+  ApiPublicQuotesTokenPdfRoute: ApiPublicQuotesTokenPdfRoute,
   ApiPublicScimV2GroupsRoute: ApiPublicScimV2GroupsRoute,
   ApiPublicScimV2UsersRoute: ApiPublicScimV2UsersRouteWithChildren,
   ApiPublicV1AtsApplicationsRoute: ApiPublicV1AtsApplicationsRouteWithChildren,
