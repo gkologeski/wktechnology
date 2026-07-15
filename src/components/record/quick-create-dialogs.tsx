@@ -48,6 +48,7 @@ export function QuickCreateCompanyDialog({
   const toastCreated = useToastCreated();
   const [name, setName] = useState(initialName ?? "");
   const [domain, setDomain] = useState("");
+  const [cnpj, setCnpj] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Sincroniza quando o diálogo abre com um nome inicial novo
