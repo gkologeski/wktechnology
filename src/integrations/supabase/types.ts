@@ -433,6 +433,50 @@ export type Database = {
           },
         ]
       }
+      activity_comments: {
+        Row: {
+          activity_id: string
+          author_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          mentions: string[]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          activity_id: string
+          author_id?: string
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          mentions?: string[]
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          activity_id?: string
+          author_id?: string
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          mentions?: string[]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_comments_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ads_accounts: {
         Row: {
           access_token: string | null

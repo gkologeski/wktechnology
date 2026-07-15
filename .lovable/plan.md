@@ -1,66 +1,92 @@
+
 ## Objetivo
-Adicionar o campo **CNPJ** à entidade Empresa (`companies`), com validação, formatação, exposição em UI, enriquecimento automático via API pública e backfill dos CNPJs já presentes no HubSpot.
+
+Permitir que usuários adicionem, editem e excluam comentários em qualquer item da timeline (nota, ligação, reunião, e-mail, tarefa, SMS, WhatsApp, LinkedIn, correio), com suporte a @mentions e notificação em tempo real — igual ao HubSpot.
 
 ## Escopo
 
-### 1. Banco de dados (migration)
-- Adicionar coluna `cnpj text` em `public.companies` (nullable).
-- Constraint `CHECK (cnpj IS NULL OR cnpj ~ '^[0-9]{14}$')` — armazenar somente dígitos.
-- Índice único parcial por workspace: `UNIQUE (owner_id, cnpj) WHERE cnpj IS NOT NULL AND deleted_at IS NULL`.
-- Adicionar `cnpj_enriched_at timestamptz NULL` para controlar quando o registro foi enriquecido pela última vez (evitar re-consultas).
+- Novo recurso de comentários vinculados a `activities.id`.
+- Suporte a @mentions (reutiliza infraestrutura existente).
+- CRUD completo restrito ao autor (edição/exclusão) e visibilidade por workspace.
+- UI: painel expansível abaixo de cada item da timeline com contador ("N comentários"), lista de comentários, editor rich-text e ações inline.
+- Fora do escopo: reações/emoji, edição colaborativa em tempo real, comentários encadeados (threading em N níveis) — HubSpot também é flat.
 
-### 2. Validação e formatação
-- `isCNPJ(v)`, `formatCNPJ(digits)` e `stripCNPJ(v)` em `src/lib/validators.ts`.
-- Validação inclui dígitos verificadores oficiais (mod 11).
+## Banco de dados
 
-### 3. UI — Exibição e edição
-- **PropertiesPanel** em `src/routes/_authenticated/companies.$id.tsx`: adicionar `{ key: "cnpj", label: "CNPJ", primary: true }`.
-- Suportar novo tipo `cnpj` em `src/components/properties-panel.tsx` (máscara ao digitar + validação inline + botão "Enriquecer via CNPJ").
-- Adicionar campo CNPJ no diálogo de criação de empresa (Quick Create + qualquer form similar).
-- Coluna opcional CNPJ na lista `/companies` via editor de colunas.
+Nova tabela `public.activity_comments`:
+- `id uuid PK`
+- `activity_id uuid` → `activities(id) ON DELETE CASCADE`
+- `workspace_id uuid` (denormalizado da activity para RLS eficiente)
+- `author_id uuid` (default `auth.uid()`)
+- `body text` (HTML rich-text)
+- `mentions uuid[]` (extraídas via `extractMentionIds`)
+- `created_at`, `updated_at`, `deleted_at` (soft delete)
 
-### 4. Catálogo de campos (Workflows / Filtros)
-- Adicionar `cnpj: "CNPJ"` no mapa `LABELS` de `src/lib/entity-fields.functions.ts`.
+Índices: `(activity_id, created_at)`, `(workspace_id)`.
 
-### 5. Enriquecimento automático via API pública (BrasilAPI)
-- Nova server function `enrichCompanyByCNPJ` em `src/lib/integrations/cnpj-enrichment.functions.ts`:
-  - Input: `{ companyId }` ou `{ cnpj }`.
-  - Middleware: `requireSupabaseAuth`.
-  - Consulta `https://brasilapi.com.br/api/cnpj/v1/{cnpj}` (pública, sem chave, com fallback para `receitaws.com.br` em caso de 5xx/timeout).
-  - Rate limit local: 3 req/s por owner via bucket em memória (best-effort) + respeitar `Retry-After` em 429.
-  - Sanitização: mapear resposta para colunas de `companies` (nome fantasia → `name` se vazio, `razao_social` → `description`, `logradouro/numero/complemento` → `address`, `municipio` → `city`, `uf` → `state`, `cep` → `cep`, `ddd_telefone_1` → `phone`, `cnae_fiscal_descricao` → `industry`).
-  - Modo `fill_empty` (default) preserva campos já preenchidos pelo usuário; modo `overwrite` opcional via parâmetro.
-  - Atualiza `cnpj_enriched_at`.
-  - Persiste um item em `enrichment_jobs` + `enrichment_job_items` para aparecer no histórico em `/settings/enrichment` (reuso do padrão existente com `provider: "brasilapi"`).
-- **Trigger automático**: após criar/editar empresa com CNPJ válido e `cnpj_enriched_at IS NULL`, o cliente chama a server function em background (fire-and-forget com toast de sucesso/erro).
-- Ação manual "Enriquecer via CNPJ" no PropertiesPanel força re-consulta (respeita cooldown de 24h salvo `?force=true`).
+RLS (espelha padrão de `activities`):
+- `SELECT`: `workspace_id IN current_user_workspaces()` (lê quem lê a atividade).
+- `INSERT`: mesma condição + `author_id = auth.uid()`.
+- `UPDATE`/`DELETE`: apenas `author_id = auth.uid()` ou permissão `techsales.activities.update.workspace` (admins).
 
-### 6. Bulk enrichment por CNPJ
-- Nova ação em `src/components/enrichment/bulk-enrich-dialog.tsx` (ou variante): "Enriquecer empresas por CNPJ" — processa em lote as empresas selecionadas que já possuem CNPJ preenchido, reaproveitando `enrichment_jobs`.
+GRANTs: `SELECT, INSERT, UPDATE, DELETE` para `authenticated`; `ALL` para `service_role`.
 
-### 7. Migração dos CNPJs do HubSpot
-- Migration SQL (com `insert` tool após aprovação):
-  - Backfill: `UPDATE companies SET cnpj = regexp_replace(hs_raw->>'cnpj', '[^0-9]', '', 'g') WHERE cnpj IS NULL AND hs_raw ? 'cnpj' AND regexp_replace(hs_raw->>'cnpj', '[^0-9]', '', 'g') ~ '^[0-9]{14}$';`
-  - Também tenta chaves alternativas usadas pelo HubSpot: `cnpj_da_empresa`, `tax_id`, `br_cnpj`, `documento`.
-  - Empresas com dígitos inválidos vão para log auditável em `hs_raw->'_cnpj_import_error'` (não bloqueia migração).
-- Ajustar `src/lib/integrations/hubspot-sync.server.ts` (e/ou o mapper equivalente) para incluir `cnpj` no mapeamento bidirecional:
-  - Import HubSpot → CRM: escreve `companies.cnpj` normalizado.
-  - Push CRM → HubSpot: envia como propriedade `cnpj` (mesma chave usada pelo cliente no HubSpot).
-- Documentar no `docs/visibility-matrix.md` ou changelog interno.
+Trigger `updated_at` padrão.
 
-### 8. Tipagem
-- `Database` regenera após a migration; `Company` cobre `cnpj` e `cnpj_enriched_at` automaticamente via `src/lib/db-types.ts`.
+## Backend
 
-## Fora do escopo
-- Adicionar CNPJ em Contato ou Lead.
-- Consulta de sócios / QSA (BrasilAPI retorna, mas não vamos persistir em novo schema neste ciclo).
-- Enriquecimento pago (Apollo/Lusha) sobre CNPJ — mantém enriquecimento existente para leads/contatos.
+Nenhum server function novo obrigatório — comentários são inseridos via cliente Supabase (mesmo padrão da criação de nota em `activity-timeline.tsx:1150`).
 
-## Validação final
-1. Criar empresa com CNPJ válido → dados fiscais preenchidos automaticamente (fill_empty).
-2. Criar empresa com CNPJ inválido → erro inline; nenhuma chamada de enriquecimento disparada.
-3. Duplicidade de CNPJ no mesmo workspace → bloqueada pelo índice único.
-4. Empresa vinda do HubSpot com CNPJ em `hs_raw` → aparece populada após migration.
-5. Job de enriquecimento aparece em `/settings/enrichment` com `provider: brasilapi`.
-6. Botão "Enriquecer via CNPJ" no detalhe da empresa força atualização respeitando cooldown.
-7. Filtro/workflow por "CNPJ" com rótulo em português.
+Estender `src/lib/notifications.functions.ts`:
+- Novo helper `notifyActivityCommentEvent({ commentId })` que:
+  - Lê o comentário + activity + related entity.
+  - Notifica os `mentions` do comentário (categoria `mention`, template já existente).
+  - Notifica o `owner_id` da activity (se ≠ autor do comentário) — categoria nova ou reutilizar `mention` com contexto "comentou na sua atividade".
+
+## Frontend
+
+Novo componente `src/components/timeline/activity-comments.tsx`:
+- Props: `activityId`, `workspaceId`.
+- Busca comentários via `supabase.from('activity_comments').select(..., author:profiles(...)).eq('activity_id', ...)`.
+- Realtime opcional (`postgres_changes` na tabela filtrando `activity_id`) — pode ficar como polling/invalidation em v1 e adicionar realtime numa fase 2.
+- Renderiza:
+  - Cabeçalho colapsável: "💬 N comentários".
+  - Lista de comentários (avatar, nome, timestamp relativo, corpo HTML sanitizado).
+  - Editor `RichHtmlEditor` (já suporta @mentions) com botão "Comentar".
+  - Menu por comentário (autor apenas): Editar / Excluir.
+
+Integrar em `src/components/activity-timeline.tsx`:
+- Renderizar `<ActivityComments />` no rodapé de cada item da timeline (dentro do wrapper compartilhado — identificar o wrapper por tipo).
+- Cuidar dos casos especiais (email já tem `EmailTimelineItem` — inserir logo abaixo do corpo).
+
+## Segurança e privacidade
+
+- RLS espelhando padrão da tabela `activities` (workspace-scoped).
+- Autor pode editar/excluir apenas os próprios comentários.
+- Sanitização do HTML no render (reutilizar `DOMPurify` já usado no editor).
+- Sem exposição de dados sensíveis em logs.
+
+## UX/UI
+
+- Segue design system: `Card` inline compacto, avatar+nome+timestamp, corpo com tipografia consistente.
+- Estados: loading skeleton, empty (esconde seção se 0 comentários e usuário não está compondo), erro com retry.
+- Dark mode e responsividade.
+- Foco visível no editor, aria-labels nos botões de ação.
+- Timestamp relativo (`há 2h`) com tooltip do timestamp absoluto.
+
+## Como validar manualmente
+
+1. Abrir um deal/contato/empresa com atividades.
+2. Em qualquer item (nota, reunião, e-mail): clicar em "Comentar" → digitar `@` → mencionar alguém → publicar.
+3. Verificar contador incrementa e comentário aparece com autor correto.
+4. Editar o próprio comentário (menu ⋯ → Editar) → salvar.
+5. Excluir o próprio comentário → some da lista.
+6. Como outro usuário: não deve conseguir editar/excluir comentário alheio (botões escondidos e RLS bloqueia via API).
+7. Usuário mencionado recebe notificação in-app.
+
+## Fases
+
+1. Migration + RLS + GRANTs.
+2. Componente `ActivityComments` + integração na timeline.
+3. Notificações de menção/comentário.
+4. (Opcional) Realtime via `postgres_changes`.
