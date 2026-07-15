@@ -340,7 +340,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             <Input
               autoFocus
               type={
-                p.type === "cep"
+                p.type === "cep" || p.type === "cnpj"
                   ? "text"
                   : p.type === "currency"
                     ? "number"
@@ -348,10 +348,22 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       ? "datetime-local"
                       : (p.type ?? "text")
               }
-              inputMode={p.type === "tel" ? "tel" : p.type === "cep" ? "numeric" : undefined}
-              maxLength={p.type === "cep" ? 9 : undefined}
+              inputMode={
+                p.type === "tel"
+                  ? "tel"
+                  : p.type === "cep" || p.type === "cnpj"
+                    ? "numeric"
+                    : undefined
+              }
+              maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
               placeholder={
-                p.type === "cep" ? "99999-999" : p.type === "tel" ? "(11) 99999-8888" : undefined
+                p.type === "cep"
+                  ? "99999-999"
+                  : p.type === "cnpj"
+                    ? "00.000.000/0000-00"
+                    : p.type === "tel"
+                      ? "(11) 99999-8888"
+                      : undefined
               }
               value={value}
               onChange={(e) =>
@@ -362,7 +374,9 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                       ? sanitizeEmailInput(e.target.value)
                       : p.type === "cep"
                         ? formatCep(e.target.value)
-                        : e.target.value,
+                        : p.type === "cnpj"
+                          ? formatCnpjInput(e.target.value)
+                          : e.target.value,
                 )
               }
               onKeyDown={(e) => e.key === "Enter" && save(p.key)}
