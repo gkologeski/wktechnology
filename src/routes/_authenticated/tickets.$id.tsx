@@ -44,6 +44,8 @@ function TicketDetail() {
   );
   const currentStageValue = useMemo(() => {
     if (!ticket || !pipeline) return "";
+    if (ticket.stage && pipeline.stages.some((s) => s.value === ticket.stage)) return ticket.stage;
+    // Compat: fallback ao stage HubSpot legado ou status para pipelines antigos.
     const hs = (ticket.external_ids as { hs_pipeline_stage?: string } | null | undefined)
       ?.hs_pipeline_stage;
     if (hs && pipeline.stages.some((s) => s.value === String(hs))) return String(hs);
@@ -67,14 +69,19 @@ function TicketDetail() {
     if (!pipeline) return;
     const stage = pipeline.stages.find((s) => s.value === v);
     if (!stage) return;
-    const nextStatus: TicketStatus =
-      stage.type === "won" ? "closed" : stage.type === "lost" ? "closed" : "open";
+    const VALID: TicketStatus[] = ["new", "open", "waiting", "resolved", "closed"];
+    const isBuiltInStatus = (VALID as string[]).includes(v);
+    const nextStatus: TicketStatus = isBuiltInStatus
+      ? (v as TicketStatus)
+      : stage.type === "won" || stage.type === "lost"
+        ? "closed"
+        : "open";
     const patch: Record<string, unknown> = {
+      stage: v,
       status: nextStatus,
       pipeline_id: pipeline.id,
-      external_ids: { ...(ticket.external_ids ?? {}), hs_pipeline_stage: v },
     };
-    if (nextStatus === "closed") {
+    if (nextStatus === "resolved" || nextStatus === "closed") {
       patch.resolved_at = ticket.resolved_at ?? new Date().toISOString();
     } else {
       patch.resolved_at = null;

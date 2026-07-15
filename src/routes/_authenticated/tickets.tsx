@@ -239,6 +239,7 @@ function TicketsIndex() {
       assignee_id: draft.assignee_id || user.id,
       due_at: draft.due_at || null,
       pipeline_id: pipeline?.id ?? null,
+      stage: editing?.stage ?? draft.status ?? "new",
       resolved_at:
         (draft.status ?? "new") === "resolved" || (draft.status ?? "new") === "closed"
           ? (editing?.resolved_at ?? new Date().toISOString())

@@ -248,8 +248,9 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
     // canônica em pipelines.stages e usamos como opções do campo `stage` (e `stage_id`),
     // ignorando os valores distintos crus da coluna (que podem incluir lixo legado).
     let pipelineStageOptions: { value: string; label: string }[] | null = null;
-    if (data.entity === "deals" || data.entity === "leads") {
-      const pipelineEntity = data.entity === "deals" ? "deal" : "lead";
+    if (data.entity === "deals" || data.entity === "leads" || data.entity === "tickets") {
+      const pipelineEntity =
+        data.entity === "deals" ? "deal" : data.entity === "leads" ? "lead" : "ticket";
       const { data: pls } = await supabase
         .from("pipelines")
         .select("name, stages, entity")
