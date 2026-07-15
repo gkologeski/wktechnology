@@ -2246,6 +2246,11 @@ export function ActivityTimeline({
                     );
                   })()}
 
+                  <ActivityComments
+                    activityId={a.id}
+                    workspaceId={(a as unknown as { workspace_id?: string }).workspace_id ?? currentWorkspaceId}
+                    team={team}
+                  />
                 </div>
               </li>
             );
