@@ -1,75 +1,66 @@
-## Análise atual
-
-**Tabela `tickets` hoje:**
-- `pipeline_id uuid NULL` — já existe mas sem obrigatoriedade nem default.
-- **Não** existe coluna `stage`. A etapa do funil hoje está armazenada em `external_ids.hs_pipeline_stage` (JSONB, legado HubSpot), com fallback no enum `status`.
-- 345 tickets ativos: 1 sem pipeline, 343 com etapa em `external_ids`.
-
-**Comparativo com `deals`:**
-- `deals.stage text NOT NULL default 'new'` + `deals.stage_id uuid NULL` + `deals.pipeline_id uuid NULL`.
-- Kanban e detalhe leem/escrevem em `stage` diretamente.
-
-**Problema:** tickets simulam etapa via JSONB, o que dificulta filtros, workflows, relatórios, RLS e a UI (o builder de workflow não expõe "Etapa do ticket" porque a coluna não existe).
-
----
-
 ## Objetivo
+Adicionar o campo **CNPJ** à entidade Empresa (`companies`), com validação, formatação, exposição em UI, enriquecimento automático via API pública e backfill dos CNPJs já presentes no HubSpot.
 
-Elevar pipeline + etapa a cidadãos de primeira classe em `tickets`, com paridade de comportamento em relação a `deals`.
+## Escopo
 
----
+### 1. Banco de dados (migration)
+- Adicionar coluna `cnpj text` em `public.companies` (nullable).
+- Constraint `CHECK (cnpj IS NULL OR cnpj ~ '^[0-9]{14}$')` — armazenar somente dígitos.
+- Índice único parcial por workspace: `UNIQUE (owner_id, cnpj) WHERE cnpj IS NOT NULL AND deleted_at IS NULL`.
+- Adicionar `cnpj_enriched_at timestamptz NULL` para controlar quando o registro foi enriquecido pela última vez (evitar re-consultas).
 
-## Mudanças
+### 2. Validação e formatação
+- `isCNPJ(v)`, `formatCNPJ(digits)` e `stripCNPJ(v)` em `src/lib/validators.ts`.
+- Validação inclui dígitos verificadores oficiais (mod 11).
 
-### 1. Migration (`supabase--migration`)
-- `ALTER TABLE public.tickets ADD COLUMN stage text;`
-- Backfill: `stage = COALESCE(external_ids->>'hs_pipeline_stage', status::text)` para todos os tickets.
-- Garantir pipeline padrão: nos tickets com `pipeline_id IS NULL`, atribuir o pipeline "Pipeline de Tickets" (id `1cd9a035-…`) — atualmente apenas 1 registro.
-- `ALTER TABLE public.tickets ALTER COLUMN pipeline_id SET NOT NULL;`
-- `ALTER TABLE public.tickets ALTER COLUMN pipeline_id SET DEFAULT '1cd9a035-b1aa-4b19-b2bb-7ce9e9f263df';` (pipeline default de tickets).
-- Índice: `CREATE INDEX IF NOT EXISTS idx_tickets_pipeline_stage ON public.tickets(pipeline_id, stage) WHERE deleted_at IS NULL;`
-- Não remover `external_ids.hs_pipeline_stage` (mantém compatibilidade com sync HubSpot); apenas deixa de ser fonte de verdade.
-- Sem alteração de RLS/policies/GRANTs — coluna herda as políticas existentes.
+### 3. UI — Exibição e edição
+- **PropertiesPanel** em `src/routes/_authenticated/companies.$id.tsx`: adicionar `{ key: "cnpj", label: "CNPJ", primary: true }`.
+- Suportar novo tipo `cnpj` em `src/components/properties-panel.tsx` (máscara ao digitar + validação inline + botão "Enriquecer via CNPJ").
+- Adicionar campo CNPJ no diálogo de criação de empresa (Quick Create + qualquer form similar).
+- Coluna opcional CNPJ na lista `/companies` via editor de colunas.
 
-### 2. Leitura de etapa (`src/routes/_authenticated/tickets.$id.tsx`, `src/components/tickets/tickets-board.tsx`, `src/components/tickets/ticket-card.tsx`, `src/components/tickets/tickets-split-view.tsx`, `src/components/tickets/tickets-sidebar.tsx`)
-- Substituir a lógica `external_ids.hs_pipeline_stage → status → primeira etapa` por leitura direta de `ticket.stage`, com fallback apenas para tickets legados sem backfill (defensivo).
-- `StageTracker` no detalhe passa a receber `ticket.stage` diretamente.
+### 4. Catálogo de campos (Workflows / Filtros)
+- Adicionar `cnpj: "CNPJ"` no mapa `LABELS` de `src/lib/entity-fields.functions.ts`.
 
-### 3. Escrita de etapa
-- **Board (`tickets-board.tsx` `handleDragEnd`)** e **detalhe (`tickets.$id.tsx` `handleStageChange`)**: gravar `stage` (coluna real) além de sincronizar `status` (open/closed conforme `stage.type`) e manter `external_ids.hs_pipeline_stage` em espelho para HubSpot.
-- **Criação de ticket** (dialog "Novo chamado" em `src/routes/_authenticated/tickets.tsx` — form já grava `pipeline_id`): incluir `stage` inicial = primeira etapa do pipeline selecionado.
-- **Bulk edit** e **workflow engine (`create_ticket`, `set_field`)**: nada muda em código; a coluna passa a ser um campo comum, e o builder já ganhará "Etapa" automaticamente via `getEntityFieldCatalog` (nomeação abaixo).
+### 5. Enriquecimento automático via API pública (BrasilAPI)
+- Nova server function `enrichCompanyByCNPJ` em `src/lib/integrations/cnpj-enrichment.functions.ts`:
+  - Input: `{ companyId }` ou `{ cnpj }`.
+  - Middleware: `requireSupabaseAuth`.
+  - Consulta `https://brasilapi.com.br/api/cnpj/v1/{cnpj}` (pública, sem chave, com fallback para `receitaws.com.br` em caso de 5xx/timeout).
+  - Rate limit local: 3 req/s por owner via bucket em memória (best-effort) + respeitar `Retry-After` em 429.
+  - Sanitização: mapear resposta para colunas de `companies` (nome fantasia → `name` se vazio, `razao_social` → `description`, `logradouro/numero/complemento` → `address`, `municipio` → `city`, `uf` → `state`, `cep` → `cep`, `ddd_telefone_1` → `phone`, `cnae_fiscal_descricao` → `industry`).
+  - Modo `fill_empty` (default) preserva campos já preenchidos pelo usuário; modo `overwrite` opcional via parâmetro.
+  - Atualiza `cnpj_enriched_at`.
+  - Persiste um item em `enrichment_jobs` + `enrichment_job_items` para aparecer no histórico em `/settings/enrichment` (reuso do padrão existente com `provider: "brasilapi"`).
+- **Trigger automático**: após criar/editar empresa com CNPJ válido e `cnpj_enriched_at IS NULL`, o cliente chama a server function em background (fire-and-forget com toast de sucesso/erro).
+- Ação manual "Enriquecer via CNPJ" no PropertiesPanel força re-consulta (respeita cooldown de 24h salvo `?force=true`).
 
-### 4. Builder de Workflows
-- `src/lib/entity-fields.functions.ts`: adicionar rótulo `stage: "Etapa"` (já existe rótulo `stage_id: "Etapa (ID)"`) — o catálogo `pipelineStageOptions` só é montado hoje para `deals` e `leads`; estender para `tickets`, filtrando `pipelines.entity = 'ticket'` para popular as opções do select de "Etapa" com todos os pipelines de ticket.
-- `src/components/workflows/workflow-builder.tsx` (ação `create_ticket`): expor campo **Etapa** dependente do Pipeline selecionado (mesmo padrão de `create_deal`) — quando pipeline definido, listar `stages` desse pipeline; caso contrário, mostrar select combinado como no filtro.
-- Filtros em `trigger` continuam funcionando pois `stage` passa a ser coluna real.
+### 6. Bulk enrichment por CNPJ
+- Nova ação em `src/components/enrichment/bulk-enrich-dialog.tsx` (ou variante): "Enriquecer empresas por CNPJ" — processa em lote as empresas selecionadas que já possuem CNPJ preenchido, reaproveitando `enrichment_jobs`.
 
-### 5. UI Kanban
-- Confirmar que `tickets-board.tsx` já monta as colunas a partir de `pipeline.stages` — mantido; apenas a chave de agrupamento passa a ser `t.stage`.
-- Sem redesign visual.
+### 7. Migração dos CNPJs do HubSpot
+- Migration SQL (com `insert` tool após aprovação):
+  - Backfill: `UPDATE companies SET cnpj = regexp_replace(hs_raw->>'cnpj', '[^0-9]', '', 'g') WHERE cnpj IS NULL AND hs_raw ? 'cnpj' AND regexp_replace(hs_raw->>'cnpj', '[^0-9]', '', 'g') ~ '^[0-9]{14}$';`
+  - Também tenta chaves alternativas usadas pelo HubSpot: `cnpj_da_empresa`, `tax_id`, `br_cnpj`, `documento`.
+  - Empresas com dígitos inválidos vão para log auditável em `hs_raw->'_cnpj_import_error'` (não bloqueia migração).
+- Ajustar `src/lib/integrations/hubspot-sync.server.ts` (e/ou o mapper equivalente) para incluir `cnpj` no mapeamento bidirecional:
+  - Import HubSpot → CRM: escreve `companies.cnpj` normalizado.
+  - Push CRM → HubSpot: envia como propriedade `cnpj` (mesma chave usada pelo cliente no HubSpot).
+- Documentar no `docs/visibility-matrix.md` ou changelog interno.
 
----
+### 8. Tipagem
+- `Database` regenera após a migration; `Company` cobre `cnpj` e `cnpj_enriched_at` automaticamente via `src/lib/db-types.ts`.
 
-## Escopo fora
-- Não alterar RLS/GRANTs, autenticação ou lógica de sync HubSpot.
-- Não remover `external_ids.hs_pipeline_stage` (backwards compat).
-- Não mexer no engine de workflows (`engine.server.ts`) — coluna real já é suportada por `set_field`/filters genéricos.
-- Não alterar o enum `ticket_status`.
+## Fora do escopo
+- Adicionar CNPJ em Contato ou Lead.
+- Consulta de sócios / QSA (BrasilAPI retorna, mas não vamos persistir em novo schema neste ciclo).
+- Enriquecimento pago (Apollo/Lusha) sobre CNPJ — mantém enriquecimento existente para leads/contatos.
 
----
-
-## Validação
-- `supabase--read_query`: conferir que `stage` foi populado em 100% dos tickets e nenhum `pipeline_id IS NULL`.
-- Abrir `/tickets`: kanban por pipeline mostra os cards nas colunas corretas (paridade com HubSpot).
-- Arrastar um card no board → recarregar → etapa persiste no banco em `tickets.stage`.
-- Alterar etapa no detalhe do ticket → mesmo comportamento.
-- Criar ticket via botão "Novo chamado" → registro nasce em `pipeline_id` + `stage` iniciais.
-- Workflow builder → ação "Criar ticket" mostra select **Etapa** com as etapas do pipeline escolhido.
-- Workflow builder → gatilho "Ticket atualizado" com filtro `stage = X` continua disparando.
-
----
-
-## Riscos
-- Backfill errado em tickets com `status` não presente no `stages` do pipeline associado → mitigação: se `stage` resultante não pertencer ao pipeline, cair para a primeira etapa do pipeline no backfill.
-- HubSpot sync bidirecional que só grava `external_ids.hs_pipeline_stage`: o mirror escrita na UI mantém compatibilidade; sync inbound (`hs_raw` → tickets) precisa espelhar em `stage` também — incluir esse ponto num item de backlog se ainda não estiver coberto (verificar `hubspot-sync-state`/edge de importação antes de finalizar a implementação).
+## Validação final
+1. Criar empresa com CNPJ válido → dados fiscais preenchidos automaticamente (fill_empty).
+2. Criar empresa com CNPJ inválido → erro inline; nenhuma chamada de enriquecimento disparada.
+3. Duplicidade de CNPJ no mesmo workspace → bloqueada pelo índice único.
+4. Empresa vinda do HubSpot com CNPJ em `hs_raw` → aparece populada após migration.
+5. Job de enriquecimento aparece em `/settings/enrichment` com `provider: brasilapi`.
+6. Botão "Enriquecer via CNPJ" no detalhe da empresa força atualização respeitando cooldown.
+7. Filtro/workflow por "CNPJ" com rótulo em português.
