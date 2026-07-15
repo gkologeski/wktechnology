@@ -134,8 +134,7 @@ export function QuickCreateCompanyDialog({
               value={cnpj}
               onChange={(e) => {
                 const d = e.target.value.replace(/\D/g, "").slice(0, 14);
-                setCnpj(formatCNPJ(d.padEnd(14, "0")).slice(0, d.length + Math.floor(d.length / 2)));
-                setCnpj(
+                const masked =
                   d.length === 14
                     ? formatCNPJ(d)
                     : d.length > 12
@@ -146,8 +145,8 @@ export function QuickCreateCompanyDialog({
                           ? `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`
                           : d.length > 2
                             ? `${d.slice(0, 2)}.${d.slice(2)}`
-                            : d,
-                );
+                            : d;
+                setCnpj(masked);
               }}
             />
           </div>
