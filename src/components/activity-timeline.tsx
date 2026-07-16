@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo, type ReactNode } from "react";
+import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -942,6 +943,12 @@ export function ActivityTimeline({
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
+
+  // Re-sincroniza silenciosamente quando a janela volta a focar ou um modal fecha
+  useRefreshCallback(() => {
+    void load({ silent: true });
+  });
+
 
   // Recarrega quando uma associação é criada/removida em outro componente
   useEffect(() => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -637,6 +638,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
+  useRefreshCallback(refresh);
 
   useEffect(() => {
     (async () => {
@@ -908,6 +910,7 @@ function DealsCard({
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
+  useRefreshCallback(refresh);
   const { pipelines } = usePipelines("deal");
 
   useEffect(() => {
@@ -1147,6 +1150,7 @@ function TicketsCard({
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
+  useRefreshCallback(refresh);
   const { pipelines } = usePipelines("ticket");
 
   useEffect(() => {
