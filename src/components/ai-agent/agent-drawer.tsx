@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, type UIMessage } from "ai";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Send, Sparkles, X, Check, XCircle, Loader2 } from "lucide-react";
+import { Send, Sparkles, Check, XCircle, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,10 +9,13 @@ import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   agentCreateContact,
   agentCreateCompany,
   agentCreateLead,
+  agentUpdateContact,
+  agentUpdateLead,
   agentCreateDeal,
   agentCreateTicket,
   agentCreateActivity,
@@ -24,6 +27,8 @@ const PROPOSAL_TO_FN: Record<string, (args: { data: unknown }) => Promise<{ summ
   proposeCreateContact: (a) => agentCreateContact(a as never),
   proposeCreateCompany: (a) => agentCreateCompany(a as never),
   proposeCreateLead: (a) => agentCreateLead(a as never),
+  proposeUpdateContact: (a) => agentUpdateContact(a as never),
+  proposeUpdateLead: (a) => agentUpdateLead(a as never),
   proposeCreateDeal: (a) => agentCreateDeal(a as never),
   proposeCreateTicket: (a) => agentCreateTicket(a as never),
   proposeCreateActivity: (a) => agentCreateActivity(a as never),
@@ -35,6 +40,8 @@ const PROPOSAL_LABELS: Record<string, string> = {
   proposeCreateContact: "Criar contato",
   proposeCreateCompany: "Criar empresa",
   proposeCreateLead: "Criar lead",
+  proposeUpdateContact: "Atualizar contato",
+  proposeUpdateLead: "Atualizar lead",
   proposeCreateDeal: "Criar negócio",
   proposeCreateTicket: "Criar chamado",
   proposeCreateActivity: "Registrar atividade",
@@ -49,8 +56,24 @@ function ProposalCard({
   toolName: string;
   payload: Record<string, unknown>;
 }) {
-  const [state, setState] = useState<"pending" | "approving" | "done" | "rejected">("pending");
-  const [result, setResult] = useState<{ summary: string; url?: string } | null>(null);
+  const queryClient = useQueryClient();
+  const approvalKey = useMemo(
+    () => `ai-agent:proposal:${toolName}:${JSON.stringify(payload, Object.keys(payload).sort())}`,
+    [payload, toolName],
+  );
+  const [result, setResult] = useState<{ summary: string; url?: string } | null>(() => {
+    const raw = typeof window !== "undefined" ? window.localStorage.getItem(approvalKey) : null;
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as { summary: string; url?: string };
+    } catch {
+      return null;
+    }
+  });
+  const [state, setState] = useState<"pending" | "approving" | "done" | "rejected">(() =>
+    result ? "done" : "pending",
+  );
+  const isUpdate = toolName.toLowerCase().includes("update");
 
   const handleApprove = async () => {
     const fn = PROPOSAL_TO_FN[toolName];
@@ -60,6 +83,8 @@ function ProposalCard({
       const res = await fn({ data: payload });
       setResult(res);
       setState("done");
+      window.localStorage.setItem(approvalKey, JSON.stringify(res));
+      await queryClient.invalidateQueries();
       toast.success(res.summary);
     } catch (e) {
       setState("pending");
@@ -93,7 +118,7 @@ function ProposalCard({
       {state === "pending" && (
         <div className="mt-3 flex gap-2">
           <Button size="sm" onClick={handleApprove}>
-            <Check className="mr-1 h-3.5 w-3.5" /> Aprovar e criar
+            <Check className="mr-1 h-3.5 w-3.5" /> Aprovar e {isUpdate ? "atualizar" : "criar"}
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setState("rejected")}>
             <XCircle className="mr-1 h-3.5 w-3.5" /> Rejeitar
@@ -102,7 +127,7 @@ function ProposalCard({
       )}
       {state === "approving" && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Criando...
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> {isUpdate ? "Atualizando..." : "Criando..."}
         </div>
       )}
       {state === "done" && result?.url && (
@@ -118,12 +143,22 @@ function ProposalCard({
 }
 
 export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+  const { user } = useAuth();
   const [input, setInput] = useState("");
+  const [chatId, setChatId] = useState(() =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}`,
+  );
+  const [initialMessages, setInitialMessages] = useState<UIMessage[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: "/api/agent/chat",
+        body: () => ({
+          sessionId: chatId,
+          pagePath: window.location.pathname,
+        }),
         headers: async () => {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
@@ -132,12 +167,71 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
           return headers;
         },
       }),
-    [],
+    [chatId],
   );
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, setMessages } = useChat({
+    id: chatId,
+    messages: initialMessages,
     transport,
     onError: (e) => toast.error(e.message),
   });
+
+  useEffect(() => {
+    if (!open || !user) return;
+    let cancelled = false;
+    async function loadHistory() {
+      setHistoryLoaded(false);
+      const storedId = window.localStorage.getItem("ai-agent:active-session-id");
+      let sessionId = storedId;
+
+      if (!sessionId) {
+        const { data: latest } = await supabase
+          .from("copilot_sessions")
+          .select("id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        sessionId = latest?.id ?? chatId;
+      }
+
+      const validSessionId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        sessionId,
+      )
+        ? sessionId
+        : crypto.randomUUID();
+
+      const { data: rows } = await supabase
+        .from("copilot_messages")
+        .select("id, role, parts")
+        .eq("session_id", validSessionId)
+        .order("created_at", { ascending: true });
+
+      if (cancelled) return;
+
+      const loaded = (rows ?? [])
+        .filter((row) => row.role === "user" || row.role === "assistant" || row.role === "system")
+        .map((row) => ({
+          id: row.id,
+          role: row.role as UIMessage["role"],
+          parts: Array.isArray(row.parts) ? (row.parts as UIMessage["parts"]) : [],
+        }));
+
+      window.localStorage.setItem("ai-agent:active-session-id", validSessionId);
+      setChatId(validSessionId);
+      setInitialMessages(loaded);
+      setMessages(loaded);
+      setHistoryLoaded(true);
+    }
+
+    loadHistory().catch(() => {
+      if (!cancelled) setHistoryLoaded(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chatId, open, setMessages, user]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -161,11 +255,16 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
           </SheetTitle>
         </SheetHeader>
         <div ref={scrollRef} className="flex-1 space-y-4 overflow-y-auto p-4">
-          {messages.length === 0 && (
+          {!historyLoaded && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando conversa…
+            </div>
+          )}
+          {historyLoaded && messages.length === 0 && (
             <div className="text-sm text-muted-foreground">
-              Peça para criar contatos, negócios, chamados, tarefas ou reuniões. Ex.:
+              Peça para buscar, atualizar ou criar contatos, leads, negócios, chamados, tarefas ou reuniões. Ex.:
               <div className="mt-2 space-y-1">
-                <div className="text-xs">• "Crie um contato João Silva na Acme"</div>
+                <div className="text-xs">• "Atualize o e-mail do lead Bruno Linter"</div>
                 <div className="text-xs">• "Registre uma tarefa para ligar amanhã ao contato Maria"</div>
                 <div className="text-xs">• "Abra um chamado em FI - Solicitações para criar contrato"</div>
               </div>
@@ -232,7 +331,7 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
               rows={1}
               autoFocus
             />
-            <Button size="icon" onClick={submit} disabled={busy || !input.trim()}>
+            <Button size="icon" onClick={submit} disabled={!historyLoaded || busy || !input.trim()}>
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
