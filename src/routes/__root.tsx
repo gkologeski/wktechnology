@@ -17,6 +17,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { BrandingProvider } from "@/lib/branding";
 import { NewVersionWatcher } from "@/components/new-version-watcher";
 import { installChunkReloadGuard } from "@/lib/chunk-reload";
+import { AgentTrigger } from "@/components/ai-agent/agent-drawer";
 
 if (typeof window !== "undefined") {
   installChunkReloadGuard();
@@ -179,6 +180,7 @@ function RootComponent() {
             <main id="main-content">
               <Outlet />
             </main>
+            <AgentTrigger />
             <Toaster richColors position="top-right" />
           </BrandingProvider>
         </I18nProvider>
