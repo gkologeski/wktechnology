@@ -23,10 +23,12 @@ export function CreateContactDialog({
   open,
   onOpenChange,
   onCreated,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated?: (id: string) => void;
+  onSaved?: (r: { id: string; action: "created" }) => void;
 }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
@@ -83,6 +85,7 @@ export function CreateContactDialog({
       reset();
       onOpenChange(false);
       onCreated?.(data!.id);
+      onSaved?.({ id: data!.id, action: "created" });
     } catch (e) {
       // Supabase PostgrestError não é instanceof Error — extrair message/code/details diretamente.
       const err = e as { message?: string; code?: string; details?: string; hint?: string } | null;

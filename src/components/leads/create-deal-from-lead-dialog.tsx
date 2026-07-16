@@ -33,11 +33,13 @@ export function CreateDealFromLeadDialog({
   onOpenChange,
   lead,
   onCreated,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   lead: Lead;
   onCreated?: (dealId: string) => void;
+  onSaved?: (r: { id: string; action: "created" }) => void;
 }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
@@ -231,6 +233,7 @@ export function CreateDealFromLeadDialog({
         nav({ to: "/deals/$id", params: { id: deal!.id } }),
       );
       onCreated?.(deal!.id);
+      onSaved?.({ id: deal!.id, action: "created" });
       onOpenChange(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao criar negócio");

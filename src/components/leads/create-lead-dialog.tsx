@@ -47,10 +47,12 @@ export function CreateLeadDialog({
   open,
   onOpenChange,
   onCreated,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated?: (id: string) => void;
+  onSaved?: (r: { id: string; action: "created" }) => void;
 }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
@@ -164,6 +166,7 @@ export function CreateLeadDialog({
       reset();
       onOpenChange(false);
       onCreated?.(data!.id);
+      onSaved?.({ id: data!.id, action: "created" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao criar lead");
     } finally {
