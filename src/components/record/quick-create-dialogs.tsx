@@ -45,6 +45,7 @@ export function QuickCreateCompanyDialog({
   open,
   onOpenChange,
   onCreated,
+  onSaved,
   initialName,
 }: BaseProps & { initialName?: string }) {
   const { user } = useAuth();
@@ -88,6 +89,7 @@ export function QuickCreateCompanyDialog({
       setDomain("");
       setCnpj("");
       onCreated?.(data.id);
+      onSaved?.({ id: data.id, action: "created" });
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao criar");
     } finally {
@@ -173,6 +175,7 @@ export function QuickCreateDealDialog({
   open,
   onOpenChange,
   onCreated,
+  onSaved,
   defaultCompanyId,
   defaultContactId,
 }: BaseProps & { defaultCompanyId?: string | null; defaultContactId?: string | null }) {
@@ -279,6 +282,7 @@ export function QuickCreateDealDialog({
       );
       onOpenChange(false);
       onCreated?.(dealId);
+      onSaved?.({ id: dealId, action: "created" });
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao criar");
     } finally {
@@ -458,6 +462,7 @@ export function QuickCreateTicketDialog({
   open,
   onOpenChange,
   onCreated,
+  onSaved,
   defaultCompanyId,
   defaultContactId,
   defaultDealId,
@@ -499,6 +504,7 @@ export function QuickCreateTicketDialog({
       setSubject("");
       setPriority("medium");
       onCreated?.(data.id);
+      onSaved?.({ id: data.id, action: "created" });
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao criar");
     } finally {
@@ -561,6 +567,7 @@ export function QuickCreateTaskDialog({
   open,
   onOpenChange,
   onCreated,
+  onSaved,
   defaultContactId,
   defaultCompanyId,
   defaultDealId,
@@ -610,6 +617,7 @@ export function QuickCreateTaskDialog({
       setPriority("MEDIUM");
       setDueDate("");
       onCreated?.(data.id);
+      onSaved?.({ id: data.id, action: "created" });
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao criar");
     } finally {
