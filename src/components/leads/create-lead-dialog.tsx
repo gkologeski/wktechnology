@@ -166,6 +166,7 @@ export function CreateLeadDialog({
       reset();
       onOpenChange(false);
       onCreated?.(data!.id);
+      onSaved?.({ id: data!.id, action: "created" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao criar lead");
     } finally {
