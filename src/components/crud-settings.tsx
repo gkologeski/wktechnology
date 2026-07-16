@@ -1,4 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { qk } from "@/lib/entity-queries";
 
 type FieldType = "text" | "textarea" | "json" | "number" | "switch";
 
@@ -37,22 +39,24 @@ export function CrudSettings<T extends { id: string }>({
   defaults?: Record<string, unknown>;
   extraInsert?: Record<string, unknown>;
 }) {
-  const [rows, setRows] = useState<T[]>([]);
+  const qc = useQueryClient();
   const [editing, setEditing] = useState<T | "new" | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>({});
 
-  const load = async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from(table)
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
-    setRows((data as T[]) ?? []);
-  };
-  useEffect(() => {
-    void load(); /* eslint-disable-next-line */
-  }, [table]);
+  const { data: rows = [] } = useQuery<T[]>({
+    queryKey: qk.crudList(table),
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from(table)
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data as T[]) ?? [];
+    },
+  });
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: qk.crudList(table) });
 
   const startNew = () => {
     const init: Record<string, unknown> = { ...(defaults ?? {}) };
@@ -100,7 +104,7 @@ export function CrudSettings<T extends { id: string }>({
     if (error) return toast.error(error.message);
     toast.success("Salvo");
     setEditing(null);
-    void load();
+    void invalidate();
   };
 
   const remove = async (id: string) => {
@@ -108,7 +112,7 @@ export function CrudSettings<T extends { id: string }>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from(table).delete().eq("id", id);
     if (error) return toast.error(error.message);
-    void load();
+    void invalidate();
   };
 
   return (
