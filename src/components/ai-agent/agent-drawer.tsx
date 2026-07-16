@@ -23,7 +23,10 @@ import {
   agentCreateMeeting,
 } from "@/lib/ai-agent/tools.functions";
 
-const PROPOSAL_TO_FN: Record<string, (args: { data: unknown }) => Promise<{ summary: string; url?: string }>> = {
+const PROPOSAL_TO_FN: Record<
+  string,
+  (args: { data: unknown }) => Promise<{ summary: string; url?: string }>
+> = {
   proposeCreateContact: (a) => agentCreateContact(a as never),
   proposeCreateCompany: (a) => agentCreateCompany(a as never),
   proposeCreateLead: (a) => agentCreateLead(a as never),
@@ -95,9 +98,7 @@ function ProposalCard({
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">
-          {PROPOSAL_LABELS[toolName] ?? toolName}
-        </span>
+        <span className="text-sm font-medium">{PROPOSAL_LABELS[toolName] ?? toolName}</span>
         {state === "done" && (
           <span className="text-xs font-medium text-emerald-600">Concluído</span>
         )}
@@ -127,14 +128,12 @@ function ProposalCard({
       )}
       {state === "approving" && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" /> {isUpdate ? "Atualizando..." : "Criando..."}
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />{" "}
+          {isUpdate ? "Atualizando..." : "Criando..."}
         </div>
       )}
       {state === "done" && result?.url && (
-        <a
-          href={result.url}
-          className="mt-2 inline-block text-xs text-primary underline"
-        >
+        <a href={result.url} className="mt-2 inline-block text-xs text-primary underline">
           Abrir registro
         </a>
       )}
@@ -142,7 +141,13 @@ function ProposalCard({
   );
 }
 
-export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
+export function AgentDrawer({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
   const { user } = useAuth();
   const [input, setInput] = useState("");
   const [chatId, setChatId] = useState(() =>
@@ -196,11 +201,10 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
         sessionId = latest?.id ?? chatId;
       }
 
-      const validSessionId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-        sessionId,
-      )
-        ? sessionId
-        : crypto.randomUUID();
+      const validSessionId =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(sessionId)
+          ? sessionId
+          : crypto.randomUUID();
 
       const { data: rows } = await supabase
         .from("copilot_messages")
@@ -263,11 +267,16 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
           )}
           {historyLoaded && messages.length === 0 && (
             <div className="text-sm text-muted-foreground">
-              Peça para buscar, atualizar ou criar contatos, leads, negócios, chamados, tarefas ou reuniões. Ex.:
+              Peça para buscar, atualizar ou criar contatos, leads, negócios, chamados, tarefas ou
+              reuniões. Ex.:
               <div className="mt-2 space-y-1">
                 <div className="text-xs">• "Atualize o e-mail do lead Bruno Linter"</div>
-                <div className="text-xs">• "Registre uma tarefa para ligar amanhã ao contato Maria"</div>
-                <div className="text-xs">• "Abra um chamado em FI - Solicitações para criar contrato"</div>
+                <div className="text-xs">
+                  • "Registre uma tarefa para ligar amanhã ao contato Maria"
+                </div>
+                <div className="text-xs">
+                  • "Abra um chamado em FI - Solicitações para criar contrato"
+                </div>
               </div>
             </div>
           )}
@@ -283,7 +292,10 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
                       {part.text}
                     </div>
                   ) : (
-                    <div key={i} className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert">
+                    <div
+                      key={i}
+                      className="prose prose-sm max-w-none text-sm text-foreground dark:prose-invert"
+                    >
                       <ReactMarkdown>{part.text}</ReactMarkdown>
                     </div>
                   );
@@ -297,7 +309,9 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
                     input?: unknown;
                   };
                   const toolName = p.type.slice("tool-".length);
-                  const output = p.output as { __proposal?: boolean; payload?: Record<string, unknown> } | undefined;
+                  const output = p.output as
+                    | { __proposal?: boolean; payload?: Record<string, unknown> }
+                    | undefined;
                   if (output?.__proposal && output.payload) {
                     return <ProposalCard key={i} toolName={toolName} payload={output.payload} />;
                   }
@@ -312,9 +326,7 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
               })}
             </div>
           ))}
-          {status === "submitted" && (
-            <div className="text-xs text-muted-foreground">Pensando…</div>
-          )}
+          {status === "submitted" && <div className="text-xs text-muted-foreground">Pensando…</div>}
         </div>
         <div className="border-t p-3">
           <div className="flex items-end gap-2">
