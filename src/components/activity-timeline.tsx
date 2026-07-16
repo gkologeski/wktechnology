@@ -944,6 +944,12 @@ export function ActivityTimeline({
     void load(); /* eslint-disable-next-line */
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
 
+  // Re-sincroniza silenciosamente quando a janela volta a focar ou um modal fecha
+  useRefreshCallback(() => {
+    void load({ silent: true });
+  });
+
+
   // Recarrega quando uma associação é criada/removida em outro componente
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | null = null;
