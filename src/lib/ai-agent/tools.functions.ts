@@ -135,6 +135,79 @@ export const agentLookupUser = createServerFn({ method: "POST" })
 // MUTADORAS (chamadas pelo cliente após aprovação humana)
 // ————————————————————————————————————————————————————————
 
+const contactUpdateSchema = z
+  .object({
+    id: z.string().uuid(),
+    first_name: z.string().min(1).max(120).optional(),
+    last_name: z.string().max(120).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().max(40).optional(),
+    company_id: z.string().uuid().optional(),
+    company_name: z.string().max(200).optional(),
+  })
+  .refine(
+    ({ id, ...fields }) => Object.values(fields).some((value) => value !== undefined),
+    "Informe ao menos um campo para atualizar.",
+  );
+
+const leadUpdateSchema = z
+  .object({
+    id: z.string().uuid(),
+    first_name: z.string().min(1).max(120).optional(),
+    last_name: z.string().max(120).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().max(40).optional(),
+    source: z.string().max(80).optional(),
+    company_name: z.string().max(200).optional(),
+    status: z.string().max(80).optional(),
+  })
+  .refine(
+    ({ id, ...fields }) => Object.values(fields).some((value) => value !== undefined),
+    "Informe ao menos um campo para atualizar.",
+  );
+
+function withoutUndefined<T extends Record<string, unknown>>(input: T) {
+  return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
+}
+
+export const agentUpdateContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => contactUpdateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { id, ...fields } = data;
+    const { data: row, error } = await context.supabase
+      .from("contacts")
+      .update(withoutUndefined(fields))
+      .eq("id", id)
+      .select("id, first_name, last_name, email")
+      .single();
+    if (error) throw new Error(error.message);
+    return {
+      id: row.id,
+      url: `/contacts/${row.id}`,
+      summary: `Contato ${[row.first_name, row.last_name].filter(Boolean).join(" ")} atualizado.`,
+    };
+  });
+
+export const agentUpdateLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => leadUpdateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { id, ...fields } = data;
+    const { data: row, error } = await context.supabase
+      .from("leads")
+      .update(withoutUndefined(fields))
+      .eq("id", id)
+      .select("id, first_name, last_name, email")
+      .single();
+    if (error) throw new Error(error.message);
+    return {
+      id: row.id,
+      url: `/leads/${row.id}`,
+      summary: `Lead ${[row.first_name, row.last_name].filter(Boolean).join(" ")} atualizado.`,
+    };
+  });
+
 export const agentCreateContact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
