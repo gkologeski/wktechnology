@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter, Link, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { bindDialogRefreshClient } from "@/lib/dialog-refresh";
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
@@ -56,6 +57,9 @@ export const getRouter = () => {
       },
     },
   });
+
+  bindDialogRefreshClient(queryClient);
+
 
   const router = createRouter({
     routeTree,
