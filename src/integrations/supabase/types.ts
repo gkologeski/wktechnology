@@ -4025,6 +4025,7 @@ export type Database = {
           content: string
           created_at: string
           id: string
+          parts: Json
           role: string
           session_id: string
           sources: Json
@@ -4033,6 +4034,7 @@ export type Database = {
           content: string
           created_at?: string
           id?: string
+          parts?: Json
           role: string
           session_id: string
           sources?: Json
@@ -4041,6 +4043,7 @@ export type Database = {
           content?: string
           created_at?: string
           id?: string
+          parts?: Json
           role?: string
           session_id?: string
           sources?: Json
