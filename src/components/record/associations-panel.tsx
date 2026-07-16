@@ -638,6 +638,7 @@ function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entity
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
+  useRefreshCallback(refresh);
 
   useEffect(() => {
     (async () => {
@@ -909,6 +910,7 @@ function DealsCard({
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
+  useRefreshCallback(refresh);
   const { pipelines } = usePipelines("deal");
 
   useEffect(() => {
@@ -1148,6 +1150,7 @@ function TicketsCard({
   const [createOpen, setCreateOpen] = useState(false);
   const [tick, setTick] = useState(0);
   const refresh = () => setTick((t) => t + 1);
+  useRefreshCallback(refresh);
   const { pipelines } = usePipelines("ticket");
 
   useEffect(() => {
