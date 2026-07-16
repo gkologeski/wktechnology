@@ -1,127 +1,53 @@
-## Objetivo
+# Plano — Corrigir agente de IA (buscas retornam Unauthorized)
 
-Substituir o Copilot atual (Cmd+K) por um **assistente de IA conversacional** com FAB flutuante, capaz de:
-- responder perguntas sobre os dados;
-- **executar ações no CRM** via tool-calling (cadastros, negócios, chamados, atividades, reuniões, tarefas);
-- **fazer perguntas de esclarecimento** quando encontrar ambiguidades, antes de propor a ação;
-- **sempre confirmar** antes de gravar;
-- persistir **uma conversa contínua por usuário**.
+## Diagnóstico
 
-Uso de Lovable AI Gateway com AI SDK (tool calling) e RLS via `requireSupabaseAuth` — cada ação executa como o próprio usuário.
+A conversa mostra dois problemas encadeados:
 
-## Backend
+1. **Falha técnica (raiz):** todas as tools de leitura (`search`, `listPipelines`) retornam `Unauthorized`. Causa: em `src/routes/api/agent/chat.ts`, cada tool chama diretamente `agentSearchEntity({ data })`, `agentListPipelines({ data })` e `agentLookupUser({ data })`. Essas são `createServerFn` com `.middleware([requireSupabaseAuth])`, que lê o header `Authorization` via `getRequest()`. Quando invocadas server-side (dentro do `streamText`), o middleware não recebe o bearer do usuário — o token existe na request do `/api/agent/chat`, mas o wrapper de server-function não repassa esse header ao próprio middleware quando é chamado programaticamente durante o streaming assíncrono. Resultado: `Unauthorized: No authorization header provided` / `Invalid token`.
 
-### 1. Persistência da conversa (migration)
-Reaproveita `copilot_sessions` / `copilot_messages` (uma sessão "default" por `owner_id`).
+2. **Falha comportamental (agravante):** ao receber o erro, o agente propôs "criar tudo do zero sem verificar", violando as regras A/B/C do system prompt (nunca inventar, sempre resolver vínculos antes de propor). Ele deveria ter parado e reportado a falha técnica.
 
-- Adiciona coluna `parts jsonb` em `copilot_messages` para persistir tool calls, tool results e cards de esclarecimento junto do texto.
-- Índice em `copilot_sessions(owner_id, kind='assistant')`.
-- RLS já cobre por `owner_id`.
+## Solução
 
-### 2. Server functions — tools do agente
-Novo `src/lib/ai-agent/tools.functions.ts` com `createServerFn` + `requireSupabaseAuth` (RLS aplica como o usuário):
+### 1. Refatorar tools para não depender do middleware de server-function
 
-**Read-only (executam sem aprovação):**
-- `agentSearchEntity({ kind, query })` — busca por nome/e-mail em contact|company|deal|lead|ticket, retorna até 5 matches com `{ id, label, extra }`. **Base do fluxo de desambiguação.**
-- `agentListPipelines({ kind })` — pipelines/etapas.
-- `agentLookupUser({ query })` — resolve responsável/mencionado por nome.
+Em `src/routes/api/agent/chat.ts`:
 
-**Mutadoras (marcadas `needsApproval: true`):**
-- `agentCreateContact`, `agentCreateCompany` (com enriquecimento CNPJ), `agentCreateLead`
-- `agentCreateDeal`, `agentCreateTicket`
-- `agentCreateActivity` (nota/ligação/e-mail), `agentCreateMeeting`, `agentCreateTask`
-- `agentMergeCompanies({ primary_id, duplicate_id })` — para o caso "mesclar Acme A e Acme B".
+- No próprio handler `POST`, extrair o bearer do `request.headers.get("authorization")` e montar **uma vez** um `supabase` client autenticado (mesmo padrão de `requireSupabaseAuth`) + resolver `userId` via `supabase.auth.getClaims(token)`.
+- Se não houver bearer válido → retornar `401` antes de iniciar o stream (o cliente já envia via `attachSupabaseAuth`).
+- Extrair a lógica das 3 tools de leitura para funções puras em um novo `src/lib/ai-agent/tools-impl.ts` que recebem `(supabase, userId, input)`. As `createServerFn` existentes em `tools.functions.ts` passam a ser apenas wrappers que chamam essas funções puras (mantém compatibilidade se algum lugar as invocar).
+- Cada `tool({ execute })` no route chama a função pura com o `supabase` já autenticado, capturado no closure.
 
-Cada função valida entrada com Zod, reusa helpers existentes (ex.: `enrichCompanyByCNPJ`, criação de meetings) e retorna `{ id, url, summary }`.
+Isso elimina totalmente o caminho `getRequest()` dentro do stream, que é onde o header se perde.
 
-### 3. Rota de chat streaming
-Novo `src/routes/api/agent/chat.ts` autenticada, com AI SDK + Lovable AI Gateway (`openai/gpt-5.5`):
+### 2. Endurecer comportamento em falha
 
-- Provider helper conforme `ai-sdk-lovable-gateway`.
-- Tools declaradas com `tool({ inputSchema, execute, needsApproval })`.
-- `stopWhen: stepCountIs(50)` — o modelo pode alternar entre buscar, perguntar, buscar de novo e só então propor a criação.
-- Histórico carregado da sessão default; persiste user+assistant em `onFinish` via `toUIMessageStreamResponse({ originalMessages, onFinish })`.
+No `AGENT_SYSTEM_PROMPT` (`src/lib/ai-agent/system-prompt.ts`), adicionar regra explícita:
 
-### 4. System prompt — política de esclarecimento
+> Se uma ferramenta de leitura retornar erro, **não** proponha criação às cegas. Informe o usuário do erro em texto, peça para tentar novamente, e só prossiga com criação se o usuário disser explicitamente "crie mesmo assim / considere como novo".
 
-Regras explícitas no prompt (traduz para PT-BR o comportamento do exemplo do usuário):
+### 3. Tratamento de erro nas tools
 
-1. **Sempre** iniciar chamando `agentSearchEntity`/`agentLookupUser`/`agentListPipelines` para resolver todos os vínculos por **nome amigável, nunca por UUID**.
-2. Se uma busca retornar **0 resultados** e o vínculo é opcional → prossegue sem ele. Se é obrigatório → pergunta se deve criar a entidade dependente primeiro (ex.: "Não achei a empresa Acme. Quer que eu crie?").
-3. Se retornar **≥ 2 resultados** para um mesmo vínculo → **NÃO** propor ação ainda; responder em texto com opções enumeradas `a)`, `b)`, `c)` incluindo, quando aplicável, `a) Mesclar` (para empresas/contatos duplicados) e `n) Criar nova`. Aguarda resposta do usuário.
-4. Se campos obrigatórios estiverem faltando (ex.: pipeline para um negócio, entidade-alvo para uma atividade) → perguntar antes de qualquer tool mutadora.
-5. Só depois de tudo resolvido, chamar a tool mutadora, que dispara o **card de aprovação** no cliente.
-6. Sem inventar valores; ao propor defaults (etapa inicial do pipeline, prioridade "média"), deixar explícito no card de aprovação.
+Envolver cada `execute` em `try/catch` e devolver `{ error: string }` estruturado em vez de propagar exceção (o AI SDK propaga como falha do step). Assim o modelo consegue reagir e mostrar erro amigável em vez de alucinar.
 
-Poucos exemplos few-shot no prompt cobrindo: empresa duplicada, contato sem empresa vinculada, atividade sem entidade-alvo, negócio sem pipeline.
+### 4. Validação
 
-## Frontend
+- Abrir o drawer do agente em `/leads` e repetir o pedido de teste ("Existe empresa Caspita?"). Verificar em Network que `/api/agent/chat` retorna 200 e as tools produzem resultados reais (não `Unauthorized`).
+- Confirmar que uma busca sem resultado retorna array vazio (não erro) e o agente pergunta "criar novo?" corretamente.
+- Simular ausência de bearer (deslogar) → route responde 401 antes do stream.
 
-### 5. Substituir o Copilot Cmd+K
-- `src/components/copilot-cmdk.tsx` → substituído por `src/components/ai-agent/agent-drawer.tsx` (Sheet lateral direito, 480px). Cmd+K continua abrindo o mesmo drawer.
-- FAB único (`Sparkles`) no canto inferior direito.
-- AI Elements: `Conversation`, `Message`, `MessageResponse`, `PromptInput`, `Tool`, `Shimmer` (instalar via `bun x ai-elements@latest add ...`).
-- Cliente: `useChat` com `DefaultChatTransport({ api: '/api/agent/chat' })`, renderizando `message.parts`.
+## Detalhes técnicos
 
-### 6. UX de esclarecimento vs. aprovação (dois momentos distintos)
+Arquivos alterados:
+- `src/routes/api/agent/chat.ts` — extrai bearer, monta supabase, chama funções puras, try/catch por tool.
+- `src/lib/ai-agent/tools-impl.ts` (novo) — funções puras `searchEntityImpl`, `listPipelinesImpl`, `lookupUserImpl` recebendo `supabase`.
+- `src/lib/ai-agent/tools.functions.ts` — read-only fns viram wrappers finos; mutadoras permanecem inalteradas (continuam via `useServerFn` no cliente após aprovação, com bearer normal).
+- `src/lib/ai-agent/system-prompt.ts` — nova regra de "não prosseguir em falha".
 
-**a) Esclarecimento (pré-execução):** as opções `a)`, `b)`, `c)` vindas do modelo em texto são renderizadas como **chips clicáveis** logo abaixo da mensagem. Clicar num chip envia automaticamente a resposta correspondente (ex.: "b) Escolher a Acme A") — o usuário também pode digitar livremente. Não há gravação envolvida nesta etapa.
-
-**b) Aprovação (pré-gravação):** para cada tool part mutadora em `input-available`, renderiza `ToolApprovalCard` com resumo dos campos (com nomes resolvidos, não UUIDs) + botões **Aprovar** / **Cancelar** que chamam `addToolResult({ approved: true|false })`. Após execução → card verde com link para a entidade; erros → card vermelho.
-
-Read-only tools mostram apenas um chip discreto ("Buscando empresas…" / "Encontrei 2 empresas").
-
-### 7. Estados e UX
-- Empty state com 4 sugestões contextuais.
-- Shimmer "Pensando…" em `submitted`/`streaming`.
-- Input com autofocus após envio, aprovação e clique em chip de esclarecimento.
-- Botão "Nova conversa" limpa `copilot_messages` da sessão default (sem threads).
-- Erros de gateway (429/402) via toast + linha inline.
-
-### 8. Limpeza
-- Remove `<CopilotCmdK />` do root; substitui pelo novo componente.
-- Mantém `copilot.tsx` (Recruiter Copilot ATS) e `chat-trigger.tsx` (mensageiro) intactos.
-
-## Segurança
-
-- Tools rodam via `requireSupabaseAuth` — RLS autoritativa; modelo nunca acessa `service_role`.
-- `LOVABLE_API_KEY` só server-side.
-- Confirmação client-side é UX; autorização real é RLS.
-- Validação Zod estrita; erros voltam estruturados ao modelo, que reformula ou pergunta.
-
-## Arquivos
-
-**Novos**
-- `src/components/ai-agent/agent-drawer.tsx`
-- `src/components/ai-agent/agent-trigger.tsx`
-- `src/components/ai-agent/tool-approval-card.tsx`
-- `src/components/ai-agent/tool-result-card.tsx`
-- `src/components/ai-agent/clarification-chips.tsx` — extrai `a)`, `b)`, `c)` do texto do assistente
-- `src/lib/ai-agent/tools.functions.ts`
-- `src/lib/ai-agent/system-prompt.ts`
-- `src/lib/ai-gateway.server.ts` (se ausente)
-- `src/routes/api/agent/chat.ts`
-- migration: `parts jsonb` em `copilot_messages` + índice
-
-**Alterados**
-- `src/routes/__root.tsx` — troca `<CopilotCmdK />` por `<AgentTrigger />` + `<AgentDrawer />`.
-- `package.json` — `ai`, `@ai-sdk/react`, `@ai-sdk/openai-compatible` + AI Elements.
-
-**Removidos**
-- `src/components/copilot-cmdk.tsx`.
+Sem migrations. Sem mudança de RLS. Sem mudança nas tools de escrita (aprovação humana intacta).
 
 ## Fora do escopo
 
-- Threads múltiplas.
-- Update/delete e ações em massa.
-- Voz (STT/TTS).
-- Undo pós-execução.
-
-## Validação manual
-
-1. "Crie um contato João Silva, joao@acme.com, empresa Acme" com 2 Acmes cadastradas → IA responde com opções `a) Mesclar / b) Acme A / c) Acme B / n) Criar nova`, renderizadas como chips clicáveis; nenhuma gravação ocorre até a escolha.
-2. Escolher `b)` → IA mostra card de aprovação com "Empresa: Acme A (SP)" → Aprovar → card verde com link.
-3. "Registrar uma ligação com Pedro" sem contato Pedro cadastrado → IA pergunta se cria o contato antes.
-4. "Novo negócio Contrato XPTO" sem pipeline → IA pergunta o pipeline listando opções.
-5. Recarregar → conversa persistida retorna com chips e cards no estado anterior.
-6. Cancelar aprovação → nada é gravado; conversa segue.
+- Não altero a UX do `AgentDrawer` nem o fluxo de aprovação.
+- Não mexo em outras server functions do projeto.
