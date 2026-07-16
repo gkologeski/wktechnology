@@ -1,12 +1,14 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Send, Sparkles, X, Check, XCircle, Loader2 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import ReactMarkdown from "react-markdown";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import {
   agentCreateContact,
   agentCreateCompany,
@@ -118,8 +120,20 @@ function ProposalCard({
 export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: "/api/agent/chat",
+        headers: async () => {
+          const { data } = await supabase.auth.getSession();
+          const token = data.session?.access_token;
+          return token ? { Authorization: `Bearer ${token}` } : {};
+        },
+      }),
+    [],
+  );
   const { messages, sendMessage, status } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/agent/chat" }),
+    transport,
     onError: (e) => toast.error(e.message),
   });
 
@@ -225,8 +239,6 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
     </Sheet>
   );
 }
-
-import { useAuth } from "@/lib/auth";
 
 export function AgentTrigger() {
   const { user } = useAuth();
