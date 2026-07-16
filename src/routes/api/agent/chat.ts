@@ -6,7 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
 import { z } from "zod";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { AGENT_SYSTEM_PROMPT } from "@/lib/ai-agent/system-prompt";
 import {
@@ -15,14 +15,35 @@ import {
   lookupUserImpl,
 } from "@/lib/ai-agent/tools-impl";
 
+function extractMessageText(message: UIMessage) {
+  return message.parts
+    .map((part) => (part.type === "text" ? part.text : ""))
+    .join(" ")
+    .trim();
+}
+
+function isUuid(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  );
+}
+
 export const Route = createFileRoute("/api/agent/chat")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { messages } = (await request.json()) as { messages?: UIMessage[] };
+        const body = (await request.json()) as {
+          messages?: UIMessage[];
+          sessionId?: unknown;
+          pagePath?: unknown;
+        };
+        const { messages } = body;
         if (!Array.isArray(messages)) {
           return new Response("messages required", { status: 400 });
         }
+        const sessionId = isUuid(body.sessionId) ? body.sessionId : crypto.randomUUID();
+        const pagePath = typeof body.pagePath === "string" ? body.pagePath.slice(0, 200) : "";
 
         // Autentica bearer manualmente.
         const authHeader = request.headers.get("authorization") ?? "";
@@ -43,9 +64,46 @@ export const Route = createFileRoute("/api/agent/chat")({
           auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
         });
         const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
-        if (claimsErr || !claims?.claims?.sub) {
+        const userId = claims?.claims?.sub;
+        if (claimsErr || !userId) {
           return new Response("Unauthorized", { status: 401 });
         }
+
+        const persistMessages = async (items: UIMessage[]) => {
+          const rows = items.filter((message) => message.role === "user" || message.role === "assistant");
+          if (!rows.length) return;
+
+          const title = extractMessageText(rows.find((message) => message.role === "user") ?? rows[0]).slice(0, 120);
+          await supabase.from("copilot_sessions").upsert({
+            id: sessionId,
+            user_id: userId,
+            owner_id: userId,
+            title: title || `Assistente${pagePath ? ` · ${pagePath}` : ""}`,
+          });
+
+          const ids = rows.map((message) => message.id);
+          const { data: existing } = await supabase
+            .from("copilot_messages")
+            .select("id")
+            .in("id", ids);
+          const existingIds = new Set((existing ?? []).map((row) => row.id));
+          const inserts = rows
+            .filter((message) => !existingIds.has(message.id))
+            .map((message) => ({
+              id: message.id,
+              session_id: sessionId,
+              role: message.role,
+              content: extractMessageText(message),
+              parts: message.parts as Json,
+              sources: [] as Json,
+            }));
+
+          if (inserts.length) {
+            await supabase.from("copilot_messages").insert(inserts);
+          }
+        };
+
+        await persistMessages(messages);
 
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
@@ -95,7 +153,18 @@ export const Route = createFileRoute("/api/agent/chat")({
         const result = streamText({
           model,
           system: AGENT_SYSTEM_PROMPT,
-          messages: await convertToModelMessages(messages),
+          messages: await convertToModelMessages([
+            ...messages,
+            ...(pagePath
+              ? [
+                  {
+                    id: `context-${sessionId}`,
+                    role: "system" as const,
+                    parts: [{ type: "text" as const, text: `Contexto de tela atual: ${pagePath}` }],
+                  },
+                ]
+              : []),
+          ]),
           stopWhen: stepCountIs(50),
           tools: {
             search: searchTool,
@@ -122,6 +191,25 @@ export const Route = createFileRoute("/api/agent/chat")({
               phone: z.string().optional(),
               source: z.string().optional(),
               company_name: z.string().optional(),
+            })),
+            proposeUpdateContact: propose("Propor atualização de contato existente (requer aprovação)", z.object({
+              id: z.string(),
+              first_name: z.string().optional(),
+              last_name: z.string().optional(),
+              email: z.string().optional(),
+              phone: z.string().optional(),
+              company_id: z.string().optional(),
+              company_name: z.string().optional(),
+            })),
+            proposeUpdateLead: propose("Propor atualização de lead existente (requer aprovação)", z.object({
+              id: z.string(),
+              first_name: z.string().optional(),
+              last_name: z.string().optional(),
+              email: z.string().optional(),
+              phone: z.string().optional(),
+              source: z.string().optional(),
+              company_name: z.string().optional(),
+              status: z.enum(["new", "contacted", "qualified", "disqualified"]).optional(),
             })),
             proposeCreateDeal: propose("Propor criação de negócio (requer aprovação)", z.object({
               name: z.string(),
@@ -177,7 +265,12 @@ export const Route = createFileRoute("/api/agent/chat")({
           },
         });
 
-        return result.toUIMessageStreamResponse({ originalMessages: messages });
+        return result.toUIMessageStreamResponse({
+          originalMessages: messages,
+          onEnd: async ({ responseMessage }) => {
+            await persistMessages([responseMessage]);
+          },
+        });
       },
     },
   },
