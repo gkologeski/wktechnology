@@ -178,6 +178,7 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
 
   useEffect(() => {
     if (!open || !user) return;
+    const userId = user.id;
     let cancelled = false;
     async function loadHistory() {
       setHistoryLoaded(false);
@@ -188,7 +189,7 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
         const { data: latest } = await supabase
           .from("copilot_sessions")
           .select("id")
-          .eq("user_id", user.id)
+          .eq("user_id", userId)
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle();
