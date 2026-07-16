@@ -47,10 +47,12 @@ export function CreateLeadDialog({
   open,
   onOpenChange,
   onCreated,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated?: (id: string) => void;
+  onSaved?: (r: { id: string; action: "created" }) => void;
 }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
