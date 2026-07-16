@@ -79,6 +79,7 @@ import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedHomeIndexRouteImport } from './routes/_authenticated/home.index'
 import { Route as AuthenticatedAtsIndexRouteImport } from './routes/_authenticated/ats.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as ApiAgentChatRouteImport } from './routes/api/agent/chat'
 import { Route as AuthenticatedWorkspaceModulesRouteImport } from './routes/_authenticated/workspace.modules'
 import { Route as AuthenticatedTicketsIdRouteImport } from './routes/_authenticated/tickets.$id'
 import { Route as AuthenticatedTasksQueuesRouteImport } from './routes/_authenticated/tasks.queues'
@@ -653,6 +654,11 @@ const AuthenticatedAtsIndexRoute = AuthenticatedAtsIndexRouteImport.update({
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAgentChatRoute = ApiAgentChatRouteImport.update({
+  id: '/api/agent/chat',
+  path: '/api/agent/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWorkspaceModulesRoute =
@@ -2071,6 +2077,7 @@ export interface FileRoutesByFullPath {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
+  '/api/agent/chat': typeof ApiAgentChatRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ats/': typeof AuthenticatedAtsIndexRoute
   '/home/': typeof AuthenticatedHomeIndexRoute
@@ -2350,6 +2357,7 @@ export interface FileRoutesByTo {
   '/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
+  '/api/agent/chat': typeof ApiAgentChatRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ats': typeof AuthenticatedAtsIndexRoute
   '/home': typeof AuthenticatedHomeIndexRoute
@@ -2636,6 +2644,7 @@ export interface FileRoutesById {
   '/_authenticated/tasks/queues': typeof AuthenticatedTasksQueuesRouteWithChildren
   '/_authenticated/tickets/$id': typeof AuthenticatedTicketsIdRoute
   '/_authenticated/workspace/modules': typeof AuthenticatedWorkspaceModulesRoute
+  '/api/agent/chat': typeof ApiAgentChatRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/ats/': typeof AuthenticatedAtsIndexRoute
   '/_authenticated/home/': typeof AuthenticatedHomeIndexRoute
@@ -2922,6 +2931,7 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/tickets/$id'
     | '/workspace/modules'
+    | '/api/agent/chat'
     | '/lovable/email/suppression'
     | '/ats/'
     | '/home/'
@@ -3201,6 +3211,7 @@ export interface FileRouteTypes {
     | '/tasks/queues'
     | '/tickets/$id'
     | '/workspace/modules'
+    | '/api/agent/chat'
     | '/lovable/email/suppression'
     | '/ats'
     | '/home'
@@ -3486,6 +3497,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tasks/queues'
     | '/_authenticated/tickets/$id'
     | '/_authenticated/workspace/modules'
+    | '/api/agent/chat'
     | '/lovable/email/suppression'
     | '/_authenticated/ats/'
     | '/_authenticated/home/'
@@ -3632,6 +3644,7 @@ export interface RootRouteChildren {
   WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
   CareersIndexRoute: typeof CareersIndexRoute
   KbIndexRoute: typeof KbIndexRoute
+  ApiAgentChatRoute: typeof ApiAgentChatRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
@@ -4192,6 +4205,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/email/suppression'
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/agent/chat': {
+      id: '/api/agent/chat'
+      path: '/api/agent/chat'
+      fullPath: '/api/agent/chat'
+      preLoaderRoute: typeof ApiAgentChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/workspace/modules': {
@@ -6360,6 +6380,7 @@ const rootRouteChildren: RootRouteChildren = {
   WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
   CareersIndexRoute: CareersIndexRoute,
   KbIndexRoute: KbIndexRoute,
+  ApiAgentChatRoute: ApiAgentChatRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
