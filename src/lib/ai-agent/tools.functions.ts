@@ -122,9 +122,9 @@ export const agentLookupUser = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id, full_name, email")
       .or(`full_name.ilike.${like},email.ilike.${like}`)
-      .limit: 5 as never; // fallback if chain breaks
+      .limit(5);
     return {
-      users: (rows ?? []).slice(0, 5).map((r) => ({
+      users: (rows ?? []).map((r) => ({
         id: r.id,
         label: r.full_name || r.email || "Usuário",
         extra: r.email ?? undefined,
