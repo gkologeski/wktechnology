@@ -160,7 +160,7 @@ const leadUpdateSchema = z
     phone: z.string().max(40).optional(),
     source: z.string().max(80).optional(),
     company_name: z.string().max(200).optional(),
-    status: z.string().max(80).optional(),
+    status: z.enum(["new", "contacted", "qualified", "disqualified"]).optional(),
   })
   .refine(
     ({ id, ...fields }) => Object.values(fields).some((value) => value !== undefined),
