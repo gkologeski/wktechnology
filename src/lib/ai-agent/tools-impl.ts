@@ -59,16 +59,16 @@ export async function searchEntityImpl(
     (rows ?? [])
       .sort((a, b) =>
         scoreMatch(input.query, a.first_name, a.last_name, a.email, a.company_name) -
-        scoreMatch(input.query, b.first_name, b.last_name, b.email, b.company_name),
+          scoreMatch(input.query, b.first_name, b.last_name, b.email, b.company_name),
       )
       .slice(0, 5)
       .forEach((r) =>
-      results.push({
-        id: r.id,
-        label: [r.first_name, r.last_name].filter(Boolean).join(" ") || (r.email ?? "Contato"),
-        extra: [r.email, r.phone, r.company_name].filter(Boolean).join(" · "),
-      }),
-    );
+        results.push({
+          id: r.id,
+          label: [r.first_name, r.last_name].filter(Boolean).join(" ") || (r.email ?? "Contato"),
+          extra: [r.email, r.phone, r.company_name].filter(Boolean).join(" · "),
+        }),
+      );
   } else if (input.kind === "company") {
     const filters = [
       `name.ilike.${like}`,
@@ -84,15 +84,17 @@ export async function searchEntityImpl(
       .or(filters)
       .limit(15);
     (rows ?? [])
-      .sort((a, b) => scoreMatch(input.query, a.name, a.cnpj) - scoreMatch(input.query, b.name, b.cnpj))
+      .sort(
+        (a, b) => scoreMatch(input.query, a.name, a.cnpj) - scoreMatch(input.query, b.name, b.cnpj),
+      )
       .slice(0, 5)
       .forEach((r) =>
-      results.push({
-        id: r.id,
-        label: r.name,
-        extra: [r.cnpj, r.description].filter(Boolean).join(" · ") || undefined,
-      }),
-    );
+        results.push({
+          id: r.id,
+          label: r.name,
+          extra: [r.cnpj, r.description].filter(Boolean).join(" · ") || undefined,
+        }),
+      );
   } else if (input.kind === "deal") {
     const { data: rows } = await supabase
       .from("deals")
@@ -111,16 +113,16 @@ export async function searchEntityImpl(
     (rows ?? [])
       .sort((a, b) =>
         scoreMatch(input.query, a.first_name, a.last_name, a.email, a.phone, a.company_name) -
-        scoreMatch(input.query, b.first_name, b.last_name, b.email, b.phone, b.company_name),
+          scoreMatch(input.query, b.first_name, b.last_name, b.email, b.phone, b.company_name),
       )
       .slice(0, 5)
       .forEach((r) =>
-      results.push({
-        id: r.id,
-        label: [r.first_name, r.last_name].filter(Boolean).join(" ") || (r.email ?? "Lead"),
-        extra: [r.email, r.phone, r.company_name, r.status].filter(Boolean).join(" · "),
-      }),
-    );
+        results.push({
+          id: r.id,
+          label: [r.first_name, r.last_name].filter(Boolean).join(" ") || (r.email ?? "Lead"),
+          extra: [r.email, r.phone, r.company_name, r.status].filter(Boolean).join(" · "),
+        }),
+      );
   } else if (input.kind === "ticket") {
     const { data: rows } = await supabase
       .from("tickets")
