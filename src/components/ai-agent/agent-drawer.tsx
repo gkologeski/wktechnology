@@ -127,7 +127,9 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
         headers: async () => {
           const { data } = await supabase.auth.getSession();
           const token = data.session?.access_token;
-          return token ? { Authorization: `Bearer ${token}` } : {};
+          const headers = new Headers();
+          if (token) headers.set("Authorization", `Bearer ${token}`);
+          return headers;
         },
       }),
     [],
