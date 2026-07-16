@@ -1,48 +1,127 @@
 ## Objetivo
 
-Fazer com que o **Valor** exibido no detalhe do negócio seja o **valor líquido** (mesmo total mostrado no rodapé dos Itens de linha: subtotal − descontos + impostos), em vez de um valor bruto/manual descolado.
+Substituir o Copilot atual (Cmd+K) por um **assistente de IA conversacional** com FAB flutuante, capaz de:
+- responder perguntas sobre os dados;
+- **executar ações no CRM** via tool-calling (cadastros, negócios, chamados, atividades, reuniões, tarefas);
+- **fazer perguntas de esclarecimento** quando encontrar ambiguidades, antes de propor a ação;
+- **sempre confirmar** antes de gravar;
+- persistir **uma conversa contínua por usuário**.
 
-Hoje: `deals.value` é um campo independente, editado manualmente; a soma dos itens de linha aparece só no editor. Os dois divergem.
+Uso de Lovable AI Gateway com AI SDK (tool calling) e RLS via `requireSupabaseAuth` — cada ação executa como o próprio usuário.
 
-## Estratégia
+## Backend
 
-Tornar `deals.value` derivado dos itens de linha sempre que existirem itens. Quando o negócio não tiver itens de linha, mantém o valor manual atual (retrocompatível).
+### 1. Persistência da conversa (migration)
+Reaproveita `copilot_sessions` / `copilot_messages` (uma sessão "default" por `owner_id`).
 
-### 1. Banco de dados (migration)
+- Adiciona coluna `parts jsonb` em `copilot_messages` para persistir tool calls, tool results e cards de esclarecimento junto do texto.
+- Índice em `copilot_sessions(owner_id, kind='assistant')`.
+- RLS já cobre por `owner_id`.
 
-Criar função e trigger em `public.deal_line_items` que, a cada `INSERT/UPDATE/DELETE`, recalcula o total líquido do deal correspondente e grava em `deals.value`:
+### 2. Server functions — tools do agente
+Novo `src/lib/ai-agent/tools.functions.ts` com `createServerFn` + `requireSupabaseAuth` (RLS aplica como o usuário):
 
-```
-total = Σ (quantity * unit_price
-           − (discount_type='amount' ? min(discount_amount*quantity, gross) : gross*discount_pct/100))
-       * (1 + tax_rate/100)
-```
+**Read-only (executam sem aprovação):**
+- `agentSearchEntity({ kind, query })` — busca por nome/e-mail em contact|company|deal|lead|ticket, retorna até 5 matches com `{ id, label, extra }`. **Base do fluxo de desambiguação.**
+- `agentListPipelines({ kind })` — pipelines/etapas.
+- `agentLookupUser({ query })` — resolve responsável/mencionado por nome.
 
-- Se a soma dos itens for `> 0` → atualiza `deals.value`.
-- Se o deal ficar sem itens (último removido) → **preserva** o `deals.value` atual (não zera), para não perder valores manuais em negócios sem catálogo.
-- Backfill único: recalcular `deals.value` para todos os deals que já tenham pelo menos um item de linha.
+**Mutadoras (marcadas `needsApproval: true`):**
+- `agentCreateContact`, `agentCreateCompany` (com enriquecimento CNPJ), `agentCreateLead`
+- `agentCreateDeal`, `agentCreateTicket`
+- `agentCreateActivity` (nota/ligação/e-mail), `agentCreateMeeting`, `agentCreateTask`
+- `agentMergeCompanies({ primary_id, duplicate_id })` — para o caso "mesclar Acme A e Acme B".
 
-### 2. Frontend
+Cada função valida entrada com Zod, reusa helpers existentes (ex.: `enrichCompanyByCNPJ`, criação de meetings) e retorna `{ id, url, summary }`.
 
-- `src/routes/_authenticated/deals.$id.tsx`: após `notifyDealsChanged` (evento `deal:line-items-changed`), o `load()` já é chamado — o header vai refletir o novo valor automaticamente. Nenhuma lógica de cálculo no cliente.
-- `PropertiesPanel` do negócio: tornar o campo **Valor** somente-leitura quando existirem itens de linha, com hint “Calculado a partir dos itens de linha”. Continua editável quando não houver itens.
-- Nenhuma alteração em cotações, faturas, pipeline board ou lista (eles já leem `deals.value`, que passará a estar sincronizado).
+### 3. Rota de chat streaming
+Novo `src/routes/api/agent/chat.ts` autenticada, com AI SDK + Lovable AI Gateway (`openai/gpt-5.5`):
 
-### 3. Fora do escopo
+- Provider helper conforme `ai-sdk-lovable-gateway`.
+- Tools declaradas com `tool({ inputSchema, execute, needsApproval })`.
+- `stopWhen: stepCountIs(50)` — o modelo pode alternar entre buscar, perguntar, buscar de novo e só então propor a criação.
+- Histórico carregado da sessão default; persiste user+assistant em `onFinish` via `toUIMessageStreamResponse({ originalMessages, onFinish })`.
 
-- Não alterar regras de RLS, políticas, permissões, autenticação ou schema além do necessário para o trigger.
-- Não mexer no cálculo dentro do editor de itens (fórmula já está correta e será replicada no SQL).
-- Não mexer em `quote_line_items` / cotações.
+### 4. System prompt — política de esclarecimento
 
-## Detalhes técnicos
+Regras explícitas no prompt (traduz para PT-BR o comportamento do exemplo do usuário):
 
-- Trigger `AFTER INSERT OR UPDATE OR DELETE ON public.deal_line_items FOR EACH ROW`, `SECURITY DEFINER`, `search_path = public`, que faz um `UPDATE public.deals SET value = (SELECT ...) WHERE id = deal_id` guardado com `SET LOCAL` para não recursar.
-- A subquery usa `GREATEST(gross - discount, 0) * (1 + tax_rate/100)` para bater 1:1 com `lineTotal` do TypeScript.
-- Migration inclui `COMMENT ON COLUMN public.deals.value IS 'Auto-sincronizado com a soma líquida de deal_line_items quando houver itens.'`.
+1. **Sempre** iniciar chamando `agentSearchEntity`/`agentLookupUser`/`agentListPipelines` para resolver todos os vínculos por **nome amigável, nunca por UUID**.
+2. Se uma busca retornar **0 resultados** e o vínculo é opcional → prossegue sem ele. Se é obrigatório → pergunta se deve criar a entidade dependente primeiro (ex.: "Não achei a empresa Acme. Quer que eu crie?").
+3. Se retornar **≥ 2 resultados** para um mesmo vínculo → **NÃO** propor ação ainda; responder em texto com opções enumeradas `a)`, `b)`, `c)` incluindo, quando aplicável, `a) Mesclar` (para empresas/contatos duplicados) e `n) Criar nova`. Aguarda resposta do usuário.
+4. Se campos obrigatórios estiverem faltando (ex.: pipeline para um negócio, entidade-alvo para uma atividade) → perguntar antes de qualquer tool mutadora.
+5. Só depois de tudo resolvido, chamar a tool mutadora, que dispara o **card de aprovação** no cliente.
+6. Sem inventar valores; ao propor defaults (etapa inicial do pipeline, prioridade "média"), deixar explícito no card de aprovação.
+
+Poucos exemplos few-shot no prompt cobrindo: empresa duplicada, contato sem empresa vinculada, atividade sem entidade-alvo, negócio sem pipeline.
+
+## Frontend
+
+### 5. Substituir o Copilot Cmd+K
+- `src/components/copilot-cmdk.tsx` → substituído por `src/components/ai-agent/agent-drawer.tsx` (Sheet lateral direito, 480px). Cmd+K continua abrindo o mesmo drawer.
+- FAB único (`Sparkles`) no canto inferior direito.
+- AI Elements: `Conversation`, `Message`, `MessageResponse`, `PromptInput`, `Tool`, `Shimmer` (instalar via `bun x ai-elements@latest add ...`).
+- Cliente: `useChat` com `DefaultChatTransport({ api: '/api/agent/chat' })`, renderizando `message.parts`.
+
+### 6. UX de esclarecimento vs. aprovação (dois momentos distintos)
+
+**a) Esclarecimento (pré-execução):** as opções `a)`, `b)`, `c)` vindas do modelo em texto são renderizadas como **chips clicáveis** logo abaixo da mensagem. Clicar num chip envia automaticamente a resposta correspondente (ex.: "b) Escolher a Acme A") — o usuário também pode digitar livremente. Não há gravação envolvida nesta etapa.
+
+**b) Aprovação (pré-gravação):** para cada tool part mutadora em `input-available`, renderiza `ToolApprovalCard` com resumo dos campos (com nomes resolvidos, não UUIDs) + botões **Aprovar** / **Cancelar** que chamam `addToolResult({ approved: true|false })`. Após execução → card verde com link para a entidade; erros → card vermelho.
+
+Read-only tools mostram apenas um chip discreto ("Buscando empresas…" / "Encontrei 2 empresas").
+
+### 7. Estados e UX
+- Empty state com 4 sugestões contextuais.
+- Shimmer "Pensando…" em `submitted`/`streaming`.
+- Input com autofocus após envio, aprovação e clique em chip de esclarecimento.
+- Botão "Nova conversa" limpa `copilot_messages` da sessão default (sem threads).
+- Erros de gateway (429/402) via toast + linha inline.
+
+### 8. Limpeza
+- Remove `<CopilotCmdK />` do root; substitui pelo novo componente.
+- Mantém `copilot.tsx` (Recruiter Copilot ATS) e `chat-trigger.tsx` (mensageiro) intactos.
+
+## Segurança
+
+- Tools rodam via `requireSupabaseAuth` — RLS autoritativa; modelo nunca acessa `service_role`.
+- `LOVABLE_API_KEY` só server-side.
+- Confirmação client-side é UX; autorização real é RLS.
+- Validação Zod estrita; erros voltam estruturados ao modelo, que reformula ou pergunta.
+
+## Arquivos
+
+**Novos**
+- `src/components/ai-agent/agent-drawer.tsx`
+- `src/components/ai-agent/agent-trigger.tsx`
+- `src/components/ai-agent/tool-approval-card.tsx`
+- `src/components/ai-agent/tool-result-card.tsx`
+- `src/components/ai-agent/clarification-chips.tsx` — extrai `a)`, `b)`, `c)` do texto do assistente
+- `src/lib/ai-agent/tools.functions.ts`
+- `src/lib/ai-agent/system-prompt.ts`
+- `src/lib/ai-gateway.server.ts` (se ausente)
+- `src/routes/api/agent/chat.ts`
+- migration: `parts jsonb` em `copilot_messages` + índice
+
+**Alterados**
+- `src/routes/__root.tsx` — troca `<CopilotCmdK />` por `<AgentTrigger />` + `<AgentDrawer />`.
+- `package.json` — `ai`, `@ai-sdk/react`, `@ai-sdk/openai-compatible` + AI Elements.
+
+**Removidos**
+- `src/components/copilot-cmdk.tsx`.
+
+## Fora do escopo
+
+- Threads múltiplas.
+- Update/delete e ações em massa.
+- Voz (STT/TTS).
+- Undo pós-execução.
 
 ## Validação manual
 
-1. Abrir um deal com itens de linha → header e “Total” do editor devem ser idênticos.
-2. Editar quantidade/preço/desconto/imposto de um item → header atualiza após fechar o editor.
-3. Remover todos os itens → valor permanece como estava (não zera).
-4. Deal sem itens → campo Valor continua editável manualmente.
+1. "Crie um contato João Silva, joao@acme.com, empresa Acme" com 2 Acmes cadastradas → IA responde com opções `a) Mesclar / b) Acme A / c) Acme B / n) Criar nova`, renderizadas como chips clicáveis; nenhuma gravação ocorre até a escolha.
+2. Escolher `b)` → IA mostra card de aprovação com "Empresa: Acme A (SP)" → Aprovar → card verde com link.
+3. "Registrar uma ligação com Pedro" sem contato Pedro cadastrado → IA pergunta se cria o contato antes.
+4. "Novo negócio Contrato XPTO" sem pipeline → IA pergunta o pipeline listando opções.
+5. Recarregar → conversa persistida retorna com chips e cards no estado anterior.
+6. Cancelar aprovação → nada é gravado; conversa segue.
