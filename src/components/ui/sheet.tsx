@@ -6,8 +6,21 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { notifyDialogClosed } from "@/lib/dialog-refresh";
 
-const Sheet = SheetPrimitive.Root;
+// Notifica o QueryClient quando o sheet fecha para revalidar dados sem F5.
+const Sheet = ({
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Root>) => (
+  <SheetPrimitive.Root
+    {...props}
+    onOpenChange={(open) => {
+      onOpenChange?.(open);
+      if (!open) notifyDialogClosed();
+    }}
+  />
+);
 
 const SheetTrigger = SheetPrimitive.Trigger;
 

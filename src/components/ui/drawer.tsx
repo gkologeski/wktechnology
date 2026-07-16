@@ -2,12 +2,22 @@ import * as React from "react";
 import { Drawer as DrawerPrimitive } from "vaul";
 
 import { cn } from "@/lib/utils";
+import { notifyDialogClosed } from "@/lib/dialog-refresh";
 
+// Notifica o QueryClient quando o drawer fecha para revalidar dados sem F5.
 const Drawer = ({
   shouldScaleBackground = true,
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
-  <DrawerPrimitive.Root shouldScaleBackground={shouldScaleBackground} {...props} />
+  <DrawerPrimitive.Root
+    shouldScaleBackground={shouldScaleBackground}
+    {...props}
+    onOpenChange={(open) => {
+      onOpenChange?.(open);
+      if (!open) notifyDialogClosed();
+    }}
+  />
 );
 Drawer.displayName = "Drawer";
 

@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter, Link, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { bindDialogRefreshClient } from "@/lib/dialog-refresh";
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
@@ -48,11 +49,17 @@ export const getRouter = () => {
       queries: {
         staleTime: 60_000, // 1 min — evita refetch agressivo ao navegar
         gcTime: 2 * 60_000, // 2 min — libera memória de queries inativas mais cedo
-        refetchOnWindowFocus: false,
+        // Revalida ao voltar o foco/janela: garante que dados alterados em
+        // outra aba, modal ou processo apareçam sem F5.
+        refetchOnWindowFocus: true,
+        refetchOnReconnect: true,
         retry: 1,
       },
     },
   });
+
+  bindDialogRefreshClient(queryClient);
+
 
   const router = createRouter({
     routeTree,

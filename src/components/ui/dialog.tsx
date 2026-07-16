@@ -5,8 +5,22 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { notifyDialogClosed } from "@/lib/dialog-refresh";
 
-const Dialog = DialogPrimitive.Root;
+// Wrapper do Root que notifica o QueryClient sempre que o dialog fecha, para
+// revalidar dados alterados dentro dele sem exigir F5 do usuário.
+const Dialog = ({
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) => (
+  <DialogPrimitive.Root
+    {...props}
+    onOpenChange={(open) => {
+      onOpenChange?.(open);
+      if (!open) notifyDialogClosed();
+    }}
+  />
+);
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogClose = DialogPrimitive.Close;
