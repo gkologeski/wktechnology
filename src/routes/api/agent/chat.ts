@@ -9,11 +9,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { AGENT_SYSTEM_PROMPT } from "@/lib/ai-agent/system-prompt";
-import {
-  searchEntityImpl,
-  listPipelinesImpl,
-  lookupUserImpl,
-} from "@/lib/ai-agent/tools-impl";
+import { searchEntityImpl, listPipelinesImpl, lookupUserImpl } from "@/lib/ai-agent/tools-impl";
 
 function extractMessageText(message: UIMessage) {
   return message.parts
@@ -70,10 +66,14 @@ export const Route = createFileRoute("/api/agent/chat")({
         }
 
         const persistMessages = async (items: UIMessage[]) => {
-          const rows = items.filter((message) => message.role === "user" || message.role === "assistant");
+          const rows = items.filter(
+            (message) => message.role === "user" || message.role === "assistant",
+          );
           if (!rows.length) return;
 
-          const title = extractMessageText(rows.find((message) => message.role === "user") ?? rows[0]).slice(0, 120);
+          const title = extractMessageText(
+            rows.find((message) => message.role === "user") ?? rows[0],
+          ).slice(0, 120);
           await supabase.from("copilot_sessions").upsert({
             id: sessionId,
             user_id: userId,
@@ -112,7 +112,7 @@ export const Route = createFileRoute("/api/agent/chat")({
         const model = gateway("google/gemini-3.5-flash");
 
         // Helper: envelopa execução para nunca lançar dentro do stream.
-        const safe = async <T,>(fn: () => Promise<T>) => {
+        const safe = async <T>(fn: () => Promise<T>) => {
           try {
             return await fn();
           } catch (e) {

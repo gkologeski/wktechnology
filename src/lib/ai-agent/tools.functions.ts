@@ -326,7 +326,10 @@ export const agentCreateDeal = createServerFn({ method: "POST" })
       await context.supabase
         .from("deal_contacts")
         .insert({ deal_id: row.id, contact_id })
-        .then(() => null, () => null);
+        .then(
+          () => null,
+          () => null,
+        );
     }
     return { id: row.id, url: `/deals/${row.id}`, summary: `Negócio ${row.name} criado.` };
   });
