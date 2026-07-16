@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ import { DealQuotes } from "@/components/deals/deal-quotes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
 import { usePipelines } from "@/lib/pipelines";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { qk } from "@/lib/entity-queries";
 import type { Deal } from "@/lib/db-types";
 import { toast } from "sonner";
 
@@ -33,16 +36,24 @@ export const Route = createFileRoute("/_authenticated/deals/$id")({
 function DealDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const [deal, setDeal] = useState<Deal | null>(null);
+  const qc = useQueryClient();
   const { pipelines } = usePipelines("deal");
 
-  const load = async () => {
-    const { data } = await supabase.from("deals").select("*").eq("id", id).single();
-    setDeal(data as Deal | null);
-  };
-  useEffect(() => {
-    void load(); /* eslint-disable-next-line */
-  }, [id]);
+  const { data: deal } = useQuery({
+    queryKey: qk.deal(id),
+    queryFn: async () => {
+      const { data, error } = await supabase.from("deals").select("*").eq("id", id).maybeSingle();
+      if (error) throw error;
+      return (data as Deal | null) ?? null;
+    },
+  });
+  const load = () => qc.invalidateQueries({ queryKey: qk.deal(id) });
+
+  useRealtimeInvalidate([
+    { table: "deals", queryKeys: [qk.deal(id)] },
+    { table: "deal_line_items", queryKeys: [qk.deal(id), qk.dealLineItems(id)] },
+    { table: "activities", queryKeys: [qk.activities("related_deal_id", id)] },
+  ]);
 
   useEffect(() => {
     function onChanged(e: Event) {
@@ -51,7 +62,7 @@ function DealDetail() {
     }
     window.addEventListener("deal:line-items-changed", onChanged);
     return () => window.removeEventListener("deal:line-items-changed", onChanged);
-    /* eslint-disable-next-line */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const dealPipeline = useMemo(() => {

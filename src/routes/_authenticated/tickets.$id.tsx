@@ -1,6 +1,7 @@
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2, Ticket as TicketIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import { TicketMacrosButton } from "@/components/tickets/ticket-macros-button";
 import { KbSuggestions } from "@/components/tickets/kb-suggestions";
 import { HtmlContent } from "@/components/rich-html-editor";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { qk } from "@/lib/entity-queries";
 
 export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
@@ -34,9 +37,28 @@ export const Route = createFileRoute("/_authenticated/tickets/$id")({
 function TicketDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
   const { pipelines } = usePipelines("ticket");
-  const [ticket, setTicket] = useState<TicketRow | null>(null);
+
+  const { data: ticket } = useQuery({
+    queryKey: qk.ticket(id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tickets")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as TicketRow | null) ?? null;
+    },
+  });
+  const load = () => qc.invalidateQueries({ queryKey: qk.ticket(id) });
+
+  useRealtimeInvalidate([
+    { table: "tickets", queryKeys: [qk.ticket(id)] },
+    { table: "activities", queryKeys: [qk.activities("related_ticket_id", id)] },
+  ]);
 
   const pipeline = useMemo(
     () => pipelines.find((p) => p.id === ticket?.pipeline_id) ?? null,
@@ -53,15 +75,6 @@ function TicketDetail() {
     return pipeline.stages[0]?.value ?? "";
   }, [ticket, pipeline]);
   const currentStage = pipeline?.stages.find((s) => s.value === currentStageValue) ?? null;
-
-  const load = useCallback(async () => {
-    const { data } = await supabase.from("tickets").select("*").eq("id", id).single();
-    setTicket(data as TicketRow | null);
-  }, [id]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
 
   if (!ticket) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
