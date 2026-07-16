@@ -1,53 +1,51 @@
-# Plano — Corrigir agente de IA (buscas retornam Unauthorized)
+Plano para corrigir o comportamento do Assistente de IA
 
-## Diagnóstico
+1. Corrigir a intenção “atualizar” vs “criar”
+- Adicionar ferramentas explícitas de atualização para registros existentes, começando por:
+  - atualizar e-mail/telefone/nome de lead;
+  - atualizar e-mail/telefone/nome de contato.
+- Atualizar o prompt do agente para proibir usar “criar contato/lead” quando o usuário pedir “alterar”, “atualizar”, “corrigir”, “inserir e-mail em registro existente”.
+- Quando estiver em uma página de detalhe, o assistente deve considerar o registro atual como contexto prioritário. Ex.: estando em `/leads/3cb...`, “atualize o Bruno Linter” deve propor atualizar esse lead, não criar contato novo.
 
-A conversa mostra dois problemas encadeados:
+2. Corrigir a busca de Bruno Linter
+- Melhorar `searchEntityImpl` para encontrar nomes completos, não apenas `first_name ilike '%Bruno Linter%'` ou `last_name ilike '%Bruno Linter%'`.
+- A busca deve quebrar termos: `Bruno` + `Linter`, procurar por combinações em `first_name`, `last_name`, `email`, `phone`, `company_name` e retornar leads/contatos relevantes.
+- Para solicitações ambíguas, o agente deve listar opções encontradas:
+  - lead Bruno Linter;
+  - contatos duplicados Bruno Linter;
+  - perguntar qual atualizar, salvo quando a página atual já determinar o registro.
 
-1. **Falha técnica (raiz):** todas as tools de leitura (`search`, `listPipelines`) retornam `Unauthorized`. Causa: em `src/routes/api/agent/chat.ts`, cada tool chama diretamente `agentSearchEntity({ data })`, `agentListPipelines({ data })` e `agentLookupUser({ data })`. Essas são `createServerFn` com `.middleware([requireSupabaseAuth])`, que lê o header `Authorization` via `getRequest()`. Quando invocadas server-side (dentro do `streamText`), o middleware não recebe o bearer do usuário — o token existe na request do `/api/agent/chat`, mas o wrapper de server-function não repassa esse header ao próprio middleware quando é chamado programaticamente durante o streaming assíncrono. Resultado: `Unauthorized: No authorization header provided` / `Invalid token`.
+3. Fazer a aprovação executar a ação correta e refletir no registro
+- Incluir cards de aprovação para atualização, com label correto: “Atualizar lead” / “Atualizar contato”, em vez de “Criar contato”.
+- Ao aprovar, chamar a server function de update correspondente e retornar URL/resumo do registro atualizado.
+- Após sucesso, invalidar/recarregar dados relevantes no cliente para a tela de detalhe mostrar o e-mail atualizado sem depender de refresh manual.
 
-2. **Falha comportamental (agravante):** ao receber o erro, o agente propôs "criar tudo do zero sem verificar", violando as regras A/B/C do system prompt (nunca inventar, sempre resolver vínculos antes de propor). Ele deveria ter parado e reportado a falha técnica.
+4. Evitar duplicidade e aprovações que voltam como pendentes
+- Persistir o estado das ações aprovadas/rejeitadas ou, no mínimo, manter um mapa local por `messageId + toolName + payloadHash` para que o mesmo card não volte como “pendente” ao reabrir o drawer durante a sessão.
+- Tornar ações aprovadas idempotentes quando possível:
+  - update: repetir a aprovação deve manter o mesmo valor, não criar duplicatas;
+  - create: usar validação prévia para avisar quando já existe registro muito parecido.
 
-## Solução
+5. Persistir histórico do chat
+- Usar as tabelas já existentes `copilot_sessions` e `copilot_messages`, que hoje estão vazias.
+- Criar funções autenticadas para:
+  - obter/criar sessão ativa do assistente;
+  - listar mensagens da sessão;
+  - salvar mensagem do usuário e resposta do assistente, incluindo `parts` de tool/proposal.
+- Carregar esse histórico no `AgentDrawer` ao abrir, para não apagar a conversa ao recarregar ou sair/entrar novamente.
 
-### 1. Refatorar tools para não depender do middleware de server-function
+6. Segurança e permissões
+- Todas as leituras e updates continuam via usuário autenticado e RLS do backend.
+- Não abrir leitura pública/anon de dados comerciais.
+- Validar autorização no backend antes de atualizar lead/contato.
+- Não registrar tokens, e-mails sensíveis em logs técnicos desnecessários.
 
-Em `src/routes/api/agent/chat.ts`:
-
-- No próprio handler `POST`, extrair o bearer do `request.headers.get("authorization")` e montar **uma vez** um `supabase` client autenticado (mesmo padrão de `requireSupabaseAuth`) + resolver `userId` via `supabase.auth.getClaims(token)`.
-- Se não houver bearer válido → retornar `401` antes de iniciar o stream (o cliente já envia via `attachSupabaseAuth`).
-- Extrair a lógica das 3 tools de leitura para funções puras em um novo `src/lib/ai-agent/tools-impl.ts` que recebem `(supabase, userId, input)`. As `createServerFn` existentes em `tools.functions.ts` passam a ser apenas wrappers que chamam essas funções puras (mantém compatibilidade se algum lugar as invocar).
-- Cada `tool({ execute })` no route chama a função pura com o `supabase` já autenticado, capturado no closure.
-
-Isso elimina totalmente o caminho `getRequest()` dentro do stream, que é onde o header se perde.
-
-### 2. Endurecer comportamento em falha
-
-No `AGENT_SYSTEM_PROMPT` (`src/lib/ai-agent/system-prompt.ts`), adicionar regra explícita:
-
-> Se uma ferramenta de leitura retornar erro, **não** proponha criação às cegas. Informe o usuário do erro em texto, peça para tentar novamente, e só prossiga com criação se o usuário disser explicitamente "crie mesmo assim / considere como novo".
-
-### 3. Tratamento de erro nas tools
-
-Envolver cada `execute` em `try/catch` e devolver `{ error: string }` estruturado em vez de propagar exceção (o AI SDK propaga como falha do step). Assim o modelo consegue reagir e mostrar erro amigável em vez de alucinar.
-
-### 4. Validação
-
-- Abrir o drawer do agente em `/leads` e repetir o pedido de teste ("Existe empresa Caspita?"). Verificar em Network que `/api/agent/chat` retorna 200 e as tools produzem resultados reais (não `Unauthorized`).
-- Confirmar que uma busca sem resultado retorna array vazio (não erro) e o agente pergunta "criar novo?" corretamente.
-- Simular ausência de bearer (deslogar) → route responde 401 antes do stream.
-
-## Detalhes técnicos
-
-Arquivos alterados:
-- `src/routes/api/agent/chat.ts` — extrai bearer, monta supabase, chama funções puras, try/catch por tool.
-- `src/lib/ai-agent/tools-impl.ts` (novo) — funções puras `searchEntityImpl`, `listPipelinesImpl`, `lookupUserImpl` recebendo `supabase`.
-- `src/lib/ai-agent/tools.functions.ts` — read-only fns viram wrappers finos; mutadoras permanecem inalteradas (continuam via `useServerFn` no cliente após aprovação, com bearer normal).
-- `src/lib/ai-agent/system-prompt.ts` — nova regra de "não prosseguir em falha".
-
-Sem migrations. Sem mudança de RLS. Sem mudança nas tools de escrita (aprovação humana intacta).
-
-## Fora do escopo
-
-- Não altero a UX do `AgentDrawer` nem o fluxo de aprovação.
-- Não mexo em outras server functions do projeto.
+7. Validação
+- Testar manualmente o fluxo reportado:
+  1. abrir `/leads/3cb97e19-6029-4885-abfe-f954d04d8530`;
+  2. pedir: “atualize o Bruno Linter com o e-mail bruno.linter@gmail.com”;
+  3. confirmar que o card diz “Atualizar lead”, não “Criar contato”;
+  4. aprovar;
+  5. confirmar que o lead passa a ter o e-mail informado;
+  6. fechar/reabrir o assistente e confirmar que o histórico e o estado aprovado permanecem coerentes.
+- Também testar busca por “Bruno Linter” fora da página de detalhe para confirmar que leads e contatos existentes aparecem como opções.

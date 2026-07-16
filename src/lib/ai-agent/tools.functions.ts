@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 // ————————————————————————————————————————————————————————
 // READ-ONLY TOOLS (executam sem aprovação)
@@ -135,6 +136,90 @@ export const agentLookupUser = createServerFn({ method: "POST" })
 // MUTADORAS (chamadas pelo cliente após aprovação humana)
 // ————————————————————————————————————————————————————————
 
+const contactUpdateSchema = z
+  .object({
+    id: z.string().uuid(),
+    first_name: z.string().min(1).max(120).optional(),
+    last_name: z.string().max(120).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().max(40).optional(),
+    company_id: z.string().uuid().optional(),
+    company_name: z.string().max(200).optional(),
+  })
+  .refine(
+    ({ id, ...fields }) => Object.values(fields).some((value) => value !== undefined),
+    "Informe ao menos um campo para atualizar.",
+  );
+
+const leadUpdateSchema = z
+  .object({
+    id: z.string().uuid(),
+    first_name: z.string().min(1).max(120).optional(),
+    last_name: z.string().max(120).optional(),
+    email: z.string().email().optional(),
+    phone: z.string().max(40).optional(),
+    source: z.string().max(80).optional(),
+    company_name: z.string().max(200).optional(),
+    status: z.enum(["new", "contacted", "qualified", "disqualified"]).optional(),
+  })
+  .refine(
+    ({ id, ...fields }) => Object.values(fields).some((value) => value !== undefined),
+    "Informe ao menos um campo para atualizar.",
+  );
+
+export const agentUpdateContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => contactUpdateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { id, ...fields } = data;
+    const patch: Database["public"]["Tables"]["contacts"]["Update"] = {};
+    if (fields.first_name !== undefined) patch.first_name = fields.first_name;
+    if (fields.last_name !== undefined) patch.last_name = fields.last_name;
+    if (fields.email !== undefined) patch.email = fields.email;
+    if (fields.phone !== undefined) patch.phone = fields.phone;
+    if (fields.company_id !== undefined) patch.company_id = fields.company_id;
+    if (fields.company_name !== undefined) patch.company_name = fields.company_name;
+    const { data: row, error } = await context.supabase
+      .from("contacts")
+      .update(patch)
+      .eq("id", id)
+      .select("id, first_name, last_name, email")
+      .single();
+    if (error) throw new Error(error.message);
+    return {
+      id: row.id,
+      url: `/contacts/${row.id}`,
+      summary: `Contato ${[row.first_name, row.last_name].filter(Boolean).join(" ")} atualizado.`,
+    };
+  });
+
+export const agentUpdateLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => leadUpdateSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { id, ...fields } = data;
+    const patch: Database["public"]["Tables"]["leads"]["Update"] = {};
+    if (fields.first_name !== undefined) patch.first_name = fields.first_name;
+    if (fields.last_name !== undefined) patch.last_name = fields.last_name;
+    if (fields.email !== undefined) patch.email = fields.email;
+    if (fields.phone !== undefined) patch.phone = fields.phone;
+    if (fields.source !== undefined) patch.source = fields.source;
+    if (fields.company_name !== undefined) patch.company_name = fields.company_name;
+    if (fields.status !== undefined) patch.status = fields.status;
+    const { data: row, error } = await context.supabase
+      .from("leads")
+      .update(patch)
+      .eq("id", id)
+      .select("id, first_name, last_name, email")
+      .single();
+    if (error) throw new Error(error.message);
+    return {
+      id: row.id,
+      url: `/leads/${row.id}`,
+      summary: `Lead ${[row.first_name, row.last_name].filter(Boolean).join(" ")} atualizado.`,
+    };
+  });
+
 export const agentCreateContact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
@@ -241,7 +326,10 @@ export const agentCreateDeal = createServerFn({ method: "POST" })
       await context.supabase
         .from("deal_contacts")
         .insert({ deal_id: row.id, contact_id })
-        .then(() => null, () => null);
+        .then(
+          () => null,
+          () => null,
+        );
     }
     return { id: row.id, url: `/deals/${row.id}`, summary: `Negócio ${row.name} criado.` };
   });
