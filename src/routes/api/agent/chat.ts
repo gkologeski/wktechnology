@@ -1,20 +1,19 @@
 // Rota de streaming do agente conversacional (Lovable AI Gateway via AI SDK).
-// Estratégia:
-// - Tools de LEITURA executam de verdade no servidor.
-// - Tools de "propose*" apenas ecoam o payload para o cliente. O cliente renderiza
-//   um card verde de aprovação e, na aprovação, chama diretamente a server function
-//   correspondente (agentCreate*). Isso garante que nenhuma escrita ocorra sem
-//   confirmação humana explícita.
+// Autentica o bearer no próprio handler e passa um supabase client pronto para
+// as tools de leitura — evita depender de getRequest() dentro do streamText,
+// que fica sem contexto de request e retornava Unauthorized.
 import { createFileRoute } from "@tanstack/react-router";
 import { convertToModelMessages, streamText, tool, stepCountIs, type UIMessage } from "ai";
 import { z } from "zod";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { createLovableAiGatewayProvider } from "@/lib/ai-gateway.server";
 import { AGENT_SYSTEM_PROMPT } from "@/lib/ai-agent/system-prompt";
 import {
-  agentSearchEntity,
-  agentListPipelines,
-  agentLookupUser,
-} from "@/lib/ai-agent/tools.functions";
+  searchEntityImpl,
+  listPipelinesImpl,
+  lookupUserImpl,
+} from "@/lib/ai-agent/tools-impl";
 
 export const Route = createFileRoute("/api/agent/chat")({
   server: {
@@ -24,11 +23,45 @@ export const Route = createFileRoute("/api/agent/chat")({
         if (!Array.isArray(messages)) {
           return new Response("messages required", { status: 400 });
         }
+
+        // Autentica bearer manualmente.
+        const authHeader = request.headers.get("authorization") ?? "";
+        if (!authHeader.startsWith("Bearer ")) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+        const token = authHeader.slice("Bearer ".length).trim();
+        if (!token) return new Response("Unauthorized", { status: 401 });
+
+        const SUPABASE_URL = process.env.SUPABASE_URL;
+        const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+        if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+          return new Response("Missing Supabase env", { status: 500 });
+        }
+
+        const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+          auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+        });
+        const { data: claims, error: claimsErr } = await supabase.auth.getClaims(token);
+        if (claimsErr || !claims?.claims?.sub) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+
         const key = process.env.LOVABLE_API_KEY;
         if (!key) return new Response("Missing LOVABLE_API_KEY", { status: 500 });
 
         const gateway = createLovableAiGatewayProvider(key);
         const model = gateway("google/gemini-3.5-flash");
+
+        // Helper: envelopa execução para nunca lançar dentro do stream.
+        const safe = async <T,>(fn: () => Promise<T>) => {
+          try {
+            return await fn();
+          } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            return { error: message } as const;
+          }
+        };
 
         const searchTool = tool({
           description: "Buscar contatos, empresas, negócios, leads ou tickets por nome/email",
@@ -36,19 +69,19 @@ export const Route = createFileRoute("/api/agent/chat")({
             kind: z.enum(["contact", "company", "deal", "lead", "ticket"]),
             query: z.string(),
           }),
-          execute: async (input) => agentSearchEntity({ data: input }),
+          execute: async (input) => safe(() => searchEntityImpl(supabase, input)),
         });
 
         const listPipelinesTool = tool({
           description: "Lista pipelines e etapas para deal ou ticket",
           inputSchema: z.object({ kind: z.enum(["deal", "ticket"]) }),
-          execute: async (input) => agentListPipelines({ data: input }),
+          execute: async (input) => safe(() => listPipelinesImpl(supabase, input)),
         });
 
         const lookupUserTool = tool({
           description: "Localiza um usuário do workspace pelo nome",
           inputSchema: z.object({ query: z.string() }),
-          execute: async (input) => agentLookupUser({ data: input }),
+          execute: async (input) => safe(() => lookupUserImpl(supabase, input)),
         });
 
         // Propose tools: apenas ecoam o payload; cliente renderiza card de aprovação.
