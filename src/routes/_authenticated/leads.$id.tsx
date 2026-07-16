@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,8 @@ import { PropertiesPanel } from "@/components/properties-panel";
 import { deleteLeadsByIds } from "@/lib/lead-delete";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { qk } from "@/lib/entity-queries";
 
 
 import { LEAD_STATUSES } from "@/lib/crm";
@@ -37,18 +40,25 @@ function LeadDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const { user: _user } = useAuth();
-  const [lead, setLead] = useState<Lead | null>(null);
+  const qc = useQueryClient();
   const [createDealOpen, setCreateDealOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const load = async () => {
-    const { data } = await supabase.from("leads").select("*").eq("id", id).single();
-    setLead(data as Lead | null);
-  };
-  useEffect(() => {
-    void load(); /* eslint-disable-next-line */
-  }, [id]);
+  const { data: lead } = useQuery({
+    queryKey: qk.lead(id),
+    queryFn: async () => {
+      const { data, error } = await supabase.from("leads").select("*").eq("id", id).maybeSingle();
+      if (error) throw error;
+      return (data as Lead | null) ?? null;
+    },
+  });
+  const load = () => qc.invalidateQueries({ queryKey: qk.lead(id) });
+
+  useRealtimeInvalidate([
+    { table: "leads", queryKeys: [qk.lead(id)] },
+    { table: "activities", queryKeys: [qk.activities("related_lead_id", id)] },
+  ]);
 
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 

@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2, Building2, ExternalLink, Sparkles } from "lucide-react";
@@ -11,6 +12,8 @@ import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { CompanyHierarchy } from "@/components/companies/company-hierarchy";
 import { enrichCompanyByCNPJ } from "@/lib/integrations/brasilapi-cnpj.functions";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { qk } from "@/lib/entity-queries";
 
 import type { Company } from "@/lib/db-types";
 import { toast } from "sonner";
@@ -22,18 +25,28 @@ export const Route = createFileRoute("/_authenticated/companies/$id")({
 function CompanyDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const [company, setCompany] = useState<Company | null>(null);
+  const qc = useQueryClient();
   const [enriching, setEnriching] = useState(false);
   const runEnrich = useServerFn(enrichCompanyByCNPJ);
 
+  const { data: company } = useQuery({
+    queryKey: qk.company(id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as Company | null) ?? null;
+    },
+  });
+  const load = () => qc.invalidateQueries({ queryKey: qk.company(id) });
 
-  const load = async () => {
-    const { data } = await supabase.from("companies").select("*").eq("id", id).single();
-    setCompany(data as Company | null);
-  };
-  useEffect(() => {
-    void load(); /* eslint-disable-next-line */
-  }, [id]);
+  useRealtimeInvalidate([
+    { table: "companies", queryKeys: [qk.company(id)] },
+    { table: "activities", queryKeys: [qk.activities("related_company_id", id)] },
+  ]);
 
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 

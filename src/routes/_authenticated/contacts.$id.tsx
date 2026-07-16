@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,8 @@ import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { qk } from "@/lib/entity-queries";
 
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
@@ -19,43 +21,43 @@ export const Route = createFileRoute("/_authenticated/contacts/$id")({
 function ContactDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const [contact, setContact] = useState<Contact | null>(null);
-  const [company, setCompany] = useState<Company | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const qc = useQueryClient();
 
-  const load = async () => {
-    // Não limpamos contact/company aqui — mantém dados anteriores visíveis
-    // enquanto o novo registro carrega (evita flash branco ao navegar em fila).
-    setLoadError(null);
-    const { data, error } = await supabase
-      .from("contacts")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) {
-      console.error("[contact] load error", error);
-      setLoadError(error.message);
-      setContact(null);
-      setLoading(false);
-      return;
-    }
-    setContact(data as Contact | null);
-    if (data?.company_id) {
-      const { data: c } = await supabase
+  const contactQ = useQuery({
+    queryKey: qk.contact(id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as Contact | null) ?? null;
+    },
+  });
+  const contact = contactQ.data ?? null;
+  const loading = contactQ.isLoading;
+  const loadError = contactQ.error ? (contactQ.error as Error).message : null;
+
+  const companyQ = useQuery({
+    queryKey: qk.company(contact?.company_id ?? "none"),
+    enabled: !!contact?.company_id,
+    queryFn: async () => {
+      const { data } = await supabase
         .from("companies")
         .select("*")
-        .eq("id", data.company_id)
+        .eq("id", contact!.company_id!)
         .maybeSingle();
-      setCompany(c as Company | null);
-    } else {
-      setCompany(null);
-    }
-    setLoading(false);
-  };
-  useEffect(() => {
-    void load(); /* eslint-disable-next-line */
-  }, [id]);
+      return (data as Company | null) ?? null;
+    },
+  });
+  const company = companyQ.data ?? null;
+  const load = () => qc.invalidateQueries({ queryKey: qk.contact(id) });
+
+  useRealtimeInvalidate([
+    { table: "contacts", queryKeys: [qk.contact(id)] },
+    { table: "activities", queryKeys: [qk.activities("related_contact_id", id)] },
+  ]);
 
   if (loading && !contact) return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
   if (loadError)
