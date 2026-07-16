@@ -94,8 +94,8 @@ export const agentListPipelines = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: pipelines } = await context.supabase
       .from("pipelines")
-      .select("id, name, entity_kind, stages")
-      .eq("entity_kind", data.kind)
+      .select("id, name, entity, stages")
+      .eq("entity", data.kind)
       .limit(20);
     return {
       pipelines: (pipelines ?? []).map((p) => ({
