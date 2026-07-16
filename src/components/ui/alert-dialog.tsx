@@ -3,8 +3,21 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
+import { notifyDialogClosed } from "@/lib/dialog-refresh";
 
-const AlertDialog = AlertDialogPrimitive.Root;
+// Notifica o QueryClient quando o alert-dialog fecha para revalidar dados sem F5.
+const AlertDialog = ({
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof AlertDialogPrimitive.Root>) => (
+  <AlertDialogPrimitive.Root
+    {...props}
+    onOpenChange={(open) => {
+      onOpenChange?.(open);
+      if (!open) notifyDialogClosed();
+    }}
+  />
+);
 
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 
