@@ -152,19 +152,8 @@ export const Route = createFileRoute("/api/agent/chat")({
 
         const result = streamText({
           model,
-          system: AGENT_SYSTEM_PROMPT,
-          messages: await convertToModelMessages([
-            ...messages,
-            ...(pagePath
-              ? [
-                  {
-                    id: `context-${sessionId}`,
-                    role: "system" as const,
-                    parts: [{ type: "text" as const, text: `Contexto de tela atual: ${pagePath}` }],
-                  },
-                ]
-              : []),
-          ]),
+          system: `${AGENT_SYSTEM_PROMPT}\n\nContexto da tela atual: ${pagePath || "não informado"}. Use esse contexto para preferir atualizar o registro aberto quando a intenção do usuário for edição.`,
+          messages: await convertToModelMessages(messages),
           stopWhen: stepCountIs(50),
           tools: {
             search: searchTool,
