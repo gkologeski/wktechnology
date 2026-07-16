@@ -244,6 +244,8 @@ export function AgentTrigger() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  if (!user) return null;
+
   return (
     <>
       <button
