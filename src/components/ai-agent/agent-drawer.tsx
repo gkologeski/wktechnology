@@ -226,7 +226,10 @@ export function AgentDrawer({ open, onOpenChange }: { open: boolean; onOpenChang
   );
 }
 
+import { useAuth } from "@/lib/auth";
+
 export function AgentTrigger() {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
   // Atalho Cmd+K / Ctrl+K também abre o assistente
