@@ -120,14 +120,13 @@ export const agentLookupUser = createServerFn({ method: "POST" })
     const like = `%${data.query.replace(/[%_]/g, " ")}%`;
     const { data: rows } = await context.supabase
       .from("profiles")
-      .select("id, full_name, email")
-      .or(`full_name.ilike.${like},email.ilike.${like}`)
+      .select("id, full_name")
+      .ilike("full_name", like)
       .limit(5);
     return {
       users: (rows ?? []).map((r) => ({
         id: r.id,
-        label: r.full_name || r.email || "Usuário",
-        extra: r.email ?? undefined,
+        label: r.full_name || "Usuário",
       })),
     };
   });
