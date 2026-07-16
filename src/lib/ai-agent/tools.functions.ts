@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
 // ————————————————————————————————————————————————————————
 // READ-ONLY TOOLS (executam sem aprovação)
@@ -166,18 +167,21 @@ const leadUpdateSchema = z
     "Informe ao menos um campo para atualizar.",
   );
 
-function withoutUndefined<T extends Record<string, unknown>>(input: T) {
-  return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
-}
-
 export const agentUpdateContact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => contactUpdateSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...fields } = data;
+    const patch: Database["public"]["Tables"]["contacts"]["Update"] = {};
+    if (fields.first_name !== undefined) patch.first_name = fields.first_name;
+    if (fields.last_name !== undefined) patch.last_name = fields.last_name;
+    if (fields.email !== undefined) patch.email = fields.email;
+    if (fields.phone !== undefined) patch.phone = fields.phone;
+    if (fields.company_id !== undefined) patch.company_id = fields.company_id;
+    if (fields.company_name !== undefined) patch.company_name = fields.company_name;
     const { data: row, error } = await context.supabase
       .from("contacts")
-      .update(withoutUndefined(fields))
+      .update(patch)
       .eq("id", id)
       .select("id, first_name, last_name, email")
       .single();
@@ -194,9 +198,17 @@ export const agentUpdateLead = createServerFn({ method: "POST" })
   .inputValidator((d) => leadUpdateSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { id, ...fields } = data;
+    const patch: Database["public"]["Tables"]["leads"]["Update"] = {};
+    if (fields.first_name !== undefined) patch.first_name = fields.first_name;
+    if (fields.last_name !== undefined) patch.last_name = fields.last_name;
+    if (fields.email !== undefined) patch.email = fields.email;
+    if (fields.phone !== undefined) patch.phone = fields.phone;
+    if (fields.source !== undefined) patch.source = fields.source;
+    if (fields.company_name !== undefined) patch.company_name = fields.company_name;
+    if (fields.status !== undefined) patch.status = fields.status;
     const { data: row, error } = await context.supabase
       .from("leads")
-      .update(withoutUndefined(fields))
+      .update(patch)
       .eq("id", id)
       .select("id, first_name, last_name, email")
       .single();
