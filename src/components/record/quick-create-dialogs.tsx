@@ -36,6 +36,8 @@ type BaseProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated?: (id: string) => void;
+  /** Contrato canônico da Fase 3 — preferido sobre `onCreated`. */
+  onSaved?: (r: { id: string; action: "created" }) => void;
 };
 
 /* ───────────── Company ───────────── */
