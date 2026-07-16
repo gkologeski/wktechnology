@@ -180,6 +180,7 @@ function RootComponent() {
             <main id="main-content">
               <Outlet />
             </main>
+            <AgentTrigger />
             <Toaster richColors position="top-right" />
           </BrandingProvider>
         </I18nProvider>
