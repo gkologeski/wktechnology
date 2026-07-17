@@ -1,9 +1,11 @@
 import { useDraggable } from "@dnd-kit/core";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatCurrency, formatDate } from "@/lib/crm";
 import type { Deal } from "@/lib/db-types";
-import { Building2, CalendarDays, Clock, User as UserIcon } from "lucide-react";
+import type { DealSignals } from "@/lib/deals/hot-score";
+import { Building2, CalendarDays, Clock, Flame, Gem, User as UserIcon } from "lucide-react";
 
 function initials(s?: string | null) {
   if (!s) return "??";
