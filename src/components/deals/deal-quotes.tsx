@@ -56,6 +56,37 @@ export function DealQuotes({ dealId }: { dealId: string }) {
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState<QuoteListItem | null>(null);
+  const [sendingQuote, setSendingQuote] = useState<QuoteListItem | null>(null);
+
+  const { data: deal } = useQuery({
+    queryKey: ["deal-quotes-context", dealId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("deals")
+        .select("id, name, company_id, primary_contact_id")
+        .eq("id", dealId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: primaryContact } = useQuery({
+    queryKey: ["deal-quotes-primary-contact", deal?.primary_contact_id],
+    queryFn: async () => {
+      if (!deal?.primary_contact_id) return null;
+      const { data, error } = await supabase
+        .from("contacts")
+        .select("id, first_name, last_name, email")
+        .eq("id", deal.primary_contact_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: Boolean(deal?.primary_contact_id),
+  });
+
+  const contactHasEmail = Boolean(primaryContact?.email);
 
   const { data: quotes = [], isLoading } = useQuery({
     queryKey: ["deal-quotes", dealId],
