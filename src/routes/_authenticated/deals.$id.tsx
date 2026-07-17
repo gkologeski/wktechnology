@@ -21,6 +21,7 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 import { StageTracker } from "@/components/stage-tracker";
 import { DealLineItems, DealLineItemsEditor, DealLineItemsCount } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
+import { DealContracts } from "@/components/contracts/deal-contracts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
 import { usePipelines } from "@/lib/pipelines";
