@@ -1,9 +1,11 @@
 import { useDraggable } from "@dnd-kit/core";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatCurrency, formatDate } from "@/lib/crm";
 import type { Deal } from "@/lib/db-types";
-import { Building2, CalendarDays, Clock, User as UserIcon } from "lucide-react";
+import type { DealSignals } from "@/lib/deals/hot-score";
+import { Building2, CalendarDays, Clock, Flame, Gem, User as UserIcon } from "lucide-react";
 
 function initials(s?: string | null) {
   if (!s) return "??";
@@ -34,6 +36,8 @@ export function DealsBoardCard({
   fields,
   columnId,
   nextActivityDate,
+  signals,
+  dimmed,
   onClick,
 }: {
   deal: Deal;
@@ -43,6 +47,8 @@ export function DealsBoardCard({
   fields?: string[];
   columnId?: string;
   nextActivityDate?: string | null;
+  signals?: DealSignals;
+  dimmed?: boolean;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -62,12 +68,33 @@ export function DealsBoardCard({
   const f = fields && fields.length > 0 ? fields : DEFAULT_CARD_FIELDS;
   const has = (k: string) => f.includes(k);
 
+  const isHot = !!signals?.isHot;
+  const isHighValue = !!signals?.isHighValue;
+  const borderStyle: React.CSSProperties = {};
+  if (isHot && isHighValue) {
+    borderStyle.borderLeft = "2px solid transparent";
+    borderStyle.borderImage = "linear-gradient(180deg, var(--hs-orange), var(--hs-stage-4)) 1";
+  } else if (isHot) {
+    borderStyle.borderLeftWidth = "2px";
+    borderStyle.borderLeftColor = "var(--hs-orange)";
+  } else if (isHighValue) {
+    borderStyle.borderLeftWidth = "2px";
+    borderStyle.borderLeftColor = "var(--hs-stage-4)";
+  }
+
+  const daysToClose =
+    deal.expected_close_date
+      ? Math.round(
+          (new Date(deal.expected_close_date).getTime() - Date.now()) / (24 * 60 * 60 * 1000),
+        )
+      : null;
+
   return (
     <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      style={style}
+      style={{ ...style, ...borderStyle }}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -78,19 +105,60 @@ export function DealsBoardCard({
       tabIndex={0}
       data-kanban-card
       data-kanban-column={columnId}
-      className="group rounded-md border bg-card p-2.5 text-sm cursor-grab active:cursor-grabbing hover:border-[var(--hs-orange)] hover:shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hs-orange)]"
+      data-hot={isHot ? "1" : undefined}
+      data-high-value={isHighValue ? "1" : undefined}
+      className={`group rounded-md border bg-card p-2.5 text-sm cursor-grab active:cursor-grabbing hover:border-[var(--hs-orange)] hover:shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hs-orange)] ${dimmed ? "opacity-60" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="font-medium leading-tight truncate flex-1">{deal.name}</div>
-        {has("priority") && deal.hs_priority && (
-          <Badge variant="outline" className="text-[10px] h-4 px-1 capitalize">
-            {deal.hs_priority}
-          </Badge>
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          {(isHot || isHighValue) && (
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex items-center gap-0.5" aria-label={isHot ? "Negócio quente" : "Alto valor"}>
+                    {isHot && (
+                      <Flame
+                        className="h-3.5 w-3.5"
+                        style={{ color: "var(--hs-orange)" }}
+                        aria-hidden
+                      />
+                    )}
+                    {isHighValue && (
+                      <Gem
+                        className="h-3.5 w-3.5"
+                        style={{ color: "var(--hs-stage-4)" }}
+                        aria-hidden
+                      />
+                    )}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {isHot && (
+                    <div>
+                      Score {signals?.score ?? 0}
+                      {daysToClose !== null && daysToClose >= 0 && ` · fecha em ${daysToClose}d`}
+                      {daysToClose !== null && daysToClose < 0 && ` · atrasado ${-daysToClose}d`}
+                    </div>
+                  )}
+                  {isHighValue && <div>Top 20% em valor no funil</div>}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {has("priority") && deal.hs_priority && (
+            <Badge variant="outline" className="text-[10px] h-4 px-1 capitalize">
+              {deal.hs_priority}
+            </Badge>
+          )}
+        </div>
       </div>
 
       {has("value") && (
-        <div className="mt-1 text-[13px] font-semibold tabular-nums text-foreground">
+        <div
+          className="mt-1 text-[13px] font-semibold tabular-nums"
+          style={isHighValue ? { color: "var(--hs-orange)" } : undefined}
+        >
           {formatCurrency(Number(deal.value), deal.currency)}
         </div>
       )}

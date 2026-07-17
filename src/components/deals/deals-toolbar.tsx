@@ -8,7 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, X, Settings2 } from "lucide-react";
+import { Search, X, Settings2, Target } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Pipeline } from "@/lib/pipelines";
 import { DATE_PRESETS, DATE_PRESET_LABELS, type DatePreset } from "@/lib/date-presets";
@@ -41,6 +41,9 @@ export function DealsToolbar({
   owners,
   filters,
   setFilters,
+  focusMode,
+  onToggleFocus,
+  hotCount,
 }: {
   pipelines: Pipeline[];
   selectedPipelineId: string | null;
@@ -48,6 +51,9 @@ export function DealsToolbar({
   owners: { id: string; name: string }[];
   filters: DealFilters;
   setFilters: (f: DealFilters) => void;
+  focusMode?: boolean;
+  onToggleFocus?: (b: boolean) => void;
+  hotCount?: number;
 }) {
   const setF = <K extends keyof DealFilters>(k: K, v: DealFilters[K]) =>
     setFilters({ ...filters, [k]: v });
@@ -98,6 +104,30 @@ export function DealsToolbar({
             <Settings2 className="h-4 w-4" />
           </Link>
         </Button>
+
+        {onToggleFocus && (
+          <Button
+            type="button"
+            variant={focusMode ? "default" : "outline"}
+            size="sm"
+            className={`h-9 ${
+              focusMode
+                ? "bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+                : ""
+            }`}
+            onClick={() => onToggleFocus(!focusMode)}
+            aria-pressed={!!focusMode}
+            title="Ordena por proximidade de fechamento e esmaece negócios frios"
+          >
+            <Target className="h-4 w-4 mr-1" />
+            Foco em fechamento
+            {focusMode && hotCount !== undefined && hotCount > 0 ? (
+              <span className="ml-1.5 rounded bg-black/10 px-1.5 text-[10px] tabular-nums">
+                {hotCount}
+              </span>
+            ) : null}
+          </Button>
+        )}
 
         <div className="flex-1" />
 

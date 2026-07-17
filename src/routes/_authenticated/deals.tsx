@@ -15,6 +15,7 @@ import { usePipelines } from "@/lib/pipelines";
 import { DealsToolbar, type DealFilters } from "@/components/deals/deals-toolbar";
 import { getDateRange } from "@/lib/date-presets";
 import { DealsBoard, type DealLookups } from "@/components/deals/deals-board";
+import { computeDealSignals } from "@/lib/deals/hot-score";
 import { DealsList } from "@/components/deals/deals-list";
 import { DealsForecast } from "@/components/deals/deals-forecast";
 import { DealsHubspotTable } from "@/components/deals/deals-hubspot-table";
@@ -55,6 +56,23 @@ function DealsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
   const DEALS_VIEW_KEY = "deals:view";
+  const DEALS_FOCUS_KEY = "deals:focusMode";
+  const [focusMode, setFocusMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(DEALS_FOCUS_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(DEALS_FOCUS_KEY, focusMode ? "1" : "0");
+    } catch {
+      /* noop */
+    }
+  }, [focusMode]);
   const [view, setView] = useState<"table" | "board" | "list" | "forecast">(() => {
     if (typeof window === "undefined") return "board";
     try {
@@ -221,6 +239,14 @@ function DealsPage() {
     });
   }, [deals, filters, selected, lookups]);
 
+  const boardHotCount = useMemo(() => {
+    if (!selected) return 0;
+    const sig = computeDealSignals(filtered, selected, nextActivities);
+    let n = 0;
+    for (const s of sig.values()) if (s.isHot) n++;
+    return n;
+  }, [filtered, selected, nextActivities]);
+
   const openNew = () => {
     setEditing(null);
     setDrawerOpen(true);
@@ -273,6 +299,9 @@ function DealsPage() {
         owners={ownerOptions}
         filters={filters}
         setFilters={setFilters}
+        focusMode={view === "board" ? focusMode : undefined}
+        onToggleFocus={view === "board" ? setFocusMode : undefined}
+        hotCount={boardHotCount}
       />
 
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="mt-4">
@@ -301,7 +330,7 @@ function DealsPage() {
         </TabsContent>
         <TabsContent value="board" className="mt-4">
           {selected ? (
-            <DealsBoard pipeline={selected} deals={filtered} lookups={lookups} nextActivities={nextActivities} onOpen={openEdit} />
+            <DealsBoard pipeline={selected} deals={filtered} lookups={lookups} nextActivities={nextActivities} focusMode={focusMode} onOpen={openEdit} />
           ) : (
             <p className="text-sm text-muted-foreground">Carregando pipeline…</p>
           )}
