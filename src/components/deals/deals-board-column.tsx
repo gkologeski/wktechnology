@@ -41,6 +41,15 @@ export function DealsBoardColumn({
               {stage.label}
             </span>
             <span className="text-[11px] text-[var(--hs-text-muted)] tabular-nums">({count})</span>
+            {hotCount && hotCount > 0 ? (
+              <span
+                className="text-[10px] tabular-nums inline-flex items-center gap-0.5"
+                style={{ color: "var(--hs-orange)" }}
+                title={`${hotCount} negócio(s) com alto score de fechamento`}
+              >
+                · {hotCount} quente{hotCount > 1 ? "s" : ""}
+              </span>
+            ) : null}
           </div>
           {typeof stage.probability === "number" && (
             <span className="text-[10px] text-[var(--hs-text-muted)] tabular-nums">
