@@ -179,7 +179,11 @@ function LeadDetail() {
         }
         right={
           <>
-            <AssociationsPanel entity="lead" entityId={lead.id} />
+            <AssociationsPanel
+              entity="lead"
+              entityId={lead.id}
+              companyId={(lead as unknown as { company_id?: string | null }).company_id ?? null}
+            />
           </>
         }
       />

@@ -66,7 +66,7 @@ export function AssociationsPanel({ entity, entityId, companyId, contactId, deal
   return (
     <>
       {entity === "lead" && <ConvertedFromLeadCard entityId={entityId} />}
-      {(entity === "contact" || entity === "deal" || entity === "ticket") && (
+      {(entity === "contact" || entity === "deal" || entity === "ticket" || entity === "lead") && (
         <CompanyCard entity={entity} entityId={entityId} companyId={companyId ?? null} />
       )}
       {(entity === "company" || entity === "deal") && (
@@ -486,7 +486,7 @@ function CompanyCard({
   entityId,
   companyId,
 }: {
-  entity: "contact" | "deal" | "ticket";
+  entity: "contact" | "deal" | "ticket" | "lead";
   entityId: string;
   companyId: string | null;
 }) {
@@ -520,11 +520,30 @@ function CompanyCard({
     void load(currentId);
   }, [currentId, load]);
 
-  const tableFor = (e: "contact" | "deal" | "ticket") =>
-    e === "contact" ? "contacts" : e === "deal" ? "deals" : "tickets";
+  const tableFor = (e: "contact" | "deal" | "ticket" | "lead") =>
+    e === "contact" ? "contacts" : e === "deal" ? "deals" : e === "lead" ? "leads" : "tickets";
 
   const associate = async (id: string) => {
-    const { error } = await sb.from(tableFor(entity)).update({ company_id: id }).eq("id", entityId);
+    const patch: Record<string, unknown> = { company_id: id };
+    if (entity === "lead") {
+      // Preencher company_name apenas se estiver vazio, sem sobrescrever entrada do usuário
+      const { data: leadRow } = await supabase
+        .from("leads")
+        .select("company_name")
+        .eq("id", entityId)
+        .maybeSingle();
+      const currentName = (leadRow as { company_name?: string | null } | null)?.company_name ?? "";
+      if (!currentName || !currentName.trim()) {
+        const { data: comp } = await supabase
+          .from("companies")
+          .select("name")
+          .eq("id", id)
+          .maybeSingle();
+        const name = (comp as { name?: string | null } | null)?.name;
+        if (name) patch.company_name = name;
+      }
+    }
+    const { error } = await sb.from(tableFor(entity)).update(patch).eq("id", entityId);
     if (error) return toast.error(error.message);
     toast.success("Empresa vinculada");
     emitTimelineRefresh();

@@ -6981,6 +6981,7 @@ export type Database = {
       leads: {
         Row: {
           assigned_user_id: string | null
+          company_id: string | null
           company_name: string | null
           converted_at: string | null
           converted_contact_id: string | null
@@ -7013,6 +7014,7 @@ export type Database = {
         }
         Insert: {
           assigned_user_id?: string | null
+          company_id?: string | null
           company_name?: string | null
           converted_at?: string | null
           converted_contact_id?: string | null
@@ -7045,6 +7047,7 @@ export type Database = {
         }
         Update: {
           assigned_user_id?: string | null
+          company_id?: string | null
           company_name?: string | null
           converted_at?: string | null
           converted_contact_id?: string | null
@@ -7076,6 +7079,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "leads_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "leads_workspace_id_fkey"
             columns: ["workspace_id"]
