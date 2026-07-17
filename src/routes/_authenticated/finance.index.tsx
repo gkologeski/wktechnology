@@ -17,11 +17,7 @@ function FinancePage() {
   return (
     <div className="p-6 space-y-6">
       <PageHeader title="Financeiro" description="Lançamentos a receber e a pagar, categorias e conciliação." />
-      <EmptyState
-        icon={DollarSign}
-        title="Módulo Financeiro"
-        description="Fundação criada. A interface será entregue nas próximas sprints."
-      />
+      <div className="rounded-lg border bg-card p-12 text-center"><DollarSign className="mx-auto h-10 w-10 text-muted-foreground" /><h3 className="mt-4 text-lg font-medium">Módulo Financeiro</h3><p className="mt-2 text-sm text-muted-foreground">Fundação criada. A interface será entregue nas próximas sprints.</p></div>
     </div>
   );
 }
