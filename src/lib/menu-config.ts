@@ -50,6 +50,8 @@ import {
   ShoppingBag,
   RefreshCw,
   Linkedin,
+  DollarSign,
+  Kanban,
 } from "lucide-react";
 
 
@@ -141,7 +143,10 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Cotações", url: "/settings/quotes", icon: FileText },
-      { title: "Contratos", url: "/proposals", icon: FileText },
+      { title: "Contratos", url: "/contracts", icon: FileText },
+      { title: "Serviços", url: "/services", icon: Package },
+      { title: "Projetos", url: "/projects", icon: Kanban },
+      { title: "Financeiro", url: "/finance", icon: DollarSign, need: "manager" },
       { title: "Produtos", url: "/settings/products", icon: Package, need: "manager" },
       { title: "Faturas", url: "/invoices", icon: FileText },
       { title: "Portal do cliente", url: "/settings/portal", icon: Briefcase, need: "admin" },
