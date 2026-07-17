@@ -257,6 +257,14 @@ function DealDetail() {
               <DealQuotes dealId={deal.id} />
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Contratos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DealContracts dealId={deal.id} companyId={deal.company_id ?? null} />
+            </CardContent>
+          </Card>
         </>
       }
       />
