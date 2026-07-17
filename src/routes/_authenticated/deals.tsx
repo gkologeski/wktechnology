@@ -15,6 +15,7 @@ import { usePipelines } from "@/lib/pipelines";
 import { DealsToolbar, type DealFilters } from "@/components/deals/deals-toolbar";
 import { getDateRange } from "@/lib/date-presets";
 import { DealsBoard, type DealLookups } from "@/components/deals/deals-board";
+import { computeDealSignals } from "@/lib/deals/hot-score";
 import { DealsList } from "@/components/deals/deals-list";
 import { DealsForecast } from "@/components/deals/deals-forecast";
 import { DealsHubspotTable } from "@/components/deals/deals-hubspot-table";
