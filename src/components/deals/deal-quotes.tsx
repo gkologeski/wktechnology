@@ -306,7 +306,55 @@ export function DealQuotes({ dealId }: { dealId: string }) {
         onOpenChange={setWizardOpen}
         existingQuote={editingQuote}
       />
-    </div>
+
+      {sendingQuote && primaryContact?.email && (
+        <SendEmailDialog
+          open={Boolean(sendingQuote)}
+          onOpenChange={(v) => {
+            if (!v) setSendingQuote(null);
+          }}
+          defaultTo={primaryContact.email}
+          defaultSubject={`Cotação ${sendingQuote.number ? `${sendingQuote.number} · ` : ""}${sendingQuote.title || deal?.name || ""}`}
+          defaultBody={(() => {
+            const contactName = [primaryContact.first_name, primaryContact.last_name]
+              .filter(Boolean)
+              .join(" ")
+              .trim();
+            const greeting = contactName ? `Olá ${contactName.split(" ")[0]},` : "Olá,";
+            const title = sendingQuote.title || deal?.name || "Cotação";
+            const link = publicUrl(sendingQuote.public_token);
+            return [
+              `<p>${greeting}</p>`,
+              `<p>Segue nossa cotação <strong>${title}</strong>${sendingQuote.number ? ` (${sendingQuote.number})` : ""}.</p>`,
+              `<p>Acesse pelo link: <a href="${link}">${link}</a></p>`,
+              `<p>Qualquer dúvida, estou à disposição.</p>`,
+            ].join("");
+          })()}
+          contactId={primaryContact.id}
+          dealId={dealId}
+          companyId={deal?.company_id ?? undefined}
+          contactName={
+            [primaryContact.first_name, primaryContact.last_name]
+              .filter(Boolean)
+              .join(" ")
+              .trim() || undefined
+          }
+          onSent={async () => {
+            try {
+              await update({
+                data: {
+                  id: sendingQuote.id,
+                  patch: { status: "sent", sent_at: new Date().toISOString() },
+                },
+              });
+              qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
+            } catch (e) {
+              toast.error((e as Error).message);
+            }
+            setSendingQuote(null);
+          }}
+        />
+      )}
   );
 }
 
