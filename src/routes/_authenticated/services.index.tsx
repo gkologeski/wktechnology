@@ -1,7 +1,29 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Package } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Package, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { listServices } from "@/lib/services.functions";
+import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/services/")({
   head: () => ({
@@ -13,11 +35,149 @@ export const Route = createFileRoute("/_authenticated/services/")({
   component: ServicesPage,
 });
 
+const STATUS_LABEL: Record<string, string> = {
+  pending: "Pendente",
+  active: "Ativo",
+  paused: "Pausado",
+  cancelled: "Cancelado",
+  completed: "Concluído",
+};
+
+const STATUS_TONE: Record<string, string> = {
+  pending: "bg-muted text-muted-foreground",
+  active: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  paused: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  cancelled: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+  completed: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+};
+
+const TYPE_LABEL: Record<string, string> = {
+  recurring: "Recorrente",
+  one_time: "Único",
+  milestone: "Por marco",
+  usage_based: "Por uso",
+};
+
 function ServicesPage() {
+  const list = useServerFn(listServices);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<string>("all");
+  const [type, setType] = useState<string>("all");
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["services", { status, type, search }],
+    queryFn: () =>
+      list({
+        data: {
+          status: status === "all" ? undefined : (status as any),
+          type: type === "all" ? undefined : (type as any),
+          search: search || undefined,
+        },
+      }),
+  });
+
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader title="Serviços" description="Serviços vinculados a contratos, com cadência de faturamento e entrega." />
-      <div className="rounded-lg border bg-card p-12 text-center"><Package className="mx-auto h-10 w-10 text-muted-foreground" /><h3 className="mt-4 text-lg font-medium">Módulo Serviços</h3><p className="mt-2 text-sm text-muted-foreground">Fundação criada. A interface será entregue na próxima sprint.</p></div>
+    <div className="p-6 space-y-5">
+      <PageHeader
+        title="Serviços"
+        description="Serviços vinculados a contratos, com cadência de faturamento e entrega."
+        count={rows.length}
+        countLabel={rows.length === 1 ? "serviço" : "serviços"}
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <Select value={type} onValueChange={setType}>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os tipos</SelectItem>
+            {Object.entries(TYPE_LABEL).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            {Object.entries(STATUS_LABEL).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="rounded-lg border bg-card">
+        {isLoading ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
+        ) : rows.length === 0 ? (
+          <div className="p-12 text-center">
+            <Package className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">Nenhum serviço ainda</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Crie serviços dentro de um contrato. O motor de billing gera automaticamente as contas conforme a cadência.
+            </p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Contrato</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
+                <TableHead>Próxima cobrança</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((s: any) => {
+                const amount = Number(s.quantity) * Number(s.unit_price);
+                return (
+                  <TableRow key={s.id}>
+                    <TableCell>
+                      <Link to="/services/$id" params={{ id: s.id }} className="font-medium hover:underline">
+                        {s.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {s.contracts ? (
+                        <Link
+                          to="/contracts/$id"
+                          params={{ id: s.contracts.id }}
+                          className="hover:underline"
+                        >
+                          {s.contracts.number ?? s.contracts.title}
+                        </Link>
+                      ) : "—"}
+                    </TableCell>
+                    <TableCell className="text-sm">{TYPE_LABEL[s.type] ?? s.type}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={STATUS_TONE[s.status] ?? ""}>
+                        {STATUS_LABEL[s.status] ?? s.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatCurrency(amount, s.currency)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {s.next_billing_at ? formatDateTime(s.next_billing_at as string).split(" ")[0] : "—"}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </div>
     </div>
   );
 }

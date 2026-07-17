@@ -159,6 +159,7 @@ import { Route as AuthenticatedSettingsAuditExportRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
 import { Route as AuthenticatedSettingsAdsSyncRouteImport } from './routes/_authenticated/settings.ads-sync'
 import { Route as AuthenticatedSettingsAccessPolicyRouteImport } from './routes/_authenticated/settings.access-policy'
+import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services.$id'
 import { Route as AuthenticatedQaTestCasesRouteImport } from './routes/_authenticated/qa.test-cases'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
@@ -238,6 +239,7 @@ import { Route as ApiPublicHooksTwilioWhatsappRouteImport } from './routes/api/p
 import { Route as ApiPublicHooksSourcingTickRouteImport } from './routes/api/public/hooks/sourcing-tick'
 import { Route as ApiPublicHooksSourcingInboundEmailRouteImport } from './routes/api/public/hooks/sourcing-inbound-email'
 import { Route as ApiPublicHooksSlaTickRouteImport } from './routes/api/public/hooks/sla-tick'
+import { Route as ApiPublicHooksServicesBillingTickRouteImport } from './routes/api/public/hooks/services-billing-tick'
 import { Route as ApiPublicHooksSequencesTickRouteImport } from './routes/api/public/hooks/sequences-tick'
 import { Route as ApiPublicHooksSentimentTickRouteImport } from './routes/api/public/hooks/sentiment-tick'
 import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/public/hooks/segments-tick'
@@ -1137,6 +1139,11 @@ const AuthenticatedSettingsAccessPolicyRoute =
     path: '/access-policy',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedServicesIdRoute = AuthenticatedServicesIdRouteImport.update({
+  id: '/services/$id',
+  path: '/services/$id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedQaTestCasesRoute =
   AuthenticatedQaTestCasesRouteImport.update({
     id: '/qa/test-cases',
@@ -1588,6 +1595,12 @@ const ApiPublicHooksSlaTickRoute = ApiPublicHooksSlaTickRouteImport.update({
   path: '/api/public/hooks/sla-tick',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksServicesBillingTickRoute =
+  ApiPublicHooksServicesBillingTickRouteImport.update({
+    id: '/api/public/hooks/services-billing-tick',
+    path: '/api/public/hooks/services-billing-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSequencesTickRoute =
   ApiPublicHooksSequencesTickRouteImport.update({
     id: '/api/public/hooks/sequences-tick',
@@ -2038,6 +2051,7 @@ export interface FileRoutesByFullPath {
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
+  '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -2170,6 +2184,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
+  '/api/public/hooks/services-billing-tick': typeof ApiPublicHooksServicesBillingTickRoute
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/sourcing-inbound-email': typeof ApiPublicHooksSourcingInboundEmailRoute
   '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
@@ -2324,6 +2339,7 @@ export interface FileRoutesByTo {
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
+  '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -2455,6 +2471,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
+  '/api/public/hooks/services-billing-tick': typeof ApiPublicHooksServicesBillingTickRoute
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/sourcing-inbound-email': typeof ApiPublicHooksSourcingInboundEmailRoute
   '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
@@ -2615,6 +2632,7 @@ export interface FileRoutesById {
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
+  '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
   '/_authenticated/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/_authenticated/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -2747,6 +2765,7 @@ export interface FileRoutesById {
   '/api/public/hooks/segments-tick': typeof ApiPublicHooksSegmentsTickRoute
   '/api/public/hooks/sentiment-tick': typeof ApiPublicHooksSentimentTickRoute
   '/api/public/hooks/sequences-tick': typeof ApiPublicHooksSequencesTickRoute
+  '/api/public/hooks/services-billing-tick': typeof ApiPublicHooksServicesBillingTickRoute
   '/api/public/hooks/sla-tick': typeof ApiPublicHooksSlaTickRoute
   '/api/public/hooks/sourcing-inbound-email': typeof ApiPublicHooksSourcingInboundEmailRoute
   '/api/public/hooks/sourcing-tick': typeof ApiPublicHooksSourcingTickRoute
@@ -2907,6 +2926,7 @@ export interface FileRouteTypes {
     | '/marketplace/$slug'
     | '/proposals/$id'
     | '/qa/test-cases'
+    | '/services/$id'
     | '/settings/access-policy'
     | '/settings/ads-sync'
     | '/settings/api-keys'
@@ -3039,6 +3059,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
+    | '/api/public/hooks/services-billing-tick'
     | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/sourcing-inbound-email'
     | '/api/public/hooks/sourcing-tick'
@@ -3193,6 +3214,7 @@ export interface FileRouteTypes {
     | '/marketplace/$slug'
     | '/proposals/$id'
     | '/qa/test-cases'
+    | '/services/$id'
     | '/settings/access-policy'
     | '/settings/ads-sync'
     | '/settings/api-keys'
@@ -3324,6 +3346,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
+    | '/api/public/hooks/services-billing-tick'
     | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/sourcing-inbound-email'
     | '/api/public/hooks/sourcing-tick'
@@ -3483,6 +3506,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketplace/$slug'
     | '/_authenticated/proposals/$id'
     | '/_authenticated/qa/test-cases'
+    | '/_authenticated/services/$id'
     | '/_authenticated/settings/access-policy'
     | '/_authenticated/settings/ads-sync'
     | '/_authenticated/settings/api-keys'
@@ -3615,6 +3639,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/segments-tick'
     | '/api/public/hooks/sentiment-tick'
     | '/api/public/hooks/sequences-tick'
+    | '/api/public/hooks/services-billing-tick'
     | '/api/public/hooks/sla-tick'
     | '/api/public/hooks/sourcing-inbound-email'
     | '/api/public/hooks/sourcing-tick'
@@ -3733,6 +3758,7 @@ export interface RootRouteChildren {
   ApiPublicHooksSegmentsTickRoute: typeof ApiPublicHooksSegmentsTickRoute
   ApiPublicHooksSentimentTickRoute: typeof ApiPublicHooksSentimentTickRoute
   ApiPublicHooksSequencesTickRoute: typeof ApiPublicHooksSequencesTickRoute
+  ApiPublicHooksServicesBillingTickRoute: typeof ApiPublicHooksServicesBillingTickRoute
   ApiPublicHooksSlaTickRoute: typeof ApiPublicHooksSlaTickRoute
   ApiPublicHooksSourcingInboundEmailRoute: typeof ApiPublicHooksSourcingInboundEmailRoute
   ApiPublicHooksSourcingTickRoute: typeof ApiPublicHooksSourcingTickRoute
@@ -4832,6 +4858,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccessPolicyRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/services/$id': {
+      id: '/_authenticated/services/$id'
+      path: '/services/$id'
+      fullPath: '/services/$id'
+      preLoaderRoute: typeof AuthenticatedServicesIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/qa/test-cases': {
       id: '/_authenticated/qa/test-cases'
       path: '/qa/test-cases'
@@ -5383,6 +5416,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/sla-tick'
       fullPath: '/api/public/hooks/sla-tick'
       preLoaderRoute: typeof ApiPublicHooksSlaTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/services-billing-tick': {
+      id: '/api/public/hooks/services-billing-tick'
+      path: '/api/public/hooks/services-billing-tick'
+      fullPath: '/api/public/hooks/services-billing-tick'
+      preLoaderRoute: typeof ApiPublicHooksServicesBillingTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/sequences-tick': {
@@ -6256,6 +6296,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
+  AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
   AuthenticatedAtsIndexRoute: typeof AuthenticatedAtsIndexRoute
   AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
@@ -6345,6 +6386,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
+  AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
   AuthenticatedAtsIndexRoute: AuthenticatedAtsIndexRoute,
   AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,
@@ -6519,6 +6561,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksSegmentsTickRoute: ApiPublicHooksSegmentsTickRoute,
   ApiPublicHooksSentimentTickRoute: ApiPublicHooksSentimentTickRoute,
   ApiPublicHooksSequencesTickRoute: ApiPublicHooksSequencesTickRoute,
+  ApiPublicHooksServicesBillingTickRoute:
+    ApiPublicHooksServicesBillingTickRoute,
   ApiPublicHooksSlaTickRoute: ApiPublicHooksSlaTickRoute,
   ApiPublicHooksSourcingInboundEmailRoute:
     ApiPublicHooksSourcingInboundEmailRoute,

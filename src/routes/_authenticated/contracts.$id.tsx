@@ -24,7 +24,9 @@ import {
   updateContract,
   deleteContract,
 } from "@/lib/contracts.functions";
+import { ContractServices } from "@/components/services/contract-services";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+
 
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({ meta: [{ title: "Contrato" }] }),
@@ -282,6 +284,15 @@ function ContractDetail() {
 
       <Card>
         <CardHeader className="pb-3">
+          <CardTitle className="text-base">Serviços</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ContractServices contractId={contract.id} currency={contract.currency ?? "BRL"} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
           <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
         </CardHeader>
         <CardContent>
@@ -293,6 +304,7 @@ function ContractDetail() {
           />
         </CardContent>
       </Card>
+
 
       {contract.deal_id && (
         <Card>
