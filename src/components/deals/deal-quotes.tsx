@@ -239,12 +239,17 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                         Baixar PDF
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      {status === "draft" && (
+                      {(status === "draft" || status === "published") && (
                         <DropdownMenuItem onSelect={() => openEdit(q)}>
                           Editar
                         </DropdownMenuItem>
                       )}
-                      {status === "draft" && (
+                      {(status === "draft" || status === "published") && contactHasEmail && (
+                        <DropdownMenuItem onSelect={() => setSendingQuote(q)}>
+                          Enviar por e-mail
+                        </DropdownMenuItem>
+                      )}
+                      {(status === "draft" || status === "published") && (
                         <DropdownMenuItem onSelect={() => markSent(q.id)}>
                           Marcar como enviada
                         </DropdownMenuItem>
