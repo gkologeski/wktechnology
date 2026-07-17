@@ -21,6 +21,7 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 import { StageTracker } from "@/components/stage-tracker";
 import { DealLineItems, DealLineItemsEditor, DealLineItemsCount } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
+import { DealContracts } from "@/components/contracts/deal-contracts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
 import { usePipelines } from "@/lib/pipelines";
@@ -254,6 +255,14 @@ function DealDetail() {
             </CardHeader>
             <CardContent>
               <DealQuotes dealId={deal.id} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Contratos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <DealContracts dealId={deal.id} companyId={deal.company_id ?? null} />
             </CardContent>
           </Card>
         </>
