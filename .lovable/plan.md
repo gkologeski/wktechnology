@@ -1,93 +1,87 @@
 
 ## Objetivo
 
-Diferenciar visualmente, no Kanban de negócios, os cards com maior probabilidade de fechar e/ou maior valor — sem poluir o layout atual (quiet premium).
+Levar a mesma linguagem visual do kanban de Negócios (borda esquerda, ícone discreto, tooltip, modo de foco) para os demais kanbans do sistema, mas com **critérios de urgência específicos de cada domínio** — nem tudo é "valor".
 
-## Como funciona
+## Mapa de sinais por kanban
 
-### 1. Score de "proximidade de fechamento" (heurística, client-side)
+| Kanban | "Hot" (urgência) | "High" (prioridade/valor) | Cold (esmaecer no foco) |
+|---|---|---|---|
+| **Negócios** (já feito) | score de proximidade de fechamento | Top 20% em valor (p80) | score < 40 |
+| **Tickets** (`tickets-board`) | SLA estourado ou < 2h para vencer, ou `updated_at` parado > 24h em stage aberto | `priority` = `urgent` (gem/estrela); `high` = destaque médio | sem atividade > 7 dias em stage aberto |
+| **ATS Candidatos** (`ats/candidates`) | parado no stage > X dias (X por stage: applied 3d, screening 5d, entrevistas 7d) OU entrevista agendada nas próximas 48h | `match_score` no Top 20% da vaga | parado > 21 dias sem movimento |
+| **ATS Jobs** (kanban de vagas, se houver board) | vaga publicada sem candidato novo em 7 dias | nº de aplicações no Top 20% | vaga em pausa/rascunho antiga |
+| **EntityBoard genérico** (`entity-board.tsx`) | opcional: `updated_at` > 14 dias no mesmo stage | — | — |
 
-Função pura em `src/lib/deals/hot-score.ts`, calculada sobre os deals já carregados (sem query extra):
+Regra comum: itens em stage do tipo `won`/`lost`/`closed`/`resolved` **nunca** recebem sinal.
 
+## Arquitetura
+
+Generalizar `src/lib/deals/hot-score.ts` para uma pequena "kanban signals API" reutilizável.
+
+```text
+src/lib/kanban/
+  signals.ts          // tipos: KanbanSignals, HotClass, SignalConfig
+  deals-signals.ts    // move o cálculo atual para cá (mantém export compat)
+  tickets-signals.ts  // NOVO
+  ats-signals.ts      // NOVO (candidatos + jobs)
 ```
-score = 0.40 * probStage        // % do estágio no pipeline
-      + 0.25 * dueSoon          // 1 se expected_close_date ≤ 14d, decai linearmente até 60d
-      + 0.20 * recentActivity   // atividade em <=7d = 1, <=30d = 0.5, else 0
-      + 0.15 * ageDecay         // deals muito antigos sem mover perdem score
-```
 
-Resultado em 0–100. Estágios `won`/`lost` sempre 0.
+- `KanbanSignals = { score, klass, isHot, isHighValue, reason? }`
+- `reason` é uma string curta usada no tooltip ("SLA em 1h", "Parado há 12 dias", "Prioridade urgente").
 
-### 2. Sinal de "high value" (percentil do funil)
+## Aplicação por tela
 
-Calculado por render, ignorando won/lost:
-- `p80 = percentile(deals.value, 80)`
-- Card é **high-value** se `value >= p80` e `value > 0`.
+### 1. Tickets (`src/components/tickets/tickets-board.tsx` + `ticket-card.tsx`)
+- Calcular `computeTicketSignals(tickets, pipeline, now)` com base em `due_at`, `updated_at`, `priority` e stage type.
+- Card recebe borda esquerda:
+  - laranja (`--hs-orange`) → hot (SLA/estagnado)
+  - âmbar (`--hs-stage-4`) → high (prioridade urgente)
+  - gradiente → ambos
+- Ícone: `Flame` (hot) / `AlertOctagon` (urgent) no header do card, com tooltip contendo `reason`.
+- Column header ganha "· N urgentes" análogo ao "N quentes".
+- Toggle **Foco em SLA** no toolbar de tickets: reordena por score, esmaece cold.
+- Persistência: `localStorage["tickets:focusMode"]`.
 
-### 3. Sinal de "hot"
-- **Hot** se `score >= 70`.
-- **Rising** (secundário) se `score >= 50 && < 70`.
+### 2. ATS Candidatos (`src/routes/_authenticated/candidates.index.tsx` + card do kanban)
+- `computeCandidateSignals` usando `stage_entries` (tempo no stage), próxima `ats_interviews` e `ats_match_scores`.
+- Mesma linguagem visual (borda + ícone + tooltip).
+- Ícones: `Flame` (parado demais / entrevista iminente), `Gem` (top match).
+- Toggle **Foco em movimento** no header.
 
-## Tratamento visual (sutil)
+### 3. ATS Jobs (só se já existir kanban; caso contrário, fora do escopo desta fase)
+- Verificar em `ats/job-postings-panel.tsx` / rotas de jobs. Se houver board, aplicar a mesma API.
 
-Em `deals-board-card.tsx`, adicionar props `isHot`, `isHighValue`, `score`.
+### 4. EntityBoard genérico (`src/components/entity-board.tsx`)
+- Aceitar prop opcional `getSignals?: (row) => KanbanSignals | undefined` e `focusMode?: boolean`.
+- Sem sinais por padrão → visual atual permanece inalterado.
+- Consumidores existentes não precisam mudar.
 
-- **Borda esquerda** de 2px:
-  - `hot` → `var(--hs-orange)` (cor primária já existente)
-  - `high-value` → `var(--hs-stage-4)` ou token semântico `--hs-accent`
-  - `hot + high-value` → gradient vertical entre os dois tokens
-- **Ícone discreto** (14px) no canto superior direito, ao lado do badge de prioridade:
-  - `Flame` (lucide) para hot
-  - `Gem` para high-value
-  - Tooltip: "Score 82 · Fecha em 9 dias" / "Top 20% em valor"
-- **Valor em negrito** já existe; para high-value, aplicar `text-[var(--hs-orange)]` no valor.
-- **Nada de**: glow, gradient no fundo, badge grande, cor do card alterada.
+## UI compartilhada
 
-Nas colunas (`deals-board-column.tsx`):
-- Contador extra minúsculo ao lado de `(count)`: `· 3 quentes` quando houver hot cards. Text-muted, sem cor de alerta.
+Extrair da implementação atual do card de Deal um pequeno componente:
 
-## Toggle "Foco em fechamento"
+- `src/components/kanban/kanban-card-signals.tsx` → renderiza borda-esquerda + ícones + tooltip a partir de `KanbanSignals`. Reusado por `deals-board-card`, `ticket-card` e card de candidato.
 
-Em `deals-toolbar.tsx`:
-- Botão toggle (ícone `Target`) `Foco em fechamento`.
-- Persistido em `localStorage: deals.focusMode`.
-- Quando ativo:
-  - Reordena cada coluna por `score desc` (fallback: valor desc).
-  - Aplica `opacity-60` em cards com `score < 40` (cold) para reforçar o contraste — sem escondê-los.
-  - Toolbar mostra pill "Foco em fechamento · N quentes".
-- Quando inativo: comportamento e ordem atuais preservados; destaque visual (bordas/ícones) permanece sempre visível.
-
-## Acessibilidade
-
-- Ícones sempre com `aria-label` e tooltip textual.
-- Borda esquerda + ícone → duplo canal (não depende só de cor).
-- Foco visível preservado (`focus-visible:ring-[var(--hs-orange)]`).
-- Dark mode: tokens `--hs-orange` / `--hs-accent` já se adaptam.
-
-## Arquivos
-
-**Novos**
-- `src/lib/deals/hot-score.ts` — score + percentil + helpers puros, com testes.
-- `src/lib/deals/hot-score.test.ts` — casos: won/lost=0, p80 com <5 deals, sem data.
-
-**Alterados**
-- `src/components/deals/deals-board-card.tsx` — props `isHot`/`isHighValue`/`score`, borda, ícones, valor destacado.
-- `src/components/deals/deals-board-column.tsx` — contador de "quentes".
-- `src/components/deals/deals-board.tsx` — computa score/percentil, aplica ordenação e opacidade quando `focusMode`.
-- `src/components/deals/deals-toolbar.tsx` — toggle "Foco em fechamento".
-- `src/routes/_authenticated/deals.tsx` (ou wrapper equivalente) — estado do toggle + persistência.
+Isso evita divergência de estilo entre os kanbans.
 
 ## Fora do escopo
 
-- Nenhuma mudança em RLS, schema, server functions ou lógica de negócio.
-- Sem novos campos no banco (score é derivado em runtime).
-- Sem alterar `deals-hubspot-table.tsx` (só o kanban).
-- Nada de IA/LLM — heurística determinística.
+- Novo pipeline/stage config.
+- Persistir score no banco (tudo continua client-side, determinístico).
+- Alterar RLS, edge functions ou lógica de negócio (SLA, match score continuam vindo das mesmas fontes).
+- Redesenhar drag-and-drop.
 
-## Validação manual
+## Validação
 
-1. Abrir `/deals`, ver bordas laranja/azul discretas nos cards certos.
-2. Passar mouse: tooltip explica o motivo.
-3. Ativar "Foco em fechamento": cards quentes sobem, frios ficam esmaecidos.
-4. Desativar: ordem e opacidade voltam ao normal, marcadores permanecem.
-5. Dark mode: contraste ok.
+- `/deals` mantém comportamento atual (regressão zero).
+- `/tickets` (quadro): tickets com SLA vencendo ganham borda laranja + tooltip "SLA em Xh"; toggle Foco em SLA reordena colunas por score.
+- `/candidates` (quadro): candidatos parados no stage acima do limite ficam "hot"; top match por vaga ganha gem.
+- Dark mode ok; tokens semânticos apenas.
+- Typecheck limpo, sem breaking changes nos consumidores do `EntityBoard`.
+
+## Detalhes técnicos
+
+- `computeTicketSignals` usa `sla_policies` quando disponível; fallback para `due_at`. Se nenhum dos dois existir, cai em `updated_at` + threshold por stage.
+- Thresholds por stage/tipo em constantes exportadas de cada arquivo `*-signals.ts` para facilitar tuning.
+- Reason string sempre em pt-BR curta (máx ~40 chars) para caber no tooltip.
