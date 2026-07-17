@@ -1,0 +1,1 @@
+UPDATE public.quotes SET status = 'published', sent_at = NULL WHERE id = '5e798fa9-e71c-4e5f-bb34-f037f0f44df4' AND status = 'sent';
