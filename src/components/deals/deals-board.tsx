@@ -22,15 +22,22 @@ export function DealsBoard({
   deals,
   lookups,
   nextActivities,
+  focusMode,
   onOpen,
 }: {
   pipeline: Pipeline;
   deals: Deal[];
   lookups: DealLookups;
   nextActivities?: Map<string, string>;
+  focusMode?: boolean;
   onOpen: (d: Deal) => void;
 }) {
   const qc = useQueryClient();
+
+  const signals = useMemo(
+    () => computeDealSignals(deals, pipeline, nextActivities),
+    [deals, pipeline, nextActivities],
+  );
 
   const grouped = useMemo(() => {
     const map: Record<string, Deal[]> = {};
