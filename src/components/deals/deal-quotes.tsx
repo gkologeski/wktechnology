@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -22,11 +22,13 @@ import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { QuoteWizard } from "@/components/deals/quote-wizard";
+import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
-type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired";
+type QuoteStatus = "draft" | "published" | "sent" | "accepted" | "declined" | "expired";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
+  published: "Publicada",
   sent: "Enviada",
   accepted: "Aceita",
   declined: "Recusada",
@@ -35,6 +37,7 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_DOT: Record<string, string> = {
   draft: "bg-muted-foreground/40",
+  published: "bg-amber-500",
   sent: "bg-blue-500",
   accepted: "bg-emerald-500",
   declined: "bg-rose-500",
