@@ -486,7 +486,7 @@ function CompanyCard({
   entityId,
   companyId,
 }: {
-  entity: "contact" | "deal" | "ticket";
+  entity: "contact" | "deal" | "ticket" | "lead";
   entityId: string;
   companyId: string | null;
 }) {
@@ -520,8 +520,8 @@ function CompanyCard({
     void load(currentId);
   }, [currentId, load]);
 
-  const tableFor = (e: "contact" | "deal" | "ticket") =>
-    e === "contact" ? "contacts" : e === "deal" ? "deals" : "tickets";
+  const tableFor = (e: "contact" | "deal" | "ticket" | "lead") =>
+    e === "contact" ? "contacts" : e === "deal" ? "deals" : e === "lead" ? "leads" : "tickets";
 
   const associate = async (id: string) => {
     const { error } = await sb.from(tableFor(entity)).update({ company_id: id }).eq("id", entityId);
