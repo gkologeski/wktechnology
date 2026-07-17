@@ -660,7 +660,12 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
               ? [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || undefined
               : undefined
           }
-          onSent={() => {
+          onSent={async () => {
+            try {
+              await markAsSentMut.mutateAsync();
+            } catch {
+              /* toast already shown */
+            }
             setShowSend(false);
             onOpenChange(false);
           }}
