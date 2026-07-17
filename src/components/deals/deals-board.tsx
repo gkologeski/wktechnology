@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Deal } from "@/lib/db-types";
 import type { Pipeline } from "@/lib/pipelines";
+import { computeDealSignals } from "@/lib/deals/hot-score";
 import { DealsBoardColumn } from "./deals-board-column";
 import { DealsBoardCard } from "./deals-board-card";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
