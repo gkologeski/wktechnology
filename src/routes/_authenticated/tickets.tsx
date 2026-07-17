@@ -57,7 +57,9 @@ import {
   Settings2,
   User,
   Building2,
+  Target,
 } from "lucide-react";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -131,11 +133,29 @@ function TicketsIndex() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
+  const TICKETS_FOCUS_KEY = "tickets:focusMode";
+  const [focusMode, setFocusMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(TICKETS_FOCUS_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(TICKETS_FOCUS_KEY, focusMode ? "1" : "0");
+    } catch {
+      /* noop */
+    }
+  }, [focusMode]);
   const related = useRelatedIds({
     contactId: draft.contact_id ?? null,
     companyId: draft.company_id ?? null,
     dealId: draft.deal_id ?? null,
   });
+
 
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
@@ -440,17 +460,33 @@ function TicketsIndex() {
 
       {/* Layout tabs */}
       <Tabs value={layout} onValueChange={handleLayoutChange} className="mt-4">
-        <TabsList>
-          <TabsTrigger value="table">
-            <Rows3 className="h-3.5 w-3.5 mr-1" /> Tabela
-          </TabsTrigger>
-          <TabsTrigger value="board">
-            <LayoutGrid className="h-3.5 w-3.5 mr-1" /> Quadro
-          </TabsTrigger>
-          <TabsTrigger value="split">
-            <Columns2 className="h-3.5 w-3.5 mr-1" /> Split
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-2">
+          <TabsList>
+            <TabsTrigger value="table">
+              <Rows3 className="h-3.5 w-3.5 mr-1" /> Tabela
+            </TabsTrigger>
+            <TabsTrigger value="board">
+              <LayoutGrid className="h-3.5 w-3.5 mr-1" /> Quadro
+            </TabsTrigger>
+            <TabsTrigger value="split">
+              <Columns2 className="h-3.5 w-3.5 mr-1" /> Split
+            </TabsTrigger>
+          </TabsList>
+          {layout === "board" && (
+            <Button
+              size="sm"
+              variant={focusMode ? "default" : "outline"}
+              onClick={() => setFocusMode(!focusMode)}
+              aria-pressed={focusMode}
+              title="Reordena por urgência (SLA, estagnação, prioridade) e esmaece itens sem urgência"
+              className="h-8"
+            >
+              <Target className="h-4 w-4 mr-1" />
+              Foco em SLA
+            </Button>
+          )}
+        </div>
+
 
         <TabsContent value="table" className="mt-4">
           {selected.size > 0 && (
@@ -690,8 +726,10 @@ function TicketsIndex() {
             }
             tickets={filtered}
             lookups={lookups}
+            focusMode={focusMode}
             onOpen={openEdit}
           />
+
         </TabsContent>
 
         <TabsContent value="split" className="mt-4">

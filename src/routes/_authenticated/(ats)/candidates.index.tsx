@@ -21,7 +21,10 @@ import {
   UserPlus,
   ArrowLeft,
   Loader2,
+  Target,
+  Flame,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +75,9 @@ import {
 import { MetaPill } from "@/components/techhire/ui";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
+import { computeCandidateSignals } from "@/lib/kanban/candidates-signals";
+import { KanbanSignalIcons, kanbanBorderStyle } from "@/components/kanban/kanban-signal-indicator";
+
 
 
 export const Route = createFileRoute("/_authenticated/(ats)/candidates/")({
@@ -314,6 +320,30 @@ function CandidatesPage() {
     for (const r of rows) c[statuses[r.id as string] ?? "new"]++;
     return c;
   }, [rows, statuses]);
+
+  const CAND_FOCUS_KEY = "candidates:focusMode";
+  const [focusMode, setFocusMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return window.localStorage.getItem(CAND_FOCUS_KEY) === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.setItem(CAND_FOCUS_KEY, focusMode ? "1" : "0"); } catch { /* noop */ }
+  }, [focusMode]);
+
+  const candSignals = useMemo(
+    () =>
+      computeCandidateSignals(
+        rows.map((r) => ({
+          id: r.id as string,
+          updated_at: (r as { updated_at?: string | null }).updated_at ?? null,
+          created_at: (r as { created_at?: string | null }).created_at ?? null,
+        })),
+        (c) => statuses[c.id] ?? "new",
+      ),
+    [rows, statuses],
+  );
+
 
 
   const handleCreate = async () => {
@@ -1167,13 +1197,39 @@ function CandidatesPage() {
           </Table>
         </div>
       ) : (
+        <>
+          <div className="mb-2 flex justify-end">
+            <Button
+              size="sm"
+              variant={focusMode ? "default" : "outline"}
+              onClick={() => setFocusMode(!focusMode)}
+              aria-pressed={focusMode}
+              title="Reordena por estagnação por estágio e esmaece candidatos em movimento"
+              className="h-8"
+            >
+              <Target className="h-4 w-4 mr-1" />
+              Modo de foco
+            </Button>
+          </div>
         <KanbanScrollContainer ariaLabel="Quadro de candidatos">
           <div className="flex gap-2 pb-4">
             {STATUS_ORDER.map((s) => {
-              const colRows = rows.filter(
+              const rawCol = rows.filter(
                 (r) => (statuses[r.id as string] ?? "new") === s,
               );
+              const colRows = focusMode
+                ? [...rawCol].sort(
+                    (a, b) =>
+                      (candSignals.get(b.id as string)?.score ?? 0) -
+                      (candSignals.get(a.id as string)?.score ?? 0),
+                  )
+                : rawCol;
+              const hotCount = colRows.reduce(
+                (n, r) => n + (candSignals.get(r.id as string)?.isHot ? 1 : 0),
+                0,
+              );
               const isOver = dragOverCol === s;
+
               const handleDrop = async (jobId: string) => {
                 const candidateId = jobId; // dataTransfer carrega o id do candidato
                 const candidate = rows.find((r) => r.id === candidateId);
@@ -1251,8 +1307,18 @@ function CandidatesPage() {
                   <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
                       <CandidateStatusPill status={s} />
-                      <span className="text-[11px] tabular-nums text-text-tertiary">
-                        {colRows.length}
+                      <span className="flex items-center gap-1 text-[11px] tabular-nums text-text-tertiary">
+                        {hotCount > 0 && (
+                          <span
+                            className="inline-flex items-center gap-0.5"
+                            title={`${hotCount} parado(s)`}
+                            style={{ color: "var(--hs-orange)" }}
+                          >
+                            <Flame className="h-3 w-3" aria-hidden />
+                            {hotCount}
+                          </span>
+                        )}
+                        <span>{colRows.length}</span>
                       </span>
                     </div>
                   </div>
@@ -1260,6 +1326,8 @@ function CandidatesPage() {
                     {colRows.map((c) => {
                       const skills = Array.isArray(c.skills) ? (c.skills as string[]) : [];
                       const cid = c.id as string;
+                      const sig = candSignals.get(cid);
+                      const dim = focusMode && sig?.klass === "cold";
                       return (
                         <Link
                           key={cid}
@@ -1277,17 +1345,23 @@ function CandidatesPage() {
                             setDraggingId(null);
                             setDragOverCol(null);
                           }}
+                          style={kanbanBorderStyle(sig)}
                           className={cn(
                             "block rounded-md border border-border-subtle bg-surface-1 p-2.5",
                             "transition-all hover:border-border-strong hover:shadow-sm",
                             "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                             "cursor-grab active:cursor-grabbing",
                             draggingId === cid && "opacity-50",
+                            dim && "opacity-60",
                           )}
                         >
-                          <div className="truncate text-sm font-medium text-text-primary">
-                            {c.full_name as string}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="truncate text-sm font-medium text-text-primary">
+                              {c.full_name as string}
+                            </div>
+                            <KanbanSignalIcons signals={sig} />
                           </div>
+
                           {c.current_position ? (
                             <div className="mt-0.5 flex items-center gap-1 text-xs text-text-secondary">
                               <Briefcase className="h-3 w-3 shrink-0 text-text-tertiary" aria-hidden />
@@ -1332,7 +1406,9 @@ function CandidatesPage() {
             })}
           </div>
         </KanbanScrollContainer>
+        </>
       )}
+
 
       <AssociateCandidateJobDialog
         open={associateState.open}

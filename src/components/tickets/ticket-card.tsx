@@ -2,6 +2,12 @@ import { useDraggable } from "@dnd-kit/core";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AlertCircle, Building2, Clock, User as UserIcon } from "lucide-react";
 import type { TicketRow } from "./types";
+import type { KanbanSignals } from "@/lib/kanban/signals";
+import {
+  KanbanSignalIcons,
+  kanbanBorderStyle,
+} from "@/components/kanban/kanban-signal-indicator";
+
 
 const PRIORITY_VAR: Record<string, string> = {
   low: "var(--priority-low)",
@@ -38,6 +44,8 @@ export function TicketCard({
   draggable = true,
   active = false,
   columnId,
+  signals,
+  dimmed,
   onClick,
 }: {
   ticket: TicketRow;
@@ -47,12 +55,15 @@ export function TicketCard({
   draggable?: boolean;
   active?: boolean;
   columnId?: string;
+  signals?: KanbanSignals;
+  dimmed?: boolean;
   onClick?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: ticket.id,
     disabled: !draggable,
   });
+
   const style = transform
     ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
@@ -68,7 +79,7 @@ export function TicketCard({
       ref={setNodeRef}
       {...(draggable ? attributes : {})}
       {...(draggable ? listeners : {})}
-      style={style}
+      style={{ ...style, ...kanbanBorderStyle(signals) }}
       onClick={onClick}
       onKeyDown={(e) => {
         if (onClick && (e.key === "Enter" || e.key === " ")) {
@@ -79,9 +90,11 @@ export function TicketCard({
       tabIndex={onClick ? 0 : -1}
       data-kanban-card
       data-kanban-column={columnId}
+      data-hot={signals?.isHot ? "1" : undefined}
+      data-high-value={signals?.isHighValue ? "1" : undefined}
       className={`group relative rounded-md border bg-card p-2.5 text-sm transition-all hover:border-[var(--hs-orange)] hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hs-orange)] ${
         draggable ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
-      } ${active ? "border-[var(--hs-orange)] ring-1 ring-[var(--hs-orange)]" : ""}`}
+      } ${active ? "border-[var(--hs-orange)] ring-1 ring-[var(--hs-orange)]" : ""} ${dimmed ? "opacity-60" : ""}`}
     >
       <div
         className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-md"
@@ -90,10 +103,14 @@ export function TicketCard({
       />
       <div className="flex items-start justify-between gap-2 pl-1">
         <div className="font-medium leading-tight line-clamp-2 flex-1">{ticket.subject}</div>
-        {ticket.priority === "urgent" && (
-          <AlertCircle className="h-3.5 w-3.5 shrink-0" style={{ color: priorityColor }} />
-        )}
+        <div className="flex items-center gap-1 shrink-0">
+          <KanbanSignalIcons signals={signals} />
+          {ticket.priority === "urgent" && !signals?.isHighValue && (
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" style={{ color: priorityColor }} />
+          )}
+        </div>
       </div>
+
 
       {(contactName || companyName) && (
         <div className="mt-1.5 space-y-0.5 pl-1">

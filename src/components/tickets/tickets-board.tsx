@@ -16,14 +16,18 @@ import { TicketCard } from "./ticket-card";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import type { TicketRow, TicketStatus } from "./types";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
+import { computeTicketSignals } from "@/lib/kanban/tickets-signals";
+import { Flame } from "lucide-react";
 
 function Column({
   stage,
   count,
+  hotCount,
   children,
 }: {
   stage: PipelineStage;
   count: number;
+  hotCount?: number;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value });
@@ -45,11 +49,22 @@ function Column({
           <span className="text-[11px] font-semibold uppercase tracking-wide truncate">
             {stage.label}
           </span>
-          <span className="ml-auto text-[11px] text-[var(--hs-text-muted)] tabular-nums">
-            {count}
+          <span className="ml-auto flex items-center gap-1 text-[11px] text-[var(--hs-text-muted)] tabular-nums">
+            {hotCount !== undefined && hotCount > 0 ? (
+              <span
+                className="inline-flex items-center gap-0.5"
+                title={`${hotCount} urgente(s)`}
+                style={{ color: "var(--hs-orange)" }}
+              >
+                <Flame className="h-3 w-3" aria-hidden />
+                {hotCount}
+              </span>
+            ) : null}
+            <span>{count}</span>
           </span>
         </div>
       </div>
+
       <div className="p-2 space-y-1.5 flex-1 min-h-[200px] overflow-y-auto max-h-[calc(100vh-260px)]">
         {children}
         {count === 0 && (
@@ -66,6 +81,7 @@ export function TicketsBoard({
   pipeline,
   tickets,
   lookups,
+  focusMode,
   onOpen,
 }: {
   pipeline: Pipeline;
@@ -75,10 +91,17 @@ export function TicketsBoard({
     companies: Map<string, string>;
     owners: Map<string, string>;
   };
+  focusMode?: boolean;
   onOpen: (t: TicketRow) => void;
 }) {
   const qc = useQueryClient();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
+
+  const signals = useMemo(
+    () => computeTicketSignals(tickets, pipeline),
+    [tickets, pipeline],
+  );
+
 
   const grouped = useMemo(() => {
     const map: Record<string, TicketRow[]> = {};
@@ -157,20 +180,36 @@ export function TicketsBoard({
       <KanbanScrollContainer ariaLabel="Quadro de chamados">
         <div className="flex gap-2 pb-4">
           {pipeline.stages.map((s) => {
-            const rows = grouped[s.value] ?? [];
+            const raw = grouped[s.value] ?? [];
+            const rows = focusMode
+              ? [...raw].sort((a, b) => {
+                  const sa = signals.get(a.id)?.score ?? 0;
+                  const sb = signals.get(b.id)?.score ?? 0;
+                  return sb - sa;
+                })
+              : raw;
+            const hotCount = rows.reduce(
+              (n, t) => n + (signals.get(t.id)?.isHot ? 1 : 0),
+              0,
+            );
             return (
-              <Column key={s.value} stage={s} count={rows.length}>
-                {rows.map((t) => (
-                  <TicketCard
-                    key={t.id}
-                    ticket={t}
-                    columnId={s.value}
-                    contactName={t.contact_id ? lookups.contacts.get(t.contact_id) : undefined}
-                    companyName={t.company_id ? lookups.companies.get(t.company_id) : undefined}
-                    ownerName={t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined}
-                    onClick={() => onOpen(t)}
-                  />
-                ))}
+              <Column key={s.value} stage={s} count={rows.length} hotCount={hotCount}>
+                {rows.map((t) => {
+                  const sig = signals.get(t.id);
+                  return (
+                    <TicketCard
+                      key={t.id}
+                      ticket={t}
+                      columnId={s.value}
+                      contactName={t.contact_id ? lookups.contacts.get(t.contact_id) : undefined}
+                      companyName={t.company_id ? lookups.companies.get(t.company_id) : undefined}
+                      ownerName={t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined}
+                      signals={sig}
+                      dimmed={focusMode && sig?.klass === "cold"}
+                      onClick={() => onOpen(t)}
+                    />
+                  );
+                })}
               </Column>
             );
           })}
@@ -179,3 +218,4 @@ export function TicketsBoard({
     </DndContext>
   );
 }
+
