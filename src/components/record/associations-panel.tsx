@@ -66,7 +66,7 @@ export function AssociationsPanel({ entity, entityId, companyId, contactId, deal
   return (
     <>
       {entity === "lead" && <ConvertedFromLeadCard entityId={entityId} />}
-      {(entity === "contact" || entity === "deal" || entity === "ticket") && (
+      {(entity === "contact" || entity === "deal" || entity === "ticket" || entity === "lead") && (
         <CompanyCard entity={entity} entityId={entityId} companyId={companyId ?? null} />
       )}
       {(entity === "company" || entity === "deal") && (
