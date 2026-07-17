@@ -71,12 +71,16 @@ import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
+import { Route as AuthenticatedServicesIndexRouteImport } from './routes/_authenticated/services.index'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
+import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace.index'
 import { Route as AuthenticatedLandingPagesIndexRouteImport } from './routes/_authenticated/landing-pages.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
 import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
 import { Route as AuthenticatedHomeIndexRouteImport } from './routes/_authenticated/home.index'
+import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
+import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authenticated/contracts.index'
 import { Route as AuthenticatedAtsIndexRouteImport } from './routes/_authenticated/ats.index'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiAgentChatRouteImport } from './routes/api/agent/chat'
@@ -612,11 +616,23 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedServicesIndexRoute =
+  AuthenticatedServicesIndexRouteImport.update({
+    id: '/services/',
+    path: '/services/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProposalsIndexRoute =
   AuthenticatedProposalsIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedProposalsRoute,
+  } as any)
+const AuthenticatedProjectsIndexRoute =
+  AuthenticatedProjectsIndexRouteImport.update({
+    id: '/projects/',
+    path: '/projects/',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMarketplaceIndexRoute =
   AuthenticatedMarketplaceIndexRouteImport.update({
@@ -646,6 +662,18 @@ const AuthenticatedHomeIndexRoute = AuthenticatedHomeIndexRouteImport.update({
   path: '/home/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFinanceIndexRoute =
+  AuthenticatedFinanceIndexRouteImport.update({
+    id: '/finance/',
+    path: '/finance/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContractsIndexRoute =
+  AuthenticatedContractsIndexRouteImport.update({
+    id: '/contracts/',
+    path: '/contracts/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAtsIndexRoute = AuthenticatedAtsIndexRouteImport.update({
   id: '/ats/',
   path: '/ats/',
@@ -2080,12 +2108,16 @@ export interface FileRoutesByFullPath {
   '/api/agent/chat': typeof ApiAgentChatRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ats/': typeof AuthenticatedAtsIndexRoute
+  '/contracts/': typeof AuthenticatedContractsIndexRoute
+  '/finance/': typeof AuthenticatedFinanceIndexRoute
   '/home/': typeof AuthenticatedHomeIndexRoute
   '/inbox/': typeof AuthenticatedInboxIndexRoute
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
+  '/services/': typeof AuthenticatedServicesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/candidates/$id': typeof AuthenticatedatsCandidatesIdRoute
@@ -2360,12 +2392,16 @@ export interface FileRoutesByTo {
   '/api/agent/chat': typeof ApiAgentChatRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/ats': typeof AuthenticatedAtsIndexRoute
+  '/contracts': typeof AuthenticatedContractsIndexRoute
+  '/finance': typeof AuthenticatedFinanceIndexRoute
   '/home': typeof AuthenticatedHomeIndexRoute
   '/inbox': typeof AuthenticatedInboxIndexRoute
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages': typeof AuthenticatedLandingPagesIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
+  '/projects': typeof AuthenticatedProjectsIndexRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
+  '/services': typeof AuthenticatedServicesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
   '/candidates/$id': typeof AuthenticatedatsCandidatesIdRoute
@@ -2647,12 +2683,16 @@ export interface FileRoutesById {
   '/api/agent/chat': typeof ApiAgentChatRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/_authenticated/ats/': typeof AuthenticatedAtsIndexRoute
+  '/_authenticated/contracts/': typeof AuthenticatedContractsIndexRoute
+  '/_authenticated/finance/': typeof AuthenticatedFinanceIndexRoute
   '/_authenticated/home/': typeof AuthenticatedHomeIndexRoute
   '/_authenticated/inbox/': typeof AuthenticatedInboxIndexRoute
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
+  '/_authenticated/services/': typeof AuthenticatedServicesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
   '/_authenticated/(ats)/candidates/$id': typeof AuthenticatedatsCandidatesIdRoute
@@ -2934,12 +2974,16 @@ export interface FileRouteTypes {
     | '/api/agent/chat'
     | '/lovable/email/suppression'
     | '/ats/'
+    | '/contracts/'
+    | '/finance/'
     | '/home/'
     | '/inbox/'
     | '/integrations/'
     | '/landing-pages/'
     | '/marketplace/'
+    | '/projects/'
     | '/proposals/'
+    | '/services/'
     | '/settings/'
     | '/workspace/'
     | '/candidates/$id'
@@ -3214,12 +3258,16 @@ export interface FileRouteTypes {
     | '/api/agent/chat'
     | '/lovable/email/suppression'
     | '/ats'
+    | '/contracts'
+    | '/finance'
     | '/home'
     | '/inbox'
     | '/integrations'
     | '/landing-pages'
     | '/marketplace'
+    | '/projects'
     | '/proposals'
+    | '/services'
     | '/settings'
     | '/workspace'
     | '/candidates/$id'
@@ -3500,12 +3548,16 @@ export interface FileRouteTypes {
     | '/api/agent/chat'
     | '/lovable/email/suppression'
     | '/_authenticated/ats/'
+    | '/_authenticated/contracts/'
+    | '/_authenticated/finance/'
     | '/_authenticated/home/'
     | '/_authenticated/inbox/'
     | '/_authenticated/integrations/'
     | '/_authenticated/landing-pages/'
     | '/_authenticated/marketplace/'
+    | '/_authenticated/projects/'
     | '/_authenticated/proposals/'
+    | '/_authenticated/services/'
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/'
     | '/_authenticated/(ats)/candidates/$id'
@@ -4151,12 +4203,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/services/': {
+      id: '/_authenticated/services/'
+      path: '/services'
+      fullPath: '/services/'
+      preLoaderRoute: typeof AuthenticatedServicesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/proposals/': {
       id: '/_authenticated/proposals/'
       path: '/'
       fullPath: '/proposals/'
       preLoaderRoute: typeof AuthenticatedProposalsIndexRouteImport
       parentRoute: typeof AuthenticatedProposalsRoute
+    }
+    '/_authenticated/projects/': {
+      id: '/_authenticated/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/marketplace/': {
       id: '/_authenticated/marketplace/'
@@ -4191,6 +4257,20 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home/'
       preLoaderRoute: typeof AuthenticatedHomeIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/finance/': {
+      id: '/_authenticated/finance/'
+      path: '/finance'
+      fullPath: '/finance/'
+      preLoaderRoute: typeof AuthenticatedFinanceIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contracts/': {
+      id: '/_authenticated/contracts/'
+      path: '/contracts'
+      fullPath: '/contracts/'
+      preLoaderRoute: typeof AuthenticatedContractsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/ats/': {
@@ -6157,9 +6237,13 @@ interface AuthenticatedRouteChildren {
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
   AuthenticatedAtsIndexRoute: typeof AuthenticatedAtsIndexRoute
+  AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
+  AuthenticatedFinanceIndexRoute: typeof AuthenticatedFinanceIndexRoute
   AuthenticatedHomeIndexRoute: typeof AuthenticatedHomeIndexRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
+  AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
+  AuthenticatedServicesIndexRoute: typeof AuthenticatedServicesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
   AuthenticatedatsCandidatesIdRoute: typeof AuthenticatedatsCandidatesIdRoute
   AuthenticatedatsHuntingCapturesRoute: typeof AuthenticatedatsHuntingCapturesRoute
@@ -6241,9 +6325,13 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
   AuthenticatedAtsIndexRoute: AuthenticatedAtsIndexRoute,
+  AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,
+  AuthenticatedFinanceIndexRoute: AuthenticatedFinanceIndexRoute,
   AuthenticatedHomeIndexRoute: AuthenticatedHomeIndexRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
+  AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
+  AuthenticatedServicesIndexRoute: AuthenticatedServicesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
   AuthenticatedatsCandidatesIdRoute: AuthenticatedatsCandidatesIdRoute,
   AuthenticatedatsHuntingCapturesRoute: AuthenticatedatsHuntingCapturesRoute,
