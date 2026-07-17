@@ -36,6 +36,8 @@ export function DealsBoardCard({
   fields,
   columnId,
   nextActivityDate,
+  signals,
+  dimmed,
   onClick,
 }: {
   deal: Deal;
@@ -45,6 +47,8 @@ export function DealsBoardCard({
   fields?: string[];
   columnId?: string;
   nextActivityDate?: string | null;
+  signals?: DealSignals;
+  dimmed?: boolean;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
