@@ -14572,6 +14572,13 @@ export type Database = {
         Args: { _owner: string; _workspace: string }
         Returns: undefined
       }
+      services_next_billing: {
+        Args: {
+          _cadence: Database["public"]["Enums"]["service_cadence"]
+          _current: string
+        }
+        Returns: string
+      }
       shares_team_with: {
         Args: { _owner: string; _user: string }
         Returns: boolean
