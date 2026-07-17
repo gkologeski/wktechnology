@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Kanban } from "lucide-react";
-import { EmptyState } from "@/components/ui/empty-state";
+
 import { PageHeader } from "@/components/page-header";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
