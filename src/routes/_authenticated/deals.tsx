@@ -55,6 +55,23 @@ function DealsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
   const DEALS_VIEW_KEY = "deals:view";
+  const DEALS_FOCUS_KEY = "deals:focusMode";
+  const [focusMode, setFocusMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem(DEALS_FOCUS_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(DEALS_FOCUS_KEY, focusMode ? "1" : "0");
+    } catch {
+      /* noop */
+    }
+  }, [focusMode]);
   const [view, setView] = useState<"table" | "board" | "list" | "forecast">(() => {
     if (typeof window === "undefined") return "board";
     try {
