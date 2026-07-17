@@ -1,52 +1,30 @@
+## Diagnóstico
 
-## Problema
+A cotação `Q-202607-6826` (deal `8da84ad6…`) está com `status = 'sent'` e `sent_at = 2026-07-17 19:55`, porém **não existe nenhum e-mail correspondente**: nem em `email_messages` (não há registro com esse assunto/número), nem em `activities` (não há `activity.type='email'` para o deal), e a cotação também não tem `payment_link_url`.
 
-No wizard de cotação, o botão **Publicar** grava `status = 'sent'` (enviada), mesmo quando o contato não tem e-mail e nenhum envio ocorreu. Além disso, uma vez publicada, não há um caminho claro para enviá-la por e-mail depois (ex.: quando o e-mail do contato é preenchido posteriormente).
+O `SendEmailDialog` só dispara `onSent` após o backend retornar `thread_id` com sucesso, então o marcação de "enviada" nesse caso não veio de um envio real. Duas causas plausíveis, ambas presentes no código atual:
 
-## Objetivo
+1. **Legado do `publishMut`** — antes da correção desta sessão, "Publicar" gravava `status='sent'` direto. Esta cotação foi criada às 19:36 e provavelmente publicada por essa versão do código, deixando o status errado mesmo após o fix do enum `published`.
+2. **`createQuotePaymentLink` em `src/lib/quotes.functions.ts` (linhas 325-337)** ainda promove `draft → sent` ao gerar link de pagamento, o que não é um envio real. Deve promover para `published` (ou não mexer no status). Como esta cotação não tem `payment_link_url`, não foi a causa aqui, mas é o mesmo bug e continuará gerando falsos "enviada".
 
-1. **Publicar** apenas publica (gera link público, marca como "Publicada"), sem afirmar envio.
-2. **Enviada** só quando o e-mail é de fato disparado.
-3. Cotações publicadas (ou em rascunho) podem ser enviadas por e-mail a qualquer momento a partir do card da cotação no negócio.
+## Plano
 
-## Mudanças
+### 1. Corrigir a fonte residual do bug (código)
+- **`src/lib/quotes.functions.ts` → `createQuotePaymentLink`**: quando `quote.status === 'draft'`, promover para `'published'` (não para `'sent'`) e **não** setar `sent_at`. Cotações já `published`/`sent`/etc. permanecem inalteradas. Isso alinha com a nova semântica: "enviada" = e-mail realmente disparado.
 
-### 1. Banco (migration)
+### 2. Corrigir o dado desta cotação
+- Migration pontual: reverter `Q-202607-6826` para `status='published'` e `sent_at=null`, já que não existe evidência de envio (sem `email_messages` com esse assunto, sem `activities.type='email'` no deal, sem `payment_link_url`).
 
-- Adicionar o valor `'published'` ao enum `quote_status` (`ALTER TYPE public.quote_status ADD VALUE IF NOT EXISTS 'published' BEFORE 'sent'`).
-- Nenhuma alteração de RLS/grants — o enum é apenas ampliado.
+```text
+UPDATE quotes
+SET status = 'published', sent_at = NULL
+WHERE id = '5e798fa9-e71c-4e5f-bb34-f037f0f44df4';
+```
 
-### 2. `src/components/deals/quote-wizard.tsx`
+### 3. Nada mais é alterado
+- UI/menu de cotações já expõe "Enviar por e-mail" para status `published` e o `SendEmailDialog.onSent` já grava `status='sent'` só após sucesso — comportamento correto, mantido.
+- Nenhuma alteração em RLS, autenticação, schema além do UPDATE pontual, ou em outras rotas.
 
-- `publishMut`: gravar `status: 'published'` (limpando `sent_at`, que representa "enviada por e-mail"). Toast: "Cotação publicada.".
-- `handlePublishAndSend`: publica como `published` e abre `SendEmailDialog`. O envio efetivo (via `onSent`) chama uma nova mutação `markAsSentMut` que grava `status: 'sent'` + `sent_at = now()`.
-- Passar `quoteId` para o `SendEmailDialog` e invocar `markAsSentMut` no callback `onSent`.
-- Ajustar mensagem quando não há e-mail no contato: "Sem e-mail no contato principal — a cotação será publicada; você poderá enviá-la por e-mail depois que o contato tiver e-mail cadastrado.".
-
-### 3. `src/components/deals/deal-quotes.tsx`
-
-- Adicionar rótulos/cores para `published` (ex.: "Publicada", dot âmbar/roxo suave conforme design system).
-- No menu de ações:
-  - Substituir "Marcar como enviada" (que hoje só aparece em rascunho) por **"Enviar por e-mail"** disponível quando `status ∈ {draft, published}` **e** o contato principal do negócio tem e-mail. Ao clicar, abre `SendEmailDialog` já preenchido; ao concluir, marca a cotação como `sent` + `sent_at`.
-  - Manter "Marcar como enviada" como opção secundária (para registrar envios feitos fora do sistema), disponível em `draft` e `published`.
-  - "Editar" continua disponível em `draft` **e** `published` (o wizard já cobre rascunhos; passa a cobrir publicadas também — apenas UI, sem novas regras de negócio).
-
-### 4. Rótulos de status onde `quote_status` é exibido
-
-Adicionar "Publicada" em:
-- `src/routes/quote.$token.tsx` (badge do topo e mapa de labels).
-- `src/routes/_authenticated/settings.quotes.tsx` (métricas, se aplicável — sem quebrar contagens existentes).
-
-Nenhum outro comportamento server-side é alterado. `sent_at` continua sendo a marca temporal do envio real por e-mail.
-
-## Fora de escopo
-
-- Alterar o fluxo de PDF, template ou pagamento.
-- Editar contato/e-mail dentro do wizard (já existe fluxo próprio no detalhe do contato).
-- Notificações/automação em cima do novo status.
-
-## Detalhes técnicos
-
-- O enum novo (`published`) é retrocompatível: linhas existentes com `sent` continuam válidas. Não há migração de dados — cotações antigas marcadas erroneamente como `sent` permanecem assim (o usuário pode ajustar manualmente via "Editar" se desejar).
-- `updateQuote` em `src/lib/quotes.functions.ts` já aceita `status`/`sent_at` genéricos — não precisa mudar. Após regenerar `types.ts` (automático), o TS aceitará `'published'`.
-- Botão "Enviar por e-mail" reutiliza `SendEmailDialog` existente; nenhum novo endpoint.
+## Verificação após implementação
+- Recarregar o detalhe do deal e confirmar que a cotação aparece como "Publicada" (badge âmbar) com opção "Enviar por e-mail" disponível.
+- Gerar um novo link de pagamento em uma cotação `draft` de teste e confirmar que ela passa para `published`, não para `sent`.

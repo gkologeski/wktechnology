@@ -325,15 +325,13 @@ export const createQuotePaymentLink = createServerFn({ method: "POST" })
     const patch: {
       payment_link_url: string;
       payment_session_id: string;
-      status?: "sent";
-      sent_at?: string;
+      status?: "published";
     } = {
       payment_link_url: session.url,
       payment_session_id: session.id,
     };
     if (quote.status === "draft") {
-      patch.status = "sent";
-      patch.sent_at = new Date().toISOString();
+      patch.status = "published";
     }
     await supabase.from("quotes").update(patch).eq("id", quote.id);
 
