@@ -41,6 +41,9 @@ export function DealsToolbar({
   owners,
   filters,
   setFilters,
+  focusMode,
+  onToggleFocus,
+  hotCount,
 }: {
   pipelines: Pipeline[];
   selectedPipelineId: string | null;
@@ -48,6 +51,9 @@ export function DealsToolbar({
   owners: { id: string; name: string }[];
   filters: DealFilters;
   setFilters: (f: DealFilters) => void;
+  focusMode?: boolean;
+  onToggleFocus?: (b: boolean) => void;
+  hotCount?: number;
 }) {
   const setF = <K extends keyof DealFilters>(k: K, v: DealFilters[K]) =>
     setFilters({ ...filters, [k]: v });
