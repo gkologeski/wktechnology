@@ -105,6 +105,30 @@ export function DealsToolbar({
           </Link>
         </Button>
 
+        {onToggleFocus && (
+          <Button
+            type="button"
+            variant={focusMode ? "default" : "outline"}
+            size="sm"
+            className={`h-9 ${
+              focusMode
+                ? "bg-[color:var(--hs-orange)] text-[color:var(--hs-orange-foreground)] hover:bg-[color:var(--hs-orange)]/90"
+                : ""
+            }`}
+            onClick={() => onToggleFocus(!focusMode)}
+            aria-pressed={!!focusMode}
+            title="Ordena por proximidade de fechamento e esmaece negócios frios"
+          >
+            <Target className="h-4 w-4 mr-1" />
+            Foco em fechamento
+            {focusMode && hotCount !== undefined && hotCount > 0 ? (
+              <span className="ml-1.5 rounded bg-black/10 px-1.5 text-[10px] tabular-nums">
+                {hotCount}
+              </span>
+            ) : null}
+          </Button>
+        )}
+
         <div className="flex-1" />
 
         <div className="relative">
