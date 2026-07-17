@@ -171,6 +171,7 @@ import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authentic
 import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authenticated/inbox.chat'
 import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authenticated/home.access'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
+import { Route as AuthenticatedContractsIdRouteImport } from './routes/_authenticated/contracts.$id'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
@@ -1203,6 +1204,12 @@ const AuthenticatedDealsIdRoute = AuthenticatedDealsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedDealsRoute,
 } as any)
+const AuthenticatedContractsIdRoute =
+  AuthenticatedContractsIdRouteImport.update({
+    id: '/contracts/$id',
+    path: '/contracts/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedContactsIdRoute = AuthenticatedContactsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2018,6 +2025,7 @@ export interface FileRoutesByFullPath {
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
+  '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
@@ -2303,6 +2311,7 @@ export interface FileRoutesByTo {
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
+  '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
@@ -2593,6 +2602,7 @@ export interface FileRoutesById {
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
+  '/_authenticated/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
   '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
   '/_authenticated/inbox/chat': typeof AuthenticatedInboxChatRoute
@@ -2884,6 +2894,7 @@ export interface FileRouteTypes {
     | '/campaigns/whatsapp'
     | '/companies/$id'
     | '/contacts/$id'
+    | '/contracts/$id'
     | '/deals/$id'
     | '/home/access'
     | '/inbox/chat'
@@ -3169,6 +3180,7 @@ export interface FileRouteTypes {
     | '/campaigns/whatsapp'
     | '/companies/$id'
     | '/contacts/$id'
+    | '/contracts/$id'
     | '/deals/$id'
     | '/home/access'
     | '/inbox/chat'
@@ -3458,6 +3470,7 @@ export interface FileRouteTypes {
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/companies/$id'
     | '/_authenticated/contacts/$id'
+    | '/_authenticated/contracts/$id'
     | '/_authenticated/deals/$id'
     | '/_authenticated/home/access'
     | '/_authenticated/inbox/chat'
@@ -4903,6 +4916,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDealsIdRouteImport
       parentRoute: typeof AuthenticatedDealsRoute
     }
+    '/_authenticated/contracts/$id': {
+      id: '/_authenticated/contracts/$id'
+      path: '/contracts/$id'
+      fullPath: '/contracts/$id'
+      preLoaderRoute: typeof AuthenticatedContractsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/contacts/$id': {
       id: '/_authenticated/contacts/$id'
       path: '/$id'
@@ -6229,6 +6249,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAuthExtensionLinkRoute: typeof AuthenticatedAuthExtensionLinkRoute
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
+  AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
   AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
@@ -6317,6 +6338,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAuthExtensionLinkRoute: AuthenticatedAuthExtensionLinkRoute,
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
+  AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
   AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
@@ -6551,13 +6573,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
