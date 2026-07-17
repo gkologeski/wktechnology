@@ -117,10 +117,22 @@ export function DealsBoard({
         <KanbanScrollContainer ariaLabel="Quadro de negócios">
           <div className="flex gap-2 pb-4">
             {pipeline.stages.map((s) => {
-              const rows = grouped[s.value] ?? [];
+              const raw = grouped[s.value] ?? [];
+              const rows = focusMode
+                ? [...raw].sort((a, b) => {
+                    const sa = signals.get(a.id)?.score ?? 0;
+                    const sb = signals.get(b.id)?.score ?? 0;
+                    if (sb !== sa) return sb - sa;
+                    return Number(b.value ?? 0) - Number(a.value ?? 0);
+                  })
+                : raw;
               const total = rows.reduce((sum, d) => sum + Number(d.value || 0), 0);
               const weighted = rows.reduce(
                 (sum, d) => sum + Number(d.value || 0) * ((s.probability ?? 0) / 100),
+                0,
+              );
+              const hotCount = rows.reduce(
+                (n, d) => n + (signals.get(d.id)?.isHot ? 1 : 0),
                 0,
               );
               return (
@@ -130,22 +142,28 @@ export function DealsBoard({
                   total={total}
                   weighted={weighted}
                   count={rows.length}
+                  hotCount={hotCount}
                 >
-                  {rows.map((d) => (
-                    <DealsBoardCard
-                      key={d.id}
-                      deal={d}
-                      columnId={s.value}
-                      companyName={d.company_id ? lookups.companies.get(d.company_id) : undefined}
-                      contactName={
-                        d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) : undefined
-                      }
-                      ownerName={lookups.owners.get(d.owner_id) ?? "—"}
-                      fields={pipeline.config?.card_fields}
-                      nextActivityDate={nextActivities?.get(d.id) ?? null}
-                      onClick={() => onOpen(d)}
-                    />
-                  ))}
+                  {rows.map((d) => {
+                    const sig = signals.get(d.id);
+                    return (
+                      <DealsBoardCard
+                        key={d.id}
+                        deal={d}
+                        columnId={s.value}
+                        companyName={d.company_id ? lookups.companies.get(d.company_id) : undefined}
+                        contactName={
+                          d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) : undefined
+                        }
+                        ownerName={lookups.owners.get(d.owner_id) ?? "—"}
+                        fields={pipeline.config?.card_fields}
+                        nextActivityDate={nextActivities?.get(d.id) ?? null}
+                        signals={sig}
+                        dimmed={focusMode && sig?.klass === "cold"}
+                        onClick={() => onOpen(d)}
+                      />
+                    );
+                  })}
                 </DealsBoardColumn>
               );
             })}
