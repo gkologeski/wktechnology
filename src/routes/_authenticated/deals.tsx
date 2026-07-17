@@ -238,6 +238,14 @@ function DealsPage() {
     });
   }, [deals, filters, selected, lookups]);
 
+  const boardHotCount = useMemo(() => {
+    if (!selected) return 0;
+    const sig = computeDealSignals(filtered, selected, nextActivities);
+    let n = 0;
+    for (const s of sig.values()) if (s.isHot) n++;
+    return n;
+  }, [filtered, selected, nextActivities]);
+
   const openNew = () => {
     setEditing(null);
     setDrawerOpen(true);
