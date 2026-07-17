@@ -85,7 +85,7 @@ function QuotesPage() {
                             ? "default"
                             : q.status === "declined"
                               ? "destructive"
-                              : q.status === "sent"
+                              : q.status === "sent" || q.status === "published"
                                 ? "secondary"
                                 : "outline"
                         }
