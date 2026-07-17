@@ -296,8 +296,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
         data: {
           id: quoteId,
           patch: {
-            status: "sent",
-            sent_at: new Date().toISOString(),
+            status: "published",
+            sent_at: null,
           },
         },
       });
@@ -306,6 +306,23 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
       toast.success("Cotação publicada.");
       invalidate();
     },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const markAsSentMut = useMutation({
+    mutationFn: async () => {
+      if (!quoteId) return;
+      await updateFn({
+        data: {
+          id: quoteId,
+          patch: {
+            status: "sent",
+            sent_at: new Date().toISOString(),
+          },
+        },
+      });
+    },
+    onSuccess: () => invalidate(),
     onError: (e: Error) => toast.error(e.message),
   });
 
