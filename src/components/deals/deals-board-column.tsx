@@ -8,12 +8,14 @@ export function DealsBoardColumn({
   total,
   weighted,
   count,
+  hotCount,
   children,
 }: {
   stage: PipelineStage;
   total: number;
   weighted: number;
   count: number;
+  hotCount?: number;
   children: ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value });
