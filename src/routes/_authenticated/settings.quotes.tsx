@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/settings/quotes")({
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
+  published: "Publicada",
   sent: "Enviada",
   accepted: "Aceita",
   declined: "Recusada",
