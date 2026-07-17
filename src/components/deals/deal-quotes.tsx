@@ -355,6 +355,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
           }}
         />
       )}
+    </div>
   );
 }
 
