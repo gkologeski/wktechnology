@@ -127,12 +127,13 @@ function PublicQuotePage() {
                 ? "default"
                 : quote.status === "declined"
                   ? "destructive"
-                  : quote.status === "sent"
+                  : quote.status === "sent" || quote.status === "published"
                     ? "secondary"
                     : "outline"
             }
           >
             {quote.status === "draft" && "Rascunho"}
+            {quote.status === "published" && "Publicada"}
             {quote.status === "sent" && "Enviada"}
             {quote.status === "accepted" && "Aceita"}
             {quote.status === "declined" && "Recusada"}

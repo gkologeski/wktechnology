@@ -296,8 +296,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
         data: {
           id: quoteId,
           patch: {
-            status: "sent",
-            sent_at: new Date().toISOString(),
+            status: "published",
+            sent_at: null,
           },
         },
       });
@@ -306,6 +306,23 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
       toast.success("Cotação publicada.");
       invalidate();
     },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const markAsSentMut = useMutation({
+    mutationFn: async () => {
+      if (!quoteId) return;
+      await updateFn({
+        data: {
+          id: quoteId,
+          patch: {
+            status: "sent",
+            sent_at: new Date().toISOString(),
+          },
+        },
+      });
+    },
+    onSuccess: () => invalidate(),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -580,7 +597,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
               </div>
               {!contact?.email && (
                 <p className="text-xs text-amber-600">
-                  Sem e-mail no contato principal — a opção "Publicar e enviar" ficará indisponível.
+                  Sem e-mail no contato principal — a cotação será publicada; você poderá enviá-la por e-mail depois de cadastrar o e-mail do contato.
                 </p>
               )}
             </div>
@@ -643,7 +660,12 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
               ? [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || undefined
               : undefined
           }
-          onSent={() => {
+          onSent={async () => {
+            try {
+              await markAsSentMut.mutateAsync();
+            } catch {
+              /* toast already shown */
+            }
             setShowSend(false);
             onOpenChange(false);
           }}

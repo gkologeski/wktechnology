@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/settings/quotes")({
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
+  published: "Publicada",
   sent: "Enviada",
   accepted: "Aceita",
   declined: "Recusada",
@@ -84,7 +85,7 @@ function QuotesPage() {
                             ? "default"
                             : q.status === "declined"
                               ? "destructive"
-                              : q.status === "sent"
+                              : q.status === "sent" || q.status === "published"
                                 ? "secondary"
                                 : "outline"
                         }

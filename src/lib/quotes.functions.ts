@@ -178,7 +178,7 @@ export const updateQuote = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         patch: z.object({
           title: z.string().nullable().optional(),
-          status: z.enum(["draft", "sent", "accepted", "declined", "expired"]).optional(),
+          status: z.enum(["draft", "published", "sent", "accepted", "declined", "expired"]).optional(),
           valid_until: z.string().nullable().optional(),
           notes: z.string().nullable().optional(),
           terms: z.string().nullable().optional(),

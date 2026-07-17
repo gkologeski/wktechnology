@@ -13883,7 +13883,13 @@ export type Database = {
       prospecting_campaign_status: "draft" | "running" | "paused" | "done"
       prospecting_source_type: "segment" | "saved_view" | "manual"
       prospecting_status: "pending" | "running" | "completed" | "failed"
-      quote_status: "draft" | "sent" | "accepted" | "declined" | "expired"
+      quote_status:
+        | "draft"
+        | "published"
+        | "sent"
+        | "accepted"
+        | "declined"
+        | "expired"
       sentiment_label: "positive" | "neutral" | "negative"
       sub_invoice_status: "pending" | "paid" | "failed" | "void"
       subscription_status:
@@ -14129,7 +14135,14 @@ export const Constants = {
       prospecting_campaign_status: ["draft", "running", "paused", "done"],
       prospecting_source_type: ["segment", "saved_view", "manual"],
       prospecting_status: ["pending", "running", "completed", "failed"],
-      quote_status: ["draft", "sent", "accepted", "declined", "expired"],
+      quote_status: [
+        "draft",
+        "published",
+        "sent",
+        "accepted",
+        "declined",
+        "expired",
+      ],
       sentiment_label: ["positive", "neutral", "negative"],
       sub_invoice_status: ["pending", "paid", "failed", "void"],
       subscription_status: [
