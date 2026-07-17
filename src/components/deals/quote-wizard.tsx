@@ -597,7 +597,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
               </div>
               {!contact?.email && (
                 <p className="text-xs text-amber-600">
-                  Sem e-mail no contato principal — a opção "Publicar e enviar" ficará indisponível.
+                  Sem e-mail no contato principal — a cotação será publicada; você poderá enviá-la por e-mail depois de cadastrar o e-mail do contato.
                 </p>
               )}
             </div>
