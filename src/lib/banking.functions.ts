@@ -384,7 +384,7 @@ export const syncBankStatement = createServerFn({ method: "POST" })
         counterparty: t.counterparty,
         category: t.category,
         balance_after: t.balance_after,
-        raw: t.raw ?? {},
+        raw: (t.raw ?? {}) as any,
       }));
 
       let inserted = 0;
