@@ -58,6 +58,7 @@ export const Route = createFileRoute("/api/public/hooks/security-scan-tick")({
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
 
+        const run = await runCronWithLogging("security-scan-tick", async () => {
         const supabase = createClient(
           process.env.SUPABASE_URL!,
           process.env.SUPABASE_SERVICE_ROLE_KEY!,
