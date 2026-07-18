@@ -1,0 +1,231 @@
+import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { DollarSign, Plus, Search } from "lucide-react";
+
+import { PageHeader } from "@/components/page-header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { listFinancialEntries } from "@/lib/finance.functions";
+import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
+import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
+
+const STATUS_LABEL: Record<string, string> = {
+  open: "Em aberto",
+  partial: "Parcial",
+  paid: "Pago",
+  overdue: "Vencido",
+  cancelled: "Cancelado",
+};
+
+const STATUS_TONE: Record<string, string> = {
+  open: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  partial: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  paid: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  overdue: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+  cancelled: "bg-muted text-muted-foreground",
+};
+
+type Entry = Awaited<ReturnType<typeof listFinancialEntries>>[number];
+
+export function EntriesListPage({
+  direction,
+  title,
+  description,
+}: {
+  direction: "receivable" | "payable";
+  title: string;
+  description: string;
+}) {
+  const qc = useQueryClient();
+  const list = useServerFn(listFinancialEntries);
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<string>("all");
+  const [openNew, setOpenNew] = useState(false);
+  const [payFor, setPayFor] = useState<Entry | null>(null);
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["finance-entries", direction, status, search],
+    queryFn: () =>
+      list({
+        data: {
+          direction,
+          status:
+            status === "all"
+              ? undefined
+              : (status as "open" | "partial" | "paid" | "overdue" | "cancelled"),
+          search: search || undefined,
+        },
+      }),
+  });
+
+  const total = useMemo(
+    () =>
+      rows.reduce(
+        (acc, r) => acc + (Number(r.amount) - Number(r.paid_amount ?? 0)),
+        0,
+      ),
+    [rows],
+  );
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["finance-entries", direction] });
+    qc.invalidateQueries({ queryKey: ["finance", "dashboard"] });
+  };
+
+  return (
+    <div className="p-6 space-y-5">
+      <PageHeader
+        title={title}
+        description={description}
+        count={rows.length}
+        countLabel={rows.length === 1 ? "lançamento" : "lançamentos"}
+        actions={
+          <Button onClick={() => setOpenNew(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Novo lançamento
+          </Button>
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por descrição…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            {Object.entries(STATUS_LABEL).map(([k, v]) => (
+              <SelectItem key={k} value={k}>
+                {v}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="ml-auto text-sm text-muted-foreground">
+          Total em aberto:{" "}
+          <span className="font-semibold tabular-nums text-foreground">
+            {formatCurrency(total)}
+          </span>
+        </div>
+      </div>
+
+      <div className="rounded-lg border bg-card">
+        {isLoading ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
+        ) : rows.length === 0 ? (
+          <div className="p-12 text-center">
+            <DollarSign className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">Nenhum lançamento</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Crie manualmente ou aguarde a geração automática por serviços e contratos.
+            </p>
+            <Button className="mt-4" onClick={() => setOpenNew(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Novo lançamento
+            </Button>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Contraparte</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
+                <TableHead className="text-right">Em aberto</TableHead>
+                <TableHead>Vencimento</TableHead>
+                <TableHead className="w-32" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((e) => {
+                const outstanding = Number(e.amount) - Number(e.paid_amount ?? 0);
+                const paid = e.status === "paid" || e.status === "cancelled";
+                return (
+                  <TableRow key={e.id}>
+                    <TableCell>
+                      <Link
+                        to="/finance/entries/$id"
+                        params={{ id: e.id }}
+                        className="font-medium hover:underline"
+                      >
+                        {e.description}
+                      </Link>
+                      {e.contracts && (
+                        <div className="text-xs text-muted-foreground">
+                          Contrato {e.contracts.number ?? e.contracts.title}
+                        </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">{e.companies?.name ?? "—"}</TableCell>
+                    <TableCell className="text-sm">{e.financial_categories?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={STATUS_TONE[e.status] ?? ""}>
+                        {STATUS_LABEL[e.status] ?? e.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatCurrency(Number(e.amount), e.currency)}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatCurrency(outstanding, e.currency)}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {formatDateTime(e.due_date).split(" ")[0]}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {!paid && (
+                        <Button size="sm" variant="outline" onClick={() => setPayFor(e)}>
+                          Baixar
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+
+      <QuickCreateEntryDialog
+        open={openNew}
+        onOpenChange={setOpenNew}
+        defaultDirection={direction}
+        onCreated={invalidate}
+      />
+      <RegisterPaymentDialog
+        entry={payFor}
+        onOpenChange={(open) => !open && setPayFor(null)}
+        onDone={invalidate}
+      />
+    </div>
+  );
+}
