@@ -81,7 +81,7 @@ export function TimerWidget() {
     | null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-40" data-tick={tick}>
+    <div className="fixed bottom-6 right-36 z-50" data-tick={tick}>
       {running ? (
         <div className="flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-3 py-2 shadow-lg border border-primary/20">
           <TimerIcon className="h-4 w-4" />
