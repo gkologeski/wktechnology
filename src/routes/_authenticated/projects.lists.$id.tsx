@@ -153,13 +153,19 @@ function ListDetailPage() {
         </TabsList>
 
         <TabsContent value="board" className="mt-4">
-          <BoardView statuses={statuses} tasks={tasks} onChanged={invalidate} />
+          <BoardView statuses={statuses} tasks={tasks} onChanged={invalidate} onOpen={setSelectedTask} />
         </TabsContent>
 
         <TabsContent value="list" className="mt-4">
-          <ListView statuses={statuses} tasks={tasks} onChanged={invalidate} />
+          <ListView statuses={statuses} tasks={tasks} onChanged={invalidate} onOpen={setSelectedTask} />
         </TabsContent>
       </Tabs>
+
+      <TaskDetailsSheet
+        task={selectedTask}
+        open={Boolean(selectedTask)}
+        onOpenChange={(v) => { if (!v) setSelectedTask(null); }}
+      />
     </div>
   );
 }
