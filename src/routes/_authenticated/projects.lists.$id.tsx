@@ -228,6 +228,7 @@ function BoardView({
                 task={t}
                 onDragStart={() => setDraggingId(t.id)}
                 onChanged={onChanged}
+                onOpen={() => onOpen(t)}
               />
             ))}
           </div>
