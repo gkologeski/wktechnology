@@ -663,7 +663,7 @@ function MembersPanel({ projectId }: { projectId: string }) {
     queryKey: ["project-members", projectId],
     queryFn: () => list({ data: { projectId } }),
   });
-  const { members: wsMembers = [] } = useWorkspaceMembers();
+  const { data: wsMembers = [] } = useWorkspaceMembers();
 
   const [userId, setUserId] = useState("");
   const [roleInProject, setRoleInProject] = useState<"manager" | "contributor" | "viewer">("contributor");
