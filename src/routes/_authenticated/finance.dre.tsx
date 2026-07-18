@@ -100,11 +100,22 @@ function DrePage() {
     <div className="p-6 space-y-6">
       <PageHeader
         title="DRE gerencial"
-        description="Receitas e despesas por competência, agrupadas por categoria."
+        description={
+          basis === "accrual"
+            ? "Receitas e despesas por competência (regime de competência)."
+            : "Receitas e despesas por data de pagamento (regime de caixa)."
+        }
         actions={
           <div className="flex items-center gap-2">
+            <Tabs value={basis} onValueChange={(v) => setBasis(v as "accrual" | "cash")}>
+              <TabsList>
+                <TabsTrigger value="accrual">Competência</TabsTrigger>
+                <TabsTrigger value="cash">Caixa</TabsTrigger>
+              </TabsList>
+            </Tabs>
             <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
               <SelectTrigger className="w-[140px]">
+
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
