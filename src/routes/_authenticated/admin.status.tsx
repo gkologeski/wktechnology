@@ -161,6 +161,61 @@ function AdminStatusPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Últimas execuções (observabilidade)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {(data?.recentCronRuns ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">Sem execuções registradas.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Job</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Início</TableHead>
+                  <TableHead>Duração</TableHead>
+                  <TableHead>Métricas / erro</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {((data?.recentCronRuns ?? []) as Array<{ id: string; job_name: string; started_at: string; duration_ms: number | null; status: string; metrics: string; error: string | null }>).map((r) => {
+                  const badgeClass =
+                    r.status === "error"
+                      ? "bg-destructive text-destructive-foreground hover:bg-destructive"
+                      : r.status === "success"
+                        ? "bg-success text-success-foreground hover:bg-success"
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary";
+                  return (
+                    <TableRow key={r.id}>
+                      <TableCell className="font-mono text-xs">{r.job_name}</TableCell>
+                      <TableCell>
+                        <Badge className={badgeClass}>{r.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {formatDistanceToNow(new Date(r.started_at), {
+                          addSuffix: true,
+                          locale: ptBR,
+                        })}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {r.duration_ms != null ? `${r.duration_ms} ms` : "—"}
+                      </TableCell>
+                      <TableCell className="font-mono text-[11px] max-w-[420px] truncate">
+                        {r.error ?? r.metrics}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+
+
+      <Card>
+        <CardHeader>
           <CardTitle>Alertas recentes</CardTitle>
         </CardHeader>
         <CardContent>
