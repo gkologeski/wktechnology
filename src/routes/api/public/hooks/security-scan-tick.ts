@@ -5,6 +5,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 type Severity = "info" | "warning" | "error" | "critical";
 
