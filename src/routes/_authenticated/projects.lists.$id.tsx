@@ -340,7 +340,7 @@ function ListView({
   );
 }
 
-function ListRow({ task, status, onChanged }: { task: Task; status?: Status; onChanged: () => void }) {
+function ListRow({ task, status, onChanged, onOpen }: { task: Task; status?: Status; onChanged: () => void; onOpen: () => void }) {
   const del = useServerFn(deleteListTask);
   const delM = useMutation({
     mutationFn: () => del({ data: { id: task.id } }),
@@ -350,7 +350,7 @@ function ListRow({ task, status, onChanged }: { task: Task; status?: Status; onC
     },
   });
   return (
-    <tr className="border-t hover:bg-muted/30">
+    <tr className="border-t hover:bg-muted/30 cursor-pointer" onClick={onOpen}>
       <td className="px-3 py-2 font-medium">{task.title}</td>
       <td className="px-3 py-2">
         {status ? (
@@ -372,7 +372,7 @@ function ListRow({ task, status, onChanged }: { task: Task; status?: Status; onC
         {task.due_at ? formatDateTime(task.due_at).split(" ")[0] : "—"}
       </td>
       <td className="px-2">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => delM.mutate()}>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); delM.mutate(); }}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </td>
