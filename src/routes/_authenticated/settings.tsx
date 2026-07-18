@@ -256,6 +256,19 @@ const sections: Section[] = [
   },
 ];
 
+/**
+ * Retorna as configurações específicas de um módulo (scope === moduleId).
+ * Consumido pelo sidebar do módulo para exibir um grupo "Configurações do módulo",
+ * sem duplicar URLs — todas as telas continuam morando em /settings/*.
+ */
+export function getSettingsForScope(scope: Exclude<Scope, "global">): Tab[] {
+  const out: Tab[] = [];
+  for (const s of sections) for (const t of s.tabs) if (t.scope === scope) out.push(t);
+  return out;
+}
+export type { Tab as SettingsTab };
+
+
 function SettingsLayout() {
   const path = useLocation({ select: (l) => l.pathname });
   const navigate = useNavigate();
