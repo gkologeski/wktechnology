@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/re
 import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { CrossModuleBanner } from "@/components/cross-module-banner";
 import { useAuth } from "@/lib/auth";
 import { useMyRole } from "@/lib/use-my-role";
 import { ShieldAlert } from "lucide-react";
