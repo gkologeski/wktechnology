@@ -171,6 +171,10 @@ import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authen
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authenticated/inbox.chat'
 import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authenticated/home.access'
+import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
+import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
+import { Route as AuthenticatedFinanceCategoriesRouteImport } from './routes/_authenticated/finance.categories'
+import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
 import { Route as AuthenticatedContractsIdRouteImport } from './routes/_authenticated/contracts.$id'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
@@ -267,6 +271,7 @@ import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
 import { Route as AuthenticatedSettingsIntegrationsLinkedinRouteImport } from './routes/_authenticated/settings.integrations.linkedin'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
+import { Route as AuthenticatedFinanceEntriesIdRouteImport } from './routes/_authenticated/finance.entries.$id'
 import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
 import { Route as AuthenticatedatsSourcingSequencesRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences'
@@ -1206,6 +1211,30 @@ const AuthenticatedHomeAccessRoute = AuthenticatedHomeAccessRouteImport.update({
   path: '/home/access',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFinanceReceivableRoute =
+  AuthenticatedFinanceReceivableRouteImport.update({
+    id: '/finance/receivable',
+    path: '/finance/receivable',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinancePayableRoute =
+  AuthenticatedFinancePayableRouteImport.update({
+    id: '/finance/payable',
+    path: '/finance/payable',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinanceCategoriesRoute =
+  AuthenticatedFinanceCategoriesRouteImport.update({
+    id: '/finance/categories',
+    path: '/finance/categories',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinanceBankAccountsRoute =
+  AuthenticatedFinanceBankAccountsRouteImport.update({
+    id: '/finance/bank-accounts',
+    path: '/finance/bank-accounts',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDealsIdRoute = AuthenticatedDealsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1760,6 +1789,12 @@ const AuthenticatedProspectingCampaignsIdRoute =
     path: '/campaigns/$id',
     getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
+const AuthenticatedFinanceEntriesIdRoute =
+  AuthenticatedFinanceEntriesIdRouteImport.update({
+    id: '/finance/entries/$id',
+    path: '/finance/entries/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAtsJobsIdRoute = AuthenticatedAtsJobsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2040,6 +2075,10 @@ export interface FileRoutesByFullPath {
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
+  '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/finance/payable': typeof AuthenticatedFinancePayableRoute
+  '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -2157,6 +2196,7 @@ export interface FileRoutesByFullPath {
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
+  '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -2328,6 +2368,10 @@ export interface FileRoutesByTo {
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
+  '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/finance/payable': typeof AuthenticatedFinancePayableRoute
+  '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -2444,6 +2488,7 @@ export interface FileRoutesByTo {
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
+  '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -2621,6 +2666,10 @@ export interface FileRoutesById {
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
+  '/_authenticated/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
+  '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
   '/_authenticated/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -2738,6 +2787,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
+  '/_authenticated/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -2915,6 +2965,10 @@ export interface FileRouteTypes {
     | '/contacts/$id'
     | '/contracts/$id'
     | '/deals/$id'
+    | '/finance/bank-accounts'
+    | '/finance/categories'
+    | '/finance/payable'
+    | '/finance/receivable'
     | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
@@ -3032,6 +3086,7 @@ export interface FileRouteTypes {
     | '/sourcing/sequences'
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
+    | '/finance/entries/$id'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/linkedin'
     | '/settings/notifications/slack'
@@ -3203,6 +3258,10 @@ export interface FileRouteTypes {
     | '/contacts/$id'
     | '/contracts/$id'
     | '/deals/$id'
+    | '/finance/bank-accounts'
+    | '/finance/categories'
+    | '/finance/payable'
+    | '/finance/receivable'
     | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
@@ -3319,6 +3378,7 @@ export interface FileRouteTypes {
     | '/sourcing/sequences'
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
+    | '/finance/entries/$id'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/linkedin'
     | '/settings/notifications/slack'
@@ -3495,6 +3555,10 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contracts/$id'
     | '/_authenticated/deals/$id'
+    | '/_authenticated/finance/bank-accounts'
+    | '/_authenticated/finance/categories'
+    | '/_authenticated/finance/payable'
+    | '/_authenticated/finance/receivable'
     | '/_authenticated/home/access'
     | '/_authenticated/inbox/chat'
     | '/_authenticated/inbox/email'
@@ -3612,6 +3676,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/sourcing/sequences'
     | '/_authenticated/admin/workspaces/$id'
     | '/_authenticated/ats/jobs/$id'
+    | '/_authenticated/finance/entries/$id'
     | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/integrations/linkedin'
     | '/_authenticated/settings/notifications/slack'
@@ -4942,6 +5007,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeAccessRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/finance/receivable': {
+      id: '/_authenticated/finance/receivable'
+      path: '/finance/receivable'
+      fullPath: '/finance/receivable'
+      preLoaderRoute: typeof AuthenticatedFinanceReceivableRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/finance/payable': {
+      id: '/_authenticated/finance/payable'
+      path: '/finance/payable'
+      fullPath: '/finance/payable'
+      preLoaderRoute: typeof AuthenticatedFinancePayableRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/finance/categories': {
+      id: '/_authenticated/finance/categories'
+      path: '/finance/categories'
+      fullPath: '/finance/categories'
+      preLoaderRoute: typeof AuthenticatedFinanceCategoriesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/finance/bank-accounts': {
+      id: '/_authenticated/finance/bank-accounts'
+      path: '/finance/bank-accounts'
+      fullPath: '/finance/bank-accounts'
+      preLoaderRoute: typeof AuthenticatedFinanceBankAccountsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/deals/$id': {
       id: '/_authenticated/deals/$id'
       path: '/$id'
@@ -5613,6 +5706,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/prospecting/campaigns/$id'
       preLoaderRoute: typeof AuthenticatedProspectingCampaignsIdRouteImport
       parentRoute: typeof AuthenticatedProspectingRoute
+    }
+    '/_authenticated/finance/entries/$id': {
+      id: '/_authenticated/finance/entries/$id'
+      path: '/finance/entries/$id'
+      fullPath: '/finance/entries/$id'
+      preLoaderRoute: typeof AuthenticatedFinanceEntriesIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/ats/jobs/$id': {
       id: '/_authenticated/ats/jobs/$id'
@@ -6290,6 +6390,10 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
+  AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
+  AuthenticatedFinanceCategoriesRoute: typeof AuthenticatedFinanceCategoriesRoute
+  AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
+  AuthenticatedFinanceReceivableRoute: typeof AuthenticatedFinanceReceivableRoute
   AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
@@ -6320,6 +6424,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingPoolsRoute: typeof AuthenticatedatsSourcingPoolsRoute
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
+  AuthenticatedFinanceEntriesIdRoute: typeof AuthenticatedFinanceEntriesIdRoute
   AuthenticatedatsCandidatesIndexRoute: typeof AuthenticatedatsCandidatesIndexRoute
   AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
   AuthenticatedatsJobsIndexRoute: typeof AuthenticatedatsJobsIndexRoute
@@ -6380,6 +6485,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
+  AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
+  AuthenticatedFinanceCategoriesRoute: AuthenticatedFinanceCategoriesRoute,
+  AuthenticatedFinancePayableRoute: AuthenticatedFinancePayableRoute,
+  AuthenticatedFinanceReceivableRoute: AuthenticatedFinanceReceivableRoute,
   AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
@@ -6415,6 +6524,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedatsSourcingReferralsRoute,
   AuthenticatedatsSourcingSequencesRoute:
     AuthenticatedatsSourcingSequencesRoute,
+  AuthenticatedFinanceEntriesIdRoute: AuthenticatedFinanceEntriesIdRoute,
   AuthenticatedatsCandidatesIndexRoute: AuthenticatedatsCandidatesIndexRoute,
   AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
   AuthenticatedatsJobsIndexRoute: AuthenticatedatsJobsIndexRoute,

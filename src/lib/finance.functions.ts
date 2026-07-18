@@ -1,0 +1,452 @@
+// Server functions for the Finance module (Sprint 4 MVP).
+// Unified financial_entries (AR/AP), payments, categories, bank accounts and dashboard.
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+
+const directionEnum = z.enum(["receivable", "payable"]);
+const originEnum = z.enum(["contract", "service", "project_milestone", "manual", "expense"]);
+const statusEnum = z.enum(["open", "partial", "paid", "overdue", "cancelled"]);
+const categoryKindEnum = z.enum(["revenue", "expense"]);
+
+// ============================================================
+// Entries
+// ============================================================
+
+export const listFinancialEntries = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        direction: directionEnum.optional(),
+        status: statusEnum.optional(),
+        companyId: z.string().uuid().optional(),
+        contractId: z.string().uuid().optional(),
+        serviceId: z.string().uuid().optional(),
+        categoryId: z.string().uuid().optional(),
+        search: z.string().optional(),
+        from: z.string().optional(), // due_date >=
+        to: z.string().optional(), // due_date <=
+        limit: z.number().int().min(1).max(1000).optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    let q = supabase
+      .from("financial_entries")
+      .select(
+        "*, financial_categories(id, name, kind), companies:counterparty_company_id(id, name), contracts(id, number, title), services(id, name)",
+      )
+      .order("due_date", { ascending: true })
+      .limit(data.limit ?? 500);
+
+    if (data.direction) q = q.eq("direction", data.direction);
+    if (data.status) q = q.eq("status", data.status);
+    if (data.companyId) q = q.eq("counterparty_company_id", data.companyId);
+    if (data.contractId) q = q.eq("contract_id", data.contractId);
+    if (data.serviceId) q = q.eq("service_id", data.serviceId);
+    if (data.categoryId) q = q.eq("category_id", data.categoryId);
+    if (data.from) q = q.gte("due_date", data.from);
+    if (data.to) q = q.lte("due_date", data.to);
+    if (data.search && data.search.trim()) q = q.ilike("description", `%${data.search.trim()}%`);
+
+    const { data: rows, error } = await q;
+    if (error) throw error;
+    return rows ?? [];
+  });
+
+export const getFinancialEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: entry, error } = await supabase
+      .from("financial_entries")
+      .select(
+        "*, financial_categories(id, name, kind), companies:counterparty_company_id(id, name), contracts(id, number, title), services(id, name)",
+      )
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!entry) return null;
+
+    const { data: payments } = await supabase
+      .from("financial_payments")
+      .select("*, financial_bank_accounts(id, name)")
+      .eq("entry_id", data.id)
+      .order("paid_at", { ascending: false });
+
+    return { ...entry, payments: payments ?? [] };
+  });
+
+const createEntryInput = z.object({
+  direction: directionEnum,
+  origin_type: originEnum.default("manual"),
+  description: z.string().min(1),
+  amount: z.number().positive(),
+  currency: z.string().default("BRL"),
+  competence_date: z.string(),
+  due_date: z.string(),
+  counterparty_company_id: z.string().uuid().nullable().optional(),
+  category_id: z.string().uuid().nullable().optional(),
+  contract_id: z.string().uuid().nullable().optional(),
+  service_id: z.string().uuid().nullable().optional(),
+  project_id: z.string().uuid().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  payment_method: z.string().nullable().optional(),
+  external_ref: z.string().nullable().optional(),
+});
+
+export const createFinancialEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => createEntryInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { data: row, error } = await supabase
+      .from("financial_entries")
+      .insert({
+        workspace_id: workspaceId,
+        owner_id: userId,
+        direction: data.direction,
+        origin_type: data.origin_type,
+        description: data.description,
+        amount: data.amount,
+        currency: data.currency,
+        competence_date: data.competence_date,
+        due_date: data.due_date,
+        counterparty_company_id: data.counterparty_company_id ?? null,
+        category_id: data.category_id ?? null,
+        contract_id: data.contract_id ?? null,
+        service_id: data.service_id ?? null,
+        project_id: data.project_id ?? null,
+        notes: data.notes ?? null,
+        payment_method: data.payment_method ?? null,
+        external_ref: data.external_ref ?? null,
+        status: "open",
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return row;
+  });
+
+export const updateFinancialEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        patch: z
+          .object({
+            description: z.string().min(1).optional(),
+            amount: z.number().positive().optional(),
+            currency: z.string().optional(),
+            competence_date: z.string().optional(),
+            due_date: z.string().optional(),
+            counterparty_company_id: z.string().uuid().nullable().optional(),
+            category_id: z.string().uuid().nullable().optional(),
+            notes: z.string().nullable().optional(),
+            payment_method: z.string().nullable().optional(),
+            status: statusEnum.optional(),
+          })
+          .strict(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase
+      .from("financial_entries")
+      .update(data.patch)
+      .eq("id", data.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return row;
+  });
+
+export const cancelFinancialEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { error } = await supabase
+      .from("financial_entries")
+      .update({ status: "cancelled" })
+      .eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+export const deleteFinancialEntry = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { error } = await supabase.from("financial_entries").delete().eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// ============================================================
+// Payments
+// ============================================================
+
+export const registerPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        entry_id: z.string().uuid(),
+        amount: z.number().positive(),
+        paid_at: z.string(),
+        method: z.string().nullable().optional(),
+        bank_account_id: z.string().uuid().nullable().optional(),
+        reference: z.string().nullable().optional(),
+        notes: z.string().nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { data: row, error } = await supabase
+      .from("financial_payments")
+      .insert({
+        workspace_id: workspaceId,
+        created_by: userId,
+        entry_id: data.entry_id,
+        amount: data.amount,
+        paid_at: data.paid_at,
+        method: data.method ?? null,
+        bank_account_id: data.bank_account_id ?? null,
+        reference: data.reference ?? null,
+        notes: data.notes ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    // status/paid_amount recalculado por trigger public.recalc_financial_entry
+    return row;
+  });
+
+export const deletePayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { error } = await supabase.from("financial_payments").delete().eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// ============================================================
+// Categories
+// ============================================================
+
+export const listCategories = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data, error } = await supabase
+      .from("financial_categories")
+      .select("*")
+      .order("kind", { ascending: true })
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  });
+
+export const createCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        name: z.string().min(1),
+        kind: categoryKindEnum,
+        code: z.string().nullable().optional(),
+        parent_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { data: row, error } = await supabase
+      .from("financial_categories")
+      .insert({
+        workspace_id: workspaceId,
+        name: data.name,
+        kind: data.kind,
+        code: data.code ?? null,
+        parent_id: data.parent_id ?? null,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return row;
+  });
+
+export const deleteCategory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { error } = await supabase.from("financial_categories").delete().eq("id", data.id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// ============================================================
+// Bank accounts
+// ============================================================
+
+export const listBankAccounts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { data, error } = await supabase
+      .from("financial_bank_accounts")
+      .select("*")
+      .order("name", { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  });
+
+export const createBankAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        name: z.string().min(1),
+        kind: z.string().default("checking"),
+        currency: z.string().default("BRL"),
+        initial_balance: z.number().default(0),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { data: row, error } = await supabase
+      .from("financial_bank_accounts")
+      .insert({
+        workspace_id: workspaceId,
+        name: data.name,
+        kind: data.kind,
+        currency: data.currency,
+        initial_balance: data.initial_balance,
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return row;
+  });
+
+export const updateBankAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        patch: z
+          .object({
+            name: z.string().min(1).optional(),
+            kind: z.string().optional(),
+            currency: z.string().optional(),
+            initial_balance: z.number().optional(),
+            active: z.boolean().optional(),
+          })
+          .strict(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase
+      .from("financial_bank_accounts")
+      .update(data.patch)
+      .eq("id", data.id)
+      .select("*")
+      .single();
+    if (error) throw error;
+    return row;
+  });
+
+// ============================================================
+// Dashboard
+// ============================================================
+
+export const getFinanceDashboard = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const today = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const addDays = (d: Date, n: number) => {
+      const c = new Date(d);
+      c.setDate(c.getDate() + n);
+      return c;
+    };
+
+    const { data: entries, error } = await supabase
+      .from("financial_entries")
+      .select("direction, status, amount, paid_amount, due_date")
+      .in("status", ["open", "partial", "overdue", "paid"])
+      .gte("due_date", iso(addDays(today, -180)))
+      .lte("due_date", iso(addDays(today, 180)));
+    if (error) throw error;
+
+    const todayIso = iso(today);
+    const in30 = iso(addDays(today, 30));
+    const in60 = iso(addDays(today, 60));
+    const in90 = iso(addDays(today, 90));
+
+    let ar_open = 0,
+      ar_overdue = 0,
+      ap_open = 0,
+      ap_overdue = 0,
+      ar_30 = 0,
+      ar_60 = 0,
+      ar_90 = 0,
+      ap_30 = 0,
+      ap_60 = 0,
+      ap_90 = 0,
+      ar_paid = 0,
+      ap_paid = 0;
+
+    for (const e of entries ?? []) {
+      const outstanding = Number(e.amount) - Number(e.paid_amount ?? 0);
+      const isAR = e.direction === "receivable";
+      if (e.status === "paid") {
+        if (isAR) ar_paid += Number(e.amount);
+        else ap_paid += Number(e.amount);
+        continue;
+      }
+      const overdue = e.due_date < todayIso && e.status !== "cancelled";
+      if (isAR) {
+        ar_open += outstanding;
+        if (overdue) ar_overdue += outstanding;
+        if (e.due_date <= in30) ar_30 += outstanding;
+        else if (e.due_date <= in60) ar_60 += outstanding;
+        else if (e.due_date <= in90) ar_90 += outstanding;
+      } else {
+        ap_open += outstanding;
+        if (overdue) ap_overdue += outstanding;
+        if (e.due_date <= in30) ap_30 += outstanding;
+        else if (e.due_date <= in60) ap_60 += outstanding;
+        else if (e.due_date <= in90) ap_90 += outstanding;
+      }
+    }
+
+    return {
+      ar: { open: ar_open, overdue: ar_overdue, paid_180d: ar_paid, d30: ar_30, d60: ar_60, d90: ar_90 },
+      ap: { open: ap_open, overdue: ap_overdue, paid_180d: ap_paid, d30: ap_30, d60: ap_60, d90: ap_90 },
+      net_30: ar_30 - ap_30,
+      net_60: ar_60 - ap_60,
+      net_90: ar_90 - ap_90,
+    };
+  });
