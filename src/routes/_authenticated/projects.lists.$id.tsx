@@ -35,6 +35,7 @@ import {
   moveTaskStatus,
   deleteListTask,
 } from "@/lib/project-hierarchy.functions";
+import { TaskDetailsSheet } from "@/components/projects/task-details-sheet";
 
 export const Route = createFileRoute("/_authenticated/projects/lists/$id")({
   head: () => ({
@@ -54,6 +55,8 @@ type Task = {
   estimated_hours: number | null;
   priority: "low" | "normal" | "high" | "urgent";
   custom_status_id: string | null;
+  project_id?: string | null;
+  tags?: string[];
 };
 
 const PRIORITY_LABEL: Record<Task["priority"], string> = {
@@ -77,6 +80,8 @@ function ListDetailPage() {
     queryKey: ["project-list", id],
     queryFn: () => getListFn({ data: { id } }),
   });
+
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["project-list", id] });
 
@@ -148,13 +153,19 @@ function ListDetailPage() {
         </TabsList>
 
         <TabsContent value="board" className="mt-4">
-          <BoardView statuses={statuses} tasks={tasks} onChanged={invalidate} />
+          <BoardView statuses={statuses} tasks={tasks} onChanged={invalidate} onOpen={setSelectedTask} />
         </TabsContent>
 
         <TabsContent value="list" className="mt-4">
-          <ListView statuses={statuses} tasks={tasks} onChanged={invalidate} />
+          <ListView statuses={statuses} tasks={tasks} onChanged={invalidate} onOpen={setSelectedTask} />
         </TabsContent>
       </Tabs>
+
+      <TaskDetailsSheet
+        task={selectedTask}
+        open={Boolean(selectedTask)}
+        onOpenChange={(v) => { if (!v) setSelectedTask(null); }}
+      />
     </div>
   );
 }
@@ -164,10 +175,12 @@ function BoardView({
   statuses,
   tasks,
   onChanged,
+  onOpen,
 }: {
   statuses: Status[];
   tasks: Task[];
   onChanged: () => void;
+  onOpen: (t: Task) => void;
 }) {
   const move = useServerFn(moveTaskStatus);
   const moveM = useMutation({
@@ -215,6 +228,7 @@ function BoardView({
                 task={t}
                 onDragStart={() => setDraggingId(t.id)}
                 onChanged={onChanged}
+                onOpen={() => onOpen(t)}
               />
             ))}
           </div>
@@ -228,10 +242,12 @@ function TaskCard({
   task,
   onDragStart,
   onChanged,
+  onOpen,
 }: {
   task: Task;
   onDragStart: () => void;
   onChanged: () => void;
+  onOpen: () => void;
 }) {
   const del = useServerFn(deleteListTask);
   const delM = useMutation({
@@ -245,7 +261,8 @@ function TaskCard({
     <div
       draggable
       onDragStart={onDragStart}
-      className="rounded-md border bg-card p-3 cursor-grab active:cursor-grabbing"
+      onClick={onOpen}
+      className="rounded-md border bg-card p-3 cursor-pointer hover:border-primary/40 active:cursor-grabbing"
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
@@ -265,10 +282,10 @@ function TaskCard({
           </div>
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button variant="ghost" size="icon" className="h-6 w-6">…</Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem className="text-destructive" onClick={() => delM.mutate()}>
               <Trash2 className="h-4 w-4 mr-2" /> Remover
             </DropdownMenuItem>
@@ -284,10 +301,12 @@ function ListView({
   statuses,
   tasks,
   onChanged,
+  onOpen,
 }: {
   statuses: Status[];
   tasks: Task[];
   onChanged: () => void;
+  onOpen: (t: Task) => void;
 }) {
   const statusById = useMemo(() => new Map(statuses.map((s) => [s.id, s])), [statuses]);
   return (
@@ -313,7 +332,7 @@ function ListView({
           )}
           {tasks.map((t) => {
             const st = t.custom_status_id ? statusById.get(t.custom_status_id) : undefined;
-            return <ListRow key={t.id} task={t} status={st} onChanged={onChanged} />;
+            return <ListRow key={t.id} task={t} status={st} onChanged={onChanged} onOpen={() => onOpen(t)} />;
           })}
         </tbody>
       </table>
@@ -321,7 +340,7 @@ function ListView({
   );
 }
 
-function ListRow({ task, status, onChanged }: { task: Task; status?: Status; onChanged: () => void }) {
+function ListRow({ task, status, onChanged, onOpen }: { task: Task; status?: Status; onChanged: () => void; onOpen: () => void }) {
   const del = useServerFn(deleteListTask);
   const delM = useMutation({
     mutationFn: () => del({ data: { id: task.id } }),
@@ -331,7 +350,7 @@ function ListRow({ task, status, onChanged }: { task: Task; status?: Status; onC
     },
   });
   return (
-    <tr className="border-t hover:bg-muted/30">
+    <tr className="border-t hover:bg-muted/30 cursor-pointer" onClick={onOpen}>
       <td className="px-3 py-2 font-medium">{task.title}</td>
       <td className="px-3 py-2">
         {status ? (
@@ -353,7 +372,7 @@ function ListRow({ task, status, onChanged }: { task: Task; status?: Status; onC
         {task.due_at ? formatDateTime(task.due_at).split(" ")[0] : "—"}
       </td>
       <td className="px-2">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => delM.mutate()}>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); delM.mutate(); }}>
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </td>

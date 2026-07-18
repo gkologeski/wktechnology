@@ -19,6 +19,7 @@ import { RouteBreadcrumbs } from "@/components/route-breadcrumbs";
 import { FocusQueueBar } from "@/components/focus-queue-bar";
 import { ModuleSwitcher } from "@/components/module-switcher";
 import { HostRouterGuard } from "@/components/host-router-guard";
+import { TimerWidget } from "@/components/timer-widget";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -137,6 +138,7 @@ function AuthenticatedLayout() {
       </div>
       <BugReportButton />
       <ChatTrigger />
+      <TimerWidget />
       <GlobalSearch />
     </SidebarProvider>
   );
