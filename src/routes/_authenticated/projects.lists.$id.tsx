@@ -55,11 +55,16 @@ type Task = {
   id: string;
   title: string;
   due_at: string | null;
+  start_at?: string | null;
   estimated_hours: number | null;
   priority: "low" | "normal" | "high" | "urgent";
   custom_status_id: string | null;
   project_id?: string | null;
+  list_id?: string | null;
   tags?: string[];
+  assignee_id?: string | null;
+  assignee_ids?: string[] | null;
+  custom_field_values?: Record<string, any> | null;
 };
 
 const PRIORITY_LABEL: Record<Task["priority"], string> = {
