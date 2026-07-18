@@ -120,9 +120,11 @@ export const toggleChecklistItem = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const patch: Record<string, unknown> = { is_done: data.isDone };
-    patch.done_at = data.isDone ? new Date().toISOString() : null;
-    patch.done_by = data.isDone ? userId : null;
+    const patch = {
+      is_done: data.isDone,
+      done_at: data.isDone ? new Date().toISOString() : null,
+      done_by: data.isDone ? userId : null,
+    };
     const { data: row, error } = await supabase
       .from("project_task_checklists")
       .update(patch)
