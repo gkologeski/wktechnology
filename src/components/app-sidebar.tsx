@@ -25,6 +25,7 @@ import { CONTRACTS_SIDEBAR_GROUPS } from "@/lib/menu-config-contracts";
 import { SERVICES_SIDEBAR_GROUPS } from "@/lib/menu-config-services";
 import { PROJECTS_SIDEBAR_GROUPS } from "@/lib/menu-config-projects";
 import { FINANCE_SIDEBAR_GROUPS } from "@/lib/menu-config-finance";
+import { CORE_SIDEBAR_GROUPS, shouldInjectCoreGroups } from "@/lib/menu-config-core";
 
 import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active-module";
 
