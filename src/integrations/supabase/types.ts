@@ -11490,6 +11490,75 @@ export type Database = {
           },
         ]
       }
+      service_catalog: {
+        Row: {
+          active: boolean
+          base_price: number
+          category: string | null
+          code: string | null
+          competencies: string[]
+          cost: number
+          created_at: string
+          created_by: string | null
+          currency: string
+          default_sla_hours: number | null
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          service_type: string
+          tags: string[]
+          tax_rate: number
+          unit: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          base_price?: number
+          category?: string | null
+          code?: string | null
+          competencies?: string[]
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          default_sla_hours?: number | null
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          service_type?: string
+          tags?: string[]
+          tax_rate?: number
+          unit?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          base_price?: number
+          category?: string | null
+          code?: string | null
+          competencies?: string[]
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          default_sla_hours?: number | null
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          service_type?: string
+          tags?: string[]
+          tax_rate?: number
+          unit?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       services: {
         Row: {
           cadence: Database["public"]["Enums"]["service_cadence"] | null
@@ -14445,6 +14514,27 @@ export type Database = {
           name?: string | null
           public_slug?: string | null
           terms_url?: string | null
+        }
+        Relationships: []
+      }
+      catalog_items: {
+        Row: {
+          active: boolean | null
+          base_price: number | null
+          category: string | null
+          code: string | null
+          created_at: string | null
+          currency: string | null
+          description: string | null
+          id: string | null
+          kind: string | null
+          name: string | null
+          owner_id: string | null
+          tax_rate: number | null
+          type: string | null
+          unit: string | null
+          updated_at: string | null
+          workspace_id: string | null
         }
         Relationships: []
       }
