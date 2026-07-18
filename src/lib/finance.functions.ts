@@ -462,6 +462,7 @@ export const getDreReport = createServerFn({ method: "POST" })
       .object({
         months: z.number().int().min(1).max(24).default(6),
         endMonth: z.string().optional(), // YYYY-MM
+        basis: z.enum(["accrual", "cash"]).default("accrual"),
       })
       .parse(input ?? {}),
   )
@@ -475,16 +476,6 @@ export const getDreReport = createServerFn({ method: "POST" })
     const endDate = new Date(Date.UTC(ey, em, 0));
     const startDate = new Date(Date.UTC(ey, em - data.months, 1));
     const iso = (d: Date) => d.toISOString().slice(0, 10);
-
-    const { data: rows, error } = await supabase
-      .from("financial_entries")
-      .select(
-        "direction, amount, competence_date, category_id, status, financial_categories(id, name, kind)",
-      )
-      .neq("status", "cancelled")
-      .gte("competence_date", iso(startDate))
-      .lte("competence_date", iso(endDate));
-    if (error) throw error;
 
     const months: string[] = [];
     for (let i = data.months - 1; i >= 0; i--) {
@@ -501,27 +492,69 @@ export const getDreReport = createServerFn({ method: "POST" })
     };
     const map = new Map<string, CatAgg>();
 
-    for (const r of rows ?? []) {
-      const cat = (r as unknown as {
-        financial_categories: { id: string; name: string; kind: "revenue" | "expense" } | null;
-      }).financial_categories;
+    const addRow = (
+      cat: { id: string; name: string; kind: "revenue" | "expense" } | null,
+      direction: string,
+      amount: number,
+      ym: string,
+    ) => {
       const kind: "revenue" | "expense" =
-        cat?.kind ?? (r.direction === "receivable" ? "revenue" : "expense");
+        cat?.kind ?? (direction === "receivable" ? "revenue" : "expense");
       const key = cat?.id ?? `__uncat_${kind}`;
       const name =
         cat?.name ??
         (kind === "revenue" ? "Sem categoria (receitas)" : "Sem categoria (despesas)");
-      const ym = String(r.competence_date).slice(0, 7);
-      if (!months.includes(ym)) continue;
+      if (!months.includes(ym)) return;
       let agg = map.get(key);
       if (!agg) {
         agg = { category_id: cat?.id ?? null, category_name: name, kind, byMonth: {}, total: 0 };
         for (const m of months) agg.byMonth[m] = 0;
         map.set(key, agg);
       }
-      agg.byMonth[ym] += Number(r.amount);
-      agg.total += Number(r.amount);
+      agg.byMonth[ym] += Number(amount);
+      agg.total += Number(amount);
+    };
+
+    if (data.basis === "cash") {
+      const { data: payments, error } = await supabase
+        .from("financial_payments")
+        .select(
+          "amount, paid_at, financial_entries!inner(direction, status, category_id, financial_categories(id, name, kind))",
+        )
+        .gte("paid_at", iso(startDate))
+        .lte("paid_at", iso(endDate));
+      if (error) throw error;
+      for (const p of payments ?? []) {
+        const entry = (p as unknown as {
+          financial_entries: {
+            direction: string;
+            status: string;
+            financial_categories: { id: string; name: string; kind: "revenue" | "expense" } | null;
+          };
+        }).financial_entries;
+        if (!entry || entry.status === "cancelled") continue;
+        const ym = String(p.paid_at).slice(0, 7);
+        addRow(entry.financial_categories, entry.direction, Number(p.amount), ym);
+      }
+    } else {
+      const { data: rows, error } = await supabase
+        .from("financial_entries")
+        .select(
+          "direction, amount, competence_date, category_id, status, financial_categories(id, name, kind)",
+        )
+        .neq("status", "cancelled")
+        .gte("competence_date", iso(startDate))
+        .lte("competence_date", iso(endDate));
+      if (error) throw error;
+      for (const r of rows ?? []) {
+        const cat = (r as unknown as {
+          financial_categories: { id: string; name: string; kind: "revenue" | "expense" } | null;
+        }).financial_categories;
+        const ym = String(r.competence_date).slice(0, 7);
+        addRow(cat, r.direction, Number(r.amount), ym);
+      }
     }
+
 
     const categories = Array.from(map.values()).sort((a, b) => {
       if (a.kind !== b.kind) return a.kind === "revenue" ? -1 : 1;
