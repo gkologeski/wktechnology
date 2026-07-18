@@ -11,9 +11,7 @@ export const CORE_SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Empresas", url: "/companies", icon: Building2 },
       { title: "Contatos", url: "/contacts", icon: Users },
-      { title: "Produtos", url: "/settings/products", icon: Package },
-      // Rota do catálogo de serviços chega na Sprint B (Fase 2). Até lá o
-      // item é ocultado pelo componente pai — vive aqui como fonte única.
+      { title: "Produtos", url: "/catalog/products", icon: Package },
       { title: "Serviços", url: "/catalog/services", icon: Wrench },
     ],
   },

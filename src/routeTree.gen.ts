@@ -180,6 +180,8 @@ import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedContractsIdRouteImport } from './routes/_authenticated/contracts.$id'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
+import { Route as AuthenticatedCatalogServicesRouteImport } from './routes/_authenticated/catalog.services'
+import { Route as AuthenticatedCatalogProductsRouteImport } from './routes/_authenticated/catalog.products'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
 import { Route as AuthenticatedAuthExtensionLinkRouteImport } from './routes/_authenticated/auth/extension-link'
@@ -1263,6 +1265,18 @@ const AuthenticatedCompaniesIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedCompaniesRoute,
   } as any)
+const AuthenticatedCatalogServicesRoute =
+  AuthenticatedCatalogServicesRouteImport.update({
+    id: '/catalog/services',
+    path: '/catalog/services',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedCatalogProductsRoute =
+  AuthenticatedCatalogProductsRouteImport.update({
+    id: '/catalog/products',
+    path: '/catalog/products',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCampaignsWhatsappRoute =
   AuthenticatedCampaignsWhatsappRouteImport.update({
     id: '/campaigns/whatsapp',
@@ -2077,6 +2091,8 @@ export interface FileRoutesByFullPath {
   '/auth/extension-link': typeof AuthenticatedAuthExtensionLinkRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/catalog/products': typeof AuthenticatedCatalogProductsRoute
+  '/catalog/services': typeof AuthenticatedCatalogServicesRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
@@ -2371,6 +2387,8 @@ export interface FileRoutesByTo {
   '/auth/extension-link': typeof AuthenticatedAuthExtensionLinkRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/catalog/products': typeof AuthenticatedCatalogProductsRoute
+  '/catalog/services': typeof AuthenticatedCatalogServicesRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
@@ -2670,6 +2688,8 @@ export interface FileRoutesById {
   '/_authenticated/auth/extension-link': typeof AuthenticatedAuthExtensionLinkRoute
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/_authenticated/catalog/products': typeof AuthenticatedCatalogProductsRoute
+  '/_authenticated/catalog/services': typeof AuthenticatedCatalogServicesRoute
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contracts/$id': typeof AuthenticatedContractsIdRoute
@@ -2970,6 +2990,8 @@ export interface FileRouteTypes {
     | '/auth/extension-link'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
+    | '/catalog/products'
+    | '/catalog/services'
     | '/companies/$id'
     | '/contacts/$id'
     | '/contracts/$id'
@@ -3264,6 +3286,8 @@ export interface FileRouteTypes {
     | '/auth/extension-link'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
+    | '/catalog/products'
+    | '/catalog/services'
     | '/companies/$id'
     | '/contacts/$id'
     | '/contracts/$id'
@@ -3562,6 +3586,8 @@ export interface FileRouteTypes {
     | '/_authenticated/auth/extension-link'
     | '/_authenticated/campaigns/email'
     | '/_authenticated/campaigns/whatsapp'
+    | '/_authenticated/catalog/products'
+    | '/_authenticated/catalog/services'
     | '/_authenticated/companies/$id'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contracts/$id'
@@ -5082,6 +5108,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCompaniesIdRouteImport
       parentRoute: typeof AuthenticatedCompaniesRoute
     }
+    '/_authenticated/catalog/services': {
+      id: '/_authenticated/catalog/services'
+      path: '/catalog/services'
+      fullPath: '/catalog/services'
+      preLoaderRoute: typeof AuthenticatedCatalogServicesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/catalog/products': {
+      id: '/_authenticated/catalog/products'
+      path: '/catalog/products'
+      fullPath: '/catalog/products'
+      preLoaderRoute: typeof AuthenticatedCatalogProductsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/campaigns/whatsapp': {
       id: '/_authenticated/campaigns/whatsapp'
       path: '/campaigns/whatsapp'
@@ -6408,6 +6448,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAuthExtensionLinkRoute: typeof AuthenticatedAuthExtensionLinkRoute
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
+  AuthenticatedCatalogProductsRoute: typeof AuthenticatedCatalogProductsRoute
+  AuthenticatedCatalogServicesRoute: typeof AuthenticatedCatalogServicesRoute
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
   AuthenticatedFinanceCategoriesRoute: typeof AuthenticatedFinanceCategoriesRoute
@@ -6504,6 +6546,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAuthExtensionLinkRoute: AuthenticatedAuthExtensionLinkRoute,
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
+  AuthenticatedCatalogProductsRoute: AuthenticatedCatalogProductsRoute,
+  AuthenticatedCatalogServicesRoute: AuthenticatedCatalogServicesRoute,
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
   AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
   AuthenticatedFinanceCategoriesRoute: AuthenticatedFinanceCategoriesRoute,
