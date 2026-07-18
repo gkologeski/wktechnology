@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { requireCronAuth } from "@/lib/cron-auth.server";
 import { runCronWithLogging } from "@/lib/cron-observability.server";
+import { dispatchAlert } from "@/lib/alert-dispatch.server";
 
 export const Route = createFileRoute("/api/public/hooks/platform-alerts-tick")({
   server: {
