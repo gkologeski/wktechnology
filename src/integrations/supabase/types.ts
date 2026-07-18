@@ -4401,6 +4401,42 @@ export type Database = {
           },
         ]
       }
+      cron_run_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          job_name: string
+          metrics: Json
+          started_at: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          job_name: string
+          metrics?: Json
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          job_name?: string
+          metrics?: Json
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       custom_object_records: {
         Row: {
           created_at: string
