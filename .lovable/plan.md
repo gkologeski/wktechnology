@@ -1,62 +1,80 @@
-# Plano — Testes e2e (Playwright) dos módulos novos
+## Objetivo
 
-Adicionar 3 specs Playwright que exercitam ponta-a-ponta os fluxos críticos dos módulos entregues nas Sprints 1-6. Alinhados à infra Playwright já existente em `tests/e2e/` (helper `auth.ts`, config apontando para `crm.wktechnology.com.br`, exige `E2E_USER_EMAIL`/`E2E_USER_PASSWORD` no `.env.test.local`).
+Fazer com que Contratos, Serviços, Projetos e Financeiro apareçam no seletor de módulos (topo) e no grid de módulos da `/home`, com o botão **Entrar** navegando corretamente para a rota inicial de cada um — em vez de dar refresh.
 
-Escopo estritamente de testes — **nenhuma alteração no código dos módulos**. Se algum spec falhar por bug real, o achado vira uma tarefa separada.
+## Causa raiz
 
-## Fluxos cobertos
+- `public.modules` tem 6 registros (`crm`, `ats`, `contracts`, `services`, `projects`, `finance`), mas o registry do front (`src/lib/modules/registry.ts`) só declara `crm` e `ats`.
+- `ModuleSwitcher` lê `MODULE_LIST` → não mostra os novos.
+- `/home` gate `canEnter = m.id === "crm" || "ats"` → novos módulos caem em "Configurar"; e mesmo se caísse em "Entrar", `openModule` faria `MODULES[id]?.defaultRoute ?? "/"` → `/` redireciona para `/home` → refresh.
+- `MODULE_ICONS` mapeia só `briefcase`/`users`; os ícones novos (`FileText`, `DollarSign`, `Kanban`, `Package`) caem no fallback `Boxes`.
 
-### 1. `tests/e2e/contracts-lifecycle.spec.ts`
-Fluxo: criar → aprovar → ativar → gerar cobrança.
-- Login (helper).
-- Navega para `/contracts`, cria contrato de venda (empresa + valor + cadência mensal).
-- Verifica cadeia default de aprovação criada (Legal → Finance) em `contract_approvals`.
-- Aprova cada etapa como admin.
-- Ativa o contrato; confirma `status=active` e `next_billing_at` populado.
-- Dispara `/api/public/hooks/services-billing-tick` (ou avança `next_billing_at`) e verifica geração de `financial_entries` sem duplicar em segunda execução (idempotência).
+## O que será feito
 
-### 2. `tests/e2e/projects-psa.spec.ts`
-Fluxo PSA básico com timesheet e marco.
-- Login.
-- Cria projeto ligado a contrato ativo (reusa o seed do spec anterior ou cria contrato inline).
-- Cria tarefa, marco billable e lança 2 time entries (uma billable, outra não).
-- Abre detalhe do projeto e valida cards de custo, receita billable e margem batendo com a lógica de `src/lib/projects/financials.ts`.
-- Marca marco como concluído e confere lançamento em Financeiro.
+### 1. Registry de módulos (`src/lib/modules/registry.ts`)
 
-### 3. `tests/e2e/finance-flow.spec.ts`
-Fluxo financeiro: recebível → pagamento → conciliação.
-- Login.
-- Em `/finance/receivable`, abre um `financial_entry` gerado pelo contrato.
-- Registra pagamento parcial; valida saldo e status intermediário.
-- Registra pagamento final; valida `status=paid` e histórico em `financial_payments`.
-- Confere que o entry desaparece da lista de "em aberto" e aparece em "pagos".
+- Estender o tipo `ModuleId` para incluir `"contracts" | "services" | "projects" | "finance"`.
+- Adicionar 4 entradas em `MODULES`, cada uma com `productName`, `defaultColor`, `icon`, `defaultRoute` e `menu` mínimo (fallback do switcher).
+- `defaultRoute` de cada um:
+  - `contracts` → `/contracts`
+  - `services` → `/services`
+  - `projects` → `/projects`
+  - `finance` → `/finance` (rota `finance.index.tsx` já existe)
 
-## Alterações estruturais
+### 2. Hosts (`src/lib/hosts.ts`)
 
-- Novo helper `tests/e2e/helpers/modules-seed.ts` com funções utilitárias reutilizáveis: `createCompanyIfMissing`, `createContract`, `approveContract`, `triggerBillingTick`. Todas via UI (clicks reais) ou via chamada autenticada ao endpoint público de cron para o billing tick.
-- Cada spec limpa seus próprios dados no `afterEach` (arquiva contrato / cancela projeto / estorna pagamento) para não vazar entre execuções — mesmo padrão dos specs `deals-crud` e `contacts-crud` atuais.
+- Como ainda não há subdomínio próprio (`contracts.wktechnology…`, etc.), configurar `MODULE_HOSTS` dos 4 novos módulos apontando para o mesmo host do CRM (`crm.wktechnology.com.br`). Assim `buildModuleUrl` devolve URL do CRM em produção e SPA relativo em preview — sem quebrar cross-host.
+- Alternativa considerada: deixar `MODULE_HOSTS` só com CRM/ATS e fazer `buildModuleUrl` degradar para path relativo quando o módulo não tem host próprio. Escolho a alternativa mais simples (apontar para host do CRM) para não mexer na assinatura tipada de `MODULE_HOSTS`.
 
-## Execução
+### 3. Detecção de módulo ativo (`src/lib/modules/active-module.ts`)
 
-- Rodar localmente com `bun run test:e2e` (usa `crm.wktechnology.com.br` + credenciais em `.env.test.local`).
-- Em CI sem credenciais, os specs continuam existindo mas serão pulados pelo `test.skip(!process.env.E2E_USER_EMAIL, …)` já usado em outros specs.
-- Não configurar CI novo — apenas deixar os specs prontos para execução manual, como os demais.
+- Adicionar em `detectModuleFromPath` os prefixes `/contracts`, `/services`, `/projects`, `/finance` retornando o `ModuleId` correspondente. Assim, ao entrar em `/contracts` o `ModuleSwitcher` mostra "TechContracts" ativo e o breadcrumb/topo reflete o contexto.
+- Não adicionar host matchers agora (sem subdomínio próprio ainda).
 
-## Fora de escopo (explícito)
+### 4. Grid da `/home` (`src/routes/_authenticated/home.index.tsx`)
 
-- Nenhuma mudança em `src/lib/contracts.functions.ts`, `services.functions.ts`, `projects.functions.ts`, `finance.functions.ts` ou nas migrations.
-- Nenhuma mudança em RLS.
-- Nenhum novo cron ou endpoint.
-- Se um spec expuser um bug, paro e reporto — a correção entra como próxima tarefa.
+- Ampliar `MODULE_ICONS` com `FileText`, `DollarSign`, `Kanban`, `Package` (mapa case-insensitive, alinhado à coluna `icon` da tabela).
+- Trocar o gate `canEnter` de allowlist hardcoded (`"crm" || "ats"`) para: `m.enabled && MODULES[m.id as ModuleId] !== undefined`. Assim qualquer módulo registrado passa a ter botão **Entrar** funcional; módulos ainda não registrados continuam com "Configurar".
 
-## Entregáveis
+### 5. Bug de refresh — `openModule`
 
-- `tests/e2e/contracts-lifecycle.spec.ts`
-- `tests/e2e/projects-psa.spec.ts`
-- `tests/e2e/finance-flow.spec.ts`
-- `tests/e2e/helpers/modules-seed.ts`
+- Depois dos passos 1–2, `MODULES[moduleId].defaultRoute` deixa de retornar `undefined` para os novos, e `buildModuleUrl` devolve caminho válido → `window.location.assign` navega para `/contracts` etc. sem cair em `/`.
+- Preservar o fallback `?? "/"` porém acrescentar um `console.warn` para expor futuras regressões (id em `public.modules` sem registry).
 
-## Validação
+### 6. Menu lateral (TechSales)
 
-- `bunx tsgo` verde após adicionar os arquivos.
-- Execução manual local dos 3 specs; se algum falhar por bug real, reporto o achado sem alterar código de produção.
+- Confirmar que Contratos, Serviços, Projetos e Financeiro continuam listados no sidebar do TechSales (fonte: `src/lib/menu-config.ts`). Se algum estiver ausente, apenas garantir o link — sem redesign nem mudança de rota.
+
+### 7. Testes manuais (checklist rápido no final)
+
+- `/home` mostra os 6 módulos com ícone e status corretos.
+- Cada card "Ativo" tem botão **Entrar** que navega para a rota default sem loop.
+- `ModuleSwitcher` no topo lista os 6 módulos e destaca o ativo quando o path bate.
+- Em rotas de workspace (`/home`, `/settings`), o rótulo do switcher continua sendo "ERP Home".
+
+## Fora do escopo (agora)
+
+- Subdomínios próprios (`contracts.…`, `finance.…`, etc.) e menu/shell dedicados por módulo — os 4 novos continuam usando o shell do TechSales.
+- Alterar RLS, tabelas, `workspace_modules`, planos/entitlements.
+- Redesign visual dos cards da `/home` ou do switcher.
+- Onboarding/marketplace flow dos módulos novos.
+
+## Arquivos que serão tocados
+
+- `src/lib/modules/registry.ts` — estender `ModuleId` e `MODULES`.
+- `src/lib/modules/active-module.ts` — novos prefixes em `detectModuleFromPath`.
+- `src/lib/hosts.ts` — `MODULE_HOSTS` com 4 novas entradas (apontando pro host do CRM).
+- `src/routes/_authenticated/home.index.tsx` — `MODULE_ICONS` ampliado, novo `canEnter`, `openModule` com warn.
+
+## Riscos
+
+- Cross-host redirect indevido: mitigado porque em preview `buildModuleUrl` já degrada para path relativo, e em produção os 4 novos apontam para o mesmo host do CRM (nunca sai da app).
+- Detecção de módulo ativo em rotas ambíguas: `/finance` é único; conflitos com rotas ATS (`/jobs`, `/candidates`) não existem porque os prefixes ATS continuam prioritários pela ordem do array.
+
+## Como validar
+
+1. Recarregar `/home` — 6 cards visíveis, ícones distintos, status "Ativo/Disponível/Não contratado".
+2. Clicar **Entrar** em Contratos → deve abrir `/contracts` sem refresh.
+3. Repetir para Serviços, Projetos, Financeiro.
+4. Abrir o `ModuleSwitcher` do topo em `/home` — 6 opções listadas.
+5. Navegar até `/contracts` e reabrir o switcher — o item ativo deve ser "TechContracts".

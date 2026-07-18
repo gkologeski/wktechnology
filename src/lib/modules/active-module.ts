@@ -29,9 +29,21 @@ export function detectModuleFromHost(hostname: string | undefined | null): Modul
 // Paths que pertencem exclusivamente ao módulo ATS. Derivado de
 // `ATS_ROUTE_PREFIXES` em `menu-config-ats.ts` — fonte única de verdade.
 // Inclui fallback estático para o caso de import circular em SSR.
+const MODULE_PATH_MATCHERS: Array<{ id: ModuleId; prefixes: string[] }> = [
+  { id: "contracts", prefixes: ["/contracts"] },
+  { id: "services", prefixes: ["/services"] },
+  { id: "projects", prefixes: ["/projects"] },
+  { id: "finance", prefixes: ["/finance"] },
+];
+
 export function detectModuleFromPath(pathname: string): ModuleId | null {
   for (const p of ATS_ROUTE_PREFIXES) {
     if (pathname === p || pathname.startsWith(p + "/")) return "ats";
+  }
+  for (const { id, prefixes } of MODULE_PATH_MATCHERS) {
+    for (const p of prefixes) {
+      if (pathname === p || pathname.startsWith(p + "/")) return id;
+    }
   }
   return null;
 }

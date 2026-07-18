@@ -15,6 +15,10 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
+  FileText,
+  Package,
+  Kanban,
+  DollarSign,
 } from "lucide-react";
 import {
   listWorkspaceModules,
@@ -44,11 +48,25 @@ export const Route = createFileRoute("/_authenticated/home/")({
 const MODULE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   briefcase: Briefcase,
   users: Users,
+  filetext: FileText,
+  package: Package,
+  kanban: Kanban,
+  dollarsign: DollarSign,
 };
 
+function resolveModuleIcon(name: string | null | undefined) {
+  const key = (name ?? "").toLowerCase();
+  return MODULE_ICONS[key] ?? Boxes;
+}
+
 function openModule(moduleId: ModuleId) {
-  const target = MODULES[moduleId]?.defaultRoute ?? "/";
-  const url = buildModuleUrl(moduleId, target);
+  const def = MODULES[moduleId];
+  if (!def) {
+    // eslint-disable-next-line no-console
+    console.warn(`[home] Módulo "${moduleId}" existe em public.modules mas não está registrado no front (src/lib/modules/registry.ts).`);
+    return;
+  }
+  const url = buildModuleUrl(moduleId, def.defaultRoute);
   // Sempre navegar na mesma aba — cross-host ou SPA — para garantir que
   // o usuário chegue ao módulo (evita bloqueio de popup).
   window.location.assign(url);
@@ -85,15 +103,15 @@ function ModulesGrid() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {data.map((m: WorkspaceModuleRow) => {
-        const Icon = MODULE_ICONS[m.icon ?? ""] ?? Boxes;
+        const Icon = resolveModuleIcon(m.icon);
         const product = m.default_product_name ?? m.name;
-        const isModuleId = (m.id === "crm" || m.id === "ats");
+        const isRegisteredModule = (MODULES as Record<string, unknown>)[m.id] !== undefined;
         const status: "Ativo" | "Disponível" | "Não contratado" = m.enabled
           ? "Ativo"
           : m.is_contracted
           ? "Disponível"
           : "Não contratado";
-        const canEnter = m.enabled && isModuleId;
+        const canEnter = m.enabled && isRegisteredModule;
         return (
           <Card
             key={m.id}
