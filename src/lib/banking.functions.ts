@@ -40,7 +40,7 @@ export const getBankConnection = createServerFn({ method: "GET" })
     const { data: conn, error } = await supabase
       .from("bank_connections")
       .select(
-        "id, provider, status, mode, display_name, scopes, external_account_id, last_sync_at, last_error, created_at, updated_at",
+        "id, provider, status, mode, display_name, scopes, external_account_id, last_sync_at, last_error, current_balance, balance_synced_at, last_statement_sync_at, created_at, updated_at",
       )
       .eq("workspace_id", workspaceId)
       .eq("provider", data.provider)
