@@ -178,7 +178,7 @@ function AdminStatusPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(data?.recentCronRuns ?? []).map((r) => {
+                {((data?.recentCronRuns ?? []) as Array<{ id: string; job_name: string; started_at: string; duration_ms: number | null; status: string; metrics: string; error: string | null }>).map((r) => {
                   const badgeClass =
                     r.status === "error"
                       ? "bg-destructive text-destructive-foreground hover:bg-destructive"
