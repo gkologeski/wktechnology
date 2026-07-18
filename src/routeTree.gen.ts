@@ -178,6 +178,7 @@ import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authentica
 import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authenticated/home.access'
 import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
+import { Route as AuthenticatedFinanceDreRouteImport } from './routes/_authenticated/finance.dre'
 import { Route as AuthenticatedFinanceCategoriesRouteImport } from './routes/_authenticated/finance.categories'
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
@@ -1260,6 +1261,11 @@ const AuthenticatedFinancePayableRoute =
     path: '/finance/payable',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedFinanceDreRoute = AuthenticatedFinanceDreRouteImport.update({
+  id: '/finance/dre',
+  path: '/finance/dre',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedFinanceCategoriesRoute =
   AuthenticatedFinanceCategoriesRouteImport.update({
     id: '/finance/categories',
@@ -2134,6 +2140,7 @@ export interface FileRoutesByFullPath {
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/finance/dre': typeof AuthenticatedFinanceDreRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
@@ -2435,6 +2442,7 @@ export interface FileRoutesByTo {
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/finance/dre': typeof AuthenticatedFinanceDreRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
@@ -2741,6 +2749,7 @@ export interface FileRoutesById {
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/_authenticated/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/_authenticated/finance/dre': typeof AuthenticatedFinanceDreRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
@@ -3048,6 +3057,7 @@ export interface FileRouteTypes {
     | '/deals/$id'
     | '/finance/bank-accounts'
     | '/finance/categories'
+    | '/finance/dre'
     | '/finance/payable'
     | '/finance/receivable'
     | '/home/access'
@@ -3349,6 +3359,7 @@ export interface FileRouteTypes {
     | '/deals/$id'
     | '/finance/bank-accounts'
     | '/finance/categories'
+    | '/finance/dre'
     | '/finance/payable'
     | '/finance/receivable'
     | '/home/access'
@@ -3654,6 +3665,7 @@ export interface FileRouteTypes {
     | '/_authenticated/deals/$id'
     | '/_authenticated/finance/bank-accounts'
     | '/_authenticated/finance/categories'
+    | '/_authenticated/finance/dre'
     | '/_authenticated/finance/payable'
     | '/_authenticated/finance/receivable'
     | '/_authenticated/home/access'
@@ -5159,6 +5171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinancePayableRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/finance/dre': {
+      id: '/_authenticated/finance/dre'
+      path: '/finance/dre'
+      fullPath: '/finance/dre'
+      preLoaderRoute: typeof AuthenticatedFinanceDreRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/finance/categories': {
       id: '/_authenticated/finance/categories'
       path: '/finance/categories'
@@ -6553,6 +6572,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
   AuthenticatedFinanceCategoriesRoute: typeof AuthenticatedFinanceCategoriesRoute
+  AuthenticatedFinanceDreRoute: typeof AuthenticatedFinanceDreRoute
   AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
   AuthenticatedFinanceReceivableRoute: typeof AuthenticatedFinanceReceivableRoute
   AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
@@ -6656,6 +6676,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
   AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
   AuthenticatedFinanceCategoriesRoute: AuthenticatedFinanceCategoriesRoute,
+  AuthenticatedFinanceDreRoute: AuthenticatedFinanceDreRoute,
   AuthenticatedFinancePayableRoute: AuthenticatedFinancePayableRoute,
   AuthenticatedFinanceReceivableRoute: AuthenticatedFinanceReceivableRoute,
   AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
