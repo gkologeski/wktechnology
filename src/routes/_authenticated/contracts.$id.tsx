@@ -25,6 +25,7 @@ import {
   deleteContract,
 } from "@/lib/contracts.functions";
 import { ContractServices } from "@/components/services/contract-services";
+import { ContractApprovalsPanel } from "@/components/contracts/contract-approvals-panel";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 
@@ -290,6 +291,8 @@ function ContractDetail() {
           <ContractServices contractId={contract.id} currency={contract.currency ?? "BRL"} />
         </CardContent>
       </Card>
+
+      <ContractApprovalsPanel contractId={contract.id} />
 
       <Card>
         <CardHeader className="pb-3">
