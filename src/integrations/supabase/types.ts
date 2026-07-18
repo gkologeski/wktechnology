@@ -9259,6 +9259,134 @@ export type Database = {
           },
         ]
       }
+      project_folders: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          sort_order: number
+          space_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          space_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          space_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_folders_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_folders_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_lists: {
+        Row: {
+          archived_at: string | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          folder_id: string | null
+          icon: string | null
+          id: string
+          name: string
+          project_id: string | null
+          sort_order: number
+          space_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          folder_id?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          project_id?: string | null
+          sort_order?: number
+          space_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          folder_id?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          project_id?: string | null
+          sort_order?: number
+          space_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_lists_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "project_folders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_lists_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_lists_space_id_fkey"
+            columns: ["space_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_lists_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_members: {
         Row: {
           bill_rate_hour: number | null
@@ -9383,17 +9511,126 @@ export type Database = {
           },
         ]
       }
+      project_spaces: {
+        Row: {
+          archived_at: string | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_spaces_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_task_statuses: {
+        Row: {
+          category: string
+          color: string | null
+          created_at: string
+          id: string
+          is_default: boolean
+          list_id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          list_id: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          category?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          list_id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_task_statuses_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "project_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_task_statuses_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_tasks: {
         Row: {
           assignee_id: string | null
           created_at: string
+          custom_status_id: string | null
           description: string | null
           due_at: string | null
           estimated_hours: number | null
           id: string
+          list_id: string | null
           milestone_id: string | null
+          parent_task_id: string | null
+          priority: Database["public"]["Enums"]["project_task_priority"]
           project_id: string
           sort_order: number
+          start_at: string | null
           status: Database["public"]["Enums"]["project_task_status"]
           title: string
           updated_at: string
@@ -9402,13 +9639,18 @@ export type Database = {
         Insert: {
           assignee_id?: string | null
           created_at?: string
+          custom_status_id?: string | null
           description?: string | null
           due_at?: string | null
           estimated_hours?: number | null
           id?: string
+          list_id?: string | null
           milestone_id?: string | null
+          parent_task_id?: string | null
+          priority?: Database["public"]["Enums"]["project_task_priority"]
           project_id: string
           sort_order?: number
+          start_at?: string | null
           status?: Database["public"]["Enums"]["project_task_status"]
           title: string
           updated_at?: string
@@ -9417,13 +9659,18 @@ export type Database = {
         Update: {
           assignee_id?: string | null
           created_at?: string
+          custom_status_id?: string | null
           description?: string | null
           due_at?: string | null
           estimated_hours?: number | null
           id?: string
+          list_id?: string | null
           milestone_id?: string | null
+          parent_task_id?: string | null
+          priority?: Database["public"]["Enums"]["project_task_priority"]
           project_id?: string
           sort_order?: number
+          start_at?: string | null
           status?: Database["public"]["Enums"]["project_task_status"]
           title?: string
           updated_at?: string
@@ -9431,10 +9678,31 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "project_tasks_custom_status_id_fkey"
+            columns: ["custom_status_id"]
+            isOneToOne: false
+            referencedRelation: "project_task_statuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "project_lists"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "project_tasks_milestone_id_fkey"
             columns: ["milestone_id"]
             isOneToOne: false
             referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
             referencedColumns: ["id"]
           },
           {
@@ -14965,6 +15233,7 @@ export type Database = {
       project_member_role: "manager" | "contributor" | "viewer"
       project_milestone_status: "pending" | "in_progress" | "done" | "cancelled"
       project_status: "planning" | "active" | "on_hold" | "done" | "cancelled"
+      project_task_priority: "low" | "normal" | "high" | "urgent"
       project_task_status: "todo" | "doing" | "review" | "done"
       proposal_approval_status: "pending" | "approved" | "rejected"
       proposal_status:
@@ -15256,6 +15525,7 @@ export const Constants = {
       project_member_role: ["manager", "contributor", "viewer"],
       project_milestone_status: ["pending", "in_progress", "done", "cancelled"],
       project_status: ["planning", "active", "on_hold", "done", "cancelled"],
+      project_task_priority: ["low", "normal", "high", "urgent"],
       project_task_status: ["todo", "doing", "review", "done"],
       proposal_approval_status: ["pending", "approved", "rejected"],
       proposal_status: [
