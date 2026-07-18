@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { runWebhookDispatch } from "@/lib/webhooks/dispatcher.server";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/webhook-tick")({
   server: {
@@ -8,8 +9,14 @@ export const Route = createFileRoute("/api/public/hooks/webhook-tick")({
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
-        const r = await runWebhookDispatch();
-        return Response.json({ ok: true, ...r });
+        const run = await runCronWithLogging("webhook-tick", async () => {
+          const r = await runWebhookDispatch();
+          return r as unknown as Record<string, unknown>;
+        });
+        if (run.status === "error") {
+          return Response.json({ ok: false, error: run.error }, { status: 500 });
+        }
+        return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
       GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },
