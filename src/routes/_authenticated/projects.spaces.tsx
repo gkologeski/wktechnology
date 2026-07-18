@@ -34,6 +34,7 @@ import {
   deleteFolder,
   deleteList,
 } from "@/lib/project-hierarchy.functions";
+import { CreateListFromTemplateButton } from "@/components/projects/list-templates-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/spaces")({
   head: () => ({
