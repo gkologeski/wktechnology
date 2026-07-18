@@ -38,11 +38,13 @@ function formatMonth(ym: string) {
 function DrePage() {
   const get = useServerFn(getDreReport);
   const [months, setMonths] = useState(6);
+  const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "dre", months],
-    queryFn: () => get({ data: { months } }),
+    queryKey: ["finance", "dre", months, basis],
+    queryFn: () => get({ data: { months, basis } }),
   });
+
 
   const revenueRows = useMemo(
     () => (data?.categories ?? []).filter((c) => c.kind === "revenue"),
