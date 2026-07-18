@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/crm";
 import { getFinanceDashboard } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
+import { FinanceAlertsPanel } from "@/components/finance/finance-alerts-panel";
 
 export const Route = createFileRoute("/_authenticated/finance/")({
   head: () => ({
