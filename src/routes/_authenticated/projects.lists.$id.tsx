@@ -301,10 +301,12 @@ function ListView({
   statuses,
   tasks,
   onChanged,
+  onOpen,
 }: {
   statuses: Status[];
   tasks: Task[];
   onChanged: () => void;
+  onOpen: (t: Task) => void;
 }) {
   const statusById = useMemo(() => new Map(statuses.map((s) => [s.id, s])), [statuses]);
   return (
