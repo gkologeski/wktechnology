@@ -77,11 +77,18 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 type Need = "admin" | "manager" | "platform" | undefined;
+/**
+ * Escopo da configuração. Regra: se impacta 2+ módulos → "global" (default).
+ * Configurações específicas de um módulo recebem o ID do módulo dono e são
+ * exibidas apenas quando aquele módulo é o ativo (via `getSettingsForScope`).
+ */
+type Scope = "global" | "crm" | "ats" | "contracts" | "services" | "projects" | "finance";
 type Tab = {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
+  scope?: Scope;
 };
 type Section = { label: string; tabs: Tab[] };
 
