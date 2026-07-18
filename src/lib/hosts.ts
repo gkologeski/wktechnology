@@ -13,6 +13,11 @@ export const WORKSPACE_HOST = "app.wktechnology.com.br";
 export const MODULE_HOSTS: Record<ModuleId, string> = {
   ats: "ats.wktechnology.com.br",
   crm: "crm.wktechnology.com.br",
+  // Módulos sem subdomínio próprio ainda — reutilizam o host do CRM.
+  contracts: "crm.wktechnology.com.br",
+  services: "crm.wktechnology.com.br",
+  projects: "crm.wktechnology.com.br",
+  finance: "crm.wktechnology.com.br",
 };
 
 export type HostKind = "workspace" | ModuleId | "preview";
