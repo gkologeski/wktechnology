@@ -51,6 +51,8 @@ import {
   updateInvoiceStatus,
   deleteInvoice,
 } from "@/lib/invoices.functions";
+import { issueNfse } from "@/lib/nfse.functions";
+
 
 export const Route = createFileRoute("/_authenticated/invoices")({
   component: InvoicesPage,
