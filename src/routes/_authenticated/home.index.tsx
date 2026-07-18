@@ -26,6 +26,7 @@ import {
 } from "@/lib/workspace/modules.functions";
 import { buildModuleUrl } from "@/lib/hosts";
 import { MODULES, type ModuleId } from "@/lib/modules/registry";
+import { setStoredActiveModule } from "@/lib/modules/active-module";
 import {
   PageHeader,
   SectionHeader,
