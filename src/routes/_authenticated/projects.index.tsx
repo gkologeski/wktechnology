@@ -1,23 +1,178 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Kanban } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Kanban, Plus, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { listProjects } from "@/lib/projects.functions";
+import { formatDateTime } from "@/lib/crm";
+import { QuickCreateProjectDialog } from "@/components/projects/quick-create-project-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
   head: () => ({
     meta: [
       { title: "Projetos" },
-      { name: "description", content: "Gestão de projetos (PSA) com apontamento de horas e marcos." },
+      { name: "description", content: "Projetos com marcos billáveis, timesheet e custo × receita." },
     ],
   }),
   component: ProjectsPage,
 });
 
+const STATUS_LABEL: Record<string, string> = {
+  planning: "Planejamento",
+  active: "Ativo",
+  on_hold: "Em espera",
+  done: "Concluído",
+  cancelled: "Cancelado",
+};
+
+const STATUS_TONE: Record<string, string> = {
+  planning: "bg-muted text-muted-foreground",
+  active: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  on_hold: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+  done: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
+  cancelled: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+};
+
 function ProjectsPage() {
+  const list = useServerFn(listProjects);
+  const qc = useQueryClient();
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
+  const [openCreate, setOpenCreate] = useState(false);
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["projects", { status, search }],
+    queryFn: () =>
+      list({
+        data: {
+          status: status === "all" ? undefined : (status as any),
+          search: search || undefined,
+        },
+      }),
+  });
+
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader title="Projetos" description="Entregas com marcos billáveis, timesheet e custo x receita." />
-      <div className="rounded-lg border bg-card p-12 text-center"><Kanban className="mx-auto h-10 w-10 text-muted-foreground" /><h3 className="mt-4 text-lg font-medium">Módulo Projetos</h3><p className="mt-2 text-sm text-muted-foreground">Fundação criada. A interface será entregue nas próximas sprints.</p></div>
+    <div className="p-6 space-y-5">
+      <PageHeader
+        title="Projetos"
+        description="Entregas com marcos billáveis, apontamento de horas e margem por projeto."
+        count={rows.length}
+        countLabel={rows.length === 1 ? "projeto" : "projetos"}
+        actions={
+          <Button onClick={() => setOpenCreate(true)} size="sm">
+            <Plus className="h-4 w-4 mr-2" /> Novo projeto
+          </Button>
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-64">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8"
+          />
+        </div>
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os status</SelectItem>
+            {Object.entries(STATUS_LABEL).map(([k, v]) => (
+              <SelectItem key={k} value={k}>
+                {v}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="rounded-lg border bg-card">
+        {isLoading ? (
+          <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
+        ) : rows.length === 0 ? (
+          <div className="p-12 text-center">
+            <Kanban className="mx-auto h-10 w-10 text-muted-foreground" />
+            <h3 className="mt-4 text-lg font-medium">Nenhum projeto ainda</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Crie um projeto avulso ou a partir de um contrato/serviço.
+            </p>
+            <Button className="mt-4" size="sm" onClick={() => setOpenCreate(true)}>
+              <Plus className="h-4 w-4 mr-2" /> Novo projeto
+            </Button>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nome</TableHead>
+                <TableHead>Contrato</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Progresso</TableHead>
+                <TableHead>Prazo</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((p: any) => (
+                <TableRow key={p.id}>
+                  <TableCell>
+                    <Link to="/projects/$id" params={{ id: p.id }} className="font-medium hover:underline">
+                      {p.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {p.contracts ? (
+                      <Link to="/contracts/$id" params={{ id: p.contracts.id }} className="hover:underline">
+                        {p.contracts.number ?? p.contracts.title}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={STATUS_TONE[p.status] ?? ""}>
+                      {STATUS_LABEL[p.status] ?? p.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{p.progress ?? 0}%</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+
+      <QuickCreateProjectDialog
+        open={openCreate}
+        onOpenChange={setOpenCreate}
+        onCreated={() => qc.invalidateQueries({ queryKey: ["projects"] })}
+      />
     </div>
   );
 }
