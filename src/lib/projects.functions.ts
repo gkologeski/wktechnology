@@ -265,6 +265,38 @@ export const deleteTask = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Cross-project listing (Sprint C — desacoplamento /projects/tasks).
+export const listAllProjectTasks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        status: taskStatusEnum.optional(),
+        projectId: z.string().uuid().optional(),
+        assigneeId: z.string().uuid().optional(),
+        mineOnly: z.boolean().optional(),
+        search: z.string().optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    let q = supabase
+      .from("project_tasks")
+      .select("*, projects(id, name, status)")
+      .order("due_at", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (data.status) q = q.eq("status", data.status);
+    if (data.projectId) q = q.eq("project_id", data.projectId);
+    if (data.assigneeId) q = q.eq("assignee_id", data.assigneeId);
+    if (data.mineOnly) q = q.eq("assignee_id", userId);
+    if (data.search?.trim()) q = q.ilike("title", `%${data.search.trim()}%`);
+    const { data: rows, error } = await q;
+    if (error) throw error;
+    return rows ?? [];
+  });
+
 // ============= MILESTONES =============
 
 export const listMilestones = createServerFn({ method: "POST" })
