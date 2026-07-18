@@ -67,6 +67,8 @@ function openModule(moduleId: ModuleId) {
     console.warn(`[home] Módulo "${moduleId}" existe em public.modules mas não está registrado no front (src/lib/modules/registry.ts).`);
     return;
   }
+  // Persiste a preferência do usuário — sidebar do módulo aparece já na 1ª tela.
+  setStoredActiveModule(moduleId);
   const url = buildModuleUrl(moduleId, def.defaultRoute);
   // Sempre navegar na mesma aba — cross-host ou SPA — para garantir que
   // o usuário chegue ao módulo (evita bloqueio de popup).
