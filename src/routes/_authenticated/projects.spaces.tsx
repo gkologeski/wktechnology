@@ -202,6 +202,7 @@ function SpaceCard({
         </Badge>
         <NewFolderButton spaceId={space.id} onCreated={onChanged} />
         <NewListButton spaceId={space.id} onCreated={onChanged} />
+        <CreateListFromTemplateButton spaceId={space.id} onCreated={onChanged} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
