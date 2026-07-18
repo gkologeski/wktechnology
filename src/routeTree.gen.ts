@@ -178,6 +178,7 @@ import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authentica
 import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authenticated/home.access'
 import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
+import { Route as AuthenticatedFinanceNfseRouteImport } from './routes/_authenticated/finance.nfse'
 import { Route as AuthenticatedFinanceDreRouteImport } from './routes/_authenticated/finance.dre'
 import { Route as AuthenticatedFinanceCategoriesRouteImport } from './routes/_authenticated/finance.categories'
 import { Route as AuthenticatedFinanceCashFlowRouteImport } from './routes/_authenticated/finance.cash-flow'
@@ -1262,6 +1263,12 @@ const AuthenticatedFinancePayableRoute =
     path: '/finance/payable',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedFinanceNfseRoute =
+  AuthenticatedFinanceNfseRouteImport.update({
+    id: '/finance/nfse',
+    path: '/finance/nfse',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinanceDreRoute = AuthenticatedFinanceDreRouteImport.update({
   id: '/finance/dre',
   path: '/finance/dre',
@@ -2149,6 +2156,7 @@ export interface FileRoutesByFullPath {
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
+  '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
@@ -2452,6 +2460,7 @@ export interface FileRoutesByTo {
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
+  '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
@@ -2760,6 +2769,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/_authenticated/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
   '/_authenticated/finance/dre': typeof AuthenticatedFinanceDreRoute
+  '/_authenticated/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
@@ -3069,6 +3079,7 @@ export interface FileRouteTypes {
     | '/finance/cash-flow'
     | '/finance/categories'
     | '/finance/dre'
+    | '/finance/nfse'
     | '/finance/payable'
     | '/finance/receivable'
     | '/home/access'
@@ -3372,6 +3383,7 @@ export interface FileRouteTypes {
     | '/finance/cash-flow'
     | '/finance/categories'
     | '/finance/dre'
+    | '/finance/nfse'
     | '/finance/payable'
     | '/finance/receivable'
     | '/home/access'
@@ -3679,6 +3691,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/cash-flow'
     | '/_authenticated/finance/categories'
     | '/_authenticated/finance/dre'
+    | '/_authenticated/finance/nfse'
     | '/_authenticated/finance/payable'
     | '/_authenticated/finance/receivable'
     | '/_authenticated/home/access'
@@ -5184,6 +5197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinancePayableRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/finance/nfse': {
+      id: '/_authenticated/finance/nfse'
+      path: '/finance/nfse'
+      fullPath: '/finance/nfse'
+      preLoaderRoute: typeof AuthenticatedFinanceNfseRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/finance/dre': {
       id: '/_authenticated/finance/dre'
       path: '/finance/dre'
@@ -6594,6 +6614,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceCashFlowRoute: typeof AuthenticatedFinanceCashFlowRoute
   AuthenticatedFinanceCategoriesRoute: typeof AuthenticatedFinanceCategoriesRoute
   AuthenticatedFinanceDreRoute: typeof AuthenticatedFinanceDreRoute
+  AuthenticatedFinanceNfseRoute: typeof AuthenticatedFinanceNfseRoute
   AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
   AuthenticatedFinanceReceivableRoute: typeof AuthenticatedFinanceReceivableRoute
   AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
@@ -6699,6 +6720,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinanceCashFlowRoute: AuthenticatedFinanceCashFlowRoute,
   AuthenticatedFinanceCategoriesRoute: AuthenticatedFinanceCategoriesRoute,
   AuthenticatedFinanceDreRoute: AuthenticatedFinanceDreRoute,
+  AuthenticatedFinanceNfseRoute: AuthenticatedFinanceNfseRoute,
   AuthenticatedFinancePayableRoute: AuthenticatedFinancePayableRoute,
   AuthenticatedFinanceReceivableRoute: AuthenticatedFinanceReceivableRoute,
   AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
@@ -6945,13 +6967,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

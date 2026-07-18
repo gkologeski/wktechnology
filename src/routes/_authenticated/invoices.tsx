@@ -51,6 +51,8 @@ import {
   updateInvoiceStatus,
   deleteInvoice,
 } from "@/lib/invoices.functions";
+import { issueNfse } from "@/lib/nfse.functions";
+
 
 export const Route = createFileRoute("/_authenticated/invoices")({
   component: InvoicesPage,
@@ -71,6 +73,8 @@ function InvoicesPage() {
   const charge = useServerFn(generateCharge);
   const updateStatus = useServerFn(updateInvoiceStatus);
   const del = useServerFn(deleteInvoice);
+  const nfse = useServerFn(issueNfse);
+
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
@@ -120,9 +124,18 @@ function InvoicesPage() {
       toast.error(e instanceof Error ? e.message : "Falha");
     }
   }
+  async function onIssueNfse(id: string) {
+    try {
+      await nfse({ data: { invoice_id: id } });
+      toast.success("Emissão de NFS-e iniciada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao emitir NFS-e");
+    }
+  }
 
   return (
     <div className="space-y-4 p-6">
+
       <PageHeader
         title="Faturas"
         description="Cobrança de clientes via Pix, boleto e cartão (Asaas/Pagar.me/Mercado Pago)."
@@ -276,6 +289,17 @@ function InvoicesPage() {
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
                           </Button>
                         )}
+                        {inv.status === "paid" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onIssueNfse(inv.id)}
+                            title="Emitir NFS-e"
+                          >
+                            NFS-e
+                          </Button>
+                        )}
+
                         <Button variant="ghost" size="icon" onClick={() => onDelete(inv.id)}>
                           <Trash2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
