@@ -15,6 +15,10 @@ import {
   Sparkles,
   ArrowRight,
   CheckCircle2,
+  FileText,
+  Package,
+  Kanban,
+  DollarSign,
 } from "lucide-react";
 import {
   listWorkspaceModules,
