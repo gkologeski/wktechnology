@@ -162,6 +162,7 @@ import { Route as AuthenticatedSettingsAccessPolicyRouteImport } from './routes/
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services.$id'
 import { Route as AuthenticatedQaTestCasesRouteImport } from './routes/_authenticated/qa.test-cases'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
+import { Route as AuthenticatedProjectsTimesheetRouteImport } from './routes/_authenticated/projects.timesheet'
 import { Route as AuthenticatedProjectsTasksRouteImport } from './routes/_authenticated/projects.tasks'
 import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authenticated/projects.spaces'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
@@ -1167,6 +1168,12 @@ const AuthenticatedProposalsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedProposalsRoute,
   } as any)
+const AuthenticatedProjectsTimesheetRoute =
+  AuthenticatedProjectsTimesheetRouteImport.update({
+    id: '/projects/timesheet',
+    path: '/projects/timesheet',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsTasksRoute =
   AuthenticatedProjectsTasksRouteImport.update({
     id: '/projects/tasks',
@@ -2134,6 +2141,7 @@ export interface FileRoutesByFullPath {
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/projects/tasks': typeof AuthenticatedProjectsTasksRoute
+  '/projects/timesheet': typeof AuthenticatedProjectsTimesheetRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
@@ -2433,6 +2441,7 @@ export interface FileRoutesByTo {
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/projects/tasks': typeof AuthenticatedProjectsTasksRoute
+  '/projects/timesheet': typeof AuthenticatedProjectsTimesheetRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
@@ -2737,6 +2746,7 @@ export interface FileRoutesById {
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/_authenticated/projects/tasks': typeof AuthenticatedProjectsTasksRoute
+  '/_authenticated/projects/timesheet': typeof AuthenticatedProjectsTimesheetRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
@@ -3042,6 +3052,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/projects/spaces'
     | '/projects/tasks'
+    | '/projects/timesheet'
     | '/proposals/$id'
     | '/qa/test-cases'
     | '/services/$id'
@@ -3341,6 +3352,7 @@ export interface FileRouteTypes {
     | '/projects/$id'
     | '/projects/spaces'
     | '/projects/tasks'
+    | '/projects/timesheet'
     | '/proposals/$id'
     | '/qa/test-cases'
     | '/services/$id'
@@ -3644,6 +3656,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/spaces'
     | '/_authenticated/projects/tasks'
+    | '/_authenticated/projects/timesheet'
     | '/_authenticated/proposals/$id'
     | '/_authenticated/qa/test-cases'
     | '/_authenticated/services/$id'
@@ -5020,6 +5033,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/proposals/$id'
       preLoaderRoute: typeof AuthenticatedProposalsIdRouteImport
       parentRoute: typeof AuthenticatedProposalsRoute
+    }
+    '/_authenticated/projects/timesheet': {
+      id: '/_authenticated/projects/timesheet'
+      path: '/projects/timesheet'
+      fullPath: '/projects/timesheet'
+      preLoaderRoute: typeof AuthenticatedProjectsTimesheetRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/projects/tasks': {
       id: '/_authenticated/projects/tasks'
@@ -6523,6 +6543,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedProjectsSpacesRoute: typeof AuthenticatedProjectsSpacesRoute
   AuthenticatedProjectsTasksRoute: typeof AuthenticatedProjectsTasksRoute
+  AuthenticatedProjectsTimesheetRoute: typeof AuthenticatedProjectsTimesheetRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
@@ -6624,6 +6645,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedProjectsSpacesRoute: AuthenticatedProjectsSpacesRoute,
   AuthenticatedProjectsTasksRoute: AuthenticatedProjectsTasksRoute,
+  AuthenticatedProjectsTimesheetRoute: AuthenticatedProjectsTimesheetRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
