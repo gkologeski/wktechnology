@@ -16,6 +16,24 @@ export type BankAuthorizationInit = {
   message?: string;
 };
 
+export type BankStatementTx = {
+  external_id: string;
+  posted_at: string; // ISO
+  amount: number; // positivo; direção controla o sinal
+  direction: "credit" | "debit";
+  description: string | null;
+  counterparty: string | null;
+  category: string | null;
+  balance_after: number | null;
+  raw?: Record<string, unknown>;
+};
+
+export type BankStatementFetch = {
+  transactions: BankStatementTx[];
+  balance: number | null;
+  cursor: string | null;
+};
+
 export interface BankProvider {
   id: string; // 'inter'
   mode: "mock" | "sandbox" | "production";
@@ -35,4 +53,13 @@ export interface BankProvider {
   refreshTokens(input: { refresh_token: string }): Promise<BankTokens>;
 
   revoke(input: { access_token: string; refresh_token?: string | null }): Promise<void>;
+
+  fetchStatement(input: {
+    access_token: string;
+    from: string; // ISO
+    to: string; // ISO
+    cursor?: string | null;
+  }): Promise<BankStatementFetch>;
+
+  fetchBalance(input: { access_token: string }): Promise<{ balance: number }>;
 }
