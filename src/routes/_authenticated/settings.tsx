@@ -138,7 +138,7 @@ const sections: Section[] = [
         need: "admin",
       },
       { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin" },
-      { to: "/settings/lead-sources", label: "Fontes de lead", icon: Filter, need: "manager" },
+      { to: "/settings/lead-sources", label: "Fontes de lead", icon: Filter, need: "manager", scope: "crm" },
       { to: "/settings/segments", label: "Segmentos", icon: Filter, need: "manager" },
       { to: "/settings/products", label: "Produtos", icon: Package, need: "manager" },
     ],
@@ -146,7 +146,7 @@ const sections: Section[] = [
   {
     label: "Vendas & Financeiro",
     tabs: [
-      { to: "/settings/quotes", label: "Cotações", icon: FileText, need: "manager" },
+      { to: "/settings/quotes", label: "Cotações", icon: FileText, need: "manager", scope: "crm" },
       {
         to: "/settings/quote-templates",
         label: "Modelos de cotação",
@@ -170,7 +170,7 @@ const sections: Section[] = [
       { to: "/settings/recurring", label: "Recorrência", icon: Repeat, need: "admin" },
       { to: "/settings/dunning", label: "Cobrança (dunning)", icon: Receipt, need: "admin" },
       { to: "/settings/nfse", label: "NFS-e", icon: FileBarChart2, need: "admin" },
-      { to: "/settings/goals", label: "Metas", icon: Star, need: "manager" },
+      { to: "/settings/goals", label: "Metas", icon: Star, need: "manager", scope: "crm" },
     ],
   },
   {
