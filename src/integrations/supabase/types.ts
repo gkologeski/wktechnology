@@ -4020,6 +4020,100 @@ export type Database = {
           },
         ]
       }
+      contract_approvals: {
+        Row: {
+          approver_id: string | null
+          comment: string | null
+          contract_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          owner_id: string
+          sort_order: number
+          stage: Database["public"]["Enums"]["contract_approval_stage"]
+          status: Database["public"]["Enums"]["contract_approval_status"]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          approver_id?: string | null
+          comment?: string | null
+          contract_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          owner_id: string
+          sort_order?: number
+          stage: Database["public"]["Enums"]["contract_approval_stage"]
+          status?: Database["public"]["Enums"]["contract_approval_status"]
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          approver_id?: string | null
+          comment?: string | null
+          contract_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          owner_id?: string
+          sort_order?: number
+          stage?: Database["public"]["Enums"]["contract_approval_stage"]
+          status?: Database["public"]["Enums"]["contract_approval_status"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_approvals_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_events: {
+        Row: {
+          actor_id: string | null
+          contract_id: string
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          contract_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          contract_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_events_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           auto_renew: boolean
@@ -14657,6 +14751,8 @@ export type Database = {
       app_role: "admin" | "manager" | "member"
       billing_interval: "week" | "month" | "quarter" | "year"
       booking_status: "confirmed" | "canceled"
+      contract_approval_stage: "legal" | "finance" | "purchasing"
+      contract_approval_status: "pending" | "approved" | "rejected" | "skipped"
       contract_role: "provider" | "client"
       contract_status:
         | "draft"
@@ -14937,6 +15033,8 @@ export const Constants = {
       app_role: ["admin", "manager", "member"],
       billing_interval: ["week", "month", "quarter", "year"],
       booking_status: ["confirmed", "canceled"],
+      contract_approval_stage: ["legal", "finance", "purchasing"],
+      contract_approval_status: ["pending", "approved", "rejected", "skipped"],
       contract_role: ["provider", "client"],
       contract_status: [
         "draft",
