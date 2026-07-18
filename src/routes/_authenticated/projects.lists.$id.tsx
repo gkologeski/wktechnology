@@ -242,10 +242,12 @@ function TaskCard({
   task,
   onDragStart,
   onChanged,
+  onOpen,
 }: {
   task: Task;
   onDragStart: () => void;
   onChanged: () => void;
+  onOpen: () => void;
 }) {
   const del = useServerFn(deleteListTask);
   const delM = useMutation({
@@ -259,7 +261,8 @@ function TaskCard({
     <div
       draggable
       onDragStart={onDragStart}
-      className="rounded-md border bg-card p-3 cursor-grab active:cursor-grabbing"
+      onClick={onOpen}
+      className="rounded-md border bg-card p-3 cursor-pointer hover:border-primary/40 active:cursor-grabbing"
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
