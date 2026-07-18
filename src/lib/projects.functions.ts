@@ -588,6 +588,7 @@ export const getProjectFinancials = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ projectId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { computeProjectFinancials } = await import("@/lib/projects/financials");
     const { supabase } = context;
     const [{ data: entries }, { data: members }, { data: milestones }] = await Promise.all([
       supabase
@@ -604,43 +605,10 @@ export const getProjectFinancials = createServerFn({ method: "POST" })
         .eq("project_id", data.projectId),
     ]);
 
-    const memberMap = new Map<string, { cost: number; bill: number }>();
-    for (const m of members ?? []) {
-      memberMap.set((m as any).user_id, {
-        cost: Number((m as any).cost_rate_hour ?? 0),
-        bill: Number((m as any).bill_rate_hour ?? 0),
-      });
-    }
-
-    let realizedCost = 0;
-    let billableRevenue = 0;
-    let loggedHours = 0;
-    for (const e of entries ?? []) {
-      const rates = memberMap.get((e as any).user_id) ?? { cost: 0, bill: 0 };
-      const h = Number((e as any).hours);
-      loggedHours += h;
-      realizedCost += h * rates.cost;
-      if ((e as any).billable) billableRevenue += h * rates.bill;
-    }
-
-    let milestoneRevenue = 0;
-    for (const m of milestones ?? []) {
-      if ((m as any).billable && (m as any).status === "done") {
-        milestoneRevenue += Number((m as any).bill_amount ?? 0);
-      }
-    }
-
-    const totalRevenue = billableRevenue + milestoneRevenue;
-    const margin = totalRevenue - realizedCost;
-    const hasRates = Array.from(memberMap.values()).some((r) => r.cost > 0 || r.bill > 0);
-
-    return {
-      loggedHours,
-      realizedCost,
-      billableRevenue,
-      milestoneRevenue,
-      totalRevenue,
-      margin,
-      hasRates,
-    };
+    return computeProjectFinancials(
+      (entries ?? []) as any,
+      (members ?? []) as any,
+      (milestones ?? []) as any,
+    );
   });
+
