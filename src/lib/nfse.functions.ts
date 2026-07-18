@@ -4,17 +4,18 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
-export const listNfse = createServerFn({ method: "GET" })
+export const listNfse = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("nfse_invoices")
-      .select("*")
+      .select("*, customer_invoices(invoice_number, amount, currency, description)")
       .order("created_at", { ascending: false })
       .limit(200);
     if (error) throw new Error(error.message);
     return { items: data ?? [] };
   });
+
 
 /**
  * Issue a NFS-e for an invoice via NFE.io. Without real credentials this returns
