@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/sla-tick")({
   server: {
@@ -8,9 +9,10 @@ export const Route = createFileRoute("/api/public/hooks/sla-tick")({
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
-        try {
+        const baseUrl = new URL(request.url).origin;
+
+        const run = await runCronWithLogging("sla-tick", async () => {
           const now = new Date().toISOString();
-          const baseUrl = new URL(request.url).origin;
 
           const { data: fr, error: e1 } = await supabaseAdmin
             .from("tickets")
@@ -32,7 +34,6 @@ export const Route = createFileRoute("/api/public/hooks/sla-tick")({
             .select("id, subject, owner_id, assignee_id");
           if (e2) throw e2;
 
-          // Create notifications for assignees on breaches
           const notifs: Array<{
             owner_id: string;
             user_id: string;
@@ -73,7 +74,6 @@ export const Route = createFileRoute("/api/public/hooks/sla-tick")({
             await supabaseAdmin.from("notifications").insert(notifs);
           }
 
-          // At-risk: notify when within 30 min of due (first response only, once)
           const soon = new Date(Date.now() + 30 * 60_000).toISOString();
           const { data: risk } = await supabaseAdmin
             .from("tickets")
@@ -84,8 +84,8 @@ export const Route = createFileRoute("/api/public/hooks/sla-tick")({
             .eq("sla_first_response_breached", false)
             .is("deleted_at", null)
             .not("assignee_id", "is", null);
+          let riskNotifsCount = 0;
           if (risk && risk.length) {
-            // Dedup: skip if a recent at-risk notif already exists in last 30 min
             const ids = risk.map((t) => t.id);
             const cutoff = new Date(Date.now() - 30 * 60_000).toISOString();
             const { data: existing } = await supabaseAdmin
@@ -107,24 +107,30 @@ export const Route = createFileRoute("/api/public/hooks/sla-tick")({
                 entity: "ticket",
                 entity_id: t.id,
               }));
-            if (riskNotifs.length) await supabaseAdmin.from("notifications").insert(riskNotifs);
+            if (riskNotifs.length) {
+              await supabaseAdmin.from("notifications").insert(riskNotifs);
+              riskNotifsCount = riskNotifs.length;
+            }
           }
 
-          return Response.json({
-            ok: true,
+          return {
             first_response_breaches: fr?.length ?? 0,
             resolution_breaches: rs?.length ?? 0,
             notifications: notifs.length,
             at_risk_checked: risk?.length ?? 0,
-            base_url: baseUrl,
-          });
-        } catch (e) {
-          console.error("[sla-tick] error", e);
-          return Response.json(
-            { ok: false, error: e instanceof Error ? e.message : String(e) },
-            { status: 500 },
-          );
+            at_risk_notifications: riskNotifsCount,
+          };
+        });
+
+        if (run.status === "error") {
+          return Response.json({ ok: false, error: run.error }, { status: 500 });
         }
+        return Response.json({
+          ok: true,
+          duration_ms: run.duration_ms,
+          base_url: baseUrl,
+          ...run.metrics,
+        });
       },
       GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },
