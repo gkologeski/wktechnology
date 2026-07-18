@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useRouter, useRouterState } from "@tanstack/re
 import { useEffect } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { CrossModuleBanner } from "@/components/cross-module-banner";
 import { useAuth } from "@/lib/auth";
 import { useMyRole } from "@/lib/use-my-role";
 import { ShieldAlert } from "lucide-react";
@@ -118,6 +119,7 @@ function AuthenticatedLayout() {
           {!blocked && <RouteBreadcrumbs />}
           <main className="flex-1 p-6 overflow-auto">
             <FocusQueueBar />
+            {!blocked && <CrossModuleBanner />}
             {blocked ? (
               <div className="max-w-md mx-auto mt-24 text-center space-y-3 border rounded-lg p-8 bg-background">
                 <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />

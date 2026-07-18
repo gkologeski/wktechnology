@@ -25,6 +25,7 @@ import { CONTRACTS_SIDEBAR_GROUPS } from "@/lib/menu-config-contracts";
 import { SERVICES_SIDEBAR_GROUPS } from "@/lib/menu-config-services";
 import { PROJECTS_SIDEBAR_GROUPS } from "@/lib/menu-config-projects";
 import { FINANCE_SIDEBAR_GROUPS } from "@/lib/menu-config-finance";
+import { CORE_SIDEBAR_GROUPS, shouldInjectCoreGroups } from "@/lib/menu-config-core";
 
 import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active-module";
 
@@ -48,17 +49,24 @@ export function AppSidebar() {
   const effectiveModuleId = activeModuleId;
   const groupsSource = workspaceShell
     ? ERP_SIDEBAR_GROUPS
-    : effectiveModuleId === "ats"
-      ? ATS_SIDEBAR_GROUPS
-      : effectiveModuleId === "contracts"
-        ? CONTRACTS_SIDEBAR_GROUPS
-        : effectiveModuleId === "services"
-          ? SERVICES_SIDEBAR_GROUPS
-          : effectiveModuleId === "projects"
-            ? PROJECTS_SIDEBAR_GROUPS
-            : effectiveModuleId === "finance"
-              ? FINANCE_SIDEBAR_GROUPS
-              : SIDEBAR_GROUPS;
+    : (() => {
+        const moduleGroups =
+          effectiveModuleId === "ats"
+            ? ATS_SIDEBAR_GROUPS
+            : effectiveModuleId === "contracts"
+              ? CONTRACTS_SIDEBAR_GROUPS
+              : effectiveModuleId === "services"
+                ? SERVICES_SIDEBAR_GROUPS
+                : effectiveModuleId === "projects"
+                  ? PROJECTS_SIDEBAR_GROUPS
+                  : effectiveModuleId === "finance"
+                    ? FINANCE_SIDEBAR_GROUPS
+                    : SIDEBAR_GROUPS;
+        // Prepend "Cadastros" (Core ERP) para módulos consumidores.
+        return shouldInjectCoreGroups(effectiveModuleId)
+          ? [...CORE_SIDEBAR_GROUPS, ...moduleGroups]
+          : moduleGroups;
+      })();
 
   // Header/branding neutro no shell de workspace.
   const shellBrand = workspaceShell

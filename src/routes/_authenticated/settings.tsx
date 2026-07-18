@@ -77,11 +77,18 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 type Need = "admin" | "manager" | "platform" | undefined;
+/**
+ * Escopo da configuração. Regra: se impacta 2+ módulos → "global" (default).
+ * Configurações específicas de um módulo recebem o ID do módulo dono e são
+ * exibidas apenas quando aquele módulo é o ativo (via `getSettingsForScope`).
+ */
+type Scope = "global" | "crm" | "ats" | "contracts" | "services" | "projects" | "finance";
 type Tab = {
   to: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
+  scope?: Scope;
 };
 type Section = { label: string; tabs: Tab[] };
 
@@ -131,7 +138,7 @@ const sections: Section[] = [
         need: "admin",
       },
       { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin" },
-      { to: "/settings/lead-sources", label: "Fontes de lead", icon: Filter, need: "manager" },
+      { to: "/settings/lead-sources", label: "Fontes de lead", icon: Filter, need: "manager", scope: "crm" },
       { to: "/settings/segments", label: "Segmentos", icon: Filter, need: "manager" },
       { to: "/settings/products", label: "Produtos", icon: Package, need: "manager" },
     ],
@@ -139,7 +146,7 @@ const sections: Section[] = [
   {
     label: "Vendas & Financeiro",
     tabs: [
-      { to: "/settings/quotes", label: "Cotações", icon: FileText, need: "manager" },
+      { to: "/settings/quotes", label: "Cotações", icon: FileText, need: "manager", scope: "crm" },
       {
         to: "/settings/quote-templates",
         label: "Modelos de cotação",
@@ -163,7 +170,7 @@ const sections: Section[] = [
       { to: "/settings/recurring", label: "Recorrência", icon: Repeat, need: "admin" },
       { to: "/settings/dunning", label: "Cobrança (dunning)", icon: Receipt, need: "admin" },
       { to: "/settings/nfse", label: "NFS-e", icon: FileBarChart2, need: "admin" },
-      { to: "/settings/goals", label: "Metas", icon: Star, need: "manager" },
+      { to: "/settings/goals", label: "Metas", icon: Star, need: "manager", scope: "crm" },
     ],
   },
   {
@@ -248,6 +255,19 @@ const sections: Section[] = [
     ],
   },
 ];
+
+/**
+ * Retorna as configurações específicas de um módulo (scope === moduleId).
+ * Consumido pelo sidebar do módulo para exibir um grupo "Configurações do módulo",
+ * sem duplicar URLs — todas as telas continuam morando em /settings/*.
+ */
+export function getSettingsForScope(scope: Exclude<Scope, "global">): Tab[] {
+  const out: Tab[] = [];
+  for (const s of sections) for (const t of s.tabs) if (t.scope === scope) out.push(t);
+  return out;
+}
+export type { Tab as SettingsTab };
+
 
 function SettingsLayout() {
   const path = useLocation({ select: (l) => l.pathname });

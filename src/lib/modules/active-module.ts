@@ -1,15 +1,18 @@
-// Detecta o módulo ativo a partir do host e/ou da rota atual.
+// Detecta o módulo ativo do ERP.
 //
-// Estratégia:
-// 1) Em produção, cada módulo do ERP é servido em um subdomínio próprio
-//    (ex.: ats.wktechnology.com.br). O hostname é a fonte de verdade.
-// 2) Em preview/local (sandbox Lovable, localhost, etc.) o subdomínio não
-//    existe; aí caímos no fallback por path: rotas que começam com `/ats`
-//    são consideradas do módulo ATS.
-// 3) O default é o módulo CRM (TechSales) — preserva o comportamento atual.
+// Ordem de resolução (do maior para o menor peso):
+// 1. Host de produção com subdomínio explícito do módulo (ex.: `ats.…`).
+//    Em produção, cada módulo pode ser servido em seu próprio subdomínio;
+//    o hostname é fonte de verdade e vence sempre.
+// 2. `localStorage.activeModule` — preferência persistida do usuário.
+//    Alterada explicitamente pelo `ModuleSwitcher` e pelo grid da /home.
+//    Isso mantém o sidebar do módulo escolhido mesmo quando o usuário
+//    abre uma tela pertencente a outro módulo (mostra banner cross-module).
+// 3. `detectModuleFromPath(pathname)` — fallback quando não há preferência.
+// 4. Default `crm`.
 
 import { useRouterState } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { MODULES, type ModuleId } from "./registry";
 import { ATS_ROUTE_PREFIXES } from "@/lib/menu-config-ats";
 
@@ -26,9 +29,7 @@ export function detectModuleFromHost(hostname: string | undefined | null): Modul
   return null;
 }
 
-// Paths que pertencem exclusivamente ao módulo ATS. Derivado de
-// `ATS_ROUTE_PREFIXES` em `menu-config-ats.ts` — fonte única de verdade.
-// Inclui fallback estático para o caso de import circular em SSR.
+// Paths que pertencem exclusivamente a cada módulo.
 const MODULE_PATH_MATCHERS: Array<{ id: ModuleId; prefixes: string[] }> = [
   { id: "contracts", prefixes: ["/contracts"] },
   { id: "services", prefixes: ["/services"] },
@@ -48,23 +49,84 @@ export function detectModuleFromPath(pathname: string): ModuleId | null {
   return null;
 }
 
+// ────────────────────────────────────────────────────────────────────────
+// Preferência persistida em localStorage
+// ────────────────────────────────────────────────────────────────────────
+
+const STORAGE_KEY = "erp.activeModule";
+const VALID_IDS: readonly ModuleId[] = ["crm", "ats", "contracts", "services", "projects", "finance"];
+
+function isValidModuleId(v: unknown): v is ModuleId {
+  return typeof v === "string" && (VALID_IDS as readonly string[]).includes(v);
+}
+
+export function getStoredActiveModule(): ModuleId | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const v = window.localStorage.getItem(STORAGE_KEY);
+    return isValidModuleId(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
- * Hook React: retorna o módulo ativo levando em conta host primeiro,
- * depois caminho. Default = `crm`.
+ * Persiste a preferência de módulo ativo e dispara `storage` para outras abas.
+ * Também dispara um CustomEvent local (`erp:active-module-changed`) para
+ * componentes na mesma aba reagirem sem depender de re-render de rota.
+ */
+export function setStoredActiveModule(id: ModuleId): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, id);
+    window.dispatchEvent(new CustomEvent("erp:active-module-changed", { detail: id }));
+  } catch {
+    /* ignore */
+  }
+}
+
+function useStoredActiveModule(): ModuleId | null {
+  const [value, setValue] = useState<ModuleId | null>(() => getStoredActiveModule());
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY) return;
+      setValue(isValidModuleId(e.newValue) ? e.newValue : null);
+    };
+    const onLocal = () => setValue(getStoredActiveModule());
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("erp:active-module-changed", onLocal);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("erp:active-module-changed", onLocal);
+    };
+  }, []);
+  return value;
+}
+
+/**
+ * Hook React: retorna o módulo ativo aplicando a ordem descrita no topo do arquivo.
  */
 export function useActiveModule(): ModuleId {
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const stored = useStoredActiveModule();
   return useMemo(() => {
     const hostname = typeof window !== "undefined" ? window.location.hostname : null;
-    // Path-first quando indica claramente outro módulo (ex.: /jobs em crm.*),
-    // senão cai no host, senão default.
-    return (
-      detectModuleFromPath(path) ??
-      detectModuleFromHost(hostname) ??
-      "crm"
-    );
-  }, [path]);
+    const hostModule = detectModuleFromHost(hostname);
+    if (hostModule) return hostModule;
+    if (stored) return stored;
+    return detectModuleFromPath(path) ?? "crm";
+  }, [path, stored]);
+}
+
+/**
+ * Hook auxiliar: retorna o módulo detectado pelo path atual (ou null se o
+ * path é neutro / workspace). Usado por `AppSidebar` para exibir banner
+ * "você está numa tela de outro módulo".
+ */
+export function usePathModule(): ModuleId | null {
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  return useMemo(() => detectModuleFromPath(path), [path]);
 }
 
 /**
