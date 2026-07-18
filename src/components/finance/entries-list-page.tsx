@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { DollarSign, Plus, Search } from "lucide-react";
+import { DollarSign, Download, Plus, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { listFinancialEntries } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
 import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
+import { downloadCsv, toCsv } from "@/lib/csv-export";
 
 const STATUS_LABEL: Record<string, string> = {
   open: "Em aberto",
@@ -99,9 +100,34 @@ export function EntriesListPage({
         count={rows.length}
         countLabel={rows.length === 1 ? "lançamento" : "lançamentos"}
         actions={
-          <Button onClick={() => setOpenNew(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Novo lançamento
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={rows.length === 0}
+              onClick={() => {
+                const csv = toCsv(rows, [
+                  { header: "Descrição", value: (r) => r.description },
+                  { header: "Contraparte", value: (r) => r.companies?.name ?? "" },
+                  { header: "Categoria", value: (r) => r.financial_categories?.name ?? "" },
+                  { header: "Status", value: (r) => STATUS_LABEL[r.status] ?? r.status },
+                  { header: "Valor", value: (r) => Number(r.amount).toFixed(2) },
+                  {
+                    header: "Em aberto",
+                    value: (r) => (Number(r.amount) - Number(r.paid_amount ?? 0)).toFixed(2),
+                  },
+                  { header: "Moeda", value: (r) => r.currency ?? "BRL" },
+                  { header: "Vencimento", value: (r) => r.due_date },
+                  { header: "Competência", value: (r) => r.competence_date ?? "" },
+                ]);
+                downloadCsv(`financeiro-${direction}-${new Date().toISOString().slice(0, 10)}`, csv);
+              }}
+            >
+              <Download className="h-4 w-4 mr-1" /> Exportar CSV
+            </Button>
+            <Button onClick={() => setOpenNew(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Novo lançamento
+            </Button>
+          </div>
         }
       />
 
