@@ -216,6 +216,7 @@ export function TimelineView({ tasks, statuses, onOpen }: { tasks: Task[]; statu
 // ============ WORKLOAD VIEW ============
 export function WorkloadView({ tasks }: { tasks: Task[] }) {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const { nameFor: nameForUser, initialsFor } = useWorkspaceMembers();
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 
