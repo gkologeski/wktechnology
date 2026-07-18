@@ -1,7 +1,7 @@
-// Endpoint chamado pelo pg_cron a cada minuto para processar broadcasts pendentes.
 import { createFileRoute } from "@tanstack/react-router";
 import { tickEmailBroadcasts } from "@/lib/email-broadcast/engine.server";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/email-broadcast-tick")({
   server: {
@@ -9,16 +9,12 @@ export const Route = createFileRoute("/api/public/hooks/email-broadcast-tick")({
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
-        try {
+        const run = await runCronWithLogging("email-broadcast-tick", async () => {
           const r = await tickEmailBroadcasts(5);
-          return Response.json({ ok: true, ...r });
-        } catch (e) {
-          console.error("[email-broadcast-tick]", e);
-          return Response.json(
-            { ok: false, error: e instanceof Error ? e.message : String(e) },
-            { status: 500 },
-          );
-        }
+          return r as unknown as Record<string, unknown>;
+        });
+        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
       GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },

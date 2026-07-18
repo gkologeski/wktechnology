@@ -1,7 +1,7 @@
-// Cron: lembretes D-1 e 1h antes das entrevistas do ATS.
 import { createFileRoute } from "@tanstack/react-router";
 import { requireCronAuth } from "@/lib/cron-auth.server";
 import { tickAtsInterviewReminders } from "@/lib/ats/interviews-engine.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/ats-interview-reminders-tick")({
   server: {
@@ -9,16 +9,12 @@ export const Route = createFileRoute("/api/public/hooks/ats-interview-reminders-
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
-        try {
-          const res = await tickAtsInterviewReminders(30);
-          return Response.json({ ok: true, ...res });
-        } catch (e) {
-          console.error("[ats-interview-reminders-tick]", e);
-          return Response.json(
-            { ok: false, error: e instanceof Error ? e.message : String(e) },
-            { status: 500 },
-          );
-        }
+        const run = await runCronWithLogging("ats-interview-reminders-tick", async () => {
+          const r = await tickAtsInterviewReminders(30);
+          return r as unknown as Record<string, unknown>;
+        });
+        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
       GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },
