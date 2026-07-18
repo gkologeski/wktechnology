@@ -82,6 +82,7 @@ function ProjectDetailPage() {
   const qc = useQueryClient();
   const get = useServerFn(getProject);
   const update = useServerFn(updateProject);
+  const fin = useServerFn(getProjectFinancials);
 
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", id],
@@ -90,7 +91,7 @@ function ProjectDetailPage() {
 
   const { data: financials } = useQuery({
     queryKey: ["project-financials", id],
-    queryFn: () => (useServerFn(getProjectFinancials))({ data: { projectId: id } }),
+    queryFn: () => fin({ data: { projectId: id } }),
   });
 
   if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
