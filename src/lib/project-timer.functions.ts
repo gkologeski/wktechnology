@@ -198,7 +198,7 @@ export const generateFinancialFromBillable = createServerFn({ method: "POST" })
       .insert({
         workspace_id: workspaceId,
         owner_id: userId,
-        direction: "in",
+        direction: "receivable",
         status: "open",
         amount: Number(amount.toFixed(2)),
         competence_date: data.to,
