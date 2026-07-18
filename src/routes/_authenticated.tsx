@@ -138,6 +138,7 @@ function AuthenticatedLayout() {
       </div>
       <BugReportButton />
       <ChatTrigger />
+      <TimerWidget />
       <GlobalSearch />
     </SidebarProvider>
   );
