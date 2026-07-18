@@ -2998,6 +2998,148 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_connection_events: {
+        Row: {
+          actor_id: string | null
+          connection_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          payload: Json
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          connection_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          payload?: Json
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          connection_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_connection_events_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_connection_tokens: {
+        Row: {
+          access_token: string
+          connection_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          refresh_token: string | null
+          rotated_at: string | null
+          scope: string | null
+          token_type: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          access_token: string
+          connection_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          refresh_token?: string | null
+          rotated_at?: string | null
+          scope?: string | null
+          token_type?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          access_token?: string
+          connection_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          refresh_token?: string | null
+          rotated_at?: string | null
+          scope?: string | null
+          token_type?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_connection_tokens_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_connections: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          display_name: string | null
+          external_account_id: string | null
+          id: string
+          last_error: string | null
+          last_sync_at: string | null
+          metadata: Json
+          mode: string
+          provider: string
+          scopes: string[]
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          external_account_id?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          metadata?: Json
+          mode?: string
+          provider: string
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          external_account_id?: string | null
+          id?: string
+          last_error?: string | null
+          last_sync_at?: string | null
+          metadata?: Json
+          mode?: string
+          provider?: string
+          scopes?: string[]
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       booking_pages: {
         Row: {
           active: boolean
