@@ -34,6 +34,7 @@ import {
   deleteFolder,
   deleteList,
 } from "@/lib/project-hierarchy.functions";
+import { CreateListFromTemplateButton } from "@/components/projects/list-templates-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/spaces")({
   head: () => ({
@@ -201,6 +202,7 @@ function SpaceCard({
         </Badge>
         <NewFolderButton spaceId={space.id} onCreated={onChanged} />
         <NewListButton spaceId={space.id} onCreated={onChanged} />
+        <CreateListFromTemplateButton spaceId={space.id} onCreated={onChanged} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -273,6 +275,7 @@ function FolderRowUI({
         <Folder className="h-4 w-4 text-muted-foreground" />
         <div className="flex-1 text-sm font-medium">{folder.name}</div>
         <NewListButton spaceId={folder.space_id} folderId={folder.id} onCreated={onChanged} />
+        <CreateListFromTemplateButton spaceId={folder.space_id} folderId={folder.id} onCreated={onChanged} />
         <Button
           variant="ghost"
           size="icon"

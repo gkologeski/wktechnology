@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 type Task = {
   id: string;
@@ -215,6 +216,7 @@ export function TimelineView({ tasks, statuses, onOpen }: { tasks: Task[]; statu
 // ============ WORKLOAD VIEW ============
 export function WorkloadView({ tasks }: { tasks: Task[] }) {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const { nameFor: nameForUser, initialsFor } = useWorkspaceMembers();
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 
@@ -272,8 +274,15 @@ export function WorkloadView({ tasks }: { tasks: Task[] }) {
             return (
               <div key={id} className="p-3 space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
-                  <div className="font-medium truncate">
-                    {id === "__unassigned__" ? "Sem responsável" : `Usuário ${id.slice(0, 8)}`}
+                  <div className="flex items-center gap-2 min-w-0">
+                    {id !== "__unassigned__" && (
+                      <div className="h-6 w-6 rounded-full bg-primary/10 text-primary text-[10px] font-semibold flex items-center justify-center shrink-0">
+                        {initialsFor(id)}
+                      </div>
+                    )}
+                    <div className="font-medium truncate">
+                      {id === "__unassigned__" ? "Sem responsável" : nameForUser(id)}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`tabular-nums ${overload ? "text-rose-600 font-semibold" : "text-muted-foreground"}`}>
