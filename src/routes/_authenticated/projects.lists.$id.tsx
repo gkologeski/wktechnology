@@ -55,6 +55,8 @@ type Task = {
   estimated_hours: number | null;
   priority: "low" | "normal" | "high" | "urgent";
   custom_status_id: string | null;
+  project_id?: string | null;
+  tags?: string[];
 };
 
 const PRIORITY_LABEL: Record<Task["priority"], string> = {
