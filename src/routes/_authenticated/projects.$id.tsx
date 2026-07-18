@@ -103,10 +103,6 @@ function ProjectDetailPage() {
       <PageHeader
         title={p.name}
         description={p.description ?? undefined}
-        breadcrumbs={[
-          { label: "Projetos", to: "/projects" },
-          { label: p.name },
-        ]}
         actions={
           <Select
             value={p.status}

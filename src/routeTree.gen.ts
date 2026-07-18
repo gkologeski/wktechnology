@@ -162,6 +162,7 @@ import { Route as AuthenticatedSettingsAccessPolicyRouteImport } from './routes/
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services.$id'
 import { Route as AuthenticatedQaTestCasesRouteImport } from './routes/_authenticated/qa.test-cases'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
+import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
@@ -1161,6 +1162,11 @@ const AuthenticatedProposalsIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedProposalsRoute,
   } as any)
+const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
+  id: '/projects/$id',
+  path: '/projects/$id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedMarketplaceSlugRoute =
   AuthenticatedMarketplaceSlugRouteImport.update({
     id: '/$slug',
@@ -2088,6 +2094,7 @@ export interface FileRoutesByFullPath {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
@@ -2381,6 +2388,7 @@ export interface FileRoutesByTo {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
+  '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
@@ -2679,6 +2687,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
+  '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
@@ -2978,6 +2987,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
+    | '/projects/$id'
     | '/proposals/$id'
     | '/qa/test-cases'
     | '/services/$id'
@@ -3271,6 +3281,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
+    | '/projects/$id'
     | '/proposals/$id'
     | '/qa/test-cases'
     | '/services/$id'
@@ -3568,6 +3579,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/marketplace/$slug'
+    | '/_authenticated/projects/$id'
     | '/_authenticated/proposals/$id'
     | '/_authenticated/qa/test-cases'
     | '/_authenticated/services/$id'
@@ -4943,6 +4955,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/proposals/$id'
       preLoaderRoute: typeof AuthenticatedProposalsIdRouteImport
       parentRoute: typeof AuthenticatedProposalsRoute
+    }
+    '/_authenticated/projects/$id': {
+      id: '/_authenticated/projects/$id'
+      path: '/projects/$id'
+      fullPath: '/projects/$id'
+      preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/marketplace/$slug': {
       id: '/_authenticated/marketplace/$slug'
@@ -6399,6 +6418,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
+  AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
@@ -6494,6 +6514,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
+  AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
