@@ -204,8 +204,8 @@ export const updateTaskAssignees = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const ids = Array.from(new Set(data.assigneeIds));
-    const patch: Record<string, unknown> = { assignee_ids: ids };
-    if (ids.length > 0) patch.assignee_id = ids[0]; // mantém compat com coluna legada
+    const patch: { assignee_ids: string[]; assignee_id?: string | null } = { assignee_ids: ids };
+    if (ids.length > 0) patch.assignee_id = ids[0]!;
     const { data: row, error } = await supabase
       .from("project_tasks")
       .update(patch)
