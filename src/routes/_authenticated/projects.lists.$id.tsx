@@ -332,7 +332,7 @@ function ListView({
           )}
           {tasks.map((t) => {
             const st = t.custom_status_id ? statusById.get(t.custom_status_id) : undefined;
-            return <ListRow key={t.id} task={t} status={st} onChanged={onChanged} />;
+            return <ListRow key={t.id} task={t} status={st} onChanged={onChanged} onOpen={() => onOpen(t)} />;
           })}
         </tbody>
       </table>
