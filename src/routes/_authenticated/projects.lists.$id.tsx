@@ -81,6 +81,8 @@ function ListDetailPage() {
     queryFn: () => getListFn({ data: { id } }),
   });
 
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
   const invalidate = () => qc.invalidateQueries({ queryKey: ["project-list", id] });
 
   if (isLoading || !data) {
