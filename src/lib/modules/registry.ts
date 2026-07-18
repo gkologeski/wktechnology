@@ -15,10 +15,23 @@ import {
   Settings as SettingsIcon,
   ClipboardCheck,
   Mail,
+  FileText,
+  Package,
+  Kanban,
+  DollarSign,
+  Wallet,
+  ArrowDownCircle,
+  ArrowUpCircle,
   type LucideIcon,
 } from "lucide-react";
 
-export type ModuleId = "crm" | "ats";
+export type ModuleId =
+  | "crm"
+  | "ats"
+  | "contracts"
+  | "services"
+  | "projects"
+  | "finance";
 
 export type ModuleMenuItem = {
   title: string;
@@ -79,6 +92,55 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
       { title: "Entrevistas", url: "/meetings", icon: CalendarIcon },
       { title: "Relatórios", url: "/reports", icon: BarChart3 },
       { title: "Configurações", url: "/settings", icon: SettingsIcon },
+    ],
+  },
+  contracts: {
+    id: "contracts",
+    name: "Contratos",
+    productName: "TechContracts",
+    shortDescription: "Gestão de contratos e aprovações",
+    defaultColor: "#2563eb",
+    icon: FileText,
+    // Sem subdomínio próprio ainda — reutiliza o host do TechSales.
+    hostSuffix: "crm",
+    defaultRoute: "/contracts",
+    menu: [{ title: "Contratos", url: "/contracts", icon: FileText }],
+  },
+  services: {
+    id: "services",
+    name: "Serviços",
+    productName: "TechServices",
+    shortDescription: "Catálogo e billing recorrente",
+    defaultColor: "#2563eb",
+    icon: Package,
+    hostSuffix: "crm",
+    defaultRoute: "/services",
+    menu: [{ title: "Serviços", url: "/services", icon: Package }],
+  },
+  projects: {
+    id: "projects",
+    name: "Projetos",
+    productName: "TechProjects",
+    shortDescription: "PSA — projetos, marcos e horas",
+    defaultColor: "#2563eb",
+    icon: Kanban,
+    hostSuffix: "crm",
+    defaultRoute: "/projects",
+    menu: [{ title: "Projetos", url: "/projects", icon: Kanban }],
+  },
+  finance: {
+    id: "finance",
+    name: "Financeiro",
+    productName: "TechFinance",
+    shortDescription: "Contas a pagar, receber e conciliação",
+    defaultColor: "#2563eb",
+    icon: DollarSign,
+    hostSuffix: "crm",
+    defaultRoute: "/finance",
+    menu: [
+      { title: "Visão geral", url: "/finance", icon: Wallet },
+      { title: "A receber", url: "/finance/receivable", icon: ArrowDownCircle },
+      { title: "A pagar", url: "/finance/payable", icon: ArrowUpCircle },
     ],
   },
 };
