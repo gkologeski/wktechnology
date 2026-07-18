@@ -4,7 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, LayoutGrid, List as ListIcon, Plus, Settings2, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, GanttChart, LayoutGrid, List as ListIcon, Plus, Settings2, Trash2, Users2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
