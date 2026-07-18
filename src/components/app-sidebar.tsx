@@ -21,6 +21,10 @@ import { ModuleSwitcher } from "@/components/module-switcher";
 import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
 import { ATS_SIDEBAR_GROUPS } from "@/lib/menu-config-ats";
 import { ERP_SIDEBAR_GROUPS, isWorkspacePathname } from "@/lib/menu-config-erp";
+import { CONTRACTS_SIDEBAR_GROUPS } from "@/lib/menu-config-contracts";
+import { SERVICES_SIDEBAR_GROUPS } from "@/lib/menu-config-services";
+import { PROJECTS_SIDEBAR_GROUPS } from "@/lib/menu-config-projects";
+import { FINANCE_SIDEBAR_GROUPS } from "@/lib/menu-config-finance";
 
 import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active-module";
 
@@ -46,7 +50,15 @@ export function AppSidebar() {
     ? ERP_SIDEBAR_GROUPS
     : effectiveModuleId === "ats"
       ? ATS_SIDEBAR_GROUPS
-      : SIDEBAR_GROUPS;
+      : effectiveModuleId === "contracts"
+        ? CONTRACTS_SIDEBAR_GROUPS
+        : effectiveModuleId === "services"
+          ? SERVICES_SIDEBAR_GROUPS
+          : effectiveModuleId === "projects"
+            ? PROJECTS_SIDEBAR_GROUPS
+            : effectiveModuleId === "finance"
+              ? FINANCE_SIDEBAR_GROUPS
+              : SIDEBAR_GROUPS;
 
   // Header/branding neutro no shell de workspace.
   const shellBrand = workspaceShell
