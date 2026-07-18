@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { tickRefreshDynamicSegments } from "@/lib/segments/engine.server";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/segments-tick")({
   server: {
@@ -8,13 +9,12 @@ export const Route = createFileRoute("/api/public/hooks/segments-tick")({
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
-        try {
-          const result = await tickRefreshDynamicSegments();
-          return Response.json({ ok: true, ...result });
-        } catch (e) {
-          const message = e instanceof Error ? e.message : String(e);
-          return Response.json({ ok: false, error: message }, { status: 500 });
-        }
+        const run = await runCronWithLogging("segments-tick", async () => {
+          const r = await tickRefreshDynamicSegments();
+          return r as unknown as Record<string, unknown>;
+        });
+        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
       GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },

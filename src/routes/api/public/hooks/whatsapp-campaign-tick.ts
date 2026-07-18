@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 const SANDBOX_FROM = "whatsapp:+14155238886";
@@ -34,7 +35,6 @@ type Campaign = {
 };
 
 async function processCampaign(camp: Campaign) {
-  // janela de 60s
   const since = new Date(Date.now() - 60_000).toISOString();
   const { count: recentCount } = await supabaseAdmin
     .from("whatsapp_campaign_recipients")
@@ -52,7 +52,6 @@ async function processCampaign(camp: Campaign) {
     .eq("status", "pending")
     .limit(batch);
   if (!recips || recips.length === 0) {
-    // Verifica se acabou
     const { count: remaining } = await supabaseAdmin
       .from("whatsapp_campaign_recipients")
       .select("id", { count: "exact", head: true })
@@ -67,7 +66,6 @@ async function processCampaign(camp: Campaign) {
     return { processed: 0 };
   }
 
-  // Carrega config do owner
   const { data: integ } = await supabaseAdmin
     .from("integrations")
     .select("config")
@@ -139,7 +137,6 @@ async function processCampaign(camp: Campaign) {
         continue;
       }
 
-      // upsert conversation + insert message
       const { data: conv } = await supabaseAdmin
         .from("whatsapp_conversations")
         .upsert(
@@ -199,7 +196,6 @@ async function processCampaign(camp: Campaign) {
     }
   }
 
-  // Atualiza contadores
   await supabaseAdmin
     .from("whatsapp_campaigns")
     .update({
@@ -209,7 +205,6 @@ async function processCampaign(camp: Campaign) {
     })
     .eq("id", camp.id);
 
-  // Verifica conclusão
   const { count: remaining } = await supabaseAdmin
     .from("whatsapp_campaign_recipients")
     .select("id", { count: "exact", head: true })
@@ -231,29 +226,31 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
-        const nowIso = new Date().toISOString();
-        const { data: camps, error } = await supabaseAdmin
-          .from("whatsapp_campaigns")
-          .select(
-            "id, owner_id, body_template, template_name, content_sid, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at",
-          )
-          .eq("status", "running")
-          .or(`scheduled_at.is.null,scheduled_at.lte.${nowIso}`)
-          .limit(50);
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-        const results: Array<{ id: string; processed: number }> = [];
-        for (const c of camps ?? []) {
-          const r = await processCampaign(c as Campaign);
-          results.push({ id: c.id, processed: r.processed });
-        }
-        return new Response(JSON.stringify({ ok: true, campaigns: results.length, results }), {
-          headers: { "Content-Type": "application/json" },
+        const run = await runCronWithLogging("whatsapp-campaign-tick", async () => {
+          const nowIso = new Date().toISOString();
+          const { data: camps, error } = await supabaseAdmin
+            .from("whatsapp_campaigns")
+            .select(
+              "id, owner_id, body_template, template_name, content_sid, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at",
+            )
+            .eq("status", "running")
+            .or(`scheduled_at.is.null,scheduled_at.lte.${nowIso}`)
+            .limit(50);
+          if (error) throw new Error(error.message);
+          const results: Array<{ id: string; processed: number }> = [];
+          let totalProcessed = 0;
+          for (const c of camps ?? []) {
+            const r = await processCampaign(c as Campaign);
+            results.push({ id: c.id, processed: r.processed });
+            totalProcessed += r.processed;
+          }
+          return {
+            campaigns: results.length,
+            processed: totalProcessed,
+          } as unknown as Record<string, unknown>;
         });
+        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
     },
   },

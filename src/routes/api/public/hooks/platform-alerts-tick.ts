@@ -2,6 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/platform-alerts-tick")({
   server: {
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/api/public/hooks/platform-alerts-tick")({
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
 
+        const run = await runCronWithLogging("platform-alerts-tick", async () => {
         const supabase = createClient(
           process.env.SUPABASE_URL!,
           process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -129,12 +131,14 @@ export const Route = createFileRoute("/api/public/hooks/platform-alerts-tick")({
           inserted++;
         }
 
-        return Response.json({
-          ok: true,
-          evaluated: rules?.length ?? 0,
-          fired: fired.length,
-          inserted,
+          return {
+            evaluated: rules?.length ?? 0,
+            fired: fired.length,
+            inserted,
+          } as unknown as Record<string, unknown>;
         });
+        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
     },
   },

@@ -1,6 +1,6 @@
-// Cron horário: sincroniza aplicantes das vagas publicadas no LinkedIn (via Unipile).
 import { createFileRoute } from "@tanstack/react-router";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/linkedin-applicants-sync")({
   server: {
@@ -8,8 +8,7 @@ export const Route = createFileRoute("/api/public/hooks/linkedin-applicants-sync
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
-
-        try {
+        const run = await runCronWithLogging("linkedin-applicants-sync", async () => {
           const { listSyncablePostings, syncPostingApplicants } = await import(
             "@/lib/ats/linkedin-applicants-sync.server"
           );
@@ -19,21 +18,17 @@ export const Route = createFileRoute("/api/public/hooks/linkedin-applicants-sync
             const r = await syncPostingApplicants(p.id);
             results.push(r);
           }
-          const summary = {
+          return {
             postings: results.length,
             fetched: results.reduce((s, r) => s + r.fetched, 0),
             createdCandidates: results.reduce((s, r) => s + r.createdCandidates, 0),
             createdApplications: results.reduce((s, r) => s + r.createdApplications, 0),
             skipped: results.reduce((s, r) => s + r.skipped, 0),
             errors: results.filter((r) => r.error).length,
-          };
-          return Response.json({ ok: true, summary, results });
-        } catch (e) {
-          return new Response(
-            JSON.stringify({ ok: false, error: (e as Error).message }),
-            { status: 500, headers: { "Content-Type": "application/json" } },
-          );
-        }
+          } as unknown as Record<string, unknown>;
+        });
+        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
     },
   },

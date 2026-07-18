@@ -5,6 +5,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 type Severity = "info" | "warning" | "error" | "critical";
 
@@ -57,6 +58,7 @@ export const Route = createFileRoute("/api/public/hooks/security-scan-tick")({
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
 
+        const run = await runCronWithLogging("security-scan-tick", async () => {
         const supabase = createClient(
           process.env.SUPABASE_URL!,
           process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -70,15 +72,11 @@ export const Route = createFileRoute("/api/public/hooks/security-scan-tick")({
           .select("id")
           .single();
         if (runErr || !runRow) {
-          return Response.json(
-            { ok: false, error: runErr?.message ?? "run insert failed" },
-            { status: 500 },
-          );
+          throw new Error(runErr?.message ?? "run insert failed");
         }
         const runId = runRow.id as string;
 
         try {
-          // 1. Database-side collector (RLS, GRANTs, SECURITY DEFINER)
           const { data: dbFindings, error: collectErr } = await supabase.rpc(
             "security_scan_collect" as never,
           );
@@ -86,7 +84,6 @@ export const Route = createFileRoute("/api/public/hooks/security-scan-tick")({
 
           const findings: Finding[] = Array.isArray(dbFindings) ? (dbFindings as Finding[]) : [];
 
-          // 2. Required secrets present?
           for (const s of REQUIRED_SECRETS) {
             const val = process.env[s.name];
             if (!val || val.length < 8) {
@@ -103,7 +100,6 @@ export const Route = createFileRoute("/api/public/hooks/security-scan-tick")({
             }
           }
 
-          // Persist findings
           if (findings.length > 0) {
             const rows = findings.map((f) => ({ ...f, run_id: runId }));
             const { error: insErr } = await (supabase.from("security_scan_findings") as any).insert(
@@ -112,7 +108,6 @@ export const Route = createFileRoute("/api/public/hooks/security-scan-tick")({
             if (insErr) throw insErr;
           }
 
-          // Tally
           const totals: Record<string, number> = {
             info: 0,
             warning: 0,
@@ -137,8 +132,6 @@ export const Route = createFileRoute("/api/public/hooks/security-scan-tick")({
             })
             .eq("id", runId);
 
-          // 3. Notify platform admins (in-app notification — works without email templates).
-          //    Only if there are warnings or worse.
           if (SEVERITY_RANK[worst] >= SEVERITY_RANK.warning) {
             const { data: admins } = await supabase.from("platform_admins").select("user_id");
             const adminIds = (admins ?? []).map((a: any) => a.user_id as string);
@@ -159,7 +152,10 @@ export const Route = createFileRoute("/api/public/hooks/security-scan-tick")({
             }
           }
 
-          return Response.json({ ok: true, run_id: runId, totals, duration_ms: duration });
+          return { run_id: runId, totals, duration_ms: duration } as unknown as Record<
+            string,
+            unknown
+          >;
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
           await supabase
@@ -171,10 +167,13 @@ export const Route = createFileRoute("/api/public/hooks/security-scan-tick")({
               duration_ms: Date.now() - t0,
             })
             .eq("id", runId);
-          console.error("[security-scan-tick] failed", msg);
-          return Response.json({ ok: false, error: msg }, { status: 500 });
+          throw err;
         }
+        });
+        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
     },
   },
 });
+
