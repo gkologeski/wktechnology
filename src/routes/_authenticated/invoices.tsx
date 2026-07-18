@@ -133,8 +133,9 @@ function InvoicesPage() {
     }
   }
 
-
+  return (
     <div className="space-y-4 p-6">
+
       <PageHeader
         title="Faturas"
         description="Cobrança de clientes via Pix, boleto e cartão (Asaas/Pagar.me/Mercado Pago)."
