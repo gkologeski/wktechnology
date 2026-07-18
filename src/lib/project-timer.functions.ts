@@ -198,11 +198,11 @@ export const generateFinancialFromBillable = createServerFn({ method: "POST" })
       .insert({
         workspace_id: workspaceId,
         kind: "income",
-        status: "pending",
+        status: "open",
         amount: Number(amount.toFixed(2)),
         due_at: data.to,
         description: `Horas billable ${data.from} a ${data.to}`,
-        origin_type: "project_time",
+        origin_type: "service",
         origin_id: data.projectId,
       })
       .select("id")
