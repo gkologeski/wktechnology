@@ -63,6 +63,13 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
       .order("fired_at", { ascending: false })
       .limit(10);
 
+    // Últimas execuções dos crons observáveis (cron_run_logs)
+    const { data: recentCronRuns } = await (supabaseAdmin as any)
+      .from("cron_run_logs")
+      .select("id, job_name, started_at, finished_at, duration_ms, status, metrics, error")
+      .order("started_at", { ascending: false })
+      .limit(20);
+
     return {
       cronJobs,
       integrations: {
@@ -72,6 +79,16 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
         workspaces: twoFa.count ?? 0,
       },
       recentEvents: recentEvents ?? [],
+      recentCronRuns: (recentCronRuns ?? []) as Array<{
+        id: string;
+        job_name: string;
+        started_at: string;
+        finished_at: string | null;
+        duration_ms: number | null;
+        status: "running" | "success" | "error";
+        metrics: Record<string, unknown>;
+        error: string | null;
+      }>,
       checkedAt: new Date().toISOString(),
     };
   });
