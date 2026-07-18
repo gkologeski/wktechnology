@@ -16,10 +16,10 @@ async function getCurrentWorkspace(supabase: any, userId: string): Promise<strin
   return list[0];
 }
 
-async function assertAdmin(supabase: any, workspaceId: string): Promise<void> {
+async function assertAdmin(supabase: any, workspaceId: string, userId: string): Promise<void> {
   const { data, error } = await supabase.rpc("is_workspace_admin_v2", {
     _workspace_id: workspaceId,
-    _user_id: (await supabase.auth.getUser()).data.user?.id,
+    _user_id: userId,
   });
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Somente administradores podem gerenciar conexões bancárias");
