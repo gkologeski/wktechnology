@@ -163,6 +163,7 @@ import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedQaTestCasesRouteImport } from './routes/_authenticated/qa.test-cases'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
 import { Route as AuthenticatedProjectsTasksRouteImport } from './routes/_authenticated/projects.tasks'
+import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authenticated/projects.spaces'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
@@ -275,6 +276,7 @@ import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
 import { Route as AuthenticatedSettingsIntegrationsLinkedinRouteImport } from './routes/_authenticated/settings.integrations.linkedin'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
+import { Route as AuthenticatedProjectsListsIdRouteImport } from './routes/_authenticated/projects.lists.$id'
 import { Route as AuthenticatedFinanceEntriesIdRouteImport } from './routes/_authenticated/finance.entries.$id'
 import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
@@ -1171,6 +1173,12 @@ const AuthenticatedProjectsTasksRoute =
     path: '/projects/tasks',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsSpacesRoute =
+  AuthenticatedProjectsSpacesRouteImport.update({
+    id: '/projects/spaces',
+    path: '/projects/spaces',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   id: '/projects/$id',
   path: '/projects/$id',
@@ -1816,6 +1824,12 @@ const AuthenticatedProspectingCampaignsIdRoute =
     path: '/campaigns/$id',
     getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
+const AuthenticatedProjectsListsIdRoute =
+  AuthenticatedProjectsListsIdRouteImport.update({
+    id: '/projects/lists/$id',
+    path: '/projects/lists/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinanceEntriesIdRoute =
   AuthenticatedFinanceEntriesIdRouteImport.update({
     id: '/finance/entries/$id',
@@ -2118,6 +2132,7 @@ export interface FileRoutesByFullPath {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/projects/tasks': typeof AuthenticatedProjectsTasksRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
@@ -2228,6 +2243,7 @@ export interface FileRoutesByFullPath {
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
+  '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -2415,6 +2431,7 @@ export interface FileRoutesByTo {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/projects/tasks': typeof AuthenticatedProjectsTasksRoute
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
@@ -2524,6 +2541,7 @@ export interface FileRoutesByTo {
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
+  '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -2717,6 +2735,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/_authenticated/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/_authenticated/projects/tasks': typeof AuthenticatedProjectsTasksRoute
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
@@ -2827,6 +2846,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/_authenticated/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
+  '/_authenticated/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -3020,6 +3040,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/projects/$id'
+    | '/projects/spaces'
     | '/projects/tasks'
     | '/proposals/$id'
     | '/qa/test-cases'
@@ -3130,6 +3151,7 @@ export interface FileRouteTypes {
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
     | '/finance/entries/$id'
+    | '/projects/lists/$id'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/linkedin'
     | '/settings/notifications/slack'
@@ -3317,6 +3339,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/projects/$id'
+    | '/projects/spaces'
     | '/projects/tasks'
     | '/proposals/$id'
     | '/qa/test-cases'
@@ -3426,6 +3449,7 @@ export interface FileRouteTypes {
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
     | '/finance/entries/$id'
+    | '/projects/lists/$id'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/linkedin'
     | '/settings/notifications/slack'
@@ -3618,6 +3642,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/marketplace/$slug'
     | '/_authenticated/projects/$id'
+    | '/_authenticated/projects/spaces'
     | '/_authenticated/projects/tasks'
     | '/_authenticated/proposals/$id'
     | '/_authenticated/qa/test-cases'
@@ -3728,6 +3753,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/workspaces/$id'
     | '/_authenticated/ats/jobs/$id'
     | '/_authenticated/finance/entries/$id'
+    | '/_authenticated/projects/lists/$id'
     | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/integrations/linkedin'
     | '/_authenticated/settings/notifications/slack'
@@ -5002,6 +5028,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsTasksRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/spaces': {
+      id: '/_authenticated/projects/spaces'
+      path: '/projects/spaces'
+      fullPath: '/projects/spaces'
+      preLoaderRoute: typeof AuthenticatedProjectsSpacesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects/$id': {
       id: '/_authenticated/projects/$id'
       path: '/projects/$id'
@@ -5786,6 +5819,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProspectingCampaignsIdRouteImport
       parentRoute: typeof AuthenticatedProspectingRoute
     }
+    '/_authenticated/projects/lists/$id': {
+      id: '/_authenticated/projects/lists/$id'
+      path: '/projects/lists/$id'
+      fullPath: '/projects/lists/$id'
+      preLoaderRoute: typeof AuthenticatedProjectsListsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/finance/entries/$id': {
       id: '/_authenticated/finance/entries/$id'
       path: '/finance/entries/$id'
@@ -6481,6 +6521,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+  AuthenticatedProjectsSpacesRoute: typeof AuthenticatedProjectsSpacesRoute
   AuthenticatedProjectsTasksRoute: typeof AuthenticatedProjectsTasksRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
@@ -6508,6 +6549,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
   AuthenticatedFinanceEntriesIdRoute: typeof AuthenticatedFinanceEntriesIdRoute
+  AuthenticatedProjectsListsIdRoute: typeof AuthenticatedProjectsListsIdRoute
   AuthenticatedatsCandidatesIndexRoute: typeof AuthenticatedatsCandidatesIndexRoute
   AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
   AuthenticatedatsJobsIndexRoute: typeof AuthenticatedatsJobsIndexRoute
@@ -6580,6 +6622,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+  AuthenticatedProjectsSpacesRoute: AuthenticatedProjectsSpacesRoute,
   AuthenticatedProjectsTasksRoute: AuthenticatedProjectsTasksRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
@@ -6612,6 +6655,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsSourcingSequencesRoute:
     AuthenticatedatsSourcingSequencesRoute,
   AuthenticatedFinanceEntriesIdRoute: AuthenticatedFinanceEntriesIdRoute,
+  AuthenticatedProjectsListsIdRoute: AuthenticatedProjectsListsIdRoute,
   AuthenticatedatsCandidatesIndexRoute: AuthenticatedatsCandidatesIndexRoute,
   AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
   AuthenticatedatsJobsIndexRoute: AuthenticatedatsJobsIndexRoute,

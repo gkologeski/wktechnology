@@ -75,7 +75,7 @@ export const updateSpace = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: any = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.description !== undefined) patch.description = data.description;
     if (data.color !== undefined) patch.color = data.color;
@@ -223,7 +223,7 @@ export const updateList = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: any = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.color !== undefined) patch.color = data.color;
     if (data.icon !== undefined) patch.icon = data.icon;
@@ -325,7 +325,7 @@ export const updateStatus = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: any = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.color !== undefined) patch.color = data.color;
     if (data.category !== undefined) patch.category = data.category;
@@ -457,7 +457,7 @@ export const updateListTask = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: any = {};
     if (data.title !== undefined) patch.title = data.title;
     if (data.priority !== undefined) patch.priority = data.priority;
     if (data.dueAt !== undefined) patch.due_at = data.dueAt;
