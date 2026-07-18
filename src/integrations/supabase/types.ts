@@ -9310,6 +9310,104 @@ export type Database = {
           },
         ]
       }
+      project_list_custom_fields: {
+        Row: {
+          created_at: string
+          id: string
+          key: string
+          label: string
+          list_id: string
+          options: Json | null
+          sort_order: number
+          type: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key: string
+          label: string
+          list_id: string
+          options?: Json | null
+          sort_order?: number
+          type: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key?: string
+          label?: string
+          list_id?: string
+          options?: Json | null
+          sort_order?: number
+          type?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_list_custom_fields_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "project_lists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_list_custom_fields_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_list_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          custom_fields: Json
+          description: string | null
+          id: string
+          name: string
+          statuses: Json
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          custom_fields?: Json
+          description?: string | null
+          id?: string
+          name: string
+          statuses?: Json
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          custom_fields?: Json
+          description?: string | null
+          id?: string
+          name?: string
+          statuses?: Json
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_list_templates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_lists: {
         Row: {
           archived_at: string | null
@@ -9709,6 +9807,7 @@ export type Database = {
           assignee_id: string | null
           assignee_ids: string[]
           created_at: string
+          custom_field_values: Json
           custom_status_id: string | null
           description: string | null
           due_at: string | null
@@ -9731,6 +9830,7 @@ export type Database = {
           assignee_id?: string | null
           assignee_ids?: string[]
           created_at?: string
+          custom_field_values?: Json
           custom_status_id?: string | null
           description?: string | null
           due_at?: string | null
@@ -9753,6 +9853,7 @@ export type Database = {
           assignee_id?: string | null
           assignee_ids?: string[]
           created_at?: string
+          custom_field_values?: Json
           custom_status_id?: string | null
           description?: string | null
           due_at?: string | null
