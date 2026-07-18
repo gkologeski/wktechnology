@@ -49,6 +49,8 @@ export function ModuleSwitcher({ className }: { className?: string }) {
     if (!isWorkspaceContext && moduleId === active) return;
     const target = MODULE_LIST.find((m) => m.id === moduleId);
     if (!target) return;
+    // Persiste preferência do usuário — sidebar/host adapta imediatamente.
+    setStoredActiveModule(moduleId);
     const url = buildModuleUrl(moduleId, target.defaultRoute);
     if (isCrossHostUrl(url)) {
       // Se o host alvo não está alcançável (sem SSL/DNS ativo), evita
