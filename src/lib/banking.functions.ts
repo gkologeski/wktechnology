@@ -79,7 +79,7 @@ export const startBankAuthorization = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId);
+    await assertAdmin(supabase, workspaceId, userId);
 
     const { resolveBankProvider } = await import("./banking/providers");
     const provider = resolveBankProvider(data.provider, data.mode);
@@ -154,7 +154,7 @@ export const completeBankAuthorization = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId);
+    await assertAdmin(supabase, workspaceId, userId);
 
     const { data: conn, error: cErr } = await supabase
       .from("bank_connections")
@@ -245,7 +245,7 @@ export const disconnectBank = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await getCurrentWorkspace(supabase, userId);
-    await assertAdmin(supabase, workspaceId);
+    await assertAdmin(supabase, workspaceId, userId);
 
     const { data: conn } = await supabase
       .from("bank_connections")
