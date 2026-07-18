@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
-import { useActiveModule, detectModuleFromPath, detectModuleFromHost } from "@/lib/modules/active-module";
+import { useActiveModule, detectModuleFromPath, detectModuleFromHost, setStoredActiveModule } from "@/lib/modules/active-module";
 import { buildModuleUrl, buildWorkspaceUrl, isCrossHostUrl, isReachableHost, getCurrentHostKind } from "@/lib/hosts";
 import { cn } from "@/lib/utils";
 
