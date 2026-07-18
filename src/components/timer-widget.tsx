@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
-import { Play, Square, Timer as TimerIcon, Loader2 } from "lucide-react";
+import { Play, Square, Timer as TimerIcon, Loader2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -80,8 +80,44 @@ export function TimerWidget() {
       })
     | null;
 
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("timer-widget:collapsed") === "1";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("timer-widget:collapsed", collapsed ? "1" : "0");
+  }, [collapsed]);
+
+  // Auto-expande quando um timer inicia
+  const hasRunning = !!running;
+  useEffect(() => {
+    if (hasRunning) setCollapsed(false);
+  }, [hasRunning]);
+
+  if (collapsed) {
+    return (
+      <div className="fixed bottom-6 right-36 z-50" data-tick={tick}>
+        <Button
+          type="button"
+          size="icon"
+          variant={running ? "default" : "secondary"}
+          onClick={() => setCollapsed(false)}
+          aria-label="Expandir timer"
+          title={running ? `Timer ativo — ${formatElapsed(running.started_at ?? null)}` : "Abrir timer"}
+          className="h-12 w-12 rounded-full shadow-lg relative"
+        >
+          <TimerIcon className="h-5 w-5" />
+          {running && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-background animate-pulse" />
+          )}
+        </Button>
+      </div>
+    );
+  }
+
   return (
-    <div className="fixed bottom-6 right-36 z-50" data-tick={tick}>
+    <div className="fixed bottom-6 right-36 z-50 flex items-center gap-1" data-tick={tick}>
       {running ? (
         <div className="flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-3 py-2 shadow-lg border border-primary/20">
           <TimerIcon className="h-4 w-4" />
@@ -113,6 +149,17 @@ export function TimerWidget() {
           startFn={startFn}
         />
       )}
+      <Button
+        type="button"
+        size="icon"
+        variant="ghost"
+        onClick={() => setCollapsed(true)}
+        aria-label="Recolher timer"
+        title="Recolher"
+        className="h-7 w-7 rounded-full bg-background/80 shadow border"
+      >
+        <ChevronRight className="h-3.5 w-3.5" />
+      </Button>
     </div>
   );
 }
