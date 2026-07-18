@@ -5,6 +5,7 @@ import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 type Task = {
   id: string;
