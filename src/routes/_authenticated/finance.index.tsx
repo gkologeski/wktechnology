@@ -146,6 +146,8 @@ function FinanceDashboard() {
         </Card>
       </div>
 
+      <FinanceAlertsPanel />
+
       {isLoading && (
         <p className="text-sm text-muted-foreground">Carregando dashboard financeiro…</p>
       )}
