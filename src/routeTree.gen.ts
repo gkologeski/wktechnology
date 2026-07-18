@@ -165,6 +165,7 @@ import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedProjectsTimesheetRouteImport } from './routes/_authenticated/projects.timesheet'
 import { Route as AuthenticatedProjectsTasksRouteImport } from './routes/_authenticated/projects.tasks'
 import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authenticated/projects.spaces'
+import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authenticated/projects.my-work'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
@@ -1186,6 +1187,12 @@ const AuthenticatedProjectsSpacesRoute =
     path: '/projects/spaces',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsMyWorkRoute =
+  AuthenticatedProjectsMyWorkRouteImport.update({
+    id: '/projects/my-work',
+    path: '/projects/my-work',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   id: '/projects/$id',
   path: '/projects/$id',
@@ -2139,6 +2146,7 @@ export interface FileRoutesByFullPath {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/projects/tasks': typeof AuthenticatedProjectsTasksRoute
   '/projects/timesheet': typeof AuthenticatedProjectsTimesheetRoute
@@ -2439,6 +2447,7 @@ export interface FileRoutesByTo {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/projects/tasks': typeof AuthenticatedProjectsTasksRoute
   '/projects/timesheet': typeof AuthenticatedProjectsTimesheetRoute
@@ -2744,6 +2753,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
+  '/_authenticated/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/_authenticated/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
   '/_authenticated/projects/tasks': typeof AuthenticatedProjectsTasksRoute
   '/_authenticated/projects/timesheet': typeof AuthenticatedProjectsTimesheetRoute
@@ -3050,6 +3060,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/projects/$id'
+    | '/projects/my-work'
     | '/projects/spaces'
     | '/projects/tasks'
     | '/projects/timesheet'
@@ -3350,6 +3361,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/projects/$id'
+    | '/projects/my-work'
     | '/projects/spaces'
     | '/projects/tasks'
     | '/projects/timesheet'
@@ -3654,6 +3666,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/marketplace/$slug'
     | '/_authenticated/projects/$id'
+    | '/_authenticated/projects/my-work'
     | '/_authenticated/projects/spaces'
     | '/_authenticated/projects/tasks'
     | '/_authenticated/projects/timesheet'
@@ -5053,6 +5066,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/spaces'
       fullPath: '/projects/spaces'
       preLoaderRoute: typeof AuthenticatedProjectsSpacesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/projects/my-work': {
+      id: '/_authenticated/projects/my-work'
+      path: '/projects/my-work'
+      fullPath: '/projects/my-work'
+      preLoaderRoute: typeof AuthenticatedProjectsMyWorkRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/projects/$id': {
@@ -6541,6 +6561,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
+  AuthenticatedProjectsMyWorkRoute: typeof AuthenticatedProjectsMyWorkRoute
   AuthenticatedProjectsSpacesRoute: typeof AuthenticatedProjectsSpacesRoute
   AuthenticatedProjectsTasksRoute: typeof AuthenticatedProjectsTasksRoute
   AuthenticatedProjectsTimesheetRoute: typeof AuthenticatedProjectsTimesheetRoute
@@ -6643,6 +6664,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
+  AuthenticatedProjectsMyWorkRoute: AuthenticatedProjectsMyWorkRoute,
   AuthenticatedProjectsSpacesRoute: AuthenticatedProjectsSpacesRoute,
   AuthenticatedProjectsTasksRoute: AuthenticatedProjectsTasksRoute,
   AuthenticatedProjectsTimesheetRoute: AuthenticatedProjectsTimesheetRoute,
