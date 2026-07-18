@@ -119,6 +119,7 @@ function AuthenticatedLayout() {
           {!blocked && <RouteBreadcrumbs />}
           <main className="flex-1 p-6 overflow-auto">
             <FocusQueueBar />
+            {!blocked && <CrossModuleBanner />}
             {blocked ? (
               <div className="max-w-md mx-auto mt-24 text-center space-y-3 border rounded-lg p-8 bg-background">
                 <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
