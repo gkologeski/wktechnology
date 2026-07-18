@@ -25,6 +25,7 @@ export const Route = createFileRoute("/api/public/hooks/platform-alerts-tick")({
             "id, name, rule_type, threshold_pct, threshold_mins, target_key, channels, enabled",
           )
           .eq("enabled", true);
+        const rulesById = new Map<string, any>((rules ?? []).map((r: any) => [r.id, r]));
 
         const fired: Array<{
           rule_id: string;
