@@ -148,7 +148,7 @@ export const updateChecklistItem = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const patch: Record<string, unknown> = {};
+    const patch: { title?: string; sort_order?: number } = {};
     if (data.title !== undefined) patch.title = data.title;
     if (data.sortOrder !== undefined) patch.sort_order = data.sortOrder;
     const { data: row, error } = await supabase
