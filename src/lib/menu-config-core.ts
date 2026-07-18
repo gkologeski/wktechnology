@@ -2,7 +2,8 @@
 // Prepend no sidebar de módulos consumidores (Sales, Contracts, Services,
 // Projects, Finance). NÃO é usado no TechHire/ATS, que tem catálogos próprios.
 import { Building2, Users, Package, Wrench } from "lucide-react";
-import type { SidebarGroup, ModuleId } from "@/lib/menu-config";
+import type { SidebarGroup } from "@/lib/menu-config";
+import type { ModuleId } from "@/lib/modules/registry";
 
 export const CORE_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
