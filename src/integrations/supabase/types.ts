@@ -11533,7 +11533,7 @@ export type Database = {
           tax_rate?: number
           unit?: string
           updated_at?: string
-          workspace_id: string
+          workspace_id?: string
         }
         Update: {
           active?: boolean
