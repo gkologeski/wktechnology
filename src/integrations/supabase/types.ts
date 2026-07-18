@@ -9561,6 +9561,95 @@ export type Database = {
           },
         ]
       }
+      project_task_checklists: {
+        Row: {
+          created_at: string
+          done_at: string | null
+          done_by: string | null
+          id: string
+          is_done: boolean
+          sort_order: number
+          task_id: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          is_done?: boolean
+          sort_order?: number
+          task_id: string
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          done_at?: string | null
+          done_by?: string | null
+          id?: string
+          is_done?: boolean
+          sort_order?: number
+          task_id?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_task_checklists_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_task_dependencies: {
+        Row: {
+          created_at: string
+          dep_type: string
+          depends_on_task_id: string
+          id: string
+          task_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          dep_type?: string
+          depends_on_task_id: string
+          id?: string
+          task_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          dep_type?: string
+          depends_on_task_id?: string
+          id?: string
+          task_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_task_dependencies_depends_on_task_id_fkey"
+            columns: ["depends_on_task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_task_dependencies_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "project_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       project_task_statuses: {
         Row: {
           category: string
@@ -9618,6 +9707,7 @@ export type Database = {
       project_tasks: {
         Row: {
           assignee_id: string | null
+          assignee_ids: string[]
           created_at: string
           custom_status_id: string | null
           description: string | null
@@ -9632,12 +9722,14 @@ export type Database = {
           sort_order: number
           start_at: string | null
           status: Database["public"]["Enums"]["project_task_status"]
+          tags: string[]
           title: string
           updated_at: string
           workspace_id: string
         }
         Insert: {
           assignee_id?: string | null
+          assignee_ids?: string[]
           created_at?: string
           custom_status_id?: string | null
           description?: string | null
@@ -9652,12 +9744,14 @@ export type Database = {
           sort_order?: number
           start_at?: string | null
           status?: Database["public"]["Enums"]["project_task_status"]
+          tags?: string[]
           title: string
           updated_at?: string
           workspace_id: string
         }
         Update: {
           assignee_id?: string | null
+          assignee_ids?: string[]
           created_at?: string
           custom_status_id?: string | null
           description?: string | null
@@ -9672,6 +9766,7 @@ export type Database = {
           sort_order?: number
           start_at?: string | null
           status?: Database["public"]["Enums"]["project_task_status"]
+          tags?: string[]
           title?: string
           updated_at?: string
           workspace_id?: string
@@ -9728,10 +9823,14 @@ export type Database = {
           billable: boolean
           created_at: string
           description: string | null
-          entry_date: string
-          hours: number
+          entry_date: string | null
+          financial_entry_id: string | null
+          hourly_rate: number | null
+          hours: number | null
           id: string
           project_id: string
+          started_at: string | null
+          stopped_at: string | null
           task_id: string | null
           updated_at: string
           user_id: string
@@ -9743,10 +9842,14 @@ export type Database = {
           billable?: boolean
           created_at?: string
           description?: string | null
-          entry_date: string
-          hours: number
+          entry_date?: string | null
+          financial_entry_id?: string | null
+          hourly_rate?: number | null
+          hours?: number | null
           id?: string
           project_id: string
+          started_at?: string | null
+          stopped_at?: string | null
           task_id?: string | null
           updated_at?: string
           user_id: string
@@ -9758,10 +9861,14 @@ export type Database = {
           billable?: boolean
           created_at?: string
           description?: string | null
-          entry_date?: string
-          hours?: number
+          entry_date?: string | null
+          financial_entry_id?: string | null
+          hourly_rate?: number | null
+          hours?: number | null
           id?: string
           project_id?: string
+          started_at?: string | null
+          stopped_at?: string | null
           task_id?: string | null
           updated_at?: string
           user_id?: string
