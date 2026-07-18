@@ -36,12 +36,15 @@ import {
   listWorkspaceTaskTags,
 } from "@/lib/project-tasks-advanced.functions";
 import { listAllProjectTasks } from "@/lib/projects.functions";
+import { listCustomFields, updateTaskCustomFieldValues } from "@/lib/project-list-extras.functions";
 
 type TaskLite = {
   id: string;
   title: string;
   project_id?: string | null;
+  list_id?: string | null;
   tags?: string[];
+  custom_field_values?: Record<string, any> | null;
 };
 
 export function TaskDetailsSheet({
@@ -62,6 +65,12 @@ export function TaskDetailsSheet({
         </SheetHeader>
         <div className="mt-4 space-y-6">
           <TagsSection task={task} />
+          {task.list_id && (
+            <>
+              <Separator />
+              <CustomFieldsSection taskId={task.id} listId={task.list_id} initialValues={task.custom_field_values ?? {}} />
+            </>
+          )}
           <Separator />
           <ChecklistSection taskId={task.id} />
           <Separator />
@@ -69,6 +78,72 @@ export function TaskDetailsSheet({
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+// ============= CUSTOM FIELDS =============
+function CustomFieldsSection({ taskId, listId, initialValues }: { taskId: string; listId: string; initialValues: Record<string, any> }) {
+  const listFn = useServerFn(listCustomFields);
+  const updateFn = useServerFn(updateTaskCustomFieldValues);
+  const qc = useQueryClient();
+  const { data: fields = [], isLoading } = useQuery({
+    queryKey: ["project-list-custom-fields", listId],
+    queryFn: () => listFn({ data: { listId } }),
+  });
+  const [values, setValues] = useState<Record<string, any>>(initialValues);
+  const m = useMutation({
+    mutationFn: (v: Record<string, any>) => updateFn({ data: { taskId, values: v } }),
+    onSuccess: () => {
+      toast.success("Campo atualizado");
+      qc.invalidateQueries({ queryKey: ["project-list"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const setAndSave = (key: string, v: any) => {
+    const next = { ...values, [key]: v };
+    setValues(next);
+    m.mutate(next);
+  };
+  if (isLoading) return null;
+  if (fields.length === 0) return null;
+  return (
+    <section className="space-y-2">
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Campos personalizados</div>
+      <div className="space-y-2">
+        {fields.map((f: any) => (
+          <div key={f.id} className="grid grid-cols-3 items-center gap-2">
+            <label className="text-xs text-muted-foreground truncate col-span-1" title={f.label}>{f.label}</label>
+            <div className="col-span-2">
+              {f.type === "text" && (
+                <Input value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} onBlur={() => m.mutate(values)} />
+              )}
+              {f.type === "number" && (
+                <Input type="number" value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value === "" ? null : Number(e.target.value) })} onBlur={() => m.mutate(values)} />
+              )}
+              {f.type === "date" && (
+                <Input type="date" value={values[f.key] ?? ""} onChange={(e) => setAndSave(f.key, e.target.value || null)} />
+              )}
+              {f.type === "url" && (
+                <Input type="url" value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} onBlur={() => m.mutate(values)} placeholder="https://..." />
+              )}
+              {f.type === "checkbox" && (
+                <Checkbox checked={!!values[f.key]} onCheckedChange={(v) => setAndSave(f.key, !!v)} />
+              )}
+              {f.type === "select" && (
+                <Select value={values[f.key] ?? ""} onValueChange={(v) => setAndSave(f.key, v || null)}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+                  <SelectContent>
+                    {(f.options as string[] | null ?? []).map((o) => (
+                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
 

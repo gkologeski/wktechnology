@@ -4,7 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, LayoutGrid, List as ListIcon, Plus, Settings2, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarDays, GanttChart, LayoutGrid, List as ListIcon, Plus, Settings2, Trash2, Users2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -36,6 +36,9 @@ import {
   deleteListTask,
 } from "@/lib/project-hierarchy.functions";
 import { TaskDetailsSheet } from "@/components/projects/task-details-sheet";
+import { CalendarView, TimelineView, WorkloadView } from "@/components/projects/list-views";
+import { CustomFieldsManagerButton } from "@/components/projects/custom-fields-manager";
+import { SaveAsTemplateButton } from "@/components/projects/list-templates-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/lists/$id")({
   head: () => ({
@@ -52,11 +55,16 @@ type Task = {
   id: string;
   title: string;
   due_at: string | null;
+  start_at?: string | null;
   estimated_hours: number | null;
   priority: "low" | "normal" | "high" | "urgent";
   custom_status_id: string | null;
   project_id?: string | null;
+  list_id?: string | null;
   tags?: string[];
+  assignee_id?: string | null;
+  assignee_ids?: string[] | null;
+  custom_field_values?: Record<string, any> | null;
 };
 
 const PRIORITY_LABEL: Record<Task["priority"], string> = {
@@ -133,7 +141,9 @@ function ListDetailPage() {
         count={tasks.length}
         countLabel={tasks.length === 1 ? "tarefa" : "tarefas"}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <CustomFieldsManagerButton listId={id} />
+            <SaveAsTemplateButton listId={id} listName={list.name} />
             <ManageStatusesButton listId={id} statuses={statuses} onChanged={invalidate} />
             <NewTaskButton listId={id} statuses={statuses} disabled={!hasProject} onCreated={invalidate} />
           </div>
@@ -150,6 +160,9 @@ function ListDetailPage() {
         <TabsList>
           <TabsTrigger value="board"><LayoutGrid className="h-4 w-4 mr-2" /> Board</TabsTrigger>
           <TabsTrigger value="list"><ListIcon className="h-4 w-4 mr-2" /> Lista</TabsTrigger>
+          <TabsTrigger value="calendar"><CalendarDays className="h-4 w-4 mr-2" /> Calendário</TabsTrigger>
+          <TabsTrigger value="timeline"><GanttChart className="h-4 w-4 mr-2" /> Timeline</TabsTrigger>
+          <TabsTrigger value="workload"><Users2 className="h-4 w-4 mr-2" /> Workload</TabsTrigger>
         </TabsList>
 
         <TabsContent value="board" className="mt-4">
@@ -158,6 +171,18 @@ function ListDetailPage() {
 
         <TabsContent value="list" className="mt-4">
           <ListView statuses={statuses} tasks={tasks} onChanged={invalidate} onOpen={setSelectedTask} />
+        </TabsContent>
+
+        <TabsContent value="calendar" className="mt-4">
+          <CalendarView tasks={tasks} onOpen={setSelectedTask} />
+        </TabsContent>
+
+        <TabsContent value="timeline" className="mt-4">
+          <TimelineView tasks={tasks} statuses={statuses} onOpen={setSelectedTask} />
+        </TabsContent>
+
+        <TabsContent value="workload" className="mt-4">
+          <WorkloadView tasks={tasks} />
         </TabsContent>
       </Tabs>
 
