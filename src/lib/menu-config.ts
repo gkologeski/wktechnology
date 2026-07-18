@@ -50,8 +50,6 @@ import {
   ShoppingBag,
   RefreshCw,
   Linkedin,
-  DollarSign,
-  Kanban,
 } from "lucide-react";
 
 
