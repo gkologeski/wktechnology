@@ -157,8 +157,8 @@ export const createListFromTemplate = createServerFn({ method: "POST" })
     z.object({
       templateId: z.string().uuid(),
       name: z.string().min(1),
+      spaceId: z.string().uuid(),
       folderId: z.string().uuid().nullable().optional(),
-      spaceId: z.string().uuid().nullable().optional(),
       projectId: z.string().uuid().nullable().optional(),
     }).parse(input),
   )
@@ -180,9 +180,10 @@ export const createListFromTemplate = createServerFn({ method: "POST" })
       .insert({
         workspace_id: workspaceId,
         name: data.name,
+        space_id: data.spaceId,
         folder_id: data.folderId ?? null,
-        space_id: data.spaceId ?? null,
         project_id: data.projectId ?? null,
+        created_by: userId,
       })
       .select("*")
       .single();
