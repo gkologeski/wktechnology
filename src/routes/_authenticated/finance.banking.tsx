@@ -1,16 +1,19 @@
-// Sprint G — Fase 1: painel de conexão OAuth com o Banco Inter (mock).
+// Sprint G — Fases 1 e 2: conexão OAuth + saldo e extrato.
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Landmark, Loader2, ShieldCheck, Unplug, Zap } from "lucide-react";
+import { Landmark, Loader2, RefreshCw, ShieldCheck, Unplug, Zap } from "lucide-react";
 
 import {
   getBankConnection,
   startBankAuthorization,
   completeBankAuthorization,
   disconnectBank,
+  syncBankStatement,
+  listBankStatement,
+  setStatementReconciliation,
 } from "@/lib/banking.functions";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -30,6 +33,21 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+} from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatCurrency } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/finance/banking")({
   component: BankingPage,
@@ -63,25 +81,41 @@ const STATUS_VARIANT: Record<StatusKind, "secondary" | "default" | "destructive"
   revoked: "destructive",
 };
 
+const RECON_LABEL: Record<string, string> = {
+  pending: "Pendente",
+  matched: "Conciliado",
+  ignored: "Ignorado",
+};
+
 function BankingPage() {
   const qc = useQueryClient();
   const getConn = useServerFn(getBankConnection);
   const startFn = useServerFn(startBankAuthorization);
   const completeFn = useServerFn(completeBankAuthorization);
   const disconnectFn = useServerFn(disconnectBank);
+  const syncFn = useServerFn(syncBankStatement);
+  const listStmt = useServerFn(listBankStatement);
+  const setRecon = useServerFn(setStatementReconciliation);
 
   const q = useQuery({
     queryKey: ["banking", "inter"],
     queryFn: () => getConn({ data: { provider: "inter" } }),
   });
 
+  const conn = q.data?.connection ?? null;
+  const status = (conn?.status ?? "disconnected") as StatusKind;
+  const events = q.data?.events ?? [];
+
+  const stmt = useQuery({
+    queryKey: ["banking", "statement", conn?.id],
+    enabled: !!conn?.id && status === "connected",
+    queryFn: () =>
+      listStmt({ data: { connection_id: conn!.id, status: "all", limit: 200 } }),
+  });
+
   const [mockDialog, setMockDialog] = useState<
     | null
-    | {
-        connection_id: string;
-        state: string;
-        message?: string;
-      }
+    | { connection_id: string; state: string; message?: string }
   >(null);
 
   const startMut = useMutation({
@@ -129,15 +163,31 @@ function BankingPage() {
       toast.error(e instanceof Error ? e.message : "Falha ao desconectar"),
   });
 
-  const conn = q.data?.connection ?? null;
-  const status = (conn?.status ?? "disconnected") as StatusKind;
-  const events = q.data?.events ?? [];
+  const syncMut = useMutation({
+    mutationFn: (connectionId: string) => syncFn({ data: { connection_id: connectionId } }),
+    onSuccess: (res) => {
+      toast.success(`Sincronizado — ${res.count} movimentações`);
+      qc.invalidateQueries({ queryKey: ["banking"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Falha ao sincronizar"),
+  });
+
+  const reconMut = useMutation({
+    mutationFn: (args: { id: string; status: "pending" | "ignored" }) =>
+      setRecon({ data: { transaction_id: args.id, status: args.status } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["banking", "statement"] });
+    },
+    onError: (e: unknown) =>
+      toast.error(e instanceof Error ? e.message : "Falha ao atualizar status"),
+  });
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
         title="Banco Inter"
-        description="Conexão Open Finance por workspace. Fase 1: provider em modo mock — nenhuma requisição real ao banco."
+        description="Conexão Open Finance por workspace. Fase 2: saldo e extrato via provider mock."
       />
 
       <Card>
@@ -168,18 +218,32 @@ function BankingPage() {
           </div>
           <div className="flex gap-2">
             {status === "connected" ? (
-              <Button
-                variant="outline"
-                onClick={() => conn && disconnectMut.mutate(conn.id)}
-                disabled={disconnectMut.isPending}
-              >
-                {disconnectMut.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Unplug className="h-4 w-4" />
-                )}
-                Desconectar
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => conn && syncMut.mutate(conn.id)}
+                  disabled={syncMut.isPending}
+                >
+                  {syncMut.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  Sincronizar
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => conn && disconnectMut.mutate(conn.id)}
+                  disabled={disconnectMut.isPending}
+                >
+                  {disconnectMut.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Unplug className="h-4 w-4" />
+                  )}
+                  Desconectar
+                </Button>
+              </>
             ) : (
               <Button onClick={() => startMut.mutate()} disabled={startMut.isPending}>
                 {startMut.isPending ? (
@@ -192,55 +256,174 @@ function BankingPage() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="grid gap-3 text-sm text-muted-foreground md:grid-cols-3">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" />
-            Acesso restrito a administradores do workspace.
+        <CardContent className="grid gap-4 text-sm md:grid-cols-3">
+          <div className="rounded-md border p-3">
+            <div className="text-xs uppercase text-muted-foreground">Saldo atual</div>
+            <div className="mt-1 text-2xl font-semibold tabular-nums">
+              {conn?.current_balance != null
+                ? formatCurrency(Number(conn.current_balance), "BRL")
+                : "—"}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {conn?.balance_synced_at
+                ? `Atualizado em ${new Date(conn.balance_synced_at).toLocaleString("pt-BR")}`
+                : "Sem sincronização"}
+            </div>
           </div>
-          <div>
-            Última sincronização:{" "}
-            {conn?.last_sync_at ? new Date(conn.last_sync_at).toLocaleString("pt-BR") : "—"}
+          <div className="rounded-md border p-3">
+            <div className="text-xs uppercase text-muted-foreground">Última sincronização</div>
+            <div className="mt-1 text-sm">
+              {conn?.last_sync_at ? new Date(conn.last_sync_at).toLocaleString("pt-BR") : "—"}
+            </div>
+            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5" />
+              Acesso restrito a administradores.
+            </div>
           </div>
-          <div>
-            Escopos:{" "}
-            {(conn?.scopes ?? []).length
-              ? (conn?.scopes ?? []).slice(0, 3).join(", ") +
-                ((conn?.scopes ?? []).length > 3 ? ` +${(conn?.scopes ?? []).length - 3}` : "")
-              : "—"}
+          <div className="rounded-md border p-3">
+            <div className="text-xs uppercase text-muted-foreground">Escopos ativos</div>
+            <div className="mt-1 text-sm">
+              {(conn?.scopes ?? []).length
+                ? (conn?.scopes ?? []).slice(0, 3).join(", ") +
+                  ((conn?.scopes ?? []).length > 3
+                    ? ` +${(conn?.scopes ?? []).length - 3}`
+                    : "")
+                : "—"}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Histórico de eventos</CardTitle>
-          <CardDescription>Trilha de auditoria da conexão (últimos 10 eventos).</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {events.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum evento registrado.</p>
-          ) : (
-            <ul className="space-y-2 text-sm">
-              {events.map((ev: any) => (
-                <li
-                  key={ev.id}
-                  className="flex items-start justify-between gap-3 rounded-md border p-2"
-                >
-                  <div>
-                    <div className="font-medium">{ev.event_type}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(ev.created_at).toLocaleString("pt-BR")}
-                    </div>
-                  </div>
-                  <pre className="max-w-[60%] truncate text-xs text-muted-foreground">
-                    {JSON.stringify(ev.payload)}
-                  </pre>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="statement">
+        <TabsList>
+          <TabsTrigger value="statement">Extrato</TabsTrigger>
+          <TabsTrigger value="events">Histórico</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="statement" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Movimentações</CardTitle>
+              <CardDescription>
+                {status === "connected"
+                  ? "Extrato sincronizado do provider. Marque como ignorado para excluir da conciliação."
+                  : "Conecte-se para visualizar o extrato."}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {status !== "connected" ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Nenhuma conexão ativa.
+                </div>
+              ) : stmt.isLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (stmt.data ?? []).length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Nenhuma movimentação. Clique em "Sincronizar" para buscar dados.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[140px]">Data</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Contraparte</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="w-[120px]">Status</TableHead>
+                      <TableHead className="w-[120px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(stmt.data ?? []).map((t: any) => {
+                      const signed = t.direction === "credit" ? t.amount : -t.amount;
+                      return (
+                        <TableRow key={t.id}>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {new Date(t.posted_at).toLocaleString("pt-BR")}
+                          </TableCell>
+                          <TableCell className="text-sm">{t.description ?? "—"}</TableCell>
+                          <TableCell className="text-sm">{t.counterparty ?? "—"}</TableCell>
+                          <TableCell
+                            className={`text-right tabular-nums font-medium ${
+                              signed >= 0 ? "text-emerald-600" : "text-destructive"
+                            }`}
+                          >
+                            {formatCurrency(signed, "BRL")}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                t.reconciliation_status === "matched"
+                                  ? "default"
+                                  : t.reconciliation_status === "ignored"
+                                    ? "secondary"
+                                    : "outline"
+                              }
+                            >
+                              {RECON_LABEL[t.reconciliation_status] ?? t.reconciliation_status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() =>
+                                reconMut.mutate({
+                                  id: t.id,
+                                  status:
+                                    t.reconciliation_status === "ignored" ? "pending" : "ignored",
+                                })
+                              }
+                              disabled={reconMut.isPending}
+                            >
+                              {t.reconciliation_status === "ignored" ? "Reativar" : "Ignorar"}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="events" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Histórico de eventos</CardTitle>
+              <CardDescription>Trilha de auditoria da conexão (últimos 10 eventos).</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {events.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Nenhum evento registrado.</p>
+              ) : (
+                <ul className="space-y-2 text-sm">
+                  {events.map((ev: any) => (
+                    <li
+                      key={ev.id}
+                      className="flex items-start justify-between gap-3 rounded-md border p-2"
+                    >
+                      <div>
+                        <div className="font-medium">{ev.event_type}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(ev.created_at).toLocaleString("pt-BR")}
+                        </div>
+                      </div>
+                      <pre className="max-w-[60%] truncate text-xs text-muted-foreground">
+                        {JSON.stringify(ev.payload)}
+                      </pre>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={!!mockDialog} onOpenChange={(o) => !o && setMockDialog(null)}>
         <DialogContent>
