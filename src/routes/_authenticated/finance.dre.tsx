@@ -14,8 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/crm";
 import { getDreReport } from "@/lib/finance.functions";
+
 
 export const Route = createFileRoute("/_authenticated/finance/dre")({
   head: () => ({
@@ -36,11 +38,13 @@ function formatMonth(ym: string) {
 function DrePage() {
   const get = useServerFn(getDreReport);
   const [months, setMonths] = useState(6);
+  const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
 
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "dre", months],
-    queryFn: () => get({ data: { months } }),
+    queryKey: ["finance", "dre", months, basis],
+    queryFn: () => get({ data: { months, basis } }),
   });
+
 
   const revenueRows = useMemo(
     () => (data?.categories ?? []).filter((c) => c.kind === "revenue"),
@@ -96,11 +100,22 @@ function DrePage() {
     <div className="p-6 space-y-6">
       <PageHeader
         title="DRE gerencial"
-        description="Receitas e despesas por competência, agrupadas por categoria."
+        description={
+          basis === "accrual"
+            ? "Receitas e despesas por competência (regime de competência)."
+            : "Receitas e despesas por data de pagamento (regime de caixa)."
+        }
         actions={
           <div className="flex items-center gap-2">
+            <Tabs value={basis} onValueChange={(v) => setBasis(v as "accrual" | "cash")}>
+              <TabsList>
+                <TabsTrigger value="accrual">Competência</TabsTrigger>
+                <TabsTrigger value="cash">Caixa</TabsTrigger>
+              </TabsList>
+            </Tabs>
             <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
               <SelectTrigger className="w-[140px]">
+
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
