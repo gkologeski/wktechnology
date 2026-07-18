@@ -73,6 +73,8 @@ function InvoicesPage() {
   const charge = useServerFn(generateCharge);
   const updateStatus = useServerFn(updateInvoiceStatus);
   const del = useServerFn(deleteInvoice);
+  const nfse = useServerFn(issueNfse);
+
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
