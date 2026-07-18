@@ -282,10 +282,10 @@ function TaskCard({
           </div>
         </div>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
             <Button variant="ghost" size="icon" className="h-6 w-6">…</Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem className="text-destructive" onClick={() => delM.mutate()}>
               <Trash2 className="h-4 w-4 mr-2" /> Remover
             </DropdownMenuItem>
