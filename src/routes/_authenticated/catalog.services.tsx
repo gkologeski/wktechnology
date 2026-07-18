@@ -175,7 +175,7 @@ function ServiceCatalogPage() {
       : await sb.from("service_catalog").insert({
           ...payload,
           owner_id: user.id,
-          workspace_id: user.id, // RLS por current_user_workspaces; workspace default = owner
+          // workspace_id preenchido pelo DEFAULT (mesmo workspace default de products)
           created_by: user.id,
         });
     if (error) {
