@@ -124,8 +124,16 @@ function InvoicesPage() {
       toast.error(e instanceof Error ? e.message : "Falha");
     }
   }
+  async function onIssueNfse(id: string) {
+    try {
+      await nfse({ data: { invoice_id: id } });
+      toast.success("Emissão de NFS-e iniciada");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao emitir NFS-e");
+    }
+  }
 
-  return (
+
     <div className="space-y-4 p-6">
       <PageHeader
         title="Faturas"
