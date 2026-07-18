@@ -450,3 +450,206 @@ export const getFinanceDashboard = createServerFn({ method: "POST" })
       net_90: ar_90 - ap_90,
     };
   });
+
+// ============================================================
+// DRE gerencial (P&L por competência)
+// ============================================================
+
+export const getDreReport = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        months: z.number().int().min(1).max(24).default(6),
+        endMonth: z.string().optional(), // YYYY-MM
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    const now = new Date();
+    const [ey, em] = data.endMonth
+      ? data.endMonth.split("-").map(Number)
+      : [now.getUTCFullYear(), now.getUTCMonth() + 1];
+    const endDate = new Date(Date.UTC(ey, em, 0));
+    const startDate = new Date(Date.UTC(ey, em - data.months, 1));
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+
+    const { data: rows, error } = await supabase
+      .from("financial_entries")
+      .select(
+        "direction, amount, competence_date, category_id, status, financial_categories(id, name, kind)",
+      )
+      .neq("status", "cancelled")
+      .gte("competence_date", iso(startDate))
+      .lte("competence_date", iso(endDate));
+    if (error) throw error;
+
+    const months: string[] = [];
+    for (let i = data.months - 1; i >= 0; i--) {
+      const d = new Date(Date.UTC(ey, em - 1 - i, 1));
+      months.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
+    }
+
+    type CatAgg = {
+      category_id: string | null;
+      category_name: string;
+      kind: "revenue" | "expense";
+      byMonth: Record<string, number>;
+      total: number;
+    };
+    const map = new Map<string, CatAgg>();
+
+    for (const r of rows ?? []) {
+      const cat = (r as unknown as {
+        financial_categories: { id: string; name: string; kind: "revenue" | "expense" } | null;
+      }).financial_categories;
+      const kind: "revenue" | "expense" =
+        cat?.kind ?? (r.direction === "receivable" ? "revenue" : "expense");
+      const key = cat?.id ?? `__uncat_${kind}`;
+      const name =
+        cat?.name ??
+        (kind === "revenue" ? "Sem categoria (receitas)" : "Sem categoria (despesas)");
+      const ym = String(r.competence_date).slice(0, 7);
+      if (!months.includes(ym)) continue;
+      let agg = map.get(key);
+      if (!agg) {
+        agg = { category_id: cat?.id ?? null, category_name: name, kind, byMonth: {}, total: 0 };
+        for (const m of months) agg.byMonth[m] = 0;
+        map.set(key, agg);
+      }
+      agg.byMonth[ym] += Number(r.amount);
+      agg.total += Number(r.amount);
+    }
+
+    const categories = Array.from(map.values()).sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === "revenue" ? -1 : 1;
+      return b.total - a.total;
+    });
+
+    const totals = {
+      revenue: months.map((m) =>
+        categories.filter((c) => c.kind === "revenue").reduce((s, c) => s + (c.byMonth[m] ?? 0), 0),
+      ),
+      expense: months.map((m) =>
+        categories.filter((c) => c.kind === "expense").reduce((s, c) => s + (c.byMonth[m] ?? 0), 0),
+      ),
+    };
+    const result = months.map((_, i) => totals.revenue[i] - totals.expense[i]);
+    const totalRevenue = totals.revenue.reduce((a, b) => a + b, 0);
+    const totalExpense = totals.expense.reduce((a, b) => a + b, 0);
+
+    return {
+      months,
+      categories,
+      totals: {
+        ...totals,
+        result,
+        totalRevenue,
+        totalExpense,
+        netResult: totalRevenue - totalExpense,
+        margin: totalRevenue > 0 ? (totalRevenue - totalExpense) / totalRevenue : 0,
+      },
+    };
+  });
+
+// ============================================================
+// Fluxo de caixa 30/60/90 com cenários
+// ============================================================
+
+export const getCashFlowProjection = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        pessimistic: z.number().min(0).max(2).default(0.7),
+        realistic: z.number().min(0).max(2).default(1),
+        optimistic: z.number().min(0).max(2).default(1.05),
+        expenseFactorPessimistic: z.number().min(0).max(2).default(1),
+        expenseFactorRealistic: z.number().min(0).max(2).default(1),
+        expenseFactorOptimistic: z.number().min(0).max(2).default(1),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const today = new Date();
+    const iso = (d: Date) => d.toISOString().slice(0, 10);
+    const addDays = (d: Date, n: number) => {
+      const c = new Date(d);
+      c.setDate(c.getDate() + n);
+      return c;
+    };
+
+    const [banks, entriesRes] = await Promise.all([
+      supabase.from("financial_bank_accounts").select("id, name, initial_balance, active"),
+      supabase
+        .from("financial_entries")
+        .select("direction, status, amount, paid_amount, due_date")
+        .in("status", ["open", "partial", "overdue"])
+        .lte("due_date", iso(addDays(today, 90))),
+    ]);
+    if (banks.error) throw banks.error;
+    if (entriesRes.error) throw entriesRes.error;
+
+    const openingBalance = (banks.data ?? [])
+      .filter((b) => b.active !== false)
+      .reduce((s, b) => s + Number(b.initial_balance ?? 0), 0);
+
+    const in30 = iso(addDays(today, 30));
+    const in60 = iso(addDays(today, 60));
+    const in90 = iso(addDays(today, 90));
+    const todayIso = iso(today);
+
+    type Bucket = { inflow: number; outflow: number };
+    const b: Record<"overdue" | "d30" | "d60" | "d90", Bucket> = {
+      overdue: { inflow: 0, outflow: 0 },
+      d30: { inflow: 0, outflow: 0 },
+      d60: { inflow: 0, outflow: 0 },
+      d90: { inflow: 0, outflow: 0 },
+    };
+
+    for (const e of entriesRes.data ?? []) {
+      const outstanding = Number(e.amount) - Number(e.paid_amount ?? 0);
+      if (outstanding <= 0) continue;
+      const isAR = e.direction === "receivable";
+      let key: keyof typeof b;
+      if (e.due_date < todayIso) key = "overdue";
+      else if (e.due_date <= in30) key = "d30";
+      else if (e.due_date <= in60) key = "d60";
+      else if (e.due_date <= in90) key = "d90";
+      else continue;
+      if (isAR) b[key].inflow += outstanding;
+      else b[key].outflow += outstanding;
+    }
+
+    const scenario = (arFactor: number, apFactor: number) => {
+      const buckets = (["overdue", "d30", "d60", "d90"] as const).map((k) => {
+        const inflow = b[k].inflow * arFactor;
+        const outflow = b[k].outflow * apFactor;
+        return { key: k, inflow, outflow, net: inflow - outflow };
+      });
+      let running = openingBalance;
+      const cumulative = buckets.map((row) => {
+        running += row.net;
+        return { ...row, balance: running };
+      });
+      return {
+        buckets: cumulative,
+        finalBalance: running,
+        totalInflow: buckets.reduce((s, x) => s + x.inflow, 0),
+        totalOutflow: buckets.reduce((s, x) => s + x.outflow, 0),
+      };
+    };
+
+    return {
+      openingBalance,
+      raw: b,
+      scenarios: {
+        pessimistic: scenario(data.pessimistic, data.expenseFactorPessimistic),
+        realistic: scenario(data.realistic, data.expenseFactorRealistic),
+        optimistic: scenario(data.optimistic, data.expenseFactorOptimistic),
+      },
+    };
+  });
