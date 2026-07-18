@@ -16,24 +16,28 @@ export function makeUserClient(): SupabaseClient {
   });
 }
 
-/** Faz login pela UI em /login (ou /auth) e aguarda chegada ao app autenticado. */
+const STORAGE_KEY = "sb-czrmhtzaeonzjmbgbabz-auth-token";
+
+/**
+ * Autentica via Supabase (password grant) e injeta a sessão em localStorage,
+ * evitando fricção do form de login (Google button, inputs controlados, etc).
+ */
 export async function loginViaUI(page: Page) {
-  await page.goto("/login");
-  // Fallback se a rota for /auth
-  if (
-    !(await page
-      .locator('input[type="email"]')
-      .first()
-      .isVisible()
-      .catch(() => false))
-  ) {
-    await page.goto("/auth");
+  const supa = makeUserClient();
+  const { data, error } = await supa.auth.signInWithPassword({
+    email: EMAIL,
+    password: PASSWORD,
+  });
+  if (error || !data.session) {
+    throw new Error("Falha login Supabase (session inject): " + error?.message);
   }
-  await page.locator('input[type="email"]').first().fill(EMAIL);
-  await page.locator('input[type="password"]').first().fill(PASSWORD);
-  // Evita clicar no botão "Entrar com Google" — usa o submit do formulário.
-  await page.locator('form button[type="submit"]').first().click();
-  // Aguarda redirecionar para alguma rota autenticada
+  // Precisa estabelecer origin localhost/prod antes do localStorage.setItem
+  await page.goto("/login");
+  await page.evaluate(
+    ([key, value]) => window.localStorage.setItem(key, value),
+    [STORAGE_KEY, JSON.stringify(data.session)] as const,
+  );
+  await page.goto("/home");
   await page.waitForURL((url) => !/\/(login|auth)/.test(url.pathname), { timeout: 20_000 });
 }
 
