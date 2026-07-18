@@ -35,6 +35,7 @@ import {
   moveTaskStatus,
   deleteListTask,
 } from "@/lib/project-hierarchy.functions";
+import { TaskDetailsSheet } from "@/components/projects/task-details-sheet";
 
 export const Route = createFileRoute("/_authenticated/projects/lists/$id")({
   head: () => ({
