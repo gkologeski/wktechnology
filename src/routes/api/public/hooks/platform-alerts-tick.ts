@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { requireCronAuth } from "@/lib/cron-auth.server";
 import { runCronWithLogging } from "@/lib/cron-observability.server";
+import { dispatchAlert } from "@/lib/alert-dispatch.server";
 
 export const Route = createFileRoute("/api/public/hooks/platform-alerts-tick")({
   server: {
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/api/public/hooks/platform-alerts-tick")({
             "id, name, rule_type, threshold_pct, threshold_mins, target_key, channels, enabled",
           )
           .eq("enabled", true);
+        const rulesById = new Map<string, any>((rules ?? []).map((r: any) => [r.id, r]));
 
         const fired: Array<{
           rule_id: string;
@@ -113,6 +115,9 @@ export const Route = createFileRoute("/api/public/hooks/platform-alerts-tick")({
 
         // Dedup: não dispara se já tem evento aberto na última hora para a mesma regra+mensagem
         let inserted = 0;
+        let dispatchedSlack = 0;
+        let dispatchedEmail = 0;
+        const dispatchErrors: string[] = [];
         for (const ev of fired) {
           const { data: existing } = await supabase
             .from("platform_alert_events")
@@ -129,12 +134,31 @@ export const Route = createFileRoute("/api/public/hooks/platform-alerts-tick")({
             context: ev.context,
           });
           inserted++;
+
+          const rule = rulesById.get(ev.rule_id);
+          const channels = Array.isArray(rule?.channels) ? rule.channels : [];
+          if (channels.length) {
+            const dp = await dispatchAlert(supabase, {
+              ruleId: ev.rule_id,
+              ruleName: rule?.name ?? "Alerta",
+              severity: ev.severity,
+              message: ev.message,
+              context: ev.context,
+              channels,
+            });
+            dispatchedSlack += dp.slack;
+            dispatchedEmail += dp.email;
+            if (dp.errors.length) dispatchErrors.push(...dp.errors);
+          }
         }
 
           return {
             evaluated: rules?.length ?? 0,
             fired: fired.length,
             inserted,
+            dispatched_slack: dispatchedSlack,
+            dispatched_email: dispatchedEmail,
+            dispatch_errors: dispatchErrors.length,
           } as unknown as Record<string, unknown>;
         });
         if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
