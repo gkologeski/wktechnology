@@ -175,10 +175,12 @@ function BoardView({
   statuses,
   tasks,
   onChanged,
+  onOpen,
 }: {
   statuses: Status[];
   tasks: Task[];
   onChanged: () => void;
+  onOpen: (t: Task) => void;
 }) {
   const move = useServerFn(moveTaskStatus);
   const moveM = useMutation({
