@@ -1,4 +1,4 @@
-// Sprint 7 — Utilitário de exportação CSV client-side.
+// Utilitário de exportação CSV client-side.
 // Compatível com Excel (BOM UTF-8, separador ";" para PT-BR).
 
 export type CsvColumn<T> = {
@@ -30,4 +30,25 @@ export function downloadCsv(filename: string, csv: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 500);
+}
+
+// Legacy API preservada: usada em listas de CRM (empresas, contatos, leads, tarefas).
+export type LegacyColumn = { key: string; label: string };
+
+export function exportRowsToCsv(
+  filename: string,
+  rows: Record<string, unknown>[],
+  columns: LegacyColumn[],
+) {
+  const csv = toCsv(rows, columns.map((c) => ({
+    header: c.label,
+    value: (row: Record<string, unknown>) => {
+      const v = row[c.key];
+      if (v === null || v === undefined) return "";
+      if (v instanceof Date) return v.toISOString();
+      if (typeof v === "object") return JSON.stringify(v);
+      return v as string | number;
+    },
+  })));
+  downloadCsv(filename, csv);
 }
