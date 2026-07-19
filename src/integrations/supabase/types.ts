@@ -15986,6 +15986,7 @@ export type Database = {
           type: string
         }[]
       }
+      get_my_phone: { Args: never; Returns: string }
       get_workspace_plan: { Args: { _workspace: string }; Returns: string }
       has_entitlement: {
         Args: { _key: string; _workspace: string }
