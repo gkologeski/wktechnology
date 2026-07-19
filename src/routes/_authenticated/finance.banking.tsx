@@ -1061,6 +1061,138 @@ function BankingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Novo pagamento AP */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Novo pagamento</DialogTitle>
+            <DialogDescription>
+              Emita um Pix ou boleto de saída via Banco Inter. Após criar, aprove para enviar ao
+              provider.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Tipo</Label>
+                <select
+                  className="w-full h-9 rounded-md border bg-background px-2 text-sm"
+                  value={paymentForm.type}
+                  onChange={(e) =>
+                    setPaymentForm((f) => ({ ...f, type: e.target.value as any }))
+                  }
+                >
+                  <option value="pix">Pix</option>
+                  <option value="ted">TED</option>
+                  <option value="boleto">Boleto</option>
+                </select>
+              </div>
+              <div>
+                <Label className="text-xs">Valor (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={paymentForm.amount}
+                  onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Agendado para</Label>
+              <Input
+                type="date"
+                value={paymentForm.scheduled_for}
+                onChange={(e) =>
+                  setPaymentForm((f) => ({ ...f, scheduled_for: e.target.value }))
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Beneficiário</Label>
+                <Input
+                  value={paymentForm.favored_name}
+                  onChange={(e) =>
+                    setPaymentForm((f) => ({ ...f, favored_name: e.target.value }))
+                  }
+                />
+              </div>
+              <div>
+                <Label className="text-xs">CPF/CNPJ</Label>
+                <Input
+                  value={paymentForm.favored_document}
+                  onChange={(e) =>
+                    setPaymentForm((f) => ({ ...f, favored_document: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            {paymentForm.type === "pix" && (
+              <div className="grid grid-cols-[140px_1fr] gap-3">
+                <div>
+                  <Label className="text-xs">Tipo de chave</Label>
+                  <select
+                    className="w-full h-9 rounded-md border bg-background px-2 text-sm"
+                    value={paymentForm.pix_key_type}
+                    onChange={(e) =>
+                      setPaymentForm((f) => ({ ...f, pix_key_type: e.target.value as any }))
+                    }
+                  >
+                    <option value="cpf">CPF</option>
+                    <option value="cnpj">CNPJ</option>
+                    <option value="email">E-mail</option>
+                    <option value="phone">Telefone</option>
+                    <option value="random">Aleatória</option>
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs">Chave Pix</Label>
+                  <Input
+                    value={paymentForm.pix_key}
+                    onChange={(e) => setPaymentForm((f) => ({ ...f, pix_key: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+            {paymentForm.type === "boleto" && (
+              <div>
+                <Label className="text-xs">Linha digitável</Label>
+                <Input
+                  value={paymentForm.boleto_digitable_line}
+                  onChange={(e) =>
+                    setPaymentForm((f) => ({ ...f, boleto_digitable_line: e.target.value }))
+                  }
+                />
+              </div>
+            )}
+            <div>
+              <Label className="text-xs">Descrição</Label>
+              <Input
+                value={paymentForm.description}
+                onChange={(e) => setPaymentForm((f) => ({ ...f, description: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setPaymentDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => createPaymentMut.mutate()}
+              disabled={
+                createPaymentMut.isPending ||
+                !paymentForm.amount ||
+                Number(paymentForm.amount) <= 0
+              }
+            >
+              {createPaymentMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              <ArrowUpRight className="h-4 w-4" /> Criar pagamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
