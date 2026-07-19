@@ -3242,6 +3242,102 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_payments: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          boleto_barcode: string | null
+          boleto_digitable_line: string | null
+          connection_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          external_id: string | null
+          failure_reason: string | null
+          favored_document: string | null
+          favored_name: string | null
+          financial_entry_id: string | null
+          id: string
+          metadata: Json
+          paid_at: string | null
+          pix_key: string | null
+          pix_key_type: string | null
+          scheduled_for: string | null
+          status: string
+          type: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          boleto_barcode?: string | null
+          boleto_digitable_line?: string | null
+          connection_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          external_id?: string | null
+          failure_reason?: string | null
+          favored_document?: string | null
+          favored_name?: string | null
+          financial_entry_id?: string | null
+          id?: string
+          metadata?: Json
+          paid_at?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          scheduled_for?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          boleto_barcode?: string | null
+          boleto_digitable_line?: string | null
+          connection_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          external_id?: string | null
+          failure_reason?: string | null
+          favored_document?: string | null
+          favored_name?: string | null
+          financial_entry_id?: string | null
+          id?: string
+          metadata?: Json
+          paid_at?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          scheduled_for?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_payments_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_payments_financial_entry_id_fkey"
+            columns: ["financial_entry_id"]
+            isOneToOne: false
+            referencedRelation: "financial_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_statement_transactions: {
         Row: {
           amount: number

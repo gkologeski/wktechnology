@@ -156,4 +156,31 @@ export const interMockProvider: BankProvider = {
       raw: { nosso_numero: nossoNum, source: "mock" },
     };
   },
+
+  async createPixPayment({ payment_id, amount, favored_name }) {
+    // Mock: 90% dos pagamentos entram como "processing" e 10% falham para simular erro.
+    const shouldFail = payment_id.charCodeAt(0) % 10 === 0;
+    return {
+      external_id: `mock_pixout_${randomBytes(6).toString("hex")}`,
+      status: shouldFail ? "failed" : "processing",
+      failure_reason: shouldFail ? "Chave Pix não encontrada (mock)" : null,
+      raw: { favored_name, amount, source: "mock" },
+    };
+  },
+
+  async createBoletoPayment({ payment_id, amount, barcode }) {
+    return {
+      external_id: `mock_bolout_${randomBytes(6).toString("hex")}`,
+      status: "processing",
+      raw: { payment_id, amount, barcode, source: "mock" },
+    };
+  },
+
+  async getPaymentStatus({ external_id }) {
+    return {
+      external_id,
+      status: "paid",
+      paid_at: new Date().toISOString(),
+    };
+  },
 };
