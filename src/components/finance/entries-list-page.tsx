@@ -69,8 +69,9 @@ export function EntriesListPage({
   const [openNew, setOpenNew] = useState(false);
   const [payFor, setPayFor] = useState<Entry | null>(null);
 
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["finance-entries", direction, status, search, legalEntityId],
+    queryKey: ["finance-entries", direction, status, search, legalEntityId, JSON.stringify(filterInput)],
     queryFn: () =>
       list({
         data: {
@@ -80,7 +81,7 @@ export function EntriesListPage({
               ? undefined
               : (status as "open" | "partial" | "paid" | "overdue" | "cancelled"),
           search: search || undefined,
-          legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId,
+          ...filterInput,
         },
       }),
   });
