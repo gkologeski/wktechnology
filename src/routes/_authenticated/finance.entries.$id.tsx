@@ -22,6 +22,8 @@ import {
   cancelFinancialEntry,
   deletePayment,
   getFinancialEntry,
+  listInstallmentSiblings,
+  deleteInstallmentGroup,
 } from "@/lib/finance.functions";
 import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
 
@@ -44,6 +46,8 @@ function EntryDetailsPage() {
   const get = useServerFn(getFinancialEntry);
   const cancelFn = useServerFn(cancelFinancialEntry);
   const delPayment = useServerFn(deletePayment);
+  const listSiblings = useServerFn(listInstallmentSiblings);
+  const delGroup = useServerFn(deleteInstallmentGroup);
 
   const [payOpen, setPayOpen] = useState(false);
 
@@ -52,9 +56,20 @@ function EntryDetailsPage() {
     queryFn: () => get({ data: { id } }),
   });
 
+  const isInstallment =
+    !!(entry && (entry.parent_entry_id || (entry.installment_total && entry.installment_total > 1)));
+  const parentId = entry?.parent_entry_id ?? entry?.id ?? null;
+
+  const { data: siblings } = useQuery({
+    queryKey: ["finance-entry-siblings", id],
+    queryFn: () => listSiblings({ data: { entry_id: id } }),
+    enabled: isInstallment,
+  });
+
   const invalidate = () => {
     refetch();
     qc.invalidateQueries({ queryKey: ["finance-entries"] });
+    qc.invalidateQueries({ queryKey: ["finance-entry-siblings"] });
     qc.invalidateQueries({ queryKey: ["finance", "dashboard"] });
   };
 
@@ -176,6 +191,70 @@ function EntryDetailsPage() {
           )}
         </CardContent>
       </Card>
+
+      {isInstallment && siblings && siblings.length > 0 && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Parcelamento</CardTitle>
+            {parentId && siblings.some((s) => s.status === "open" || s.status === "overdue") && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (!confirm("Excluir todas as parcelas em aberto deste grupo?")) return;
+                  const r = await delGroup({ data: { parent_entry_id: parentId, only_open: true } });
+                  toast.success(`${r.deleted} parcela(s) excluída(s); ${r.kept} mantida(s).`);
+                  invalidate();
+                  navigate({
+                    to: entry.direction === "receivable" ? "/finance/receivable" : "/finance/payable",
+                  });
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-1" /> Excluir parcelas em aberto
+              </Button>
+            )}
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>#</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {siblings.map((s) => (
+                  <TableRow
+                    key={s.id}
+                    className={s.id === entry.id ? "bg-muted/50" : "cursor-pointer"}
+                    onClick={() => {
+                      if (s.id !== entry.id) navigate({ to: "/finance/entries/$id", params: { id: s.id } });
+                    }}
+                  >
+                    <TableCell className="text-sm tabular-nums">
+                      {s.installment_number}/{s.installment_total}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {formatDateTime(s.due_date).split(" ")[0]}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {STATUS_LABEL[s.status] ?? s.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-sm">
+                      {formatCurrency(Number(s.amount), entry.currency)}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
 
       <Card>
         <CardHeader>

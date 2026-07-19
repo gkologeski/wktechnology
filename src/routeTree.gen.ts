@@ -176,6 +176,7 @@ import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authen
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authenticated/inbox.chat'
 import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authenticated/home.access'
+import { Route as AuthenticatedFinanceRecurrencesRouteImport } from './routes/_authenticated/finance.recurrences'
 import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceNfseRouteImport } from './routes/_authenticated/finance.nfse'
@@ -261,6 +262,7 @@ import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksSecurityScanTickRouteImport } from './routes/api/public/hooks/security-scan-tick'
 import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/public/hooks/scoring-tick'
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
+import { Route as ApiPublicHooksRecurrencesTickRouteImport } from './routes/api/public/hooks/recurrences-tick'
 import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/api/public/hooks/prospecting-dial-tick'
 import { Route as ApiPublicHooksPlatformAlertsTickRouteImport } from './routes/api/public/hooks/platform-alerts-tick'
 import { Route as ApiPublicHooksLinkedinApplicantsSyncRouteImport } from './routes/api/public/hooks/linkedin-applicants-sync'
@@ -1255,6 +1257,12 @@ const AuthenticatedHomeAccessRoute = AuthenticatedHomeAccessRouteImport.update({
   path: '/home/access',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFinanceRecurrencesRoute =
+  AuthenticatedFinanceRecurrencesRouteImport.update({
+    id: '/finance/recurrences',
+    path: '/finance/recurrences',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinanceReceivableRoute =
   AuthenticatedFinanceReceivableRouteImport.update({
     id: '/finance/receivable',
@@ -1745,6 +1753,12 @@ const ApiPublicHooksScheduledExportsTickRoute =
     path: '/api/public/hooks/scheduled-exports-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRecurrencesTickRoute =
+  ApiPublicHooksRecurrencesTickRouteImport.update({
+    id: '/api/public/hooks/recurrences-tick',
+    path: '/api/public/hooks/recurrences-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksProspectingDialTickRoute =
   ApiPublicHooksProspectingDialTickRouteImport.update({
     id: '/api/public/hooks/prospecting-dial-tick',
@@ -2188,6 +2202,7 @@ export interface FileRoutesByFullPath {
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
+  '/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -2336,6 +2351,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
+  '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
@@ -2496,6 +2512,7 @@ export interface FileRoutesByTo {
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
+  '/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -2643,6 +2660,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
+  '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
@@ -2809,6 +2827,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
+  '/_authenticated/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
   '/_authenticated/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -2957,6 +2976,7 @@ export interface FileRoutesById {
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
+  '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
@@ -3123,6 +3143,7 @@ export interface FileRouteTypes {
     | '/finance/nfse'
     | '/finance/payable'
     | '/finance/receivable'
+    | '/finance/recurrences'
     | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
@@ -3271,6 +3292,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
+    | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/security-scan-tick'
@@ -3431,6 +3453,7 @@ export interface FileRouteTypes {
     | '/finance/nfse'
     | '/finance/payable'
     | '/finance/receivable'
+    | '/finance/recurrences'
     | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
@@ -3578,6 +3601,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
+    | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/security-scan-tick'
@@ -3743,6 +3767,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/nfse'
     | '/_authenticated/finance/payable'
     | '/_authenticated/finance/receivable'
+    | '/_authenticated/finance/recurrences'
     | '/_authenticated/home/access'
     | '/_authenticated/inbox/chat'
     | '/_authenticated/inbox/email'
@@ -3891,6 +3916,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
+    | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/security-scan-tick'
@@ -4012,6 +4038,7 @@ export interface RootRouteChildren {
   ApiPublicHooksLinkedinApplicantsSyncRoute: typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   ApiPublicHooksPlatformAlertsTickRoute: typeof ApiPublicHooksPlatformAlertsTickRoute
   ApiPublicHooksProspectingDialTickRoute: typeof ApiPublicHooksProspectingDialTickRoute
+  ApiPublicHooksRecurrencesTickRoute: typeof ApiPublicHooksRecurrencesTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
   ApiPublicHooksSecurityScanTickRoute: typeof ApiPublicHooksSecurityScanTickRoute
@@ -5237,6 +5264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeAccessRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/finance/recurrences': {
+      id: '/_authenticated/finance/recurrences'
+      path: '/finance/recurrences'
+      fullPath: '/finance/recurrences'
+      preLoaderRoute: typeof AuthenticatedFinanceRecurrencesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/finance/receivable': {
       id: '/_authenticated/finance/receivable'
       path: '/finance/receivable'
@@ -5830,6 +5864,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/scheduled-exports-tick'
       fullPath: '/api/public/hooks/scheduled-exports-tick'
       preLoaderRoute: typeof ApiPublicHooksScheduledExportsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/recurrences-tick': {
+      id: '/api/public/hooks/recurrences-tick'
+      path: '/api/public/hooks/recurrences-tick'
+      fullPath: '/api/public/hooks/recurrences-tick'
+      preLoaderRoute: typeof ApiPublicHooksRecurrencesTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/prospecting-dial-tick': {
@@ -6715,6 +6756,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceNfseRoute: typeof AuthenticatedFinanceNfseRoute
   AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
   AuthenticatedFinanceReceivableRoute: typeof AuthenticatedFinanceReceivableRoute
+  AuthenticatedFinanceRecurrencesRoute: typeof AuthenticatedFinanceRecurrencesRoute
   AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
@@ -6823,6 +6865,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinanceNfseRoute: AuthenticatedFinanceNfseRoute,
   AuthenticatedFinancePayableRoute: AuthenticatedFinancePayableRoute,
   AuthenticatedFinanceReceivableRoute: AuthenticatedFinanceReceivableRoute,
+  AuthenticatedFinanceRecurrencesRoute: AuthenticatedFinanceRecurrencesRoute,
   AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
@@ -7006,6 +7049,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksPlatformAlertsTickRoute: ApiPublicHooksPlatformAlertsTickRoute,
   ApiPublicHooksProspectingDialTickRoute:
     ApiPublicHooksProspectingDialTickRoute,
+  ApiPublicHooksRecurrencesTickRoute: ApiPublicHooksRecurrencesTickRoute,
   ApiPublicHooksScheduledExportsTickRoute:
     ApiPublicHooksScheduledExportsTickRoute,
   ApiPublicHooksScoringTickRoute: ApiPublicHooksScoringTickRoute,
@@ -7069,13 +7113,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
