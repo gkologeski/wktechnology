@@ -50,16 +50,35 @@ function BankAccountsPage() {
   const qc = useQueryClient();
   const list = useServerFn(listBankAccounts);
   const create = useServerFn(createBankAccount);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
+  const { data: legalEntities = [] } = useLegalEntities();
+
+  const leById = useMemo(() => {
+    const m = new Map<string, { code: string | null; name: string }>();
+    legalEntities.forEach((le) => m.set(le.id, le));
+    return m;
+  }, [legalEntities]);
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [kind, setKind] = useState("checking");
   const [initial, setInitial] = useState("0");
+  const [formLegalEntity, setFormLegalEntity] = useState<string>("__none__");
 
+  const filterLE = legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId;
   const { data: rows = [] } = useQuery({
-    queryKey: ["finance-banks"],
-    queryFn: () => list(),
+    queryKey: ["finance-banks", filterLE ?? "all"],
+    queryFn: () => list({ data: { legalEntityId: filterLE } }),
   });
+
+  function openCreate() {
+    setName("");
+    setInitial("0");
+    setKind("checking");
+    // Pré-seleciona a empresa do filtro ativo, se houver.
+    setFormLegalEntity(filterLE ?? "__none__");
+    setOpen(true);
+  }
 
   async function submit() {
     if (!name.trim()) return;
@@ -70,11 +89,10 @@ function BankAccountsPage() {
           kind,
           currency: "BRL",
           initial_balance: Number(String(initial).replace(",", ".")) || 0,
+          legal_entity_id: formLegalEntity === "__none__" ? null : formLegalEntity,
         },
       });
       toast.success("Conta criada");
-      setName("");
-      setInitial("0");
       qc.invalidateQueries({ queryKey: ["finance-banks"] });
       setOpen(false);
     } catch (e) {
@@ -88,9 +106,12 @@ function BankAccountsPage() {
         title="Contas bancárias"
         description="Contas e caixas usados para conciliação de pagamentos."
         actions={
-          <Button onClick={() => setOpen(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Nova conta
-          </Button>
+          <div className="flex items-center gap-2">
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-1" /> Nova conta
+            </Button>
+          </div>
         }
       />
 
@@ -104,22 +125,35 @@ function BankAccountsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
+                <TableHead>Empresa</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Moeda</TableHead>
                 <TableHead className="text-right">Saldo inicial</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((b) => (
-                <TableRow key={b.id}>
-                  <TableCell className="font-medium">{b.name}</TableCell>
-                  <TableCell className="text-sm">{b.kind}</TableCell>
-                  <TableCell className="text-sm">{b.currency}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatCurrency(Number(b.initial_balance), b.currency)}
-                  </TableCell>
-                </TableRow>
-              ))}
+              {rows.map((b) => {
+                const le = b.legal_entity_id ? leById.get(b.legal_entity_id) : null;
+                return (
+                  <TableRow key={b.id}>
+                    <TableCell className="font-medium">{b.name}</TableCell>
+                    <TableCell className="text-sm">
+                      {le ? (
+                        <Badge variant="outline" className="text-xs">
+                          {le.code ?? le.name}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-sm">{b.kind}</TableCell>
+                    <TableCell className="text-sm">{b.currency}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {formatCurrency(Number(b.initial_balance), b.currency)}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
@@ -135,6 +169,24 @@ function BankAccountsPage() {
               <Label>Nome</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} />
             </div>
+            {legalEntities.length > 1 && (
+              <div className="space-y-2">
+                <Label>Empresa</Label>
+                <Select value={formLegalEntity} onValueChange={setFormLegalEntity}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Não vincular —</SelectItem>
+                    {legalEntities.map((le) => (
+                      <SelectItem key={le.id} value={le.id}>
+                        {le.code ? `${le.code} · ${le.name}` : le.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={kind} onValueChange={setKind}>
