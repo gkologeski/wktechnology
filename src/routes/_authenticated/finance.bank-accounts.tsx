@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,12 @@ import {
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/crm";
 import { createBankAccount, listBankAccounts } from "@/lib/finance.functions";
+import {
+  ALL_LEGAL_ENTITIES,
+  LegalEntitySelect,
+  useLegalEntities,
+  useLegalEntityFilter,
+} from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/bank-accounts")({
   head: () => ({ meta: [{ title: "Contas bancárias" }] }),
