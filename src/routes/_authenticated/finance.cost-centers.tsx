@@ -187,6 +187,9 @@ function CostCentersPage() {
       <PageHeader
         title="Centros de custo"
         description="Hierarquia de centros de custo por empresa. Valores agregados dos rateios de lançamentos."
+        actions={
+          <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+        }
       />
 
       <div className="grid gap-3 md:grid-cols-3">
