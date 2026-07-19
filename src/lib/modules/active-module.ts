@@ -111,11 +111,12 @@ export function useActiveModule(): ModuleId {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const stored = useStoredActiveModule();
   return useMemo(() => {
-    const hostname = typeof window !== "undefined" ? window.location.hostname : null;
-    const hostModule = detectModuleFromHost(hostname);
-    if (hostModule) return hostModule;
+    // Single-host: host não discrimina mais o módulo.
+    // Ordem: path do módulo > preferência salva > default crm.
+    const pathModule = detectModuleFromPath(path);
+    if (pathModule) return pathModule;
     if (stored) return stored;
-    return detectModuleFromPath(path) ?? "crm";
+    return "crm";
   }, [path, stored]);
 }
 
