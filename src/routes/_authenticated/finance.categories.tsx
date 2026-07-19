@@ -47,6 +47,7 @@ type Cat = {
   kind: "revenue" | "expense";
   code: string | null;
   parent_id: string | null;
+  legal_entity_id: string | null;
 };
 
 type Node = Cat & { children: Node[] };
