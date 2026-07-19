@@ -167,6 +167,50 @@ function ReconciliationPage() {
     onError: (e: any) => toast.error(e?.message ?? "Erro ao reativar"),
   });
 
+  const bulkIgnoreMut = useMutation({
+    mutationFn: (ids: string[]) => bulkIgnoreFn({ data: { transaction_ids: ids } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r?.updated ?? 0} transação(ões) ignorada(s)`);
+      clearSelection();
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao ignorar em lote"),
+  });
+
+  const bulkLinkMut = useMutation({
+    mutationFn: (ids: string[]) =>
+      bulkLinkFn({
+        data: {
+          connection_id: connectionId!,
+          window_days: windowDays,
+          transaction_ids: ids,
+        },
+      }),
+    onSuccess: (r: any) => {
+      toast.success(
+        `${r?.linked ?? 0} vinculada(s), ${r?.skipped ?? 0} sem candidato`,
+      );
+      clearSelection();
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao vincular em lote"),
+  });
+
+  const bulkCreateMut = useMutation({
+    mutationFn: (ids: string[]) =>
+      bulkCreateFn({ data: { transaction_ids: ids } }),
+    onSuccess: (r: any) => {
+      const errs = r?.errors?.length ?? 0;
+      toast.success(
+        `${r?.created ?? 0} lançamento(s) criado(s)` +
+          (errs > 0 ? ` · ${errs} falha(s)` : ""),
+      );
+      clearSelection();
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao criar em lote"),
+  });
+
   const items = suggestQ.data?.items ?? [];
   const withCandidates = useMemo(
     () => items.filter((it: any) => (it.candidates?.length ?? 0) > 0),
@@ -176,6 +220,16 @@ function ReconciliationPage() {
     () => items.filter((it: any) => (it.candidates?.length ?? 0) === 0),
     [items],
   );
+  const allIds = useMemo(() => items.map((it: any) => it.transaction.id), [items]);
+  const allSelected = allIds.length > 0 && allIds.every((id: string) => selected.has(id));
+  const someSelected = selected.size > 0 && !allSelected;
+  const toggleAll = () => {
+    if (allSelected) clearSelection();
+    else setSelected(new Set(allIds));
+  };
+  const bulkBusy =
+    bulkIgnoreMut.isPending || bulkLinkMut.isPending || bulkCreateMut.isPending;
+
 
   return (
     <div className="space-y-6 p-6">
