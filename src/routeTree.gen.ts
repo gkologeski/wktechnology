@@ -270,6 +270,7 @@ import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/a
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicHooksCalendarRecordingsTickRouteImport } from './routes/api/public/hooks/calendar-recordings-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
+import { Route as ApiPublicHooksBankingTickRouteImport } from './routes/api/public/hooks/banking-tick'
 import { Route as ApiPublicHooksAuditExportTickRouteImport } from './routes/api/public/hooks/audit-export-tick'
 import { Route as ApiPublicHooksAtsInterviewRemindersTickRouteImport } from './routes/api/public/hooks/ats-interview-reminders-tick'
 import { Route as ApiPublicHooksAtsEmailsTickRouteImport } from './routes/api/public/hooks/ats-emails-tick'
@@ -1798,6 +1799,12 @@ const ApiPublicHooksBugReportAnalyzeRoute =
     path: '/api/public/hooks/bug-report-analyze',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBankingTickRoute =
+  ApiPublicHooksBankingTickRouteImport.update({
+    id: '/api/public/hooks/banking-tick',
+    path: '/api/public/hooks/banking-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAuditExportTickRoute =
   ApiPublicHooksAuditExportTickRouteImport.update({
     id: '/api/public/hooks/audit-export-tick',
@@ -2319,6 +2326,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
+  '/api/public/hooks/banking-tick': typeof ApiPublicHooksBankingTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
@@ -2625,6 +2633,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
+  '/api/public/hooks/banking-tick': typeof ApiPublicHooksBankingTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
@@ -2938,6 +2947,7 @@ export interface FileRoutesById {
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
+  '/api/public/hooks/banking-tick': typeof ApiPublicHooksBankingTickRoute
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
@@ -3251,6 +3261,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/ats-interview-reminders-tick'
     | '/api/public/hooks/audit-export-tick'
+    | '/api/public/hooks/banking-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
@@ -3557,6 +3568,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/ats-interview-reminders-tick'
     | '/api/public/hooks/audit-export-tick'
+    | '/api/public/hooks/banking-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
@@ -3869,6 +3881,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/ats-interview-reminders-tick'
     | '/api/public/hooks/audit-export-tick'
+    | '/api/public/hooks/banking-tick'
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
@@ -3989,6 +4002,7 @@ export interface RootRouteChildren {
   ApiPublicHooksAtsEmailsTickRoute: typeof ApiPublicHooksAtsEmailsTickRoute
   ApiPublicHooksAtsInterviewRemindersTickRoute: typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   ApiPublicHooksAuditExportTickRoute: typeof ApiPublicHooksAuditExportTickRoute
+  ApiPublicHooksBankingTickRoute: typeof ApiPublicHooksBankingTickRoute
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarRecordingsTickRoute: typeof ApiPublicHooksCalendarRecordingsTickRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
@@ -5881,6 +5895,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksBugReportAnalyzeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/banking-tick': {
+      id: '/api/public/hooks/banking-tick'
+      path: '/api/public/hooks/banking-tick'
+      fullPath: '/api/public/hooks/banking-tick'
+      preLoaderRoute: typeof ApiPublicHooksBankingTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/audit-export-tick': {
       id: '/api/public/hooks/audit-export-tick'
       path: '/api/public/hooks/audit-export-tick'
@@ -6972,6 +6993,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksAtsInterviewRemindersTickRoute:
     ApiPublicHooksAtsInterviewRemindersTickRoute,
   ApiPublicHooksAuditExportTickRoute: ApiPublicHooksAuditExportTickRoute,
+  ApiPublicHooksBankingTickRoute: ApiPublicHooksBankingTickRoute,
   ApiPublicHooksBugReportAnalyzeRoute: ApiPublicHooksBugReportAnalyzeRoute,
   ApiPublicHooksCalendarRecordingsTickRoute:
     ApiPublicHooksCalendarRecordingsTickRoute,
@@ -7047,13 +7069,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
