@@ -1,71 +1,37 @@
-# Consolidação em domínio único
+## Problema
 
-Hoje a aplicação roda em três hosts (`app.`, `ats.`, `crm.` wktechnology.com.br) com um `HostRouterGuard` que faz redirects cross-host. Isso cria complexidade real (SSL/DNS por subdomínio, loops de redirect, cookies de sessão não compartilhados, SEO fragmentado, deep-link cross-módulo quebrado) sem ganho técnico — é um monólito TanStack Start servindo os três.
+No sidebar do módulo **Serviços** (`SERVICES_SIDEBAR_GROUPS` em `src/lib/menu-config-services.ts`), o item **Produtos** aponta para `/settings/products`. Essa rota é filha do layout `src/routes/_authenticated/settings.tsx`, que substitui o conteúdo da página por um shell próprio (aside "Configurações" à esquerda + `<Outlet />`). Resultado: ao clicar em Produtos dentro de Serviços, o usuário sai visualmente do módulo — a tela "recarrega para Configuração".
 
-## Recomendação: um domínio, módulos como prefixo de rota
+Além disso, o mesmo item aparece em **Estrutura CRM** dentro de `/settings`, então há duas entradas competindo.
 
-Padrão usado por Linear, Stripe Dashboard, Attio, Shopify Admin, Atlassian: **um host, módulo como primeiro segmento do path**.
+## Objetivo
 
-```text
-app.wktechnology.com.br/            → ERP Home (seletor de módulos)
-app.wktechnology.com.br/ats/...     → TechHire
-app.wktechnology.com.br/crm/...     → TechSales
-app.wktechnology.com.br/finance/... → TechFinance
-app.wktechnology.com.br/settings    → Workspace/config (compartilhado)
-```
+Ao clicar em **Produtos** no sidebar de Serviços, o usuário deve permanecer no módulo Serviços (com o sidebar do módulo intacto) e ver o CRUD de produtos. Sem mexer em regra de negócio, RLS ou no CRUD em si.
 
-Ganhos:
-- Sessão Supabase única (sem cross-domain cookies / relogin).
-- Sem redirects entre hosts → fim dos loops e do `HostRouterGuard`.
-- Deep-link de qualquer módulo funciona de qualquer contexto.
-- Um certificado, um DNS, um cache de assets.
-- Analytics e observabilidade unificados.
+## Abordagem
 
-Trade-off: URLs mais longas. Aceitável — é o padrão SaaS B2B.
+Criar uma rota dedicada do módulo Serviços que reaproveita o mesmo componente de página de `/settings/products`, sem passar pelo layout de Configurações. Manter `/settings/products` como está para quem entra pelas Configurações do CRM.
 
-## Escopo da mudança
+### Passos
 
-### 1. Roteamento
-- Mover rotas ATS para prefixo `/ats/*` (hoje muitas vivem sem prefixo porque o host já discrimina): `/jobs`, `/candidates`, `/interviews`, etc. → `/ats/jobs`, `/ats/candidates`…
-- Manter `/crm/*`, `/finance/*`, `/contracts/*` já prefixados.
-- Rotas neutras (`/settings`, `/account`, `/workspace`, `/home`, `/auth`) permanecem sem prefixo.
-- Adicionar redirects 301 dos paths antigos sem prefixo para os novos (preserva bookmarks).
+1. **Extrair o componente `ProductsPage`** de `src/routes/_authenticated/settings.products.tsx` para um módulo compartilhado (ex.: `src/components/products/products-page.tsx`), exportando-o como componente puro. A rota atual passa a apenas importá-lo e usar como `component`.
+   - Sem alterar consultas, mutations, permissões ou UI.
 
-### 2. Detecção de módulo ativo
-- Reescrever `src/lib/modules/active-module.ts` para priorizar path (não host).
-- `detectModuleFromPath` vira única fonte de verdade; `detectModuleFromHost` é removido.
-- `localStorage.activeModule` continua como fallback para telas neutras.
+2. **Nova rota `/_authenticated/services.products.tsx`** que também usa `ProductsPage` como componente. Isso já herda o layout autenticado padrão (sidebar do módulo Serviços continua visível, pois o path começa com `/services` e o `detectModuleFromPath` classifica como `services`).
 
-### 3. Remoção de infra multi-host
-- Deletar `HostRouterGuard` e sua montagem no root.
-- Simplificar `src/lib/hosts.ts`: remover `MODULE_HOSTS`, `buildModuleUrl`, `isReachableHost`, `HostRouterGuard`. Manter apenas `getAppUrl()`.
-- Atualizar `src/routes/index.tsx` para sempre redirecionar para `/home`.
+3. **Atualizar o sidebar do módulo Serviços** (`src/lib/menu-config-services.ts`): trocar `url: "/settings/products"` por `url: "/services/products"`.
 
-### 4. Domínios
-- `app.wktechnology.com.br` (ou apenas `wktechnology.com.br`) vira o host canônico único.
-- `ats.` e `crm.` viram redirect 301 permanente para `app.` preservando path (via config de domínio na Lovable).
-- Atualizar `APP_URL`, metadados SSR (`__root.tsx` `og:*`, JSON-LD), sitemap e templates de e-mail para o host único.
+4. **Deixar `/settings/products` intacto** — continua acessível pelo menu de Configurações (Estrutura CRM), para preservar o fluxo atual de admins que gerenciam o catálogo via Configurações.
 
-### 5. Migração de dados/links
-- Buscar no repo por hardcodes de `ats.wktechnology` e `crm.wktechnology` (e-mails transacionais, webhooks públicos, docs, extensão Chrome, PDFs de cotação) e trocar para o host único.
-- Endpoints públicos (`/api/public/*`) não mudam — já são path-based.
+## Fora do escopo
 
-### 6. Rollout
-1. Migração de rotas + redirects (behind flag ou direto, tudo em um deploy).
-2. Reconfigurar DNS: `app.` como primário; `ats.` e `crm.` apontando para o mesmo app com header/regra de redirect 301 para `app.` + path.
-3. Monitorar 404s e cliques nos redirects por 30 dias, então descomissionar `ats.`/`crm.` no médio prazo (ou manter permanentemente como redirect).
+- Alterar o CRUD, schema, RLS ou permissões (`need: "manager"`).
+- Redesenhar a tela de produtos.
+- Remover a entrada em `/settings` (mantida como acesso alternativo via Configurações).
 
-## Alternativas consideradas (e por que não)
+## Validação manual
 
-- **Manter multi-host + arrumar o guard**: paga o custo de complexidade toda semana (loops, SSL, sessão) sem benefício correspondente.
-- **Path-based apenas para módulos novos**: mantém dois modelos coexistindo indefinidamente. Pior dos mundos.
-- **Subdomínio por workspace/tenant** (`{tenant}.wktechnology.com.br`): faz sentido para multi-tenant white-label, mas é ortogonal a "um domínio por módulo" — pode ser adotado depois se virar requisito real.
-
-## Detalhes técnicos
-
-- Rotas TanStack: renomear arquivos em `src/routes/_authenticated/` (`jobs.*.tsx` → `ats.jobs.*.tsx` etc.) e ajustar cada `createFileRoute("/…")` para o novo path. `src/routeTree.gen.ts` regenera automaticamente.
-- `ATS_ROUTE_PREFIXES` em `src/lib/menu-config-ats.ts` passa a listar paths com `/ats/` prefixado.
-- `<Link to>` type-safe: o typecheck do TanStack Router vai apontar toda referência que precisa mudar; usar isso como checklist.
-- Redirects legados: um arquivo `src/routes/_authenticated/{jobs,candidates,interviews,...}.$.tsx` com `beforeLoad` fazendo `throw redirect({ to: "/ats/…" })` cobre o histórico.
-- `src/routes/api/public/*` fica intocado; webhooks externos continuam válidos.
-- Extensão Chrome (`extension/manifest.json` host_permissions) atualizada para o host único.
+1. Estar no módulo Serviços (`/services`). Sidebar mostra grupo "Serviços" com item **Produtos**.
+2. Clicar em **Produtos** → URL vira `/services/products`, sidebar do módulo Serviços permanece, conteúdo é o CRUD de produtos.
+3. Acessar `/settings/products` diretamente → shell de Configurações continua funcionando normalmente.
+4. Sem regressão de dark mode, permissões ou CRUD.
