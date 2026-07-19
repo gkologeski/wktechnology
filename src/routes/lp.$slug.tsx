@@ -12,7 +12,7 @@ export const Route = createFileRoute("/lp/$slug")({
   component: PublicLandingPage,
   head: ({ params, loaderData }) => {
     const p = loaderData?.page as { title?: string; description?: string | null } | null;
-    const url = `https://ats.wktechnology.com.br/lp/${params.slug}`;
+    const url = `https://app.wktechnology.com.br/lp/${params.slug}`;
     const title = p?.title || "Landing page — WK Technology CRM";
     const rawDesc = p?.description || "";
     const description =
