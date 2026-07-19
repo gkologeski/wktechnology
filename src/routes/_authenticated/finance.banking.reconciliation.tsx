@@ -399,7 +399,9 @@ function ReconciliationPage() {
                                     </>
                                   )}
                                 </div>
-                              </div>
+                                  </div>
+                                </div>
+
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`text-base font-semibold tabular-nums ${
