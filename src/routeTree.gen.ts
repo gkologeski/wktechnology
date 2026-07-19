@@ -277,6 +277,7 @@ import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
+import { Route as ApiPublicBankingInterWebhookRouteImport } from './routes/api/public/banking/inter-webhook'
 import { Route as AuthenticatedSettingsRolesMatrixRouteImport } from './routes/_authenticated/settings.roles.matrix'
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
 import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
@@ -1836,6 +1837,12 @@ const ApiPublicBookingSlugRoute = ApiPublicBookingSlugRouteImport.update({
   path: '/api/public/booking/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBankingInterWebhookRoute =
+  ApiPublicBankingInterWebhookRouteImport.update({
+    id: '/api/public/banking/inter-webhook',
+    path: '/api/public/banking/inter-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedSettingsRolesMatrixRoute =
   AuthenticatedSettingsRolesMatrixRouteImport.update({
     id: '/matrix',
@@ -2304,6 +2311,7 @@ export interface FileRoutesByFullPath {
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
+  '/api/public/banking/inter-webhook': typeof ApiPublicBankingInterWebhookRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -2609,6 +2617,7 @@ export interface FileRoutesByTo {
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
+  '/api/public/banking/inter-webhook': typeof ApiPublicBankingInterWebhookRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -2921,6 +2930,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/_authenticated/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
+  '/api/public/banking/inter-webhook': typeof ApiPublicBankingInterWebhookRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
@@ -3233,6 +3243,7 @@ export interface FileRouteTypes {
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
     | '/settings/roles/matrix'
+    | '/api/public/banking/inter-webhook'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -3538,6 +3549,7 @@ export interface FileRouteTypes {
     | '/settings/notifications/slack'
     | '/settings/roles/$roleId'
     | '/settings/roles/matrix'
+    | '/api/public/banking/inter-webhook'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -3849,6 +3861,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications/slack'
     | '/_authenticated/settings/roles/$roleId'
     | '/_authenticated/settings/roles/matrix'
+    | '/api/public/banking/inter-webhook'
     | '/api/public/booking/$slug'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
@@ -3968,6 +3981,7 @@ export interface RootRouteChildren {
   KbIndexRoute: typeof KbIndexRoute
   ApiAgentChatRoute: typeof ApiAgentChatRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
+  ApiPublicBankingInterWebhookRoute: typeof ApiPublicBankingInterWebhookRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
@@ -5916,6 +5930,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBookingSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/banking/inter-webhook': {
+      id: '/api/public/banking/inter-webhook'
+      path: '/api/public/banking/inter-webhook'
+      fullPath: '/api/public/banking/inter-webhook'
+      preLoaderRoute: typeof ApiPublicBankingInterWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings/roles/matrix': {
       id: '/_authenticated/settings/roles/matrix'
       path: '/matrix'
@@ -6942,6 +6963,7 @@ const rootRouteChildren: RootRouteChildren = {
   KbIndexRoute: KbIndexRoute,
   ApiAgentChatRoute: ApiAgentChatRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
+  ApiPublicBankingInterWebhookRoute: ApiPublicBankingInterWebhookRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,

@@ -57,8 +57,10 @@ export const Route = createFileRoute("/api/public/banking/inter-webhook")({
         }
 
         if (parsed.status === "canceled" || parsed.status === "expired") {
-          const patch: Record<string, unknown> = { status: parsed.status };
-          if (parsed.status === "canceled") patch.canceled_at = new Date().toISOString();
+          const patch =
+            parsed.status === "canceled"
+              ? { status: "canceled" as const, canceled_at: new Date().toISOString() }
+              : { status: "expired" as const };
           const { error } = await supabaseAdmin
             .from("bank_charges")
             .update(patch)
