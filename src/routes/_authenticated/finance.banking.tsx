@@ -260,6 +260,94 @@ function BankingPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao simular pagamento"),
   });
 
+  // -------- Pagamentos AP (Fase 5) --------
+  const listPayments = useServerFn(listBankPayments);
+  const createPayment = useServerFn(createBankPayment);
+  const approvePayment = useServerFn(approveBankPayment);
+  const cancelPayment = useServerFn(cancelBankPayment);
+  const simulateSettle = useServerFn(simulatePaymentSettlement);
+  const paymentsSummary = useServerFn(getPaymentsSummary);
+
+  const payments = useQuery({
+    queryKey: ["banking", "payments", conn?.id],
+    enabled: !!conn?.id && status === "connected",
+    queryFn: () => listPayments({ data: { connection_id: conn!.id, status: "all", limit: 200 } }),
+  });
+
+  const summary = useQuery({
+    queryKey: ["banking", "payments-summary", conn?.id],
+    enabled: !!conn?.id && status === "connected",
+    queryFn: () => paymentsSummary({ data: { connection_id: conn!.id } }),
+  });
+
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({
+    type: "pix" as "pix" | "ted" | "boleto",
+    amount: "",
+    scheduled_for: new Date().toISOString().slice(0, 10),
+    favored_name: "",
+    favored_document: "",
+    pix_key: "",
+    pix_key_type: "cpf" as "cpf" | "cnpj" | "email" | "phone" | "random",
+    boleto_digitable_line: "",
+    description: "",
+  });
+
+  const createPaymentMut = useMutation({
+    mutationFn: () =>
+      createPayment({
+        data: {
+          connection_id: conn!.id,
+          type: paymentForm.type,
+          amount: Number(paymentForm.amount),
+          scheduled_for: paymentForm.scheduled_for || null,
+          favored_name: paymentForm.favored_name || null,
+          favored_document: paymentForm.favored_document || null,
+          pix_key: paymentForm.type === "pix" ? paymentForm.pix_key : null,
+          pix_key_type: paymentForm.type === "pix" ? paymentForm.pix_key_type : null,
+          boleto_digitable_line:
+            paymentForm.type === "boleto" ? paymentForm.boleto_digitable_line : null,
+          description: paymentForm.description || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Pagamento criado (rascunho)");
+      setPaymentDialogOpen(false);
+      setPaymentForm((f) => ({ ...f, amount: "", description: "", pix_key: "", boleto_digitable_line: "" }));
+      qc.invalidateQueries({ queryKey: ["banking", "payments"] });
+      qc.invalidateQueries({ queryKey: ["banking", "payments-summary"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao criar pagamento"),
+  });
+
+  const approvePayMut = useMutation({
+    mutationFn: (id: string) => approvePayment({ data: { payment_id: id } }),
+    onSuccess: (res: any) => {
+      toast.success(`Pagamento ${res.status === "paid" ? "liquidado" : "enviado"}`);
+      qc.invalidateQueries({ queryKey: ["banking"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao aprovar"),
+  });
+
+  const cancelPayMut = useMutation({
+    mutationFn: (id: string) => cancelPayment({ data: { payment_id: id } }),
+    onSuccess: () => {
+      toast.success("Pagamento cancelado");
+      qc.invalidateQueries({ queryKey: ["banking", "payments"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao cancelar"),
+  });
+
+  const simulateSettleMut = useMutation({
+    mutationFn: (id: string) => simulateSettle({ data: { payment_id: id } }),
+    onSuccess: () => {
+      toast.success("Pagamento liquidado (mock)");
+      qc.invalidateQueries({ queryKey: ["banking"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao liquidar"),
+  });
+
+
 
 
   return (
