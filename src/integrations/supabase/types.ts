@@ -5068,6 +5068,7 @@ export type Database = {
           id: string
           invoice_number: string
           issued_at: string
+          legal_entity_id: string | null
           metadata: Json
           owner_id: string
           paid_at: string | null
@@ -5097,6 +5098,7 @@ export type Database = {
           id?: string
           invoice_number: string
           issued_at?: string
+          legal_entity_id?: string | null
           metadata?: Json
           owner_id: string
           paid_at?: string | null
@@ -5126,6 +5128,7 @@ export type Database = {
           id?: string
           invoice_number?: string
           issued_at?: string
+          legal_entity_id?: string | null
           metadata?: Json
           owner_id?: string
           paid_at?: string | null
@@ -5158,6 +5161,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_invoices_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -7007,6 +7017,7 @@ export type Database = {
           id: string
           initial_balance: number
           kind: string
+          legal_entity_id: string | null
           metadata: Json
           name: string
           updated_at: string
@@ -7021,6 +7032,7 @@ export type Database = {
           id?: string
           initial_balance?: number
           kind?: string
+          legal_entity_id?: string | null
           metadata?: Json
           name: string
           updated_at?: string
@@ -7035,6 +7047,7 @@ export type Database = {
           id?: string
           initial_balance?: number
           kind?: string
+          legal_entity_id?: string | null
           metadata?: Json
           name?: string
           updated_at?: string
@@ -7046,6 +7059,13 @@ export type Database = {
             columns: ["bank_connection_id"]
             isOneToOne: false
             referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_bank_accounts_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -7063,6 +7083,7 @@ export type Database = {
           created_at: string
           id: string
           kind: Database["public"]["Enums"]["financial_category_kind"]
+          legal_entity_id: string | null
           name: string
           parent_id: string | null
           updated_at: string
@@ -7073,6 +7094,7 @@ export type Database = {
           created_at?: string
           id?: string
           kind: Database["public"]["Enums"]["financial_category_kind"]
+          legal_entity_id?: string | null
           name: string
           parent_id?: string | null
           updated_at?: string
@@ -7083,12 +7105,20 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: Database["public"]["Enums"]["financial_category_kind"]
+          legal_entity_id?: string | null
           name?: string
           parent_id?: string | null
           updated_at?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "financial_categories_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "financial_categories_parent_id_fkey"
             columns: ["parent_id"]
@@ -7098,6 +7128,67 @@ export type Database = {
           },
           {
             foreignKeyName: "financial_categories_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_cost_centers: {
+        Row: {
+          active: boolean
+          code: string | null
+          created_at: string
+          id: string
+          legal_entity_id: string | null
+          metadata: Json
+          name: string
+          parent_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          id?: string
+          legal_entity_id?: string | null
+          metadata?: Json
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          code?: string | null
+          created_at?: string
+          id?: string
+          legal_entity_id?: string | null
+          metadata?: Json
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_cost_centers_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_cost_centers_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "financial_cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_cost_centers_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -7122,6 +7213,7 @@ export type Database = {
           id: string
           installment_number: number | null
           installment_total: number | null
+          legal_entity_id: string | null
           metadata: Json
           notes: string | null
           origin_id: string | null
@@ -7152,6 +7244,7 @@ export type Database = {
           id?: string
           installment_number?: number | null
           installment_total?: number | null
+          legal_entity_id?: string | null
           metadata?: Json
           notes?: string | null
           origin_id?: string | null
@@ -7182,6 +7275,7 @@ export type Database = {
           id?: string
           installment_number?: number | null
           installment_total?: number | null
+          legal_entity_id?: string | null
           metadata?: Json
           notes?: string | null
           origin_id?: string | null
@@ -7219,6 +7313,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "financial_entries_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "financial_entries_parent_entry_id_fkey"
             columns: ["parent_entry_id"]
             isOneToOne: false
@@ -7244,6 +7345,45 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_entry_allocations: {
+        Row: {
+          amount: number
+          cost_center_id: string
+          created_at: string
+          entry_id: string
+          id: string
+        }
+        Insert: {
+          amount: number
+          cost_center_id: string
+          created_at?: string
+          entry_id: string
+          id?: string
+        }
+        Update: {
+          amount?: number
+          cost_center_id?: string
+          created_at?: string
+          entry_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_entry_allocations_cost_center_id_fkey"
+            columns: ["cost_center_id"]
+            isOneToOne: false
+            referencedRelation: "financial_cost_centers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entry_allocations_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "financial_entries"
             referencedColumns: ["id"]
           },
         ]
@@ -8142,6 +8282,77 @@ export type Database = {
           },
         ]
       }
+      legal_entities: {
+        Row: {
+          active: boolean
+          address_json: Json
+          cnpj: string | null
+          code: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          ie: string | null
+          im: string | null
+          is_default: boolean
+          logo_url: string | null
+          metadata: Json
+          name: string
+          nfse_settings: Json
+          payments_settings: Json
+          trade_name: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          address_json?: Json
+          cnpj?: string | null
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ie?: string | null
+          im?: string | null
+          is_default?: boolean
+          logo_url?: string | null
+          metadata?: Json
+          name: string
+          nfse_settings?: Json
+          payments_settings?: Json
+          trade_name?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          address_json?: Json
+          cnpj?: string | null
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          ie?: string | null
+          im?: string | null
+          is_default?: boolean
+          logo_url?: string | null
+          metadata?: Json
+          name?: string
+          nfse_settings?: Json
+          payments_settings?: Json
+          trade_name?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_entities_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_chat_messages: {
         Row: {
           author_user_id: string | null
@@ -9016,6 +9227,7 @@ export type Database = {
           id: string
           invoice_id: string | null
           issued_at: string | null
+          legal_entity_id: string | null
           nf_number: string | null
           pdf_url: string | null
           raw: Json
@@ -9034,6 +9246,7 @@ export type Database = {
           id?: string
           invoice_id?: string | null
           issued_at?: string | null
+          legal_entity_id?: string | null
           nf_number?: string | null
           pdf_url?: string | null
           raw?: Json
@@ -9052,6 +9265,7 @@ export type Database = {
           id?: string
           invoice_id?: string | null
           issued_at?: string | null
+          legal_entity_id?: string | null
           nf_number?: string | null
           pdf_url?: string | null
           raw?: Json
@@ -9068,6 +9282,13 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "customer_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nfse_invoices_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {

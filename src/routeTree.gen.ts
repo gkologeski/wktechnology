@@ -132,6 +132,7 @@ import { Route as AuthenticatedSettingsMyPermissionsRouteImport } from './routes
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMediaRouteImport } from './routes/_authenticated/settings.media'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
+import { Route as AuthenticatedSettingsLegalEntitiesRouteImport } from './routes/_authenticated/settings.legal-entities'
 import { Route as AuthenticatedSettingsLeadSourcesRouteImport } from './routes/_authenticated/settings.lead-sources'
 import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
 import { Route as AuthenticatedSettingsKbRouteImport } from './routes/_authenticated/settings.kb'
@@ -998,6 +999,12 @@ const AuthenticatedSettingsMacrosRoute =
   AuthenticatedSettingsMacrosRouteImport.update({
     id: '/macros',
     path: '/macros',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsLegalEntitiesRoute =
+  AuthenticatedSettingsLegalEntitiesRouteImport.update({
+    id: '/legal-entities',
+    path: '/legal-entities',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsLeadSourcesRoute =
@@ -2247,6 +2254,7 @@ export interface FileRoutesByFullPath {
   '/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
+  '/settings/legal-entities': typeof AuthenticatedSettingsLegalEntitiesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
@@ -2557,6 +2565,7 @@ export interface FileRoutesByTo {
   '/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
+  '/settings/legal-entities': typeof AuthenticatedSettingsLegalEntitiesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
@@ -2872,6 +2881,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/_authenticated/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
+  '/_authenticated/settings/legal-entities': typeof AuthenticatedSettingsLegalEntitiesRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
@@ -3188,6 +3198,7 @@ export interface FileRouteTypes {
     | '/settings/kb'
     | '/settings/language'
     | '/settings/lead-sources'
+    | '/settings/legal-entities'
     | '/settings/macros'
     | '/settings/media'
     | '/settings/mobile'
@@ -3498,6 +3509,7 @@ export interface FileRouteTypes {
     | '/settings/kb'
     | '/settings/language'
     | '/settings/lead-sources'
+    | '/settings/legal-entities'
     | '/settings/macros'
     | '/settings/media'
     | '/settings/mobile'
@@ -3812,6 +3824,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/kb'
     | '/_authenticated/settings/language'
     | '/_authenticated/settings/lead-sources'
+    | '/_authenticated/settings/legal-entities'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/media'
     | '/_authenticated/settings/mobile'
@@ -4954,6 +4967,13 @@ declare module '@tanstack/react-router' {
       path: '/macros'
       fullPath: '/settings/macros'
       preLoaderRoute: typeof AuthenticatedSettingsMacrosRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/legal-entities': {
+      id: '/_authenticated/settings/legal-entities'
+      path: '/legal-entities'
+      fullPath: '/settings/legal-entities'
+      preLoaderRoute: typeof AuthenticatedSettingsLegalEntitiesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/lead-sources': {
@@ -6469,6 +6489,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsKbRoute: typeof AuthenticatedSettingsKbRoute
   AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
   AuthenticatedSettingsLeadSourcesRoute: typeof AuthenticatedSettingsLeadSourcesRoute
+  AuthenticatedSettingsLegalEntitiesRoute: typeof AuthenticatedSettingsLegalEntitiesRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsMediaRoute: typeof AuthenticatedSettingsMediaRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
@@ -6551,6 +6572,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsKbRoute: AuthenticatedSettingsKbRoute,
   AuthenticatedSettingsLanguageRoute: AuthenticatedSettingsLanguageRoute,
   AuthenticatedSettingsLeadSourcesRoute: AuthenticatedSettingsLeadSourcesRoute,
+  AuthenticatedSettingsLegalEntitiesRoute:
+    AuthenticatedSettingsLegalEntitiesRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsMediaRoute: AuthenticatedSettingsMediaRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
