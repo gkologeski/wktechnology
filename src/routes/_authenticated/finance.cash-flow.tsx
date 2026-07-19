@@ -42,10 +42,17 @@ function CashFlowPage() {
     expenseFactorRealistic: 1.0,
     expenseFactorOptimistic: 1.0,
   });
+  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "cash-flow", factors],
-    queryFn: () => get({ data: factors }),
+    queryKey: ["finance", "cash-flow", factors, legalEntityId],
+    queryFn: () =>
+      get({
+        data: {
+          ...factors,
+          legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId,
+        },
+      }),
   });
 
   return (
