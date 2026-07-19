@@ -261,6 +261,7 @@ import { Route as ApiPublicHooksSegmentsTickRouteImport } from './routes/api/pub
 import { Route as ApiPublicHooksSecurityScanTickRouteImport } from './routes/api/public/hooks/security-scan-tick'
 import { Route as ApiPublicHooksScoringTickRouteImport } from './routes/api/public/hooks/scoring-tick'
 import { Route as ApiPublicHooksScheduledExportsTickRouteImport } from './routes/api/public/hooks/scheduled-exports-tick'
+import { Route as ApiPublicHooksRecurrencesTickRouteImport } from './routes/api/public/hooks/recurrences-tick'
 import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/api/public/hooks/prospecting-dial-tick'
 import { Route as ApiPublicHooksPlatformAlertsTickRouteImport } from './routes/api/public/hooks/platform-alerts-tick'
 import { Route as ApiPublicHooksLinkedinApplicantsSyncRouteImport } from './routes/api/public/hooks/linkedin-applicants-sync'
@@ -1745,6 +1746,12 @@ const ApiPublicHooksScheduledExportsTickRoute =
     path: '/api/public/hooks/scheduled-exports-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksRecurrencesTickRoute =
+  ApiPublicHooksRecurrencesTickRouteImport.update({
+    id: '/api/public/hooks/recurrences-tick',
+    path: '/api/public/hooks/recurrences-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksProspectingDialTickRoute =
   ApiPublicHooksProspectingDialTickRouteImport.update({
     id: '/api/public/hooks/prospecting-dial-tick',
@@ -2336,6 +2343,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
+  '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
@@ -2643,6 +2651,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
+  '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
@@ -2957,6 +2966,7 @@ export interface FileRoutesById {
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
+  '/api/public/hooks/recurrences-tick': typeof ApiPublicHooksRecurrencesTickRoute
   '/api/public/hooks/scheduled-exports-tick': typeof ApiPublicHooksScheduledExportsTickRoute
   '/api/public/hooks/scoring-tick': typeof ApiPublicHooksScoringTickRoute
   '/api/public/hooks/security-scan-tick': typeof ApiPublicHooksSecurityScanTickRoute
@@ -3271,6 +3281,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
+    | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/security-scan-tick'
@@ -3578,6 +3589,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
+    | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/security-scan-tick'
@@ -3891,6 +3903,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
+    | '/api/public/hooks/recurrences-tick'
     | '/api/public/hooks/scheduled-exports-tick'
     | '/api/public/hooks/scoring-tick'
     | '/api/public/hooks/security-scan-tick'
@@ -4012,6 +4025,7 @@ export interface RootRouteChildren {
   ApiPublicHooksLinkedinApplicantsSyncRoute: typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   ApiPublicHooksPlatformAlertsTickRoute: typeof ApiPublicHooksPlatformAlertsTickRoute
   ApiPublicHooksProspectingDialTickRoute: typeof ApiPublicHooksProspectingDialTickRoute
+  ApiPublicHooksRecurrencesTickRoute: typeof ApiPublicHooksRecurrencesTickRoute
   ApiPublicHooksScheduledExportsTickRoute: typeof ApiPublicHooksScheduledExportsTickRoute
   ApiPublicHooksScoringTickRoute: typeof ApiPublicHooksScoringTickRoute
   ApiPublicHooksSecurityScanTickRoute: typeof ApiPublicHooksSecurityScanTickRoute
@@ -5832,6 +5846,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksScheduledExportsTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/recurrences-tick': {
+      id: '/api/public/hooks/recurrences-tick'
+      path: '/api/public/hooks/recurrences-tick'
+      fullPath: '/api/public/hooks/recurrences-tick'
+      preLoaderRoute: typeof ApiPublicHooksRecurrencesTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/prospecting-dial-tick': {
       id: '/api/public/hooks/prospecting-dial-tick'
       path: '/api/public/hooks/prospecting-dial-tick'
@@ -7006,6 +7027,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksPlatformAlertsTickRoute: ApiPublicHooksPlatformAlertsTickRoute,
   ApiPublicHooksProspectingDialTickRoute:
     ApiPublicHooksProspectingDialTickRoute,
+  ApiPublicHooksRecurrencesTickRoute: ApiPublicHooksRecurrencesTickRoute,
   ApiPublicHooksScheduledExportsTickRoute:
     ApiPublicHooksScheduledExportsTickRoute,
   ApiPublicHooksScoringTickRoute: ApiPublicHooksScoringTickRoute,
