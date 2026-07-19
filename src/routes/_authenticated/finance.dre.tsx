@@ -40,10 +40,18 @@ function DrePage() {
   const get = useServerFn(getDreReport);
   const [months, setMonths] = useState(6);
   const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
+  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "dre", months, basis],
-    queryFn: () => get({ data: { months, basis } }),
+    queryKey: ["finance", "dre", months, basis, legalEntityId],
+    queryFn: () =>
+      get({
+        data: {
+          months,
+          basis,
+          legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId,
+        },
+      }),
   });
 
 
