@@ -5,30 +5,24 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 import { z } from "zod";
 
-const PayloadSchema = z.discriminatedUnion("kind", [
-  z.object({
-    kind: z.literal("charge"),
-    charge_id: z.string().uuid(),
-    status: z.enum(["paid", "canceled", "expired"]),
-    paid_at: z.string().datetime().optional(),
-    external_id: z.string().optional(),
-  }),
-  z.object({
-    kind: z.literal("payment"),
-    payment_id: z.string().uuid(),
-    status: z.enum(["processing", "paid", "failed"]),
-    paid_at: z.string().datetime().optional(),
-    failure_reason: z.string().optional(),
-    external_id: z.string().optional(),
-  }),
-  // Compat com payload antigo (sem kind, tratado como charge)
-  z.object({
-    charge_id: z.string().uuid(),
-    status: z.enum(["paid", "canceled", "expired"]),
-    paid_at: z.string().datetime().optional(),
-    external_id: z.string().optional(),
-  }),
-]);
+const ChargePayload = z.object({
+  kind: z.literal("charge").optional(),
+  charge_id: z.string().uuid(),
+  status: z.enum(["paid", "canceled", "expired"]),
+  paid_at: z.string().datetime().optional(),
+  external_id: z.string().optional(),
+});
+
+const PaymentPayload = z.object({
+  kind: z.literal("payment"),
+  payment_id: z.string().uuid(),
+  status: z.enum(["processing", "paid", "failed"]),
+  paid_at: z.string().datetime().optional(),
+  failure_reason: z.string().optional(),
+  external_id: z.string().optional(),
+});
+
+const PayloadSchema = z.union([PaymentPayload, ChargePayload]);
 
 export const Route = createFileRoute("/api/public/banking/inter-webhook")({
   server: {
