@@ -204,11 +204,16 @@ export function EntriesListPage({
                       >
                         {e.description}
                       </Link>
-                      {e.contracts && (
-                        <div className="text-xs text-muted-foreground">
-                          Contrato {e.contracts.number ?? e.contracts.title}
-                        </div>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                        {e.installment_total && e.installment_total > 1 && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            {e.installment_number ?? "?"}/{e.installment_total}
+                          </Badge>
+                        )}
+                        {e.contracts && (
+                          <span>Contrato {e.contracts.number ?? e.contracts.title}</span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm">{e.companies?.name ?? "—"}</TableCell>
                     <TableCell className="text-sm">{e.financial_categories?.name ?? "—"}</TableCell>
