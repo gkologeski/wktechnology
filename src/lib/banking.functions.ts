@@ -1229,6 +1229,97 @@ export const getPaymentsSummary = createServerFn({ method: "POST" })
     return { due_today: dueToday, next_7_days: next7, overdue };
   });
 
+// -------------------------------------------------------------------
+// GET banking health (Fase 6 — observabilidade)
+// -------------------------------------------------------------------
+export const getBankingHealth = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { provider?: string }) =>
+    z.object({ provider: z.string().default("inter") }).parse(data ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+
+    const { data: conn } = await admin
+      .from("bank_connections")
+      .select("id, status, last_sync_at, last_error")
+      .eq("workspace_id", workspaceId)
+      .eq("provider", data.provider)
+      .maybeSingle();
+
+    const { data: lastRun } = await admin
+      .from("cron_run_logs")
+      .select("job_name, started_at, finished_at, duration_ms, status, metrics, error")
+      .eq("job_name", "banking-tick")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data: recentRuns } = await admin
+      .from("cron_run_logs")
+      .select("status")
+      .eq("job_name", "banking-tick")
+      .order("started_at", { ascending: false })
+      .limit(24);
+    const runsOk = (recentRuns ?? []).filter((r: any) => r.status === "ok").length;
+    const runsFailed = (recentRuns ?? []).filter((r: any) => r.status !== "ok").length;
+
+    const { data: alerts } = await admin
+      .from("platform_alert_events")
+      .select("id, severity, message, context, fired_at")
+      .is("resolved_at", null)
+      .contains("context", { workspace_id: workspaceId })
+      .order("fired_at", { ascending: false })
+      .limit(10);
+
+    let stuckPayments = 0;
+    let tokenExpiresAt: string | null = null;
+    let tokenExpiresSoon = false;
+    let tokenHasRefresh = true;
+    if (conn?.id) {
+      const cutoff6h = new Date(Date.now() - 6 * 3600 * 1000).toISOString();
+      const { count } = await admin
+        .from("bank_payments")
+        .select("id", { count: "exact", head: true })
+        .eq("connection_id", conn.id)
+        .eq("status", "processing")
+        .lt("approved_at", cutoff6h);
+      stuckPayments = count ?? 0;
+
+      const { data: tk } = await admin
+        .from("bank_connection_tokens")
+        .select("expires_at, refresh_token")
+        .eq("connection_id", conn.id)
+        .is("rotated_at", null)
+        .maybeSingle();
+      if (tk?.expires_at) {
+        tokenExpiresAt = tk.expires_at;
+        tokenExpiresSoon = new Date(tk.expires_at).getTime() - Date.now() < 24 * 3600 * 1000;
+        tokenHasRefresh = !!tk.refresh_token;
+      }
+    }
+
+    return {
+      connection_status: conn?.status ?? "disconnected",
+      last_sync_at: conn?.last_sync_at ?? null,
+      last_error: conn?.last_error ?? null,
+      last_run: lastRun ?? null,
+      runs_ok: runsOk,
+      runs_failed: runsFailed,
+      alerts: alerts ?? [],
+      stuck_payments: stuckPayments,
+      token_expires_at: tokenExpiresAt,
+      token_expires_soon: tokenExpiresSoon,
+      token_has_refresh: tokenHasRefresh,
+    };
+  });
+
+
 
 
 
