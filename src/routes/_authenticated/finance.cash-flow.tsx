@@ -116,6 +116,7 @@ function CashFlowPage() {
               </div>
             </PopoverContent>
           </Popover>
+          </div>
         }
       />
 
