@@ -6,14 +6,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2, XCircle, RotateCcw, ScanSearch } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, RotateCcw, ScanSearch, Wand2, FilePlus2 } from "lucide-react";
 
 import {
   getBankConnection,
   suggestReconciliationMatches,
   listReconciliationHistory,
   setStatementReconciliation,
+  bulkIgnoreTransactions,
+  bulkLinkBestMatch,
+  bulkCreateEntries,
 } from "@/lib/banking.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
