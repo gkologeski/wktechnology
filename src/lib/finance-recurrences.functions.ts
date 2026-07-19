@@ -174,7 +174,7 @@ export const runMyDueRecurrences = createServerFn({ method: "POST" })
       // Loop so a paused-and-resumed recurrence can catch up multiple periods.
       // Cap iterations per row to avoid runaway loops on bad data.
       for (let i = 0; i < 24; i++) {
-        const advanced = await advanceRecurrenceOnce(supabase, r, today);
+        const advanced = await advanceRecurrenceOnce(supabase, r as any, today);
         if (!advanced) break;
         generated++;
         r.next_run_date = advanced.next_run_date;
