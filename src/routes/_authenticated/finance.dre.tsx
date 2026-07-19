@@ -115,13 +115,14 @@ function DrePage() {
             : "Receitas e despesas por data de pagamento (regime de caixa)."
         }
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Tabs value={basis} onValueChange={(v) => setBasis(v as "accrual" | "cash")}>
               <TabsList>
                 <TabsTrigger value="accrual">Competência</TabsTrigger>
                 <TabsTrigger value="cash">Caixa</TabsTrigger>
               </TabsList>
             </Tabs>
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
             <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
               <SelectTrigger className="w-[140px]">
 
