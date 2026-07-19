@@ -42,7 +42,7 @@ function CashFlowPage() {
     expenseFactorRealistic: 1.0,
     expenseFactorOptimistic: 1.0,
   });
-  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
 
   const { data, isLoading } = useQuery({
     queryKey: ["finance", "cash-flow", factors, legalEntityId],
