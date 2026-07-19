@@ -10,6 +10,7 @@ export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Visão geral", url: "/finance", icon: DollarSign, need: "manager" },
       { title: "A receber", url: "/finance/receivable", icon: DollarSign, need: "manager" },
       { title: "A pagar", url: "/finance/payable", icon: DollarSign, need: "manager" },
+      { title: "Recorrências", url: "/finance/recurrences", icon: Repeat, need: "manager" },
       { title: "DRE gerencial", url: "/finance/dre", icon: BarChart3, need: "manager" },
       { title: "Fluxo de caixa", url: "/finance/cash-flow", icon: TrendingUp, need: "manager" },
       { title: "Plano de contas", url: "/finance/categories", icon: DollarSign, need: "manager" },
