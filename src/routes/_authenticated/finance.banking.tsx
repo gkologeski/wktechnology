@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Landmark, Loader2, RefreshCw, ShieldCheck, Unplug, Zap } from "lucide-react";
+import { Landmark, Loader2, RefreshCw, ShieldCheck, Unplug, Zap, Plus, Copy, CheckCircle2, X } from "lucide-react";
 
 import {
   getBankConnection,
@@ -14,6 +14,10 @@ import {
   syncBankStatement,
   listBankStatement,
   setStatementReconciliation,
+  listBankCharges,
+  createBankCharge,
+  cancelBankCharge,
+  simulateChargePayment,
 } from "@/lib/banking.functions";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -47,6 +51,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/finance/banking")({
@@ -183,6 +191,71 @@ function BankingPage() {
       toast.error(e instanceof Error ? e.message : "Falha ao atualizar status"),
   });
 
+  // -------- Cobranças (Fase 4) --------
+  const listCharges = useServerFn(listBankCharges);
+  const createCharge = useServerFn(createBankCharge);
+  const cancelCharge = useServerFn(cancelBankCharge);
+  const simulatePay = useServerFn(simulateChargePayment);
+
+  const charges = useQuery({
+    queryKey: ["banking", "charges", conn?.id],
+    enabled: !!conn?.id && status === "connected",
+    queryFn: () => listCharges({ data: { connection_id: conn!.id, status: "all", limit: 200 } }),
+  });
+
+  const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
+  const [chargeForm, setChargeForm] = useState({
+    type: "pix" as "pix" | "boleto",
+    amount: "",
+    due_date: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+    description: "",
+    payer_name: "",
+    payer_document: "",
+  });
+  const [showCharge, setShowCharge] = useState<any | null>(null);
+
+  const createChargeMut = useMutation({
+    mutationFn: () =>
+      createCharge({
+        data: {
+          connection_id: conn!.id,
+          type: chargeForm.type,
+          amount: Number(chargeForm.amount),
+          due_date: chargeForm.due_date,
+          description: chargeForm.description || null,
+          payer_name: chargeForm.payer_name || null,
+          payer_document: chargeForm.payer_document || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Cobrança criada");
+      setChargeDialogOpen(false);
+      setChargeForm((f) => ({ ...f, amount: "", description: "" }));
+      qc.invalidateQueries({ queryKey: ["banking", "charges"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao criar cobrança"),
+  });
+
+  const cancelChargeMut = useMutation({
+    mutationFn: (id: string) => cancelCharge({ data: { charge_id: id } }),
+    onSuccess: () => {
+      toast.success("Cobrança cancelada");
+      qc.invalidateQueries({ queryKey: ["banking", "charges"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao cancelar"),
+  });
+
+  const simulatePayMut = useMutation({
+    mutationFn: (id: string) => simulatePay({ data: { charge_id: id } }),
+    onSuccess: () => {
+      toast.success("Pagamento simulado — cobrança liquidada");
+      qc.invalidateQueries({ queryKey: ["banking"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao simular pagamento"),
+  });
+
+
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
@@ -297,8 +370,122 @@ function BankingPage() {
       <Tabs defaultValue="statement">
         <TabsList>
           <TabsTrigger value="statement">Extrato</TabsTrigger>
+          <TabsTrigger value="charges">Cobranças</TabsTrigger>
           <TabsTrigger value="events">Histórico</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="charges" className="mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Cobranças Pix e Boleto</CardTitle>
+                <CardDescription>
+                  Emita cobranças vinculadas ao Banco Inter. Ao liquidar, o pagamento é registrado
+                  automaticamente no lançamento financeiro associado.
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => setChargeDialogOpen(true)}
+                disabled={status !== "connected"}
+              >
+                <Plus className="h-4 w-4" /> Nova cobrança
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {status !== "connected" ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Conecte-se para emitir cobranças.
+                </div>
+              ) : charges.isLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (charges.data ?? []).length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Nenhuma cobrança emitida.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Tipo</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Pagador</TableHead>
+                      <TableHead className="w-[120px]">Vencimento</TableHead>
+                      <TableHead className="text-right w-[140px]">Valor</TableHead>
+                      <TableHead className="w-[120px]">Status</TableHead>
+                      <TableHead className="w-[220px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(charges.data ?? []).map((c: any) => (
+                      <TableRow key={c.id}>
+                        <TableCell>
+                          <Badge variant="outline" className="uppercase">
+                            {c.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{c.description ?? "—"}</TableCell>
+                        <TableCell className="text-sm">{c.payer_name ?? "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          {new Date(c.due_date).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-medium">
+                          {formatCurrency(Number(c.amount), "BRL")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              c.status === "paid"
+                                ? "default"
+                                : c.status === "pending"
+                                  ? "outline"
+                                  : "secondary"
+                            }
+                          >
+                            {c.status === "paid"
+                              ? "Paga"
+                              : c.status === "pending"
+                                ? "Pendente"
+                                : c.status === "canceled"
+                                  ? "Cancelada"
+                                  : "Expirada"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-1">
+                          <Button variant="ghost" size="sm" onClick={() => setShowCharge(c)}>
+                            Ver
+                          </Button>
+                          {c.status === "pending" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => simulatePayMut.mutate(c.id)}
+                                disabled={simulatePayMut.isPending}
+                                title="Simular liquidação (mock)"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => cancelChargeMut.mutate(c.id)}
+                                disabled={cancelChargeMut.isPending}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="statement" className="mt-4">
           <Card>
@@ -452,6 +639,161 @@ function BankingPage() {
               {completeMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Aprovar consentimento
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={chargeDialogOpen} onOpenChange={setChargeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova cobrança</DialogTitle>
+            <DialogDescription>
+              Gere um Pix ou boleto vinculado à conexão do Banco Inter.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Tipo</Label>
+                <Select
+                  value={chargeForm.type}
+                  onValueChange={(v) => setChargeForm((f) => ({ ...f, type: v as any }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pix">Pix</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Vencimento</Label>
+                <Input
+                  type="date"
+                  value={chargeForm.due_date}
+                  onChange={(e) => setChargeForm((f) => ({ ...f, due_date: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Valor (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={chargeForm.amount}
+                onChange={(e) => setChargeForm((f) => ({ ...f, amount: e.target.value }))}
+                placeholder="0,00"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Pagador (nome)</Label>
+                <Input
+                  value={chargeForm.payer_name}
+                  onChange={(e) => setChargeForm((f) => ({ ...f, payer_name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Documento</Label>
+                <Input
+                  value={chargeForm.payer_document}
+                  onChange={(e) => setChargeForm((f) => ({ ...f, payer_document: e.target.value }))}
+                  placeholder="CPF/CNPJ"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Textarea
+                rows={2}
+                value={chargeForm.description}
+                onChange={(e) => setChargeForm((f) => ({ ...f, description: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setChargeDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => createChargeMut.mutate()}
+              disabled={createChargeMut.isPending || !chargeForm.amount || Number(chargeForm.amount) <= 0}
+            >
+              {createChargeMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Emitir cobrança
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!showCharge} onOpenChange={(o) => !o && setShowCharge(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              Cobrança {showCharge?.type === "pix" ? "Pix" : "Boleto"} —{" "}
+              {showCharge && formatCurrency(Number(showCharge.amount), "BRL")}
+            </DialogTitle>
+            <DialogDescription>
+              {showCharge?.description || "Sem descrição"} · Vencimento{" "}
+              {showCharge && new Date(showCharge.due_date).toLocaleDateString("pt-BR")}
+            </DialogDescription>
+          </DialogHeader>
+          {showCharge?.type === "pix" ? (
+            <div className="space-y-3">
+              {showCharge.pix_qr_code && (
+                <div className="flex justify-center rounded-md border bg-white p-4">
+                  <img src={showCharge.pix_qr_code} alt="QR Code Pix" className="h-48 w-48" />
+                </div>
+              )}
+              {showCharge.pix_copy_paste && (
+                <div>
+                  <Label className="text-xs">Copia e cola</Label>
+                  <div className="flex gap-2">
+                    <Input readOnly value={showCharge.pix_copy_paste} className="font-mono text-xs" />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(showCharge.pix_copy_paste);
+                        toast.success("Copiado");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {showCharge?.boleto_digitable_line && (
+                <div>
+                  <Label className="text-xs">Linha digitável</Label>
+                  <div className="flex gap-2">
+                    <Input readOnly value={showCharge.boleto_digitable_line} className="font-mono text-xs" />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(showCharge.boleto_digitable_line);
+                        toast.success("Copiado");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {showCharge?.boleto_url && (
+                <Button variant="outline" asChild>
+                  <a href={showCharge.boleto_url} target="_blank" rel="noreferrer">
+                    Abrir PDF do boleto
+                  </a>
+                </Button>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCharge(null)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
