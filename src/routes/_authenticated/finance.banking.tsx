@@ -1200,3 +1200,179 @@ function BankingPage() {
     </div>
   );
 }
+
+function BankingHealthCard({ providerConnected }: { providerConnected: boolean }) {
+  const healthFn = useServerFn(getBankingHealth);
+  const health = useQuery({
+    queryKey: ["banking", "health"],
+    queryFn: () => healthFn({ data: { provider: "inter" } }),
+    refetchInterval: 60_000,
+  });
+
+  const h = health.data;
+  const lastRun = h?.last_run as any;
+  const alerts = (h?.alerts ?? []) as Array<{
+    id: string;
+    severity: "info" | "warning" | "error";
+    message: string;
+    fired_at: string;
+  }>;
+
+  const hasIssue =
+    !!h &&
+    ((h.stuck_payments ?? 0) > 0 ||
+      h.token_expires_soon ||
+      !h.token_has_refresh ||
+      (h.runs_failed ?? 0) > 0 ||
+      alerts.some((a) => a.severity !== "info") ||
+      !!h.last_error);
+
+  const tone = hasIssue ? "warning" : "ok";
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div
+            className={
+              "rounded-md p-2 " +
+              (tone === "ok"
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "bg-amber-500/10 text-amber-600 dark:text-amber-400")
+            }
+          >
+            <Activity className="h-5 w-5" />
+          </div>
+          <div>
+            <CardTitle className="flex items-center gap-2 text-base">
+              Saúde das conexões
+              <Badge variant={tone === "ok" ? "secondary" : "destructive"}>
+                {health.isLoading ? "Carregando…" : tone === "ok" ? "Saudável" : "Atenção"}
+              </Badge>
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Monitor do cron{" "}
+              <code className="rounded bg-muted px-1 py-0.5 text-[11px]">banking-tick</code> —
+              sincronização, tokens, alertas e pagamentos presos.
+            </CardDescription>
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => health.refetch()}
+          disabled={health.isFetching}
+        >
+          {health.isFetching ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          Atualizar
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <div className="grid gap-3 md:grid-cols-4">
+          <div className="rounded-md border p-3">
+            <div className="text-xs uppercase text-muted-foreground">Última execução</div>
+            <div className="mt-1 flex items-center gap-1.5 text-sm">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+              {lastRun?.started_at
+                ? new Date(lastRun.started_at).toLocaleString("pt-BR")
+                : "—"}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {lastRun
+                ? `${lastRun.status === "ok" ? "OK" : "Falha"} · ${lastRun.duration_ms ?? 0}ms`
+                : "Cron ainda não executou"}
+            </div>
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="text-xs uppercase text-muted-foreground">Últimas 24 execuções</div>
+            <div className="mt-1 text-sm tabular-nums">
+              <span className="text-emerald-600 dark:text-emerald-400">{h?.runs_ok ?? 0} ok</span>{" "}
+              ·{" "}
+              <span
+                className={
+                  (h?.runs_failed ?? 0) > 0
+                    ? "text-destructive"
+                    : "text-muted-foreground"
+                }
+              >
+                {h?.runs_failed ?? 0} falhas
+              </span>
+            </div>
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="text-xs uppercase text-muted-foreground">Pagamentos parados</div>
+            <div className="mt-1 text-xl font-semibold tabular-nums">
+              {h?.stuck_payments ?? 0}
+            </div>
+            <div className="mt-1 text-xs text-muted-foreground">Em processamento há &gt;6h</div>
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="text-xs uppercase text-muted-foreground">Token</div>
+            <div className="mt-1 text-sm">
+              {!providerConnected
+                ? "—"
+                : h?.token_expires_at
+                  ? new Date(h.token_expires_at).toLocaleString("pt-BR")
+                  : "Sem token"}
+            </div>
+            <div
+              className={
+                "mt-1 text-xs " +
+                (h?.token_expires_soon || !h?.token_has_refresh
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-muted-foreground")
+              }
+            >
+              {!providerConnected
+                ? "Conexão desconectada"
+                : !h?.token_has_refresh
+                  ? "Sem refresh_token — reautorizar"
+                  : h?.token_expires_soon
+                    ? "Expira em <24h"
+                    : "OK"}
+            </div>
+          </div>
+        </div>
+
+        {alerts.length > 0 && (
+          <div className="space-y-2">
+            <div className="text-xs uppercase text-muted-foreground">Alertas ativos</div>
+            {alerts.slice(0, 5).map((a) => {
+              const Icon =
+                a.severity === "error"
+                  ? AlertCircle
+                  : a.severity === "warning"
+                    ? AlertTriangle
+                    : Info;
+              const tint =
+                a.severity === "error"
+                  ? "text-destructive"
+                  : a.severity === "warning"
+                    ? "text-amber-600 dark:text-amber-400"
+                    : "text-muted-foreground";
+              return (
+                <div
+                  key={a.id}
+                  className="flex items-start gap-2 rounded-md border p-2 text-sm"
+                >
+                  <Icon className={"mt-0.5 h-4 w-4 shrink-0 " + tint} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate">{a.message}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(a.fired_at).toLocaleString("pt-BR")}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
