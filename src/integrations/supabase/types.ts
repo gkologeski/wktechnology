@@ -3088,13 +3088,16 @@ export type Database = {
       }
       bank_connections: {
         Row: {
+          balance_synced_at: string | null
           client_id: string | null
           created_at: string
           created_by: string | null
+          current_balance: number | null
           display_name: string | null
           external_account_id: string | null
           id: string
           last_error: string | null
+          last_statement_sync_at: string | null
           last_sync_at: string | null
           metadata: Json
           mode: string
@@ -3105,13 +3108,16 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          balance_synced_at?: string | null
           client_id?: string | null
           created_at?: string
           created_by?: string | null
+          current_balance?: number | null
           display_name?: string | null
           external_account_id?: string | null
           id?: string
           last_error?: string | null
+          last_statement_sync_at?: string | null
           last_sync_at?: string | null
           metadata?: Json
           mode?: string
@@ -3122,13 +3128,16 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          balance_synced_at?: string | null
           client_id?: string | null
           created_at?: string
           created_by?: string | null
+          current_balance?: number | null
           display_name?: string | null
           external_account_id?: string | null
           id?: string
           last_error?: string | null
+          last_statement_sync_at?: string | null
           last_sync_at?: string | null
           metadata?: Json
           mode?: string
@@ -3139,6 +3148,81 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      bank_statement_transactions: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          bank_account_id: string | null
+          category: string | null
+          connection_id: string
+          counterparty: string | null
+          created_at: string
+          description: string | null
+          direction: string
+          external_id: string
+          id: string
+          matched_payment_id: string | null
+          posted_at: string
+          raw: Json
+          reconciliation_status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          bank_account_id?: string | null
+          category?: string | null
+          connection_id: string
+          counterparty?: string | null
+          created_at?: string
+          description?: string | null
+          direction: string
+          external_id: string
+          id?: string
+          matched_payment_id?: string | null
+          posted_at: string
+          raw?: Json
+          reconciliation_status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          bank_account_id?: string | null
+          category?: string | null
+          connection_id?: string
+          counterparty?: string | null
+          created_at?: string
+          description?: string | null
+          direction?: string
+          external_id?: string
+          id?: string
+          matched_payment_id?: string | null
+          posted_at?: string
+          raw?: Json
+          reconciliation_status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_transactions_bank_account_id_fkey"
+            columns: ["bank_account_id"]
+            isOneToOne: false
+            referencedRelation: "financial_bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_transactions_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       booking_pages: {
         Row: {
@@ -6727,8 +6811,10 @@ export type Database = {
       financial_bank_accounts: {
         Row: {
           active: boolean
+          bank_connection_id: string | null
           created_at: string
           currency: string
+          external_account_id: string | null
           id: string
           initial_balance: number
           kind: string
@@ -6739,8 +6825,10 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          bank_connection_id?: string | null
           created_at?: string
           currency?: string
+          external_account_id?: string | null
           id?: string
           initial_balance?: number
           kind?: string
@@ -6751,8 +6839,10 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          bank_connection_id?: string | null
           created_at?: string
           currency?: string
+          external_account_id?: string | null
           id?: string
           initial_balance?: number
           kind?: string
@@ -6762,6 +6852,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "financial_bank_accounts_bank_connection_id_fkey"
+            columns: ["bank_connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "financial_bank_accounts_workspace_id_fkey"
             columns: ["workspace_id"]

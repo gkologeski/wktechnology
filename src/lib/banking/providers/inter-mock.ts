@@ -60,4 +60,67 @@ export const interMockProvider: BankProvider = {
   async revoke(): Promise<void> {
     // no-op no mock
   },
+
+  async fetchBalance(): Promise<{ balance: number }> {
+    // saldo simulado com pequena variação para parecer real
+    const base = 42580.35;
+    const jitter = Math.sin(Date.now() / 3600_000) * 250;
+    return { balance: Number((base + jitter).toFixed(2)) };
+  },
+
+  async fetchStatement({ from, to }): Promise<{
+    transactions: {
+      external_id: string;
+      posted_at: string;
+      amount: number;
+      direction: "credit" | "debit";
+      description: string | null;
+      counterparty: string | null;
+      category: string | null;
+      balance_after: number | null;
+      raw?: Record<string, unknown>;
+    }[];
+    balance: number | null;
+    cursor: string | null;
+  }> {
+    const start = new Date(from).getTime();
+    const end = new Date(to).getTime();
+    const days = Math.max(1, Math.min(60, Math.ceil((end - start) / 86_400_000)));
+
+    const samples: Array<{
+      dir: "credit" | "debit";
+      amount: number;
+      desc: string;
+      counterparty: string;
+      category: string;
+    }> = [
+      { dir: "credit", amount: 8500, desc: "PIX recebido — Cliente A", counterparty: "CLIENTE A LTDA", category: "receita" },
+      { dir: "debit", amount: 1200.5, desc: "Pagamento fornecedor", counterparty: "FORN SERVIÇOS SA", category: "despesa" },
+      { dir: "credit", amount: 3200, desc: "Boleto liquidado", counterparty: "CLIENTE B ME", category: "receita" },
+      { dir: "debit", amount: 480.9, desc: "Tarifa bancária", counterparty: "BANCO INTER", category: "tarifa" },
+      { dir: "debit", amount: 2750, desc: "Folha de pagamento", counterparty: "FOLHA", category: "folha" },
+      { dir: "credit", amount: 1500, desc: "PIX recebido — Cliente C", counterparty: "CLIENTE C EIRELI", category: "receita" },
+    ];
+
+    let running = 40000;
+    const txs = Array.from({ length: Math.min(days * 2, 40) }).map((_, i) => {
+      const s = samples[i % samples.length];
+      const ts = new Date(start + (i * (end - start)) / Math.max(1, days * 2)).toISOString();
+      const signed = s.dir === "credit" ? s.amount : -s.amount;
+      running = Number((running + signed).toFixed(2));
+      return {
+        external_id: `mock-tx-${start}-${i}`,
+        posted_at: ts,
+        amount: s.amount,
+        direction: s.dir,
+        description: s.desc,
+        counterparty: s.counterparty,
+        category: s.category,
+        balance_after: running,
+        raw: { source: "mock" },
+      };
+    });
+
+    return { transactions: txs, balance: running, cursor: null };
+  },
 };
