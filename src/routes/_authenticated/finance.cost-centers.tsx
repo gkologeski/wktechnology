@@ -15,23 +15,38 @@ import { Badge } from "@/components/ui/badge";
 // -----------------------------------------------------------------
 const listCostCentersWithTotals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    (input === undefined
+      ? { legalEntityId: undefined as string | undefined }
+      : (input as { legalEntityId?: string })),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    const legalEntityId = data?.legalEntityId;
+    let ccQ = supabase
+      .from("financial_cost_centers")
+      .select("id, name, parent_id, legal_entity_id, active")
+      .eq("workspace_id", workspaceId)
+      .order("name");
+    if (legalEntityId) ccQ = ccQ.eq("legal_entity_id", legalEntityId);
+
+    let allocQ = supabase
+      .from("financial_entry_allocations")
+      .select(
+        "cost_center_id, amount, financial_entries!inner(workspace_id, direction, legal_entity_id)",
+      )
+      .eq("financial_entries.workspace_id", workspaceId);
+    if (legalEntityId)
+      allocQ = allocQ.eq("financial_entries.legal_entity_id", legalEntityId);
+
     const [ccRes, leRes, allocRes] = await Promise.all([
-      supabase
-        .from("financial_cost_centers")
-        .select("id, name, parent_id, legal_entity_id, active")
-        .eq("workspace_id", workspaceId)
-        .order("name"),
+      ccQ,
       supabase
         .from("legal_entities")
         .select("id, code, name")
         .eq("workspace_id", workspaceId),
-      supabase
-        .from("financial_entry_allocations")
-        .select("cost_center_id, amount, financial_entries!inner(workspace_id, direction)")
-        .eq("financial_entries.workspace_id", workspaceId),
+      allocQ,
     ]);
     if (ccRes.error) throw ccRes.error;
     if (leRes.error) throw leRes.error;
