@@ -206,6 +206,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     items: [
       { to: "/settings/branding", label: "White-label", icon: Sparkles, need: "admin" },
       { to: "/settings/legal-entities", label: "Empresas (CNPJs)", icon: Building2, need: "admin" },
+      { to: "/settings/legal-entity-groups", label: "Grupos empresariais", icon: Building2, need: "admin" },
       { to: "/settings/language", label: "Idioma", icon: Languages, need: "admin" },
       { to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager" },
       { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard, need: "admin" },
