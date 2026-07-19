@@ -182,6 +182,7 @@ import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_au
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceNfseRouteImport } from './routes/_authenticated/finance.nfse'
 import { Route as AuthenticatedFinanceDreRouteImport } from './routes/_authenticated/finance.dre'
+import { Route as AuthenticatedFinanceCostCentersRouteImport } from './routes/_authenticated/finance.cost-centers'
 import { Route as AuthenticatedFinanceCategoriesRouteImport } from './routes/_authenticated/finance.categories'
 import { Route as AuthenticatedFinanceCashFlowRouteImport } from './routes/_authenticated/finance.cash-flow'
 import { Route as AuthenticatedFinanceBankingRouteImport } from './routes/_authenticated/finance.banking'
@@ -1293,6 +1294,12 @@ const AuthenticatedFinanceDreRoute = AuthenticatedFinanceDreRouteImport.update({
   path: '/finance/dre',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFinanceCostCentersRoute =
+  AuthenticatedFinanceCostCentersRouteImport.update({
+    id: '/finance/cost-centers',
+    path: '/finance/cost-centers',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinanceCategoriesRoute =
   AuthenticatedFinanceCategoriesRouteImport.update({
     id: '/finance/categories',
@@ -2205,6 +2212,7 @@ export interface FileRoutesByFullPath {
   '/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/finance/cost-centers': typeof AuthenticatedFinanceCostCentersRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -2516,6 +2524,7 @@ export interface FileRoutesByTo {
   '/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/finance/cost-centers': typeof AuthenticatedFinanceCostCentersRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -2832,6 +2841,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/_authenticated/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/_authenticated/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/_authenticated/finance/cost-centers': typeof AuthenticatedFinanceCostCentersRoute
   '/_authenticated/finance/dre': typeof AuthenticatedFinanceDreRoute
   '/_authenticated/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -3149,6 +3159,7 @@ export interface FileRouteTypes {
     | '/finance/banking'
     | '/finance/cash-flow'
     | '/finance/categories'
+    | '/finance/cost-centers'
     | '/finance/dre'
     | '/finance/nfse'
     | '/finance/payable'
@@ -3460,6 +3471,7 @@ export interface FileRouteTypes {
     | '/finance/banking'
     | '/finance/cash-flow'
     | '/finance/categories'
+    | '/finance/cost-centers'
     | '/finance/dre'
     | '/finance/nfse'
     | '/finance/payable'
@@ -3775,6 +3787,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/banking'
     | '/_authenticated/finance/cash-flow'
     | '/_authenticated/finance/categories'
+    | '/_authenticated/finance/cost-centers'
     | '/_authenticated/finance/dre'
     | '/_authenticated/finance/nfse'
     | '/_authenticated/finance/payable'
@@ -5319,6 +5332,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceDreRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/finance/cost-centers': {
+      id: '/_authenticated/finance/cost-centers'
+      path: '/finance/cost-centers'
+      fullPath: '/finance/cost-centers'
+      preLoaderRoute: typeof AuthenticatedFinanceCostCentersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/finance/categories': {
       id: '/_authenticated/finance/categories'
       path: '/finance/categories'
@@ -6775,6 +6795,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceBankingRoute: typeof AuthenticatedFinanceBankingRouteWithChildren
   AuthenticatedFinanceCashFlowRoute: typeof AuthenticatedFinanceCashFlowRoute
   AuthenticatedFinanceCategoriesRoute: typeof AuthenticatedFinanceCategoriesRoute
+  AuthenticatedFinanceCostCentersRoute: typeof AuthenticatedFinanceCostCentersRoute
   AuthenticatedFinanceDreRoute: typeof AuthenticatedFinanceDreRoute
   AuthenticatedFinanceNfseRoute: typeof AuthenticatedFinanceNfseRoute
   AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
@@ -6884,6 +6905,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedFinanceBankingRouteWithChildren,
   AuthenticatedFinanceCashFlowRoute: AuthenticatedFinanceCashFlowRoute,
   AuthenticatedFinanceCategoriesRoute: AuthenticatedFinanceCategoriesRoute,
+  AuthenticatedFinanceCostCentersRoute: AuthenticatedFinanceCostCentersRoute,
   AuthenticatedFinanceDreRoute: AuthenticatedFinanceDreRoute,
   AuthenticatedFinanceNfseRoute: AuthenticatedFinanceNfseRoute,
   AuthenticatedFinancePayableRoute: AuthenticatedFinancePayableRoute,
