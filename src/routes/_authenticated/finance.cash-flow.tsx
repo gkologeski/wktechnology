@@ -61,7 +61,9 @@ function CashFlowPage() {
         title="Fluxo de caixa"
         description="Projeção 30/60/90 dias com cenários pessimista, realista e otimista."
         actions={
-          <Popover>
+          <div className="flex flex-wrap items-center gap-2">
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+            <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline">
                 <Settings2 className="h-4 w-4 mr-1" /> Cenários
