@@ -686,3 +686,170 @@ export const getCashFlowProjection = createServerFn({ method: "POST" })
       },
     };
   });
+
+// ============================================================
+// Sprint H — Fase 1: Parcelamentos
+// ============================================================
+
+const cadenceEnum = z.enum(["monthly", "weekly", "custom_days"]);
+const splitModeEnum = z.enum(["equal", "first_bigger", "custom_amounts"]);
+
+function addMonths(iso: string, n: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const target = new Date(Date.UTC(y, m - 1 + n, 1));
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(d, lastDay));
+  return target.toISOString().slice(0, 10);
+}
+
+function addDays(iso: string, n: number): string {
+  const d = new Date(iso + "T00:00:00Z");
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function roundCents(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+export const createInstallments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        base: createEntryInput,
+        count: z.number().int().min(2).max(120),
+        cadence: cadenceEnum,
+        custom_interval_days: z.number().int().min(1).max(365).optional(),
+        split_mode: splitModeEnum.default("equal"),
+        custom_amounts: z.array(z.number().positive()).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const total = data.base.amount;
+
+    let amounts: number[] = [];
+    if (data.split_mode === "custom_amounts") {
+      if (!data.custom_amounts || data.custom_amounts.length !== data.count) {
+        throw new Error("Informe um valor para cada parcela.");
+      }
+      amounts = data.custom_amounts.map(roundCents);
+      const sum = roundCents(amounts.reduce((a, b) => a + b, 0));
+      if (Math.abs(sum - roundCents(total)) > 0.01) {
+        throw new Error(`Soma das parcelas (${sum}) difere do total (${total}).`);
+      }
+    } else {
+      const each = roundCents(total / data.count);
+      amounts = Array(data.count).fill(each);
+      const diff = roundCents(total - each * data.count);
+      if (Math.abs(diff) > 0.001) {
+        if (data.split_mode === "first_bigger") amounts[0] = roundCents(amounts[0] + diff);
+        else amounts[amounts.length - 1] = roundCents(amounts[amounts.length - 1] + diff);
+      }
+    }
+
+    const dueDates: string[] = [];
+    for (let i = 0; i < data.count; i++) {
+      if (data.cadence === "monthly") dueDates.push(addMonths(data.base.due_date, i));
+      else if (data.cadence === "weekly") dueDates.push(addDays(data.base.due_date, i * 7));
+      else dueDates.push(addDays(data.base.due_date, i * (data.custom_interval_days ?? 30)));
+    }
+
+    const parentInsert = {
+      workspace_id: workspaceId,
+      owner_id: userId,
+      direction: data.base.direction,
+      origin_type: data.base.origin_type,
+      description: `${data.base.description} (1/${data.count})`,
+      amount: amounts[0],
+      currency: data.base.currency,
+      competence_date: data.base.competence_date,
+      due_date: dueDates[0],
+      counterparty_company_id: data.base.counterparty_company_id ?? null,
+      category_id: data.base.category_id ?? null,
+      contract_id: data.base.contract_id ?? null,
+      service_id: data.base.service_id ?? null,
+      project_id: data.base.project_id ?? null,
+      notes: data.base.notes ?? null,
+      payment_method: data.base.payment_method ?? null,
+      external_ref: data.base.external_ref ?? null,
+      status: "open" as const,
+      installment_number: 1,
+      installment_total: data.count,
+    };
+
+    const { data: parent, error: parentErr } = await supabase
+      .from("financial_entries")
+      .insert(parentInsert)
+      .select("*")
+      .single();
+    if (parentErr) throw parentErr;
+
+    if (data.count > 1) {
+      const rest = [];
+      for (let i = 1; i < data.count; i++) {
+        rest.push({
+          ...parentInsert,
+          description: `${data.base.description} (${i + 1}/${data.count})`,
+          amount: amounts[i],
+          due_date: dueDates[i],
+          installment_number: i + 1,
+          parent_entry_id: parent.id,
+        });
+      }
+      const { error: restErr } = await supabase.from("financial_entries").insert(rest);
+      if (restErr) throw restErr;
+    }
+
+    return { parent_id: parent.id, count: data.count, total_amount: roundCents(total) };
+  });
+
+export const listInstallmentSiblings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ entry_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: entry, error: eErr } = await supabase
+      .from("financial_entries")
+      .select("id, parent_entry_id, installment_total")
+      .eq("id", data.entry_id)
+      .maybeSingle();
+    if (eErr) throw eErr;
+    if (!entry) return [];
+    const parentId = entry.parent_entry_id ?? entry.id;
+    const { data: rows, error } = await supabase
+      .from("financial_entries")
+      .select("id, description, amount, due_date, status, installment_number, installment_total, parent_entry_id")
+      .or(`id.eq.${parentId},parent_entry_id.eq.${parentId}`)
+      .order("installment_number", { ascending: true });
+    if (error) throw error;
+    return rows ?? [];
+  });
+
+export const deleteInstallmentGroup = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ parent_entry_id: z.string().uuid(), only_open: z.boolean().default(true) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const parentId = data.parent_entry_id;
+    const { data: rows, error } = await supabase
+      .from("financial_entries")
+      .select("id, status, installment_number")
+      .or(`id.eq.${parentId},parent_entry_id.eq.${parentId}`);
+    if (error) throw error;
+    const list = rows ?? [];
+    const deletable = list.filter((r) =>
+      data.only_open ? r.status === "open" || r.status === "overdue" : true,
+    );
+    const kept = list.filter((r) => !deletable.find((d) => d.id === r.id));
+    if (deletable.length === 0) return { deleted: 0, kept: kept.length };
+    const ids = deletable.map((r) => r.id);
+    const { error: delErr } = await supabase.from("financial_entries").delete().in("id", ids);
+    if (delErr) throw delErr;
+    return { deleted: deletable.length, kept: kept.length };
+  });
