@@ -36,9 +36,11 @@ import { formatCurrency } from "@/lib/crm";
 import { createBankAccount, listBankAccounts } from "@/lib/finance.functions";
 import {
   ALL_LEGAL_ENTITIES,
+  GROUP_PREFIX,
   LegalEntitySelect,
   useLegalEntities,
   useLegalEntityFilter,
+  useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/bank-accounts")({
@@ -65,10 +67,14 @@ function BankAccountsPage() {
   const [initial, setInitial] = useState("0");
   const [formLegalEntity, setFormLegalEntity] = useState<string>("__none__");
 
-  const filterLE = legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId;
+  const filterLE =
+    legalEntityId === ALL_LEGAL_ENTITIES || legalEntityId.startsWith(GROUP_PREFIX)
+      ? undefined
+      : legalEntityId;
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: rows = [] } = useQuery({
-    queryKey: ["finance-banks", filterLE ?? "all"],
-    queryFn: () => list({ data: { legalEntityId: filterLE } }),
+    queryKey: ["finance-banks", legalEntityId, JSON.stringify(filterInput)],
+    queryFn: () => list({ data: filterInput }),
   });
 
   function openCreate() {
