@@ -923,6 +923,313 @@ export const simulateChargePayment = createServerFn({ method: "POST" })
     return settleChargePayment(supabase, workspaceId, data.charge_id, new Date().toISOString(), userId);
   });
 
+// -------------------------------------------------------------------
+// Sprint G — Fase 5: Pagamentos a fornecedores (AP)
+// -------------------------------------------------------------------
+
+export const listBankPayments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: { connection_id: string; status?: string; limit?: number }) =>
+      z
+        .object({
+          connection_id: z.string().uuid(),
+          status: z
+            .enum(["draft", "approved", "processing", "paid", "failed", "canceled", "all"])
+            .default("all"),
+          limit: z.number().int().min(1).max(500).default(100),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    let q = supabase
+      .from("bank_payments")
+      .select(
+        "id, type, amount, scheduled_for, status, favored_name, favored_document, pix_key, pix_key_type, boleto_digitable_line, description, external_id, paid_at, failure_reason, financial_entry_id, approved_at, created_at",
+      )
+      .eq("workspace_id", workspaceId)
+      .eq("connection_id", data.connection_id)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+
+    if (data.status !== "all") q = q.eq("status", data.status);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const createBankPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      connection_id: string;
+      type: "pix" | "ted" | "boleto";
+      amount: number;
+      scheduled_for?: string | null;
+      favored_name?: string | null;
+      favored_document?: string | null;
+      pix_key?: string | null;
+      pix_key_type?: "cpf" | "cnpj" | "email" | "phone" | "random" | null;
+      boleto_barcode?: string | null;
+      boleto_digitable_line?: string | null;
+      description?: string | null;
+      financial_entry_id?: string | null;
+    }) =>
+      z
+        .object({
+          connection_id: z.string().uuid(),
+          type: z.enum(["pix", "ted", "boleto"]),
+          amount: z.number().positive(),
+          scheduled_for: z.string().nullable().optional(),
+          favored_name: z.string().max(200).nullable().optional(),
+          favored_document: z.string().max(32).nullable().optional(),
+          pix_key: z.string().max(200).nullable().optional(),
+          pix_key_type: z
+            .enum(["cpf", "cnpj", "email", "phone", "random"])
+            .nullable()
+            .optional(),
+          boleto_barcode: z.string().max(64).nullable().optional(),
+          boleto_digitable_line: z.string().max(64).nullable().optional(),
+          description: z.string().max(500).nullable().optional(),
+          financial_entry_id: z.string().uuid().nullable().optional(),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    if (data.type === "pix" && (!data.pix_key || !data.pix_key_type)) {
+      throw new Error("Chave Pix e tipo de chave são obrigatórios para pagamentos Pix");
+    }
+    if (data.type === "boleto" && !data.boleto_barcode && !data.boleto_digitable_line) {
+      throw new Error("Código de barras ou linha digitável obrigatórios para boleto");
+    }
+
+    const { data: inserted, error: iErr } = await supabase
+      .from("bank_payments")
+      .insert({
+        workspace_id: workspaceId,
+        connection_id: data.connection_id,
+        financial_entry_id: data.financial_entry_id ?? null,
+        type: data.type,
+        amount: data.amount,
+        scheduled_for: data.scheduled_for ?? null,
+        status: "draft",
+        favored_name: data.favored_name ?? null,
+        favored_document: data.favored_document ?? null,
+        pix_key: data.pix_key ?? null,
+        pix_key_type: data.pix_key_type ?? null,
+        boleto_barcode: data.boleto_barcode ?? null,
+        boleto_digitable_line: data.boleto_digitable_line ?? null,
+        description: data.description ?? null,
+        created_by: userId,
+      })
+      .select("id")
+      .single();
+    if (iErr) throw new Error(iErr.message);
+
+    await supabase.from("bank_connection_events").insert({
+      connection_id: data.connection_id,
+      workspace_id: workspaceId,
+      event_type: "payment_created",
+      actor_id: userId,
+      payload: { payment_id: inserted.id, type: data.type, amount: data.amount },
+    });
+
+    return { ok: true, payment_id: inserted.id };
+  });
+
+export const approveBankPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { payment_id: string }) =>
+    z.object({ payment_id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const { data: p, error: pErr } = await supabase
+      .from("bank_payments")
+      .select("id, connection_id, type, amount, favored_name, favored_document, pix_key, pix_key_type, boleto_barcode, boleto_digitable_line, description, status, created_by")
+      .eq("id", data.payment_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!p) throw new Error("Pagamento não encontrado");
+    if (p.status !== "draft") throw new Error(`Somente rascunhos podem ser aprovados (status: ${p.status})`);
+    if (p.created_by && p.created_by === userId) {
+      // Nota: dupla custódia opcional — permitir por enquanto, apenas registrar
+    }
+
+    const { data: conn, error: cErr } = await supabase
+      .from("bank_connections")
+      .select("id, provider, mode, status")
+      .eq("id", p.connection_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (cErr) throw new Error(cErr.message);
+    if (!conn || conn.status !== "connected") throw new Error("Conexão inativa");
+
+    const accessToken = await getActiveToken(supabase, conn.id);
+    const { resolveBankProvider } = await import("./banking/providers");
+    const provider = resolveBankProvider(conn.provider, conn.mode);
+
+    let providerRes;
+    try {
+      if (p.type === "pix") {
+        if (!provider.createPixPayment) throw new Error("Provider não suporta pagamento Pix");
+        providerRes = await provider.createPixPayment({
+          access_token: accessToken,
+          payment_id: p.id,
+          amount: Number(p.amount),
+          favored_name: p.favored_name ?? "",
+          favored_document: p.favored_document ?? "",
+          pix_key: p.pix_key ?? "",
+          pix_key_type: p.pix_key_type ?? "random",
+          description: p.description,
+        });
+      } else if (p.type === "boleto") {
+        if (!provider.createBoletoPayment) throw new Error("Provider não suporta pagamento boleto");
+        providerRes = await provider.createBoletoPayment({
+          access_token: accessToken,
+          payment_id: p.id,
+          amount: Number(p.amount),
+          barcode: p.boleto_barcode ?? p.boleto_digitable_line ?? "",
+          favored_name: p.favored_name,
+          description: p.description,
+        });
+      } else {
+        throw new Error("TED ainda não suportado no provider atual");
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await supabase
+        .from("bank_payments")
+        .update({ status: "failed", failure_reason: msg })
+        .eq("id", p.id);
+      throw e;
+    }
+
+    const nextStatus =
+      providerRes.status === "paid"
+        ? "paid"
+        : providerRes.status === "failed"
+          ? "failed"
+          : "processing";
+
+    await supabase
+      .from("bank_payments")
+      .update({
+        status: nextStatus,
+        external_id: providerRes.external_id,
+        approved_by: userId,
+        approved_at: new Date().toISOString(),
+        failure_reason: providerRes.failure_reason ?? null,
+        metadata: (providerRes.raw ?? {}) as any,
+        paid_at: nextStatus === "paid" ? new Date().toISOString() : null,
+      })
+      .eq("id", p.id);
+
+    await supabase.from("bank_connection_events").insert({
+      connection_id: conn.id,
+      workspace_id: workspaceId,
+      event_type: "payment_approved",
+      actor_id: userId,
+      payload: { payment_id: p.id, external_id: providerRes.external_id, status: nextStatus },
+    });
+
+    return { ok: true, status: nextStatus, external_id: providerRes.external_id };
+  });
+
+export const cancelBankPayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { payment_id: string }) =>
+    z.object({ payment_id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const { data: p } = await supabase
+      .from("bank_payments")
+      .select("id, status")
+      .eq("id", data.payment_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (!p) throw new Error("Pagamento não encontrado");
+    if (!["draft", "approved"].includes(p.status)) {
+      throw new Error("Somente pagamentos em rascunho ou aprovados podem ser cancelados");
+    }
+    const { error } = await supabase
+      .from("bank_payments")
+      .update({ status: "canceled" })
+      .eq("id", data.payment_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const simulatePaymentSettlement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { payment_id: string }) =>
+    z.object({ payment_id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const { settleBankPaymentAdmin } = await import("./banking/payments.server");
+    // supabase (usuário admin) tem RLS admin_update — usar diretamente.
+    return settleBankPaymentAdmin(supabase, data.payment_id, new Date().toISOString());
+  });
+
+// -------------------------------------------------------------------
+// KPIs: resumo de pagamentos (a pagar hoje / próximos 7 dias / atrasados)
+// -------------------------------------------------------------------
+export const getPaymentsSummary = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { connection_id: string }) =>
+    z.object({ connection_id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const today = new Date().toISOString().slice(0, 10);
+    const in7 = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+
+    const { data: rows, error } = await supabase
+      .from("bank_payments")
+      .select("amount, scheduled_for, status")
+      .eq("workspace_id", workspaceId)
+      .eq("connection_id", data.connection_id)
+      .in("status", ["draft", "approved", "processing"]);
+    if (error) throw new Error(error.message);
+
+    let dueToday = 0;
+    let next7 = 0;
+    let overdue = 0;
+    (rows ?? []).forEach((r: any) => {
+      const s = r.scheduled_for as string | null;
+      const amt = Number(r.amount);
+      if (!s) return;
+      if (s < today) overdue += amt;
+      else if (s === today) dueToday += amt;
+      else if (s <= in7) next7 += amt;
+    });
+    return { due_today: dueToday, next_7_days: next7, overdue };
+  });
+
+
 
 
 
