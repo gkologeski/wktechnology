@@ -7120,12 +7120,15 @@ export type Database = {
           due_date: string
           external_ref: string | null
           id: string
+          installment_number: number | null
+          installment_total: number | null
           metadata: Json
           notes: string | null
           origin_id: string | null
           origin_type: Database["public"]["Enums"]["financial_origin_type"]
           owner_id: string
           paid_amount: number
+          parent_entry_id: string | null
           payment_method: string | null
           project_id: string | null
           service_id: string | null
@@ -7147,12 +7150,15 @@ export type Database = {
           due_date: string
           external_ref?: string | null
           id?: string
+          installment_number?: number | null
+          installment_total?: number | null
           metadata?: Json
           notes?: string | null
           origin_id?: string | null
           origin_type?: Database["public"]["Enums"]["financial_origin_type"]
           owner_id: string
           paid_amount?: number
+          parent_entry_id?: string | null
           payment_method?: string | null
           project_id?: string | null
           service_id?: string | null
@@ -7174,12 +7180,15 @@ export type Database = {
           due_date?: string
           external_ref?: string | null
           id?: string
+          installment_number?: number | null
+          installment_total?: number | null
           metadata?: Json
           notes?: string | null
           origin_id?: string | null
           origin_type?: Database["public"]["Enums"]["financial_origin_type"]
           owner_id?: string
           paid_amount?: number
+          parent_entry_id?: string | null
           payment_method?: string | null
           project_id?: string | null
           service_id?: string | null
@@ -7207,6 +7216,13 @@ export type Database = {
             columns: ["counterparty_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_parent_entry_id_fkey"
+            columns: ["parent_entry_id"]
+            isOneToOne: false
+            referencedRelation: "financial_entries"
             referencedColumns: ["id"]
           },
           {
