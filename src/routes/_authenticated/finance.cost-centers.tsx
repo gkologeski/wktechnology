@@ -9,6 +9,11 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
+import {
+  ALL_LEGAL_ENTITIES,
+  LegalEntitySelect,
+  useLegalEntityFilter,
+} from "@/components/finance/legal-entity-select";
 
 // -----------------------------------------------------------------
 // Inline server function: list cost centers with totals
