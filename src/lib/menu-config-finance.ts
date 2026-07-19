@@ -15,6 +15,8 @@ export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Plano de contas", url: "/finance/categories", icon: DollarSign, need: "manager" },
       { title: "Contas bancárias", url: "/finance/bank-accounts", icon: DollarSign, need: "manager" },
       { title: "Banco Inter", url: "/finance/banking", icon: Landmark, need: "manager" },
+      { title: "Conciliação", url: "/finance/banking/reconciliation", icon: Landmark, need: "manager" },
+
       { title: "Faturas", url: "/invoices", icon: FileText },
       { title: "NFS-e", url: "/finance/nfse", icon: Receipt, need: "manager" },
     ],
