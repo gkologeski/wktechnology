@@ -7315,6 +7315,74 @@ export type Database = {
           },
         ]
       }
+      financial_recurrences: {
+        Row: {
+          active: boolean
+          cadence: string
+          created_at: string
+          day_of_month: number | null
+          direction: string
+          end_date: string | null
+          id: string
+          interval_days: number | null
+          last_generated_entry_id: string | null
+          max_occurrences: number | null
+          next_run_date: string
+          occurrences_generated: number
+          owner_id: string
+          start_date: string
+          template: Json
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          cadence: string
+          created_at?: string
+          day_of_month?: number | null
+          direction: string
+          end_date?: string | null
+          id?: string
+          interval_days?: number | null
+          last_generated_entry_id?: string | null
+          max_occurrences?: number | null
+          next_run_date: string
+          occurrences_generated?: number
+          owner_id: string
+          start_date: string
+          template?: Json
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          cadence?: string
+          created_at?: string
+          day_of_month?: number | null
+          direction?: string
+          end_date?: string | null
+          id?: string
+          interval_days?: number | null
+          last_generated_entry_id?: string | null
+          max_occurrences?: number | null
+          next_run_date?: string
+          occurrences_generated?: number
+          owner_id?: string
+          start_date?: string
+          template?: Json
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_recurrences_last_generated_entry_id_fkey"
+            columns: ["last_generated_entry_id"]
+            isOneToOne: false
+            referencedRelation: "financial_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       form_submissions: {
         Row: {
           contact_id: string | null
