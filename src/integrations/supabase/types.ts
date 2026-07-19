@@ -3014,7 +3014,6 @@ export type Database = {
           financial_entry_id: string | null
           id: string
           metadata: Json
-          owner_id: string
           paid_at: string | null
           payer_document: string | null
           payer_name: string | null
@@ -3023,6 +3022,7 @@ export type Database = {
           status: string
           type: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           amount: number
@@ -3039,7 +3039,6 @@ export type Database = {
           financial_entry_id?: string | null
           id?: string
           metadata?: Json
-          owner_id: string
           paid_at?: string | null
           payer_document?: string | null
           payer_name?: string | null
@@ -3048,6 +3047,7 @@ export type Database = {
           status?: string
           type: string
           updated_at?: string
+          workspace_id: string
         }
         Update: {
           amount?: number
@@ -3064,7 +3064,6 @@ export type Database = {
           financial_entry_id?: string | null
           id?: string
           metadata?: Json
-          owner_id?: string
           paid_at?: string | null
           payer_document?: string | null
           payer_name?: string | null
@@ -3073,6 +3072,7 @@ export type Database = {
           status?: string
           type?: string
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
