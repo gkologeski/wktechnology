@@ -61,7 +61,7 @@ function Metric({
 function FinanceDashboard() {
   const get = useServerFn(getFinanceDashboard);
   const [openNew, setOpenNew] = useState(false);
-  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["finance", "dashboard", legalEntityId],
