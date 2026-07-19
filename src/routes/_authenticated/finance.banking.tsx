@@ -24,7 +24,6 @@ import {
   cancelBankPayment,
   simulatePaymentSettlement,
   getPaymentsSummary,
-  getPaymentsSummary,
   getBankingHealth,
 } from "@/lib/banking.functions";
 import { PageHeader } from "@/components/page-header";
