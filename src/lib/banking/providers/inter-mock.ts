@@ -123,4 +123,37 @@ export const interMockProvider: BankProvider = {
 
     return { transactions: txs, balance: running, cursor: null };
   },
+
+  async createPixCharge({ charge_id, amount, description }) {
+    const txid = `TXID${charge_id.replace(/-/g, "").slice(0, 22).toUpperCase()}`;
+    const copyPaste = `00020126360014BR.GOV.BCB.PIX0114+55MOCK${txid}5204000053039865802BR5910MOCK INTER6009SAO PAULO62070503***6304MOCK`;
+    return {
+      external_id: `mock_pix_${randomBytes(6).toString("hex")}`,
+      pix_qr_code: `data:image/svg+xml;utf8,${encodeURIComponent(
+        `<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><rect width='200' height='200' fill='#fff'/><text x='50%' y='50%' text-anchor='middle' font-family='monospace' font-size='10' fill='#000'>PIX MOCK ${txid.slice(-8)} - R$ ${amount.toFixed(2)}</text></svg>`,
+      )}`,
+      pix_copy_paste: copyPaste,
+      boleto_barcode: null,
+      boleto_digitable_line: null,
+      boleto_url: null,
+      raw: { txid, description, source: "mock" },
+    };
+  },
+
+  async createBoletoCharge({ charge_id, amount, due_date }) {
+    const nossoNum = charge_id.replace(/\D/g, "").slice(0, 10).padStart(10, "0");
+    const centavos = Math.round(amount * 100).toString().padStart(10, "0");
+    const dueCode = new Date(due_date).getTime().toString().slice(-4);
+    const digitable = `07790.00000 ${nossoNum.slice(0, 5)}.${nossoNum.slice(5)}0 00000.000000 1 ${dueCode}${centavos.slice(0, 6)}`;
+    const barcode = `07791${dueCode}${centavos}0000000000${nossoNum}`;
+    return {
+      external_id: `mock_bol_${randomBytes(6).toString("hex")}`,
+      pix_qr_code: null,
+      pix_copy_paste: null,
+      boleto_barcode: barcode,
+      boleto_digitable_line: digitable,
+      boleto_url: `https://mock.inter.example/boleto/${charge_id}.pdf`,
+      raw: { nosso_numero: nossoNum, source: "mock" },
+    };
+  },
 };
