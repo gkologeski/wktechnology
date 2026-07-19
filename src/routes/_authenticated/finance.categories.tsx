@@ -31,9 +31,11 @@ import {
 } from "@/lib/finance.functions";
 import {
   ALL_LEGAL_ENTITIES,
+  GROUP_PREFIX,
   LegalEntitySelect,
   useLegalEntities,
   useLegalEntityFilter,
+  useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/categories")({
