@@ -161,6 +161,7 @@ import { Route as AuthenticatedSettingsAuditExportRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
 import { Route as AuthenticatedSettingsAdsSyncRouteImport } from './routes/_authenticated/settings.ads-sync'
 import { Route as AuthenticatedSettingsAccessPolicyRouteImport } from './routes/_authenticated/settings.access-policy'
+import { Route as AuthenticatedServicesProductsRouteImport } from './routes/_authenticated/services.products'
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services.$id'
 import { Route as AuthenticatedQaTestCasesRouteImport } from './routes/_authenticated/qa.test-cases'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
@@ -1175,6 +1176,12 @@ const AuthenticatedSettingsAccessPolicyRoute =
     id: '/access-policy',
     path: '/access-policy',
     getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedServicesProductsRoute =
+  AuthenticatedServicesProductsRouteImport.update({
+    id: '/services/products',
+    path: '/services/products',
+    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedServicesIdRoute = AuthenticatedServicesIdRouteImport.update({
   id: '/services/$id',
@@ -2242,6 +2249,7 @@ export interface FileRoutesByFullPath {
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
+  '/services/products': typeof AuthenticatedServicesProductsRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -2555,6 +2563,7 @@ export interface FileRoutesByTo {
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
+  '/services/products': typeof AuthenticatedServicesProductsRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -2873,6 +2882,7 @@ export interface FileRoutesById {
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
+  '/_authenticated/services/products': typeof AuthenticatedServicesProductsRoute
   '/_authenticated/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/_authenticated/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -3192,6 +3202,7 @@ export interface FileRouteTypes {
     | '/proposals/$id'
     | '/qa/test-cases'
     | '/services/$id'
+    | '/services/products'
     | '/settings/access-policy'
     | '/settings/ads-sync'
     | '/settings/api-keys'
@@ -3505,6 +3516,7 @@ export interface FileRouteTypes {
     | '/proposals/$id'
     | '/qa/test-cases'
     | '/services/$id'
+    | '/services/products'
     | '/settings/access-policy'
     | '/settings/ads-sync'
     | '/settings/api-keys'
@@ -3822,6 +3834,7 @@ export interface FileRouteTypes {
     | '/_authenticated/proposals/$id'
     | '/_authenticated/qa/test-cases'
     | '/_authenticated/services/$id'
+    | '/_authenticated/services/products'
     | '/_authenticated/settings/access-policy'
     | '/_authenticated/settings/ads-sync'
     | '/_authenticated/settings/api-keys'
@@ -5197,6 +5210,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/access-policy'
       preLoaderRoute: typeof AuthenticatedSettingsAccessPolicyRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/services/products': {
+      id: '/_authenticated/services/products'
+      path: '/services/products'
+      fullPath: '/services/products'
+      preLoaderRoute: typeof AuthenticatedServicesProductsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/services/$id': {
       id: '/_authenticated/services/$id'
@@ -6836,6 +6856,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsTimesheetRoute: typeof AuthenticatedProjectsTimesheetRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
+  AuthenticatedServicesProductsRoute: typeof AuthenticatedServicesProductsRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
   AuthenticatedAtsIndexRoute: typeof AuthenticatedAtsIndexRoute
   AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
@@ -6946,6 +6967,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsTimesheetRoute: AuthenticatedProjectsTimesheetRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
+  AuthenticatedServicesProductsRoute: AuthenticatedServicesProductsRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
   AuthenticatedAtsIndexRoute: AuthenticatedAtsIndexRoute,
   AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,
