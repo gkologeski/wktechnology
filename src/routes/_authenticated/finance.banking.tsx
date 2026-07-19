@@ -370,8 +370,122 @@ function BankingPage() {
       <Tabs defaultValue="statement">
         <TabsList>
           <TabsTrigger value="statement">Extrato</TabsTrigger>
+          <TabsTrigger value="charges">Cobranças</TabsTrigger>
           <TabsTrigger value="events">Histórico</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="charges" className="mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Cobranças Pix e Boleto</CardTitle>
+                <CardDescription>
+                  Emita cobranças vinculadas ao Banco Inter. Ao liquidar, o pagamento é registrado
+                  automaticamente no lançamento financeiro associado.
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => setChargeDialogOpen(true)}
+                disabled={status !== "connected"}
+              >
+                <Plus className="h-4 w-4" /> Nova cobrança
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {status !== "connected" ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Conecte-se para emitir cobranças.
+                </div>
+              ) : charges.isLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (charges.data ?? []).length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Nenhuma cobrança emitida.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">Tipo</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Pagador</TableHead>
+                      <TableHead className="w-[120px]">Vencimento</TableHead>
+                      <TableHead className="text-right w-[140px]">Valor</TableHead>
+                      <TableHead className="w-[120px]">Status</TableHead>
+                      <TableHead className="w-[220px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(charges.data ?? []).map((c: any) => (
+                      <TableRow key={c.id}>
+                        <TableCell>
+                          <Badge variant="outline" className="uppercase">
+                            {c.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{c.description ?? "—"}</TableCell>
+                        <TableCell className="text-sm">{c.payer_name ?? "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          {new Date(c.due_date).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-medium">
+                          {formatCurrency(Number(c.amount), "BRL")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              c.status === "paid"
+                                ? "default"
+                                : c.status === "pending"
+                                  ? "outline"
+                                  : "secondary"
+                            }
+                          >
+                            {c.status === "paid"
+                              ? "Paga"
+                              : c.status === "pending"
+                                ? "Pendente"
+                                : c.status === "canceled"
+                                  ? "Cancelada"
+                                  : "Expirada"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-1">
+                          <Button variant="ghost" size="sm" onClick={() => setShowCharge(c)}>
+                            Ver
+                          </Button>
+                          {c.status === "pending" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => simulatePayMut.mutate(c.id)}
+                                disabled={simulatePayMut.isPending}
+                                title="Simular liquidação (mock)"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => cancelChargeMut.mutate(c.id)}
+                                disabled={cancelChargeMut.isPending}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="statement" className="mt-4">
           <Card>
