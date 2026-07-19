@@ -132,6 +132,7 @@ import { Route as AuthenticatedSettingsMyPermissionsRouteImport } from './routes
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMediaRouteImport } from './routes/_authenticated/settings.media'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
+import { Route as AuthenticatedSettingsLegalEntitiesRouteImport } from './routes/_authenticated/settings.legal-entities'
 import { Route as AuthenticatedSettingsLeadSourcesRouteImport } from './routes/_authenticated/settings.lead-sources'
 import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
 import { Route as AuthenticatedSettingsKbRouteImport } from './routes/_authenticated/settings.kb'
@@ -181,6 +182,7 @@ import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_au
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceNfseRouteImport } from './routes/_authenticated/finance.nfse'
 import { Route as AuthenticatedFinanceDreRouteImport } from './routes/_authenticated/finance.dre'
+import { Route as AuthenticatedFinanceCostCentersRouteImport } from './routes/_authenticated/finance.cost-centers'
 import { Route as AuthenticatedFinanceCategoriesRouteImport } from './routes/_authenticated/finance.categories'
 import { Route as AuthenticatedFinanceCashFlowRouteImport } from './routes/_authenticated/finance.cash-flow'
 import { Route as AuthenticatedFinanceBankingRouteImport } from './routes/_authenticated/finance.banking'
@@ -1000,6 +1002,12 @@ const AuthenticatedSettingsMacrosRoute =
     path: '/macros',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsLegalEntitiesRoute =
+  AuthenticatedSettingsLegalEntitiesRouteImport.update({
+    id: '/legal-entities',
+    path: '/legal-entities',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsLeadSourcesRoute =
   AuthenticatedSettingsLeadSourcesRouteImport.update({
     id: '/lead-sources',
@@ -1286,6 +1294,12 @@ const AuthenticatedFinanceDreRoute = AuthenticatedFinanceDreRouteImport.update({
   path: '/finance/dre',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFinanceCostCentersRoute =
+  AuthenticatedFinanceCostCentersRouteImport.update({
+    id: '/finance/cost-centers',
+    path: '/finance/cost-centers',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinanceCategoriesRoute =
   AuthenticatedFinanceCategoriesRouteImport.update({
     id: '/finance/categories',
@@ -2198,6 +2212,7 @@ export interface FileRoutesByFullPath {
   '/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/finance/cost-centers': typeof AuthenticatedFinanceCostCentersRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -2247,6 +2262,7 @@ export interface FileRoutesByFullPath {
   '/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
+  '/settings/legal-entities': typeof AuthenticatedSettingsLegalEntitiesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
@@ -2508,6 +2524,7 @@ export interface FileRoutesByTo {
   '/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/finance/cost-centers': typeof AuthenticatedFinanceCostCentersRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -2557,6 +2574,7 @@ export interface FileRoutesByTo {
   '/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
+  '/settings/legal-entities': typeof AuthenticatedSettingsLegalEntitiesRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
@@ -2823,6 +2841,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/_authenticated/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/_authenticated/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
+  '/_authenticated/finance/cost-centers': typeof AuthenticatedFinanceCostCentersRoute
   '/_authenticated/finance/dre': typeof AuthenticatedFinanceDreRoute
   '/_authenticated/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
@@ -2872,6 +2891,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/_authenticated/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
+  '/_authenticated/settings/legal-entities': typeof AuthenticatedSettingsLegalEntitiesRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
@@ -3139,6 +3159,7 @@ export interface FileRouteTypes {
     | '/finance/banking'
     | '/finance/cash-flow'
     | '/finance/categories'
+    | '/finance/cost-centers'
     | '/finance/dre'
     | '/finance/nfse'
     | '/finance/payable'
@@ -3188,6 +3209,7 @@ export interface FileRouteTypes {
     | '/settings/kb'
     | '/settings/language'
     | '/settings/lead-sources'
+    | '/settings/legal-entities'
     | '/settings/macros'
     | '/settings/media'
     | '/settings/mobile'
@@ -3449,6 +3471,7 @@ export interface FileRouteTypes {
     | '/finance/banking'
     | '/finance/cash-flow'
     | '/finance/categories'
+    | '/finance/cost-centers'
     | '/finance/dre'
     | '/finance/nfse'
     | '/finance/payable'
@@ -3498,6 +3521,7 @@ export interface FileRouteTypes {
     | '/settings/kb'
     | '/settings/language'
     | '/settings/lead-sources'
+    | '/settings/legal-entities'
     | '/settings/macros'
     | '/settings/media'
     | '/settings/mobile'
@@ -3763,6 +3787,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/banking'
     | '/_authenticated/finance/cash-flow'
     | '/_authenticated/finance/categories'
+    | '/_authenticated/finance/cost-centers'
     | '/_authenticated/finance/dre'
     | '/_authenticated/finance/nfse'
     | '/_authenticated/finance/payable'
@@ -3812,6 +3837,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/kb'
     | '/_authenticated/settings/language'
     | '/_authenticated/settings/lead-sources'
+    | '/_authenticated/settings/legal-entities'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/media'
     | '/_authenticated/settings/mobile'
@@ -4956,6 +4982,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsMacrosRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/legal-entities': {
+      id: '/_authenticated/settings/legal-entities'
+      path: '/legal-entities'
+      fullPath: '/settings/legal-entities'
+      preLoaderRoute: typeof AuthenticatedSettingsLegalEntitiesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/lead-sources': {
       id: '/_authenticated/settings/lead-sources'
       path: '/lead-sources'
@@ -5297,6 +5330,13 @@ declare module '@tanstack/react-router' {
       path: '/finance/dre'
       fullPath: '/finance/dre'
       preLoaderRoute: typeof AuthenticatedFinanceDreRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/finance/cost-centers': {
+      id: '/_authenticated/finance/cost-centers'
+      path: '/finance/cost-centers'
+      fullPath: '/finance/cost-centers'
+      preLoaderRoute: typeof AuthenticatedFinanceCostCentersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/finance/categories': {
@@ -6469,6 +6509,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsKbRoute: typeof AuthenticatedSettingsKbRoute
   AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
   AuthenticatedSettingsLeadSourcesRoute: typeof AuthenticatedSettingsLeadSourcesRoute
+  AuthenticatedSettingsLegalEntitiesRoute: typeof AuthenticatedSettingsLegalEntitiesRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsMediaRoute: typeof AuthenticatedSettingsMediaRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
@@ -6551,6 +6592,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsKbRoute: AuthenticatedSettingsKbRoute,
   AuthenticatedSettingsLanguageRoute: AuthenticatedSettingsLanguageRoute,
   AuthenticatedSettingsLeadSourcesRoute: AuthenticatedSettingsLeadSourcesRoute,
+  AuthenticatedSettingsLegalEntitiesRoute:
+    AuthenticatedSettingsLegalEntitiesRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsMediaRoute: AuthenticatedSettingsMediaRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
@@ -6752,6 +6795,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceBankingRoute: typeof AuthenticatedFinanceBankingRouteWithChildren
   AuthenticatedFinanceCashFlowRoute: typeof AuthenticatedFinanceCashFlowRoute
   AuthenticatedFinanceCategoriesRoute: typeof AuthenticatedFinanceCategoriesRoute
+  AuthenticatedFinanceCostCentersRoute: typeof AuthenticatedFinanceCostCentersRoute
   AuthenticatedFinanceDreRoute: typeof AuthenticatedFinanceDreRoute
   AuthenticatedFinanceNfseRoute: typeof AuthenticatedFinanceNfseRoute
   AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
@@ -6861,6 +6905,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedFinanceBankingRouteWithChildren,
   AuthenticatedFinanceCashFlowRoute: AuthenticatedFinanceCashFlowRoute,
   AuthenticatedFinanceCategoriesRoute: AuthenticatedFinanceCategoriesRoute,
+  AuthenticatedFinanceCostCentersRoute: AuthenticatedFinanceCostCentersRoute,
   AuthenticatedFinanceDreRoute: AuthenticatedFinanceDreRoute,
   AuthenticatedFinanceNfseRoute: AuthenticatedFinanceNfseRoute,
   AuthenticatedFinancePayableRoute: AuthenticatedFinancePayableRoute,
