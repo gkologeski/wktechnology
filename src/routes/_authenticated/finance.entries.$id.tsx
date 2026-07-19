@@ -46,6 +46,8 @@ function EntryDetailsPage() {
   const get = useServerFn(getFinancialEntry);
   const cancelFn = useServerFn(cancelFinancialEntry);
   const delPayment = useServerFn(deletePayment);
+  const listSiblings = useServerFn(listInstallmentSiblings);
+  const delGroup = useServerFn(deleteInstallmentGroup);
 
   const [payOpen, setPayOpen] = useState(false);
 
@@ -54,9 +56,20 @@ function EntryDetailsPage() {
     queryFn: () => get({ data: { id } }),
   });
 
+  const isInstallment =
+    !!(entry && (entry.parent_entry_id || (entry.installment_total && entry.installment_total > 1)));
+  const parentId = entry?.parent_entry_id ?? entry?.id ?? null;
+
+  const { data: siblings } = useQuery({
+    queryKey: ["finance-entry-siblings", id],
+    queryFn: () => listSiblings({ data: { entry_id: id } }),
+    enabled: isInstallment,
+  });
+
   const invalidate = () => {
     refetch();
     qc.invalidateQueries({ queryKey: ["finance-entries"] });
+    qc.invalidateQueries({ queryKey: ["finance-entry-siblings"] });
     qc.invalidateQueries({ queryKey: ["finance", "dashboard"] });
   };
 
