@@ -84,6 +84,19 @@ function ReconciliationPage() {
   const [historyStatus, setHistoryStatus] = useState<"matched" | "ignored" | "all">(
     "all",
   );
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleOne = (id: string) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const clearSelection = () => setSelected(new Set());
+
+  const bulkIgnoreFn = useServerFn(bulkIgnoreTransactions);
+  const bulkLinkFn = useServerFn(bulkLinkBestMatch);
+  const bulkCreateFn = useServerFn(bulkCreateEntries);
 
   const connQ = useQuery({
     queryKey: ["banking", "connection", "inter"],
