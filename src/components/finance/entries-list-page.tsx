@@ -61,7 +61,7 @@ export function EntriesListPage({
   const list = useServerFn(listFinancialEntries);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
-  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
   const [openNew, setOpenNew] = useState(false);
   const [payFor, setPayFor] = useState<Entry | null>(null);
 
