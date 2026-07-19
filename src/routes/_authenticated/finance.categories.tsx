@@ -231,9 +231,12 @@ function CategoriesPage() {
         title="Plano de contas"
         description="Estrutura hierárquica de receitas e despesas para o DRE gerencial."
         actions={
-          <Button onClick={() => openCreate()}>
-            <Plus className="h-4 w-4 mr-1" /> Nova conta
-          </Button>
+          <div className="flex items-center gap-2">
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+            <Button onClick={() => openCreate()}>
+              <Plus className="h-4 w-4 mr-1" /> Nova conta
+            </Button>
+          </div>
         }
       />
 
