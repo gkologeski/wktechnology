@@ -29,6 +29,12 @@ import {
   deleteCategory,
   listCategories,
 } from "@/lib/finance.functions";
+import {
+  ALL_LEGAL_ENTITIES,
+  LegalEntitySelect,
+  useLegalEntities,
+  useLegalEntityFilter,
+} from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/categories")({
   head: () => ({ meta: [{ title: "Plano de contas" }] }),
