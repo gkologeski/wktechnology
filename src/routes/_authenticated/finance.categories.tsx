@@ -300,6 +300,24 @@ function CategoriesPage() {
                 </SelectContent>
               </Select>
             </div>
+            {legalEntities.length > 1 && (
+              <div className="space-y-2">
+                <Label>Empresa</Label>
+                <Select value={formLegalEntity} onValueChange={setFormLegalEntity}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Não vincular —</SelectItem>
+                    {legalEntities.map((le) => (
+                      <SelectItem key={le.id} value={le.id}>
+                        {le.code ? `${le.code} · ${le.name}` : le.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>
