@@ -11,7 +11,11 @@ import { formatCurrency } from "@/lib/crm";
 import { getFinanceDashboard } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
 import { FinanceAlertsPanel } from "@/components/finance/finance-alerts-panel";
-import { ALL_LEGAL_ENTITIES, LegalEntitySelect, useLegalEntityFilter } from "@/components/finance/legal-entity-select";
+import {
+  LegalEntitySelect,
+  useLegalEntityFilter,
+  useLegalEntityFilterInput,
+} from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/")({
   head: () => ({
@@ -63,12 +67,10 @@ function FinanceDashboard() {
   const [openNew, setOpenNew] = useState(false);
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
 
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["finance", "dashboard", legalEntityId],
-    queryFn: () =>
-      get({
-        data: { legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId },
-      }),
+    queryKey: ["finance", "dashboard", legalEntityId, JSON.stringify(filterInput)],
+    queryFn: () => get({ data: filterInput }),
   });
 
   const ar = data?.ar ?? { open: 0, overdue: 0, paid_180d: 0, d30: 0, d60: 0, d90: 0 };
