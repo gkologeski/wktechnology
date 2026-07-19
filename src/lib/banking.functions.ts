@@ -517,3 +517,156 @@ export const setStatementReconciliation = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// -------------------------------------------------------------------
+// SUGGEST reconciliation matches
+// Para cada transação (padrão: pendentes), busca financial_payments
+// com mesmo valor absoluto e paid_at dentro de ±windowDays de posted_at.
+// -------------------------------------------------------------------
+export const suggestReconciliationMatches = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: { connection_id: string; window_days?: number; limit?: number }) =>
+      z
+        .object({
+          connection_id: z.string().uuid(),
+          window_days: z.number().int().min(0).max(30).default(5),
+          limit: z.number().int().min(1).max(200).default(50),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const { data: txs, error: tErr } = await supabase
+      .from("bank_statement_transactions")
+      .select("id, posted_at, amount, direction, description, counterparty")
+      .eq("workspace_id", workspaceId)
+      .eq("connection_id", data.connection_id)
+      .eq("reconciliation_status", "pending")
+      .order("posted_at", { ascending: false })
+      .limit(data.limit);
+    if (tErr) throw new Error(tErr.message);
+    const txList = txs ?? [];
+    if (txList.length === 0) return { items: [] };
+
+    // Janela global para reduzir consultas: min-max posted_at ± window_days
+    const dates = txList.map((t: any) => new Date(t.posted_at).getTime());
+    const minMs = Math.min(...dates) - data.window_days * 86400000;
+    const maxMs = Math.max(...dates) + data.window_days * 86400000;
+    const fromIso = new Date(minMs).toISOString().slice(0, 10);
+    const toIso = new Date(maxMs).toISOString().slice(0, 10);
+
+    // Já usados em matches vigentes — excluir
+    const { data: usedRows } = await supabase
+      .from("bank_statement_transactions")
+      .select("matched_payment_id")
+      .eq("workspace_id", workspaceId)
+      .eq("reconciliation_status", "matched")
+      .not("matched_payment_id", "is", null);
+    const usedIds = new Set(
+      (usedRows ?? []).map((r: any) => r.matched_payment_id).filter(Boolean),
+    );
+
+    const { data: pays, error: pErr } = await supabase
+      .from("financial_payments")
+      .select("id, entry_id, paid_at, amount, method, reference, notes")
+      .eq("workspace_id", workspaceId)
+      .gte("paid_at", fromIso)
+      .lte("paid_at", toIso);
+    if (pErr) throw new Error(pErr.message);
+    const payments = (pays ?? []).filter((p: any) => !usedIds.has(p.id));
+
+    const windowMs = data.window_days * 86400000;
+    const items = txList.map((t: any) => {
+      const postedMs = new Date(t.posted_at).getTime();
+      const amt = Math.abs(Number(t.amount));
+      const candidates = payments
+        .map((p: any) => {
+          const payMs = new Date(p.paid_at).getTime();
+          const diff = Math.abs(payMs - postedMs);
+          const amountOk = Math.abs(Math.abs(Number(p.amount)) - amt) < 0.01;
+          return { p, diff, amountOk };
+        })
+        .filter((c: any) => c.amountOk && c.diff <= windowMs)
+        .sort((a: any, b: any) => a.diff - b.diff)
+        .slice(0, 3)
+        .map((c: any) => ({
+          payment_id: c.p.id,
+          entry_id: c.p.entry_id,
+          paid_at: c.p.paid_at,
+          amount: c.p.amount,
+          method: c.p.method,
+          reference: c.p.reference,
+          notes: c.p.notes,
+          days_diff: Math.round(c.diff / 86400000),
+        }));
+      return { transaction: t, candidates };
+    });
+
+    return { items };
+  });
+
+// -------------------------------------------------------------------
+// LIST reconciliation history (matched + ignored)
+// -------------------------------------------------------------------
+export const listReconciliationHistory = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      connection_id: string;
+      status?: "matched" | "ignored" | "all";
+      limit?: number;
+    }) =>
+      z
+        .object({
+          connection_id: z.string().uuid(),
+          status: z.enum(["matched", "ignored", "all"]).default("all"),
+          limit: z.number().int().min(1).max(500).default(100),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    let q = supabase
+      .from("bank_statement_transactions")
+      .select(
+        "id, posted_at, amount, direction, description, counterparty, reconciliation_status, matched_payment_id, updated_at",
+      )
+      .eq("workspace_id", workspaceId)
+      .eq("connection_id", data.connection_id)
+      .in(
+        "reconciliation_status",
+        data.status === "all" ? ["matched", "ignored"] : [data.status],
+      )
+      .order("updated_at", { ascending: false })
+      .limit(data.limit);
+
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+
+    const paymentIds = (rows ?? [])
+      .map((r: any) => r.matched_payment_id)
+      .filter(Boolean);
+    let paymentsById: Record<string, any> = {};
+    if (paymentIds.length) {
+      const { data: pays } = await supabase
+        .from("financial_payments")
+        .select("id, paid_at, amount, method, reference")
+        .in("id", paymentIds);
+      paymentsById = Object.fromEntries((pays ?? []).map((p: any) => [p.id, p]));
+    }
+
+    return (rows ?? []).map((r: any) => ({
+      ...r,
+      matched_payment: r.matched_payment_id
+        ? paymentsById[r.matched_payment_id] ?? null
+        : null,
+    }));
+  });
+
+
