@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Landmark, Loader2, RefreshCw, ShieldCheck, Unplug, Zap, Plus, Copy, CheckCircle2, X, Send, ArrowUpRight } from "lucide-react";
+import { Landmark, Loader2, RefreshCw, ShieldCheck, Unplug, Zap, Plus, Copy, CheckCircle2, X, Send, ArrowUpRight, Activity, AlertTriangle, AlertCircle, Info, Clock } from "lucide-react";
 
 import {
   getBankConnection,
