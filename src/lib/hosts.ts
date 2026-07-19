@@ -1,101 +1,66 @@
-// Host-aware URL helpers para a arquitetura multi-host:
-//   app.wktechnology.com.br  → Workspace Hub (config geral)
-//   ats.wktechnology.com.br  → módulo ATS (TechHire)
-//   crm.wktechnology.com.br  → módulo CRM (TechSales)
+// Single-host mode: a aplicação roda em um único domínio (canonical
+// `app.wktechnology.com.br`). As funções deste módulo eram usadas para
+// construir URLs cross-host em uma arquitetura antiga multi-subdomínio.
+// Foram mantidas com a MESMA assinatura para não quebrar call sites, mas
+// agora sempre devolvem paths relativos (SPA) — não há mais redirect
+// cross-host, não há mais `HostRouterGuard`.
 //
-// Em preview Lovable / localhost tudo roda no mesmo host: as funções degradam
-// para path relativo (SPA) e o "guard" de host fica inerte.
+// Se em algum momento voltar a existir separação por subdomínio, este
+// arquivo é o único ponto de mudança.
 
 import type { ModuleId } from "./modules/registry";
 
-export const WORKSPACE_HOST = "app.wktechnology.com.br";
+export const CANONICAL_HOST = "app.wktechnology.com.br";
+export const WORKSPACE_HOST = CANONICAL_HOST;
 
+// Mantido apenas para retro-compat de imports. Todos apontam para o host único.
 export const MODULE_HOSTS: Record<ModuleId, string> = {
-  ats: "ats.wktechnology.com.br",
-  crm: "crm.wktechnology.com.br",
-  // Módulos sem subdomínio próprio ainda — reutilizam o host do CRM.
-  contracts: "crm.wktechnology.com.br",
-  services: "crm.wktechnology.com.br",
-  projects: "crm.wktechnology.com.br",
-  finance: "crm.wktechnology.com.br",
+  ats: CANONICAL_HOST,
+  crm: CANONICAL_HOST,
+  contracts: CANONICAL_HOST,
+  services: CANONICAL_HOST,
+  projects: CANONICAL_HOST,
+  finance: CANONICAL_HOST,
 };
 
 export type HostKind = "workspace" | ModuleId | "preview";
 
-const PRODUCTION_HOSTS = new Set<string>([
-  WORKSPACE_HOST,
-  ...Object.values(MODULE_HOSTS),
-]);
-
 export function isProductionHost(hostname: string | undefined | null): boolean {
   if (!hostname) return false;
-  return PRODUCTION_HOSTS.has(hostname.toLowerCase());
+  const h = hostname.toLowerCase();
+  return h === CANONICAL_HOST || h.endsWith(".wktechnology.com.br");
 }
 
-/**
- * Hosts considerados "alcançáveis" — i.e., realmente servidos por este
- * projeto em produção. Permite desligar redirects cross-host quando um
- * subdomínio ainda não está configurado (SSL/DNS), evitando loops.
- *
- * Default conservador: sem `VITE_REACHABLE_HOSTS`, apenas o host atual é
- * considerado alcançável — assim cross-host redirect só ocorre após
- * opt-in explícito (ex.: VITE_REACHABLE_HOSTS="app.x,crm.x,ats.x").
- */
 export function getReachableHosts(): Set<string> {
-  const raw = (import.meta as { env?: Record<string, string | undefined> }).env
-    ?.VITE_REACHABLE_HOSTS;
-  if (raw) {
-    return new Set(
-      raw
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean),
-    );
-  }
-  if (typeof window !== "undefined") {
-    return new Set([window.location.hostname.toLowerCase()]);
-  }
-  return new Set();
+  return new Set([CANONICAL_HOST]);
 }
 
 export function isReachableHost(hostname: string | undefined | null): boolean {
   if (!hostname) return false;
-  return getReachableHosts().has(hostname.toLowerCase());
+  return hostname.toLowerCase() === CANONICAL_HOST;
 }
 
-export function getHostKind(hostname: string | undefined | null): HostKind {
-  if (!hostname) return "preview";
-  const h = hostname.toLowerCase();
-  if (h === WORKSPACE_HOST) return "workspace";
-  for (const [id, host] of Object.entries(MODULE_HOSTS) as Array<[ModuleId, string]>) {
-    if (h === host) return id;
-  }
-  return "preview";
+// Sempre "workspace" no modelo single-host — nenhum host discrimina módulo.
+export function getHostKind(_hostname: string | undefined | null): HostKind {
+  return "workspace";
 }
 
 export function getCurrentHostKind(): HostKind {
-  if (typeof window === "undefined") return "preview";
-  return getHostKind(window.location.hostname);
+  return "workspace";
 }
 
-/** URL para uma rota de módulo. Em produção, devolve URL absoluta no host
- *  do módulo. Em preview/localhost, devolve o próprio path (SPA). */
-export function buildModuleUrl(moduleId: ModuleId, path: string): string {
-  const safePath = path.startsWith("/") ? path : `/${path}`;
-  if (typeof window === "undefined") return safePath;
-  if (!isProductionHost(window.location.hostname)) return safePath;
-  return `https://${MODULE_HOSTS[moduleId]}${safePath}`;
+/** Path relativo — não há mais navegação cross-host. */
+export function buildModuleUrl(_moduleId: ModuleId, path: string): string {
+  return path.startsWith("/") ? path : `/${path}`;
 }
 
-/** URL para uma rota do Workspace Hub. Sempre alvo: `app.`. */
+/** Path relativo — não há mais navegação cross-host. */
 export function buildWorkspaceUrl(path: string): string {
-  const safePath = path.startsWith("/") ? path : `/${path}`;
-  if (typeof window === "undefined") return safePath;
-  if (!isProductionHost(window.location.hostname)) return safePath;
-  return `https://${WORKSPACE_HOST}${safePath}`;
+  return path.startsWith("/") ? path : `/${path}`;
 }
 
-/** True quando o link deve ser cross-host (target externo). */
+/** Sempre false no modelo single-host: `buildModuleUrl`/`buildWorkspaceUrl`
+ *  devolvem path relativo. Mantido para retro-compat. */
 export function isCrossHostUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
