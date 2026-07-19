@@ -26,6 +26,7 @@ export const listFinancialEntries = createServerFn({ method: "POST" })
         serviceId: z.string().uuid().optional(),
         categoryId: z.string().uuid().optional(),
         legalEntityId: z.string().uuid().optional(),
+        legalEntityIds: z.array(z.string().uuid()).optional(),
         search: z.string().optional(),
         from: z.string().optional(), // due_date >=
         to: z.string().optional(), // due_date <=
@@ -50,6 +51,8 @@ export const listFinancialEntries = createServerFn({ method: "POST" })
     if (data.serviceId) q = q.eq("service_id", data.serviceId);
     if (data.categoryId) q = q.eq("category_id", data.categoryId);
     if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
+    if (data.legalEntityIds && data.legalEntityIds.length)
+      q = q.in("legal_entity_id", data.legalEntityIds);
     if (data.from) q = q.gte("due_date", data.from);
     if (data.to) q = q.lte("due_date", data.to);
     if (data.search && data.search.trim()) q = q.ilike("description", `%${data.search.trim()}%`);
@@ -252,7 +255,12 @@ export const deletePayment = createServerFn({ method: "POST" })
 export const listCategories = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ legalEntityId: z.string().uuid().optional() }).parse(input ?? {}),
+    z
+      .object({
+        legalEntityId: z.string().uuid().optional(),
+        legalEntityIds: z.array(z.string().uuid()).optional(),
+      })
+      .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -262,6 +270,8 @@ export const listCategories = createServerFn({ method: "POST" })
       .order("kind", { ascending: true })
       .order("name", { ascending: true });
     if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
+    if (data.legalEntityIds && data.legalEntityIds.length)
+      q = q.in("legal_entity_id", data.legalEntityIds);
     const { data: rows, error } = await q;
     if (error) throw error;
     return rows ?? [];
@@ -316,7 +326,12 @@ export const deleteCategory = createServerFn({ method: "POST" })
 export const listBankAccounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ legalEntityId: z.string().uuid().optional() }).parse(input ?? {}),
+    z
+      .object({
+        legalEntityId: z.string().uuid().optional(),
+        legalEntityIds: z.array(z.string().uuid()).optional(),
+      })
+      .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -325,6 +340,8 @@ export const listBankAccounts = createServerFn({ method: "POST" })
       .select("*")
       .order("name", { ascending: true });
     if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
+    if (data.legalEntityIds && data.legalEntityIds.length)
+      q = q.in("legal_entity_id", data.legalEntityIds);
     const { data: rows, error } = await q;
     if (error) throw error;
     return rows ?? [];
@@ -400,7 +417,10 @@ export const getFinanceDashboard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
-      .object({ legalEntityId: z.string().uuid().optional() })
+      .object({
+        legalEntityId: z.string().uuid().optional(),
+        legalEntityIds: z.array(z.string().uuid()).optional(),
+      })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
@@ -420,6 +440,8 @@ export const getFinanceDashboard = createServerFn({ method: "POST" })
       .gte("due_date", iso(addDays(today, -180)))
       .lte("due_date", iso(addDays(today, 180)));
     if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
+    if (data.legalEntityIds && data.legalEntityIds.length)
+      q = q.in("legal_entity_id", data.legalEntityIds);
     const { data: entries, error } = await q;
     if (error) throw error;
 
@@ -487,6 +509,7 @@ export const getDreReport = createServerFn({ method: "POST" })
         endMonth: z.string().optional(), // YYYY-MM
         basis: z.enum(["accrual", "cash"]).default("accrual"),
         legalEntityId: z.string().uuid().optional(),
+        legalEntityIds: z.array(z.string().uuid()).optional(),
       })
       .parse(input ?? {}),
   )
@@ -548,6 +571,8 @@ export const getDreReport = createServerFn({ method: "POST" })
         .gte("paid_at", iso(startDate))
         .lte("paid_at", iso(endDate));
       if (data.legalEntityId) pq = pq.eq("financial_entries.legal_entity_id", data.legalEntityId);
+      if (data.legalEntityIds && data.legalEntityIds.length)
+        pq = pq.in("financial_entries.legal_entity_id", data.legalEntityIds);
       const { data: payments, error } = await pq;
       if (error) throw error;
       for (const p of payments ?? []) {
@@ -572,6 +597,8 @@ export const getDreReport = createServerFn({ method: "POST" })
         .gte("competence_date", iso(startDate))
         .lte("competence_date", iso(endDate));
       if (data.legalEntityId) eq = eq.eq("legal_entity_id", data.legalEntityId);
+      if (data.legalEntityIds && data.legalEntityIds.length)
+        eq = eq.in("legal_entity_id", data.legalEntityIds);
       const { data: rows, error } = await eq;
       if (error) throw error;
       for (const r of rows ?? []) {
@@ -631,6 +658,7 @@ export const getCashFlowProjection = createServerFn({ method: "POST" })
         expenseFactorRealistic: z.number().min(0).max(2).default(1),
         expenseFactorOptimistic: z.number().min(0).max(2).default(1),
         legalEntityId: z.string().uuid().optional(),
+        legalEntityIds: z.array(z.string().uuid()).optional(),
       })
       .parse(input ?? {}),
   )
@@ -648,12 +676,16 @@ export const getCashFlowProjection = createServerFn({ method: "POST" })
       .from("financial_bank_accounts")
       .select("id, name, initial_balance, active");
     if (data.legalEntityId) banksQ = banksQ.eq("legal_entity_id", data.legalEntityId);
+    if (data.legalEntityIds && data.legalEntityIds.length)
+      banksQ = banksQ.in("legal_entity_id", data.legalEntityIds);
     let entriesQ = supabase
       .from("financial_entries")
       .select("direction, status, amount, paid_amount, due_date")
       .in("status", ["open", "partial", "overdue"])
       .lte("due_date", iso(addDays(today, 90)));
     if (data.legalEntityId) entriesQ = entriesQ.eq("legal_entity_id", data.legalEntityId);
+    if (data.legalEntityIds && data.legalEntityIds.length)
+      entriesQ = entriesQ.in("legal_entity_id", data.legalEntityIds);
     const [banks, entriesRes] = await Promise.all([banksQ, entriesQ]);
     if (banks.error) throw banks.error;
     if (entriesRes.error) throw entriesRes.error;
