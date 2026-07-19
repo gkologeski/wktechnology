@@ -147,10 +147,13 @@ export function LegalEntitySelect({
   const { data: entities = [] } = useLegalEntities();
   const { data: groups = [] } = useLegalEntityGroups();
 
-  const nonSystemGroups = (groups as Array<{ id: string; name: string; is_system: boolean }>)
-    .filter((g) => !g.is_system);
-  const systemGroup = (groups as Array<{ id: string; name: string; is_system: boolean }>)
-    .find((g) => g.is_system);
+  const groupList = groups as unknown as Array<{
+    id: string;
+    name: string;
+    is_system: boolean;
+  }>;
+  const nonSystemGroups = groupList.filter((g) => !g.is_system);
+  const systemGroup = groupList.find((g) => g.is_system);
 
   // Nada a filtrar se só há uma empresa e nenhum grupo customizado.
   if (entities.length <= 1 && nonSystemGroups.length === 0) return null;
