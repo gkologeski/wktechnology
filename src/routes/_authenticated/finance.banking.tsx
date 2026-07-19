@@ -642,6 +642,161 @@ function BankingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={chargeDialogOpen} onOpenChange={setChargeDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nova cobrança</DialogTitle>
+            <DialogDescription>
+              Gere um Pix ou boleto vinculado à conexão do Banco Inter.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Tipo</Label>
+                <Select
+                  value={chargeForm.type}
+                  onValueChange={(v) => setChargeForm((f) => ({ ...f, type: v as any }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pix">Pix</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Vencimento</Label>
+                <Input
+                  type="date"
+                  value={chargeForm.due_date}
+                  onChange={(e) => setChargeForm((f) => ({ ...f, due_date: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Valor (R$)</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                value={chargeForm.amount}
+                onChange={(e) => setChargeForm((f) => ({ ...f, amount: e.target.value }))}
+                placeholder="0,00"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Pagador (nome)</Label>
+                <Input
+                  value={chargeForm.payer_name}
+                  onChange={(e) => setChargeForm((f) => ({ ...f, payer_name: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Documento</Label>
+                <Input
+                  value={chargeForm.payer_document}
+                  onChange={(e) => setChargeForm((f) => ({ ...f, payer_document: e.target.value }))}
+                  placeholder="CPF/CNPJ"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Descrição</Label>
+              <Textarea
+                rows={2}
+                value={chargeForm.description}
+                onChange={(e) => setChargeForm((f) => ({ ...f, description: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setChargeDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => createChargeMut.mutate()}
+              disabled={createChargeMut.isPending || !chargeForm.amount || Number(chargeForm.amount) <= 0}
+            >
+              {createChargeMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Emitir cobrança
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!showCharge} onOpenChange={(o) => !o && setShowCharge(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              Cobrança {showCharge?.type === "pix" ? "Pix" : "Boleto"} —{" "}
+              {showCharge && formatCurrency(Number(showCharge.amount), "BRL")}
+            </DialogTitle>
+            <DialogDescription>
+              {showCharge?.description || "Sem descrição"} · Vencimento{" "}
+              {showCharge && new Date(showCharge.due_date).toLocaleDateString("pt-BR")}
+            </DialogDescription>
+          </DialogHeader>
+          {showCharge?.type === "pix" ? (
+            <div className="space-y-3">
+              {showCharge.pix_qr_code && (
+                <div className="flex justify-center rounded-md border bg-white p-4">
+                  <img src={showCharge.pix_qr_code} alt="QR Code Pix" className="h-48 w-48" />
+                </div>
+              )}
+              {showCharge.pix_copy_paste && (
+                <div>
+                  <Label className="text-xs">Copia e cola</Label>
+                  <div className="flex gap-2">
+                    <Input readOnly value={showCharge.pix_copy_paste} className="font-mono text-xs" />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(showCharge.pix_copy_paste);
+                        toast.success("Copiado");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {showCharge?.boleto_digitable_line && (
+                <div>
+                  <Label className="text-xs">Linha digitável</Label>
+                  <div className="flex gap-2">
+                    <Input readOnly value={showCharge.boleto_digitable_line} className="font-mono text-xs" />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(showCharge.boleto_digitable_line);
+                        toast.success("Copiado");
+                      }}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+              {showCharge?.boleto_url && (
+                <Button variant="outline" asChild>
+                  <a href={showCharge.boleto_url} target="_blank" rel="noreferrer">
+                    Abrir PDF do boleto
+                  </a>
+                </Button>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowCharge(null)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
