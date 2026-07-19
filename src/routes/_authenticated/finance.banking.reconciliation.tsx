@@ -475,8 +475,10 @@ function ReconciliationPage() {
                           </li>
                         );
                       })}
-                    </ul>
+                      </ul>
+                    </>
                   )}
+
                 </CardContent>
               </Card>
             </TabsContent>
