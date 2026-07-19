@@ -84,17 +84,21 @@ function CategoriesPage() {
   const list = useServerFn(listCategories);
   const create = useServerFn(createCategory);
   const del = useServerFn(deleteCategory);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
+  const { data: legalEntities = [] } = useLegalEntities();
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<"revenue" | "expense">("revenue");
   const [code, setCode] = useState("");
   const [parentId, setParentId] = useState<string>("__root__");
+  const [formLegalEntity, setFormLegalEntity] = useState<string>("__none__");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  const filterLE = legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId;
   const { data: rows = [] } = useQuery({
-    queryKey: ["finance-categories"],
-    queryFn: () => list() as Promise<Cat[]>,
+    queryKey: ["finance-categories", filterLE ?? "all"],
+    queryFn: () => list({ data: { legalEntityId: filterLE } }) as Promise<Cat[]>,
   });
 
   const tree = useMemo(() => buildTree(rows), [rows]);
@@ -108,6 +112,9 @@ function CategoriesPage() {
     setCode("");
     if (preset?.kind) setKind(preset.kind);
     setParentId(preset?.parent ?? "__root__");
+    // Se um pai foi escolhido, herda a empresa dele; senão, usa o filtro ativo.
+    const parent = preset?.parent ? rows.find((r) => r.id === preset.parent) : null;
+    setFormLegalEntity(parent?.legal_entity_id ?? filterLE ?? "__none__");
     setOpen(true);
   }
 
@@ -120,6 +127,7 @@ function CategoriesPage() {
           kind,
           code: code.trim() || null,
           parent_id: parentId === "__root__" ? null : parentId,
+          legal_entity_id: formLegalEntity === "__none__" ? null : formLegalEntity,
         },
       });
       toast.success("Categoria criada");
