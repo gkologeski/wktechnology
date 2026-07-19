@@ -313,14 +313,19 @@ export const deleteCategory = createServerFn({ method: "POST" })
 
 export const listBankAccounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    z.object({ legalEntityId: z.string().uuid().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data, error } = await supabase
+    let q = supabase
       .from("financial_bank_accounts")
       .select("*")
       .order("name", { ascending: true });
+    if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
+    const { data: rows, error } = await q;
     if (error) throw error;
-    return data ?? [];
+    return rows ?? [];
   });
 
 export const createBankAccount = createServerFn({ method: "POST" })
