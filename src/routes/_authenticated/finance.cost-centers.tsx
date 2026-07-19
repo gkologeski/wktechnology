@@ -116,12 +116,15 @@ function buildTree(rows: CC[]): Node[] {
 
 function CostCentersPage() {
   const fetchFn = useServerFn(listCostCentersWithTotals);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
+  const filterLE = legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId;
   const { data, isLoading } = useQuery({
-    queryKey: ["cost-centers"],
-    queryFn: () => fetchFn() as Promise<{
-      centers: CC[];
-      legalEntities: { id: string; code: string | null; name: string }[];
-    }>,
+    queryKey: ["cost-centers", filterLE ?? "all"],
+    queryFn: () =>
+      fetchFn({ data: { legalEntityId: filterLE } }) as Promise<{
+        centers: CC[];
+        legalEntities: { id: string; code: string | null; name: string }[];
+      }>,
   });
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
