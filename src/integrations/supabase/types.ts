@@ -2998,6 +2998,99 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_charges: {
+        Row: {
+          amount: number
+          boleto_barcode: string | null
+          boleto_digitable_line: string | null
+          boleto_url: string | null
+          canceled_at: string | null
+          connection_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string
+          external_id: string | null
+          financial_entry_id: string | null
+          id: string
+          metadata: Json
+          owner_id: string
+          paid_at: string | null
+          payer_document: string | null
+          payer_name: string | null
+          pix_copy_paste: string | null
+          pix_qr_code: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          boleto_barcode?: string | null
+          boleto_digitable_line?: string | null
+          boleto_url?: string | null
+          canceled_at?: string | null
+          connection_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date: string
+          external_id?: string | null
+          financial_entry_id?: string | null
+          id?: string
+          metadata?: Json
+          owner_id: string
+          paid_at?: string | null
+          payer_document?: string | null
+          payer_name?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          boleto_barcode?: string | null
+          boleto_digitable_line?: string | null
+          boleto_url?: string | null
+          canceled_at?: string | null
+          connection_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string
+          external_id?: string | null
+          financial_entry_id?: string | null
+          id?: string
+          metadata?: Json
+          owner_id?: string
+          paid_at?: string | null
+          payer_document?: string | null
+          payer_name?: string | null
+          pix_copy_paste?: string | null
+          pix_qr_code?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_charges_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_charges_financial_entry_id_fkey"
+            columns: ["financial_entry_id"]
+            isOneToOne: false
+            referencedRelation: "financial_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_connection_events: {
         Row: {
           actor_id: string | null
