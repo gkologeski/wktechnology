@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/crm";
 import { getCashFlowProjection } from "@/lib/finance.functions";
-import { ALL_LEGAL_ENTITIES, LegalEntitySelect } from "@/components/finance/legal-entity-select";
+import { ALL_LEGAL_ENTITIES, LegalEntitySelect, useLegalEntityFilter } from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/cash-flow")({
   head: () => ({
@@ -42,7 +42,7 @@ function CashFlowPage() {
     expenseFactorRealistic: 1.0,
     expenseFactorOptimistic: 1.0,
   });
-  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
 
   const { data, isLoading } = useQuery({
     queryKey: ["finance", "cash-flow", factors, legalEntityId],
