@@ -461,7 +461,10 @@ function BankingPage() {
         </CardContent>
       </Card>
 
+      <BankingHealthCard providerConnected={status === "connected"} />
+
       <Tabs defaultValue="statement">
+
         <TabsList>
           <TabsTrigger value="statement">Extrato</TabsTrigger>
           <TabsTrigger value="charges">Cobranças</TabsTrigger>
