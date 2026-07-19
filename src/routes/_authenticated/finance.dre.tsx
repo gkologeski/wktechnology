@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/crm";
 import { getDreReport } from "@/lib/finance.functions";
-import { ALL_LEGAL_ENTITIES, LegalEntitySelect } from "@/components/finance/legal-entity-select";
+import { ALL_LEGAL_ENTITIES, LegalEntitySelect, useLegalEntityFilter } from "@/components/finance/legal-entity-select";
 
 
 export const Route = createFileRoute("/_authenticated/finance/dre")({
