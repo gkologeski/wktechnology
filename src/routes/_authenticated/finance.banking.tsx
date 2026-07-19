@@ -191,6 +191,71 @@ function BankingPage() {
       toast.error(e instanceof Error ? e.message : "Falha ao atualizar status"),
   });
 
+  // -------- Cobranças (Fase 4) --------
+  const listCharges = useServerFn(listBankCharges);
+  const createCharge = useServerFn(createBankCharge);
+  const cancelCharge = useServerFn(cancelBankCharge);
+  const simulatePay = useServerFn(simulateChargePayment);
+
+  const charges = useQuery({
+    queryKey: ["banking", "charges", conn?.id],
+    enabled: !!conn?.id && status === "connected",
+    queryFn: () => listCharges({ data: { connection_id: conn!.id, status: "all", limit: 200 } }),
+  });
+
+  const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
+  const [chargeForm, setChargeForm] = useState({
+    type: "pix" as "pix" | "boleto",
+    amount: "",
+    due_date: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+    description: "",
+    payer_name: "",
+    payer_document: "",
+  });
+  const [showCharge, setShowCharge] = useState<any | null>(null);
+
+  const createChargeMut = useMutation({
+    mutationFn: () =>
+      createCharge({
+        data: {
+          connection_id: conn!.id,
+          type: chargeForm.type,
+          amount: Number(chargeForm.amount),
+          due_date: chargeForm.due_date,
+          description: chargeForm.description || null,
+          payer_name: chargeForm.payer_name || null,
+          payer_document: chargeForm.payer_document || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Cobrança criada");
+      setChargeDialogOpen(false);
+      setChargeForm((f) => ({ ...f, amount: "", description: "" }));
+      qc.invalidateQueries({ queryKey: ["banking", "charges"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao criar cobrança"),
+  });
+
+  const cancelChargeMut = useMutation({
+    mutationFn: (id: string) => cancelCharge({ data: { charge_id: id } }),
+    onSuccess: () => {
+      toast.success("Cobrança cancelada");
+      qc.invalidateQueries({ queryKey: ["banking", "charges"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao cancelar"),
+  });
+
+  const simulatePayMut = useMutation({
+    mutationFn: (id: string) => simulatePay({ data: { charge_id: id } }),
+    onSuccess: () => {
+      toast.success("Pagamento simulado — cobrança liquidada");
+      qc.invalidateQueries({ queryKey: ["banking"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao simular pagamento"),
+  });
+
+
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
