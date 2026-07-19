@@ -8353,6 +8353,99 @@ export type Database = {
           },
         ]
       }
+      legal_entity_group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          legal_entity_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          legal_entity_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          legal_entity_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_entity_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entity_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_entity_group_members_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "legal_entity_group_members_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      legal_entity_groups: {
+        Row: {
+          active: boolean
+          code: string | null
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          code?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          code?: string | null
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_entity_groups_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       live_chat_messages: {
         Row: {
           author_user_id: string | null

@@ -27,7 +27,11 @@ import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { listFinancialEntries } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
 import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
-import { ALL_LEGAL_ENTITIES, LegalEntitySelect, useLegalEntityFilter } from "@/components/finance/legal-entity-select";
+import {
+  LegalEntitySelect,
+  useLegalEntityFilter,
+  useLegalEntityFilterInput,
+} from "@/components/finance/legal-entity-select";
 import { downloadCsv, toCsv } from "@/lib/csv-export";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -65,8 +69,9 @@ export function EntriesListPage({
   const [openNew, setOpenNew] = useState(false);
   const [payFor, setPayFor] = useState<Entry | null>(null);
 
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["finance-entries", direction, status, search, legalEntityId],
+    queryKey: ["finance-entries", direction, status, search, legalEntityId, JSON.stringify(filterInput)],
     queryFn: () =>
       list({
         data: {
@@ -76,7 +81,7 @@ export function EntriesListPage({
               ? undefined
               : (status as "open" | "partial" | "paid" | "overdue" | "cancelled"),
           search: search || undefined,
-          legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId,
+          ...filterInput,
         },
       }),
   });

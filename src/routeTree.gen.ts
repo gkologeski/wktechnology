@@ -132,6 +132,7 @@ import { Route as AuthenticatedSettingsMyPermissionsRouteImport } from './routes
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMediaRouteImport } from './routes/_authenticated/settings.media'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
+import { Route as AuthenticatedSettingsLegalEntityGroupsRouteImport } from './routes/_authenticated/settings.legal-entity-groups'
 import { Route as AuthenticatedSettingsLegalEntitiesRouteImport } from './routes/_authenticated/settings.legal-entities'
 import { Route as AuthenticatedSettingsLeadSourcesRouteImport } from './routes/_authenticated/settings.lead-sources'
 import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
@@ -1000,6 +1001,12 @@ const AuthenticatedSettingsMacrosRoute =
   AuthenticatedSettingsMacrosRouteImport.update({
     id: '/macros',
     path: '/macros',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsLegalEntityGroupsRoute =
+  AuthenticatedSettingsLegalEntityGroupsRouteImport.update({
+    id: '/legal-entity-groups',
+    path: '/legal-entity-groups',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsLegalEntitiesRoute =
@@ -2263,6 +2270,7 @@ export interface FileRoutesByFullPath {
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/legal-entities': typeof AuthenticatedSettingsLegalEntitiesRoute
+  '/settings/legal-entity-groups': typeof AuthenticatedSettingsLegalEntityGroupsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
@@ -2575,6 +2583,7 @@ export interface FileRoutesByTo {
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/settings/legal-entities': typeof AuthenticatedSettingsLegalEntitiesRoute
+  '/settings/legal-entity-groups': typeof AuthenticatedSettingsLegalEntityGroupsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
@@ -2892,6 +2901,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
   '/_authenticated/settings/lead-sources': typeof AuthenticatedSettingsLeadSourcesRoute
   '/_authenticated/settings/legal-entities': typeof AuthenticatedSettingsLegalEntitiesRoute
+  '/_authenticated/settings/legal-entity-groups': typeof AuthenticatedSettingsLegalEntityGroupsRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
@@ -3210,6 +3220,7 @@ export interface FileRouteTypes {
     | '/settings/language'
     | '/settings/lead-sources'
     | '/settings/legal-entities'
+    | '/settings/legal-entity-groups'
     | '/settings/macros'
     | '/settings/media'
     | '/settings/mobile'
@@ -3522,6 +3533,7 @@ export interface FileRouteTypes {
     | '/settings/language'
     | '/settings/lead-sources'
     | '/settings/legal-entities'
+    | '/settings/legal-entity-groups'
     | '/settings/macros'
     | '/settings/media'
     | '/settings/mobile'
@@ -3838,6 +3850,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/language'
     | '/_authenticated/settings/lead-sources'
     | '/_authenticated/settings/legal-entities'
+    | '/_authenticated/settings/legal-entity-groups'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/media'
     | '/_authenticated/settings/mobile'
@@ -4980,6 +4993,13 @@ declare module '@tanstack/react-router' {
       path: '/macros'
       fullPath: '/settings/macros'
       preLoaderRoute: typeof AuthenticatedSettingsMacrosRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/legal-entity-groups': {
+      id: '/_authenticated/settings/legal-entity-groups'
+      path: '/legal-entity-groups'
+      fullPath: '/settings/legal-entity-groups'
+      preLoaderRoute: typeof AuthenticatedSettingsLegalEntityGroupsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/legal-entities': {
@@ -6510,6 +6530,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
   AuthenticatedSettingsLeadSourcesRoute: typeof AuthenticatedSettingsLeadSourcesRoute
   AuthenticatedSettingsLegalEntitiesRoute: typeof AuthenticatedSettingsLegalEntitiesRoute
+  AuthenticatedSettingsLegalEntityGroupsRoute: typeof AuthenticatedSettingsLegalEntityGroupsRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsMediaRoute: typeof AuthenticatedSettingsMediaRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
@@ -6594,6 +6615,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsLeadSourcesRoute: AuthenticatedSettingsLeadSourcesRoute,
   AuthenticatedSettingsLegalEntitiesRoute:
     AuthenticatedSettingsLegalEntitiesRoute,
+  AuthenticatedSettingsLegalEntityGroupsRoute:
+    AuthenticatedSettingsLegalEntityGroupsRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsMediaRoute: AuthenticatedSettingsMediaRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
@@ -7158,13 +7181,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

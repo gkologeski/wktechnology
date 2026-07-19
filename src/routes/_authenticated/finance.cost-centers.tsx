@@ -10,9 +10,9 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
-  ALL_LEGAL_ENTITIES,
   LegalEntitySelect,
   useLegalEntityFilter,
+  useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
 
 // -----------------------------------------------------------------
@@ -22,19 +22,21 @@ const listCostCentersWithTotals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     (input === undefined
-      ? { legalEntityId: undefined as string | undefined }
-      : (input as { legalEntityId?: string })),
+      ? { legalEntityId: undefined as string | undefined, legalEntityIds: undefined as string[] | undefined }
+      : (input as { legalEntityId?: string; legalEntityIds?: string[] })),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const legalEntityId = data?.legalEntityId;
+    const legalEntityIds = data?.legalEntityIds;
     let ccQ = supabase
       .from("financial_cost_centers")
       .select("id, name, parent_id, legal_entity_id, active")
       .eq("workspace_id", workspaceId)
       .order("name");
     if (legalEntityId) ccQ = ccQ.eq("legal_entity_id", legalEntityId);
+    if (legalEntityIds && legalEntityIds.length) ccQ = ccQ.in("legal_entity_id", legalEntityIds);
 
     let allocQ = supabase
       .from("financial_entry_allocations")
@@ -44,6 +46,8 @@ const listCostCentersWithTotals = createServerFn({ method: "POST" })
       .eq("financial_entries.workspace_id", workspaceId);
     if (legalEntityId)
       allocQ = allocQ.eq("financial_entries.legal_entity_id", legalEntityId);
+    if (legalEntityIds && legalEntityIds.length)
+      allocQ = allocQ.in("financial_entries.legal_entity_id", legalEntityIds);
 
     const [ccRes, leRes, allocRes] = await Promise.all([
       ccQ,
@@ -117,11 +121,11 @@ function buildTree(rows: CC[]): Node[] {
 function CostCentersPage() {
   const fetchFn = useServerFn(listCostCentersWithTotals);
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
-  const filterLE = legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId;
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data, isLoading } = useQuery({
-    queryKey: ["cost-centers", filterLE ?? "all"],
+    queryKey: ["cost-centers", legalEntityId, JSON.stringify(filterInput)],
     queryFn: () =>
-      fetchFn({ data: { legalEntityId: filterLE } }) as Promise<{
+      fetchFn({ data: filterInput }) as Promise<{
         centers: CC[];
         legalEntities: { id: string; code: string | null; name: string }[];
       }>,

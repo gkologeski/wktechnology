@@ -31,9 +31,11 @@ import {
 } from "@/lib/finance.functions";
 import {
   ALL_LEGAL_ENTITIES,
+  GROUP_PREFIX,
   LegalEntitySelect,
   useLegalEntities,
   useLegalEntityFilter,
+  useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/categories")({
@@ -95,10 +97,14 @@ function CategoriesPage() {
   const [formLegalEntity, setFormLegalEntity] = useState<string>("__none__");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const filterLE = legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId;
+  const filterLE =
+    legalEntityId === ALL_LEGAL_ENTITIES || legalEntityId.startsWith(GROUP_PREFIX)
+      ? undefined
+      : legalEntityId;
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: rows = [] } = useQuery({
-    queryKey: ["finance-categories", filterLE ?? "all"],
-    queryFn: () => list({ data: { legalEntityId: filterLE } }) as Promise<Cat[]>,
+    queryKey: ["finance-categories", legalEntityId, JSON.stringify(filterInput)],
+    queryFn: () => list({ data: filterInput }) as Promise<Cat[]>,
   });
 
   const tree = useMemo(() => buildTree(rows), [rows]);
