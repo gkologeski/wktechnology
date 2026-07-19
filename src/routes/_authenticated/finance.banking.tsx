@@ -465,8 +465,178 @@ function BankingPage() {
         <TabsList>
           <TabsTrigger value="statement">Extrato</TabsTrigger>
           <TabsTrigger value="charges">Cobranças</TabsTrigger>
+          <TabsTrigger value="payments">Pagamentos</TabsTrigger>
           <TabsTrigger value="events">Histórico</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="payments" className="mt-4 space-y-4">
+          {status === "connected" && (
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-md border p-3">
+                <div className="text-xs uppercase text-muted-foreground">A pagar hoje</div>
+                <div className="mt-1 text-xl font-semibold tabular-nums">
+                  {formatCurrency(Number(summary.data?.due_today ?? 0), "BRL")}
+                </div>
+              </div>
+              <div className="rounded-md border p-3">
+                <div className="text-xs uppercase text-muted-foreground">Próximos 7 dias</div>
+                <div className="mt-1 text-xl font-semibold tabular-nums">
+                  {formatCurrency(Number(summary.data?.next_7_days ?? 0), "BRL")}
+                </div>
+              </div>
+              <div className="rounded-md border p-3">
+                <div className="text-xs uppercase text-muted-foreground">Atrasados</div>
+                <div className="mt-1 text-xl font-semibold tabular-nums text-destructive">
+                  {formatCurrency(Number(summary.data?.overdue ?? 0), "BRL")}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base">Pagamentos a fornecedores</CardTitle>
+                <CardDescription>
+                  Emita Pix e boletos de saída via Banco Inter. Fluxo: rascunho → aprovar →
+                  processamento → pago (conciliação automática com AP).
+                </CardDescription>
+              </div>
+              <Button
+                onClick={() => setPaymentDialogOpen(true)}
+                disabled={status !== "connected"}
+              >
+                <Plus className="h-4 w-4" /> Novo pagamento
+              </Button>
+            </CardHeader>
+            <CardContent className="p-0">
+              {status !== "connected" ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Conecte-se para emitir pagamentos.
+                </div>
+              ) : payments.isLoading ? (
+                <div className="flex items-center justify-center p-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (payments.data ?? []).length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  Nenhum pagamento emitido.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">Tipo</TableHead>
+                      <TableHead>Beneficiário</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead className="w-[110px]">Agendado</TableHead>
+                      <TableHead className="text-right w-[140px]">Valor</TableHead>
+                      <TableHead className="w-[130px]">Status</TableHead>
+                      <TableHead className="w-[240px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(payments.data ?? []).map((p: any) => (
+                      <TableRow key={p.id}>
+                        <TableCell>
+                          <Badge variant="outline" className="uppercase">
+                            {p.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          <div>{p.favored_name ?? "—"}</div>
+                          {p.favored_document && (
+                            <div className="text-xs text-muted-foreground">{p.favored_document}</div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">{p.description ?? "—"}</TableCell>
+                        <TableCell className="text-xs">
+                          {p.scheduled_for
+                            ? new Date(p.scheduled_for).toLocaleDateString("pt-BR")
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-medium">
+                          {formatCurrency(Number(p.amount), "BRL")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              p.status === "paid"
+                                ? "default"
+                                : p.status === "failed" || p.status === "canceled"
+                                  ? "destructive"
+                                  : p.status === "processing"
+                                    ? "secondary"
+                                    : "outline"
+                            }
+                            title={p.failure_reason ?? undefined}
+                          >
+                            {p.status === "draft"
+                              ? "Rascunho"
+                              : p.status === "approved"
+                                ? "Aprovado"
+                                : p.status === "processing"
+                                  ? "Processando"
+                                  : p.status === "paid"
+                                    ? "Pago"
+                                    : p.status === "failed"
+                                      ? "Falhou"
+                                      : "Cancelado"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right space-x-1">
+                          {p.status === "draft" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => approvePayMut.mutate(p.id)}
+                                disabled={approvePayMut.isPending}
+                              >
+                                <Send className="h-3.5 w-3.5" /> Aprovar
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => cancelPayMut.mutate(p.id)}
+                                disabled={cancelPayMut.isPending}
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
+                          {p.status === "processing" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => simulateSettleMut.mutate(p.id)}
+                              disabled={simulateSettleMut.isPending}
+                              title="Simular confirmação (mock)"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
+                            </Button>
+                          )}
+                          {p.status === "approved" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => simulateSettleMut.mutate(p.id)}
+                              disabled={simulateSettleMut.isPending}
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Liquidar
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+
 
         <TabsContent value="charges" className="mt-4">
           <Card>
