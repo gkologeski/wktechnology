@@ -17,7 +17,11 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/crm";
 import { getDreReport } from "@/lib/finance.functions";
-import { ALL_LEGAL_ENTITIES, LegalEntitySelect, useLegalEntityFilter } from "@/components/finance/legal-entity-select";
+import {
+  LegalEntitySelect,
+  useLegalEntityFilter,
+  useLegalEntityFilterInput,
+} from "@/components/finance/legal-entity-select";
 
 
 export const Route = createFileRoute("/_authenticated/finance/dre")({
@@ -42,14 +46,15 @@ function DrePage() {
   const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
 
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "dre", months, basis, legalEntityId],
+    queryKey: ["finance", "dre", months, basis, legalEntityId, JSON.stringify(filterInput)],
     queryFn: () =>
       get({
         data: {
           months,
           basis,
-          legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId,
+          ...filterInput,
         },
       }),
   });
