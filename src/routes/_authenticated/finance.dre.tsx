@@ -17,6 +17,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/crm";
 import { getDreReport } from "@/lib/finance.functions";
+import { ALL_LEGAL_ENTITIES, LegalEntitySelect } from "@/components/finance/legal-entity-select";
 
 
 export const Route = createFileRoute("/_authenticated/finance/dre")({
@@ -39,10 +40,18 @@ function DrePage() {
   const get = useServerFn(getDreReport);
   const [months, setMonths] = useState(6);
   const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
+  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "dre", months, basis],
-    queryFn: () => get({ data: { months, basis } }),
+    queryKey: ["finance", "dre", months, basis, legalEntityId],
+    queryFn: () =>
+      get({
+        data: {
+          months,
+          basis,
+          legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId,
+        },
+      }),
   });
 
 
@@ -106,13 +115,14 @@ function DrePage() {
             : "Receitas e despesas por data de pagamento (regime de caixa)."
         }
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Tabs value={basis} onValueChange={(v) => setBasis(v as "accrual" | "cash")}>
               <TabsList>
                 <TabsTrigger value="accrual">Competência</TabsTrigger>
                 <TabsTrigger value="cash">Caixa</TabsTrigger>
               </TabsList>
             </Tabs>
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
             <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
               <SelectTrigger className="w-[140px]">
 

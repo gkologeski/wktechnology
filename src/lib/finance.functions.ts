@@ -25,6 +25,7 @@ export const listFinancialEntries = createServerFn({ method: "POST" })
         contractId: z.string().uuid().optional(),
         serviceId: z.string().uuid().optional(),
         categoryId: z.string().uuid().optional(),
+        legalEntityId: z.string().uuid().optional(),
         search: z.string().optional(),
         from: z.string().optional(), // due_date >=
         to: z.string().optional(), // due_date <=
@@ -48,6 +49,7 @@ export const listFinancialEntries = createServerFn({ method: "POST" })
     if (data.contractId) q = q.eq("contract_id", data.contractId);
     if (data.serviceId) q = q.eq("service_id", data.serviceId);
     if (data.categoryId) q = q.eq("category_id", data.categoryId);
+    if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
     if (data.from) q = q.gte("due_date", data.from);
     if (data.to) q = q.lte("due_date", data.to);
     if (data.search && data.search.trim()) q = q.ilike("description", `%${data.search.trim()}%`);
@@ -382,7 +384,12 @@ export const updateBankAccount = createServerFn({ method: "POST" })
 
 export const getFinanceDashboard = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    z
+      .object({ legalEntityId: z.string().uuid().optional() })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase } = context;
     const today = new Date();
     const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -392,12 +399,14 @@ export const getFinanceDashboard = createServerFn({ method: "POST" })
       return c;
     };
 
-    const { data: entries, error } = await supabase
+    let q = supabase
       .from("financial_entries")
       .select("direction, status, amount, paid_amount, due_date")
       .in("status", ["open", "partial", "overdue", "paid"])
       .gte("due_date", iso(addDays(today, -180)))
       .lte("due_date", iso(addDays(today, 180)));
+    if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
+    const { data: entries, error } = await q;
     if (error) throw error;
 
     const todayIso = iso(today);
@@ -463,6 +472,7 @@ export const getDreReport = createServerFn({ method: "POST" })
         months: z.number().int().min(1).max(24).default(6),
         endMonth: z.string().optional(), // YYYY-MM
         basis: z.enum(["accrual", "cash"]).default("accrual"),
+        legalEntityId: z.string().uuid().optional(),
       })
       .parse(input ?? {}),
   )
@@ -516,13 +526,15 @@ export const getDreReport = createServerFn({ method: "POST" })
     };
 
     if (data.basis === "cash") {
-      const { data: payments, error } = await supabase
+      let pq = supabase
         .from("financial_payments")
         .select(
-          "amount, paid_at, financial_entries!inner(direction, status, category_id, financial_categories(id, name, kind))",
+          "amount, paid_at, financial_entries!inner(direction, status, category_id, legal_entity_id, financial_categories(id, name, kind))",
         )
         .gte("paid_at", iso(startDate))
         .lte("paid_at", iso(endDate));
+      if (data.legalEntityId) pq = pq.eq("financial_entries.legal_entity_id", data.legalEntityId);
+      const { data: payments, error } = await pq;
       if (error) throw error;
       for (const p of payments ?? []) {
         const entry = (p as unknown as {
@@ -537,7 +549,7 @@ export const getDreReport = createServerFn({ method: "POST" })
         addRow(entry.financial_categories, entry.direction, Number(p.amount), ym);
       }
     } else {
-      const { data: rows, error } = await supabase
+      let eq = supabase
         .from("financial_entries")
         .select(
           "direction, amount, competence_date, category_id, status, financial_categories(id, name, kind)",
@@ -545,6 +557,8 @@ export const getDreReport = createServerFn({ method: "POST" })
         .neq("status", "cancelled")
         .gte("competence_date", iso(startDate))
         .lte("competence_date", iso(endDate));
+      if (data.legalEntityId) eq = eq.eq("legal_entity_id", data.legalEntityId);
+      const { data: rows, error } = await eq;
       if (error) throw error;
       for (const r of rows ?? []) {
         const cat = (r as unknown as {
@@ -602,6 +616,7 @@ export const getCashFlowProjection = createServerFn({ method: "POST" })
         expenseFactorPessimistic: z.number().min(0).max(2).default(1),
         expenseFactorRealistic: z.number().min(0).max(2).default(1),
         expenseFactorOptimistic: z.number().min(0).max(2).default(1),
+        legalEntityId: z.string().uuid().optional(),
       })
       .parse(input ?? {}),
   )
@@ -615,14 +630,17 @@ export const getCashFlowProjection = createServerFn({ method: "POST" })
       return c;
     };
 
-    const [banks, entriesRes] = await Promise.all([
-      supabase.from("financial_bank_accounts").select("id, name, initial_balance, active"),
-      supabase
-        .from("financial_entries")
-        .select("direction, status, amount, paid_amount, due_date")
-        .in("status", ["open", "partial", "overdue"])
-        .lte("due_date", iso(addDays(today, 90))),
-    ]);
+    let banksQ = supabase
+      .from("financial_bank_accounts")
+      .select("id, name, initial_balance, active");
+    if (data.legalEntityId) banksQ = banksQ.eq("legal_entity_id", data.legalEntityId);
+    let entriesQ = supabase
+      .from("financial_entries")
+      .select("direction, status, amount, paid_amount, due_date")
+      .in("status", ["open", "partial", "overdue"])
+      .lte("due_date", iso(addDays(today, 90)));
+    if (data.legalEntityId) entriesQ = entriesQ.eq("legal_entity_id", data.legalEntityId);
+    const [banks, entriesRes] = await Promise.all([banksQ, entriesQ]);
     if (banks.error) throw banks.error;
     if (entriesRes.error) throw entriesRes.error;
 

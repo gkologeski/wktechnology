@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/crm";
 import { getCashFlowProjection } from "@/lib/finance.functions";
+import { ALL_LEGAL_ENTITIES, LegalEntitySelect } from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/cash-flow")({
   head: () => ({
@@ -41,10 +42,17 @@ function CashFlowPage() {
     expenseFactorRealistic: 1.0,
     expenseFactorOptimistic: 1.0,
   });
+  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["finance", "cash-flow", factors],
-    queryFn: () => get({ data: factors }),
+    queryKey: ["finance", "cash-flow", factors, legalEntityId],
+    queryFn: () =>
+      get({
+        data: {
+          ...factors,
+          legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId,
+        },
+      }),
   });
 
   return (
@@ -53,7 +61,9 @@ function CashFlowPage() {
         title="Fluxo de caixa"
         description="Projeção 30/60/90 dias com cenários pessimista, realista e otimista."
         actions={
-          <Popover>
+          <div className="flex flex-wrap items-center gap-2">
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+            <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline">
                 <Settings2 className="h-4 w-4 mr-1" /> Cenários
@@ -106,6 +116,7 @@ function CashFlowPage() {
               </div>
             </PopoverContent>
           </Popover>
+          </div>
         }
       />
 

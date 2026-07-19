@@ -27,6 +27,7 @@ import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { listFinancialEntries } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
 import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
+import { ALL_LEGAL_ENTITIES, LegalEntitySelect } from "@/components/finance/legal-entity-select";
 import { downloadCsv, toCsv } from "@/lib/csv-export";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -60,11 +61,12 @@ export function EntriesListPage({
   const list = useServerFn(listFinancialEntries);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
+  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
   const [openNew, setOpenNew] = useState(false);
   const [payFor, setPayFor] = useState<Entry | null>(null);
 
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["finance-entries", direction, status, search],
+    queryKey: ["finance-entries", direction, status, search, legalEntityId],
     queryFn: () =>
       list({
         data: {
@@ -74,6 +76,7 @@ export function EntriesListPage({
               ? undefined
               : (status as "open" | "partial" | "paid" | "overdue" | "cancelled"),
           search: search || undefined,
+          legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId,
         },
       }),
   });
@@ -154,6 +157,7 @@ export function EntriesListPage({
             ))}
           </SelectContent>
         </Select>
+        <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
         <div className="ml-auto text-sm text-muted-foreground">
           Total em aberto:{" "}
           <span className="font-semibold tabular-nums text-foreground">
