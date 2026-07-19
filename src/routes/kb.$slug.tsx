@@ -19,7 +19,7 @@ export const Route = createFileRoute("/kb/$slug")({
       excerpt?: string | null;
       body?: string;
     } | null;
-    const url = `https://ats.wktechnology.com.br/kb/${params.slug}`;
+    const url = `https://app.wktechnology.com.br/kb/${params.slug}`;
     const title = a?.title
       ? `${a.title} — Central de Ajuda WK Technology CRM`
       : "Artigo — Central de Ajuda WK Technology CRM";

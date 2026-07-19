@@ -18,7 +18,7 @@ import { WorkspaceMenu } from "@/components/workspace-menu";
 import { RouteBreadcrumbs } from "@/components/route-breadcrumbs";
 import { FocusQueueBar } from "@/components/focus-queue-bar";
 import { ModuleSwitcher } from "@/components/module-switcher";
-import { HostRouterGuard } from "@/components/host-router-guard";
+
 import { TimerWidget } from "@/components/timer-widget";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -102,7 +102,7 @@ function AuthenticatedLayout() {
 
   return (
     <SidebarProvider>
-      <HostRouterGuard />
+      
       <div className="min-h-screen flex w-full bg-muted/20">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">

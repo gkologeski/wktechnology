@@ -23,10 +23,10 @@ export const Route = createFileRoute("/kb/")({
         content:
           "Encontre artigos, tutoriais e respostas para suas dúvidas sobre o WK Technology CRM e como aproveitar todos os recursos da plataforma.",
       },
-      { property: "og:url", content: "https://ats.wktechnology.com.br/kb" },
+      { property: "og:url", content: "https://app.wktechnology.com.br/kb" },
       { property: "og:type", content: "website" },
     ],
-    links: [{ rel: "canonical", href: "https://ats.wktechnology.com.br/kb" }],
+    links: [{ rel: "canonical", href: "https://app.wktechnology.com.br/kb" }],
   }),
 });
 

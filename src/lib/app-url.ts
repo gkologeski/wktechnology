@@ -1,6 +1,6 @@
 // URL canônica da aplicação. Em runtime (cliente) preferimos o host
 // atual; no SSR/build usamos VITE_APP_URL ou o domínio publicado padrão.
-const FALLBACK = "https://ats.wktechnology.com.br";
+const FALLBACK = "https://app.wktechnology.com.br";
 
 export function getAppUrl(): string {
   if (typeof window !== "undefined" && window.location?.origin) {

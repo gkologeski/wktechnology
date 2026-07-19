@@ -1,6 +1,5 @@
 // Module switcher: alterna entre os módulos do ERP (CRM, ATS, ...).
-// Em produção navega para o subdomínio do módulo; em preview/local,
-// navega para a rota padrão dentro da mesma aplicação.
+// Single-host: sempre navegação SPA — não há mais cross-host.
 
 import { useState } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
@@ -13,8 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
-import { useActiveModule, detectModuleFromPath, detectModuleFromHost, setStoredActiveModule } from "@/lib/modules/active-module";
-import { buildModuleUrl, buildWorkspaceUrl, isCrossHostUrl, isReachableHost, getCurrentHostKind } from "@/lib/hosts";
+import { useActiveModule, detectModuleFromPath, setStoredActiveModule } from "@/lib/modules/active-module";
 import { cn } from "@/lib/utils";
 
 // Rotas comuns do workspace (não pertencem a um módulo específico).
@@ -30,45 +28,18 @@ export function ModuleSwitcher({ className }: { className?: string }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  // Considera o contexto "workspace" quando:
-  // - a rota atual pertence claramente ao workspace (ex.: /home, /settings); ou
-  // - estamos em preview/localhost e o path não indica um módulo específico
-  //   (evita mostrar "TechSales" como default na home do ERP).
-  const hostname = typeof window !== "undefined" ? window.location.hostname : null;
-  const hostKind = getCurrentHostKind();
   const pathModule = detectModuleFromPath(pathname);
-  const hostModule = detectModuleFromHost(hostname);
-  const isWorkspaceContext =
-    isWorkspaceRoute(pathname) ||
-    (hostKind === "preview" && !pathModule && !hostModule);
+  const isWorkspaceContext = isWorkspaceRoute(pathname) || !pathModule;
 
   const handleSelect = (moduleId: typeof active) => {
     setOpen(false);
-    // No contexto workspace (ERP Home / settings), o módulo "ativo" é apenas
-    // um default visual — sempre permita navegar para o módulo escolhido.
     if (!isWorkspaceContext && moduleId === active) return;
     const target = MODULE_LIST.find((m) => m.id === moduleId);
     if (!target) return;
-    // Persiste preferência do usuário — sidebar/host adapta imediatamente.
     setStoredActiveModule(moduleId);
-    const url = buildModuleUrl(moduleId, target.defaultRoute);
-    if (isCrossHostUrl(url)) {
-      // Se o host alvo não está alcançável (sem SSL/DNS ativo), evita
-      // navegação cross-host que provocaria loop e cai pra SPA.
-      try {
-        const targetHost = new URL(url).hostname;
-        if (!isReachableHost(targetHost)) {
-          navigate({ to: target.defaultRoute });
-          return;
-        }
-      } catch {
-        /* ignore */
-      }
-      window.location.assign(url);
-    } else {
-      navigate({ to: url });
-    }
+    navigate({ to: target.defaultRoute });
   };
+
 
   const activeDef = MODULE_LIST.find((m) => m.id === active) ?? MODULE_LIST[0];
 
@@ -92,21 +63,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
           type="button"
           onClick={() => {
             setOpen(false);
-            const url = buildWorkspaceUrl("/home");
-            if (isCrossHostUrl(url)) {
-              try {
-                const targetHost = new URL(url).hostname;
-                if (!isReachableHost(targetHost)) {
-                  navigate({ to: "/home" });
-                  return;
-                }
-              } catch {
-                /* ignore */
-              }
-              window.location.assign(url);
-            } else {
-              navigate({ to: "/home" });
-            }
+            navigate({ to: "/home" });
           }}
           className={cn(
             "w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-accent transition-colors",

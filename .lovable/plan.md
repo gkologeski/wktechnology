@@ -1,84 +1,71 @@
-## Grupos Empresariais no TechFinance
+# Consolidação em domínio único
 
-Permitir que o workspace agrupe múltiplos CNPJs (legal_entities) em Grupos Empresariais, com relação N:N, e usar esses grupos como filtro consolidado em todas as telas financeiras — incluindo relatórios comparativos por CNPJ dentro do grupo.
+Hoje a aplicação roda em três hosts (`app.`, `ats.`, `crm.` wktechnology.com.br) com um `HostRouterGuard` que faz redirects cross-host. Isso cria complexidade real (SSL/DNS por subdomínio, loops de redirect, cookies de sessão não compartilhados, SEO fragmentado, deep-link cross-módulo quebrado) sem ganho técnico — é um monólito TanStack Start servindo os três.
 
-### Fase 1 — Schema (migration)
+## Recomendação: um domínio, módulos como prefixo de rota
 
-Novas tabelas em `public`:
+Padrão usado por Linear, Stripe Dashboard, Attio, Shopify Admin, Atlassian: **um host, módulo como primeiro segmento do path**.
 
-- `legal_entity_groups` — grupo empresarial.
-  - Campos: `id`, `workspace_id`, `code` (opcional, único por workspace), `name`, `description`, `color`, `is_system` (para o grupo padrão "Todas as empresas"), `active`, `created_by`, `created_at`, `updated_at`.
-- `legal_entity_group_members` — associação N:N.
-  - Campos: `group_id`, `legal_entity_id`, `created_at`. PK composta `(group_id, legal_entity_id)`.
+```text
+app.wktechnology.com.br/            → ERP Home (seletor de módulos)
+app.wktechnology.com.br/ats/...     → TechHire
+app.wktechnology.com.br/crm/...     → TechSales
+app.wktechnology.com.br/finance/... → TechFinance
+app.wktechnology.com.br/settings    → Workspace/config (compartilhado)
+```
 
-Regras:
-- GRANT SELECT/INSERT/UPDATE/DELETE `authenticated`, ALL `service_role`.
-- RLS: acesso apenas para membros do workspace (padrão já usado em `legal_entities`); somente admin do workspace pode escrever (via `has_workspace_role`/policy equivalente já usada em outras tabelas).
-- Trigger `updated_at`.
-- Backfill: criar 1 grupo `is_system=true`, code `ALL`, nome "Todas as empresas" por workspace com CNPJs, populando `legal_entity_group_members` com todos os `legal_entities` do workspace.
-- Trigger em `legal_entities` (INSERT/soft-delete) para manter o grupo `is_system=true` sincronizado com todas as empresas ativas do workspace.
+Ganhos:
+- Sessão Supabase única (sem cross-domain cookies / relogin).
+- Sem redirects entre hosts → fim dos loops e do `HostRouterGuard`.
+- Deep-link de qualquer módulo funciona de qualquer contexto.
+- Um certificado, um DNS, um cache de assets.
+- Analytics e observabilidade unificados.
 
-### Fase 2 — Server functions
+Trade-off: URLs mais longas. Aceitável — é o padrão SaaS B2B.
 
-Novo arquivo `src/lib/legal-entity-groups.functions.ts`:
+## Escopo da mudança
 
-- `listLegalEntityGroups()` → retorna grupos do workspace com `member_ids` e contagem de CNPJs.
-- `upsertLegalEntityGroup({ id?, code, name, description, color, active })` — admin only; bloqueia edição de nome/code em grupos `is_system`.
-- `deleteLegalEntityGroup({ id })` — admin only; bloqueia exclusão de grupos `is_system`.
-- `setGroupMembers({ group_id, legal_entity_ids })` — admin only; bloqueia alteração em grupos `is_system`.
+### 1. Roteamento
+- Mover rotas ATS para prefixo `/ats/*` (hoje muitas vivem sem prefixo porque o host já discrimina): `/jobs`, `/candidates`, `/interviews`, etc. → `/ats/jobs`, `/ats/candidates`…
+- Manter `/crm/*`, `/finance/*`, `/contracts/*` já prefixados.
+- Rotas neutras (`/settings`, `/account`, `/workspace`, `/home`, `/auth`) permanecem sem prefixo.
+- Adicionar redirects 301 dos paths antigos sem prefixo para os novos (preserva bookmarks).
 
-Extensão em `src/lib/legal-entities.functions.ts`:
-- `resolveLegalEntityIds(selector)` — helper server-side que aceita `{ legalEntityId?: string, groupId?: string }` e retorna o array final de IDs a filtrar. Base para reuso nas outras server functions financeiras.
+### 2. Detecção de módulo ativo
+- Reescrever `src/lib/modules/active-module.ts` para priorizar path (não host).
+- `detectModuleFromPath` vira única fonte de verdade; `detectModuleFromHost` é removido.
+- `localStorage.activeModule` continua como fallback para telas neutras.
 
-Ajuste em `src/lib/finance.functions.ts` (aditivo, não quebra chamadas atuais):
-- Todas as listagens/agregações que hoje aceitam `legalEntityId` passam a aceitar também `groupId` (opcional). Quando `groupId` presente, resolvem para os IDs do grupo e aplicam `IN (...)`. Server functions afetadas: `listFinancialEntries`, `getFinancialSummary`, `getDreReport`, `getCashFlow`, `listCategories`, `listBankAccounts`, `listCostCentersWithTotals`, e agregados de dashboard.
+### 3. Remoção de infra multi-host
+- Deletar `HostRouterGuard` e sua montagem no root.
+- Simplificar `src/lib/hosts.ts`: remover `MODULE_HOSTS`, `buildModuleUrl`, `isReachableHost`, `HostRouterGuard`. Manter apenas `getAppUrl()`.
+- Atualizar `src/routes/index.tsx` para sempre redirecionar para `/home`.
 
-### Fase 3 — UI: filtro consolidado
+### 4. Domínios
+- `app.wktechnology.com.br` (ou apenas `wktechnology.com.br`) vira o host canônico único.
+- `ats.` e `crm.` viram redirect 301 permanente para `app.` preservando path (via config de domínio na Lovable).
+- Atualizar `APP_URL`, metadados SSR (`__root.tsx` `og:*`, JSON-LD), sitemap e templates de e-mail para o host único.
 
-Atualização em `src/components/finance/legal-entity-select.tsx`:
+### 5. Migração de dados/links
+- Buscar no repo por hardcodes de `ats.wktechnology` e `crm.wktechnology` (e-mails transacionais, webhooks públicos, docs, extensão Chrome, PDFs de cotação) e trocar para o host único.
+- Endpoints públicos (`/api/public/*`) não mudam — já são path-based.
 
-- Componente passa a suportar dois modos: **Empresa** e **Grupo**.
-  - Estrutura visual: um único `Select` agrupado em duas seções ("Grupos" e "Empresas"), como Linear/Attio. Item selecionado exibe badge "Grupo" ou "CNPJ".
-- Hook `useLegalEntityFilter` estendido para persistir `{ kind: "entity"|"group"|"all", id?: string }` em `localStorage` (chave existente `finance.legalEntityId` migra para `finance.legalEntitySelection`) e no query param `?le=` / `?leg=`.
-- Backward-compat: quando `kind==="entity"` continua enviando `legalEntityId`; quando `kind==="group"` envia `groupId`.
-- Sync entre abas via `StorageEvent` (já existe).
+### 6. Rollout
+1. Migração de rotas + redirects (behind flag ou direto, tudo em um deploy).
+2. Reconfigurar DNS: `app.` como primário; `ats.` e `crm.` apontando para o mesmo app com header/regra de redirect 301 para `app.` + path.
+3. Monitorar 404s e cliques nos redirects por 30 dias, então descomissionar `ats.`/`crm.` no médio prazo (ou manter permanentemente como redirect).
 
-Todas as telas que já usam `useLegalEntityFilter` passam a receber o seletor unificado, sem trocar chamadas — apenas passando `{ legalEntityId, groupId }` para as server functions.
+## Alternativas consideradas (e por que não)
 
-### Fase 4 — Gestão de grupos (nova rota)
+- **Manter multi-host + arrumar o guard**: paga o custo de complexidade toda semana (loops, SSL, sessão) sem benefício correspondente.
+- **Path-based apenas para módulos novos**: mantém dois modelos coexistindo indefinidamente. Pior dos mundos.
+- **Subdomínio por workspace/tenant** (`{tenant}.wktechnology.com.br`): faz sentido para multi-tenant white-label, mas é ortogonal a "um domínio por módulo" — pode ser adotado depois se virar requisito real.
 
-Nova rota `src/routes/_authenticated/settings.legal-entity-groups.tsx`, no mesmo padrão de `settings.legal-entities.tsx`:
+## Detalhes técnicos
 
-- `PageHeader` com título "Grupos empresariais" e ação primária "Novo grupo".
-- Tabela com: Nome (+ badge "Padrão" para `is_system`), Código, CNPJs (chips com nome/código truncados), Status, Ações (editar, excluir).
-- Dialog de criar/editar: campos `code`, `name`, `description`, `color`, `active`, e um multi-select de CNPJs (reusando dados de `listLegalEntities`).
-- Grupo `is_system` é apenas leitura para nome/code/members; permite editar cor/descrição.
-- Loading, empty, error states seguindo padrão de `settings.legal-entities.tsx`.
-
-Entrada no menu lateral de Configurações abaixo de "Empresas (CNPJs)".
-
-### Fase 5 — Relatórios comparativos
-
-Em `finance.dre.tsx` e `finance.cash-flow.tsx`, quando o filtro atual é um **Grupo**:
-
-- Botão toggle "Consolidado | Comparativo".
-- Modo Comparativo: tabela ganha colunas por CNPJ do grupo + coluna "Total". Server function retorna também o breakdown por `legal_entity_id` (novo campo opcional `groupBreakdown: true` no input).
-- Preserva o layout existente quando o filtro é uma empresa única ou "Todas".
-
-### Fase 6 — QA & validações
-
-- `bun run typecheck` e build.
-- Verificar RLS/GRANTs via `supabase--linter` após migration.
-- Manual: criar grupo, associar 2 CNPJs, alternar seletor em DRE/A pagar/A receber/Fluxo de caixa/Dashboard, verificar persistência em `?leg=` + reload + nova aba, verificar comparativo, verificar bloqueios em grupo padrão.
-
-### Fora de escopo (não implementar agora)
-
-- Eliminação automática de transferências intra-grupo (você não marcou).
-- Rateio automático entre CNPJs do grupo.
-- Exportação de relatório comparativo para Excel/PDF.
-
-### Detalhes técnicos
-
-- Todas as políticas RLS seguem `owner_id`/`workspace_id` conforme padrão já vigente (evitando reintroduzir padrões marcados nas security memories anteriores).
-- Nenhuma alteração em autenticação, schema fora dessas 2 tabelas, ou em módulos fora do TechFinance.
-- Sem novas dependências npm.
+- Rotas TanStack: renomear arquivos em `src/routes/_authenticated/` (`jobs.*.tsx` → `ats.jobs.*.tsx` etc.) e ajustar cada `createFileRoute("/…")` para o novo path. `src/routeTree.gen.ts` regenera automaticamente.
+- `ATS_ROUTE_PREFIXES` em `src/lib/menu-config-ats.ts` passa a listar paths com `/ats/` prefixado.
+- `<Link to>` type-safe: o typecheck do TanStack Router vai apontar toda referência que precisa mudar; usar isso como checklist.
+- Redirects legados: um arquivo `src/routes/_authenticated/{jobs,candidates,interviews,...}.$.tsx` com `beforeLoad` fazendo `throw redirect({ to: "/ats/…" })` cobre o histórico.
+- `src/routes/api/public/*` fica intocado; webhooks externos continuam válidos.
+- Extensão Chrome (`extension/manifest.json` host_permissions) atualizada para o host único.
