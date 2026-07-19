@@ -176,6 +176,7 @@ import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authen
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authenticated/inbox.chat'
 import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authenticated/home.access'
+import { Route as AuthenticatedFinanceRecurrencesRouteImport } from './routes/_authenticated/finance.recurrences'
 import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceNfseRouteImport } from './routes/_authenticated/finance.nfse'
@@ -1256,6 +1257,12 @@ const AuthenticatedHomeAccessRoute = AuthenticatedHomeAccessRouteImport.update({
   path: '/home/access',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFinanceRecurrencesRoute =
+  AuthenticatedFinanceRecurrencesRouteImport.update({
+    id: '/finance/recurrences',
+    path: '/finance/recurrences',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinanceReceivableRoute =
   AuthenticatedFinanceReceivableRouteImport.update({
     id: '/finance/receivable',
@@ -2195,6 +2202,7 @@ export interface FileRoutesByFullPath {
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
+  '/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -2504,6 +2512,7 @@ export interface FileRoutesByTo {
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
+  '/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -2818,6 +2827,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
+  '/_authenticated/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
   '/_authenticated/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
@@ -3133,6 +3143,7 @@ export interface FileRouteTypes {
     | '/finance/nfse'
     | '/finance/payable'
     | '/finance/receivable'
+    | '/finance/recurrences'
     | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
@@ -3442,6 +3453,7 @@ export interface FileRouteTypes {
     | '/finance/nfse'
     | '/finance/payable'
     | '/finance/receivable'
+    | '/finance/recurrences'
     | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
@@ -3755,6 +3767,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/nfse'
     | '/_authenticated/finance/payable'
     | '/_authenticated/finance/receivable'
+    | '/_authenticated/finance/recurrences'
     | '/_authenticated/home/access'
     | '/_authenticated/inbox/chat'
     | '/_authenticated/inbox/email'
@@ -5251,6 +5264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHomeAccessRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/finance/recurrences': {
+      id: '/_authenticated/finance/recurrences'
+      path: '/finance/recurrences'
+      fullPath: '/finance/recurrences'
+      preLoaderRoute: typeof AuthenticatedFinanceRecurrencesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/finance/receivable': {
       id: '/_authenticated/finance/receivable'
       path: '/finance/receivable'
@@ -6736,6 +6756,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceNfseRoute: typeof AuthenticatedFinanceNfseRoute
   AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
   AuthenticatedFinanceReceivableRoute: typeof AuthenticatedFinanceReceivableRoute
+  AuthenticatedFinanceRecurrencesRoute: typeof AuthenticatedFinanceRecurrencesRoute
   AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
@@ -6844,6 +6865,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinanceNfseRoute: AuthenticatedFinanceNfseRoute,
   AuthenticatedFinancePayableRoute: AuthenticatedFinancePayableRoute,
   AuthenticatedFinanceReceivableRoute: AuthenticatedFinanceReceivableRoute,
+  AuthenticatedFinanceRecurrencesRoute: AuthenticatedFinanceRecurrencesRoute,
   AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
