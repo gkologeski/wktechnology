@@ -27,7 +27,7 @@ import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { listFinancialEntries } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
 import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
-import { ALL_LEGAL_ENTITIES, LegalEntitySelect } from "@/components/finance/legal-entity-select";
+import { ALL_LEGAL_ENTITIES, LegalEntitySelect, useLegalEntityFilter } from "@/components/finance/legal-entity-select";
 import { downloadCsv, toCsv } from "@/lib/csv-export";
 
 const STATUS_LABEL: Record<string, string> = {
