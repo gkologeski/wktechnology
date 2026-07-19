@@ -11,6 +11,7 @@ import { formatCurrency } from "@/lib/crm";
 import { getFinanceDashboard } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
 import { FinanceAlertsPanel } from "@/components/finance/finance-alerts-panel";
+import { ALL_LEGAL_ENTITIES, LegalEntitySelect } from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/")({
   head: () => ({
@@ -60,10 +61,14 @@ function Metric({
 function FinanceDashboard() {
   const get = useServerFn(getFinanceDashboard);
   const [openNew, setOpenNew] = useState(false);
+  const [legalEntityId, setLegalEntityId] = useState<string>(ALL_LEGAL_ENTITIES);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ["finance", "dashboard"],
-    queryFn: () => get(),
+    queryKey: ["finance", "dashboard", legalEntityId],
+    queryFn: () =>
+      get({
+        data: { legalEntityId: legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId },
+      }),
   });
 
   const ar = data?.ar ?? { open: 0, overdue: 0, paid_180d: 0, d30: 0, d60: 0, d90: 0 };
@@ -76,7 +81,8 @@ function FinanceDashboard() {
         title="Financeiro"
         description="Contas a receber e a pagar, fluxo de caixa e categorias."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
             <Button variant="outline" asChild>
               <Link to="/finance/receivable">A receber</Link>
             </Button>
