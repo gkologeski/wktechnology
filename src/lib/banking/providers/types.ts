@@ -44,6 +44,20 @@ export type BankChargeCreated = {
   raw?: Record<string, unknown>;
 };
 
+export type BankPaymentCreated = {
+  external_id: string;
+  status: "processing" | "paid" | "failed";
+  failure_reason?: string | null;
+  raw?: Record<string, unknown>;
+};
+
+export type BankPaymentStatus = {
+  external_id: string;
+  status: "processing" | "paid" | "failed" | "canceled";
+  paid_at?: string | null;
+  failure_reason?: string | null;
+};
+
 export interface BankProvider {
   id: string; // 'inter'
   mode: "mock" | "sandbox" | "production";
@@ -92,4 +106,30 @@ export interface BankProvider {
     payer_document?: string | null;
     description?: string | null;
   }): Promise<BankChargeCreated>;
+
+  // Pagamentos a fornecedores (Fase 5)
+  createPixPayment?(input: {
+    access_token: string;
+    payment_id: string;
+    amount: number;
+    favored_name: string;
+    favored_document: string;
+    pix_key: string;
+    pix_key_type: string;
+    description?: string | null;
+  }): Promise<BankPaymentCreated>;
+
+  createBoletoPayment?(input: {
+    access_token: string;
+    payment_id: string;
+    amount: number;
+    barcode: string;
+    favored_name?: string | null;
+    description?: string | null;
+  }): Promise<BankPaymentCreated>;
+
+  getPaymentStatus?(input: {
+    access_token: string;
+    external_id: string;
+  }): Promise<BankPaymentStatus>;
 }
