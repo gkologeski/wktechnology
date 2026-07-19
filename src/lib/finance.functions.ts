@@ -339,6 +339,7 @@ export const createBankAccount = createServerFn({ method: "POST" })
         kind: z.string().default("checking"),
         currency: z.string().default("BRL"),
         initial_balance: z.number().default(0),
+        legal_entity_id: z.string().uuid().nullable().optional(),
       })
       .parse(input),
   )
@@ -353,6 +354,7 @@ export const createBankAccount = createServerFn({ method: "POST" })
         kind: data.kind,
         currency: data.currency,
         initial_balance: data.initial_balance,
+        legal_entity_id: data.legal_entity_id ?? null,
       })
       .select("*")
       .single();
