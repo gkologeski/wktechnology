@@ -10,9 +10,9 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import {
-  ALL_LEGAL_ENTITIES,
   LegalEntitySelect,
   useLegalEntityFilter,
+  useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
 
 // -----------------------------------------------------------------
@@ -121,11 +121,11 @@ function buildTree(rows: CC[]): Node[] {
 function CostCentersPage() {
   const fetchFn = useServerFn(listCostCentersWithTotals);
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
-  const filterLE = legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId;
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data, isLoading } = useQuery({
-    queryKey: ["cost-centers", filterLE ?? "all"],
+    queryKey: ["cost-centers", legalEntityId, JSON.stringify(filterInput)],
     queryFn: () =>
-      fetchFn({ data: { legalEntityId: filterLE } }) as Promise<{
+      fetchFn({ data: filterInput }) as Promise<{
         centers: CC[];
         legalEntities: { id: string; code: string | null; name: string }[];
       }>,
