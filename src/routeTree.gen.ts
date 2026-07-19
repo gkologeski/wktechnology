@@ -284,6 +284,7 @@ import { Route as AuthenticatedSettingsIntegrationsLinkedinRouteImport } from '.
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedProjectsListsIdRouteImport } from './routes/_authenticated/projects.lists.$id'
 import { Route as AuthenticatedFinanceEntriesIdRouteImport } from './routes/_authenticated/finance.entries.$id'
+import { Route as AuthenticatedFinanceBankingReconciliationRouteImport } from './routes/_authenticated/finance.banking.reconciliation'
 import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedAdminWorkspacesIdRouteImport } from './routes/_authenticated/admin.workspaces.$id'
 import { Route as AuthenticatedatsSourcingSequencesRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences'
@@ -1877,6 +1878,12 @@ const AuthenticatedFinanceEntriesIdRoute =
     path: '/finance/entries/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedFinanceBankingReconciliationRoute =
+  AuthenticatedFinanceBankingReconciliationRouteImport.update({
+    id: '/reconciliation',
+    path: '/reconciliation',
+    getParentRoute: () => AuthenticatedFinanceBankingRoute,
+  } as any)
 const AuthenticatedAtsJobsIdRoute = AuthenticatedAtsJobsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2160,7 +2167,7 @@ export interface FileRoutesByFullPath {
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
-  '/finance/banking': typeof AuthenticatedFinanceBankingRoute
+  '/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
@@ -2289,6 +2296,7 @@ export interface FileRoutesByFullPath {
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
+  '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
@@ -2465,7 +2473,7 @@ export interface FileRoutesByTo {
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
-  '/finance/banking': typeof AuthenticatedFinanceBankingRoute
+  '/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
@@ -2593,6 +2601,7 @@ export interface FileRoutesByTo {
   '/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
+  '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
@@ -2775,7 +2784,7 @@ export interface FileRoutesById {
   '/_authenticated/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
-  '/_authenticated/finance/banking': typeof AuthenticatedFinanceBankingRoute
+  '/_authenticated/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/_authenticated/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
   '/_authenticated/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
   '/_authenticated/finance/dre': typeof AuthenticatedFinanceDreRoute
@@ -2904,6 +2913,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/sourcing/sequences': typeof AuthenticatedatsSourcingSequencesRoute
   '/_authenticated/admin/workspaces/$id': typeof AuthenticatedAdminWorkspacesIdRoute
   '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
+  '/_authenticated/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/_authenticated/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/_authenticated/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
@@ -3215,6 +3225,7 @@ export interface FileRouteTypes {
     | '/sourcing/sequences'
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
+    | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
     | '/projects/lists/$id'
     | '/prospecting/campaigns/$id'
@@ -3519,6 +3530,7 @@ export interface FileRouteTypes {
     | '/sourcing/sequences'
     | '/admin/workspaces/$id'
     | '/ats/jobs/$id'
+    | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
     | '/projects/lists/$id'
     | '/prospecting/campaigns/$id'
@@ -3829,6 +3841,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/sourcing/sequences'
     | '/_authenticated/admin/workspaces/$id'
     | '/_authenticated/ats/jobs/$id'
+    | '/_authenticated/finance/banking/reconciliation'
     | '/_authenticated/finance/entries/$id'
     | '/_authenticated/projects/lists/$id'
     | '/_authenticated/prospecting/campaigns/$id'
@@ -5952,6 +5965,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceEntriesIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/finance/banking/reconciliation': {
+      id: '/_authenticated/finance/banking/reconciliation'
+      path: '/reconciliation'
+      fullPath: '/finance/banking/reconciliation'
+      preLoaderRoute: typeof AuthenticatedFinanceBankingReconciliationRouteImport
+      parentRoute: typeof AuthenticatedFinanceBankingRoute
+    }
     '/_authenticated/ats/jobs/$id': {
       id: '/_authenticated/ats/jobs/$id'
       path: '/$id'
@@ -6576,6 +6596,21 @@ const AuthenticatedAtsJobsRouteChildren: AuthenticatedAtsJobsRouteChildren = {
 const AuthenticatedAtsJobsRouteWithChildren =
   AuthenticatedAtsJobsRoute._addFileChildren(AuthenticatedAtsJobsRouteChildren)
 
+interface AuthenticatedFinanceBankingRouteChildren {
+  AuthenticatedFinanceBankingReconciliationRoute: typeof AuthenticatedFinanceBankingReconciliationRoute
+}
+
+const AuthenticatedFinanceBankingRouteChildren: AuthenticatedFinanceBankingRouteChildren =
+  {
+    AuthenticatedFinanceBankingReconciliationRoute:
+      AuthenticatedFinanceBankingReconciliationRoute,
+  }
+
+const AuthenticatedFinanceBankingRouteWithChildren =
+  AuthenticatedFinanceBankingRoute._addFileChildren(
+    AuthenticatedFinanceBankingRouteChildren,
+  )
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedCommunicationsRoute: typeof AuthenticatedCommunicationsRoute
@@ -6631,7 +6666,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCatalogServicesRoute: typeof AuthenticatedCatalogServicesRoute
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
-  AuthenticatedFinanceBankingRoute: typeof AuthenticatedFinanceBankingRoute
+  AuthenticatedFinanceBankingRoute: typeof AuthenticatedFinanceBankingRouteWithChildren
   AuthenticatedFinanceCashFlowRoute: typeof AuthenticatedFinanceCashFlowRoute
   AuthenticatedFinanceCategoriesRoute: typeof AuthenticatedFinanceCategoriesRoute
   AuthenticatedFinanceDreRoute: typeof AuthenticatedFinanceDreRoute
@@ -6738,7 +6773,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCatalogServicesRoute: AuthenticatedCatalogServicesRoute,
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
   AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
-  AuthenticatedFinanceBankingRoute: AuthenticatedFinanceBankingRoute,
+  AuthenticatedFinanceBankingRoute:
+    AuthenticatedFinanceBankingRouteWithChildren,
   AuthenticatedFinanceCashFlowRoute: AuthenticatedFinanceCashFlowRoute,
   AuthenticatedFinanceCategoriesRoute: AuthenticatedFinanceCategoriesRoute,
   AuthenticatedFinanceDreRoute: AuthenticatedFinanceDreRoute,
