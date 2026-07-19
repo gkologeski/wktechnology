@@ -29,6 +29,12 @@ import {
   deleteCategory,
   listCategories,
 } from "@/lib/finance.functions";
+import {
+  ALL_LEGAL_ENTITIES,
+  LegalEntitySelect,
+  useLegalEntities,
+  useLegalEntityFilter,
+} from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/categories")({
   head: () => ({ meta: [{ title: "Plano de contas" }] }),
@@ -41,6 +47,7 @@ type Cat = {
   kind: "revenue" | "expense";
   code: string | null;
   parent_id: string | null;
+  legal_entity_id: string | null;
 };
 
 type Node = Cat & { children: Node[] };
@@ -77,17 +84,21 @@ function CategoriesPage() {
   const list = useServerFn(listCategories);
   const create = useServerFn(createCategory);
   const del = useServerFn(deleteCategory);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
+  const { data: legalEntities = [] } = useLegalEntities();
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [kind, setKind] = useState<"revenue" | "expense">("revenue");
   const [code, setCode] = useState("");
   const [parentId, setParentId] = useState<string>("__root__");
+  const [formLegalEntity, setFormLegalEntity] = useState<string>("__none__");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
+  const filterLE = legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId;
   const { data: rows = [] } = useQuery({
-    queryKey: ["finance-categories"],
-    queryFn: () => list() as Promise<Cat[]>,
+    queryKey: ["finance-categories", filterLE ?? "all"],
+    queryFn: () => list({ data: { legalEntityId: filterLE } }) as Promise<Cat[]>,
   });
 
   const tree = useMemo(() => buildTree(rows), [rows]);
@@ -101,6 +112,9 @@ function CategoriesPage() {
     setCode("");
     if (preset?.kind) setKind(preset.kind);
     setParentId(preset?.parent ?? "__root__");
+    // Se um pai foi escolhido, herda a empresa dele; senão, usa o filtro ativo.
+    const parent = preset?.parent ? rows.find((r) => r.id === preset.parent) : null;
+    setFormLegalEntity(parent?.legal_entity_id ?? filterLE ?? "__none__");
     setOpen(true);
   }
 
@@ -113,6 +127,7 @@ function CategoriesPage() {
           kind,
           code: code.trim() || null,
           parent_id: parentId === "__root__" ? null : parentId,
+          legal_entity_id: formLegalEntity === "__none__" ? null : formLegalEntity,
         },
       });
       toast.success("Categoria criada");
@@ -216,9 +231,12 @@ function CategoriesPage() {
         title="Plano de contas"
         description="Estrutura hierárquica de receitas e despesas para o DRE gerencial."
         actions={
-          <Button onClick={() => openCreate()}>
-            <Plus className="h-4 w-4 mr-1" /> Nova conta
-          </Button>
+          <div className="flex items-center gap-2">
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+            <Button onClick={() => openCreate()}>
+              <Plus className="h-4 w-4 mr-1" /> Nova conta
+            </Button>
+          </div>
         }
       />
 
@@ -282,6 +300,24 @@ function CategoriesPage() {
                 </SelectContent>
               </Select>
             </div>
+            {legalEntities.length > 1 && (
+              <div className="space-y-2">
+                <Label>Empresa</Label>
+                <Select value={formLegalEntity} onValueChange={setFormLegalEntity}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">— Não vincular —</SelectItem>
+                    {legalEntities.map((le) => (
+                      <SelectItem key={le.id} value={le.id}>
+                        {le.code ? `${le.code} · ${le.name}` : le.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>

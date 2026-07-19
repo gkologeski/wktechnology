@@ -251,15 +251,20 @@ export const deletePayment = createServerFn({ method: "POST" })
 
 export const listCategories = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    z.object({ legalEntityId: z.string().uuid().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data, error } = await supabase
+    let q = supabase
       .from("financial_categories")
       .select("*")
       .order("kind", { ascending: true })
       .order("name", { ascending: true });
+    if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
+    const { data: rows, error } = await q;
     if (error) throw error;
-    return data ?? [];
+    return rows ?? [];
   });
 
 export const createCategory = createServerFn({ method: "POST" })
@@ -271,6 +276,7 @@ export const createCategory = createServerFn({ method: "POST" })
         kind: categoryKindEnum,
         code: z.string().nullable().optional(),
         parent_id: z.string().uuid().nullable().optional(),
+        legal_entity_id: z.string().uuid().nullable().optional(),
       })
       .parse(input),
   )
@@ -285,6 +291,7 @@ export const createCategory = createServerFn({ method: "POST" })
         kind: data.kind,
         code: data.code ?? null,
         parent_id: data.parent_id ?? null,
+        legal_entity_id: data.legal_entity_id ?? null,
       })
       .select("*")
       .single();
@@ -308,14 +315,19 @@ export const deleteCategory = createServerFn({ method: "POST" })
 
 export const listBankAccounts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    z.object({ legalEntityId: z.string().uuid().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data, error } = await supabase
+    let q = supabase
       .from("financial_bank_accounts")
       .select("*")
       .order("name", { ascending: true });
+    if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
+    const { data: rows, error } = await q;
     if (error) throw error;
-    return data ?? [];
+    return rows ?? [];
   });
 
 export const createBankAccount = createServerFn({ method: "POST" })
@@ -327,6 +339,7 @@ export const createBankAccount = createServerFn({ method: "POST" })
         kind: z.string().default("checking"),
         currency: z.string().default("BRL"),
         initial_balance: z.number().default(0),
+        legal_entity_id: z.string().uuid().nullable().optional(),
       })
       .parse(input),
   )
@@ -341,6 +354,7 @@ export const createBankAccount = createServerFn({ method: "POST" })
         kind: data.kind,
         currency: data.currency,
         initial_balance: data.initial_balance,
+        legal_entity_id: data.legal_entity_id ?? null,
       })
       .select("*")
       .single();

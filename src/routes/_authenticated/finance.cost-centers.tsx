@@ -9,29 +9,49 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
+import {
+  ALL_LEGAL_ENTITIES,
+  LegalEntitySelect,
+  useLegalEntityFilter,
+} from "@/components/finance/legal-entity-select";
 
 // -----------------------------------------------------------------
 // Inline server function: list cost centers with totals
 // -----------------------------------------------------------------
 const listCostCentersWithTotals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    (input === undefined
+      ? { legalEntityId: undefined as string | undefined }
+      : (input as { legalEntityId?: string })),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    const legalEntityId = data?.legalEntityId;
+    let ccQ = supabase
+      .from("financial_cost_centers")
+      .select("id, name, parent_id, legal_entity_id, active")
+      .eq("workspace_id", workspaceId)
+      .order("name");
+    if (legalEntityId) ccQ = ccQ.eq("legal_entity_id", legalEntityId);
+
+    let allocQ = supabase
+      .from("financial_entry_allocations")
+      .select(
+        "cost_center_id, amount, financial_entries!inner(workspace_id, direction, legal_entity_id)",
+      )
+      .eq("financial_entries.workspace_id", workspaceId);
+    if (legalEntityId)
+      allocQ = allocQ.eq("financial_entries.legal_entity_id", legalEntityId);
+
     const [ccRes, leRes, allocRes] = await Promise.all([
-      supabase
-        .from("financial_cost_centers")
-        .select("id, name, parent_id, legal_entity_id, active")
-        .eq("workspace_id", workspaceId)
-        .order("name"),
+      ccQ,
       supabase
         .from("legal_entities")
         .select("id, code, name")
         .eq("workspace_id", workspaceId),
-      supabase
-        .from("financial_entry_allocations")
-        .select("cost_center_id, amount, financial_entries!inner(workspace_id, direction)")
-        .eq("financial_entries.workspace_id", workspaceId),
+      allocQ,
     ]);
     if (ccRes.error) throw ccRes.error;
     if (leRes.error) throw leRes.error;
@@ -96,12 +116,15 @@ function buildTree(rows: CC[]): Node[] {
 
 function CostCentersPage() {
   const fetchFn = useServerFn(listCostCentersWithTotals);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
+  const filterLE = legalEntityId === ALL_LEGAL_ENTITIES ? undefined : legalEntityId;
   const { data, isLoading } = useQuery({
-    queryKey: ["cost-centers"],
-    queryFn: () => fetchFn() as Promise<{
-      centers: CC[];
-      legalEntities: { id: string; code: string | null; name: string }[];
-    }>,
+    queryKey: ["cost-centers", filterLE ?? "all"],
+    queryFn: () =>
+      fetchFn({ data: { legalEntityId: filterLE } }) as Promise<{
+        centers: CC[];
+        legalEntities: { id: string; code: string | null; name: string }[];
+      }>,
   });
 
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -164,6 +187,9 @@ function CostCentersPage() {
       <PageHeader
         title="Centros de custo"
         description="Hierarquia de centros de custo por empresa. Valores agregados dos rateios de lançamentos."
+        actions={
+          <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+        }
       />
 
       <div className="grid gap-3 md:grid-cols-3">
