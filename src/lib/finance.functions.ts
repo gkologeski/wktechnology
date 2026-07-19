@@ -251,15 +251,20 @@ export const deletePayment = createServerFn({ method: "POST" })
 
 export const listCategories = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input) =>
+    z.object({ legalEntityId: z.string().uuid().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data, error } = await supabase
+    let q = supabase
       .from("financial_categories")
       .select("*")
       .order("kind", { ascending: true })
       .order("name", { ascending: true });
+    if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
+    const { data: rows, error } = await q;
     if (error) throw error;
-    return data ?? [];
+    return rows ?? [];
   });
 
 export const createCategory = createServerFn({ method: "POST" })
