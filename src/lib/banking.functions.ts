@@ -670,6 +670,237 @@ export const listReconciliationHistory = createServerFn({ method: "POST" })
   });
 
 // -------------------------------------------------------------------
+// Sprint H — Fase 3: Conciliação bancária em massa
+// -------------------------------------------------------------------
+
+export const bulkIgnoreTransactions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { transaction_ids: string[] }) =>
+    z
+      .object({
+        transaction_ids: z.array(z.string().uuid()).min(1).max(500),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const { error, count } = await supabase
+      .from("bank_statement_transactions")
+      .update(
+        { reconciliation_status: "ignored", matched_payment_id: null },
+        { count: "exact" },
+      )
+      .in("id", data.transaction_ids)
+      .eq("workspace_id", workspaceId);
+    if (error) throw new Error(error.message);
+    return { ok: true, updated: count ?? 0 };
+  });
+
+export const bulkLinkBestMatch = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      connection_id: string;
+      window_days?: number;
+      transaction_ids?: string[];
+    }) =>
+      z
+        .object({
+          connection_id: z.string().uuid(),
+          window_days: z.number().int().min(0).max(30).default(5),
+          transaction_ids: z.array(z.string().uuid()).max(500).optional(),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    let txQ = supabase
+      .from("bank_statement_transactions")
+      .select("id, posted_at, amount, direction")
+      .eq("workspace_id", workspaceId)
+      .eq("connection_id", data.connection_id)
+      .eq("reconciliation_status", "pending");
+    if (data.transaction_ids && data.transaction_ids.length > 0) {
+      txQ = txQ.in("id", data.transaction_ids);
+    }
+    const { data: txs, error: tErr } = await txQ.limit(500);
+    if (tErr) throw new Error(tErr.message);
+    const txList = txs ?? [];
+    if (txList.length === 0) return { ok: true, linked: 0, skipped: 0 };
+
+    const dates = txList.map((t: any) => new Date(t.posted_at).getTime());
+    const minMs = Math.min(...dates) - data.window_days * 86400000;
+    const maxMs = Math.max(...dates) + data.window_days * 86400000;
+    const fromIso = new Date(minMs).toISOString().slice(0, 10);
+    const toIso = new Date(maxMs).toISOString().slice(0, 10);
+
+    const { data: usedRows } = await supabase
+      .from("bank_statement_transactions")
+      .select("matched_payment_id")
+      .eq("workspace_id", workspaceId)
+      .eq("reconciliation_status", "matched")
+      .not("matched_payment_id", "is", null);
+    const used = new Set(
+      (usedRows ?? []).map((r: any) => r.matched_payment_id).filter(Boolean),
+    );
+
+    const { data: pays, error: pErr } = await supabase
+      .from("financial_payments")
+      .select("id, paid_at, amount")
+      .eq("workspace_id", workspaceId)
+      .gte("paid_at", fromIso)
+      .lte("paid_at", toIso);
+    if (pErr) throw new Error(pErr.message);
+    const payments = (pays ?? []).filter((p: any) => !used.has(p.id));
+
+    const windowMs = data.window_days * 86400000;
+    let linked = 0;
+    let skipped = 0;
+    for (const t of txList) {
+      const postedMs = new Date(t.posted_at).getTime();
+      const amt = Math.abs(Number(t.amount));
+      const best = payments
+        .map((p: any) => {
+          const diff = Math.abs(new Date(p.paid_at).getTime() - postedMs);
+          const amountOk = Math.abs(Math.abs(Number(p.amount)) - amt) < 0.01;
+          return { p, diff, amountOk };
+        })
+        .filter((c: any) => c.amountOk && c.diff <= windowMs)
+        .sort((a: any, b: any) => a.diff - b.diff)[0];
+      if (!best) {
+        skipped++;
+        continue;
+      }
+      const { error: uErr } = await supabase
+        .from("bank_statement_transactions")
+        .update({
+          reconciliation_status: "matched",
+          matched_payment_id: best.p.id,
+        })
+        .eq("id", t.id)
+        .eq("workspace_id", workspaceId);
+      if (uErr) {
+        skipped++;
+        continue;
+      }
+      used.add(best.p.id);
+      const idx = payments.findIndex((p: any) => p.id === best.p.id);
+      if (idx >= 0) payments.splice(idx, 1);
+      linked++;
+    }
+    return { ok: true, linked, skipped };
+  });
+
+export const bulkCreateEntries = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      transaction_ids: string[];
+      category_id?: string | null;
+      bank_account_id?: string | null;
+    }) =>
+      z
+        .object({
+          transaction_ids: z.array(z.string().uuid()).min(1).max(200),
+          category_id: z.string().uuid().nullable().optional(),
+          bank_account_id: z.string().uuid().nullable().optional(),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const { data: txs, error: tErr } = await supabase
+      .from("bank_statement_transactions")
+      .select("id, posted_at, amount, direction, description, counterparty")
+      .in("id", data.transaction_ids)
+      .eq("workspace_id", workspaceId)
+      .eq("reconciliation_status", "pending");
+    if (tErr) throw new Error(tErr.message);
+    const txList = txs ?? [];
+
+    let created = 0;
+    const errors: string[] = [];
+    for (const t of txList) {
+      const amount = Math.abs(Number(t.amount));
+      const dir = t.direction === "credit" ? "receivable" : "payable";
+      const dateIso = new Date(t.posted_at).toISOString().slice(0, 10);
+      const description =
+        (t.description && String(t.description).trim()) ||
+        (t.counterparty && String(t.counterparty).trim()) ||
+        "Movimentação bancária";
+
+      const { data: entry, error: eErr } = await supabase
+        .from("financial_entries")
+        .insert({
+          workspace_id: workspaceId,
+          owner_id: userId,
+          direction: dir,
+          origin_type: "manual",
+          description,
+          amount,
+          currency: "BRL",
+          competence_date: dateIso,
+          due_date: dateIso,
+          paid_amount: amount,
+          status: "paid",
+          category_id: data.category_id ?? null,
+          external_ref: `bank_tx:${t.id}`,
+        })
+        .select("id")
+        .single();
+      if (eErr || !entry) {
+        errors.push(eErr?.message ?? "Falha ao criar lançamento");
+        continue;
+      }
+
+      const { data: pay, error: pErr } = await supabase
+        .from("financial_payments")
+        .insert({
+          workspace_id: workspaceId,
+          entry_id: entry.id,
+          bank_account_id: data.bank_account_id ?? null,
+          paid_at: dateIso,
+          amount,
+          method: "bank",
+          reference: description.slice(0, 120),
+          created_by: userId,
+        })
+        .select("id")
+        .single();
+      if (pErr || !pay) {
+        errors.push(pErr?.message ?? "Falha ao registrar pagamento");
+        continue;
+      }
+
+      const { error: uErr } = await supabase
+        .from("bank_statement_transactions")
+        .update({
+          reconciliation_status: "matched",
+          matched_payment_id: pay.id,
+        })
+        .eq("id", t.id)
+        .eq("workspace_id", workspaceId);
+      if (uErr) {
+        errors.push(uErr.message);
+        continue;
+      }
+      created++;
+    }
+    return { ok: true, created, errors };
+  });
+
+
+
+// -------------------------------------------------------------------
 // Sprint G — Fase 4: Cobranças (Pix + Boleto)
 // -------------------------------------------------------------------
 

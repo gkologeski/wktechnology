@@ -6,14 +6,18 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2, XCircle, RotateCcw, ScanSearch } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, RotateCcw, ScanSearch, Wand2, FilePlus2 } from "lucide-react";
 
 import {
   getBankConnection,
   suggestReconciliationMatches,
   listReconciliationHistory,
   setStatementReconciliation,
+  bulkIgnoreTransactions,
+  bulkLinkBestMatch,
+  bulkCreateEntries,
 } from "@/lib/banking.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +84,19 @@ function ReconciliationPage() {
   const [historyStatus, setHistoryStatus] = useState<"matched" | "ignored" | "all">(
     "all",
   );
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleOne = (id: string) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const clearSelection = () => setSelected(new Set());
+
+  const bulkIgnoreFn = useServerFn(bulkIgnoreTransactions);
+  const bulkLinkFn = useServerFn(bulkLinkBestMatch);
+  const bulkCreateFn = useServerFn(bulkCreateEntries);
 
   const connQ = useQuery({
     queryKey: ["banking", "connection", "inter"],
@@ -150,6 +167,50 @@ function ReconciliationPage() {
     onError: (e: any) => toast.error(e?.message ?? "Erro ao reativar"),
   });
 
+  const bulkIgnoreMut = useMutation({
+    mutationFn: (ids: string[]) => bulkIgnoreFn({ data: { transaction_ids: ids } }),
+    onSuccess: (r: any) => {
+      toast.success(`${r?.updated ?? 0} transação(ões) ignorada(s)`);
+      clearSelection();
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao ignorar em lote"),
+  });
+
+  const bulkLinkMut = useMutation({
+    mutationFn: (ids: string[]) =>
+      bulkLinkFn({
+        data: {
+          connection_id: connectionId!,
+          window_days: windowDays,
+          transaction_ids: ids,
+        },
+      }),
+    onSuccess: (r: any) => {
+      toast.success(
+        `${r?.linked ?? 0} vinculada(s), ${r?.skipped ?? 0} sem candidato`,
+      );
+      clearSelection();
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao vincular em lote"),
+  });
+
+  const bulkCreateMut = useMutation({
+    mutationFn: (ids: string[]) =>
+      bulkCreateFn({ data: { transaction_ids: ids } }),
+    onSuccess: (r: any) => {
+      const errs = r?.errors?.length ?? 0;
+      toast.success(
+        `${r?.created ?? 0} lançamento(s) criado(s)` +
+          (errs > 0 ? ` · ${errs} falha(s)` : ""),
+      );
+      clearSelection();
+      invalidateAll();
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Erro ao criar em lote"),
+  });
+
   const items = suggestQ.data?.items ?? [];
   const withCandidates = useMemo(
     () => items.filter((it: any) => (it.candidates?.length ?? 0) > 0),
@@ -159,6 +220,16 @@ function ReconciliationPage() {
     () => items.filter((it: any) => (it.candidates?.length ?? 0) === 0),
     [items],
   );
+  const allIds = useMemo(() => items.map((it: any) => it.transaction.id), [items]);
+  const allSelected = allIds.length > 0 && allIds.every((id: string) => selected.has(id));
+  const someSelected = selected.size > 0 && !allSelected;
+  const toggleAll = () => {
+    if (allSelected) clearSelection();
+    else setSelected(new Set(allIds));
+  };
+  const bulkBusy =
+    bulkIgnoreMut.isPending || bulkLinkMut.isPending || bulkCreateMut.isPending;
+
 
   return (
     <div className="space-y-6 p-6">
@@ -242,17 +313,80 @@ function ReconciliationPage() {
                       ignoradas.
                     </div>
                   ) : (
-                    <ul className="space-y-3">
-                      {items.map((it: any) => {
-                        const t = it.transaction;
-                        const signed = t.direction === "credit" ? t.amount : -t.amount;
-                        return (
-                          <li
-                            key={t.id}
-                            className="rounded-lg border bg-card p-4 shadow-sm"
+                    <>
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3">
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={
+                              allSelected ? true : someSelected ? "indeterminate" : false
+                            }
+                            onCheckedChange={toggleAll}
+                          />
+                          <span className="font-medium">
+                            {selected.size > 0
+                              ? `${selected.size} selecionada(s)`
+                              : "Selecionar todas"}
+                          </span>
+                        </label>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={selected.size === 0 || bulkBusy}
+                            onClick={() => bulkLinkMut.mutate(Array.from(selected))}
                           >
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                              <div className="min-w-0 flex-1">
+                            <Wand2 className="mr-1 h-4 w-4" />
+                            Vincular melhor match
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={selected.size === 0 || bulkBusy}
+                            onClick={() => bulkCreateMut.mutate(Array.from(selected))}
+                          >
+                            <FilePlus2 className="mr-1 h-4 w-4" />
+                            Criar lançamentos
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={selected.size === 0 || bulkBusy}
+                            onClick={() => bulkIgnoreMut.mutate(Array.from(selected))}
+                          >
+                            <XCircle className="mr-1 h-4 w-4" />
+                            Ignorar
+                          </Button>
+                          {selected.size > 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={clearSelection}
+                              disabled={bulkBusy}
+                            >
+                              Limpar
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                      <ul className="space-y-3">
+                        {items.map((it: any) => {
+                          const t = it.transaction;
+                          const signed = t.direction === "credit" ? t.amount : -t.amount;
+                          const isSelected = selected.has(t.id);
+                          return (
+                            <li
+                              key={t.id}
+                              className="rounded-lg border bg-card p-4 shadow-sm"
+                            >
+                              <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div className="flex min-w-0 flex-1 items-start gap-3">
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={() => toggleOne(t.id)}
+                                    className="mt-1"
+                                  />
+                                  <div className="min-w-0 flex-1">
+
                                 <div className="text-sm font-medium">
                                   {t.description ?? "Movimentação"}
                                 </div>
@@ -265,7 +399,9 @@ function ReconciliationPage() {
                                     </>
                                   )}
                                 </div>
-                              </div>
+                                  </div>
+                                </div>
+
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`text-base font-semibold tabular-nums ${
@@ -339,8 +475,10 @@ function ReconciliationPage() {
                           </li>
                         );
                       })}
-                    </ul>
+                      </ul>
+                    </>
                   )}
+
                 </CardContent>
               </Card>
             </TabsContent>
