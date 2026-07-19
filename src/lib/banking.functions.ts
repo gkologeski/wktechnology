@@ -669,4 +669,261 @@ export const listReconciliationHistory = createServerFn({ method: "POST" })
     }));
   });
 
+// -------------------------------------------------------------------
+// Sprint G — Fase 4: Cobranças (Pix + Boleto)
+// -------------------------------------------------------------------
+
+export const listBankCharges = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: { connection_id: string; status?: string; limit?: number }) =>
+      z
+        .object({
+          connection_id: z.string().uuid(),
+          status: z.enum(["pending", "paid", "canceled", "expired", "all"]).default("all"),
+          limit: z.number().int().min(1).max(500).default(100),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    let q = supabase
+      .from("bank_charges")
+      .select(
+        "id, type, amount, due_date, status, payer_name, payer_document, description, pix_qr_code, pix_copy_paste, boleto_barcode, boleto_digitable_line, boleto_url, external_id, paid_at, canceled_at, financial_entry_id, created_at",
+      )
+      .eq("workspace_id", workspaceId)
+      .eq("connection_id", data.connection_id)
+      .order("created_at", { ascending: false })
+      .limit(data.limit);
+
+    if (data.status !== "all") q = q.eq("status", data.status);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return rows ?? [];
+  });
+
+export const createBankCharge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      connection_id: string;
+      type: "pix" | "boleto";
+      amount: number;
+      due_date: string;
+      description?: string | null;
+      payer_name?: string | null;
+      payer_document?: string | null;
+      financial_entry_id?: string | null;
+    }) =>
+      z
+        .object({
+          connection_id: z.string().uuid(),
+          type: z.enum(["pix", "boleto"]),
+          amount: z.number().positive(),
+          due_date: z.string().min(10),
+          description: z.string().max(500).nullable().optional(),
+          payer_name: z.string().max(200).nullable().optional(),
+          payer_document: z.string().max(32).nullable().optional(),
+          financial_entry_id: z.string().uuid().nullable().optional(),
+        })
+        .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const { data: conn, error: cErr } = await supabase
+      .from("bank_connections")
+      .select("id, provider, mode, status")
+      .eq("id", data.connection_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (cErr) throw new Error(cErr.message);
+    if (!conn) throw new Error("Conexão não encontrada");
+    if (conn.status !== "connected") throw new Error("Conexão inativa — reautorize");
+
+    const { data: inserted, error: iErr } = await supabase
+      .from("bank_charges")
+      .insert({
+        workspace_id: workspaceId,
+        connection_id: conn.id,
+        financial_entry_id: data.financial_entry_id ?? null,
+        type: data.type,
+        amount: data.amount,
+        due_date: data.due_date,
+        description: data.description ?? null,
+        payer_name: data.payer_name ?? null,
+        payer_document: data.payer_document ?? null,
+        created_by: userId,
+      })
+      .select("id")
+      .single();
+    if (iErr) throw new Error(iErr.message);
+
+    const accessToken = await getActiveToken(supabase, conn.id);
+    const { resolveBankProvider } = await import("./banking/providers");
+    const provider = resolveBankProvider(conn.provider, conn.mode);
+    const fn = data.type === "pix" ? provider.createPixCharge : provider.createBoletoCharge;
+    if (!fn) throw new Error(`Provider não suporta ${data.type}`);
+
+    try {
+      const res = await fn.call(provider, {
+        access_token: accessToken,
+        charge_id: inserted.id,
+        amount: data.amount,
+        due_date: data.due_date,
+        description: data.description ?? null,
+        payer_name: data.payer_name ?? null,
+        payer_document: data.payer_document ?? null,
+      });
+
+      const { error: uErr } = await supabase
+        .from("bank_charges")
+        .update({
+          external_id: res.external_id,
+          pix_qr_code: res.pix_qr_code,
+          pix_copy_paste: res.pix_copy_paste,
+          boleto_barcode: res.boleto_barcode,
+          boleto_digitable_line: res.boleto_digitable_line,
+          boleto_url: res.boleto_url,
+          metadata: (res.raw ?? {}) as any,
+        })
+        .eq("id", inserted.id);
+      if (uErr) throw new Error(uErr.message);
+
+      return { ok: true, charge_id: inserted.id };
+    } catch (e) {
+      await supabase.from("bank_charges").delete().eq("id", inserted.id);
+      throw e;
+    }
+  });
+
+export const cancelBankCharge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { charge_id: string }) =>
+    z.object({ charge_id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+
+    const { data: charge } = await supabase
+      .from("bank_charges")
+      .select("id, status")
+      .eq("id", data.charge_id)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (!charge) throw new Error("Cobrança não encontrada");
+    if (charge.status !== "pending") throw new Error("Somente cobranças pendentes podem ser canceladas");
+
+    const { error } = await supabase
+      .from("bank_charges")
+      .update({ status: "canceled", canceled_at: new Date().toISOString() })
+      .eq("id", data.charge_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// Marca cobrança como paga e cria financial_payment + concilia extrato (idempotente por external_id).
+async function settleChargePayment(
+  supabase: any,
+  workspaceId: string,
+  chargeId: string,
+  paidAtIso: string,
+  actorId: string | null,
+) {
+  const { data: charge, error } = await supabase
+    .from("bank_charges")
+    .select("id, connection_id, financial_entry_id, amount, type, status, external_id, description")
+    .eq("id", chargeId)
+    .eq("workspace_id", workspaceId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!charge) throw new Error("Cobrança não encontrada");
+  if (charge.status === "paid") return { ok: true, already: true };
+  if (charge.status !== "pending") throw new Error(`Cobrança em status ${charge.status}`);
+
+  const paidDate = paidAtIso.slice(0, 10);
+
+  let paymentId: string | null = null;
+  if (charge.financial_entry_id) {
+    const { data: linkedAccount } = await supabase
+      .from("financial_bank_accounts")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("bank_connection_id", charge.connection_id)
+      .maybeSingle();
+
+    const { data: pay, error: pErr } = await supabase
+      .from("financial_payments")
+      .insert({
+        workspace_id: workspaceId,
+        entry_id: charge.financial_entry_id,
+        bank_account_id: linkedAccount?.id ?? null,
+        paid_at: paidDate,
+        amount: charge.amount,
+        method: charge.type,
+        reference: charge.external_id ?? charge.id,
+        notes: `Liquidação automática — ${charge.type.toUpperCase()}`,
+        created_by: actorId,
+      })
+      .select("id")
+      .single();
+    if (pErr) throw new Error(pErr.message);
+    paymentId = pay.id;
+
+    const { data: entry } = await supabase
+      .from("financial_entries")
+      .select("amount, paid_amount, status")
+      .eq("id", charge.financial_entry_id)
+      .maybeSingle();
+    if (entry) {
+      const newPaid = Number(entry.paid_amount) + Number(charge.amount);
+      const newStatus = newPaid + 0.001 >= Number(entry.amount) ? "paid" : "partially_paid";
+      await supabase
+        .from("financial_entries")
+        .update({ paid_amount: newPaid, status: newStatus })
+        .eq("id", charge.financial_entry_id);
+    }
+  }
+
+  await supabase
+    .from("bank_charges")
+    .update({ status: "paid", paid_at: paidAtIso })
+    .eq("id", chargeId);
+
+  // tenta conciliar transação de extrato com mesmo external_id
+  if (paymentId && charge.external_id) {
+    await supabase
+      .from("bank_statement_transactions")
+      .update({ reconciliation_status: "matched", matched_payment_id: paymentId })
+      .eq("workspace_id", workspaceId)
+      .eq("connection_id", charge.connection_id)
+      .eq("external_id", charge.external_id);
+  }
+
+  return { ok: true, payment_id: paymentId };
+}
+
+export const simulateChargePayment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { charge_id: string }) =>
+    z.object({ charge_id: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await getCurrentWorkspace(supabase, userId);
+    await assertAdmin(supabase, workspaceId, userId);
+    return settleChargePayment(supabase, workspaceId, data.charge_id, new Date().toISOString(), userId);
+  });
+
+export const _settleChargePaymentForWebhook = settleChargePayment;
+
+
 
