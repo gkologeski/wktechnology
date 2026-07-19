@@ -276,6 +276,7 @@ export const createCategory = createServerFn({ method: "POST" })
         kind: categoryKindEnum,
         code: z.string().nullable().optional(),
         parent_id: z.string().uuid().nullable().optional(),
+        legal_entity_id: z.string().uuid().nullable().optional(),
       })
       .parse(input),
   )
@@ -290,6 +291,7 @@ export const createCategory = createServerFn({ method: "POST" })
         kind: data.kind,
         code: data.code ?? null,
         parent_id: data.parent_id ?? null,
+        legal_entity_id: data.legal_entity_id ?? null,
       })
       .select("*")
       .single();
