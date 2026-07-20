@@ -604,6 +604,25 @@ export const consumeInvite = createServerFn({ method: "POST" })
     } as never);
     if (mErr && mErr.code !== "23505") throw new Error(mErr.message);
 
+    // Atribui o job_role padrão para que user_has_permission retorne true.
+    // Sem isso, RLS bloqueia inserts em activities/deals/etc. para membros novos.
+    const jobRoleId =
+      inv.role === "owner"
+        ? "aaaaaaaa-0000-4000-8000-000000000009"
+        : inv.role === "admin"
+          ? "aaaaaaaa-0000-4000-8000-000000000008"
+          : inv.role === "manager"
+            ? "aaaaaaaa-0000-4000-8000-000000000002"
+            : "aaaaaaaa-0000-4000-8000-000000000001"; // member -> Vendedor
+    const { error: jrErr } = await supabaseAdmin.from("user_job_roles").insert({
+      user_id: userId,
+      role_id: jobRoleId,
+      owner_id: inv.workspace_id, // user_effective_permissions exige owner_id = workspace_id
+      is_primary: true,
+    } as never);
+    if (jrErr && jrErr.code !== "23505") throw new Error(jrErr.message);
+
+
     // Marca convite como aceito
     await supabaseAdmin
       .from("workspace_invites")
