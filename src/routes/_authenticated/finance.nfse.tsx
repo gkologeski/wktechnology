@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/table";
 import { listNfse } from "@/lib/nfse.functions";
 import { formatDateTime } from "@/lib/crm";
+import {
+  LegalEntitySelect,
+  useLegalEntityFilter,
+  useLegalEntityFilterInput,
+} from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/nfse")({
   head: () => ({ meta: [{ title: "NFS-e" }] }),
@@ -55,9 +60,11 @@ type NfseRow = {
 
 function NfseListPage() {
   const list = useServerFn(listNfse);
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data, isLoading } = useQuery({
-    queryKey: ["nfse-invoices"],
-    queryFn: () => list() as Promise<{ items: NfseRow[] }>,
+    queryKey: ["nfse-invoices", legalEntityId, JSON.stringify(filterInput)],
+    queryFn: () => list({ data: filterInput }) as Promise<{ items: NfseRow[] }>,
   });
 
   const items = data?.items ?? [];
@@ -68,9 +75,12 @@ function NfseListPage() {
         title="NFS-e"
         description="Notas fiscais de serviço emitidas pela plataforma."
         actions={
-          <Button asChild variant="outline">
-            <Link to="/settings/nfse">Configurações</Link>
-          </Button>
+          <div className="flex gap-2">
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+            <Button asChild variant="outline">
+              <Link to="/settings/nfse">Configurações</Link>
+            </Button>
+          </div>
         }
       />
 

@@ -16,6 +16,7 @@ const templateSchema = z.object({
   contract_id: z.string().uuid().nullable().optional(),
   service_id: z.string().uuid().nullable().optional(),
   project_id: z.string().uuid().nullable().optional(),
+  legal_entity_id: z.string().uuid().nullable().optional(),
   payment_method: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
 });
@@ -36,7 +37,12 @@ export const listRecurrences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
-      .object({ direction: directionEnum.optional(), active: z.boolean().optional() })
+      .object({
+        direction: directionEnum.optional(),
+        active: z.boolean().optional(),
+        legalEntityId: z.string().uuid().optional(),
+        legalEntityIds: z.array(z.string().uuid()).optional(),
+      })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
@@ -47,6 +53,9 @@ export const listRecurrences = createServerFn({ method: "POST" })
       .order("next_run_date", { ascending: true });
     if (data.direction) q = q.eq("direction", data.direction);
     if (typeof data.active === "boolean") q = q.eq("active", data.active);
+    if (data.legalEntityId) q = q.eq("template->>legal_entity_id", data.legalEntityId);
+    if (data.legalEntityIds && data.legalEntityIds.length)
+      q = q.in("template->>legal_entity_id", data.legalEntityIds);
     const { data: rows, error } = await q;
     if (error) throw error;
     return rows ?? [];

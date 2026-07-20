@@ -53,6 +53,11 @@ import {
   upsertRecurrence,
 } from "@/lib/finance-recurrences.functions";
 import { listCategories } from "@/lib/finance.functions";
+import {
+  LegalEntitySelect,
+  useLegalEntityFilter,
+  useLegalEntityFilterInput,
+} from "@/components/finance/legal-entity-select";
 
 export const Route = createFileRoute("/_authenticated/finance/recurrences")({
   head: () => ({ meta: [{ title: "Recorrências financeiras" }] }),
@@ -78,11 +83,13 @@ function RecurrencesPage() {
   const [tab, setTab] = useState<"all" | "receivable" | "payable">("all");
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
+  const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["finance-recurrences", tab],
+    queryKey: ["finance-recurrences", tab, legalEntityId, JSON.stringify(filterInput)],
     queryFn: () =>
       list({
-        data: tab === "all" ? {} : { direction: tab },
+        data: { ...(tab === "all" ? {} : { direction: tab }), ...filterInput },
       }),
   });
 
@@ -102,6 +109,7 @@ function RecurrencesPage() {
         description="Modelos que geram lançamentos financeiros automaticamente."
         actions={
           <div className="flex gap-2">
+            <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
             <Button
               variant="outline"
               onClick={async () => {
