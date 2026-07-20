@@ -183,6 +183,8 @@ import { Route as AuthenticatedFinanceRecurrencesRouteImport } from './routes/_a
 import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
 import { Route as AuthenticatedFinancePayableRouteImport } from './routes/_authenticated/finance.payable'
 import { Route as AuthenticatedFinanceNfseRouteImport } from './routes/_authenticated/finance.nfse'
+import { Route as AuthenticatedFinanceLegalEntityGroupsRouteImport } from './routes/_authenticated/finance.legal-entity-groups'
+import { Route as AuthenticatedFinanceLegalEntitiesRouteImport } from './routes/_authenticated/finance.legal-entities'
 import { Route as AuthenticatedFinanceDreRouteImport } from './routes/_authenticated/finance.dre'
 import { Route as AuthenticatedFinanceCostCentersRouteImport } from './routes/_authenticated/finance.cost-centers'
 import { Route as AuthenticatedFinanceCategoriesRouteImport } from './routes/_authenticated/finance.categories'
@@ -1303,6 +1305,18 @@ const AuthenticatedFinanceNfseRoute =
     path: '/finance/nfse',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedFinanceLegalEntityGroupsRoute =
+  AuthenticatedFinanceLegalEntityGroupsRouteImport.update({
+    id: '/finance/legal-entity-groups',
+    path: '/finance/legal-entity-groups',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinanceLegalEntitiesRoute =
+  AuthenticatedFinanceLegalEntitiesRouteImport.update({
+    id: '/finance/legal-entities',
+    path: '/finance/legal-entities',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedFinanceDreRoute = AuthenticatedFinanceDreRouteImport.update({
   id: '/finance/dre',
   path: '/finance/dre',
@@ -2228,6 +2242,8 @@ export interface FileRoutesByFullPath {
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
   '/finance/cost-centers': typeof AuthenticatedFinanceCostCentersRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
+  '/finance/legal-entities': typeof AuthenticatedFinanceLegalEntitiesRoute
+  '/finance/legal-entity-groups': typeof AuthenticatedFinanceLegalEntityGroupsRoute
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
@@ -2542,6 +2558,8 @@ export interface FileRoutesByTo {
   '/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
   '/finance/cost-centers': typeof AuthenticatedFinanceCostCentersRoute
   '/finance/dre': typeof AuthenticatedFinanceDreRoute
+  '/finance/legal-entities': typeof AuthenticatedFinanceLegalEntitiesRoute
+  '/finance/legal-entity-groups': typeof AuthenticatedFinanceLegalEntityGroupsRoute
   '/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
@@ -2861,6 +2879,8 @@ export interface FileRoutesById {
   '/_authenticated/finance/categories': typeof AuthenticatedFinanceCategoriesRoute
   '/_authenticated/finance/cost-centers': typeof AuthenticatedFinanceCostCentersRoute
   '/_authenticated/finance/dre': typeof AuthenticatedFinanceDreRoute
+  '/_authenticated/finance/legal-entities': typeof AuthenticatedFinanceLegalEntitiesRoute
+  '/_authenticated/finance/legal-entity-groups': typeof AuthenticatedFinanceLegalEntityGroupsRoute
   '/_authenticated/finance/nfse': typeof AuthenticatedFinanceNfseRoute
   '/_authenticated/finance/payable': typeof AuthenticatedFinancePayableRoute
   '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
@@ -3181,6 +3201,8 @@ export interface FileRouteTypes {
     | '/finance/categories'
     | '/finance/cost-centers'
     | '/finance/dre'
+    | '/finance/legal-entities'
+    | '/finance/legal-entity-groups'
     | '/finance/nfse'
     | '/finance/payable'
     | '/finance/receivable'
@@ -3495,6 +3517,8 @@ export interface FileRouteTypes {
     | '/finance/categories'
     | '/finance/cost-centers'
     | '/finance/dre'
+    | '/finance/legal-entities'
+    | '/finance/legal-entity-groups'
     | '/finance/nfse'
     | '/finance/payable'
     | '/finance/receivable'
@@ -3813,6 +3837,8 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/categories'
     | '/_authenticated/finance/cost-centers'
     | '/_authenticated/finance/dre'
+    | '/_authenticated/finance/legal-entities'
+    | '/_authenticated/finance/legal-entity-groups'
     | '/_authenticated/finance/nfse'
     | '/_authenticated/finance/payable'
     | '/_authenticated/finance/receivable'
@@ -5365,6 +5391,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceNfseRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/finance/legal-entity-groups': {
+      id: '/_authenticated/finance/legal-entity-groups'
+      path: '/finance/legal-entity-groups'
+      fullPath: '/finance/legal-entity-groups'
+      preLoaderRoute: typeof AuthenticatedFinanceLegalEntityGroupsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/finance/legal-entities': {
+      id: '/_authenticated/finance/legal-entities'
+      path: '/finance/legal-entities'
+      fullPath: '/finance/legal-entities'
+      preLoaderRoute: typeof AuthenticatedFinanceLegalEntitiesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/finance/dre': {
       id: '/_authenticated/finance/dre'
       path: '/finance/dre'
@@ -6840,6 +6880,8 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceCategoriesRoute: typeof AuthenticatedFinanceCategoriesRoute
   AuthenticatedFinanceCostCentersRoute: typeof AuthenticatedFinanceCostCentersRoute
   AuthenticatedFinanceDreRoute: typeof AuthenticatedFinanceDreRoute
+  AuthenticatedFinanceLegalEntitiesRoute: typeof AuthenticatedFinanceLegalEntitiesRoute
+  AuthenticatedFinanceLegalEntityGroupsRoute: typeof AuthenticatedFinanceLegalEntityGroupsRoute
   AuthenticatedFinanceNfseRoute: typeof AuthenticatedFinanceNfseRoute
   AuthenticatedFinancePayableRoute: typeof AuthenticatedFinancePayableRoute
   AuthenticatedFinanceReceivableRoute: typeof AuthenticatedFinanceReceivableRoute
@@ -6951,6 +6993,10 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinanceCategoriesRoute: AuthenticatedFinanceCategoriesRoute,
   AuthenticatedFinanceCostCentersRoute: AuthenticatedFinanceCostCentersRoute,
   AuthenticatedFinanceDreRoute: AuthenticatedFinanceDreRoute,
+  AuthenticatedFinanceLegalEntitiesRoute:
+    AuthenticatedFinanceLegalEntitiesRoute,
+  AuthenticatedFinanceLegalEntityGroupsRoute:
+    AuthenticatedFinanceLegalEntityGroupsRoute,
   AuthenticatedFinanceNfseRoute: AuthenticatedFinanceNfseRoute,
   AuthenticatedFinancePayableRoute: AuthenticatedFinancePayableRoute,
   AuthenticatedFinanceReceivableRoute: AuthenticatedFinanceReceivableRoute,
@@ -7203,13 +7249,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

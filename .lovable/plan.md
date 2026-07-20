@@ -1,37 +1,30 @@
 ## Problema
 
-No sidebar "Cadastros" (grupo Core global), o item **Produtos** aponta para `/catalog/products`. Hoje essa rota faz `redirect({ to: "/settings/products" })` (ver `src/routes/_authenticated/catalog.products.tsx`), o que:
+No sidebar do TechFinance, os itens **Empresas (CNPJs)** e **Grupos empresariais** apontam para `/settings/legal-entities` e `/settings/legal-entity-groups`. Como esses paths começam com `/settings`, o `detectModuleFromPath` os trata como rota de workspace, o `AppSidebar` troca para o shell do TechERP/Configurações e o usuário sai do contexto do Finance — mesmo problema já resolvido em Produtos (migrado para `/catalog/products`).
 
-- ativa o layout `_authenticated/settings.tsx` (shell "Configurações" com aside próprio);
-- muda o contexto visual — o usuário sai do módulo em que estava (TechSales, TechContracts, etc.) e "cai" em Configurações.
+## Solução
 
-Empresas (`/companies`) e Contatos (`/contacts`) já funcionam como entidades globais: são rotas de primeiro nível, herdam apenas o layout autenticado padrão e preservam o sidebar do módulo ativo. Produtos deve seguir esse mesmo padrão.
+Espelhar o padrão de Produtos: extrair o conteúdo das duas telas para componentes reutilizáveis e expor novas rotas sob `/finance/*`, que já é reconhecido como módulo Finance. Manter as rotas antigas em `/settings/*` funcionando (retrocompatibilidade e acesso via Configurações do ERP).
 
-## Objetivo
+### Passos
 
-Ao clicar em **Produtos** no grupo "Cadastros", o usuário permanece no módulo atual (sidebar do módulo intacto) e vê o CRUD de produtos — igual ao comportamento de Empresas.
-
-Sem alterar CRUD, schema, RLS ou permissões.
-
-## Abordagem
-
-1. **Trocar o redirect por render real em `/catalog/products`.**
-   `src/routes/_authenticated/catalog.products.tsx` deixa de fazer `redirect` e passa a renderizar o componente compartilhado `ProductsPage` (`src/components/products/products-page.tsx`) — mesmo padrão já usado em `/services/products` e `/settings/products`.
-
-2. **Manter `/settings/products` intacto.** Continua acessível pelo menu de Configurações (Estrutura CRM) para admins que gerenciam catálogo via Configurações. Nenhuma mudança nesse arquivo.
-
-3. **Nenhuma mudança no menu.** `CORE_SIDEBAR_GROUPS` já aponta Produtos para `/catalog/products` — só precisamos que essa URL passe a renderizar a página no layout autenticado padrão (sem shell de Configurações).
+1. Extrair o corpo de `src/routes/_authenticated/settings.legal-entities.tsx` para `src/components/finance/legal-entities-page.tsx` (componente puro, sem `createFileRoute`).
+2. Extrair o corpo de `src/routes/_authenticated/settings.legal-entity-groups.tsx` para `src/components/finance/legal-entity-groups-page.tsx` da mesma forma.
+3. Reduzir as duas rotas de `/settings/*` a wrappers que renderizam os componentes extraídos (preserva o acesso atual pelo shell de Configurações).
+4. Criar `src/routes/_authenticated/finance.legal-entities.tsx` e `src/routes/_authenticated/finance.legal-entity-groups.tsx` renderizando os mesmos componentes; cada rota define seu próprio `head()` e `PageHeader` já vem do componente compartilhado.
+5. Atualizar `src/lib/menu-config-finance.ts`:
+   - `Empresas (CNPJs)` → `/finance/legal-entities`
+   - `Grupos empresariais` → `/finance/legal-entity-groups`
+6. Não alterar `menu-config-core.ts`, permissões, RLS, server functions (`legal-entities.functions`) nem qualquer lógica de negócio.
 
 ## Fora do escopo
 
-- Alterar `ProductsPage`, CRUD, schema, RLS, permissões.
-- Remover a entrada de Produtos em `/settings` (mantida como acesso alternativo).
-- Mexer em `/services/products` (continua funcionando).
+- Nenhuma mudança em backend, RLS, migrations ou server functions.
+- Não remover as rotas `/settings/*` — apenas o menu do Finance deixa de referenciá-las.
+- Nenhuma alteração visual nas telas.
 
-## Validação manual
+## Como validar
 
-1. Estar em qualquer módulo (ex.: TechSales em `/deals`). Sidebar mostra grupo "Cadastros" com **Produtos**.
-2. Clicar em **Produtos** → URL vira `/catalog/products`, sidebar do módulo permanece, conteúdo é o CRUD de produtos (sem shell de Configurações).
-3. Repetir a partir de TechContracts, TechServices, TechProjects, TechFinance — em todos, o módulo ativo é preservado.
-4. Acessar `/settings/products` diretamente → shell de Configurações continua funcionando.
-5. `/services/products` continua funcionando com sidebar do módulo Serviços.
+1. No módulo TechFinance, clicar em **Empresas (CNPJs)** e **Grupos empresariais**: sidebar permanece no Finance, sem redirecionar para Configurações.
+2. Acessar `/settings/legal-entities` diretamente ainda funciona (via CRM/Configurações).
+3. CRUD, seleção de padrão e totais continuam operando idênticos.
