@@ -108,7 +108,7 @@ const sections: Section[] = [
       { to: "/settings/branding", label: "White-label", icon: Sparkles, need: "admin" },
       { to: "/settings/language", label: "Idioma", icon: Languages, need: "admin" },
       { to: "/settings/mobile", label: "Mobile / PWA", icon: Smartphone, need: "admin" },
-      { to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager" },
+      { to: "/settings/calendars", label: "Calendários", icon: Calendar },
       { to: "/settings/booking", label: "Agendamentos", icon: CalendarCheck, need: "manager" },
       { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard, need: "admin" },
       {

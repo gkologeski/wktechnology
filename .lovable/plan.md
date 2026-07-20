@@ -1,41 +1,34 @@
 ## Diagnóstico
 
-Cristiane tem cargo **Vendedor** no workspace. As policies RLS de INSERT das entidades TechSales estão **inconsistentes**:
+Cristiane (perfil Vendedor, membro) está acessando `app.wktechnology.com.br/settings/calendars` e vê "Sem permissão". A confusão inicial ("não consegue conectar Google") na verdade é sobre **conectar a agenda Google pessoal** dela — não é falha de login.
 
-| Tabela | Permissão exigida no INSERT | Vendedor tem? |
-|---|---|---|
-| contacts | `techsales.contacts.create.own` | ✅ |
-| deals | `techsales.deals.create.own` | ✅ |
-| activities | `techsales.activities.create.own` | ✅ |
-| **companies** | **`techsales.companies.manage.workspace`** | ❌ |
+Causa raiz confirmada em `src/routes/_authenticated/settings.tsx:111`:
 
-O catálogo `public.permissions` só tem duas chaves para companies: `view.workspace` e `manage.workspace` — não existe `create.own`. Vendedor só recebe `view.workspace`, então RLS bloqueia o INSERT.
+```ts
+{ to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager" }
+```
 
-Confirmado via `user_has_permission(cristiane, ws, 'techsales.companies.manage.workspace') = false`.
+O item do menu está restrito a `manager`/`admin`, então:
+- O link nem aparece no menu de Configurações para o membro.
+- A tela é filtrada como não-permitida na navegação (sensação de "sem permissão").
 
-## Correção (migration única)
+Isso é inconsistente com `/settings/email` (linha 100), que **não** exige role — e-mail pessoal já é liberado a todos. As server functions do calendário (`startCalendarOAuth`, `listCalendarAccounts`, etc.) já operam por `context.userId` dentro do workspace, ou seja, cada usuário conecta a própria conta Google. Não há motivo funcional para exigir manager.
 
-1. Adicionar novas chaves em `public.permissions`:
-   - `techsales.companies.create.own`
-   - `techsales.companies.update.own`
-   - `techsales.companies.delete.own`
+## Correção proposta
 
-2. Conceder `create.own`/`update.own` aos permission_sets que já concedem `contacts.create.own` (Vendedor, Gerente, SDR, etc.), mantendo `manage.workspace` apenas para Admin/Owner/Gerente.
+Alteração mínima e cirúrgica, apenas UI/gate de navegação:
 
-3. Reescrever as policies de `companies` para espelhar o padrão de `contacts`:
-   - **INSERT**: `create.own` OU `manage.workspace`
-   - **UPDATE**: (`update.own` AND `owner_id = auth.uid()`) OU `manage.workspace`
-   - **DELETE**: (`delete.own` AND `owner_id = auth.uid()`) OU `manage.workspace`
-   - **SELECT**: mantém como está (workspace inteiro)
-
-## Validação
-
-- `user_has_permission(cristiane, ws, 'techsales.companies.create.own')` = `true`.
-- Cristiane consegue cadastrar empresa.
-- Vendedor não consegue editar/excluir empresas de terceiros (só as próprias).
-- Admin/Owner continuam com controle total.
+1. Em `src/routes/_authenticated/settings.tsx` linha 111, remover `need: "manager"` do item `/settings/calendars`, deixando-o visível a todos os usuários autenticados (mesmo padrão do `/settings/email`).
 
 ## Fora do escopo
 
-- UI de gestão de cargos.
-- Revisão paralela de leads/products (podem ter mesma inconsistência — abordo em PR separado se quiser).
+- Não altero server functions, RLS, schema ou fluxo OAuth.
+- Não mexo em outras entradas do menu.
+- Não altero permissões de outras telas de Configurações.
+
+## Como validar
+
+1. Logar como Cristiane (perfil Vendedor) em `app.wktechnology.com.br`.
+2. Abrir Configurações → item "Calendários" deve aparecer no menu.
+3. Clicar em "Conectar Google", concluir consentimento OAuth e ver a conta listada com sync ativo.
+4. Validar que admin/manager continuam enxergando normalmente.
