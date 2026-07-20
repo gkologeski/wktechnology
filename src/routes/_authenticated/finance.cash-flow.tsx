@@ -125,6 +125,18 @@ function CashFlowPage() {
         }
       />
 
+      {data?.consolidation?.isGroup && (
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm flex items-center justify-between gap-2">
+          <span>
+            <strong>Consolidado</strong> — {data.consolidation.groupSize} CNPJs do grupo
+          </span>
+          <span className="text-muted-foreground text-xs">
+            {data.consolidation.intercompanyEliminated} lançamento(s) intercompany eliminado(s)
+          </span>
+        </div>
+      )}
+
+
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground">
