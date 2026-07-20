@@ -152,6 +152,7 @@ import { Route as AuthenticatedSettingsDataResidencyRouteImport } from './routes
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
 import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes/_authenticated/settings.custom-objects'
 import { Route as AuthenticatedSettingsClausesRouteImport } from './routes/_authenticated/settings.clauses'
+import { Route as AuthenticatedSettingsChargingTemplatesRouteImport } from './routes/_authenticated/settings.charging-templates'
 import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
 import { Route as AuthenticatedSettingsBrandingRouteImport } from './routes/_authenticated/settings.branding'
 import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_authenticated/settings.booking'
@@ -276,6 +277,7 @@ import { Route as ApiPublicHooksLinkedinApplicantsSyncRouteImport } from './rout
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
+import { Route as ApiPublicHooksDunningTickRouteImport } from './routes/api/public/hooks/dunning-tick'
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicHooksCalendarRecordingsTickRouteImport } from './routes/api/public/hooks/calendar-recordings-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
@@ -1126,6 +1128,12 @@ const AuthenticatedSettingsClausesRoute =
     path: '/clauses',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsChargingTemplatesRoute =
+  AuthenticatedSettingsChargingTemplatesRouteImport.update({
+    id: '/charging-templates',
+    path: '/charging-templates',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsCalendarsRoute =
   AuthenticatedSettingsCalendarsRouteImport.update({
     id: '/calendars',
@@ -1844,6 +1852,12 @@ const ApiPublicHooksEmailBroadcastTickRoute =
     path: '/api/public/hooks/email-broadcast-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksDunningTickRoute =
+  ApiPublicHooksDunningTickRouteImport.update({
+    id: '/api/public/hooks/dunning-tick',
+    path: '/api/public/hooks/dunning-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksCalendarTickRoute =
   ApiPublicHooksCalendarTickRouteImport.update({
     id: '/api/public/hooks/calendar-tick',
@@ -2283,6 +2297,7 @@ export interface FileRoutesByFullPath {
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
@@ -2401,6 +2416,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -2600,6 +2616,7 @@ export interface FileRoutesByTo {
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
@@ -2717,6 +2734,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -2922,6 +2940,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/_authenticated/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/_authenticated/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/_authenticated/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/_authenticated/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
@@ -3040,6 +3059,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -3245,6 +3265,7 @@ export interface FileRouteTypes {
     | '/settings/booking'
     | '/settings/branding'
     | '/settings/calendars'
+    | '/settings/charging-templates'
     | '/settings/clauses'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
@@ -3363,6 +3384,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -3562,6 +3584,7 @@ export interface FileRouteTypes {
     | '/settings/booking'
     | '/settings/branding'
     | '/settings/calendars'
+    | '/settings/charging-templates'
     | '/settings/clauses'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
@@ -3679,6 +3702,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -3883,6 +3907,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/booking'
     | '/_authenticated/settings/branding'
     | '/_authenticated/settings/calendars'
+    | '/_authenticated/settings/charging-templates'
     | '/_authenticated/settings/clauses'
     | '/_authenticated/settings/custom-objects'
     | '/_authenticated/settings/custom-properties'
@@ -4001,6 +4026,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -4123,6 +4149,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarRecordingsTickRoute: typeof ApiPublicHooksCalendarRecordingsTickRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
+  ApiPublicHooksDunningTickRoute: typeof ApiPublicHooksDunningTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
@@ -5187,6 +5214,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsClausesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/charging-templates': {
+      id: '/_authenticated/settings/charging-templates'
+      path: '/charging-templates'
+      fullPath: '/settings/charging-templates'
+      preLoaderRoute: typeof AuthenticatedSettingsChargingTemplatesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/calendars': {
       id: '/_authenticated/settings/calendars'
       path: '/calendars'
@@ -6055,6 +6089,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEmailBroadcastTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/dunning-tick': {
+      id: '/api/public/hooks/dunning-tick'
+      path: '/api/public/hooks/dunning-tick'
+      fullPath: '/api/public/hooks/dunning-tick'
+      preLoaderRoute: typeof ApiPublicHooksDunningTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/calendar-tick': {
       id: '/api/public/hooks/calendar-tick'
       path: '/api/public/hooks/calendar-tick'
@@ -6591,6 +6632,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsBookingRoute: typeof AuthenticatedSettingsBookingRoute
   AuthenticatedSettingsBrandingRoute: typeof AuthenticatedSettingsBrandingRoute
   AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
+  AuthenticatedSettingsChargingTemplatesRoute: typeof AuthenticatedSettingsChargingTemplatesRoute
   AuthenticatedSettingsClausesRoute: typeof AuthenticatedSettingsClausesRoute
   AuthenticatedSettingsCustomObjectsRoute: typeof AuthenticatedSettingsCustomObjectsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
@@ -6670,6 +6712,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsBookingRoute: AuthenticatedSettingsBookingRoute,
   AuthenticatedSettingsBrandingRoute: AuthenticatedSettingsBrandingRoute,
   AuthenticatedSettingsCalendarsRoute: AuthenticatedSettingsCalendarsRoute,
+  AuthenticatedSettingsChargingTemplatesRoute:
+    AuthenticatedSettingsChargingTemplatesRoute,
   AuthenticatedSettingsClausesRoute: AuthenticatedSettingsClausesRoute,
   AuthenticatedSettingsCustomObjectsRoute:
     AuthenticatedSettingsCustomObjectsRoute,
@@ -7199,6 +7243,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksCalendarRecordingsTickRoute:
     ApiPublicHooksCalendarRecordingsTickRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
+  ApiPublicHooksDunningTickRoute: ApiPublicHooksDunningTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
