@@ -21,7 +21,11 @@ import {
   listDunningPolicies,
   upsertDunningPolicy,
   deleteDunningPolicy,
+  listDunningRuns,
 } from "@/lib/dunning.functions";
+import { listChargingTemplates } from "@/lib/charging-templates.functions";
+import { Link } from "@tanstack/react-router";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/settings/dunning")({
   component: DunningPage,
@@ -31,6 +35,7 @@ type Step = {
   offset_days: number;
   channel: "email" | "whatsapp" | "task" | "escalation";
   template?: string;
+  template_id?: string | null;
   subject?: string;
   body?: string;
 };
@@ -60,6 +65,22 @@ function DunningPage() {
     queryKey: ["dunning-policies"],
     queryFn: () => list(),
   });
+  const runsFn = useServerFn(listDunningRuns);
+  const { data: runsData } = useQuery({
+    queryKey: ["dunning-runs"],
+    queryFn: () => runsFn(),
+  });
+  const templatesFn = useServerFn(listChargingTemplates);
+  const { data: templatesData } = useQuery({
+    queryKey: ["charging-templates-by-channel"],
+    queryFn: () => templatesFn(),
+  });
+  const templates = (templatesData?.templates ?? []) as Array<{
+    id: string;
+    name: string;
+    channel: "email" | "whatsapp";
+    active: boolean;
+  }>;
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("Régua padrão");
