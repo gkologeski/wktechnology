@@ -27,6 +27,7 @@ import {
   createInstallments,
   listCategories,
 } from "@/lib/finance.functions";
+import { useLegalEntities } from "@/components/finance/legal-entity-select";
 
 type Direction = "receivable" | "payable";
 
@@ -70,6 +71,8 @@ export function QuickCreateEntryDialog({
   const [competenceDate, setCompetenceDate] = useState(today());
   const [categoryId, setCategoryId] = useState<string>("none");
   const [notes, setNotes] = useState("");
+  const [counterpartyLegalEntityId, setCounterpartyLegalEntityId] = useState<string>("none");
+  const { data: legalEntities = [] } = useLegalEntities();
   const [categories, setCategories] = useState<
     Awaited<ReturnType<typeof listCategories>>
   >([]);
@@ -89,6 +92,7 @@ export function QuickCreateEntryDialog({
     setDueDate(today());
     setCompetenceDate(today());
     setCategoryId("none");
+    setCounterpartyLegalEntityId("none");
     setNotes("");
     setInstallments(false);
     setCount(2);
@@ -140,6 +144,8 @@ export function QuickCreateEntryDialog({
         competence_date: competenceDate,
         due_date: dueDate,
         category_id: categoryId === "none" ? null : categoryId,
+        counterparty_legal_entity_id:
+          counterpartyLegalEntityId === "none" ? null : counterpartyLegalEntityId,
         notes: notes.trim() || null,
       };
       if (installments && count >= 2) {
@@ -307,6 +313,34 @@ export function QuickCreateEntryDialog({
               </>
             )}
           </div>
+
+          {legalEntities.length > 1 && (
+            <div className="space-y-2">
+              <Label>Empresa contra-parte (intercompany)</Label>
+              <Select
+                value={counterpartyLegalEntityId}
+                onValueChange={setCounterpartyLegalEntityId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Nenhuma" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  {(legalEntities as Array<{ id: string; code: string | null; name: string }>).map(
+                    (le) => (
+                      <SelectItem key={le.id} value={le.id}>
+                        {le.code ? `${le.code} · ${le.name}` : le.name}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Marque quando a contra-parte for outro CNPJ do grupo. Esses lançamentos são
+                eliminados no DRE e Fluxo de Caixa consolidados.
+              </p>
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>Notas</Label>

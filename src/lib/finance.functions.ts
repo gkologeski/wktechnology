@@ -95,6 +95,7 @@ const createEntryInput = z.object({
   competence_date: z.string(),
   due_date: z.string(),
   counterparty_company_id: z.string().uuid().nullable().optional(),
+  counterparty_legal_entity_id: z.string().uuid().nullable().optional(),
   category_id: z.string().uuid().nullable().optional(),
   contract_id: z.string().uuid().nullable().optional(),
   service_id: z.string().uuid().nullable().optional(),
@@ -123,6 +124,7 @@ export const createFinancialEntry = createServerFn({ method: "POST" })
         competence_date: data.competence_date,
         due_date: data.due_date,
         counterparty_company_id: data.counterparty_company_id ?? null,
+        counterparty_legal_entity_id: data.counterparty_legal_entity_id ?? null,
         category_id: data.category_id ?? null,
         contract_id: data.contract_id ?? null,
         service_id: data.service_id ?? null,
@@ -152,6 +154,7 @@ export const updateFinancialEntry = createServerFn({ method: "POST" })
             competence_date: z.string().optional(),
             due_date: z.string().optional(),
             counterparty_company_id: z.string().uuid().nullable().optional(),
+            counterparty_legal_entity_id: z.string().uuid().nullable().optional(),
             category_id: z.string().uuid().nullable().optional(),
             notes: z.string().nullable().optional(),
             payment_method: z.string().nullable().optional(),
@@ -562,11 +565,17 @@ export const getDreReport = createServerFn({ method: "POST" })
       agg.total += Number(amount);
     };
 
+    // Grupo empresarial: quando >=2 CNPJs, elimina transações intercompany
+    // (contra-parte também está no grupo) para evitar dupla contagem.
+    const groupIds =
+      data.legalEntityIds && data.legalEntityIds.length >= 2 ? data.legalEntityIds : null;
+    let intercompanyEliminated = 0;
+
     if (data.basis === "cash") {
       let pq = supabase
         .from("financial_payments")
         .select(
-          "amount, paid_at, financial_entries!inner(direction, status, category_id, legal_entity_id, financial_categories(id, name, kind))",
+          "amount, paid_at, financial_entries!inner(direction, status, category_id, legal_entity_id, counterparty_legal_entity_id, financial_categories(id, name, kind))",
         )
         .gte("paid_at", iso(startDate))
         .lte("paid_at", iso(endDate));
@@ -580,10 +589,15 @@ export const getDreReport = createServerFn({ method: "POST" })
           financial_entries: {
             direction: string;
             status: string;
+            counterparty_legal_entity_id: string | null;
             financial_categories: { id: string; name: string; kind: "revenue" | "expense" } | null;
           };
         }).financial_entries;
         if (!entry || entry.status === "cancelled") continue;
+        if (groupIds && entry.counterparty_legal_entity_id && groupIds.includes(entry.counterparty_legal_entity_id)) {
+          intercompanyEliminated++;
+          continue;
+        }
         const ym = String(p.paid_at).slice(0, 7);
         addRow(entry.financial_categories, entry.direction, Number(p.amount), ym);
       }
@@ -591,7 +605,7 @@ export const getDreReport = createServerFn({ method: "POST" })
       let eq = supabase
         .from("financial_entries")
         .select(
-          "direction, amount, competence_date, category_id, status, financial_categories(id, name, kind)",
+          "direction, amount, competence_date, category_id, status, counterparty_legal_entity_id, financial_categories(id, name, kind)",
         )
         .neq("status", "cancelled")
         .gte("competence_date", iso(startDate))
@@ -602,13 +616,19 @@ export const getDreReport = createServerFn({ method: "POST" })
       const { data: rows, error } = await eq;
       if (error) throw error;
       for (const r of rows ?? []) {
-        const cat = (r as unknown as {
+        const row = r as unknown as {
+          counterparty_legal_entity_id: string | null;
           financial_categories: { id: string; name: string; kind: "revenue" | "expense" } | null;
-        }).financial_categories;
+        };
+        if (groupIds && row.counterparty_legal_entity_id && groupIds.includes(row.counterparty_legal_entity_id)) {
+          intercompanyEliminated++;
+          continue;
+        }
         const ym = String(r.competence_date).slice(0, 7);
-        addRow(cat, r.direction, Number(r.amount), ym);
+        addRow(row.financial_categories, r.direction, Number(r.amount), ym);
       }
     }
+
 
 
     const categories = Array.from(map.values()).sort((a, b) => {
@@ -638,6 +658,11 @@ export const getDreReport = createServerFn({ method: "POST" })
         totalExpense,
         netResult: totalRevenue - totalExpense,
         margin: totalRevenue > 0 ? (totalRevenue - totalExpense) / totalRevenue : 0,
+      },
+      consolidation: {
+        isGroup: !!groupIds,
+        groupSize: groupIds?.length ?? 0,
+        intercompanyEliminated,
       },
     };
   });
@@ -678,9 +703,11 @@ export const getCashFlowProjection = createServerFn({ method: "POST" })
     if (data.legalEntityId) banksQ = banksQ.eq("legal_entity_id", data.legalEntityId);
     if (data.legalEntityIds && data.legalEntityIds.length)
       banksQ = banksQ.in("legal_entity_id", data.legalEntityIds);
+    const groupIds =
+      data.legalEntityIds && data.legalEntityIds.length >= 2 ? data.legalEntityIds : null;
     let entriesQ = supabase
       .from("financial_entries")
-      .select("direction, status, amount, paid_amount, due_date")
+      .select("direction, status, amount, paid_amount, due_date, counterparty_legal_entity_id")
       .in("status", ["open", "partial", "overdue"])
       .lte("due_date", iso(addDays(today, 90)));
     if (data.legalEntityId) entriesQ = entriesQ.eq("legal_entity_id", data.legalEntityId);
@@ -707,9 +734,16 @@ export const getCashFlowProjection = createServerFn({ method: "POST" })
       d90: { inflow: 0, outflow: 0 },
     };
 
+    let intercompanyEliminated = 0;
     for (const e of entriesRes.data ?? []) {
       const outstanding = Number(e.amount) - Number(e.paid_amount ?? 0);
       if (outstanding <= 0) continue;
+      const cp = (e as unknown as { counterparty_legal_entity_id: string | null })
+        .counterparty_legal_entity_id;
+      if (groupIds && cp && groupIds.includes(cp)) {
+        intercompanyEliminated++;
+        continue;
+      }
       const isAR = e.direction === "receivable";
       let key: keyof typeof b;
       if (e.due_date < todayIso) key = "overdue";
@@ -747,6 +781,11 @@ export const getCashFlowProjection = createServerFn({ method: "POST" })
         pessimistic: scenario(data.pessimistic, data.expenseFactorPessimistic),
         realistic: scenario(data.realistic, data.expenseFactorRealistic),
         optimistic: scenario(data.optimistic, data.expenseFactorOptimistic),
+      },
+      consolidation: {
+        isGroup: !!groupIds,
+        groupSize: groupIds?.length ?? 0,
+        intercompanyEliminated,
       },
     };
   });

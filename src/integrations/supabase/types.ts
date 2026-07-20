@@ -7204,6 +7204,7 @@ export type Database = {
           competence_date: string
           contract_id: string | null
           counterparty_company_id: string | null
+          counterparty_legal_entity_id: string | null
           created_at: string
           currency: string
           description: string
@@ -7235,6 +7236,7 @@ export type Database = {
           competence_date: string
           contract_id?: string | null
           counterparty_company_id?: string | null
+          counterparty_legal_entity_id?: string | null
           created_at?: string
           currency?: string
           description: string
@@ -7266,6 +7268,7 @@ export type Database = {
           competence_date?: string
           contract_id?: string | null
           counterparty_company_id?: string | null
+          counterparty_legal_entity_id?: string | null
           created_at?: string
           currency?: string
           description?: string
@@ -7310,6 +7313,13 @@ export type Database = {
             columns: ["counterparty_company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_counterparty_legal_entity_id_fkey"
+            columns: ["counterparty_legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {

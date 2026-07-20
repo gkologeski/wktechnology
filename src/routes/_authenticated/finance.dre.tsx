@@ -146,6 +146,18 @@ function DrePage() {
         }
       />
 
+      {data?.consolidation?.isGroup && (
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm flex items-center justify-between gap-2">
+          <span>
+            <strong>Consolidado</strong> — {data.consolidation.groupSize} CNPJs do grupo
+          </span>
+          <span className="text-muted-foreground text-xs">
+            {data.consolidation.intercompanyEliminated} transação(ões) intercompany eliminada(s)
+          </span>
+        </div>
+      )}
+
+
       {data && (
         <div className="grid gap-4 md:grid-cols-3">
           <SummaryCard label="Receita total" value={data.totals.totalRevenue} tone="positive" />
