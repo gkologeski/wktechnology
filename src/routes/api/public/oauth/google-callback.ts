@@ -5,6 +5,8 @@ import {
   callbackRedirectUri,
   exchangeCodeForTokens,
   fetchGoogleUserInfo,
+  isAllowedGoogleOAuthReturnOrigin,
+  normalizeOrigin,
   verifyState,
 } from "@/lib/email-oauth.server";
 
@@ -26,9 +28,17 @@ function htmlResponse(title: string, body: string, status = 200) {
   );
 }
 
-function connectedResponse(opts: { returnTo: string; integration: "calendar" | "gmail" }) {
+function connectedResponse(opts: {
+  returnTo: string;
+  integration: "calendar" | "gmail";
+  messageTargetOrigin?: string;
+}) {
   const queryKey = opts.integration === "calendar" ? "calendar" : "gmail";
   const connectedUrl = `${opts.returnTo}${opts.returnTo.includes("?") ? "&" : "?"}${queryKey}=connected`;
+  const messageTargetOrigin =
+    opts.messageTargetOrigin && isAllowedGoogleOAuthReturnOrigin(opts.messageTargetOrigin)
+      ? normalizeOrigin(opts.messageTargetOrigin)
+      : "";
   const payload = JSON.stringify({
     type: "google-oauth-connected",
     integration: opts.integration,
@@ -40,8 +50,9 @@ function connectedResponse(opts: { returnTo: string; integration: "calendar" | "
     `<h1>Google conectado com sucesso</h1><p>Você já pode voltar ao CRM.</p><p><a href="${esc(connectedUrl)}">Voltar agora</a></p><script>
 (function () {
   var payload = ${payload};
+  var messageTargetOrigin = ${JSON.stringify(messageTargetOrigin)};
   if (window.opener && !window.opener.closed) {
-    window.opener.postMessage(payload, window.location.origin);
+    window.opener.postMessage(payload, messageTargetOrigin || window.location.origin);
     window.close();
     setTimeout(function () { window.location.replace(payload.url); }, 800);
     return;
@@ -130,7 +141,11 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
               returnTo: parsed.return_to,
               fallbackPath: "/settings/calendars",
             });
-            return connectedResponse({ returnTo, integration: "calendar" });
+            return connectedResponse({
+              returnTo,
+              integration: "calendar",
+              messageTargetOrigin: parsed.return_origin,
+            });
           }
 
           // Default: gmail
@@ -172,7 +187,11 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
             returnTo: parsed.return_to,
             fallbackPath: "/settings/email",
           });
-          return connectedResponse({ returnTo, integration: "gmail" });
+          return connectedResponse({
+            returnTo,
+            integration: "gmail",
+            messageTargetOrigin: parsed.return_origin,
+          });
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Erro desconhecido";
           return htmlResponse(
