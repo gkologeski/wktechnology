@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 import {
+  buildGoogleOAuthReturnUrl,
   callbackRedirectUri,
   exchangeCodeForTokens,
   fetchGoogleUserInfo,
+  isAllowedGoogleOAuthReturnOrigin,
+  normalizeOrigin,
   verifyState,
 } from "@/lib/email-oauth.server";
 
@@ -25,9 +28,17 @@ function htmlResponse(title: string, body: string, status = 200) {
   );
 }
 
-function connectedResponse(opts: { returnTo: string; integration: "calendar" | "gmail" }) {
+function connectedResponse(opts: {
+  returnTo: string;
+  integration: "calendar" | "gmail";
+  messageTargetOrigin?: string;
+}) {
   const queryKey = opts.integration === "calendar" ? "calendar" : "gmail";
   const connectedUrl = `${opts.returnTo}${opts.returnTo.includes("?") ? "&" : "?"}${queryKey}=connected`;
+  const messageTargetOrigin =
+    opts.messageTargetOrigin && isAllowedGoogleOAuthReturnOrigin(opts.messageTargetOrigin)
+      ? normalizeOrigin(opts.messageTargetOrigin)
+      : "";
   const payload = JSON.stringify({
     type: "google-oauth-connected",
     integration: opts.integration,
@@ -39,8 +50,9 @@ function connectedResponse(opts: { returnTo: string; integration: "calendar" | "
     `<h1>Google conectado com sucesso</h1><p>Você já pode voltar ao CRM.</p><p><a href="${esc(connectedUrl)}">Voltar agora</a></p><script>
 (function () {
   var payload = ${payload};
+  var messageTargetOrigin = ${JSON.stringify(messageTargetOrigin)};
   if (window.opener && !window.opener.closed) {
-    window.opener.postMessage(payload, window.location.origin);
+    window.opener.postMessage(payload, messageTargetOrigin || window.location.origin);
     window.close();
     setTimeout(function () { window.location.replace(payload.url); }, 800);
     return;
@@ -71,7 +83,7 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
           return htmlResponse("Parâmetros faltando", `<h1>Requisição inválida</h1>`, 400);
         }
 
-        let parsed: { user_id: string; return_to?: string; mode?: string };
+        let parsed: { user_id: string; return_to?: string; return_origin?: string; mode?: string };
         try {
           parsed = verifyState(state);
         } catch (e) {
@@ -124,11 +136,16 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
               const { error } = await supabaseAdmin.from("calendar_accounts").insert(payload);
               if (error) throw new Error(error.message);
             }
-            const returnTo =
-              parsed.return_to && parsed.return_to.startsWith("/")
-                ? parsed.return_to
-                : "/settings/calendars";
-            return connectedResponse({ returnTo, integration: "calendar" });
+            const returnTo = buildGoogleOAuthReturnUrl({
+              returnOrigin: parsed.return_origin,
+              returnTo: parsed.return_to,
+              fallbackPath: "/settings/calendars",
+            });
+            return connectedResponse({
+              returnTo,
+              integration: "calendar",
+              messageTargetOrigin: parsed.return_origin,
+            });
           }
 
           // Default: gmail
@@ -165,11 +182,16 @@ export const Route = createFileRoute("/api/public/oauth/google-callback")({
             if (error) throw new Error(error.message);
           }
 
-          const returnTo =
-            parsed.return_to && parsed.return_to.startsWith("/")
-              ? parsed.return_to
-              : "/settings/email";
-          return connectedResponse({ returnTo, integration: "gmail" });
+          const returnTo = buildGoogleOAuthReturnUrl({
+            returnOrigin: parsed.return_origin,
+            returnTo: parsed.return_to,
+            fallbackPath: "/settings/email",
+          });
+          return connectedResponse({
+            returnTo,
+            integration: "gmail",
+            messageTargetOrigin: parsed.return_origin,
+          });
         } catch (e) {
           const msg = e instanceof Error ? e.message : "Erro desconhecido";
           return htmlResponse(

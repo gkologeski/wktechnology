@@ -1,48 +1,24 @@
-## Problema
+Plano para corrigir o erro de login com Google:
 
-Cristiane ainda vê **Acesso restrito** ao abrir:
+1. Confirmar o ponto exato do fluxo
+   - Verificar se o erro ocorre no login principal (`/login`) ou ao conectar Gmail/Agenda nas configurações.
+   - Validar a origem usada no momento do erro: `app.wktechnology.com.br`, `ats.wktechnology.com.br`, `crm.wktechnology.com.br` ou preview.
 
-- `/settings/email`
-- `/settings/calendars`
+2. Revisar configuração do Google Auth no backend
+   - Conferir se o provedor Google está habilitado no Lovable Cloud.
+   - Reconfigurar o Social Auth do Google se a configuração estiver ausente, antiga ou inconsistente.
+   - Garantir que os domínios customizados ativos estejam aceitos pelo fluxo gerenciado.
 
-Pelos anexos, o bloqueio acontece antes da tela de conexão carregar. O arquivo já em contexto confirma um gate global em `src/routes/_authenticated.tsx`:
+3. Revisar o código do login
+   - Manter o uso correto de `lovable.auth.signInWithOAuth("google")`, não `supabase.auth.signInWithOAuth` direto.
+   - Validar se `redirect_uri: window.location.origin` está adequado para todos os domínios publicados.
+   - Ajustar o pós-login para preservar destino e redirecionar para `/dashboard` apenas depois da sessão estar hidratada, se necessário.
 
-- `/settings/email` está em `ADMIN_ONLY`.
-- `/settings/calendars` está em `MANAGER_PLUS`.
+4. Diferenciar login Google de conexão Gmail/Agenda
+   - Se o erro for no login social: corrigir o provedor Google Auth.
+   - Se o erro for ao conectar Gmail/Agenda: revisar o OAuth Google usado pela integração de e-mail/calendário, que é outro fluxo e pode exigir redirect/client próprios.
 
-Isso explica por que a alteração anterior no menu de Configurações não resolveu: a rota continua bloqueada pelo layout autenticado global.
-
-## Plano de correção
-
-1. Alterar somente `src/routes/_authenticated.tsx`.
-2. Remover `/settings/email` de `ADMIN_ONLY`.
-3. Remover `/settings/calendars` de `MANAGER_PLUS`.
-4. Manter as demais permissões de Configurações intactas.
-5. Não alterar backend, banco, RLS, OAuth, server functions ou permissões administrativas.
-
-## Resultado esperado
-
-- Usuários membros/vendedores autenticados poderão abrir as telas pessoais de conexão:
-  - e-mail pessoal em `/settings/email`;
-  - agenda pessoal em `/settings/calendars`.
-- A segurança continua por usuário nas funções de conexão/sincronização, não por acesso administrativo à tela.
-- Telas realmente administrativas de Configurações continuam bloqueadas.
-
-## Validação
-
-Após implementar:
-
-1. Verificar o diff para garantir que só os dois paths foram removidos das listas globais.
-2. Validar que `/settings/email` e `/settings/calendars` não aparecem mais em listas `ADMIN_ONLY`/`MANAGER_PLUS`.
-3. Validar manualmente no app com usuário membro/vendedor:
-   - abrir `/settings/email`;
-   - abrir `/settings/calendars`;
-   - confirmar que a tela de conexão aparece em vez de **Acesso restrito**.
-
-<presentation-actions>
-  <presentation-open-history>View History</presentation-open-history>
-</presentation-actions>
-
-<presentation-actions>
-<presentation-link url="https://docs.lovable.dev/tips-tricks/troubleshooting">Troubleshooting docs</presentation-link>
-</presentation-actions>
+5. Validar
+   - Testar o botão “Entrar com Google” no preview/publicado conforme possível.
+   - Verificar console/rede se o erro persistir.
+   - Se a correção envolver configuração do backend, republicar o app para refletir o ajuste no domínio customizado.

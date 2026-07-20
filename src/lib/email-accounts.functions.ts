@@ -11,7 +11,11 @@ export const startGmailOAuth = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const redirectUri = callbackRedirectUri(data.origin);
-    const state = signState({ user_id: context.userId, return_to: data.return_to });
+    const state = signState({
+      user_id: context.userId,
+      return_to: data.return_to,
+      return_origin: data.origin,
+    });
     const url = buildGmailAuthUrl({ redirectUri, state });
     return { url };
   });

@@ -17,6 +17,11 @@ import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 
 const searchSchema = z.object({ gmail: z.string().optional() });
+const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set(["https://crm.wktechnology.com.br"]);
+
+function isTrustedGoogleOAuthMessageOrigin(origin: string) {
+  return origin === window.location.origin || GOOGLE_OAUTH_MESSAGE_ORIGINS.has(origin);
+}
 
 export const Route = createFileRoute("/_authenticated/settings/email")({
   validateSearch: searchSchema,
@@ -61,7 +66,7 @@ function EmailSettings() {
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) return;
+      if (!isTrustedGoogleOAuthMessageOrigin(event.origin)) return;
       const data = event.data as { type?: string; integration?: string };
       if (data.type !== "google-oauth-connected" || data.integration !== "gmail") return;
       toast.success("Gmail conectado com sucesso");
