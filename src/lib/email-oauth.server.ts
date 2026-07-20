@@ -24,6 +24,14 @@ export const CALENDAR_SCOPES = [
 const GOOGLE_AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
 const GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
+const GOOGLE_OAUTH_CALLBACK_PATH = "/api/public/oauth/google-callback";
+const WK_CANONICAL_GOOGLE_OAUTH_ORIGIN = "https://crm.wktechnology.com.br";
+const WK_ALLOWED_APP_HOSTS = new Set([
+  "app.wktechnology.com.br",
+  "crm.wktechnology.com.br",
+  "ats.wktechnology.com.br",
+  "wktechnology.lovable.app",
+]);
 
 function b64url(buf: Buffer | string) {
   return Buffer.from(buf)
@@ -54,6 +62,7 @@ export function signState(payload: Record<string, unknown>): string {
 export function verifyState(state: string): {
   user_id: string;
   return_to?: string;
+  return_origin?: string;
   mode?: string;
   ts: number;
 } {
@@ -66,6 +75,7 @@ export function verifyState(state: string): {
   const parsed = JSON.parse(b64urlDecode(body).toString("utf8")) as {
     user_id: string;
     return_to?: string;
+    return_origin?: string;
     mode?: string;
     ts: number;
   };
@@ -142,8 +152,57 @@ export async function fetchGoogleUserInfo(accessToken: string) {
   return (await res.json()) as { email: string; name?: string; sub: string };
 }
 
+export function normalizeOrigin(origin: string): string {
+  const parsed = new URL(origin);
+  return parsed.origin.replace(/\/+$/, "");
+}
+
+function isWkCustomDomain(origin: string): boolean {
+  try {
+    return new URL(origin).hostname.endsWith(".wktechnology.com.br");
+  } catch {
+    return false;
+  }
+}
+
+export function googleOAuthCallbackOrigin(appOrigin: string): string {
+  const configured = process.env.GOOGLE_OAUTH_REDIRECT_ORIGIN;
+  if (configured) return normalizeOrigin(configured);
+
+  const origin = normalizeOrigin(appOrigin);
+  if (isWkCustomDomain(origin)) return WK_CANONICAL_GOOGLE_OAUTH_ORIGIN;
+  return origin;
+}
+
+export function isAllowedGoogleOAuthReturnOrigin(origin: string): boolean {
+  try {
+    const parsed = new URL(origin);
+    if (parsed.protocol !== "https:" && parsed.hostname !== "localhost") return false;
+    return (
+      parsed.hostname === "localhost" ||
+      parsed.hostname.endsWith(".lovable.app") ||
+      parsed.hostname.endsWith(".lovableproject.com") ||
+      WK_ALLOWED_APP_HOSTS.has(parsed.hostname) ||
+      parsed.hostname.endsWith(".wktechnology.com.br")
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function buildGoogleOAuthReturnUrl(opts: {
+  returnOrigin?: string;
+  returnTo?: string;
+  fallbackPath: string;
+}): string {
+  const origin =
+    opts.returnOrigin && isAllowedGoogleOAuthReturnOrigin(opts.returnOrigin)
+      ? normalizeOrigin(opts.returnOrigin)
+      : "";
+  const path = opts.returnTo && opts.returnTo.startsWith("/") ? opts.returnTo : opts.fallbackPath;
+  return origin ? new URL(path, origin).toString() : path;
+}
+
 export function callbackRedirectUri(origin: string): string {
-  // origin is a full origin like "https://app.example.com" (no trailing slash)
-  const trimmed = origin.replace(/\/+$/, "");
-  return `${trimmed}/api/public/oauth/google-callback`;
+  return `${googleOAuthCallbackOrigin(origin)}${GOOGLE_OAUTH_CALLBACK_PATH}`;
 }
