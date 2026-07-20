@@ -204,6 +204,7 @@ export const startCalendarOAuth = createServerFn({ method: "POST" })
     const state = signState({
       user_id: context.userId,
       return_to: data.return_to,
+      return_origin: data.origin,
       mode: "calendar",
     });
     const url = buildCalendarAuthUrl({ redirectUri, state });
