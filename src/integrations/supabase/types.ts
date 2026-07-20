@@ -3952,6 +3952,45 @@ export type Database = {
           },
         ]
       }
+      charging_templates: {
+        Row: {
+          active: boolean
+          body: string
+          channel: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          subject: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          body: string
+          channel: string
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          subject?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          subject?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       chat_conversation_members: {
         Row: {
           conversation_id: string
