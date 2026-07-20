@@ -61,39 +61,47 @@ async function loadTemplate(
 async function resolveRecipient(
   supabase: SupabaseClient,
   invoice: Invoice,
-): Promise<{ customerName: string; phone: string | null }> {
+): Promise<{ customerName: string; phone: string | null; email: string | null }> {
   let customerName = "";
   let phone: string | null = null;
+  let email: string | null = null;
   if (invoice.contact_id) {
     const { data } = await supabase
       .from("contacts")
-      .select("first_name, last_name, phone, mobile_phone")
+      .select("first_name, last_name, phone, mobile_phone, email")
       .eq("id", invoice.contact_id)
       .maybeSingle();
     customerName = [data?.first_name, data?.last_name].filter(Boolean).join(" ").trim();
     phone = data?.mobile_phone || data?.phone || null;
+    email = data?.email || null;
   }
-  if ((!customerName || !phone) && invoice.company_id) {
+  if ((!customerName || !phone || !email) && invoice.company_id) {
     const { data } = await supabase
       .from("companies")
-      .select("name, phone")
+      .select("name, phone, email")
       .eq("id", invoice.company_id)
       .maybeSingle();
     if (!customerName) customerName = data?.name ?? "";
     if (!phone) phone = data?.phone ?? null;
+    if (!email) email = data?.email ?? null;
   }
-  return { customerName, phone };
+  return { customerName, phone, email };
 }
 
 async function resolveContext(
   supabase: SupabaseClient,
   invoice: Invoice,
   step: Step,
-): Promise<{ tokens: Record<string, string | number>; phone: string | null }> {
+): Promise<{
+  tokens: Record<string, string | number>;
+  phone: string | null;
+  email: string | null;
+  customerName: string;
+}> {
   const today = new Date();
   const due = new Date(invoice.due_date);
   const daysOverdue = Math.max(0, daysBetween(today, due));
-  const { customerName, phone } = await resolveRecipient(supabase, invoice);
+  const { customerName, phone, email } = await resolveRecipient(supabase, invoice);
   void step;
   return {
     tokens: {
@@ -105,6 +113,8 @@ async function resolveContext(
       customer_name: customerName || "Cliente",
     },
     phone,
+    email,
+    customerName,
   };
 }
 
@@ -114,7 +124,7 @@ async function executeStep(
   policy: Policy,
   step: Step,
 ): Promise<Record<string, unknown>> {
-  const { tokens: ctx, phone } = await resolveContext(supabase, invoice, step);
+  const { tokens: ctx, phone, email, customerName } = await resolveContext(supabase, invoice, step);
   const tmpl = await loadTemplate(supabase, step.template_id);
   const subject = renderTokens(tmpl?.subject ?? step.subject ?? "", ctx);
   const body = renderTokens(tmpl?.body ?? step.body ?? "", ctx);
@@ -194,7 +204,47 @@ async function executeStep(
     }
   }
 
-  // email: envio real depende de app-emails configurado; mantém como queued.
+  if (step.channel === "email") {
+    if (!email) {
+      return { ...eventBase, status: "error", error: "Contato sem e-mail" };
+    }
+    try {
+      const { sendTransactionalEmailFromServer } = await import("@/lib/email-send.server");
+      const result = await sendTransactionalEmailFromServer({
+        supabase,
+        templateName: "dunning-notice",
+        recipientEmail: email,
+        idempotencyKey: `dunning:${policy.id}:${invoice.id}:${step.offset_days}`,
+        templateData: {
+          subject,
+          body,
+          invoiceNumber: invoice.invoice_number,
+          customerName: customerName || "Cliente",
+        },
+      });
+      if (result.status === "sent") {
+        return {
+          ...eventBase,
+          status: "sent",
+          provider: "lovable-email",
+          message_id: result.messageId,
+          to: email,
+        };
+      }
+      if (result.status === "suppressed") {
+        return { ...eventBase, status: "suppressed", to: email, message_id: result.messageId };
+      }
+      return { ...eventBase, status: "error", error: result.error };
+    } catch (err) {
+      console.error("[dunning] email send failed", err);
+      return {
+        ...eventBase,
+        status: "error",
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
   return { ...eventBase, status: "queued" };
 }
 
