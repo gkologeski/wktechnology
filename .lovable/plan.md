@@ -1,30 +1,60 @@
 ## Problema
 
-No sidebar do TechFinance, os itens **Empresas (CNPJs)** e **Grupos empresariais** apontam para `/settings/legal-entities` e `/settings/legal-entity-groups`. Como esses paths começam com `/settings`, o `detectModuleFromPath` os trata como rota de workspace, o `AppSidebar` troca para o shell do TechERP/Configurações e o usuário sai do contexto do Finance — mesmo problema já resolvido em Produtos (migrado para `/catalog/products`).
+Cristiane (e provavelmente todo `member` convidado após a migração RBAC) recebe *"new row violates row-level security policy for table 'activities'"* ao executar ações que registram atividade (envio de e-mail, agendamento, etc., que aparecem no fluxo de "conectar e-mail/agenda").
 
-## Solução
+Investigação confirmou:
+- `workspace_members.role = member` e `user_roles.role = member` existem.
+- `user_job_roles` e `user_permission_sets` estão **vazios** para ela.
+- Policy `ws_insert_activities` exige `user_has_permission(auth.uid(), ws, 'techsales.activities.create.own')`, que consulta `user_job_roles`/`user_permission_sets`. Sem linhas → retorna `false` → INSERT bloqueado.
+- Mesmo padrão vai reproduzir em `deals`, `contacts`, `meetings` etc. quando as policies delas dependerem do mesmo `user_has_permission`.
 
-Espelhar o padrão de Produtos: extrair o conteúdo das duas telas para componentes reutilizáveis e expor novas rotas sob `/finance/*`, que já é reconhecido como módulo Finance. Manter as rotas antigas em `/settings/*` funcionando (retrocompatibilidade e acesso via Configurações do ERP).
+## Correção — 2 frentes
 
-### Passos
+### 1. Backfill imediato (migration)
 
-1. Extrair o corpo de `src/routes/_authenticated/settings.legal-entities.tsx` para `src/components/finance/legal-entities-page.tsx` (componente puro, sem `createFileRoute`).
-2. Extrair o corpo de `src/routes/_authenticated/settings.legal-entity-groups.tsx` para `src/components/finance/legal-entity-groups-page.tsx` da mesma forma.
-3. Reduzir as duas rotas de `/settings/*` a wrappers que renderizam os componentes extraídos (preserva o acesso atual pelo shell de Configurações).
-4. Criar `src/routes/_authenticated/finance.legal-entities.tsx` e `src/routes/_authenticated/finance.legal-entity-groups.tsx` renderizando os mesmos componentes; cada rota define seu próprio `head()` e `PageHeader` já vem do componente compartilhado.
-5. Atualizar `src/lib/menu-config-finance.ts`:
-   - `Empresas (CNPJs)` → `/finance/legal-entities`
-   - `Grupos empresariais` → `/finance/legal-entity-groups`
-6. Não alterar `menu-config-core.ts`, permissões, RLS, server functions (`legal-entities.functions`) nem qualquer lógica de negócio.
+Atribuir o `job_role` padrão para todo usuário do workspace que hoje está em `workspace_members` sem entrada em `user_job_roles`:
+
+- `member` → `Vendedor` (`aaaaaaaa-0000-4000-8000-000000000001`)
+- `manager` → `Gerente Comercial` (`...000002`)
+- `admin` → `Workspace Admin` (`...000008`)
+- `owner` → `Workspace Owner` (`...000009`)
+
+SQL (idempotente):
+
+```sql
+INSERT INTO public.user_job_roles (user_id, role_id, workspace_id, assigned_by)
+SELECT wm.user_id,
+       CASE wm.role
+         WHEN 'owner'   THEN 'aaaaaaaa-0000-4000-8000-000000000009'::uuid
+         WHEN 'admin'   THEN 'aaaaaaaa-0000-4000-8000-000000000008'::uuid
+         WHEN 'manager' THEN 'aaaaaaaa-0000-4000-8000-000000000002'::uuid
+         ELSE                'aaaaaaaa-0000-4000-8000-000000000001'::uuid
+       END,
+       wm.workspace_id,
+       wm.user_id
+FROM public.workspace_members wm
+LEFT JOIN public.user_job_roles ujr ON ujr.user_id = wm.user_id
+WHERE ujr.user_id IS NULL;
+```
+
+(Verifico colunas reais de `user_job_roles` antes de rodar; ajusto se não tiver `workspace_id`/`assigned_by`.)
+
+### 2. Fluxo de convite (código)
+
+Em `src/lib/workspace-invites.functions.ts` → `consumeInvite`, adicionar após a inserção em `workspace_members`/`user_roles` a inserção equivalente em `user_job_roles` usando o mesmo mapeamento acima. Assim novos convidados já entram com job_role atribuído e a UI de "Gerenciar acessos" pode refinar depois.
 
 ## Fora do escopo
 
-- Nenhuma mudança em backend, RLS, migrations ou server functions.
-- Não remover as rotas `/settings/*` — apenas o menu do Finance deixa de referenciá-las.
-- Nenhuma alteração visual nas telas.
+- Não altero RLS nem revejo o mapeamento `role → job_role` neste PR (é o padrão definido no seed dos `job_roles`; qualquer ajuste passa por decisão de produto).
+- Não mexo no OAuth callback — ele está correto.
 
-## Como validar
+## Validação
 
-1. No módulo TechFinance, clicar em **Empresas (CNPJs)** e **Grupos empresariais**: sidebar permanece no Finance, sem redirecionar para Configurações.
-2. Acessar `/settings/legal-entities` diretamente ainda funciona (via CRM/Configurações).
-3. CRUD, seleção de padrão e totais continuam operando idênticos.
+1. Rodar migration, confirmar `SELECT public.user_has_permission('<cristiane_uuid>', '<ws>', 'techsales.activities.create.own')` = `true`.
+2. Cristiane recarrega o app e tenta a ação que falhava → sem toast RLS.
+3. Convidar um usuário novo → aceitar → conferir que já cai em `user_job_roles` com "Vendedor".
+
+## Riscos
+
+- Backfill dá "Vendedor" a todos os `member` legados. Se algum devia ser "Recrutador" (TechHire), admin do workspace refina em Configurações → Acessos depois.
+- Nenhum efeito colateral em `admin`/`owner` (recebem Workspace Admin/Owner que já vêm com policy allowlist ampla).
