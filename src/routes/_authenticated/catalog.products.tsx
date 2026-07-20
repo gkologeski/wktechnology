@@ -1,11 +1,9 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { ProductsPage } from "@/components/products/products-page";
 
-// Ponto de entrada canônico do Catálogo de Produtos.
-// Hoje a UI de CRUD vive em /settings/products (fonte única). Mantemos a
-// URL /catalog/products como caminho estável para o Core ERP; quando a
-// UI unificada de Catálogo estiver pronta ela assume esta rota.
+// Ponto de entrada canônico do Catálogo de Produtos (entidade global do Core ERP).
+// Renderiza no layout autenticado padrão para preservar o sidebar do módulo ativo,
+// igual a Empresas (/companies) e Contatos (/contacts).
 export const Route = createFileRoute("/_authenticated/catalog/products")({
-  beforeLoad: () => {
-    throw redirect({ to: "/settings/products" });
-  },
+  component: ProductsPage,
 });

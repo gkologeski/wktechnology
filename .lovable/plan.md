@@ -1,37 +1,37 @@
 ## Problema
 
-No sidebar do módulo **Serviços** (`SERVICES_SIDEBAR_GROUPS` em `src/lib/menu-config-services.ts`), o item **Produtos** aponta para `/settings/products`. Essa rota é filha do layout `src/routes/_authenticated/settings.tsx`, que substitui o conteúdo da página por um shell próprio (aside "Configurações" à esquerda + `<Outlet />`). Resultado: ao clicar em Produtos dentro de Serviços, o usuário sai visualmente do módulo — a tela "recarrega para Configuração".
+No sidebar "Cadastros" (grupo Core global), o item **Produtos** aponta para `/catalog/products`. Hoje essa rota faz `redirect({ to: "/settings/products" })` (ver `src/routes/_authenticated/catalog.products.tsx`), o que:
 
-Além disso, o mesmo item aparece em **Estrutura CRM** dentro de `/settings`, então há duas entradas competindo.
+- ativa o layout `_authenticated/settings.tsx` (shell "Configurações" com aside próprio);
+- muda o contexto visual — o usuário sai do módulo em que estava (TechSales, TechContracts, etc.) e "cai" em Configurações.
+
+Empresas (`/companies`) e Contatos (`/contacts`) já funcionam como entidades globais: são rotas de primeiro nível, herdam apenas o layout autenticado padrão e preservam o sidebar do módulo ativo. Produtos deve seguir esse mesmo padrão.
 
 ## Objetivo
 
-Ao clicar em **Produtos** no sidebar de Serviços, o usuário deve permanecer no módulo Serviços (com o sidebar do módulo intacto) e ver o CRUD de produtos. Sem mexer em regra de negócio, RLS ou no CRUD em si.
+Ao clicar em **Produtos** no grupo "Cadastros", o usuário permanece no módulo atual (sidebar do módulo intacto) e vê o CRUD de produtos — igual ao comportamento de Empresas.
+
+Sem alterar CRUD, schema, RLS ou permissões.
 
 ## Abordagem
 
-Criar uma rota dedicada do módulo Serviços que reaproveita o mesmo componente de página de `/settings/products`, sem passar pelo layout de Configurações. Manter `/settings/products` como está para quem entra pelas Configurações do CRM.
+1. **Trocar o redirect por render real em `/catalog/products`.**
+   `src/routes/_authenticated/catalog.products.tsx` deixa de fazer `redirect` e passa a renderizar o componente compartilhado `ProductsPage` (`src/components/products/products-page.tsx`) — mesmo padrão já usado em `/services/products` e `/settings/products`.
 
-### Passos
+2. **Manter `/settings/products` intacto.** Continua acessível pelo menu de Configurações (Estrutura CRM) para admins que gerenciam catálogo via Configurações. Nenhuma mudança nesse arquivo.
 
-1. **Extrair o componente `ProductsPage`** de `src/routes/_authenticated/settings.products.tsx` para um módulo compartilhado (ex.: `src/components/products/products-page.tsx`), exportando-o como componente puro. A rota atual passa a apenas importá-lo e usar como `component`.
-   - Sem alterar consultas, mutations, permissões ou UI.
-
-2. **Nova rota `/_authenticated/services.products.tsx`** que também usa `ProductsPage` como componente. Isso já herda o layout autenticado padrão (sidebar do módulo Serviços continua visível, pois o path começa com `/services` e o `detectModuleFromPath` classifica como `services`).
-
-3. **Atualizar o sidebar do módulo Serviços** (`src/lib/menu-config-services.ts`): trocar `url: "/settings/products"` por `url: "/services/products"`.
-
-4. **Deixar `/settings/products` intacto** — continua acessível pelo menu de Configurações (Estrutura CRM), para preservar o fluxo atual de admins que gerenciam o catálogo via Configurações.
+3. **Nenhuma mudança no menu.** `CORE_SIDEBAR_GROUPS` já aponta Produtos para `/catalog/products` — só precisamos que essa URL passe a renderizar a página no layout autenticado padrão (sem shell de Configurações).
 
 ## Fora do escopo
 
-- Alterar o CRUD, schema, RLS ou permissões (`need: "manager"`).
-- Redesenhar a tela de produtos.
-- Remover a entrada em `/settings` (mantida como acesso alternativo via Configurações).
+- Alterar `ProductsPage`, CRUD, schema, RLS, permissões.
+- Remover a entrada de Produtos em `/settings` (mantida como acesso alternativo).
+- Mexer em `/services/products` (continua funcionando).
 
 ## Validação manual
 
-1. Estar no módulo Serviços (`/services`). Sidebar mostra grupo "Serviços" com item **Produtos**.
-2. Clicar em **Produtos** → URL vira `/services/products`, sidebar do módulo Serviços permanece, conteúdo é o CRUD de produtos.
-3. Acessar `/settings/products` diretamente → shell de Configurações continua funcionando normalmente.
-4. Sem regressão de dark mode, permissões ou CRUD.
+1. Estar em qualquer módulo (ex.: TechSales em `/deals`). Sidebar mostra grupo "Cadastros" com **Produtos**.
+2. Clicar em **Produtos** → URL vira `/catalog/products`, sidebar do módulo permanece, conteúdo é o CRUD de produtos (sem shell de Configurações).
+3. Repetir a partir de TechContracts, TechServices, TechProjects, TechFinance — em todos, o módulo ativo é preservado.
+4. Acessar `/settings/products` diretamente → shell de Configurações continua funcionando.
+5. `/services/products` continua funcionando com sidebar do módulo Serviços.
