@@ -58,39 +58,53 @@ async function loadTemplate(
   return { subject: data.subject, body: data.body };
 }
 
+async function resolveRecipient(
+  supabase: SupabaseClient,
+  invoice: Invoice,
+): Promise<{ customerName: string; phone: string | null }> {
+  let customerName = "";
+  let phone: string | null = null;
+  if (invoice.contact_id) {
+    const { data } = await supabase
+      .from("contacts")
+      .select("first_name, last_name, phone, mobile_phone")
+      .eq("id", invoice.contact_id)
+      .maybeSingle();
+    customerName = [data?.first_name, data?.last_name].filter(Boolean).join(" ").trim();
+    phone = data?.mobile_phone || data?.phone || null;
+  }
+  if ((!customerName || !phone) && invoice.company_id) {
+    const { data } = await supabase
+      .from("companies")
+      .select("name, phone")
+      .eq("id", invoice.company_id)
+      .maybeSingle();
+    if (!customerName) customerName = data?.name ?? "";
+    if (!phone) phone = data?.phone ?? null;
+  }
+  return { customerName, phone };
+}
+
 async function resolveContext(
   supabase: SupabaseClient,
   invoice: Invoice,
   step: Step,
-): Promise<Record<string, string | number>> {
+): Promise<{ tokens: Record<string, string | number>; phone: string | null }> {
   const today = new Date();
   const due = new Date(invoice.due_date);
   const daysOverdue = Math.max(0, daysBetween(today, due));
-  let customerName = "";
-  if (invoice.contact_id) {
-    const { data } = await supabase
-      .from("contacts")
-      .select("first_name, last_name")
-      .eq("id", invoice.contact_id)
-      .maybeSingle();
-    customerName = [data?.first_name, data?.last_name].filter(Boolean).join(" ").trim();
-  }
-  if (!customerName && invoice.company_id) {
-    const { data } = await supabase
-      .from("companies")
-      .select("name")
-      .eq("id", invoice.company_id)
-      .maybeSingle();
-    customerName = data?.name ?? "";
-  }
+  const { customerName, phone } = await resolveRecipient(supabase, invoice);
   void step;
   return {
-    invoice_number: invoice.invoice_number,
-    amount: invoice.amount.toFixed(2),
-    currency: invoice.currency,
-    due_date: invoice.due_date,
-    days_overdue: daysOverdue,
-    customer_name: customerName || "Cliente",
+    tokens: {
+      invoice_number: invoice.invoice_number,
+      amount: invoice.amount.toFixed(2),
+      currency: invoice.currency,
+      due_date: invoice.due_date,
+      days_overdue: daysOverdue,
+      customer_name: customerName || "Cliente",
+    },
+    phone,
   };
 }
 
@@ -100,7 +114,7 @@ async function executeStep(
   policy: Policy,
   step: Step,
 ): Promise<Record<string, unknown>> {
-  const ctx = await resolveContext(supabase, invoice, step);
+  const { tokens: ctx, phone } = await resolveContext(supabase, invoice, step);
   const tmpl = await loadTemplate(supabase, step.template_id);
   const subject = renderTokens(tmpl?.subject ?? step.subject ?? "", ctx);
   const body = renderTokens(tmpl?.body ?? step.body ?? "", ctx);
@@ -147,8 +161,40 @@ async function executeStep(
     return { ...eventBase, status: "escalated" };
   }
 
-  // email / whatsapp: enfileira no log de auditoria. O envio real depende
-  // de configuração de app-emails ou WhatsApp por workspace.
+  if (step.channel === "whatsapp") {
+    if (!phone) {
+      return { ...eventBase, status: "error", error: "Contato sem telefone" };
+    }
+    try {
+      const { sendWhatsAppFromServer } = await import("@/lib/whatsapp-send.server");
+      const result = await sendWhatsAppFromServer({
+        supabase,
+        workspaceId: invoice.workspace_id,
+        to: phone,
+        body,
+        contactId: invoice.contact_id,
+        templateName: step.template_id ? `dunning:${step.template_id}` : "dunning",
+        source: { origin: "dunning", invoice_id: invoice.id, policy_id: policy.id },
+      });
+      return {
+        ...eventBase,
+        status: "sent",
+        provider: "twilio",
+        message_sid: result.sid,
+        provider_status: result.status,
+        to: result.to,
+      };
+    } catch (err) {
+      console.error("[dunning] whatsapp send failed", err);
+      return {
+        ...eventBase,
+        status: "error",
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
+  // email: envio real depende de app-emails configurado; mantém como queued.
   return { ...eventBase, status: "queued" };
 }
 
