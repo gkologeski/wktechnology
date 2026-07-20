@@ -204,7 +204,47 @@ async function executeStep(
     }
   }
 
-  // email: envio real depende de app-emails configurado; mantém como queued.
+  if (step.channel === "email") {
+    if (!email) {
+      return { ...eventBase, status: "error", error: "Contato sem e-mail" };
+    }
+    try {
+      const { sendTransactionalEmailFromServer } = await import("@/lib/email-send.server");
+      const result = await sendTransactionalEmailFromServer({
+        supabase,
+        templateName: "dunning-notice",
+        recipientEmail: email,
+        idempotencyKey: `dunning:${policy.id}:${invoice.id}:${step.offset_days}`,
+        templateData: {
+          subject,
+          body,
+          invoiceNumber: invoice.invoice_number,
+          customerName: customerName || "Cliente",
+        },
+      });
+      if (result.status === "sent") {
+        return {
+          ...eventBase,
+          status: "sent",
+          provider: "lovable-email",
+          message_id: result.messageId,
+          to: email,
+        };
+      }
+      if (result.status === "suppressed") {
+        return { ...eventBase, status: "suppressed", to: email, message_id: result.messageId };
+      }
+      return { ...eventBase, status: "error", error: result.error };
+    } catch (err) {
+      console.error("[dunning] email send failed", err);
+      return {
+        ...eventBase,
+        status: "error",
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
+
   return { ...eventBase, status: "queued" };
 }
 
