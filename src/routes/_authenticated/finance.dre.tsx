@@ -154,14 +154,34 @@ function DrePage() {
       />
 
       {data?.consolidation?.isGroup && (
-        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm flex items-center justify-between gap-2">
-          <span>
-            <strong>Consolidado</strong> — {data.consolidation.groupSize} CNPJs do grupo
-          </span>
-          <span className="text-muted-foreground text-xs">
-            {data.consolidation.intercompanyEliminated} transação(ões) intercompany eliminada(s)
-          </span>
-        </div>
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm flex items-center justify-between gap-2 cursor-help">
+                <span className="flex items-center gap-2">
+                  <Info className="h-4 w-4 text-primary" />
+                  <strong>Consolidado</strong> — {data.consolidation.groupSize} CNPJs do grupo
+                </span>
+                <span className="text-muted-foreground text-xs">
+                  {data.consolidation.intercompanyEliminated} transação(ões) intercompany eliminada(s)
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-sm">
+              Transações entre CNPJs do grupo são eliminadas para não inflar receitas e despesas na visão consolidada.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+
+      {data?.consolidation?.isGroup && (
+        <Alert variant="default" className="bg-muted/40">
+          <Info className="h-4 w-4" />
+          <AlertTitle>Como funciona a eliminação intercompany</AlertTitle>
+          <AlertDescription>
+            Quando um grupo empresarial é selecionado, lançamentos cuja empresa e contra-parte pertencem ao mesmo grupo são excluídos do cálculo. Isso evita que vendas internas entre CNPJs do grupo sejam contadas como receita/despesa real.
+          </AlertDescription>
+        </Alert>
       )}
 
 
