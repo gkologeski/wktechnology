@@ -23,6 +23,7 @@ export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
 
       { title: "Faturas", url: "/invoices", icon: FileText },
       { title: "NFS-e", url: "/finance/nfse", icon: Receipt, need: "manager" },
+      { title: "Auditoria", url: "/finance/audit", icon: ShieldCheck, need: "admin" },
     ],
   },
 ];
