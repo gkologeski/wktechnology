@@ -61,28 +61,31 @@ async function loadTemplate(
 async function resolveRecipient(
   supabase: SupabaseClient,
   invoice: Invoice,
-): Promise<{ customerName: string; phone: string | null }> {
+): Promise<{ customerName: string; phone: string | null; email: string | null }> {
   let customerName = "";
   let phone: string | null = null;
+  let email: string | null = null;
   if (invoice.contact_id) {
     const { data } = await supabase
       .from("contacts")
-      .select("first_name, last_name, phone, mobile_phone")
+      .select("first_name, last_name, phone, mobile_phone, email")
       .eq("id", invoice.contact_id)
       .maybeSingle();
     customerName = [data?.first_name, data?.last_name].filter(Boolean).join(" ").trim();
     phone = data?.mobile_phone || data?.phone || null;
+    email = data?.email || null;
   }
-  if ((!customerName || !phone) && invoice.company_id) {
+  if ((!customerName || !phone || !email) && invoice.company_id) {
     const { data } = await supabase
       .from("companies")
-      .select("name, phone")
+      .select("name, phone, email")
       .eq("id", invoice.company_id)
       .maybeSingle();
     if (!customerName) customerName = data?.name ?? "";
     if (!phone) phone = data?.phone ?? null;
+    if (!email) email = data?.email ?? null;
   }
-  return { customerName, phone };
+  return { customerName, phone, email };
 }
 
 async function resolveContext(
