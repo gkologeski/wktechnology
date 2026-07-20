@@ -124,7 +124,7 @@ async function executeStep(
   policy: Policy,
   step: Step,
 ): Promise<Record<string, unknown>> {
-  const { tokens: ctx, phone } = await resolveContext(supabase, invoice, step);
+  const { tokens: ctx, phone, email, customerName } = await resolveContext(supabase, invoice, step);
   const tmpl = await loadTemplate(supabase, step.template_id);
   const subject = renderTokens(tmpl?.subject ?? step.subject ?? "", ctx);
   const body = renderTokens(tmpl?.body ?? step.body ?? "", ctx);
