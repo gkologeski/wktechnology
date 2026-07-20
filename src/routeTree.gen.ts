@@ -276,6 +276,7 @@ import { Route as ApiPublicHooksLinkedinApplicantsSyncRouteImport } from './rout
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
+import { Route as ApiPublicHooksDunningTickRouteImport } from './routes/api/public/hooks/dunning-tick'
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicHooksCalendarRecordingsTickRouteImport } from './routes/api/public/hooks/calendar-recordings-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
@@ -1844,6 +1845,12 @@ const ApiPublicHooksEmailBroadcastTickRoute =
     path: '/api/public/hooks/email-broadcast-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksDunningTickRoute =
+  ApiPublicHooksDunningTickRouteImport.update({
+    id: '/api/public/hooks/dunning-tick',
+    path: '/api/public/hooks/dunning-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksCalendarTickRoute =
   ApiPublicHooksCalendarTickRouteImport.update({
     id: '/api/public/hooks/calendar-tick',
@@ -2401,6 +2408,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -2717,6 +2725,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -3040,6 +3049,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
@@ -3363,6 +3373,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -3679,6 +3690,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -4001,6 +4013,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
@@ -4123,6 +4136,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarRecordingsTickRoute: typeof ApiPublicHooksCalendarRecordingsTickRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
+  ApiPublicHooksDunningTickRoute: typeof ApiPublicHooksDunningTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
@@ -6055,6 +6069,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEmailBroadcastTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/dunning-tick': {
+      id: '/api/public/hooks/dunning-tick'
+      path: '/api/public/hooks/dunning-tick'
+      fullPath: '/api/public/hooks/dunning-tick'
+      preLoaderRoute: typeof ApiPublicHooksDunningTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/calendar-tick': {
       id: '/api/public/hooks/calendar-tick'
       path: '/api/public/hooks/calendar-tick'
@@ -7199,6 +7220,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksCalendarRecordingsTickRoute:
     ApiPublicHooksCalendarRecordingsTickRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
+  ApiPublicHooksDunningTickRoute: ApiPublicHooksDunningTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
