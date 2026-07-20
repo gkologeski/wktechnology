@@ -1,34 +1,48 @@
-## Diagnóstico
+## Problema
 
-Cristiane (perfil Vendedor, membro) está acessando `app.wktechnology.com.br/settings/calendars` e vê "Sem permissão". A confusão inicial ("não consegue conectar Google") na verdade é sobre **conectar a agenda Google pessoal** dela — não é falha de login.
+Cristiane ainda vê **Acesso restrito** ao abrir:
 
-Causa raiz confirmada em `src/routes/_authenticated/settings.tsx:111`:
+- `/settings/email`
+- `/settings/calendars`
 
-```ts
-{ to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager" }
-```
+Pelos anexos, o bloqueio acontece antes da tela de conexão carregar. O arquivo já em contexto confirma um gate global em `src/routes/_authenticated.tsx`:
 
-O item do menu está restrito a `manager`/`admin`, então:
-- O link nem aparece no menu de Configurações para o membro.
-- A tela é filtrada como não-permitida na navegação (sensação de "sem permissão").
+- `/settings/email` está em `ADMIN_ONLY`.
+- `/settings/calendars` está em `MANAGER_PLUS`.
 
-Isso é inconsistente com `/settings/email` (linha 100), que **não** exige role — e-mail pessoal já é liberado a todos. As server functions do calendário (`startCalendarOAuth`, `listCalendarAccounts`, etc.) já operam por `context.userId` dentro do workspace, ou seja, cada usuário conecta a própria conta Google. Não há motivo funcional para exigir manager.
+Isso explica por que a alteração anterior no menu de Configurações não resolveu: a rota continua bloqueada pelo layout autenticado global.
 
-## Correção proposta
+## Plano de correção
 
-Alteração mínima e cirúrgica, apenas UI/gate de navegação:
+1. Alterar somente `src/routes/_authenticated.tsx`.
+2. Remover `/settings/email` de `ADMIN_ONLY`.
+3. Remover `/settings/calendars` de `MANAGER_PLUS`.
+4. Manter as demais permissões de Configurações intactas.
+5. Não alterar backend, banco, RLS, OAuth, server functions ou permissões administrativas.
 
-1. Em `src/routes/_authenticated/settings.tsx` linha 111, remover `need: "manager"` do item `/settings/calendars`, deixando-o visível a todos os usuários autenticados (mesmo padrão do `/settings/email`).
+## Resultado esperado
 
-## Fora do escopo
+- Usuários membros/vendedores autenticados poderão abrir as telas pessoais de conexão:
+  - e-mail pessoal em `/settings/email`;
+  - agenda pessoal em `/settings/calendars`.
+- A segurança continua por usuário nas funções de conexão/sincronização, não por acesso administrativo à tela.
+- Telas realmente administrativas de Configurações continuam bloqueadas.
 
-- Não altero server functions, RLS, schema ou fluxo OAuth.
-- Não mexo em outras entradas do menu.
-- Não altero permissões de outras telas de Configurações.
+## Validação
 
-## Como validar
+Após implementar:
 
-1. Logar como Cristiane (perfil Vendedor) em `app.wktechnology.com.br`.
-2. Abrir Configurações → item "Calendários" deve aparecer no menu.
-3. Clicar em "Conectar Google", concluir consentimento OAuth e ver a conta listada com sync ativo.
-4. Validar que admin/manager continuam enxergando normalmente.
+1. Verificar o diff para garantir que só os dois paths foram removidos das listas globais.
+2. Validar que `/settings/email` e `/settings/calendars` não aparecem mais em listas `ADMIN_ONLY`/`MANAGER_PLUS`.
+3. Validar manualmente no app com usuário membro/vendedor:
+   - abrir `/settings/email`;
+   - abrir `/settings/calendars`;
+   - confirmar que a tela de conexão aparece em vez de **Acesso restrito**.
+
+<presentation-actions>
+  <presentation-open-history>View History</presentation-open-history>
+</presentation-actions>
+
+<presentation-actions>
+<presentation-link url="https://docs.lovable.dev/tips-tricks/troubleshooting">Troubleshooting docs</presentation-link>
+</presentation-actions>
