@@ -259,18 +259,53 @@ function DunningPage() {
                       <Trash2 className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </div>
-                  {s.channel === "email" && (
+                  {(s.channel === "email" || s.channel === "whatsapp") && (
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">
+                        Template ({s.channel})
+                      </Label>
+                      <Select
+                        value={s.template_id ?? "__inline__"}
+                        onValueChange={(v) =>
+                          updateStep(i, { template_id: v === "__inline__" ? null : v })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecionar template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__inline__">Usar mensagem inline</SelectItem>
+                          {templates
+                            .filter((t) => t.channel === s.channel && t.active)
+                            .map((t) => (
+                              <SelectItem key={t.id} value={t.id}>
+                                {t.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <Link
+                        to="/settings/charging-templates"
+                        className="text-xs text-primary underline"
+                      >
+                        Gerenciar templates
+                      </Link>
+                    </div>
+                  )}
+                  {!s.template_id && s.channel === "email" && (
                     <Input
                       placeholder="Assunto"
                       value={s.subject ?? ""}
                       onChange={(e) => updateStep(i, { subject: e.target.value })}
                     />
                   )}
-                  <Input
-                    placeholder="Mensagem (use {invoice_number}, {amount}, {days_overdue})"
-                    value={s.body ?? ""}
-                    onChange={(e) => updateStep(i, { body: e.target.value })}
-                  />
+                  {!s.template_id && (
+                    <Input
+                      placeholder="Mensagem (use {invoice_number}, {amount}, {days_overdue})"
+                      value={s.body ?? ""}
+                      onChange={(e) => updateStep(i, { body: e.target.value })}
+                    />
+                  )}
                 </div>
               ))}
               <Button
@@ -291,6 +326,46 @@ function DunningPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="h-4 w-4" /> Execuções recentes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!runsData?.runs?.length ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma execução ainda. O cron processa faturas vencidas periodicamente.
+            </p>
+          ) : (
+            <div className="divide-y">
+              {runsData.runs.slice(0, 30).map((r) => {
+                const inv = (r as unknown as { customer_invoices?: { invoice_number?: string; amount?: number; due_date?: string } }).customer_invoices;
+                const history = Array.isArray(r.history) ? (r.history as Array<{ channel?: string; at?: string }>) : [];
+                return (
+                  <div key={r.id} className="py-2 flex items-center justify-between text-sm">
+                    <div>
+                      <div className="font-medium">
+                        Fatura {inv?.invoice_number ?? "—"}
+                        <span className="text-muted-foreground ml-2">
+                          venc. {inv?.due_date ?? "—"}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Passo atual: {r.current_step ?? 0} · {history.length} evento(s)
+                      </div>
+                    </div>
+                    <Badge variant={r.status === "active" ? "default" : "outline"}>
+                      {r.status}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
