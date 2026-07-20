@@ -191,6 +191,7 @@ import { Route as AuthenticatedFinanceCategoriesRouteImport } from './routes/_au
 import { Route as AuthenticatedFinanceCashFlowRouteImport } from './routes/_authenticated/finance.cash-flow'
 import { Route as AuthenticatedFinanceBankingRouteImport } from './routes/_authenticated/finance.banking'
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
+import { Route as AuthenticatedFinanceAuditRouteImport } from './routes/_authenticated/finance.audit'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
 import { Route as AuthenticatedContractsIdRouteImport } from './routes/_authenticated/contracts.$id'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
@@ -1352,6 +1353,12 @@ const AuthenticatedFinanceBankAccountsRoute =
     path: '/finance/bank-accounts',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedFinanceAuditRoute =
+  AuthenticatedFinanceAuditRouteImport.update({
+    id: '/finance/audit',
+    path: '/finance/audit',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDealsIdRoute = AuthenticatedDealsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2236,6 +2243,7 @@ export interface FileRoutesByFullPath {
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
@@ -2552,6 +2560,7 @@ export interface FileRoutesByTo {
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
@@ -2873,6 +2882,7 @@ export interface FileRoutesById {
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
+  '/_authenticated/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
   '/_authenticated/finance/banking': typeof AuthenticatedFinanceBankingRouteWithChildren
   '/_authenticated/finance/cash-flow': typeof AuthenticatedFinanceCashFlowRoute
@@ -3195,6 +3205,7 @@ export interface FileRouteTypes {
     | '/contacts/$id'
     | '/contracts/$id'
     | '/deals/$id'
+    | '/finance/audit'
     | '/finance/bank-accounts'
     | '/finance/banking'
     | '/finance/cash-flow'
@@ -3511,6 +3522,7 @@ export interface FileRouteTypes {
     | '/contacts/$id'
     | '/contracts/$id'
     | '/deals/$id'
+    | '/finance/audit'
     | '/finance/bank-accounts'
     | '/finance/banking'
     | '/finance/cash-flow'
@@ -3831,6 +3843,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contracts/$id'
     | '/_authenticated/deals/$id'
+    | '/_authenticated/finance/audit'
     | '/_authenticated/finance/bank-accounts'
     | '/_authenticated/finance/banking'
     | '/_authenticated/finance/cash-flow'
@@ -5447,6 +5460,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFinanceBankAccountsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/finance/audit': {
+      id: '/_authenticated/finance/audit'
+      path: '/finance/audit'
+      fullPath: '/finance/audit'
+      preLoaderRoute: typeof AuthenticatedFinanceAuditRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/deals/$id': {
       id: '/_authenticated/deals/$id'
       path: '/$id'
@@ -6874,6 +6894,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCatalogProductsRoute: typeof AuthenticatedCatalogProductsRoute
   AuthenticatedCatalogServicesRoute: typeof AuthenticatedCatalogServicesRoute
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
+  AuthenticatedFinanceAuditRoute: typeof AuthenticatedFinanceAuditRoute
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
   AuthenticatedFinanceBankingRoute: typeof AuthenticatedFinanceBankingRouteWithChildren
   AuthenticatedFinanceCashFlowRoute: typeof AuthenticatedFinanceCashFlowRoute
@@ -6986,6 +7007,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCatalogProductsRoute: AuthenticatedCatalogProductsRoute,
   AuthenticatedCatalogServicesRoute: AuthenticatedCatalogServicesRoute,
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
+  AuthenticatedFinanceAuditRoute: AuthenticatedFinanceAuditRoute,
   AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
   AuthenticatedFinanceBankingRoute:
     AuthenticatedFinanceBankingRouteWithChildren,
@@ -7249,13 +7271,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
