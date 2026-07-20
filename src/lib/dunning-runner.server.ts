@@ -92,11 +92,16 @@ async function resolveContext(
   supabase: SupabaseClient,
   invoice: Invoice,
   step: Step,
-): Promise<{ tokens: Record<string, string | number>; phone: string | null }> {
+): Promise<{
+  tokens: Record<string, string | number>;
+  phone: string | null;
+  email: string | null;
+  customerName: string;
+}> {
   const today = new Date();
   const due = new Date(invoice.due_date);
   const daysOverdue = Math.max(0, daysBetween(today, due));
-  const { customerName, phone } = await resolveRecipient(supabase, invoice);
+  const { customerName, phone, email } = await resolveRecipient(supabase, invoice);
   void step;
   return {
     tokens: {
@@ -108,6 +113,8 @@ async function resolveContext(
       customer_name: customerName || "Cliente",
     },
     phone,
+    email,
+    customerName,
   };
 }
 
