@@ -28,7 +28,7 @@ export const financeAuditReport = createServerFn({ method: "POST" })
     let base = supabase
       .from("financial_entries")
       .select(
-        "id, amount, direction, description, due_date, category_id, cost_center_id, legal_entity_id",
+        "id, amount, direction, description, due_date, category_id, legal_entity_id, financial_entry_allocations(id)",
       )
       .limit(50000);
     if (scopeIds) base = base.in("legal_entity_id", scopeIds);
@@ -36,7 +36,16 @@ export const financeAuditReport = createServerFn({ method: "POST" })
     const { data: rows, error } = await base;
     if (error) throw new Error(error.message);
 
-    const list = rows ?? [];
+    const list = (rows ?? []) as Array<{
+      id: string;
+      amount: number | string;
+      direction: string;
+      description: string | null;
+      due_date: string | null;
+      category_id: string | null;
+      legal_entity_id: string | null;
+      financial_entry_allocations: Array<{ id: string }> | null;
+    }>;
     const byEntity = new Map<
       string,
       { total: number; no_category: number; no_cost_center: number; no_legal_entity: number }
@@ -61,7 +70,7 @@ export const financeAuditReport = createServerFn({ method: "POST" })
         b.no_category++;
         noCategory++;
       }
-      if (!r.cost_center_id) {
+      if (!r.financial_entry_allocations || r.financial_entry_allocations.length === 0) {
         b.no_cost_center++;
         noCostCenter++;
       }
