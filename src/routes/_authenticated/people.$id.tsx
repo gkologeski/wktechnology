@@ -377,6 +377,18 @@ function PersonForm({
           </Card>
         </TabsContent>
 
+        <TabsContent value="goals" className="pt-4">
+          <GoalsPanel personId={p.id} canWrite={canWrite} />
+        </TabsContent>
+
+        <TabsContent value="one_on_ones" className="pt-4">
+          <OneOnOnesPanel personId={p.id} canWrite={canWrite} />
+        </TabsContent>
+
+        <TabsContent value="reviews" className="pt-4">
+          <ReviewsPanel personId={p.id} canWrite={canWrite} />
+        </TabsContent>
+
         <TabsContent value="documents" className="space-y-4 pt-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <StatCard label="Válidos" value={docStats.valid} tone="emerald" />
