@@ -130,8 +130,9 @@ function PersonForm({
   onSaved: () => void;
   upsert: ReturnType<typeof useServerFn<typeof upsertPerson>>;
 }) {
-  const p = person.person;
-  const canWrite = person.can_write;
+  const p = person;
+  const canWrite = true; // RLS bloqueia writes de não-admins — botão aparece, servidor decide.
+  const canViewSensitive = person.can_view_sensitive;
 
   const [fullName, setFullName] = useState(p.full_name);
   const [preferredName, setPreferredName] = useState(p.preferred_name ?? "");
@@ -143,9 +144,7 @@ function PersonForm({
   const [status, setStatus] = useState<PeopleStatus>(p.status);
   const [employment, setEmployment] = useState<PeopleEmploymentType>(p.employment_type);
   const [notes, setNotes] = useState(p.notes ?? "");
-  const [costHour, setCostHour] = useState<string>(
-    person.sensitive?.cost_hour != null ? String(person.sensitive.cost_hour) : "",
-  );
+  const [costHour, setCostHour] = useState<string>(p.cost_hour != null ? String(p.cost_hour) : "");
 
   const mut = useMutation({
     mutationFn: () =>
