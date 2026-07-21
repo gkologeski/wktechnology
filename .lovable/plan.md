@@ -5,7 +5,32 @@
 - `src/lib/notifications.functions.ts` migrado para `supabaseAdmin` nas leituras de `profiles.notification_preferences` (destravou GRANTs por coluna).
 - Levantamento de schema das 13 tabelas alvo: identificadas divergências (algumas usam `workspace_id` sem `owner_id`; `products/recurring_plans` usam `active` em vez de `status`).
 
-Nada além disso foi commitado ainda para a feature de workflows cross-módulo. As partes abaixo são o que falta.
+## Fases implementadas
+
+### Fase 1 — Fundação de tipos e schemas ✅
+
+Arquivos entregues:
+- `src/lib/workflows/types.ts` — expandido `WorkflowEntity`, `ENTITY_LABELS`, `ENTITY_GROUPS` (grupos "Projetos", "Financeiro", "Comercial", "Contratos"), `ENTITY_FIELDS` e `WORKFLOW_WRITABLE_TABLES`.
+- `src/lib/workflows/schemas.ts` — expandido `EntityEnum`; adicionadas ações genéricas `create_record` / `update_record` / `delete_record` com `table` (whitelist) + `values` (record).
+- `src/lib/workflows/associations.ts` — mapeamento de FKs cross-módulo (ex.: `projects.company_id`, `contracts.deal_id`, `financial_entries.legal_entity_id`).
+
+### Fase 2 — Engine ✅
+
+Arquivo entregue: `src/lib/workflows/engine.server.ts`
+
+- Atualizados `assignFieldFor` e `notificationLinkFor` para novas entidades.
+- Implementados handlers `create_record` / `update_record` / `delete_record` com:
+  - Whitelist de tabelas (`WORKFLOW_WRITABLE_TABLES`) + resolução automática de `owner_id` (default: `ctx.ownerId`).
+  - Suporte a tokens `{{campo}}` em qualquer valor.
+  - Fallback de `workspace_id` para tabelas sem `owner_id`.
+
+### Fase 4 — UI Builder ✅
+
+Arquivos entregues:
+- `src/components/workflows/workflow-builder.tsx` — novos grupos no diálogo de seleção de entidade e categoria "Registros (genérico)" na biblioteca de ações.
+- `src/components/workflows/generic-record-form.tsx` — formulário de configuração das ações genéricas, reaproveitando `ExtraFieldsEditor` e `TokenInput`.
+
+## Fases pendentes
 
 ## Escopo alvo
 
