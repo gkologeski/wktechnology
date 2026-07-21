@@ -55,6 +55,7 @@ import { OneOnOnesPanel } from "@/components/people/one-on-ones-panel";
 import { ReviewsPanel } from "@/components/people/reviews-panel";
 import { PsychosocialPanel } from "@/components/people/psychosocial-panel";
 import { IncidentsPanel } from "@/components/people/incidents-panel";
+import { AllocationsPanel } from "@/components/people/allocations-panel";
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
