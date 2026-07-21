@@ -80,7 +80,7 @@ export const saveWorkflowActionTemplate = createServerFn({ method: "POST" })
       action_type: data.action_type,
       entity: data.entity ?? null,
       table_name: data.table_name ?? null,
-      action_json: data.action_json,
+      action_json: data.action_json as unknown as Json,
       visibility: data.visibility,
     };
     const { data: row, error } = await context.supabase
