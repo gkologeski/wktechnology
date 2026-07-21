@@ -1,45 +1,68 @@
-## Objetivo
+# Botão "Nova vaga" oculto para Priscila — corrigir owner_id em user_job_roles
 
-Substituir os três itens genéricos "Criar/Atualizar/Excluir registro (qualquer módulo)" da biblioteca de ações do Workflow Builder por uma navegação em dois níveis, agrupada por módulo, com rótulos amigáveis por entidade (ex.: "Criar Projeto", "Criar Registro de Contas a Pagar", "Criar Serviço").
+## Diagnóstico (confirmado)
 
-## Escopo
+O botão "Nova vaga" em `/jobs` é gated por `<Can permission="techhire.jobs.create.own">`. O hook `usePermissions` chama a RPC `current_user_permissions(_workspace_id)` passando o workspace do usuário (via `workspace_members`).
 
-Somente UI/apresentação do picker de ações e labels. Não altera engine, tipos de ação, RLS, migrations, nem o `GenericRecordForm` (que continua sendo o form de edição do passo, apenas com `table` já pré-selecionado).
+Consultas realizadas:
+- Priscila é membro do workspace `184b9435-…` (WK Technology).
+- Ela tem `user_job_roles.role_id = aaaaaaaa-…-04` (Head de RH) contendo `techhire.jobs.create.own` (e outras `techhire.jobs.*`).
+- Mas o registro em `user_job_roles` está com `owner_id = 1c237fbe-…` — que é um **user_id**, não o workspace. Portanto a RPC (que filtra por `owner_id = _workspace_id`) devolve `[]` para o workspace correto, e o `Can` esconde o botão.
 
-## Mudanças
+Outros usuários do mesmo workspace têm a mesma inconsistência (`cba8e2c2`, `d473eff9`, `bc636710`, `5946963b` — Priscila). Um deles inclusive tem duas linhas: uma com `owner_id = 1c237fbe-…` (errado) e outra com `owner_id = 184b9435-…` (correto), o que confirma que o valor certo é o workspace.
 
-### 1. `src/lib/workflows/types.ts`
-- Adicionar um catálogo `RECORD_ACTION_MODULES` que agrupa por módulo as tabelas graváveis com rótulos específicos em pt-BR (usando singular e nomes de negócio):
-  - **Vendas:** Lead, Contato, Empresa, Negócio, Cotação, Proposta
-  - **Atendimento:** Ticket
-  - **Recrutamento (ATS):** Vaga, Candidato, Aplicação, Entrevista
-  - **Projetos:** Projeto, Tarefa de projeto, Marco de projeto
-  - **Contratos e catálogo:** Contrato, Produto, Serviço
-  - **Financeiro:** Lançamento financeiro (contas a pagar/receber), Pagamento bancário, Fatura de cliente, Fatura de assinatura, Plano recorrente
-  - **Atividades:** Atividade
-- Nota: como `financial_entries` cobre tanto pagar quanto receber via campo `direction`, será listado como "Lançamento financeiro" (o form já expõe o campo `direction` via catálogo). Não vamos criar duas ações separadas por direção.
+Escopo: apenas normalizar os dados existentes de `user_job_roles`. Não altera código, RLS, roles ou permissões.
 
-### 2. `src/components/workflows/workflow-builder.tsx`
-- Ajustar `ActionLibraryPanel`:
-  - Manter as demais categorias como estão.
-  - Remover o card único "Registros (qualquer módulo)".
-  - No lugar, renderizar uma seção "Registros" com submenus expansíveis por módulo. Cada módulo lista suas entidades e, ao clicar em uma entidade, abre um mini-picker inline com três botões: **Criar**, **Editar**, **Excluir**.
-  - Interação: clique único cai no módulo → clique na entidade expande as 3 operações → clique na operação chama `onPick` com o tipo (`create_record`/`update_record`/`delete_record`) e a `table` alvo.
-- Estender `onPick` para aceitar opcionalmente uma `table` pré-selecionada:
-  - `addAction` já cria a ação via `defaultActionOfType`; ajustar para aceitar override e injetar `table` no passo recém-criado antes de `insertStep`.
-- Ícones: usar os ícones dos módulos de `src/lib/modules/registry.ts` (Briefcase, Users, Kanban, FileText, Package, DollarSign) para os grupos e um ícone neutro para cada linha.
+## Passos
 
-### 3. Sem mudança em `GenericRecordForm`
-- O form continua sendo aberto normalmente ao selecionar o passo; a diferença é que a tabela já vem preenchida e o catálogo de campos aparece imediatamente. O select de tabela permanece disponível caso o usuário queira trocar.
+1. **Migração SQL** (`supabase/migrations/…_fix_user_job_roles_owner_id.sql`)
+   - Para cada linha de `user_job_roles` cujo `owner_id` NÃO é um `workspaces.id`, substituir por `workspace_members.workspace_id` do próprio `user_id`.
+   - Ignorar (log via `RAISE NOTICE`) linhas em que o usuário não tem workspace_member — nada a fazer.
+   - Deduplicar caso a correção crie conflito com uma linha já existente no mesmo (user_id, role_id, owner_id): manter a `is_primary = true` (ou a mais recente) e remover a duplicada.
 
-## Fora de escopo (registrado como follow-up)
+   Estrutura:
+   ```sql
+   WITH bad AS (
+     SELECT ujr.id, wm.workspace_id AS correct_owner
+     FROM user_job_roles ujr
+     JOIN workspace_members wm ON wm.user_id = ujr.user_id
+     WHERE ujr.owner_id NOT IN (SELECT id FROM workspaces)
+   )
+   UPDATE user_job_roles ujr
+   SET owner_id = bad.correct_owner
+   FROM bad
+   WHERE ujr.id = bad.id
+     AND NOT EXISTS (
+       SELECT 1 FROM user_job_roles x
+       WHERE x.user_id = ujr.user_id
+         AND x.role_id = ujr.role_id
+         AND x.owner_id = bad.correct_owner
+         AND x.id <> ujr.id
+     );
 
-- "Associar Projeto ao Serviço" (associação Projeto↔Serviço) exige uma associação declarada em `ENTITY_ASSOCIATIONS` para a ação `associate_records`. Hoje não existe esse mapeamento e o `services` não é uma entidade de trigger. Fica como pendência separada; se quiser, faço em plano dedicado depois deste.
+   -- remover as que ficaram órfãs por já existir a versão correta
+   DELETE FROM user_job_roles ujr
+   WHERE ujr.owner_id NOT IN (SELECT id FROM workspaces)
+     AND EXISTS (
+       SELECT 1 FROM workspace_members wm
+       JOIN user_job_roles x ON x.user_id = wm.user_id AND x.role_id = ujr.role_id
+       WHERE wm.user_id = ujr.user_id AND x.owner_id = wm.workspace_id
+     );
+   ```
 
-## Validação manual
+2. **Validação pós-migração** (via `supabase--read_query`):
+   - `SELECT count(*) FROM user_job_roles WHERE owner_id NOT IN (SELECT id FROM workspaces);` deve ficar próximo de 0 (só sobra usuário sem workspace_member).
+   - `SELECT current_user_permissions('184b9435-…') …` executado como Priscila (via server function) deve retornar as `techhire.jobs.*`.
 
-1. `/settings/workflows` → editar workflow → adicionar passo → biblioteca deve mostrar módulos com entidades e as três operações.
-2. Escolher "Projetos → Projeto → Criar" cria passo com título "Criar registro (qualquer módulo)" e o `GenericRecordForm` abre com `table=projects` e campos do catálogo carregados.
-3. Escolher "Financeiro → Lançamento financeiro → Criar" abre form com campo `direction` (pagar/receber), `amount`, `due_at`, `legal_entity_id`, etc.
-4. Testar Editar/Excluir: form pede `target_id` com suporte a tokens.
-5. Verificar que categorias antigas (CRM, ATS, Criar registro, Comunicação, etc.) continuam funcionando inalteradas.
+3. **Comunicação ao usuário**: pedir a Priscila para dar F5 (as permissões têm `staleTime` de 5 min).
+
+## Não incluído neste plano
+
+- Não altero a RPC `current_user_permissions`, o hook `usePermissions`, o componente `<Can>` nem o botão em `jobs.index.tsx` — o código está correto, o problema é dado inconsistente.
+- Não adiciono FK/constraint em `user_job_roles.owner_id → workspaces.id` agora (pode quebrar seed histórico); posso propor em plano separado.
+
+## Como validar manualmente
+
+1. Login como Priscila em `/jobs`.
+2. O botão "Nova vaga" deve aparecer no header, ao lado do FilterBar.
+3. Em `/settings/my-permissions` (se existir) devem aparecer as permissões `techhire.jobs.*`.
