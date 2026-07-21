@@ -66,7 +66,7 @@ function MyTeamPage() {
   const fn = useServerFn(getMyTeam);
   const q = useQuery({
     queryKey: ["my-team"],
-    queryFn: () => fn({ data: {} }),
+    queryFn: () => fn(),
   });
   const members = q.data?.members ?? [];
 
