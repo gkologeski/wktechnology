@@ -237,6 +237,12 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, webhook_url: "https://outlook.office.com/webhook/...", text: "Notificação de workflow: {{name}}" };
     case "approval_step":
       return { type, title: "Aprovar {{name}}", note: "", halt_on_reject: true };
+    case "create_record":
+      return { type, table: "activities", values: {} };
+    case "update_record":
+      return { type, table: "activities", target_id: "{{id}}", values: {} };
+    case "delete_record":
+      return { type, table: "activities", target_id: "{{id}}" };
   }
 }
 
