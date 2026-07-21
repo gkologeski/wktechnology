@@ -11761,6 +11761,8 @@ export type Database = {
           hourly_rate: number | null
           hours: number | null
           id: string
+          invoice_id: string | null
+          invoiced_at: string | null
           person_id: string | null
           project_id: string
           started_at: string | null
@@ -11782,6 +11784,8 @@ export type Database = {
           hourly_rate?: number | null
           hours?: number | null
           id?: string
+          invoice_id?: string | null
+          invoiced_at?: string | null
           person_id?: string | null
           project_id: string
           started_at?: string | null
@@ -11803,6 +11807,8 @@ export type Database = {
           hourly_rate?: number | null
           hours?: number | null
           id?: string
+          invoice_id?: string | null
+          invoiced_at?: string | null
           person_id?: string | null
           project_id?: string
           started_at?: string | null
@@ -11818,6 +11824,13 @@ export type Database = {
             columns: ["allocation_id"]
             isOneToOne: false
             referencedRelation: "people_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_entries_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "customer_invoices"
             referencedColumns: ["id"]
           },
           {
