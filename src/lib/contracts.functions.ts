@@ -74,8 +74,104 @@ export const getContract = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw error;
+    if (!row) return null;
+
+    // parent (contrato de venda ao qual este contrato de compra está vinculado)
+    let parent: {
+      id: string;
+      number: string | null;
+      title: string;
+      status: string;
+      total_value: number;
+      currency: string;
+      role: "provider" | "client";
+    } | null = null;
+    if (row.parent_contract_id) {
+      const { data: p } = await supabase
+        .from("contracts")
+        .select("id, number, title, status, total_value, currency, role")
+        .eq("id", row.parent_contract_id)
+        .maybeSingle();
+      if (p) parent = p as typeof parent;
+    }
+
+    // children (contratos de compra vinculados a este contrato de prestação)
+    const { data: children } = await supabase
+      .from("contracts")
+      .select("id, number, title, status, total_value, currency, role, counterparty_company_id, starts_at, ends_at")
+      .eq("parent_contract_id", data.id)
+      .order("created_at", { ascending: true });
+
+    return { ...row, parent, children: children ?? [] };
+  });
+
+// ============= LINKABLE (para o seletor de vínculo) =============
+
+export const listLinkableContracts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        role: roleEnum,
+        excludeId: z.string().uuid().optional(),
+        q: z.string().optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    let query = supabase
+      .from("contracts")
+      .select("id, number, title, status, total_value, currency, role")
+      .eq("role", data.role)
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 20);
+    if (data.excludeId) query = query.neq("id", data.excludeId);
+    if (data.q && data.q.trim()) {
+      const t = `%${data.q.trim()}%`;
+      query = query.or(`title.ilike.${t},number.ilike.${t}`);
+    }
+    const { data: rows, error } = await query;
+    if (error) throw error;
+    return rows ?? [];
+  });
+
+// ============= LINK / UNLINK PARENT =============
+
+export const linkContractParent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        childId: z.string().uuid(),
+        parentId: z.string().uuid().nullable(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+
+    const { data: row, error } = await supabase
+      .from("contracts")
+      .update({ parent_contract_id: data.parentId })
+      .eq("id", data.childId)
+      .select("id, parent_contract_id")
+      .single();
+    if (error) throw error;
+
+    await (supabase as any).from("contract_events").insert({
+      workspace_id: workspaceId,
+      contract_id: data.childId,
+      actor_id: userId,
+      event_type: data.parentId ? "parent_linked" : "parent_unlinked",
+      payload: { parent_contract_id: data.parentId },
+    });
+
     return row;
   });
+
 
 // ============= CREATE =============
 
