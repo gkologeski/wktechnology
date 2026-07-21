@@ -253,7 +253,7 @@ export const listOneOnOnes = createServerFn({ method: "POST" })
       .eq("person_id", data.person_id)
       .order("scheduled_at", { ascending: false, nullsFirst: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []) as OneOnOneRow[];
+    return (rows ?? []) as unknown as OneOnOneRow[];
   });
 
 export const upsertOneOnOne = createServerFn({ method: "POST" })
