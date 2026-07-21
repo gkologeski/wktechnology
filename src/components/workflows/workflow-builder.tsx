@@ -102,6 +102,9 @@ import {
   EVENT_LABELS,
   ACTION_LABELS,
   ACTION_CATEGORIES,
+  RECORD_ACTION_MODULES,
+  type WorkflowWritableTable,
+
   FILTER_OPS,
   type WorkflowEntity,
   type WorkflowEventType,
