@@ -402,6 +402,8 @@ const taskSchema = z.object({
   due_date: z.string().nullable().optional(),
   status: z.enum(ONB_TASK_STATUSES).default("pending"),
   order_index: z.number().int().default(0),
+  is_critical: z.boolean().nullable().optional(),
+  revocation_system: z.string().max(120).nullable().optional(),
 });
 
 export const upsertOnbTask = createServerFn({ method: "POST" })
@@ -418,6 +420,9 @@ export const upsertOnbTask = createServerFn({ method: "POST" })
       due_date: data.due_date || null,
       status: data.status,
       order_index: data.order_index,
+      is_critical: data.is_critical ?? false,
+      revocation_system: data.revocation_system ?? null,
+
     };
     if (data.status === "done") {
       payload.completed_at = new Date().toISOString();
