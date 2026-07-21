@@ -4,6 +4,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { runAutoStart } from "@/lib/people/onboarding.functions";
+
 
 export const PEOPLE_EMPLOYMENT_TYPES = ["pj", "clt", "contractor", "intern", "other"] as const;
 export const PEOPLE_STATUSES = [
@@ -244,11 +246,26 @@ export const upsertPerson = createServerFn({ method: "POST" })
     };
 
     if (data.id) {
+      // Detecta transição de status para `offboarding` para disparar automação.
+      const { data: prev } = await supabase
+        .from("people")
+        .select("status")
+        .eq("id", data.id)
+        .maybeSingle();
+      const prevStatus = (prev as { status: PeopleStatus | null } | null)?.status ?? null;
       const { error } = await supabase
         .from("people")
         .update(payload as never)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
+      if (data.status === "offboarding" && prevStatus !== "offboarding") {
+        // Idempotente: só cria plano se ainda não existir offboarding.
+        await runAutoStart(supabase as never, {
+          userId,
+          personId: data.id,
+          kind: "offboarding",
+        }).catch(() => undefined);
+      }
       return { id: data.id };
     }
 
@@ -259,8 +276,17 @@ export const upsertPerson = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    return { id: (row as { id: string }).id };
+    const newId = (row as { id: string }).id;
+    if (data.status === "offboarding") {
+      await runAutoStart(supabase as never, {
+        userId,
+        personId: newId,
+        kind: "offboarding",
+      }).catch(() => undefined);
+    }
+    return { id: newId };
   });
+
 
 export const archivePerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -347,5 +373,13 @@ export const promoteCandidateToPerson = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    return { id: (row as { id: string }).id, existed: false };
+    const newId = (row as { id: string }).id;
+    // Sprint 7 — Automação: dispara plano de onboarding padrão (idempotente).
+    await runAutoStart(supabase as never, {
+      userId,
+      personId: newId,
+      kind: "onboarding",
+    }).catch(() => undefined);
+    return { id: newId, existed: false };
   });
+
