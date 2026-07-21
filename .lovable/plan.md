@@ -30,6 +30,12 @@ Arquivos entregues:
 - `src/components/workflows/workflow-builder.tsx` — novos grupos no diálogo de seleção de entidade e categoria "Registros (genérico)" na biblioteca de ações.
 - `src/components/workflows/generic-record-form.tsx` — formulário de configuração das ações genéricas, reaproveitando `ExtraFieldsEditor` e `TokenInput`.
 
+### Fase 3 — Migração DB ✅
+
+- `enqueue_workflow_event` reescrita: resolve `owner_id` via jsonb, com fallback para `workspaces.created_by` quando `owner_id` não existir; `workspace_id` também propagado para `workflow_events`.
+- Detecção de `stage_changed` expandida para: `projects`, `contracts`, `financial_entries`, `quotes`, `proposals`, `bank_payments`, `subscription_invoices`, `customer_invoices` (via `status`); `project_tasks` (via `status_id`); `project_milestones` (via `status`); `products` e `recurring_plans` (via `active`).
+- Triggers `AFTER INSERT/UPDATE` anexadas às 13 tabelas alvo.
+
 ## Fases pendentes
 
 ## Escopo alvo
