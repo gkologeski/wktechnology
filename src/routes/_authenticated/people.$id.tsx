@@ -393,6 +393,19 @@ function PersonForm({
           <ReviewsPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
 
+        {canViewSensitive ? (
+          <TabsContent value="psychosocial" className="pt-4">
+            <PsychosocialPanel personId={p.id} canWrite={canWrite} />
+          </TabsContent>
+        ) : null}
+
+        {canViewSensitive ? (
+          <TabsContent value="incidents" className="pt-4">
+            <IncidentsPanel personId={p.id} canWrite={canWrite} />
+          </TabsContent>
+        ) : null}
+
+
         <TabsContent value="documents" className="space-y-4 pt-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <StatCard label="Válidos" value={docStats.valid} tone="emerald" />
