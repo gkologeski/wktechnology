@@ -110,9 +110,16 @@ function PeoplePage() {
         title="Pessoas"
         description="Gerencie prestadores, ex-candidatos contratados e o time interno."
         actions={
-          <Button onClick={() => setOpenNew(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Nova pessoa
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline">
+              <Link to="/people/onboarding-templates">
+                <ClipboardList className="h-4 w-4 mr-2" /> Modelos
+              </Link>
+            </Button>
+            <Button onClick={() => setOpenNew(true)}>
+              <Plus className="h-4 w-4 mr-2" /> Nova pessoa
+            </Button>
+          </div>
         }
       />
 
