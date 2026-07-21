@@ -32,20 +32,21 @@ import { searchCompanies, searchContacts, searchPipelines, searchUsers } from "@
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
-type EntityName =
-  | "leads"
-  | "contacts"
-  | "companies"
-  | "deals"
-  | "tickets"
-  | "activities";
+import type { WorkflowWritableTable } from "@/lib/workflows/types";
+
+type EntityName = WorkflowWritableTable;
 
 interface Props {
   entity: EntityName;
   extraFields: Record<string, unknown> | undefined;
   hiddenKeys?: string[];
   onChange: (next: Record<string, unknown> | undefined) => void;
+  /** Rótulo do bloco colapsável. Padrão: "Mais campos". */
+  title?: string;
+  /** Inicia aberto (útil quando é o editor primário da ação). */
+  defaultOpen?: boolean;
 }
+
 
 // Campos longos usam Textarea em vez de Input.
 const LONG_TEXT_FIELDS = new Set([
@@ -423,8 +424,9 @@ export function FkPicker({
   );
 }
 
-export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange }: Props) {
-  const [open, setOpen] = useState(false);
+export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, title, defaultOpen }: Props) {
+  const [open, setOpen] = useState(Boolean(defaultOpen));
+
   const [pickerOpen, setPickerOpen] = useState(false);
   const fetchCatalog = useServerFn(getEntityFieldCatalog);
   const { data, isLoading, error } = useQuery({
@@ -485,7 +487,8 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange }:
       >
         <span className="flex items-center gap-1.5">
           {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          Mais campos
+          {title ?? "Mais campos"}
+
           {usedKeys.length > 0 && (
             <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
               {usedKeys.length}

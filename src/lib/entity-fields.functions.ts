@@ -139,6 +139,45 @@ const LABELS: Record<string, string> = {
   activity_type: "Tipo de atividade",
   due_date: "Vence em",
   completed_at: "Concluída em",
+  // Projects / tasks / milestones
+  project_id: "Projeto",
+  milestone_id: "Marco",
+  parent_task_id: "Tarefa pai",
+  start_date: "Início",
+  end_date: "Término",
+  estimated_hours: "Horas estimadas",
+  actual_hours: "Horas realizadas",
+  progress: "Progresso",
+  // Finance
+  amount: "Valor",
+  net_amount: "Valor líquido",
+  gross_amount: "Valor bruto",
+  due_at_date: "Vence em",
+  paid_at: "Pago em",
+  category_id: "Categoria",
+  cost_center_id: "Centro de custo",
+  legal_entity_id: "Empresa (CNPJ)",
+  bank_account_id: "Conta bancária",
+  direction: "Direção",
+  payment_method: "Método de pagamento",
+  reference: "Referência",
+  // Contracts / quotes / proposals
+  contract_id: "Contrato",
+  deal_id_ref: "Negócio",
+  start_at: "Início da vigência",
+  end_at: "Fim da vigência",
+  total: "Total",
+  subtotal: "Subtotal",
+  discount: "Desconto",
+  tax: "Imposto",
+  valid_until: "Válido até",
+  // Products / services / recurring plans
+  sku: "SKU",
+  unit_price: "Preço unitário",
+  unit: "Unidade",
+  billing_cycle: "Ciclo de cobrança",
+  interval: "Intervalo",
+
 };
 
 function toLabel(col: string): string {
@@ -177,10 +216,24 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
           "ats_candidates",
           "ats_applications",
           "ats_interviews",
+          "projects",
+          "project_tasks",
+          "project_milestones",
+          "contracts",
+          "financial_entries",
+          "bank_payments",
+          "quotes",
+          "proposals",
+          "products",
+          "services",
+          "recurring_plans",
+          "subscription_invoices",
+          "customer_invoices",
         ]),
 
       })
       .parse(input),
+
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

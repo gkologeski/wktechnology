@@ -1,10 +1,12 @@
 // Form para ações genéricas create_record / update_record / delete_record.
-// Permite escolher qualquer tabela da whitelist e editar os campos como
-// pares chave/valor (com suporte a tokens {{campo}} nos valores).
-import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+// Usa o catálogo de campos da tabela alvo (mesmo mecanismo do "Mais campos"
+// dos create_* específicos) para expor inputs tipados com rótulos amigáveis,
+// selects para FKs e enums, datepickers, switches para booleanos e suporte a
+// tokens {{campo}} onde faz sentido. Campos fora do catálogo (custom fields,
+// colunas novas) ficam disponíveis como pares chave/valor livres.
+import { useMemo } from "react";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -12,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ExtraFieldsEditor } from "./extra-fields-editor";
+import { TokenInput } from "./token-input";
 import {
   WORKFLOW_WRITABLE_TABLES,
   ENTITY_LABELS,
@@ -30,57 +34,46 @@ interface Props {
 }
 
 function tableLabel(t: WorkflowWritableTable): string {
-  // ENTITY_LABELS cobre a maioria; activities é caso especial.
   return (ENTITY_LABELS as Record<string, string>)[t] ?? t;
 }
 
 export function GenericRecordForm({ action, onChange }: Props) {
   const hasValues = action.type !== "delete_record";
-  const values = hasValues ? (action as { values: Record<string, unknown> }).values : {};
-  const entries = Object.entries(values);
+
+  const values = useMemo<Record<string, unknown>>(() => {
+    if (!hasValues) return {};
+    return (action as { values?: Record<string, unknown> }).values ?? {};
+  }, [action, hasValues]);
 
   const setTable = (v: string) => {
-    onChange({ ...action, table: v as WorkflowWritableTable } as GenericAction);
+    // Ao trocar de tabela, limpa valores para não vazar campos incompatíveis.
+    const next: GenericAction = hasValues
+      ? ({ ...action, table: v as WorkflowWritableTable, values: {} } as GenericAction)
+      : ({ ...action, table: v as WorkflowWritableTable } as GenericAction);
+    onChange(next);
   };
 
-  const setValue = (key: string, val: string) => {
+  const setValues = (nextVals: Record<string, unknown> | undefined) => {
     if (!hasValues) return;
-    const next = { ...(values as Record<string, unknown>), [key]: val };
-    onChange({ ...(action as GenericAction), values: next } as unknown as GenericAction);
+    onChange({ ...(action as GenericAction), values: nextVals ?? {} } as unknown as GenericAction);
   };
 
-  const renameKey = (oldK: string, newK: string) => {
-    if (!hasValues || !newK || newK === oldK) return;
-    const next: Record<string, unknown> = {};
-    for (const [k, v] of entries) next[k === oldK ? newK : k] = v;
-    onChange({ ...(action as GenericAction), values: next } as unknown as GenericAction);
-  };
-
-  const removeKey = (k: string) => {
-    if (!hasValues) return;
-    const next = { ...(values as Record<string, unknown>) };
-    delete next[k];
-    onChange({ ...(action as GenericAction), values: next } as unknown as GenericAction);
-  };
-
-  const addField = () => {
-    if (!hasValues) return;
-    let base = "campo";
-    let i = 1;
-    while (`${base}${i}` in values) i++;
-    const next = { ...(values as Record<string, unknown>), [`${base}${i}`]: "" };
-    onChange({ ...(action as GenericAction), values: next } as unknown as GenericAction);
-  };
+  // owner_id é preenchido automaticamente pela engine quando a tabela tem a coluna.
+  const HIDDEN_IN_GENERIC = ["owner_id", "workspace_id"];
 
   return (
     <div className="space-y-3">
       <div>
         <Label className="text-xs">Tabela alvo</Label>
         <Select value={action.table} onValueChange={setTable}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {WORKFLOW_WRITABLE_TABLES.map((t) => (
-              <SelectItem key={t} value={t}>{tableLabel(t)}</SelectItem>
+              <SelectItem key={t} value={t}>
+                {tableLabel(t)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -88,52 +81,38 @@ export function GenericRecordForm({ action, onChange }: Props) {
 
       {(action.type === "update_record" || action.type === "delete_record") && (
         <div>
-          <Label className="text-xs">ID do registro (aceita tokens, ex.: {"{{id}}"})</Label>
-          <Input
-            value={action.target_id}
-            onChange={(e) => onChange({ ...action, target_id: e.target.value })}
+          <Label className="text-xs">
+            ID do registro (aceita tokens, ex.: {"{{id}}"})
+          </Label>
+          <TokenInput
+            value={action.target_id ?? ""}
+            onValueChange={(v) => onChange({ ...action, target_id: v })}
             placeholder="{{id}}"
           />
         </div>
       )}
 
       {hasValues && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs">Valores</Label>
-            <Button type="button" size="sm" variant="ghost" onClick={addField}>
-              <Plus className="h-3 w-3 mr-1" /> adicionar campo
-            </Button>
-          </div>
-          {entries.length === 0 && (
-            <p className="text-xs text-muted-foreground">
-              Nenhum campo definido. Clique em "adicionar campo" para começar.
-            </p>
-          )}
-          {entries.map(([k, v]) => (
-            <div key={k} className="grid grid-cols-[1fr_1.5fr_auto] gap-2 items-center">
-              <Input
-                defaultValue={k}
-                onBlur={(e) => renameKey(k, e.target.value.trim())}
-                placeholder="nome_do_campo"
-              />
-              <Input
-                value={typeof v === "string" ? v : String(v ?? "")}
-                onChange={(e) => setValue(k, e.target.value)}
-                placeholder="valor (suporta {{tokens}})"
-              />
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                onClick={() => removeKey(k)}
-                aria-label="remover"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+        <>
+          <ExtraFieldsEditor
+            key={action.table}
+            entity={action.table}
+            extraFields={values}
+            hiddenKeys={HIDDEN_IN_GENERIC}
+            onChange={setValues}
+            title="Campos do registro"
+            defaultOpen
+          />
+          {/* Fallback para colunas fora do catálogo (custom fields livres). */}
+          <details className="rounded-md border border-border/60 bg-muted/20">
+            <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">
+              Campo avançado (chave/valor livre)
+            </summary>
+            <div className="border-t border-border/60 px-3 py-2.5">
+              <FreeKeyValueEditor values={values} onChange={setValues} />
             </div>
-          ))}
-        </div>
+          </details>
+        </>
       )}
 
       {action.type === "create_record" && (
@@ -142,6 +121,63 @@ export function GenericRecordForm({ action, onChange }: Props) {
           quando a tabela alvo possuir essa coluna.
         </p>
       )}
+    </div>
+  );
+}
+
+// Editor livre — usado só como escape hatch para colunas não presentes no
+// catálogo (custom fields, colunas adicionadas depois do build). O editor
+// tipado acima já cobre a esmagadora maioria dos casos.
+function FreeKeyValueEditor({
+  values,
+  onChange,
+}: {
+  values: Record<string, unknown>;
+  onChange: (next: Record<string, unknown>) => void;
+}) {
+  const entries = Object.entries(values);
+  const rename = (oldK: string, newK: string) => {
+    if (!newK || newK === oldK) return;
+    const next: Record<string, unknown> = {};
+    for (const [k, v] of entries) next[k === oldK ? newK : k] = v;
+    onChange(next);
+  };
+  const setVal = (k: string, v: string) => {
+    onChange({ ...values, [k]: v });
+  };
+  const add = () => {
+    let i = 1;
+    while (`campo${i}` in values) i++;
+    onChange({ ...values, [`campo${i}`]: "" });
+  };
+  return (
+    <div className="space-y-2">
+      {entries.length === 0 && (
+        <p className="text-[11px] text-muted-foreground">
+          Nenhum par livre. Use apenas para colunas que não aparecem acima.
+        </p>
+      )}
+      {entries.map(([k, v]) => (
+        <div key={k} className="grid grid-cols-[1fr_1.5fr] gap-2">
+          <Input
+            defaultValue={k}
+            onBlur={(e) => rename(k, e.target.value.trim())}
+            placeholder="nome_da_coluna"
+          />
+          <TokenInput
+            value={typeof v === "string" ? v : String(v ?? "")}
+            onValueChange={(nv) => setVal(k, nv)}
+            placeholder="valor (aceita {{tokens}})"
+          />
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={add}
+        className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+      >
+        + adicionar par livre
+      </button>
     </div>
   );
 }
