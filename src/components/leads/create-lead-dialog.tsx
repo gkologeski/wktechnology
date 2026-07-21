@@ -31,6 +31,7 @@ import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialo
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
+import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
 
 type ContactMatch = {
   id: string;
@@ -243,6 +244,7 @@ export function CreateLeadDialog({
             <Label>Fonte</Label>
             <SourceCombobox value={form.source} onChange={(v) => setForm({ ...form, source: v })} />
           </div>
+          <OnboardingGuidedEntry entity="lead" onNavigate={() => onOpenChange(false)} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>

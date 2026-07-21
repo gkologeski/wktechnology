@@ -29,6 +29,7 @@ import { usePipelines } from "@/lib/pipelines";
 import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
 import { Building2, User } from "lucide-react";
 import { isCNPJ, formatCNPJ } from "@/lib/validators";
+import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -154,6 +155,7 @@ export function QuickCreateCompanyDialog({
               }}
             />
           </div>
+          <OnboardingGuidedEntry entity="company" onNavigate={() => onOpenChange(false)} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>

@@ -18,6 +18,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
+import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
 
 export function CreateContactDialog({
   open,
@@ -176,6 +177,7 @@ export function CreateContactDialog({
             <Label htmlFor="company_name">Empresa</Label>
             <CompanyPicker id="company_name" value={company} onChange={setCompany} toastOnMatches />
           </div>
+          <OnboardingGuidedEntry entity="contact" onNavigate={() => onOpenChange(false)} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
