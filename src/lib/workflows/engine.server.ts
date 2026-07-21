@@ -1019,13 +1019,13 @@ async function runAction(
         const ownerId = action.owner_id?.trim() || ctx.ownerId;
         const withOwner = { ...rendered, owner_id: ownerId };
         // Tenta com owner_id; se a tabela não tiver essa coluna, refaz sem.
-        let insertRes = await ctx.supabase
+        let insertRes = await supabase
           .from(action.table)
           .insert(withOwner as never)
           .select("id")
           .maybeSingle();
         if (insertRes.error && /owner_id/.test(insertRes.error.message)) {
-          insertRes = await ctx.supabase
+          insertRes = await supabase
             .from(action.table)
             .insert(rendered as never)
             .select("id")
@@ -1041,7 +1041,7 @@ async function runAction(
         for (const [k, v] of Object.entries(action.values ?? {})) {
           rendered[k] = typeof v === "string" ? renderTokens(v, ctx.after, ctx.vars) : v;
         }
-        const { error } = await ctx.supabase
+        const { error } = await supabase
           .from(action.table)
           .update(rendered as never)
           .eq("id", targetId);
@@ -1051,7 +1051,7 @@ async function runAction(
       case "delete_record": {
         const targetId = renderTokens(action.target_id, ctx.after, ctx.vars) as string;
         if (!targetId) throw new Error("target_id vazio");
-        const { error } = await ctx.supabase
+        const { error } = await supabase
           .from(action.table)
           .delete()
           .eq("id", targetId);
