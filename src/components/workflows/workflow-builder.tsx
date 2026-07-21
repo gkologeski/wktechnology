@@ -656,8 +656,9 @@ export function WorkflowBuilder({
                 {library ? (
                   <ActionLibraryPanel
                     onClose={() => setLibrary(null)}
-                    onPick={(t) => addAction(t, library.parentPath)}
+                    onPick={(t, overrides) => addAction(t, library.parentPath, overrides)}
                   />
+
                 ) : selection === "trigger" ? (
                   <TriggerConfigPanel
                     entity={state.entity}
