@@ -32,20 +32,21 @@ import { searchCompanies, searchContacts, searchPipelines, searchUsers } from "@
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
-type EntityName =
-  | "leads"
-  | "contacts"
-  | "companies"
-  | "deals"
-  | "tickets"
-  | "activities";
+import type { WorkflowWritableTable } from "@/lib/workflows/types";
+
+type EntityName = WorkflowWritableTable;
 
 interface Props {
   entity: EntityName;
   extraFields: Record<string, unknown> | undefined;
   hiddenKeys?: string[];
   onChange: (next: Record<string, unknown> | undefined) => void;
+  /** Rótulo do bloco colapsável. Padrão: "Mais campos". */
+  title?: string;
+  /** Inicia aberto (útil quando é o editor primário da ação). */
+  defaultOpen?: boolean;
 }
+
 
 // Campos longos usam Textarea em vez de Input.
 const LONG_TEXT_FIELDS = new Set([
