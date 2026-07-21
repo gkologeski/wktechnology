@@ -9869,6 +9869,74 @@ export type Database = {
           },
         ]
       }
+      people_incidents: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_confidential: boolean
+          location: string | null
+          occurred_at: string
+          owner_id: string
+          person_id: string | null
+          resolution: string | null
+          resolved_at: string | null
+          severity: string
+          status: string
+          title: string
+          updated_at: string
+          witnesses: string | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_confidential?: boolean
+          location?: string | null
+          occurred_at?: string
+          owner_id: string
+          person_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title: string
+          updated_at?: string
+          witnesses?: string | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_confidential?: boolean
+          location?: string | null
+          occurred_at?: string
+          owner_id?: string
+          person_id?: string | null
+          resolution?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          witnesses?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_incidents_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people_one_on_ones: {
         Row: {
           action_items: Json
@@ -9927,6 +9995,74 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "people_one_on_ones_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_psychosocial_assessments: {
+        Row: {
+          action_plan: string | null
+          assessed_at: string
+          burnout_signals: boolean
+          created_at: string
+          created_by: string | null
+          dimensions: Json
+          follow_up_at: string | null
+          harassment_signals: boolean
+          id: string
+          method: string
+          notes: string | null
+          overall_score: number | null
+          owner_id: string
+          person_id: string
+          risk_level: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_plan?: string | null
+          assessed_at?: string
+          burnout_signals?: boolean
+          created_at?: string
+          created_by?: string | null
+          dimensions?: Json
+          follow_up_at?: string | null
+          harassment_signals?: boolean
+          id?: string
+          method?: string
+          notes?: string | null
+          overall_score?: number | null
+          owner_id: string
+          person_id: string
+          risk_level?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_plan?: string | null
+          assessed_at?: string
+          burnout_signals?: boolean
+          created_at?: string
+          created_by?: string | null
+          dimensions?: Json
+          follow_up_at?: string | null
+          harassment_signals?: boolean
+          id?: string
+          method?: string
+          notes?: string | null
+          overall_score?: number | null
+          owner_id?: string
+          person_id?: string
+          risk_level?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_psychosocial_assessments_person_id_fkey"
             columns: ["person_id"]
             isOneToOne: false
             referencedRelation: "people"
