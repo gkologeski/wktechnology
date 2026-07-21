@@ -61,22 +61,6 @@ export const listPendingBillableGroups = createServerFn({ method: "POST" })
   .inputValidator((i) => listSchema.parse(i ?? {}))
   .handler(async ({ data, context }): Promise<{ groups: PendingBillingGroup[] }> => {
     const { supabase } = context;
-    let q = (supabase.from("project_time_entries") as unknown as {
-      select: (c: string) => {
-        eq: (k: string, v: unknown) => typeof q;
-      };
-    })
-      .select("id, entry_date, hours, hourly_rate, allocation_id, person_id")
-      .eq("billable", true)
-      .eq("invoice_id", null as unknown as string) as unknown as {
-      not: (k: string, op: string, v: unknown) => typeof q;
-      is: (k: string, v: null) => typeof q;
-      gte: (k: string, v: string) => typeof q;
-      lte: (k: string, v: string) => typeof q;
-      then: Promise<{ data: EntryRow[] | null; error: { message: string } | null }>["then"];
-    };
-    // Precisamos: approved_at IS NOT NULL, invoice_id IS NULL, allocation_id IS NOT NULL.
-    // O eq acima em invoice_id=null não funciona; reconstruímos com is/not.
     const base = supabase
       .from("project_time_entries")
       .select("id, entry_date, hours, hourly_rate, allocation_id, person_id")
