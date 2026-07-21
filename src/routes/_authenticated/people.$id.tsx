@@ -318,7 +318,7 @@ function PersonForm({
             </CardContent>
           </Card>
 
-          {person.sensitive ? (
+          {canViewSensitive ? (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Financeiro (restrito)</CardTitle>
