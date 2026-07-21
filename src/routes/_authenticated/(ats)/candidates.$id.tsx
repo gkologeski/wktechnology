@@ -263,8 +263,16 @@ function CandidateDetailPage() {
   );
 
   return (
-    <RecordLayout
-      header={header}
+    <>
+      <HireCandidateDialog
+        open={hireOpen}
+        onOpenChange={setHireOpen}
+        candidateId={c.id}
+        candidateName={c.full_name}
+        suggestedRole={c.current_position ?? null}
+      />
+      <RecordLayout
+        header={header}
       left={
         <div className="space-y-4">
           <IdentityBlock candidate={c} />
