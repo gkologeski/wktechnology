@@ -4,6 +4,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { runAutoStart } from "@/lib/people/onboarding.functions";
+
 
 export const PEOPLE_EMPLOYMENT_TYPES = ["pj", "clt", "contractor", "intern", "other"] as const;
 export const PEOPLE_STATUSES = [
