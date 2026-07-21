@@ -335,15 +335,40 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   ats_candidates: "Candidatos (ATS)",
   ats_applications: "Aplicações (ATS)",
   ats_interviews: "Entrevistas (ATS)",
+  projects: "Projetos",
+  project_tasks: "Tarefas de projeto",
+  project_milestones: "Marcos de projeto",
+  contracts: "Contratos",
+  financial_entries: "Lançamentos financeiros",
+  bank_payments: "Pagamentos bancários",
+  quotes: "Cotações",
+  proposals: "Propostas",
+  products: "Produtos",
+  services: "Serviços",
+  recurring_plans: "Planos recorrentes",
+  subscription_invoices: "Faturas de assinatura",
+  customer_invoices: "Faturas de clientes",
 };
 
 // Grupos por módulo (para dropdown do builder).
 export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }> = [
-  { label: "Vendas", entities: ["leads", "contacts", "companies", "deals"] },
+  { label: "Vendas", entities: ["leads", "contacts", "companies", "deals", "quotes", "proposals"] },
   { label: "Atendimento", entities: ["tickets"] },
   {
     label: "Recrutamento",
     entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews"],
+  },
+  { label: "Projetos", entities: ["projects", "project_tasks", "project_milestones"] },
+  { label: "Contratos e catálogo", entities: ["contracts", "products", "services"] },
+  {
+    label: "Financeiro",
+    entities: [
+      "financial_entries",
+      "bank_payments",
+      "customer_invoices",
+      "subscription_invoices",
+      "recurring_plans",
+    ],
   },
 ];
 
