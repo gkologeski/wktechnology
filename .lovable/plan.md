@@ -1,107 +1,57 @@
+## TechPeople — Sprint 1.5: Fechar HRIS + começar Resultados
 
-# TechPeople — Gestão de Pessoas & Outsourcing
+A Sprint 1 do TechPeople entregou schema, server functions e as rotas `/people` e `/people/$id`. Faltam dois itens para fechar o Cadastro 360° e destravar o resto do módulo:
 
-Novo módulo do ERP para o "meio" que hoje falta entre TechHire (entrada), Contracts (vínculo), Projects (execução) e Finance (custo). Cobre HRIS, Resultados, Psicossocial (NR-1) e VMS/Outsourcing.
+1. **Ação "Contratar candidato"** no TechHire (promoção → `people`).
+2. **Painel de documentos com alerta de vencimento** já usável na ficha.
 
-## Escopo confirmado
+Depois disso, entra a **Sprint 2 (Resultados)** com metas e 1:1s — o que já dá valor de gestão real sem depender de NR-1.
 
-- Universo: **prestadores PJ ativos** + **candidatos aprovados no TechHire** (promoção automática ao contratar).
-- Confidencialidade em 3 camadas:
-  - **RH/Admin**: vê tudo (custo, avaliações, respostas psicossociais nominais são anônimas mesmo para RH).
-  - **Gestor**: vê seu time (dados operacionais, avaliações que fez, resultados; sem custo do PJ).
-  - **Pessoa**: vê só o próprio.
-- Módulo cross-integrado: Contracts, Projects, TechHire, Finance.
-- Nome: **TechPeople** (host `techpeople.wktechnology.com.br`, rota base `/people`).
+### Escopo desta entrega
 
-## Arquitetura
+#### Parte A — Fechar Sprint 1 (HRIS)
 
-### Modelo central: `people`
+- **Ação no ATS**: botão "Contratar" no detalhe do candidato, visível quando o candidato tem oferta aceita. Abre modal com `employment_type`, `role_title`, `hire_date`, `manager_id`, `cost_hour` e chama `promoteCandidateToPerson` (já existe). Redireciona para `/people/$id` após sucesso. Idempotente — se já foi promovido, apenas navega.
+- **Painel de documentos** (`PersonDocumentsPanel`) na aba "Documentos" do `/people/$id`:
+  - Upload para bucket `people-documents` (privado, RLS por `owner_id`).
+  - Lista com tipo, nome, validade, status (`ok`, `expiring` <30d, `expired`), download via signed URL.
+  - Server fns em `src/lib/people/documents.functions.ts` (já existe — apenas complementar com `uploadDocument`, `deleteDocument`, `listDocuments`).
+- **Alerta automático**: view `people_documents_expiring` (docs com `expires_at` nos próximos 30 dias) usada por um card no topo de `/people` (só admin/HR).
 
-`people` é a "pessoa viva" — distinta de `ats_candidates` (funil) e `profiles` (usuário do sistema). Um candidato aprovado gera uma `person`; a pessoa pode ou não ter `profile` (login).
+#### Parte B — Iniciar Sprint 2 (Resultados)
 
-```text
-ats_candidates ──approve──▶ people ◀──── profiles (opcional, se tiver acesso ao ERP)
-                              │
-                              ├─▶ contracts (parent_contract_id: venda ↔ compra)
-                              ├─▶ project_members / project_time_entries
-                              ├─▶ people_goals / people_reviews / people_one_on_ones
-                              └─▶ people_pulse_responses (anônimas)
-```
+- **Migration** para `people_goals` e `people_one_on_ones` com RLS já baseada em `can_view_person`:
+  - `people_goals`: `person_id`, `title`, `description`, `metric`, `target`, `progress`, `period_start`, `period_end`, `status` (`open`/`at_risk`/`done`/`missed`), `project_id?`, `contract_id?`.
+  - `people_one_on_ones`: `person_id`, `manager_id`, `scheduled_at`, `notes` (privado ao par), `action_items` (jsonb), `mood` (1–5).
+  - `GRANT` + policies + trigger de audit + `enqueue_workflow_event`.
+- **Rotas**:
+  - `/people/$id/goals` — lista + criar/editar meta.
+  - `/people/$id/1-on-1s` — lista + registrar 1:1 (visível só para gestor e a própria pessoa).
+- **Componentes** reutilizando o design system: `MetricCard` para "Metas no prazo / em risco", `DataTable` para listagem, `FormSection` para o formulário. Sem novos primitivos.
+- **Server functions** em `src/lib/people/goals.functions.ts` e `src/lib/people/one-on-ones.functions.ts` (list/get/upsert/archive), todas com `requireSupabaseAuth`.
 
-### Tabelas novas (11)
+### Fora do escopo desta entrega
 
-| Tabela | Papel |
-|---|---|
-| `people` | Ficha 360°: dados pessoais, PJ, custo hora, status (ativo/bench/desligado), gestor, `candidate_id`, `profile_id`, `owner_id` (workspace) |
-| `people_documents` | RG, CNPJ, contrato social, certidões, foto — com validade e alerta |
-| `people_allocations` | Vínculo pessoa ↔ projeto/cliente com % alocação, período, papel |
-| `people_skills` | Matriz de skills (tag + nível 1–5 + certificações) |
-| `people_goals` | OKRs/metas por pessoa e por período; ligados a projeto ou conta |
-| `people_reviews` | Avaliação de desempenho e **avaliação do tomador (cliente)** sobre o prestador |
-| `people_one_on_ones` | Registros de 1:1 gestor ↔ pessoa (privado ao par) |
-| `people_pulse_surveys` | Templates de pulse (eNPS, riscos psicossociais NR-1) |
-| `people_pulse_responses` | Respostas **anônimas** (sem `person_id`, só hash + agregados) |
-| `people_alerts` | Alertas de burnout, doc vencido, bench prolongado, queda de eNPS |
-| `people_events` | Timeline unificada (histórico consolidado) |
+- Avaliação do tomador via token público (Sprint 2 completa).
+- Matriz de skills e heatmap (Sprint 2 completa).
+- NR-1, pulse anônimo, alertas de burnout (Sprint 3).
+- Painel de margem / bench / turnover (Sprint 4).
 
-Todas herdam padrão do ERP: `id`, `owner_id` (workspace), `created_at`, `updated_at`, triggers de audit e enqueue_workflow_event.
+### Detalhes técnicos
 
-### RLS por camadas
+- Bucket `people-documents`: criar via `supabase--storage_create_bucket`, privado. Policies para SELECT/INSERT/UPDATE/DELETE só quando `owner_id` do arquivo casa com workspace do usuário e `can_view_person_sensitive(person_id)` retorna true.
+- Novas entidades adicionadas ao `workflow_events_entity_check`: `people_goals`, `people_one_on_ones`, `people_documents` — ampliar a constraint (mesmo padrão já usado).
+- Rotas ficam sob `_authenticated/people.$id.goals.tsx` e `_authenticated/people.$id.one-on-ones.tsx` (nesting flat com ponto, como o projeto já usa).
+- Sidebar do TechPeople ganha entrada "Metas" só quando dentro de uma pessoa (mantém o menu do módulo enxuto — Metas é aba do detalhe, não item raiz).
+- Ordem canônica de campos das novas entidades adicionada em `src/lib/workflows/entity-field-order.ts` para consistência no Workflow Builder.
 
-Function nova `public.can_view_person(_person_id uuid)`:
-- true se `has_role(workspace_admin)` OU `has_role(hr)` OU `people.manager_id = auth.uid()` (via profile) OU `people.profile_id = auth.uid()` (é a própria pessoa).
+### Ordem de execução
 
-Function `public.can_view_person_sensitive(_person_id uuid)`:
-- true só para HR/Admin. Usada para colunas `cost_hour`, `personal_doc`, `salary_pj`.
+1. Migration Parte A (bucket + policies + view de docs vencendo).
+2. Complementar `documents.functions.ts` (upload/list/delete) e `PersonDocumentsPanel`.
+3. Botão "Contratar" no detalhe do candidato ATS + modal.
+4. Migration Parte B (goals + one_on_ones + workflow_events_entity_check).
+5. Server functions + rotas de goals e 1:1s.
+6. Validações: `bun run typecheck` e `bun run build`.
 
-Views split:
-- `people_public` (sem colunas sensíveis) — usada por gestor e pela própria pessoa.
-- `people_full` — usada por HR/Admin.
-
-Pulse responses **nunca** têm `person_id`. Anonimato preservado por design.
-
-## Fases de entrega
-
-### Fase 1 — Cadastro 360° (HRIS)
-- Migration: `people`, `people_documents`, `people_events`, `can_view_person*`, RLS.
-- Rota `/people` (lista) + `/people/$id` (ficha com 6 abas: Overview, Contratos, Projetos, Documentos, Timeline, Custos [restrito]).
-- Componentes: `PersonPageHeader`, `PersonMetricRow` (tempo de casa, alocação %, contratos ativos, projetos ativos), `PersonDocumentsPanel` com alerta de vencimento.
-- Ação **"Contratar candidato"** em `ats_candidates` (status `offer_accepted`) → server fn `promoteCandidateToPerson` cria `person`, vincula ao contrato quando existir.
-- Sidebar: adicionar entrada `TechPeople` em `src/lib/menu-config-people.ts`; registrar em `modules/registry.ts`.
-
-### Fase 2 — Resultados
-- Migration: `people_goals`, `people_reviews`, `people_one_on_ones`, `people_allocations`, `people_skills`.
-- Rota `/people/$id/goals`, `/people/$id/reviews`, `/people/$id/1-on-1s`.
-- **Avaliação do tomador**: gera link público tokenizado (rota `/review.$token.tsx`) enviado ao PM do cliente após fechamento de sprint/marco de projeto — 5 perguntas (qualidade, prazo, comunicação, autonomia, recomendaria).
-- Matriz de skills com heatmap por conta/projeto.
-
-### Fase 3 — Psicossocial (NR-1)
-- Migration: `people_pulse_surveys`, `people_pulse_responses` (anônimas), `people_alerts`.
-- Template padrão embarcado: **Inventário de Riscos Psicossociais NR-1** (17 perguntas Copsoq-BR abreviado) + eNPS.
-- Rota `/people/pulse` (RH gerencia campanhas) e `/pulse.$token.tsx` (público, anônimo).
-- Alertas automáticos (cron 15 min existente): burnout (eNPS < 6 + horas > 200/mês + faltas), doc vencido, bench > 30 dias.
-- Dashboard psicossocial agregado (mínimo 5 respostas por agrupamento para preservar anonimato).
-
-### Fase 4 — VMS/Outsourcing (o diferencial)
-- Rota `/people/margin` — painel por pessoa: receita mensal (via `contracts` de venda) − custo mensal (via `contracts` de compra ligado por `parent_contract_id`), margem R$ e %.
-- Rota `/people/bench` — quem está sem alocação ativa; tempo em bench; skills disponíveis.
-- Rota `/people/turnover` — turnover por cliente/projeto/gestor; alerta preditivo (queda de eNPS + reviews baixas + bench).
-- Widget "Saúde da conta" reutilizável no detalhe do cliente em TechSales.
-
-## Detalhes técnicos
-
-- Todas as server functions em `src/lib/people/*.functions.ts` (`requireSupabaseAuth`).
-- Layout gates: `_authenticated/people/` para app; `/pulse.$token` e `/review.$token` públicas (com verificação de token single-use).
-- Reaproveita padrões existentes: `ats_page_header` → `PeoplePageHeader`, `MetricCard`, `FilterBar`, `DataTable`, `EmptyState`, `StatusBadge`.
-- Workflows: entrada nova `person` no CHECK constraint de `workflow_events`; triggers `enqueue_workflow_event` em `people`, `people_goals`, `people_reviews`, `people_alerts`.
-- Anonimato psicossocial garantido por: (1) sem `person_id`; (2) k-anonymity ≥ 5 na consulta; (3) grants restritos ao role HR.
-- Módulo em `modules/registry.ts` com `defaultRoute: "/people"`, `icon: UserCog`, cor `#059669`.
-
-## Roadmap sugerido
-
-1. **Sprint 1** — Fase 1 (Cadastro + promoção do candidato + doc panel).
-2. **Sprint 2** — Fase 2 (Metas, 1:1 e avaliação do tomador via token público).
-3. **Sprint 3** — Fase 3 (NR-1 + eNPS + alertas automáticos).
-4. **Sprint 4** — Fase 4 (Painel de margem, bench, turnover, widget de saúde da conta).
-
-Confirma esse recorte para eu detalhar a Sprint 1 e começar pela migration + rota `/people`? Se quiser cortar algo (ex.: adiar 1:1s, adiar skills), me diz agora que ajusto o plano.
+Confirma seguir com Sprint 1.5 + início da Sprint 2 nesse recorte? Se preferir só fechar a Sprint 1 (Parte A) agora e deixar a Sprint 2 para depois, me diz que corto pela metade.
