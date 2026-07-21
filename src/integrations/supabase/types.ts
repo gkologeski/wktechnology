@@ -9766,11 +9766,90 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "people_allocations_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
+          {
             foreignKeyName: "people_allocations_project_id_fkey"
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_benefits: {
+        Row: {
+          active: boolean
+          benefit_type: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          employee_share: number
+          ends_on: string | null
+          id: string
+          monthly_value: number
+          notes: string | null
+          owner_id: string
+          person_id: string
+          plan_name: string | null
+          provider: string | null
+          starts_on: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          benefit_type: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_share?: number
+          ends_on?: string | null
+          id?: string
+          monthly_value?: number
+          notes?: string | null
+          owner_id: string
+          person_id: string
+          plan_name?: string | null
+          provider?: string | null
+          starts_on?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          benefit_type?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          employee_share?: number
+          ends_on?: string | null
+          id?: string
+          monthly_value?: number
+          notes?: string | null
+          owner_id?: string
+          person_id?: string
+          plan_name?: string | null
+          provider?: string | null
+          starts_on?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_benefits_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_benefits_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
           },
         ]
       }
@@ -9834,6 +9913,13 @@ export type Database = {
             referencedRelation: "people"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "people_documents_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
         ]
       }
       people_events: {
@@ -9880,6 +9966,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "people"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_events_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
           },
         ]
       }
@@ -9949,6 +10042,13 @@ export type Database = {
             referencedRelation: "people"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "people_goals_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
         ]
       }
       people_incidents: {
@@ -10017,6 +10117,13 @@ export type Database = {
             referencedRelation: "people"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "people_incidents_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
         ]
       }
       people_onboarding_plans: {
@@ -10072,6 +10179,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "people"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_onboarding_plans_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
           },
           {
             foreignKeyName: "people_onboarding_plans_template_id_fkey"
@@ -10255,6 +10369,13 @@ export type Database = {
             referencedRelation: "people"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "people_one_on_ones_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
         ]
       }
       people_psychosocial_assessments: {
@@ -10322,6 +10443,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "people"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_psychosocial_assessments_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
           },
         ]
       }
@@ -10396,6 +10524,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "people"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_reviews_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
           },
         ]
       }
@@ -11691,6 +11826,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "people"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_entries_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
           },
           {
             foreignKeyName: "project_time_entries_project_id_fkey"
@@ -16841,7 +16983,29 @@ export type Database = {
             referencedRelation: "people"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "people_documents_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
         ]
+      }
+      people_total_cost: {
+        Row: {
+          benefits_total: number | null
+          employment_type:
+            | Database["public"]["Enums"]["people_employment_type"]
+            | null
+          full_name: string | null
+          monthly_cost: number | null
+          owner_id: string | null
+          person_id: string | null
+          status: Database["public"]["Enums"]["people_status"] | null
+          total_cost_monthly: number | null
+        }
+        Relationships: []
       }
       workspace_branding_public: {
         Row: {
