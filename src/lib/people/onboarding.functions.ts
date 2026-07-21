@@ -583,7 +583,10 @@ async function materializePlan(
         due_date: due,
         order_index: idx,
         status: "pending" as const,
+        is_critical: it.is_critical ?? false,
+        revocation_system: it.revocation_system ?? null,
       };
+
     });
     const { error: e2 } = await supabase
       .from("people_onboarding_tasks")
