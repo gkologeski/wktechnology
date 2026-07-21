@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
+import type { Json } from "@/integrations/supabase/types";
+
 export type WorkflowActionTemplateRow = {
   id: string;
   owner_id: string;
@@ -15,12 +17,13 @@ export type WorkflowActionTemplateRow = {
   action_type: string;
   entity: string | null;
   table_name: string | null;
-  action_json: Record<string, unknown>;
+  action_json: Json;
   visibility: "personal" | "shared";
   usage_count: number;
   created_at: string;
   updated_at: string;
 };
+
 
 const upsertSchema = z.object({
   id: z.string().uuid().optional(),
