@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown, Wand2 } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown, Wand2, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
