@@ -452,13 +452,19 @@ export function WorkflowBuilder({
   const selectedAction =
     selection && selection !== "trigger" ? getStep(state.actions, selection) : null;
 
-  const addAction = (type: WorkflowActionType, parentPath: StepPath) => {
-    const newAction = defaultActionOfType(type);
+  const addAction = (
+    type: WorkflowActionType,
+    parentPath: StepPath,
+    overrides?: Partial<WorkflowAction>,
+  ) => {
+    const base = defaultActionOfType(type);
+    const newAction = (overrides ? { ...base, ...overrides } : base) as WorkflowAction;
     setActions((prev) => insertStep(prev, parentPath, newAction));
     setLibrary(null);
     // Seleciona o novo passo (último índice do array em que foi inserido).
     // Como cálculo exato é chato, apenas fecha a biblioteca — usuário pode clicar no card.
   };
+
 
   const handleDropAt = (to: { parentPath: StepPath; index: number }) => {
     if (!dragging) return;
