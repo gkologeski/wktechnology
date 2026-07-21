@@ -59,7 +59,7 @@ export type PersonRow = {
   cost_hour: number | null;
   monthly_cost: number | null;
   currency: string;
-  personal_doc: Record<string, unknown>;
+  personal_doc: PersonDocMap;
   tags: string[];
   notes: string | null;
   archived: boolean;
@@ -169,7 +169,7 @@ export const getPerson = createServerFn({ method: "POST" })
     let sensitive: {
       cost_hour: number | null;
       monthly_cost: number | null;
-      personal_doc: Record<string, unknown>;
+      personal_doc: PersonDocMap;
     } = { cost_hour: null, monthly_cost: null, personal_doc: {} };
 
     if (canViewSensitive) {
