@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown, Wand2 } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown, Wand2, AlertCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -453,6 +453,54 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     return true;
   };
 
+  const isToken = (v: unknown) =>
+    typeof v === "string" && /\{\{\s*[\w.]+\s*\}\}/.test(v);
+
+  // Validação em tempo real: campos obrigatórios vazios e inconsistências de tipo.
+  function validateField(f: EntityFieldDef): string | null {
+    const v = values[f.name];
+    const filled = hasValue(f.name);
+    if (f.required && !filled) return "Campo obrigatório.";
+    if (!filled) return null;
+    if (isToken(v)) return null; // tokens são resolvidos em runtime
+    if (f.type === "number") {
+      const n = typeof v === "number" ? v : Number(v);
+      if (!Number.isFinite(n)) return "Valor deve ser numérico.";
+    }
+    if (f.type === "date" && typeof v === "string") {
+      const d = new Date(v);
+      if (Number.isNaN(d.getTime())) return "Data inválida.";
+    }
+    if (f.type === "select" && f.options?.length && typeof v === "string") {
+      if (!f.options.some((o) => o.value === v)) return "Valor fora das opções.";
+    }
+    return null;
+  }
+
+  const fieldErrors = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const f of visibleFields) {
+      const err = validateField(f);
+      if (err) m.set(f.name, err);
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleFields, values]);
+
+  const errorCount = fieldErrors.size;
+  const hasMissingRequired = visibleFields.some(
+    (f) => f.required && !hasValue(f.name),
+  );
+
+  // Auto-expande quando há pendências no primeiro render após carregar catálogo.
+  useEffect(() => {
+    if (hasMissingRequired) {
+      setOpen(true);
+      setShowEmpty(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMissingRequired]);
+
   const filled = visibleFields.filter((f) => hasValue(f.name));
   const empty = visibleFields.filter((f) => !hasValue(f.name));
   const orphanKeys = Object.keys(values).filter(
@@ -513,13 +561,25 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
 
 
   function renderRow(field: EntityFieldDef | undefined, key: string, value: unknown) {
+    const err = field ? fieldErrors.get(field.name) : undefined;
+    const required = Boolean(field?.required);
     return (
       <div
         key={key}
-        className="space-y-1.5 rounded border border-border/40 bg-background p-2"
+        className={cn(
+          "space-y-1.5 rounded border bg-background p-2 transition-colors",
+          err ? "border-destructive/60 ring-1 ring-destructive/30" : "border-border/40",
+        )}
       >
         <div className="flex items-start justify-between gap-2">
-          <Label className="text-xs font-medium">{field?.label ?? key}</Label>
+          <Label className="text-xs font-medium flex items-center gap-1">
+            <span>{field?.label ?? key}</span>
+            {required && (
+              <span className="text-destructive" aria-label="obrigatório" title="Campo obrigatório">
+                *
+              </span>
+            )}
+          </Label>
           {hasValue(key) && (
             <Button
               type="button"
@@ -544,6 +604,12 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
             />
           )}
         </div>
+        {err && (
+          <p className="flex items-center gap-1 text-[11px] font-medium text-destructive">
+            <AlertCircle className="h-3 w-3" />
+            {err}
+          </p>
+        )}
       </div>
     );
   }
@@ -564,6 +630,15 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
               {filledCount}
             </span>
           )}
+          {errorCount > 0 && (
+            <span
+              className="flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
+              title="Existem campos com pendências"
+            >
+              <AlertCircle className="h-2.5 w-2.5" />
+              {errorCount} pendência{errorCount > 1 ? "s" : ""}
+            </span>
+          )}
         </span>
         <span className="text-[10px] text-muted-foreground">
           {isLoading ? "carregando..." : `${visibleFields.length} campos`}
@@ -572,6 +647,20 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
 
       {open && (
         <div className="space-y-2 border-t border-border/60 px-3 py-2.5">
+          {errorCount > 0 && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[11px] text-destructive">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <div className="space-y-0.5">
+                <p className="font-medium">
+                  {errorCount} campo{errorCount > 1 ? "s" : ""} com pendência antes de salvar.
+                </p>
+                <p className="text-destructive/80">
+                  Revise obrigatórios (*) e valores inconsistentes destacados abaixo.
+                </p>
+              </div>
+            </div>
+          )}
+
           {error && (
             <p className="text-xs text-destructive">
               Não foi possível carregar os campos desta entidade.
