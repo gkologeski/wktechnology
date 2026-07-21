@@ -238,7 +238,10 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
 
     // Fetch preferences for all targets
     const uniqueIds = Array.from(new Set(targets.map((t) => t.userId)));
-    const { data: prefRows } = await supabase
+    // notification_preferences is server-only (column-level GRANT restricted);
+    // use the admin client and scope by the mention/assignment target ids only.
+    const { supabaseAdmin: notifAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: prefRows } = await notifAdmin
       .from("profiles")
       .select("id, full_name, notification_preferences")
       .in("id", uniqueIds);
