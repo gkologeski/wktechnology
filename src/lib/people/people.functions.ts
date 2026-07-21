@@ -373,5 +373,13 @@ export const promoteCandidateToPerson = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
-    return { id: (row as { id: string }).id, existed: false };
+    const newId = (row as { id: string }).id;
+    // Sprint 7 — Automação: dispara plano de onboarding padrão (idempotente).
+    await runAutoStart(supabase as never, {
+      userId,
+      personId: newId,
+      kind: "onboarding",
+    }).catch(() => undefined);
+    return { id: newId, existed: false };
   });
+
