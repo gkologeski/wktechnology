@@ -477,3 +477,213 @@ export const deleteOnbTask = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ============ SPRINT 7 — AUTOMAÇÃO ============
+//
+// Seleciona template padrão por kind + role_title/employment_type e materializa
+// o plano automaticamente ao promover candidato (onboarding) ou ao mudar o
+// status da pessoa para `offboarding` (offboarding). Emite eventos de domínio
+// para permitir integração com workflows.
+
+type AnyClient = SupabaseClient<never, never, never>;
+
+async function pickDefaultTemplate(
+  supabase: AnyClient,
+  workspaceId: string,
+  kind: OnbKind,
+  hints: { role_title?: string | null; employment_type?: string | null },
+): Promise<{ id: string; items: OnbTemplateItem[] } | null> {
+  const { data } = await supabase
+    .from("people_onboarding_templates")
+    .select("id, role_title, employment_type, items")
+    .eq("workspace_id", workspaceId)
+    .eq("kind", kind)
+    .eq("is_active", true);
+  const rows = (data ?? []) as Array<{
+    id: string;
+    role_title: string | null;
+    employment_type: string | null;
+    items: OnbTemplateItem[] | null;
+  }>;
+  if (rows.length === 0) return null;
+  const role = (hints.role_title ?? "").trim().toLowerCase();
+  const empType = (hints.employment_type ?? "").trim().toLowerCase();
+  // Preferência: match role_title + employment_type > role_title > employment_type > primeiro
+  const score = (r: (typeof rows)[number]) => {
+    let s = 0;
+    if (role && r.role_title && r.role_title.trim().toLowerCase() === role) s += 2;
+    if (empType && r.employment_type && r.employment_type.trim().toLowerCase() === empType) s += 1;
+    return s;
+  };
+  rows.sort((a, b) => score(b) - score(a));
+  const best = rows[0];
+  return { id: best.id, items: (best.items ?? []) as OnbTemplateItem[] };
+}
+
+async function materializePlan(
+  supabase: AnyClient,
+  args: {
+    userId: string;
+    workspaceId: string;
+    personId: string;
+    kind: OnbKind;
+    templateId: string | null;
+    items: OnbTemplateItem[];
+    startedAt?: string | null;
+    notes?: string | null;
+  },
+): Promise<{ planId: string; taskCount: number }> {
+  const startedAt = args.startedAt ?? new Date().toISOString().slice(0, 10);
+  const { data: planRow, error } = await supabase
+    .from("people_onboarding_plans")
+    .insert({
+      workspace_id: args.workspaceId,
+      owner_id: args.userId,
+      person_id: args.personId,
+      template_id: args.templateId,
+      kind: args.kind,
+      status: "in_progress",
+      started_at: startedAt,
+      notes: args.notes ?? null,
+    } as never)
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  const planId = (planRow as { id: string }).id;
+  let taskCount = 0;
+  if (args.items.length > 0) {
+    const base = new Date(startedAt);
+    const rows = args.items.map((it, idx) => {
+      let due: string | null = null;
+      if (typeof it.due_offset_days === "number") {
+        const d = new Date(base);
+        d.setDate(d.getDate() + it.due_offset_days);
+        due = d.toISOString().slice(0, 10);
+      }
+      return {
+        workspace_id: args.workspaceId,
+        plan_id: planId,
+        title: it.title,
+        description: it.description ?? null,
+        category: it.category ?? null,
+        due_date: due,
+        order_index: idx,
+        status: "pending" as const,
+      };
+    });
+    const { error: e2 } = await supabase
+      .from("people_onboarding_tasks")
+      .insert(rows as never);
+    if (e2) throw new Error(e2.message);
+    taskCount = rows.length;
+  }
+  return { planId, taskCount };
+}
+
+/**
+ * Verifica se já existe plano ativo/concluído do mesmo kind para essa pessoa.
+ * Automação é idempotente: nunca cria um segundo plano do mesmo kind.
+ */
+async function hasExistingPlan(
+  supabase: AnyClient,
+  personId: string,
+  kind: OnbKind,
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("people_onboarding_plans")
+    .select("id")
+    .eq("person_id", personId)
+    .eq("kind", kind)
+    .limit(1);
+  return ((data ?? []) as unknown[]).length > 0;
+}
+
+/**
+ * Server function chamada internamente ou pelo engine de workflows.
+ * Cria automaticamente um plano do kind indicado usando o template padrão
+ * (heurística role_title + employment_type). Idempotente por pessoa+kind.
+ */
+export const autoStartOnbPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        person_id: z.string().uuid(),
+        kind: z.enum(ONB_KINDS),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    return runAutoStart(supabase as AnyClient, {
+      userId,
+      personId: data.person_id,
+      kind: data.kind,
+    });
+  });
+
+/**
+ * Núcleo compartilhado da automação — reutilizável por outras server functions
+ * (ex.: promoteCandidateToPerson, upsertPerson) sem passar pelo RPC.
+ */
+export async function runAutoStart(
+  supabase: AnyClient,
+  args: { userId: string; personId: string; kind: OnbKind },
+): Promise<{
+  status: "created" | "skipped_existing" | "skipped_no_template" | "skipped_missing_person";
+  plan_id?: string;
+  template_id?: string | null;
+  task_count?: number;
+}> {
+  const { userId, personId, kind } = args;
+  const { data: person } = await supabase
+    .from("people")
+    .select("id, owner_id, role_title, employment_type, hire_date, termination_date")
+    .eq("id", personId)
+    .maybeSingle();
+  if (!person) return { status: "skipped_missing_person" };
+  const p = person as {
+    id: string;
+    owner_id: string;
+    role_title: string | null;
+    employment_type: string | null;
+    hire_date: string | null;
+    termination_date: string | null;
+  };
+  if (await hasExistingPlan(supabase, personId, kind)) {
+    return { status: "skipped_existing" };
+  }
+  const tpl = await pickDefaultTemplate(supabase, p.owner_id, kind, {
+    role_title: p.role_title,
+    employment_type: p.employment_type,
+  });
+  if (!tpl) return { status: "skipped_no_template" };
+  const startedAt =
+    kind === "onboarding"
+      ? p.hire_date ?? new Date().toISOString().slice(0, 10)
+      : p.termination_date ?? new Date().toISOString().slice(0, 10);
+  const { planId, taskCount } = await materializePlan(supabase, {
+    userId,
+    workspaceId: p.owner_id,
+    personId,
+    kind,
+    templateId: tpl.id,
+    items: tpl.items,
+    startedAt,
+  });
+  await emitEvent(supabase, {
+    ownerId: p.owner_id,
+    eventName: kind === "onboarding" ? "people.onboarding_started" : "people.offboarding_started",
+    entityType: "person",
+    entityId: personId,
+    payload: {
+      person_id: personId,
+      plan_id: planId,
+      template_id: tpl.id,
+      task_count: taskCount,
+      source: "auto",
+    },
+    dedupeKey: `people.${kind}_started:${personId}`,
+  }).catch(() => undefined);
+  return { status: "created", plan_id: planId, template_id: tpl.id, task_count: taskCount };
+}
