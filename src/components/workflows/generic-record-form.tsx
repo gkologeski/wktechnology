@@ -46,21 +46,21 @@ export function GenericRecordForm({ action, onChange }: Props) {
   const setValue = (key: string, val: string) => {
     if (!hasValues) return;
     const next = { ...(values as Record<string, unknown>), [key]: val };
-    onChange({ ...(action as GenericAction & { values: Record<string, unknown> }), values: next });
+    onChange({ ...(action as GenericAction), values: next } as unknown as GenericAction);
   };
 
   const renameKey = (oldK: string, newK: string) => {
     if (!hasValues || !newK || newK === oldK) return;
     const next: Record<string, unknown> = {};
     for (const [k, v] of entries) next[k === oldK ? newK : k] = v;
-    onChange({ ...(action as GenericAction & { values: Record<string, unknown> }), values: next });
+    onChange({ ...(action as GenericAction), values: next } as unknown as GenericAction);
   };
 
   const removeKey = (k: string) => {
     if (!hasValues) return;
     const next = { ...(values as Record<string, unknown>) };
     delete next[k];
-    onChange({ ...(action as GenericAction & { values: Record<string, unknown> }), values: next });
+    onChange({ ...(action as GenericAction), values: next } as unknown as GenericAction);
   };
 
   const addField = () => {
@@ -69,7 +69,7 @@ export function GenericRecordForm({ action, onChange }: Props) {
     let i = 1;
     while (`${base}${i}` in values) i++;
     const next = { ...(values as Record<string, unknown>), [`${base}${i}`]: "" };
-    onChange({ ...(action as GenericAction & { values: Record<string, unknown> }), values: next });
+    onChange({ ...(action as GenericAction), values: next } as unknown as GenericAction);
   };
 
   return (
