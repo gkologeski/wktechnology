@@ -319,6 +319,24 @@ export type WorkflowAction =
       approver_user_id?: string;
       /** Se true, ao rejeitar interrompe a run com erro; se false, apenas ignora o restante. */
       halt_on_reject?: boolean;
+    }
+  // Ações genéricas cross-módulo
+  | {
+      type: "create_record";
+      table: WorkflowWritableTable;
+      values: Record<string, unknown>;
+      owner_id?: string;
+    }
+  | {
+      type: "update_record";
+      table: WorkflowWritableTable;
+      target_id: string;
+      values: Record<string, unknown>;
+    }
+  | {
+      type: "delete_record";
+      table: WorkflowWritableTable;
+      target_id: string;
     };
 
 
