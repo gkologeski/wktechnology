@@ -424,8 +424,9 @@ export function FkPicker({
   );
 }
 
-export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange }: Props) {
-  const [open, setOpen] = useState(false);
+export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, title, defaultOpen }: Props) {
+  const [open, setOpen] = useState(Boolean(defaultOpen));
+
   const [pickerOpen, setPickerOpen] = useState(false);
   const fetchCatalog = useServerFn(getEntityFieldCatalog);
   const { data, isLoading, error } = useQuery({
