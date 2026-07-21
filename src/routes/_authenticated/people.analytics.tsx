@@ -1,7 +1,10 @@
 // /people/analytics — Sprint 11: dashboard de People (headcount, turnover, custo, margem).
+// Sprint 12: integração com TechFinance (sincronizar folha como recorrências).
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import {
   Users,
   UserPlus,
@@ -12,6 +15,8 @@ import {
   TrendingUp,
   Briefcase,
   ArrowLeft,
+  RefreshCw,
+  CheckCircle2,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
@@ -19,13 +24,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getPeopleAnalytics } from "@/lib/people/analytics.functions";
+import {
+  materializePeoplePayroll,
+  type PayrollSyncResult,
+} from "@/lib/people/finance-sync.functions";
 import {
   PEOPLE_STATUS_LABELS,
   PEOPLE_EMPLOYMENT_LABELS,
   type PeopleStatus,
   type PeopleEmploymentType,
 } from "@/lib/people/people.functions";
+
 
 export const Route = createFileRoute("/_authenticated/people/analytics")({
   component: PeopleAnalyticsPage,
