@@ -1,24 +1,62 @@
-Plano para corrigir o erro de login com Google:
+## Objetivo
 
-1. Confirmar o ponto exato do fluxo
-   - Verificar se o erro ocorre no login principal (`/login`) ou ao conectar Gmail/Agenda nas configurações.
-   - Validar a origem usada no momento do erro: `app.wktechnology.com.br`, `ats.wktechnology.com.br`, `crm.wktechnology.com.br` ou preview.
+Hoje o `AiSummaryPanel` só permite resumir "Conversa" (WhatsApp + activities) ou "Calls/Reuniões". Ficam de fora e-mails, notas, tasks, e principalmente as **gravações/transcrições de reuniões** (`meeting_summaries`, `meetings.transcript`, `activities.transcription`) — que contêm informação valiosa. Vamos expandir os tipos de resumo e enriquecer o coletor.
 
-2. Revisar configuração do Google Auth no backend
-   - Conferir se o provedor Google está habilitado no Lovable Cloud.
-   - Reconfigurar o Social Auth do Google se a configuração estiver ausente, antiga ou inconsistente.
-   - Garantir que os domínios customizados ativos estejam aceitos pelo fluxo gerenciado.
+## Escopo
 
-3. Revisar o código do login
-   - Manter o uso correto de `lovable.auth.signInWithOAuth("google")`, não `supabase.auth.signInWithOAuth` direto.
-   - Validar se `redirect_uri: window.location.origin` está adequado para todos os domínios publicados.
-   - Ajustar o pós-login para preservar destino e redirecionar para `/dashboard` apenas depois da sessão estar hidratada, se necessário.
+Somente `AiSummaryPanel` + `ai-summaries.functions.ts` + migration do CHECK constraint. Sem mexer em RLS, autenticação, timeline geral ou outras entidades.
 
-4. Diferenciar login Google de conexão Gmail/Agenda
-   - Se o erro for no login social: corrigir o provedor Google Auth.
-   - Se o erro for ao conectar Gmail/Agenda: revisar o OAuth Google usado pela integração de e-mail/calendário, que é outro fluxo e pode exigir redirect/client próprios.
+## Mudanças
 
-5. Validar
-   - Testar o botão “Entrar com Google” no preview/publicado conforme possível.
-   - Verificar console/rede se o erro persistir.
-   - Se a correção envolver configuração do backend, republicar o app para refletir o ajuste no domínio customizado.
+### 1. Novos tipos de resumo (kind)
+Ampliar o enum `kind` para:
+- `conversation` — WhatsApp + e-mails (mantém foco em diálogo com cliente)
+- `call` — activities `call` (áudio + transcrição Twilio)
+- `meeting` — reuniões (`meetings` + `meeting_summaries` + `activities` tipo `meeting` com `transcription`/`recording_url`)
+- `email` — apenas e-mails (`email_messages` + activities tipo `email`)
+- `notes` — notas e comentários internos (`activities` tipo `note`, `activity_comments`)
+- `tasks` — tasks e follow-ups (`activities` tipo `task`)
+- `all` — consolidação de tudo acima, timeline completa
+
+### 2. Coletor `collectMessages`
+Reescrever para, conforme o `kind`, incluir também:
+- **meetings**: buscar `meetings` (por `deal_id`/`contact_id`), juntar `meeting_summaries.summary/action_items` e `meetings.transcript` quando existir; incluir `activities.transcription` para type=`meeting`.
+- **email**: buscar `email_messages` relacionados (via `email_threads` do contato/deal) — assunto, snippet, direction; complementar com activities tipo `email`.
+- **notes/tasks**: incluir activities dos tipos correspondentes; para notas, também puxar `activity_comments` do período.
+- **calls**: incluir `activities.transcription` e `recording_duration_seconds` além do body/outcome.
+- **all**: união de tudo, limitado a ~400 mensagens.
+
+Manter janela `window_days` e ordenação cronológica.
+
+### 3. Prompt
+`buildPrompt` recebe `kind` e adapta cabeçalho ("Resuma reuniões e gravações…", "Resuma e-mails trocados…", "Consolide toda a interação…"). Schema JSON de saída permanece igual.
+
+### 4. UI (`AiSummaryPanel`)
+- Substituir o Select de kind por lista com todos os novos tipos + ícones (Mail, FileText, ListTodo, CalendarDays, Layers para "Tudo").
+- Badge do card mostra label amigável do tipo.
+- Empty state atualizado.
+
+### 5. Migration
+Atualizar CHECK constraint `ai_summaries_kind_check` para aceitar os novos valores (`conversation|call|meeting|email|notes|tasks|all`). Preservar linhas existentes.
+
+## Detalhes técnicos
+
+Arquivos:
+- `supabase/migrations/<ts>_ai_summaries_expand_kinds.sql` — drop/add do CHECK.
+- `src/lib/ai-summaries.functions.ts` — enum KIND, `collectMessages` expandido, `buildPrompt` com header por kind.
+- `src/components/ai/ai-summary-panel.tsx` — Select com novas opções, mapa `KIND_LABEL`/`KIND_ICON`, badge.
+
+Sem alterações em: RLS, schema de `ai_summaries` (só CHECK), outras rotas, permissões.
+
+## Riscos / não-escopo
+
+- Não altero como a timeline renderiza itens; só o painel de resumo.
+- Não crio novo modelo IA; segue `google/gemini-2.5-flash`.
+- Transcrições longas podem estourar contexto — aplico `slice(0, 800)` por item já existente e limito total a 400 msgs.
+
+## Validação manual
+
+1. Abrir um deal com reuniões gravadas (ex.: `deals/f6c61100-1e8e-4ef3-a224-ceaf055f07d0`) → gerar resumo tipo "Reuniões" e conferir se traz pontos das transcrições.
+2. Abrir contato com e-mails trocados → gerar tipo "E-mails".
+3. Ticket com notas/comentários → tipo "Notas".
+4. Deal com muita coisa → tipo "Tudo" consolidado.

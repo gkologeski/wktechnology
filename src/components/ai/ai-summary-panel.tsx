@@ -1,7 +1,18 @@
 import { formatDateTime } from "@/lib/crm";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Sparkles, RefreshCw, Trash2, Phone, MessageSquare } from "lucide-react";
+import {
+  Sparkles,
+  RefreshCw,
+  Trash2,
+  Phone,
+  MessageSquare,
+  Mail,
+  Video,
+  FileText,
+  ListTodo,
+  Layers,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +27,7 @@ import { toast } from "sonner";
 import { generateAiSummary, listAiSummaries, deleteAiSummary } from "@/lib/ai-summaries.functions";
 
 type Entity = "lead" | "contact" | "deal" | "ticket";
-type Kind = "conversation" | "call";
+type Kind = "conversation" | "call" | "meeting" | "email" | "notes" | "tasks" | "all";
 
 type SummaryRow = {
   id: string;
@@ -37,6 +48,21 @@ const SENTIMENT_VARIANT: Record<string, "default" | "secondary" | "destructive" 
   neutro: "secondary",
   negativo: "destructive",
 };
+
+const KIND_OPTIONS: { value: Kind; label: string; icon: ReactNode }[] = [
+  { value: "conversation", label: "Conversa", icon: <MessageSquare className="h-3 w-3" /> },
+  { value: "call", label: "Ligações", icon: <Phone className="h-3 w-3" /> },
+  { value: "meeting", label: "Reuniões", icon: <Video className="h-3 w-3" /> },
+  { value: "email", label: "E-mails", icon: <Mail className="h-3 w-3" /> },
+  { value: "notes", label: "Notas", icon: <FileText className="h-3 w-3" /> },
+  { value: "tasks", label: "Tarefas", icon: <ListTodo className="h-3 w-3" /> },
+  { value: "all", label: "Tudo", icon: <Layers className="h-3 w-3" /> },
+];
+
+const KIND_LABEL: Record<Kind, string> = KIND_OPTIONS.reduce(
+  (acc, o) => ({ ...acc, [o.value]: o.label }),
+  {} as Record<Kind, string>,
+);
 
 export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId: string }) {
   const list = useServerFn(listAiSummaries);
@@ -104,22 +130,18 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
         </CardTitle>
         <div className="flex items-center gap-2">
           <Select value={kind} onValueChange={(v) => setKind(v as Kind)}>
-            <SelectTrigger className="h-8 w-[140px] text-xs">
+            <SelectTrigger className="h-8 w-[150px] text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="conversation">
-                <span className="flex items-center gap-2">
-                  <MessageSquare className="h-3 w-3" />
-                  Conversa
-                </span>
-              </SelectItem>
-              <SelectItem value="call">
-                <span className="flex items-center gap-2">
-                  <Phone className="h-3 w-3" />
-                  Calls/Reuniões
-                </span>
-              </SelectItem>
+              {KIND_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  <span className="flex items-center gap-2">
+                    {opt.icon}
+                    {opt.label}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={String(windowDays)} onValueChange={(v) => setWindowDays(Number(v))}>
@@ -156,7 +178,7 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline" className="text-[10px] uppercase">
-                  {r.kind === "call" ? "Calls" : "Conversa"}
+                  {KIND_LABEL[r.kind] ?? r.kind}
                 </Badge>
                 {r.sentiment && (
                   <Badge
