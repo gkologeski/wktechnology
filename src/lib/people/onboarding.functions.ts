@@ -49,7 +49,10 @@ export type OnbTemplateItem = {
   description?: string | null;
   category?: string | null;
   due_offset_days?: number | null;
+  is_critical?: boolean | null;
+  revocation_system?: string | null;
 };
+
 
 export type OnbTemplateRow = {
   id: string;
