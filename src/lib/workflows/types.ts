@@ -463,6 +463,10 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
     ],
   },
   {
+    label: "Registros (qualquer módulo)",
+    actions: ["create_record", "update_record", "delete_record"],
+  },
+  {
     label: "Comunicação",
     actions: ["create_activity", "send_notification", "send_email", "send_whatsapp", "send_slack", "send_teams"],
   },
