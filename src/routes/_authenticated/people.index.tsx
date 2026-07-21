@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Search, UserCog, ClipboardList } from "lucide-react";
+import { Plus, Search, UserCog, ClipboardList, BarChart3 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -111,6 +111,11 @@ function PeoplePage() {
         description="Gerencie prestadores, ex-candidatos contratados e o time interno."
         actions={
           <div className="flex items-center gap-2">
+            <Button asChild variant="outline">
+              <Link to="/people/analytics">
+                <BarChart3 className="h-4 w-4 mr-2" /> Analytics
+              </Link>
+            </Button>
             <Button asChild variant="outline">
               <Link to="/people/onboarding-templates">
                 <ClipboardList className="h-4 w-4 mr-2" /> Modelos
