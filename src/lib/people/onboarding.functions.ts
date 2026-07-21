@@ -100,9 +100,12 @@ export type OnbTaskRow = {
   completed_at: string | null;
   completed_by: string | null;
   order_index: number;
+  is_critical: boolean;
+  revocation_system: string | null;
   created_at: string;
   updated_at: string;
 };
+
 
 type MinimalClient = { from: (t: string) => unknown };
 async function resolveWorkspaceId(
