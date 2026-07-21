@@ -293,7 +293,17 @@ function ContractDetail() {
         </CardContent>
       </Card>
 
+      <ContractParentLink
+        contractId={contract.id}
+        role={role}
+        currency={contract.currency ?? "BRL"}
+        totalValue={Number(contract.total_value ?? 0)}
+        parent={(contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] }).parent ?? null}
+        children={(contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] }).children ?? []}
+      />
+
       <ContractApprovalsPanel contractId={contract.id} />
+
 
       <Card>
         <CardHeader className="pb-3">
