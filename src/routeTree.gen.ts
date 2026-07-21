@@ -180,6 +180,7 @@ import { Route as AuthenticatedPeopleContractMarginRouteImport } from './routes/
 import { Route as AuthenticatedPeopleBillingRouteImport } from './routes/_authenticated/people.billing'
 import { Route as AuthenticatedPeopleAnalyticsRouteImport } from './routes/_authenticated/people.analytics'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
+import { Route as AuthenticatedOnboardingEntityRouteImport } from './routes/_authenticated/onboarding.$entity'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
@@ -1302,6 +1303,12 @@ const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
   path: '/people/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedOnboardingEntityRoute =
+  AuthenticatedOnboardingEntityRouteImport.update({
+    id: '/onboarding/$entity',
+    path: '/onboarding/$entity',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMarketplaceSlugRoute =
   AuthenticatedMarketplaceSlugRouteImport.update({
     id: '/$slug',
@@ -2341,6 +2348,7 @@ export interface FileRoutesByFullPath {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
+  '/onboarding/$entity': typeof AuthenticatedOnboardingEntityRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
@@ -2669,6 +2677,7 @@ export interface FileRoutesByTo {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
+  '/onboarding/$entity': typeof AuthenticatedOnboardingEntityRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
@@ -3002,6 +3011,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
+  '/_authenticated/onboarding/$entity': typeof AuthenticatedOnboardingEntityRoute
   '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
   '/_authenticated/people/billing': typeof AuthenticatedPeopleBillingRoute
@@ -3336,6 +3346,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
+    | '/onboarding/$entity'
     | '/people/$id'
     | '/people/analytics'
     | '/people/billing'
@@ -3664,6 +3675,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
+    | '/onboarding/$entity'
     | '/people/$id'
     | '/people/analytics'
     | '/people/billing'
@@ -3996,6 +4008,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/marketplace/$slug'
+    | '/_authenticated/onboarding/$entity'
     | '/_authenticated/people/$id'
     | '/_authenticated/people/analytics'
     | '/_authenticated/people/billing'
@@ -5524,6 +5537,13 @@ declare module '@tanstack/react-router' {
       path: '/people/$id'
       fullPath: '/people/$id'
       preLoaderRoute: typeof AuthenticatedPeopleIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/onboarding/$entity': {
+      id: '/_authenticated/onboarding/$entity'
+      path: '/onboarding/$entity'
+      fullPath: '/onboarding/$entity'
+      preLoaderRoute: typeof AuthenticatedOnboardingEntityRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/marketplace/$slug': {
@@ -7138,6 +7158,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
+  AuthenticatedOnboardingEntityRoute: typeof AuthenticatedOnboardingEntityRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedPeopleAnalyticsRoute: typeof AuthenticatedPeopleAnalyticsRoute
   AuthenticatedPeopleBillingRoute: typeof AuthenticatedPeopleBillingRoute
@@ -7262,6 +7283,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
+  AuthenticatedOnboardingEntityRoute: AuthenticatedOnboardingEntityRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedPeopleAnalyticsRoute: AuthenticatedPeopleAnalyticsRoute,
   AuthenticatedPeopleBillingRoute: AuthenticatedPeopleBillingRoute,
