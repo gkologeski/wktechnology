@@ -143,3 +143,100 @@ export const listPersonTimeline = createServerFn({ method: "POST" })
       created_at: string;
     }>;
   });
+
+// --- Storage: signed URLs para upload/download ---------------------------
+
+export const createDocumentUpload = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        person_id: z.string().uuid(),
+        file_name: z.string().min(1).max(200),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: person, error: perr } = await supabase
+      .from("people")
+      .select("owner_id")
+      .eq("id", data.person_id)
+      .maybeSingle();
+    if (perr) throw new Error(perr.message);
+    if (!person) throw new Error("Pessoa não encontrada");
+    const ownerId = (person as { owner_id: string }).owner_id;
+
+    // Sanitiza filename.
+    const safe = data.file_name.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(-160);
+    const key = `${ownerId}/${data.person_id}/${Date.now()}-${safe}`;
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error } = await supabaseAdmin.storage
+      .from("people-documents")
+      .createSignedUploadUrl(key);
+    if (error) throw new Error(error.message);
+    return { path: signed.path, token: signed.token, signedUrl: signed.signedUrl };
+  });
+
+export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: doc, error } = await context.supabase
+      .from("people_documents")
+      .select("file_url")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    const path = (doc as { file_url: string | null } | null)?.file_url;
+    if (!path) throw new Error("Documento sem arquivo");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error: sErr } = await supabaseAdmin.storage
+      .from("people-documents")
+      .createSignedUrl(path, 300);
+    if (sErr) throw new Error(sErr.message);
+    return { url: signed.signedUrl };
+  });
+
+// --- Listagem global de documentos a vencer ---------------------------------
+
+export type ExpiringDocumentRow = {
+  id: string;
+  owner_id: string;
+  person_id: string;
+  person_name: string;
+  person_photo_url: string | null;
+  doc_type: string;
+  doc_number: string | null;
+  expires_at: string | null;
+  status: PeopleDocStatus;
+  file_url: string | null;
+  file_name: string | null;
+  updated_at: string;
+  days_left: number | null;
+};
+
+export const listExpiringDocuments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        status: z.enum(["all", "expired", "expiring"]).default("all"),
+        limit: z.number().int().min(1).max(500).default(200),
+      })
+      .parse(i ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    let q = context.supabase
+      .from("people_documents_expiring")
+      .select(
+        "id, owner_id, person_id, person_name, person_photo_url, doc_type, doc_number, expires_at, status, file_url, file_name, updated_at, days_left",
+      )
+      .order("expires_at", { ascending: true })
+      .limit(data.limit);
+    if (data.status !== "all") q = q.eq("status", data.status);
+    const { data: rows, error } = await q;
+    if (error) throw new Error(error.message);
+    return (rows ?? []) as ExpiringDocumentRow[];
+  });
