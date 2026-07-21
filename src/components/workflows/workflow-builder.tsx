@@ -1842,10 +1842,12 @@ function StepConfigPanel({
         <h3 className="text-sm font-semibold">{ACTION_LABELS[action.type]}</h3>
         <p className="text-xs text-muted-foreground mt-1">Configure os detalhes deste passo.</p>
       </div>
+      <ActionTemplatesBar action={action} entity={entity} onApply={onChange} />
       <StepConfigForm action={action} entity={entity} entityFields={entityFields} onChange={onChange} />
     </div>
   );
 }
+
 
 function StepConfigForm({
   action,
