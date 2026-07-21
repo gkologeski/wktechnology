@@ -2,7 +2,11 @@
 
 > Documento de referência para avaliação futura. Fontes auditadas:
 > `docs/roadmap.md`, `docs/releases-12-21-scope.md`, `docs/hubspot-feature-map.md`, `.lovable/plan.md`.
-> Última atualização: 2026-06-22.
+> Última atualização: 2026-07-21.
+
+## 0. Workflows cross-módulo (entregue 2026-07-21)
+
+Workflows agora suportam gatilhos e ações genéricas (`create_record` / `update_record` / `delete_record`) em 13 entidades além do CRM/ATS: `projects`, `project_tasks`, `project_milestones`, `contracts`, `financial_entries`, `bank_payments`, `quotes`, `proposals`, `products`, `services`, `recurring_plans`, `subscription_invoices`, `customer_invoices`. A função `enqueue_workflow_event` resolve `owner_id` via `workspaces.created_by` quando a tabela alvo não possui a coluna. Detalhes em `.lovable/plan.md` (fases 1-4 do plano de workflows cross-módulo).
 
 ## 1. Pendências do roadmap.md
 
