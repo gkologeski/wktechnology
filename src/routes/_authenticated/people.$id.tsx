@@ -229,6 +229,7 @@ function PersonForm({
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">Perfil</TabsTrigger>
+          <TabsTrigger value="allocations">Alocações</TabsTrigger>
           <TabsTrigger value="goals">Metas</TabsTrigger>
           <TabsTrigger value="one_on_ones">1:1s</TabsTrigger>
           <TabsTrigger value="reviews">Avaliações</TabsTrigger>
