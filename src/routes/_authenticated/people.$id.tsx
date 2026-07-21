@@ -440,3 +440,129 @@ function StatCard({
     </Card>
   );
 }
+
+function docBadgeClass(status: PeopleDocumentRow["status"]) {
+  switch (status) {
+    case "valid":
+      return "bg-emerald-500/10 text-emerald-700";
+    case "expiring":
+      return "bg-amber-500/10 text-amber-700";
+    case "expired":
+      return "bg-rose-500/10 text-rose-700";
+    default:
+      return "";
+  }
+}
+
+function DocumentsPanel({
+  personId,
+  documents,
+}: {
+  personId: string;
+  documents: PeopleDocumentRow[];
+}) {
+  const qc = useQueryClient();
+  const deleteFn = useServerFn(deletePersonDocument);
+  const downloadFn = useServerFn(getDocumentDownloadUrl);
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<PeopleDocumentRow | null>(null);
+
+  const del = useMutation({
+    mutationFn: (id: string) => deleteFn({ data: { id } }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["person-docs", personId] });
+      toast.success("Documento removido");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  async function handleDownload(id: string) {
+    try {
+      const { url } = await downloadFn({ data: { id } });
+      window.open(url, "_blank", "noopener");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar link");
+    }
+  }
+
+  return (
+    <>
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
+        >
+          <Plus className="h-4 w-4 mr-2" /> Novo documento
+        </Button>
+      </div>
+      <Card>
+        <CardContent className="p-0 divide-y">
+          {documents.length === 0 ? (
+            <div className="p-6 text-sm text-muted-foreground text-center">
+              <FileCheck2 className="h-6 w-6 mx-auto mb-2 opacity-60" />
+              Nenhum documento cadastrado.
+            </div>
+          ) : (
+            documents.map((d) => (
+              <div key={d.id} className="p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium truncate">{d.doc_type}</div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {d.doc_number ?? "—"}
+                    {d.expires_at ? ` · vence em ${d.expires_at}` : ""}
+                    {d.file_name ? ` · ${d.file_name}` : ""}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant="secondary" className={docBadgeClass(d.status)}>
+                    {d.status}
+                  </Badge>
+                  {d.file_url ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDownload(d.id)}
+                      title="Baixar"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setEditing(d);
+                      setOpen(true);
+                    }}
+                    title="Editar"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      if (confirm(`Remover documento "${d.doc_type}"?`)) del.mutate(d.id);
+                    }}
+                    title="Remover"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
+      <PersonDocumentDialog
+        open={open}
+        onOpenChange={setOpen}
+        personId={personId}
+        document={editing}
+      />
+    </>
+  );
+}
