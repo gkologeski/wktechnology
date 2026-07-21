@@ -117,7 +117,7 @@ async function loadAllocationsFor(
   };
   const { data, error } = await q
     .select(
-      "id, project_id, contract_id, billable_rate, cost_rate, allocation_pct, starts_at, ends_at, status, role_title, contracts(title,contract_number), projects(name)",
+      "id, project_id, contract_id, billable_rate, cost_rate, allocation_pct, starts_at, ends_at, status, role_title, contracts(title,number), projects(name)",
     )
     .eq("person_id", personId)
     .lte("starts_at", end)
@@ -125,13 +125,13 @@ async function loadAllocationsFor(
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => {
     const row = r as AllocationSlim & {
-      contracts?: { title: string | null; contract_number: string | null } | null;
+      contracts?: { title: string | null; number: string | null } | null;
       projects?: { name: string | null } | null;
     };
     return {
       ...row,
       contract_title: row.contracts?.title ?? null,
-      contract_number: row.contracts?.contract_number ?? null,
+      contract_number: row.contracts?.number ?? null,
       project_name: row.projects?.name ?? null,
     };
   });
