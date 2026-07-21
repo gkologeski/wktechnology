@@ -117,7 +117,7 @@ function PeopleAnalyticsPage() {
   const analyticsFn = useServerFn(getPeopleAnalytics);
   const { data, isLoading } = useQuery({
     queryKey: ["people_analytics"],
-    queryFn: () => analyticsFn({ data: {} }),
+    queryFn: () => analyticsFn(),
   });
 
   return (
