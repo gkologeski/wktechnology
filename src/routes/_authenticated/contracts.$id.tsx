@@ -26,6 +26,7 @@ import {
 } from "@/lib/contracts.functions";
 import { ContractServices } from "@/components/services/contract-services";
 import { ContractApprovalsPanel } from "@/components/contracts/contract-approvals-panel";
+import { ContractParentLink } from "@/components/contracts/contract-parent-link";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 
