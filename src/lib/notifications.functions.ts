@@ -106,8 +106,12 @@ function mergeWithDefaults(raw: unknown): NotificationPrefs {
 export const getMyNotificationPrefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { data, error } = await supabase
+    const { userId } = context;
+    // notification_preferences is not exposed to authenticated clients via the
+    // Data API (column-level GRANT restricted). Read with the service-role
+    // client, scoped to the current user only.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("profiles")
       .select("notification_preferences")
       .eq("id", userId)
@@ -120,8 +124,9 @@ export const updateMyNotificationPrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ prefs: prefsSchema }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
+    const { userId } = context;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("profiles")
       .update({ notification_preferences: data.prefs })
       .eq("id", userId);
