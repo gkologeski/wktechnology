@@ -9484,6 +9484,116 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_step: number
+          entity_id: string | null
+          entity_type: string
+          form_data: Json
+          id: string
+          owner_id: string
+          status: string
+          template_id: string | null
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          entity_id?: string | null
+          entity_type: string
+          form_data?: Json
+          id?: string
+          owner_id: string
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_step?: number
+          entity_id?: string | null
+          entity_type?: string
+          form_data?: Json
+          id?: string
+          owner_id?: string
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_runs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          entity_type: string
+          field_config: Json
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          owner_id: string
+          segment_field: string | null
+          segment_value: string | null
+          step_order: Json
+          tasks_template: Json
+          updated_at: string
+          workflow_id: string | null
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          entity_type: string
+          field_config?: Json
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          owner_id: string
+          segment_field?: string | null
+          segment_value?: string | null
+          step_order?: Json
+          tasks_template?: Json
+          updated_at?: string
+          workflow_id?: string | null
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          entity_type?: string
+          field_config?: Json
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          segment_field?: string | null
+          segment_value?: string | null
+          step_order?: Json
+          tasks_template?: Json
+          updated_at?: string
+          workflow_id?: string | null
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       outbound_webhooks: {
         Row: {
           active: boolean
