@@ -57,6 +57,7 @@ import { PsychosocialPanel } from "@/components/people/psychosocial-panel";
 import { IncidentsPanel } from "@/components/people/incidents-panel";
 import { AllocationsPanel } from "@/components/people/allocations-panel";
 import { TimesheetPanel } from "@/components/people/timesheet-panel";
+import { OnboardingPanel } from "@/components/people/onboarding-panel";
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
@@ -235,6 +236,7 @@ function PersonForm({
           <TabsTrigger value="goals">Metas</TabsTrigger>
           <TabsTrigger value="one_on_ones">1:1s</TabsTrigger>
           <TabsTrigger value="reviews">Avaliações</TabsTrigger>
+          <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           {canViewSensitive ? <TabsTrigger value="psychosocial">Psicossocial</TabsTrigger> : null}
           {canViewSensitive ? <TabsTrigger value="incidents">Incidentes</TabsTrigger> : null}
           <TabsTrigger value="documents">Documentos</TabsTrigger>
@@ -408,6 +410,10 @@ function PersonForm({
 
         <TabsContent value="reviews" className="pt-4">
           <ReviewsPanel personId={p.id} canWrite={canWrite} />
+        </TabsContent>
+
+        <TabsContent value="onboarding" className="pt-4">
+          <OnboardingPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
 
         {canViewSensitive ? (
