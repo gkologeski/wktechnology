@@ -29,7 +29,7 @@ const upsertSchema = z.object({
   doc_number: z.string().max(60).nullable().optional(),
   issued_at: z.string().nullable().optional(),
   expires_at: z.string().nullable().optional(),
-  file_url: z.string().url().nullable().optional().or(z.literal("")),
+  file_url: z.string().max(500).nullable().optional(),
   file_name: z.string().max(200).nullable().optional(),
   is_sensitive: z.boolean().default(true),
   notes: z.string().max(2000).nullable().optional(),
