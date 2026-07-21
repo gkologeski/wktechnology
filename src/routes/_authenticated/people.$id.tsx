@@ -58,6 +58,8 @@ import { IncidentsPanel } from "@/components/people/incidents-panel";
 import { AllocationsPanel } from "@/components/people/allocations-panel";
 import { TimesheetPanel } from "@/components/people/timesheet-panel";
 import { OnboardingPanel } from "@/components/people/onboarding-panel";
+import { OffboardingCompliancePanel } from "@/components/people/offboarding-compliance-panel";
+
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
