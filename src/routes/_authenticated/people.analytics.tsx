@@ -1,7 +1,10 @@
 // /people/analytics — Sprint 11: dashboard de People (headcount, turnover, custo, margem).
+// Sprint 12: integração com TechFinance (sincronizar folha como recorrências).
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
 import {
   Users,
   UserPlus,
@@ -12,6 +15,8 @@ import {
   TrendingUp,
   Briefcase,
   ArrowLeft,
+  RefreshCw,
+  CheckCircle2,
 } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
@@ -19,13 +24,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getPeopleAnalytics } from "@/lib/people/analytics.functions";
+import {
+  materializePeoplePayroll,
+  type PayrollSyncResult,
+} from "@/lib/people/finance-sync.functions";
 import {
   PEOPLE_STATUS_LABELS,
   PEOPLE_EMPLOYMENT_LABELS,
   type PeopleStatus,
   type PeopleEmploymentType,
 } from "@/lib/people/people.functions";
+
 
 export const Route = createFileRoute("/_authenticated/people/analytics")({
   component: PeopleAnalyticsPage,
@@ -115,10 +133,35 @@ function TrendBars({
 
 function PeopleAnalyticsPage() {
   const analyticsFn = useServerFn(getPeopleAnalytics);
+  const syncFn = useServerFn(materializePeoplePayroll);
+  const [syncOpen, setSyncOpen] = useState(false);
+  const [syncResult, setSyncResult] = useState<PayrollSyncResult | null>(null);
+  const [previewMode, setPreviewMode] = useState(true);
+
   const { data, isLoading } = useQuery({
     queryKey: ["people_analytics"],
     queryFn: () => analyticsFn(),
   });
+
+  const sync = useMutation({
+    mutationFn: (dryRun: boolean) => syncFn({ data: { dryRun } }),
+    onSuccess: (r) => {
+      setSyncResult(r);
+      if (!previewMode) {
+        toast.success(
+          `Folha sincronizada · ${r.created} criadas, ${r.updated} atualizadas, ${r.deactivated} desativadas`,
+        );
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const openSync = () => {
+    setSyncResult(null);
+    setPreviewMode(true);
+    setSyncOpen(true);
+    sync.mutate(true);
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -126,13 +169,21 @@ function PeopleAnalyticsPage() {
         title="Analytics · TechPeople"
         description="Headcount, movimentação, custos e margem de alocações."
         actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/people">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={openSync}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Sincronizar folha
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/people">
+                <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+              </Link>
+            </Button>
+          </div>
         }
       />
+
+
+
 
       {isLoading || !data ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
@@ -302,6 +353,131 @@ function PeopleAnalyticsPage() {
           </div>
         </>
       )}
+
+      <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" /> Sincronizar folha com TechFinance
+            </DialogTitle>
+            <DialogDescription>
+              Cria/atualiza uma recorrência mensal (Pagar) por pessoa ativa com o
+              custo total (base + benefícios vigentes). Idempotente — pode rodar
+              quantas vezes precisar.
+            </DialogDescription>
+          </DialogHeader>
+
+          {sync.isPending && !syncResult ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          ) : syncResult ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="rounded border p-2">
+                  <div className="text-lg font-semibold text-emerald-600">{syncResult.created}</div>
+                  <div className="text-[11px] text-muted-foreground">Criadas</div>
+                </div>
+                <div className="rounded border p-2">
+                  <div className="text-lg font-semibold text-primary">{syncResult.updated}</div>
+                  <div className="text-[11px] text-muted-foreground">Atualizadas</div>
+                </div>
+                <div className="rounded border p-2">
+                  <div className="text-lg font-semibold text-red-600">{syncResult.deactivated}</div>
+                  <div className="text-[11px] text-muted-foreground">Desativadas</div>
+                </div>
+                <div className="rounded border p-2">
+                  <div className="text-lg font-semibold text-muted-foreground">{syncResult.skipped}</div>
+                  <div className="text-[11px] text-muted-foreground">Sem alteração</div>
+                </div>
+              </div>
+              <div className="text-sm">
+                Total mensal a materializar:{" "}
+                <span className="font-semibold">
+                  {syncResult.total_monthly.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: syncResult.currency,
+                  })}
+                </span>
+              </div>
+              <div className="max-h-64 overflow-auto rounded border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr className="text-left">
+                      <th className="p-2 font-medium">Pessoa</th>
+                      <th className="p-2 font-medium text-right">Valor</th>
+                      <th className="p-2 font-medium">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {syncResult.items.map((it) => (
+                      <tr key={it.person_id} className="border-t">
+                        <td className="p-2">{it.person_name}</td>
+                        <td className="p-2 text-right tabular-nums">
+                          {it.monthly_amount.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: syncResult.currency,
+                          })}
+                        </td>
+                        <td className="p-2">
+                          <Badge
+                            variant={
+                              it.action === "created"
+                                ? "default"
+                                : it.action === "updated"
+                                  ? "secondary"
+                                  : it.action === "deactivated"
+                                    ? "destructive"
+                                    : "outline"
+                            }
+                          >
+                            {it.action === "created"
+                              ? "Criar"
+                              : it.action === "updated"
+                                ? "Atualizar"
+                                : it.action === "deactivated"
+                                  ? "Desativar"
+                                  : "Sem alteração"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {!previewMode ? (
+                <div className="flex items-center gap-2 text-sm text-emerald-600">
+                  <CheckCircle2 className="h-4 w-4" /> Recorrências aplicadas em TechFinance.
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">
+                  Prévia — nada foi gravado ainda. Clique em "Aplicar" para materializar.
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSyncOpen(false)}>
+              Fechar
+            </Button>
+            {previewMode && syncResult ? (
+              <Button
+                disabled={sync.isPending}
+                onClick={() => {
+                  setPreviewMode(false);
+                  sync.mutate(false);
+                }}
+              >
+                Aplicar
+              </Button>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
