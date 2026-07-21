@@ -1,0 +1,2 @@
+ALTER TABLE public.ai_summaries DROP CONSTRAINT IF EXISTS ai_summaries_kind_check;
+ALTER TABLE public.ai_summaries ADD CONSTRAINT ai_summaries_kind_check CHECK (kind = ANY (ARRAY['conversation','call','meeting','email','notes','tasks','all']));
