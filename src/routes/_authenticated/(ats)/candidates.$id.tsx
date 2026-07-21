@@ -122,6 +122,7 @@ function CandidateDetailPage() {
 
   const [data, setData] = useState<CandidateDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hireOpen, setHireOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
