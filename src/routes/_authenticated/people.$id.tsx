@@ -412,6 +412,10 @@ function PersonForm({
           <ReviewsPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
 
+        <TabsContent value="onboarding" className="pt-4">
+          <OnboardingPanel personId={p.id} canWrite={canWrite} />
+        </TabsContent>
+
         {canViewSensitive ? (
           <TabsContent value="psychosocial" className="pt-4">
             <PsychosocialPanel personId={p.id} canWrite={canWrite} />
