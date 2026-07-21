@@ -1,53 +1,45 @@
-## Problema
-
-O `GenericRecordForm` (usado em `create_record` / `update_record` / `delete_record`) hoje é um mapa livre chave→valor de texto puro. O usuário não sabe quais campos existem em cada tabela, não conhece os tipos e digita nomes de coluna errados.
-
 ## Objetivo
 
-Trocar o mapa livre por um formulário tipado, com campos descobertos dinamicamente da tabela alvo, com rótulos amigáveis em pt-BR, controles corretos por tipo (texto, número, data, booleano, select) e suporte a tokens `{{campo}}` onde faz sentido.
+Substituir os três itens genéricos "Criar/Atualizar/Excluir registro (qualquer módulo)" da biblioteca de ações do Workflow Builder por uma navegação em dois níveis, agrupada por módulo, com rótulos amigáveis por entidade (ex.: "Criar Projeto", "Criar Registro de Contas a Pagar", "Criar Serviço").
 
-## Escopo (somente UI + catálogo de campos)
+## Escopo
 
-- Não muda schema, RLS, engine de execução, nem contratos das ações. O payload continua sendo `{ table, values, target_id? }` — só a forma de montá-lo muda.
-- Não altera outras ações do builder.
+Somente UI/apresentação do picker de ações e labels. Não altera engine, tipos de ação, RLS, migrations, nem o `GenericRecordForm` (que continua sendo o form de edição do passo, apenas com `table` já pré-selecionado).
 
 ## Mudanças
 
-### 1. Ampliar o catálogo de campos (`src/lib/entity-fields.functions.ts`)
+### 1. `src/lib/workflows/types.ts`
+- Adicionar um catálogo `RECORD_ACTION_MODULES` que agrupa por módulo as tabelas graváveis com rótulos específicos em pt-BR (usando singular e nomes de negócio):
+  - **Vendas:** Lead, Contato, Empresa, Negócio, Cotação, Proposta
+  - **Atendimento:** Ticket
+  - **Recrutamento (ATS):** Vaga, Candidato, Aplicação, Entrevista
+  - **Projetos:** Projeto, Tarefa de projeto, Marco de projeto
+  - **Contratos e catálogo:** Contrato, Produto, Serviço
+  - **Financeiro:** Lançamento financeiro (contas a pagar/receber), Pagamento bancário, Fatura de cliente, Fatura de assinatura, Plano recorrente
+  - **Atividades:** Atividade
+- Nota: como `financial_entries` cobre tanto pagar quanto receber via campo `direction`, será listado como "Lançamento financeiro" (o form já expõe o campo `direction` via catálogo). Não vamos criar duas ações separadas por direção.
 
-- Expandir o enum `entity` do `getEntityFieldCatalog` para cobrir todas as tabelas de `WORKFLOW_WRITABLE_TABLES`: adicionar `projects`, `project_tasks`, `project_milestones`, `contracts`, `financial_entries`, `bank_payments`, `quotes`, `proposals`, `products`, `services`, `recurring_plans`, `subscription_invoices`, `customer_invoices`.
-- Adicionar rótulos pt-BR no mapa `LABELS` para os campos principais dessas tabelas (nome, valor, moeda, status, data de vencimento, categoria, centro de custo, empresa, cliente, projeto, etc.). Fallback continua sendo snake_case → Title Case.
-- Manter a lista `HIDDEN` (esconder `id`, `owner_id`, `workspace_id`, `deleted_at`, etc.). Em `update_record` esses continuam ocultos — o `id` do alvo já é o `target_id`.
-- Sem mudanças no RPC `get_entity_field_catalog`: ele já lê `information_schema` genericamente.
+### 2. `src/components/workflows/workflow-builder.tsx`
+- Ajustar `ActionLibraryPanel`:
+  - Manter as demais categorias como estão.
+  - Remover o card único "Registros (qualquer módulo)".
+  - No lugar, renderizar uma seção "Registros" com submenus expansíveis por módulo. Cada módulo lista suas entidades e, ao clicar em uma entidade, abre um mini-picker inline com três botões: **Criar**, **Editar**, **Excluir**.
+  - Interação: clique único cai no módulo → clique na entidade expande as 3 operações → clique na operação chama `onPick` com o tipo (`create_record`/`update_record`/`delete_record`) e a `table` alvo.
+- Estender `onPick` para aceitar opcionalmente uma `table` pré-selecionada:
+  - `addAction` já cria a ação via `defaultActionOfType`; ajustar para aceitar override e injetar `table` no passo recém-criado antes de `insertStep`.
+- Ícones: usar os ícones dos módulos de `src/lib/modules/registry.ts` (Briefcase, Users, Kanban, FileText, Package, DollarSign) para os grupos e um ícone neutro para cada linha.
 
-### 2. Reescrever `src/components/workflows/generic-record-form.tsx`
+### 3. Sem mudança em `GenericRecordForm`
+- O form continua sendo aberto normalmente ao selecionar o passo; a diferença é que a tabela já vem preenchida e o catálogo de campos aparece imediatamente. O select de tabela permanece disponível caso o usuário queira trocar.
 
-- Ao escolher `table`, buscar o catálogo via `useQuery(['entity-fields', table], () => getEntityFieldCatalog({ data: { entity: table } }))`.
-- Renderizar duas seções:
-  1. **Campos conhecidos** — lista das colunas retornadas pelo catálogo, ordenadas pelo mesmo peso já usado (select → texto → data). Cada linha usa o controle certo:
-     - `text` → `TokenInput` (com pills de variáveis, mesmo padrão dos outros passos).
-     - `number` → `Input type="number"` com toggle "usar token" que troca para `TokenInput`.
-     - `date` → `Input type="date"` com toggle "usar token".
-     - `boolean` → `Switch` (grava `true`/`false`).
-     - `select` (com `options`) → `Select` shadcn; para FKs (`pipeline_id`, `company_id`, `assigned_user_id`, `owner_id`) o catálogo já resolve os rótulos legíveis; adicionar opção "usar token".
-     - Todos com botão para limpar/remover do payload.
-  2. **Campos avançados** (colapsável, oculto por padrão) — mantém o editor livre chave/valor atual, para colunas fora do catálogo (custom fields, colunas novas). Reusa o componente atual como fallback.
-- Skeleton enquanto carrega o catálogo; empty state se a tabela não tiver campos editáveis; error state com botão de retry.
-- Em `update_record` e `delete_record`, o campo "ID do registro" continua igual (já aceita tokens). Em `update_record`, só grava em `values` as colunas explicitamente preenchidas — não envia todos os campos do catálogo.
-- Em `create_record`, se a tabela tiver `owner_id`, seguir mostrando o aviso atual de auto-preenchimento e não expor `owner_id` no formulário.
-- Mantém a API do componente (`action`, `onChange`) — sem impacto no `WorkflowBuilder`.
+## Fora de escopo (registrado como follow-up)
 
-### 3. Sem migração
+- "Associar Projeto ao Serviço" (associação Projeto↔Serviço) exige uma associação declarada em `ENTITY_ASSOCIATIONS` para a ação `associate_records`. Hoje não existe esse mapeamento e o `services` não é uma entidade de trigger. Fica como pendência separada; se quiser, faço em plano dedicado depois deste.
 
-Não há mudança de banco. O `WORKFLOW_WRITABLE_TABLES` já existe e a engine já aceita esses valores.
+## Validação manual
 
-## Validações
-
-- `bun run tsgo` (typecheck).
-- Smoke manual em `/settings/workflows`: escolher cada tabela nova, verificar labels, tipos e que o payload salvo em `actions` continua no formato `{ table, values }`.
-
-## Fora do escopo
-
-- Custom fields (`custom_properties`) tipados — continuam acessíveis pela seção "Campos avançados" (texto livre).
-- Validação server-side de tipos além do que a engine já faz.
-- Redesign visual do resto do builder.
+1. `/settings/workflows` → editar workflow → adicionar passo → biblioteca deve mostrar módulos com entidades e as três operações.
+2. Escolher "Projetos → Projeto → Criar" cria passo com título "Criar registro (qualquer módulo)" e o `GenericRecordForm` abre com `table=projects` e campos do catálogo carregados.
+3. Escolher "Financeiro → Lançamento financeiro → Criar" abre form com campo `direction` (pagar/receber), `amount`, `due_at`, `legal_entity_id`, etc.
+4. Testar Editar/Excluir: form pede `target_id` com suporte a tokens.
+5. Verificar que categorias antigas (CRM, ATS, Criar registro, Comunicação, etc.) continuam funcionando inalteradas.
