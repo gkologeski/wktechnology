@@ -463,8 +463,8 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
   const catalog = data?.fields ?? [];
 
   const visibleFields = useMemo(
-    () => catalog.filter((f) => !hidden.has(f.name)),
-    [catalog, hidden],
+    () => sortFieldsByCanonicalOrder(entity, catalog.filter((f) => !hidden.has(f.name))),
+    [catalog, hidden, entity],
   );
 
   const fieldByName = useMemo(() => {
