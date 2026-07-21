@@ -64,6 +64,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
 import { ExtraFieldsEditor, FkPicker } from "./extra-fields-editor";
+import { GenericRecordForm } from "./generic-record-form";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
