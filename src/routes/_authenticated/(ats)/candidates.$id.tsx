@@ -16,8 +16,10 @@ import {
   Users,
   Flag,
   ShieldCheck,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { HireCandidateDialog } from "@/components/people/hire-candidate-dialog";
 import { Button } from "@/components/ui/button";
 import { RecordLayout } from "@/components/record/record-layout";
 import { ScoreBadge, SourceBadge } from "@/components/ats/ui/badges";
