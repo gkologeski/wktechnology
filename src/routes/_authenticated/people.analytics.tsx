@@ -353,6 +353,131 @@ function PeopleAnalyticsPage() {
           </div>
         </>
       )}
+
+      <Dialog open={syncOpen} onOpenChange={setSyncOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <RefreshCw className="h-4 w-4" /> Sincronizar folha com TechFinance
+            </DialogTitle>
+            <DialogDescription>
+              Cria/atualiza uma recorrência mensal (Pagar) por pessoa ativa com o
+              custo total (base + benefícios vigentes). Idempotente — pode rodar
+              quantas vezes precisar.
+            </DialogDescription>
+          </DialogHeader>
+
+          {sync.isPending && !syncResult ? (
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+          ) : syncResult ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <div className="rounded border p-2">
+                  <div className="text-lg font-semibold text-emerald-600">{syncResult.created}</div>
+                  <div className="text-[11px] text-muted-foreground">Criadas</div>
+                </div>
+                <div className="rounded border p-2">
+                  <div className="text-lg font-semibold text-primary">{syncResult.updated}</div>
+                  <div className="text-[11px] text-muted-foreground">Atualizadas</div>
+                </div>
+                <div className="rounded border p-2">
+                  <div className="text-lg font-semibold text-red-600">{syncResult.deactivated}</div>
+                  <div className="text-[11px] text-muted-foreground">Desativadas</div>
+                </div>
+                <div className="rounded border p-2">
+                  <div className="text-lg font-semibold text-muted-foreground">{syncResult.skipped}</div>
+                  <div className="text-[11px] text-muted-foreground">Sem alteração</div>
+                </div>
+              </div>
+              <div className="text-sm">
+                Total mensal a materializar:{" "}
+                <span className="font-semibold">
+                  {syncResult.total_monthly.toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: syncResult.currency,
+                  })}
+                </span>
+              </div>
+              <div className="max-h-64 overflow-auto rounded border">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50 sticky top-0">
+                    <tr className="text-left">
+                      <th className="p-2 font-medium">Pessoa</th>
+                      <th className="p-2 font-medium text-right">Valor</th>
+                      <th className="p-2 font-medium">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {syncResult.items.map((it) => (
+                      <tr key={it.person_id} className="border-t">
+                        <td className="p-2">{it.person_name}</td>
+                        <td className="p-2 text-right tabular-nums">
+                          {it.monthly_amount.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: syncResult.currency,
+                          })}
+                        </td>
+                        <td className="p-2">
+                          <Badge
+                            variant={
+                              it.action === "created"
+                                ? "default"
+                                : it.action === "updated"
+                                  ? "secondary"
+                                  : it.action === "deactivated"
+                                    ? "destructive"
+                                    : "outline"
+                            }
+                          >
+                            {it.action === "created"
+                              ? "Criar"
+                              : it.action === "updated"
+                                ? "Atualizar"
+                                : it.action === "deactivated"
+                                  ? "Desativar"
+                                  : "Sem alteração"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {!previewMode ? (
+                <div className="flex items-center gap-2 text-sm text-emerald-600">
+                  <CheckCircle2 className="h-4 w-4" /> Recorrências aplicadas em TechFinance.
+                </div>
+              ) : (
+                <div className="text-xs text-muted-foreground">
+                  Prévia — nada foi gravado ainda. Clique em "Aplicar" para materializar.
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setSyncOpen(false)}>
+              Fechar
+            </Button>
+            {previewMode && syncResult ? (
+              <Button
+                disabled={sync.isPending}
+                onClick={() => {
+                  setPreviewMode(false);
+                  sync.mutate(false);
+                }}
+              >
+                Aplicar
+              </Button>
+            ) : null}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
