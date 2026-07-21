@@ -109,7 +109,6 @@ function PeoplePage() {
       <PageHeader
         title="Pessoas"
         description="Gerencie prestadores, ex-candidatos contratados e o time interno."
-        icon={<Users className="h-5 w-5" />}
         actions={
           <Button onClick={() => setOpenNew(true)}>
             <Plus className="h-4 w-4 mr-2" /> Nova pessoa

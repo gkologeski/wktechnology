@@ -74,6 +74,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedServicesIndexRouteImport } from './routes/_authenticated/services.index'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedPeopleIndexRouteImport } from './routes/_authenticated/people.index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace.index'
 import { Route as AuthenticatedLandingPagesIndexRouteImport } from './routes/_authenticated/landing-pages.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
@@ -666,6 +667,12 @@ const AuthenticatedProjectsIndexRoute =
   AuthenticatedProjectsIndexRouteImport.update({
     id: '/projects/',
     path: '/projects/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPeopleIndexRoute =
+  AuthenticatedPeopleIndexRouteImport.update({
+    id: '/people/',
+    path: '/people/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMarketplaceIndexRoute =
@@ -2376,6 +2383,7 @@ export interface FileRoutesByFullPath {
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/people/': typeof AuthenticatedPeopleIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/services/': typeof AuthenticatedServicesIndexRoute
@@ -2694,6 +2702,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages': typeof AuthenticatedLandingPagesIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
+  '/people': typeof AuthenticatedPeopleIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/services': typeof AuthenticatedServicesIndexRoute
@@ -3019,6 +3028,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/_authenticated/people/': typeof AuthenticatedPeopleIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/services/': typeof AuthenticatedServicesIndexRoute
@@ -3344,6 +3354,7 @@ export interface FileRouteTypes {
     | '/integrations/'
     | '/landing-pages/'
     | '/marketplace/'
+    | '/people/'
     | '/projects/'
     | '/proposals/'
     | '/services/'
@@ -3662,6 +3673,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/landing-pages'
     | '/marketplace'
+    | '/people'
     | '/projects'
     | '/proposals'
     | '/services'
@@ -3986,6 +3998,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/'
     | '/_authenticated/landing-pages/'
     | '/_authenticated/marketplace/'
+    | '/_authenticated/people/'
     | '/_authenticated/projects/'
     | '/_authenticated/proposals/'
     | '/_authenticated/services/'
@@ -4666,6 +4679,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects/'
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/': {
+      id: '/_authenticated/people/'
+      path: '/people'
+      fullPath: '/people/'
+      preLoaderRoute: typeof AuthenticatedPeopleIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/marketplace/': {
@@ -6971,6 +6991,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHomeIndexRoute: typeof AuthenticatedHomeIndexRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
+  AuthenticatedPeopleIndexRoute: typeof AuthenticatedPeopleIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
   AuthenticatedServicesIndexRoute: typeof AuthenticatedServicesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
@@ -7087,6 +7108,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHomeIndexRoute: AuthenticatedHomeIndexRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
+  AuthenticatedPeopleIndexRoute: AuthenticatedPeopleIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
   AuthenticatedServicesIndexRoute: AuthenticatedServicesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
