@@ -53,6 +53,8 @@ import { PersonDocumentDialog } from "@/components/people/document-dialog";
 import { GoalsPanel } from "@/components/people/goals-panel";
 import { OneOnOnesPanel } from "@/components/people/one-on-ones-panel";
 import { ReviewsPanel } from "@/components/people/reviews-panel";
+import { PsychosocialPanel } from "@/components/people/psychosocial-panel";
+import { IncidentsPanel } from "@/components/people/incidents-panel";
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
@@ -229,6 +231,8 @@ function PersonForm({
           <TabsTrigger value="goals">Metas</TabsTrigger>
           <TabsTrigger value="one_on_ones">1:1s</TabsTrigger>
           <TabsTrigger value="reviews">Avaliações</TabsTrigger>
+          {canViewSensitive ? <TabsTrigger value="psychosocial">Psicossocial</TabsTrigger> : null}
+          {canViewSensitive ? <TabsTrigger value="incidents">Incidentes</TabsTrigger> : null}
           <TabsTrigger value="documents">Documentos</TabsTrigger>
           <TabsTrigger value="timeline">Histórico</TabsTrigger>
         </TabsList>
@@ -388,6 +392,19 @@ function PersonForm({
         <TabsContent value="reviews" className="pt-4">
           <ReviewsPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
+
+        {canViewSensitive ? (
+          <TabsContent value="psychosocial" className="pt-4">
+            <PsychosocialPanel personId={p.id} canWrite={canWrite} />
+          </TabsContent>
+        ) : null}
+
+        {canViewSensitive ? (
+          <TabsContent value="incidents" className="pt-4">
+            <IncidentsPanel personId={p.id} canWrite={canWrite} />
+          </TabsContent>
+        ) : null}
+
 
         <TabsContent value="documents" className="space-y-4 pt-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
