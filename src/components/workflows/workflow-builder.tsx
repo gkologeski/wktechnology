@@ -64,6 +64,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
 import { ExtraFieldsEditor, FkPicker } from "./extra-fields-editor";
+import { GenericRecordForm } from "./generic-record-form";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
@@ -163,6 +164,9 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   send_slack: Hash,
   send_teams: MessageSquare,
   approval_step: CheckSquare,
+  create_record: PlusIcon,
+  update_record: Sparkles,
+  delete_record: Eraser,
 };
 
 
@@ -234,6 +238,12 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, webhook_url: "https://outlook.office.com/webhook/...", text: "Notificação de workflow: {{name}}" };
     case "approval_step":
       return { type, title: "Aprovar {{name}}", note: "", halt_on_reject: true };
+    case "create_record":
+      return { type, table: "activities", values: {} };
+    case "update_record":
+      return { type, table: "activities", target_id: "{{id}}", values: {} };
+    case "delete_record":
+      return { type, table: "activities", target_id: "{{id}}" };
   }
 }
 
@@ -2602,6 +2612,10 @@ function StepConfigForm({
       return <SendTeamsForm action={action} onChange={onChange} />;
     case "approval_step":
       return <ApprovalStepForm action={action} onChange={onChange} />;
+    case "create_record":
+    case "update_record":
+    case "delete_record":
+      return <GenericRecordForm action={action} onChange={onChange} />;
     default: {
       const _exhaustive: never = action;
       void _exhaustive;

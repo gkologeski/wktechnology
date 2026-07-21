@@ -7,7 +7,52 @@ export type WorkflowEntity =
   | "ats_jobs"
   | "ats_candidates"
   | "ats_applications"
-  | "ats_interviews";
+  | "ats_interviews"
+  // Cross-módulo (Fase workflows-erp)
+  | "projects"
+  | "project_tasks"
+  | "project_milestones"
+  | "contracts"
+  | "financial_entries"
+  | "bank_payments"
+  | "quotes"
+  | "proposals"
+  | "products"
+  | "services"
+  | "recurring_plans"
+  | "subscription_invoices"
+  | "customer_invoices";
+
+/**
+ * Tabelas permitidas em ações genéricas create_record / update_record / delete_record.
+ * Precisa bater 1:1 com as policies RLS e triggers do engine.
+ */
+export const WORKFLOW_WRITABLE_TABLES = [
+  "leads",
+  "contacts",
+  "companies",
+  "deals",
+  "tickets",
+  "ats_jobs",
+  "ats_candidates",
+  "ats_applications",
+  "ats_interviews",
+  "activities",
+  "projects",
+  "project_tasks",
+  "project_milestones",
+  "contracts",
+  "financial_entries",
+  "bank_payments",
+  "quotes",
+  "proposals",
+  "products",
+  "services",
+  "recurring_plans",
+  "subscription_invoices",
+  "customer_invoices",
+] as const;
+export type WorkflowWritableTable = (typeof WORKFLOW_WRITABLE_TABLES)[number];
 
 export type WorkflowEventType = "created" | "updated" | "stage_changed";
 
@@ -274,6 +319,24 @@ export type WorkflowAction =
       approver_user_id?: string;
       /** Se true, ao rejeitar interrompe a run com erro; se false, apenas ignora o restante. */
       halt_on_reject?: boolean;
+    }
+  // Ações genéricas cross-módulo
+  | {
+      type: "create_record";
+      table: WorkflowWritableTable;
+      values: Record<string, unknown>;
+      owner_id?: string;
+    }
+  | {
+      type: "update_record";
+      table: WorkflowWritableTable;
+      target_id: string;
+      values: Record<string, unknown>;
+    }
+  | {
+      type: "delete_record";
+      table: WorkflowWritableTable;
+      target_id: string;
     };
 
 
@@ -290,15 +353,40 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   ats_candidates: "Candidatos (ATS)",
   ats_applications: "Aplicações (ATS)",
   ats_interviews: "Entrevistas (ATS)",
+  projects: "Projetos",
+  project_tasks: "Tarefas de projeto",
+  project_milestones: "Marcos de projeto",
+  contracts: "Contratos",
+  financial_entries: "Lançamentos financeiros",
+  bank_payments: "Pagamentos bancários",
+  quotes: "Cotações",
+  proposals: "Propostas",
+  products: "Produtos",
+  services: "Serviços",
+  recurring_plans: "Planos recorrentes",
+  subscription_invoices: "Faturas de assinatura",
+  customer_invoices: "Faturas de clientes",
 };
 
 // Grupos por módulo (para dropdown do builder).
 export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }> = [
-  { label: "Vendas", entities: ["leads", "contacts", "companies", "deals"] },
+  { label: "Vendas", entities: ["leads", "contacts", "companies", "deals", "quotes", "proposals"] },
   { label: "Atendimento", entities: ["tickets"] },
   {
     label: "Recrutamento",
     entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews"],
+  },
+  { label: "Projetos", entities: ["projects", "project_tasks", "project_milestones"] },
+  { label: "Contratos e catálogo", entities: ["contracts", "products", "services"] },
+  {
+    label: "Financeiro",
+    entities: [
+      "financial_entries",
+      "bank_payments",
+      "customer_invoices",
+      "subscription_invoices",
+      "recurring_plans",
+    ],
   },
 ];
 
@@ -342,6 +430,9 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   send_slack: "Enviar mensagem no Slack",
   send_teams: "Enviar mensagem no Teams",
   approval_step: "Aprovação humana",
+  create_record: "Criar registro (qualquer módulo)",
+  update_record: "Atualizar registro (qualquer módulo)",
+  delete_record: "Excluir registro (qualquer módulo)",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
@@ -496,6 +587,31 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "duration_min",
     "stage_value",
   ],
+  projects: ["name", "status", "priority", "company_id", "deal_id", "start_date", "end_date", "budget", "owner_id"],
+  project_tasks: ["name", "status_id", "priority", "assignee_id", "project_id", "due_date"],
+  project_milestones: ["name", "status", "due_date", "project_id"],
+  contracts: ["title", "status", "value", "currency", "start_date", "end_date", "company_id", "deal_id", "owner_id"],
+  financial_entries: [
+    "description",
+    "kind",
+    "status",
+    "amount",
+    "due_date",
+    "paid_at",
+    "category_id",
+    "cost_center_id",
+    "legal_entity_id",
+    "bank_account_id",
+    "owner_id",
+  ],
+  bank_payments: ["description", "status", "amount", "due_date", "paid_at", "bank_account_id"],
+  quotes: ["title", "status", "total", "currency", "deal_id", "company_id", "valid_until", "owner_id"],
+  proposals: ["title", "status", "value", "deal_id", "company_id", "sent_at", "accepted_at", "owner_id"],
+  products: ["name", "sku", "price", "cost", "active", "category", "owner_id"],
+  services: ["name", "unit_price", "duration_min", "active", "category", "owner_id"],
+  recurring_plans: ["name", "amount", "currency", "interval", "active", "owner_id"],
+  subscription_invoices: ["number", "status", "amount", "due_date", "paid_at", "subscription_id"],
+  customer_invoices: ["number", "status", "amount", "due_date", "paid_at", "company_id"],
 };
 
 export const FILTER_OPS: Array<{ value: FilterOp; label: string }> = [

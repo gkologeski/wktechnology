@@ -13,6 +13,45 @@ export const EntityEnum = z.enum([
   "ats_candidates",
   "ats_applications",
   "ats_interviews",
+  "projects",
+  "project_tasks",
+  "project_milestones",
+  "contracts",
+  "financial_entries",
+  "bank_payments",
+  "quotes",
+  "proposals",
+  "products",
+  "services",
+  "recurring_plans",
+  "subscription_invoices",
+  "customer_invoices",
+]);
+
+const WritableTableEnum = z.enum([
+  "leads",
+  "contacts",
+  "companies",
+  "deals",
+  "tickets",
+  "ats_jobs",
+  "ats_candidates",
+  "ats_applications",
+  "ats_interviews",
+  "activities",
+  "projects",
+  "project_tasks",
+  "project_milestones",
+  "contracts",
+  "financial_entries",
+  "bank_payments",
+  "quotes",
+  "proposals",
+  "products",
+  "services",
+  "recurring_plans",
+  "subscription_invoices",
+  "customer_invoices",
 ]);
 
 export const FilterSchema = z.object({
@@ -230,6 +269,26 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     note: z.string().max(2000).optional(),
     approver_user_id: z.string().uuid().optional(),
     halt_on_reject: z.boolean().optional(),
+  }),
+  // Ações genéricas cross-módulo — funcionam sobre qualquer tabela da whitelist.
+  z.object({
+    type: z.literal("create_record"),
+    table: WritableTableEnum,
+    values: z.record(z.string(), z.unknown()),
+    /** Se omitido, usa ctx.ownerId no campo owner_id (quando a tabela tem). */
+    owner_id: z.string().uuid().optional(),
+  }),
+  z.object({
+    type: z.literal("update_record"),
+    table: WritableTableEnum,
+    /** ID do registro alvo. Aceita tokens (ex: "{{id}}" no próprio registro). */
+    target_id: z.string().min(1).max(200),
+    values: z.record(z.string(), z.unknown()),
+  }),
+  z.object({
+    type: z.literal("delete_record"),
+    table: WritableTableEnum,
+    target_id: z.string().min(1).max(200),
   }),
 ]);
 
