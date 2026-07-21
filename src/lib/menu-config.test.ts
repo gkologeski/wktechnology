@@ -41,6 +41,7 @@ const SETTINGS_MANAGER_PLUS = [
   "/settings/email-templates",
   "/settings/macros",
   "/settings/kb",
+  "/settings/onboarding-templates",
 ];
 const SETTINGS_ADMIN_ONLY = [
   "/settings/branding",
