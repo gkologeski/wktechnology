@@ -341,6 +341,7 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         name: r.column_name,
         label: toLabel(r.column_name),
         type,
+        required: r.is_nullable === "NO" && !r.has_default,
       };
 
       // Override: stage / stage_id usam catálogo do pipeline, não distinct values.
