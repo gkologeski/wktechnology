@@ -163,6 +163,9 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   send_slack: Hash,
   send_teams: MessageSquare,
   approval_step: CheckSquare,
+  create_record: PlusIcon,
+  update_record: Sparkles,
+  delete_record: Eraser,
 };
 
 
