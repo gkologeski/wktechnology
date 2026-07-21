@@ -122,27 +122,21 @@ export type ReviewRow = {
 // ============================================================
 // Helpers
 // ============================================================
-async function resolveOwnerId(
-  supabase: {
-    from: (
-      t: string,
-    ) => {
-      select: (c: string) => {
-        eq: (
-          k: string,
-          v: string,
-        ) => { maybeSingle: () => Promise<{ data: unknown; error: unknown }> };
+type MinimalClient = { from: (t: string) => unknown };
+
+async function resolveOwnerId(supabase: MinimalClient, userId: string): Promise<string> {
+  const q = supabase.from("profiles") as {
+    select: (c: string) => {
+      eq: (
+        k: string,
+        v: string,
+      ) => {
+        maybeSingle: () => Promise<{ data: { active_workspace_id: string | null } | null }>;
       };
     };
-  },
-  userId: string,
-): Promise<string> {
-  const { data } = await supabase
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", userId)
-    .maybeSingle();
-  const ownerId = (data as { active_workspace_id: string | null } | null)?.active_workspace_id;
+  };
+  const { data } = await q.select("active_workspace_id").eq("id", userId).maybeSingle();
+  const ownerId = data?.active_workspace_id;
   if (!ownerId) throw new Error("Workspace ativo não encontrado");
   return ownerId;
 }
