@@ -59,7 +59,7 @@ export const listWorkflowSubscriptions = createServerFn({ method: "POST" })
       .order("event_pattern", { ascending: true })
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
-    return { items: (data ?? []) as WorkflowSubscriptionRow[] };
+    return { items: (data ?? []) as unknown as WorkflowSubscriptionRow[] };
   });
 
 export const saveWorkflowSubscription = createServerFn({ method: "POST" })
@@ -83,7 +83,7 @@ export const saveWorkflowSubscription = createServerFn({ method: "POST" })
       .select("*")
       .single();
     if (error) throw new Error(error.message);
-    return { item: row as WorkflowSubscriptionRow };
+    return { item: row as unknown as WorkflowSubscriptionRow };
   });
 
 export const toggleWorkflowSubscription = createServerFn({ method: "POST" })
