@@ -177,10 +177,24 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
           "ats_candidates",
           "ats_applications",
           "ats_interviews",
+          "projects",
+          "project_tasks",
+          "project_milestones",
+          "contracts",
+          "financial_entries",
+          "bank_payments",
+          "quotes",
+          "proposals",
+          "products",
+          "services",
+          "recurring_plans",
+          "subscription_invoices",
+          "customer_invoices",
         ]),
 
       })
       .parse(input),
+
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
