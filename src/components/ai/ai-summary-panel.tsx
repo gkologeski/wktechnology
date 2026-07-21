@@ -178,7 +178,7 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant="outline" className="text-[10px] uppercase">
-                  {r.kind === "call" ? "Calls" : "Conversa"}
+                  {KIND_LABEL[r.kind] ?? r.kind}
                 </Badge>
                 {r.sentiment && (
                   <Badge
