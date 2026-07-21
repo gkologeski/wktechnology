@@ -172,6 +172,7 @@ import { Route as AuthenticatedProjectsTasksRouteImport } from './routes/_authen
 import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authenticated/projects.spaces'
 import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authenticated/projects.my-work'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedPeopleOnboardingTemplatesRouteImport } from './routes/_authenticated/people.onboarding-templates'
 import { Route as AuthenticatedPeopleDocumentsRouteImport } from './routes/_authenticated/people.documents'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
@@ -1249,6 +1250,12 @@ const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   path: '/projects/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPeopleOnboardingTemplatesRoute =
+  AuthenticatedPeopleOnboardingTemplatesRouteImport.update({
+    id: '/people/onboarding-templates',
+    path: '/people/onboarding-templates',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPeopleDocumentsRoute =
   AuthenticatedPeopleDocumentsRouteImport.update({
     id: '/people/documents',
@@ -2301,6 +2308,7 @@ export interface FileRoutesByFullPath {
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -2623,6 +2631,7 @@ export interface FileRoutesByTo {
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -2950,6 +2959,7 @@ export interface FileRoutesById {
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/_authenticated/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/_authenticated/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -3278,6 +3288,7 @@ export interface FileRouteTypes {
     | '/marketplace/$slug'
     | '/people/$id'
     | '/people/documents'
+    | '/people/onboarding-templates'
     | '/projects/$id'
     | '/projects/my-work'
     | '/projects/spaces'
@@ -3600,6 +3611,7 @@ export interface FileRouteTypes {
     | '/marketplace/$slug'
     | '/people/$id'
     | '/people/documents'
+    | '/people/onboarding-templates'
     | '/projects/$id'
     | '/projects/my-work'
     | '/projects/spaces'
@@ -3926,6 +3938,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketplace/$slug'
     | '/_authenticated/people/$id'
     | '/_authenticated/people/documents'
+    | '/_authenticated/people/onboarding-templates'
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/my-work'
     | '/_authenticated/projects/spaces'
@@ -5390,6 +5403,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$id'
       fullPath: '/projects/$id'
       preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/onboarding-templates': {
+      id: '/_authenticated/people/onboarding-templates'
+      path: '/people/onboarding-templates'
+      fullPath: '/people/onboarding-templates'
+      preLoaderRoute: typeof AuthenticatedPeopleOnboardingTemplatesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/documents': {
@@ -7017,6 +7037,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedPeopleDocumentsRoute: typeof AuthenticatedPeopleDocumentsRoute
+  AuthenticatedPeopleOnboardingTemplatesRoute: typeof AuthenticatedPeopleOnboardingTemplatesRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedProjectsMyWorkRoute: typeof AuthenticatedProjectsMyWorkRoute
   AuthenticatedProjectsSpacesRoute: typeof AuthenticatedProjectsSpacesRoute
@@ -7136,6 +7157,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedPeopleDocumentsRoute: AuthenticatedPeopleDocumentsRoute,
+  AuthenticatedPeopleOnboardingTemplatesRoute:
+    AuthenticatedPeopleOnboardingTemplatesRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedProjectsMyWorkRoute: AuthenticatedProjectsMyWorkRoute,
   AuthenticatedProjectsSpacesRoute: AuthenticatedProjectsSpacesRoute,
