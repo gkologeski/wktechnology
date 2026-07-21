@@ -35,6 +35,7 @@ const MODULE_PATH_MATCHERS: Array<{ id: ModuleId; prefixes: string[] }> = [
   { id: "services", prefixes: ["/services"] },
   { id: "projects", prefixes: ["/projects"] },
   { id: "finance", prefixes: ["/finance"] },
+  { id: "people", prefixes: ["/people"] },
 ];
 
 export function detectModuleFromPath(pathname: string): ModuleId | null {
@@ -54,7 +55,7 @@ export function detectModuleFromPath(pathname: string): ModuleId | null {
 // ────────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "erp.activeModule";
-const VALID_IDS: readonly ModuleId[] = ["crm", "ats", "contracts", "services", "projects", "finance"];
+const VALID_IDS: readonly ModuleId[] = ["crm", "ats", "contracts", "services", "projects", "finance", "people"];
 
 function isValidModuleId(v: unknown): v is ModuleId {
   return typeof v === "string" && (VALID_IDS as readonly string[]).includes(v);

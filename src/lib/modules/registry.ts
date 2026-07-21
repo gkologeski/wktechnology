@@ -9,6 +9,7 @@ import {
   Users,
   LayoutDashboard,
   UserPlus,
+  UserCog,
   GitBranch,
   Calendar as CalendarIcon,
   BarChart3,
@@ -31,7 +32,8 @@ export type ModuleId =
   | "contracts"
   | "services"
   | "projects"
-  | "finance";
+  | "finance"
+  | "people";
 
 export type ModuleMenuItem = {
   title: string;
@@ -141,6 +143,20 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
       { title: "Visão geral", url: "/finance", icon: Wallet },
       { title: "A receber", url: "/finance/receivable", icon: ArrowDownCircle },
       { title: "A pagar", url: "/finance/payable", icon: ArrowUpCircle },
+    ],
+  },
+  people: {
+    id: "people",
+    name: "Pessoas",
+    productName: "TechPeople",
+    shortDescription: "Gestão de prestadores e time",
+    defaultColor: "#059669",
+    icon: UserCog,
+    hostSuffix: "crm",
+    defaultRoute: "/people",
+    menu: [
+      { title: "Pessoas", url: "/people", icon: Users },
+      { title: "Meu time", url: "/people/my-team", icon: UserCog },
     ],
   },
 };

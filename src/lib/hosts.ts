@@ -21,6 +21,7 @@ export const MODULE_HOSTS: Record<ModuleId, string> = {
   services: CANONICAL_HOST,
   projects: CANONICAL_HOST,
   finance: CANONICAL_HOST,
+  people: CANONICAL_HOST,
 };
 
 export type HostKind = "workspace" | ModuleId | "preview";

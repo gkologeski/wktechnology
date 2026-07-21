@@ -9578,6 +9578,229 @@ export type Database = {
           },
         ]
       }
+      people: {
+        Row: {
+          archived: boolean
+          candidate_id: string | null
+          cnpj: string | null
+          cost_hour: number | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          email: string | null
+          employment_type: Database["public"]["Enums"]["people_employment_type"]
+          full_name: string
+          hire_date: string | null
+          id: string
+          legal_entity_name: string | null
+          location: string | null
+          manager_id: string | null
+          monthly_cost: number | null
+          notes: string | null
+          owner_id: string
+          personal_doc: Json
+          phone: string | null
+          photo_url: string | null
+          preferred_name: string | null
+          profile_id: string | null
+          role_title: string | null
+          seniority: string | null
+          status: Database["public"]["Enums"]["people_status"]
+          tags: string[]
+          termination_date: string | null
+          timezone: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived?: boolean
+          candidate_id?: string | null
+          cnpj?: string | null
+          cost_hour?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          email?: string | null
+          employment_type?: Database["public"]["Enums"]["people_employment_type"]
+          full_name: string
+          hire_date?: string | null
+          id?: string
+          legal_entity_name?: string | null
+          location?: string | null
+          manager_id?: string | null
+          monthly_cost?: number | null
+          notes?: string | null
+          owner_id: string
+          personal_doc?: Json
+          phone?: string | null
+          photo_url?: string | null
+          preferred_name?: string | null
+          profile_id?: string | null
+          role_title?: string | null
+          seniority?: string | null
+          status?: Database["public"]["Enums"]["people_status"]
+          tags?: string[]
+          termination_date?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived?: boolean
+          candidate_id?: string | null
+          cnpj?: string | null
+          cost_hour?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          email?: string | null
+          employment_type?: Database["public"]["Enums"]["people_employment_type"]
+          full_name?: string
+          hire_date?: string | null
+          id?: string
+          legal_entity_name?: string | null
+          location?: string | null
+          manager_id?: string | null
+          monthly_cost?: number | null
+          notes?: string | null
+          owner_id?: string
+          personal_doc?: Json
+          phone?: string | null
+          photo_url?: string | null
+          preferred_name?: string | null
+          profile_id?: string | null
+          role_title?: string | null
+          seniority?: string | null
+          status?: Database["public"]["Enums"]["people_status"]
+          tags?: string[]
+          termination_date?: string | null
+          timezone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_documents: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          doc_number: string | null
+          doc_type: string
+          expires_at: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          is_sensitive: boolean
+          issued_at: string | null
+          notes: string | null
+          owner_id: string
+          person_id: string
+          status: Database["public"]["Enums"]["people_doc_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          doc_number?: string | null
+          doc_type: string
+          expires_at?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_sensitive?: boolean
+          issued_at?: string | null
+          notes?: string | null
+          owner_id: string
+          person_id: string
+          status?: Database["public"]["Enums"]["people_doc_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          doc_number?: string | null
+          doc_type?: string
+          expires_at?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_sensitive?: boolean
+          issued_at?: string | null
+          notes?: string | null
+          owner_id?: string
+          person_id?: string
+          status?: Database["public"]["Enums"]["people_doc_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_documents_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          description: string | null
+          event_type: string
+          id: string
+          metadata: Json
+          owner_id: string
+          person_id: string
+          title: string
+          visible_to_person: boolean
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          description?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json
+          owner_id: string
+          person_id: string
+          title: string
+          visible_to_person?: boolean
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          description?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json
+          owner_id?: string
+          person_id?: string
+          title?: string
+          visible_to_person?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_events_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permission_set_items: {
         Row: {
           created_at: string
@@ -15989,6 +16212,12 @@ export type Database = {
         Returns: undefined
       }
       can_access_ats_job: { Args: { _job_id: string }; Returns: boolean }
+      can_manage_person: { Args: { _person_id: string }; Returns: boolean }
+      can_view_person: { Args: { _person_id: string }; Returns: boolean }
+      can_view_person_sensitive: {
+        Args: { _person_id: string }
+        Returns: boolean
+      }
       can_write_owner: {
         Args: { _owner: string; _user: string }
         Returns: boolean
@@ -16355,6 +16584,14 @@ export type Database = {
       job_kind: "import" | "enrich" | "export" | "sync"
       job_status: "queued" | "running" | "done" | "failed" | "partial"
       lead_status: "new" | "contacted" | "qualified" | "disqualified"
+      people_doc_status: "valid" | "expiring" | "expired" | "missing"
+      people_employment_type: "pj" | "clt" | "contractor" | "intern" | "other"
+      people_status:
+        | "active"
+        | "bench"
+        | "on_leave"
+        | "offboarding"
+        | "terminated"
       perm_action:
         | "view"
         | "create"
@@ -16646,6 +16883,15 @@ export const Constants = {
       job_kind: ["import", "enrich", "export", "sync"],
       job_status: ["queued", "running", "done", "failed", "partial"],
       lead_status: ["new", "contacted", "qualified", "disqualified"],
+      people_doc_status: ["valid", "expiring", "expired", "missing"],
+      people_employment_type: ["pj", "clt", "contractor", "intern", "other"],
+      people_status: [
+        "active",
+        "bench",
+        "on_leave",
+        "offboarding",
+        "terminated",
+      ],
       perm_action: [
         "view",
         "create",

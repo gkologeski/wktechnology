@@ -74,6 +74,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedServicesIndexRouteImport } from './routes/_authenticated/services.index'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
+import { Route as AuthenticatedPeopleIndexRouteImport } from './routes/_authenticated/people.index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace.index'
 import { Route as AuthenticatedLandingPagesIndexRouteImport } from './routes/_authenticated/landing-pages.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
@@ -171,6 +172,7 @@ import { Route as AuthenticatedProjectsTasksRouteImport } from './routes/_authen
 import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authenticated/projects.spaces'
 import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authenticated/projects.my-work'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
@@ -666,6 +668,12 @@ const AuthenticatedProjectsIndexRoute =
   AuthenticatedProjectsIndexRouteImport.update({
     id: '/projects/',
     path: '/projects/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPeopleIndexRoute =
+  AuthenticatedPeopleIndexRouteImport.update({
+    id: '/people/',
+    path: '/people/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMarketplaceIndexRoute =
@@ -1238,6 +1246,11 @@ const AuthenticatedProjectsMyWorkRoute =
 const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   id: '/projects/$id',
   path: '/projects/$id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
+  id: '/people/$id',
+  path: '/people/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedMarketplaceSlugRoute =
@@ -2279,6 +2292,7 @@ export interface FileRoutesByFullPath {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
+  '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -2376,6 +2390,7 @@ export interface FileRoutesByFullPath {
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/people/': typeof AuthenticatedPeopleIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/services/': typeof AuthenticatedServicesIndexRoute
@@ -2598,6 +2613,7 @@ export interface FileRoutesByTo {
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
+  '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -2694,6 +2710,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages': typeof AuthenticatedLandingPagesIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
+  '/people': typeof AuthenticatedPeopleIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
   '/services': typeof AuthenticatedServicesIndexRoute
@@ -2922,6 +2939,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
+  '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/_authenticated/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -3019,6 +3037,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/_authenticated/people/': typeof AuthenticatedPeopleIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
   '/_authenticated/services/': typeof AuthenticatedServicesIndexRoute
@@ -3247,6 +3266,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
+    | '/people/$id'
     | '/projects/$id'
     | '/projects/my-work'
     | '/projects/spaces'
@@ -3344,6 +3364,7 @@ export interface FileRouteTypes {
     | '/integrations/'
     | '/landing-pages/'
     | '/marketplace/'
+    | '/people/'
     | '/projects/'
     | '/proposals/'
     | '/services/'
@@ -3566,6 +3587,7 @@ export interface FileRouteTypes {
     | '/leads/$id'
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
+    | '/people/$id'
     | '/projects/$id'
     | '/projects/my-work'
     | '/projects/spaces'
@@ -3662,6 +3684,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/landing-pages'
     | '/marketplace'
+    | '/people'
     | '/projects'
     | '/proposals'
     | '/services'
@@ -3889,6 +3912,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/marketplace/$slug'
+    | '/_authenticated/people/$id'
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/my-work'
     | '/_authenticated/projects/spaces'
@@ -3986,6 +4010,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/'
     | '/_authenticated/landing-pages/'
     | '/_authenticated/marketplace/'
+    | '/_authenticated/people/'
     | '/_authenticated/projects/'
     | '/_authenticated/proposals/'
     | '/_authenticated/services/'
@@ -4668,6 +4693,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/people/': {
+      id: '/_authenticated/people/'
+      path: '/people'
+      fullPath: '/people/'
+      preLoaderRoute: typeof AuthenticatedPeopleIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/marketplace/': {
       id: '/_authenticated/marketplace/'
       path: '/'
@@ -5345,6 +5377,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$id'
       fullPath: '/projects/$id'
       preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/$id': {
+      id: '/_authenticated/people/$id'
+      path: '/people/$id'
+      fullPath: '/people/$id'
+      preLoaderRoute: typeof AuthenticatedPeopleIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/marketplace/$slug': {
@@ -6956,6 +6995,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
+  AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedProjectsMyWorkRoute: typeof AuthenticatedProjectsMyWorkRoute
   AuthenticatedProjectsSpacesRoute: typeof AuthenticatedProjectsSpacesRoute
@@ -6971,6 +7011,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHomeIndexRoute: typeof AuthenticatedHomeIndexRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
+  AuthenticatedPeopleIndexRoute: typeof AuthenticatedPeopleIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
   AuthenticatedServicesIndexRoute: typeof AuthenticatedServicesIndexRoute
   AuthenticatedWorkspaceIndexRoute: typeof AuthenticatedWorkspaceIndexRoute
@@ -7072,6 +7113,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
+  AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedProjectsMyWorkRoute: AuthenticatedProjectsMyWorkRoute,
   AuthenticatedProjectsSpacesRoute: AuthenticatedProjectsSpacesRoute,
@@ -7087,6 +7129,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHomeIndexRoute: AuthenticatedHomeIndexRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
+  AuthenticatedPeopleIndexRoute: AuthenticatedPeopleIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
   AuthenticatedServicesIndexRoute: AuthenticatedServicesIndexRoute,
   AuthenticatedWorkspaceIndexRoute: AuthenticatedWorkspaceIndexRoute,
