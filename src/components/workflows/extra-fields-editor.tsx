@@ -647,6 +647,20 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
 
       {open && (
         <div className="space-y-2 border-t border-border/60 px-3 py-2.5">
+          {errorCount > 0 && (
+            <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[11px] text-destructive">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <div className="space-y-0.5">
+                <p className="font-medium">
+                  {errorCount} campo{errorCount > 1 ? "s" : ""} com pendência antes de salvar.
+                </p>
+                <p className="text-destructive/80">
+                  Revise obrigatórios (*) e valores inconsistentes destacados abaixo.
+                </p>
+              </div>
+            </div>
+          )}
+
           {error && (
             <p className="text-xs text-destructive">
               Não foi possível carregar os campos desta entidade.
