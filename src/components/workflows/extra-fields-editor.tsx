@@ -426,8 +426,8 @@ export function FkPicker({
 
 export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, title, defaultOpen }: Props) {
   const [open, setOpen] = useState(Boolean(defaultOpen));
+  const [showEmpty, setShowEmpty] = useState(false);
 
-  const [pickerOpen, setPickerOpen] = useState(false);
   const fetchCatalog = useServerFn(getEntityFieldCatalog);
   const { data, isLoading, error } = useQuery({
     queryKey: ["wf-entity-fields-full", entity],
@@ -437,44 +437,80 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
 
   const hidden = useMemo(() => new Set(hiddenKeys ?? []), [hiddenKeys]);
   const catalog = data?.fields ?? [];
-  const byName = useMemo(() => {
-    const m = new Map<string, EntityFieldDef>();
-    for (const f of catalog) m.set(f.name, f);
-    return m;
-  }, [catalog]);
 
-  const usedKeys = Object.keys(extraFields ?? {});
-  const availableFields = catalog.filter(
-    (f) => !hidden.has(f.name) && !usedKeys.includes(f.name),
+  const visibleFields = useMemo(
+    () => catalog.filter((f) => !hidden.has(f.name)),
+    [catalog, hidden],
   );
 
-  const usedEntries: Array<[string, EntityFieldDef | undefined, unknown]> = usedKeys.map(
-    (k) => [k, byName.get(k), (extraFields as Record<string, unknown>)[k]],
+  const values = (extraFields ?? {}) as Record<string, unknown>;
+  const hasValue = (k: string) => {
+    if (!(k in values)) return false;
+    const v = values[k];
+    if (v === null || v === undefined || v === "") return false;
+    if (typeof v === "object" && !Array.isArray(v) && Object.keys(v as object).length === 0)
+      return false;
+    return true;
+  };
+
+  const filled = visibleFields.filter((f) => hasValue(f.name));
+  const empty = visibleFields.filter((f) => !hasValue(f.name));
+  const orphanKeys = Object.keys(values).filter(
+    (k) => !hidden.has(k) && !visibleFields.some((f) => f.name === k),
   );
+
+  const filledCount = filled.length + orphanKeys.length;
 
   function setKey(key: string, value: unknown) {
-    const next: Record<string, unknown> = { ...(extraFields ?? {}) };
-    if (value === null || value === undefined) {
-      // Preservar chave com null para permitir limpar campo explicitamente
-      next[key] = null;
+    const next: Record<string, unknown> = { ...values };
+    if (value === null || value === undefined || value === "") {
+      delete next[key];
     } else {
       next[key] = value;
     }
-    onChange(next);
+    onChange(Object.keys(next).length ? next : undefined);
   }
 
   function removeKey(key: string) {
-    const next: Record<string, unknown> = { ...(extraFields ?? {}) };
+    const next: Record<string, unknown> = { ...values };
     delete next[key];
     onChange(Object.keys(next).length ? next : undefined);
   }
 
-  function addField(name: string) {
-    const field = byName.get(name);
-    const initial =
-      field?.type === "boolean" ? false : field?.name === "custom_fields" ? {} : "";
-    setKey(name, initial);
-    setPickerOpen(false);
+  function renderRow(field: EntityFieldDef | undefined, key: string, value: unknown) {
+    return (
+      <div
+        key={key}
+        className="space-y-1.5 rounded border border-border/40 bg-background p-2"
+      >
+        <div className="flex items-start justify-between gap-2">
+          <Label className="text-xs font-medium">{field?.label ?? key}</Label>
+          {hasValue(key) && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 -mt-1 -mr-1"
+              aria-label={`Limpar ${field?.label ?? key}`}
+              onClick={() => removeKey(key)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+        <div>
+          {field ? (
+            <FieldInput field={field} value={value} onChange={(v) => setKey(key, v)} />
+          ) : (
+            <Input
+              value={typeof value === "string" ? value : value == null ? "" : String(value)}
+              onChange={(e) => setKey(key, e.target.value)}
+              placeholder="valor"
+            />
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -488,15 +524,14 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
         <span className="flex items-center gap-1.5">
           {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
           {title ?? "Mais campos"}
-
-          {usedKeys.length > 0 && (
+          {filledCount > 0 && (
             <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-              {usedKeys.length}
+              {filledCount}
             </span>
           )}
         </span>
         <span className="text-[10px] text-muted-foreground">
-          {isLoading ? "carregando..." : `${catalog.length} disponíveis`}
+          {isLoading ? "carregando..." : `${visibleFields.length} campos`}
         </span>
       </button>
 
@@ -507,80 +542,52 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
               Não foi possível carregar os campos desta entidade.
             </p>
           )}
-          {usedEntries.length === 0 && !error && (
+
+          {isLoading && !error && (
+            <p className="text-xs text-muted-foreground">Carregando campos...</p>
+          )}
+
+          {!isLoading && !error && visibleFields.length === 0 && orphanKeys.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              Nenhum campo extra configurado. Use tokens <code className="text-[11px]">{`{{campo}}`}</code>{" "}
-              para reutilizar valores do registro que disparou o workflow.
+              Nenhum campo disponível para esta entidade.
             </p>
           )}
-          {usedEntries.map(([key, field, value]) => (
-            <div
-              key={key}
-              className="space-y-1.5 rounded border border-border/40 bg-background p-2"
-            >
-              <div className="flex items-start justify-between gap-2">
-                <Label className="text-xs font-medium">{field?.label ?? key}</Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 -mt-1 -mr-1"
-                  aria-label={`Remover ${field?.label ?? key}`}
-                  onClick={() => removeKey(key)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              <div>
-                {field ? (
-                  <FieldInput field={field} value={value} onChange={(v) => setKey(key, v)} />
-                ) : (
-                  <Input
-                    value={typeof value === "string" ? value : value == null ? "" : String(value)}
-                    onChange={(e) => setKey(key, e.target.value)}
-                    placeholder="valor"
-                  />
-                )}
-              </div>
-            </div>
-          ))}
 
-          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
-            <PopoverTrigger asChild>
-              <Button
+          {(filled.length > 0 || orphanKeys.length > 0) && (
+            <div className="space-y-2">
+              {filled.map((f) => renderRow(f, f.name, values[f.name]))}
+              {orphanKeys.map((k) => renderRow(undefined, k, values[k]))}
+            </div>
+          )}
+
+          {empty.length > 0 && (
+            <div className="space-y-2 pt-1">
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 text-xs"
-                disabled={availableFields.length === 0 && !isLoading}
+                onClick={() => setShowEmpty((v) => !v)}
+                className="flex w-full items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                aria-expanded={showEmpty}
               >
-                <Plus className="mr-1 h-3.5 w-3.5" />
-                Adicionar campo
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 p-0" align="start">
-              <Command>
-                <CommandInput placeholder="Buscar campo..." />
-                <CommandList>
-                  <CommandEmpty>Nenhum campo disponível.</CommandEmpty>
-                  <CommandGroup>
-                    {availableFields.map((f) => (
-                      <CommandItem
-                        key={f.name}
-                        value={`${f.label} ${f.name}`}
-                        onSelect={() => addField(f.name)}
-                      >
-                        <span className="flex-1 truncate">{f.label}</span>
-                        <span className={cn("ml-2 text-[10px] text-muted-foreground")}>
-                          {f.type}
-                        </span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
+                {showEmpty ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+                {filled.length > 0 || orphanKeys.length > 0 ? "Outros campos" : "Todos os campos"}
+                <span className="text-[10px] text-muted-foreground">({empty.length})</span>
+              </button>
+
+              {showEmpty && (
+                <div className="space-y-2">
+                  {empty.map((f) => renderRow(f, f.name, values[f.name]))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <p className="pt-1 text-[10px] text-muted-foreground">
+            Use tokens <code className="text-[10px]">{`{{campo}}`}</code> nos campos texto para reutilizar valores do registro que disparou o workflow.
+          </p>
         </div>
       )}
     </div>
