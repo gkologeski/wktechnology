@@ -11442,6 +11442,7 @@ export type Database = {
       }
       project_time_entries: {
         Row: {
+          allocation_id: string | null
           approved_at: string | null
           approved_by: string | null
           billable: boolean
@@ -11452,6 +11453,7 @@ export type Database = {
           hourly_rate: number | null
           hours: number | null
           id: string
+          person_id: string | null
           project_id: string
           started_at: string | null
           stopped_at: string | null
@@ -11461,6 +11463,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          allocation_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
           billable?: boolean
@@ -11471,6 +11474,7 @@ export type Database = {
           hourly_rate?: number | null
           hours?: number | null
           id?: string
+          person_id?: string | null
           project_id: string
           started_at?: string | null
           stopped_at?: string | null
@@ -11480,6 +11484,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          allocation_id?: string | null
           approved_at?: string | null
           approved_by?: string | null
           billable?: boolean
@@ -11490,6 +11495,7 @@ export type Database = {
           hourly_rate?: number | null
           hours?: number | null
           id?: string
+          person_id?: string | null
           project_id?: string
           started_at?: string | null
           stopped_at?: string | null
@@ -11499,6 +11505,20 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "project_time_entries_allocation_id_fkey"
+            columns: ["allocation_id"]
+            isOneToOne: false
+            referencedRelation: "people_allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_time_entries_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "project_time_entries_project_id_fkey"
             columns: ["project_id"]
