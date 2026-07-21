@@ -489,15 +489,11 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
   };
 
   function tokenForField(field: EntityFieldDef): string | null {
-    // tipos que aceitam token livre
-    if (
-      field.type !== "text" &&
-      field.type !== "number" &&
-      !(field.type === "reference" || field.name.endsWith("_id"))
-    ) {
+    if (field.name === "custom_fields") return null;
+    // boolean/date/select têm valores fechados — não fazem sentido com token
+    if (field.type === "boolean" || field.type === "date" || field.type === "select") {
       return null;
     }
-    if (field.name === "custom_fields") return null;
     return TOKEN_ALIAS[field.name] ?? `{{${field.name}}}`;
   }
 
