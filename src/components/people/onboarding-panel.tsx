@@ -563,6 +563,8 @@ function TaskDialog({
   const [category, setCategory] = useState(task?.category ?? "");
   const [dueDate, setDueDate] = useState(task?.due_date ?? "");
   const [status, setStatus] = useState<OnbTaskStatus>(task?.status ?? "pending");
+  const [isCritical, setIsCritical] = useState<boolean>(task?.is_critical ?? false);
+  const [revocationSystem, setRevocationSystem] = useState<string>(task?.revocation_system ?? "");
 
   const mut = useMutation({
     mutationFn: () =>
@@ -576,6 +578,8 @@ function TaskDialog({
           due_date: dueDate || null,
           status,
           order_index: task?.order_index ?? nextIndex,
+          is_critical: isCritical,
+          revocation_system: revocationSystem.trim() || null,
         },
       }),
     onSuccess: () => {
@@ -584,6 +588,7 @@ function TaskDialog({
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
