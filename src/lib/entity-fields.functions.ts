@@ -13,6 +13,8 @@ export type EntityFieldDef = {
   type: EntityFieldType;
   // Quando preenchido (≤20), o construtor renderiza Select.
   options?: { value: string; label: string }[];
+  /** Campo é obrigatório no schema (NOT NULL sem default). */
+  required?: boolean;
 };
 
 type RawRow = {
@@ -20,6 +22,8 @@ type RawRow = {
   data_type: string;
   distinct_values: string[] | null;
   distinct_count: number | null;
+  is_nullable?: string | null;
+  has_default?: boolean | null;
 };
 
 // Colunas internas/sistema escondidas do builder.
