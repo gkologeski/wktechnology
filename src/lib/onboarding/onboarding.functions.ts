@@ -57,7 +57,7 @@ export type OnbRunRow = {
   entity_type: OnbEntityType;
   entity_id: string | null;
   current_step: number;
-  form_data: Record<string, unknown>;
+  form_data: Record<string, string | number | boolean | null>;
   status: "draft" | "completed" | "cancelled";
   completed_at: string | null;
   created_at: string;
@@ -238,7 +238,7 @@ export const startOnbRun = createServerFn({ method: "POST" })
 const saveSchema = z.object({
   run_id: z.string().uuid(),
   current_step: z.number().int().min(0),
-  form_data: z.record(z.string(), z.unknown()),
+  form_data: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()])),
 });
 
 export const saveOnbRun = createServerFn({ method: "POST" })
@@ -249,7 +249,7 @@ export const saveOnbRun = createServerFn({ method: "POST" })
       .from("onboarding_runs")
       .update({
         current_step: data.current_step,
-        form_data: data.form_data,
+        form_data: data.form_data as never,
       })
       .eq("id", data.run_id);
     if (error) throw new Error(error.message);
