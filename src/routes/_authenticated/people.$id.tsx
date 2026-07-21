@@ -242,6 +242,7 @@ function PersonForm({
           <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           {canViewSensitive ? <TabsTrigger value="psychosocial">Psicossocial</TabsTrigger> : null}
           {canViewSensitive ? <TabsTrigger value="incidents">Incidentes</TabsTrigger> : null}
+          {canViewSensitive ? <TabsTrigger value="benefits">Benefícios</TabsTrigger> : null}
           <TabsTrigger value="documents">Documentos</TabsTrigger>
           <TabsTrigger value="timeline">Histórico</TabsTrigger>
         </TabsList>
