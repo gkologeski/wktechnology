@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown, Wand2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -477,6 +477,41 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     onChange(Object.keys(next).length ? next : undefined);
   }
 
+  // Aliases: alguns campos da entidade alvo têm nomes diferentes do payload
+  // do registro-gatilho. Mapeia para o token mais provável.
+  const TOKEN_ALIAS: Record<string, string> = {
+    counterparty_company_id: "{{company_id}}",
+    primary_contact_id: "{{contact_id}}",
+    assigned_user_id: "{{owner_id}}",
+    assignee_id: "{{owner_id}}",
+    hiring_manager_id: "{{owner_id}}",
+    approver_user_id: "{{owner_id}}",
+  };
+
+  function tokenForField(field: EntityFieldDef): string | null {
+    if (field.name === "custom_fields") return null;
+    // boolean/date/select têm valores fechados — não fazem sentido com token
+    if (field.type === "boolean" || field.type === "date" || field.type === "select") {
+      return null;
+    }
+    return TOKEN_ALIAS[field.name] ?? `{{${field.name}}}`;
+  }
+
+  function autofillFromWorkflow() {
+    const next: Record<string, unknown> = { ...values };
+    let changed = 0;
+    for (const f of empty) {
+      const tk = tokenForField(f);
+      if (!tk) continue;
+      next[f.name] = tk;
+      changed++;
+    }
+    if (changed > 0) onChange(next);
+  }
+
+  const autofillableCount = empty.filter((f) => tokenForField(f) !== null).length;
+
+
   function renderRow(field: EntityFieldDef | undefined, key: string, value: unknown) {
     return (
       <div
@@ -585,9 +620,26 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
             </div>
           )}
 
+          {empty.length > 0 && autofillableCount > 0 && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={autofillFromWorkflow}
+                title="Preenche os campos vazios com variáveis do workflow, ex.: {{title}}"
+              >
+                <Wand2 className="mr-1 h-3 w-3" />
+                Preencher com variáveis do workflow ({autofillableCount})
+              </Button>
+            </div>
+          )}
+
           <p className="pt-1 text-[10px] text-muted-foreground">
             Use tokens <code className="text-[10px]">{`{{campo}}`}</code> nos campos texto para reutilizar valores do registro que disparou o workflow.
           </p>
+
         </div>
       )}
     </div>
