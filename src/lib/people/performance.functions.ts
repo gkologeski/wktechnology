@@ -334,7 +334,7 @@ export const listReviews = createServerFn({ method: "POST" })
       .eq("person_id", data.person_id)
       .order("period_end", { ascending: false });
     if (error) throw new Error(error.message);
-    return (rows ?? []) as ReviewRow[];
+    return (rows ?? []) as unknown as ReviewRow[];
   });
 
 export const upsertReview = createServerFn({ method: "POST" })
