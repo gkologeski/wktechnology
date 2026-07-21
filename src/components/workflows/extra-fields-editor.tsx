@@ -487,7 +487,8 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
       >
         <span className="flex items-center gap-1.5">
           {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-          Mais campos
+          {title ?? "Mais campos"}
+
           {usedKeys.length > 0 && (
             <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
               {usedKeys.length}
