@@ -2611,6 +2611,10 @@ function StepConfigForm({
       return <SendTeamsForm action={action} onChange={onChange} />;
     case "approval_step":
       return <ApprovalStepForm action={action} onChange={onChange} />;
+    case "create_record":
+    case "update_record":
+    case "delete_record":
+      return <GenericRecordForm action={action} onChange={onChange} />;
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
