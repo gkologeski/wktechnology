@@ -35,6 +35,7 @@ const MODULE_PATH_MATCHERS: Array<{ id: ModuleId; prefixes: string[] }> = [
   { id: "services", prefixes: ["/services"] },
   { id: "projects", prefixes: ["/projects"] },
   { id: "finance", prefixes: ["/finance"] },
+  { id: "people", prefixes: ["/people"] },
 ];
 
 export function detectModuleFromPath(pathname: string): ModuleId | null {
