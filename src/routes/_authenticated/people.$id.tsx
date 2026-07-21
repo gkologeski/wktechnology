@@ -236,6 +236,7 @@ function PersonForm({
           <TabsTrigger value="goals">Metas</TabsTrigger>
           <TabsTrigger value="one_on_ones">1:1s</TabsTrigger>
           <TabsTrigger value="reviews">Avaliações</TabsTrigger>
+          <TabsTrigger value="onboarding">Onboarding</TabsTrigger>
           {canViewSensitive ? <TabsTrigger value="psychosocial">Psicossocial</TabsTrigger> : null}
           {canViewSensitive ? <TabsTrigger value="incidents">Incidentes</TabsTrigger> : null}
           <TabsTrigger value="documents">Documentos</TabsTrigger>
