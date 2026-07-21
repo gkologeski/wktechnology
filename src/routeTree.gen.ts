@@ -92,6 +92,7 @@ import { Route as AuthenticatedTasksIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsZapierRouteImport } from './routes/_authenticated/settings.zapier'
 import { Route as AuthenticatedSettingsWorkspaceTeamRouteImport } from './routes/_authenticated/settings.workspace-team'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
+import { Route as AuthenticatedSettingsWorkflowSubscriptionsRouteImport } from './routes/_authenticated/settings.workflow-subscriptions'
 import { Route as AuthenticatedSettingsWidgetRouteImport } from './routes/_authenticated/settings.widget'
 import { Route as AuthenticatedSettingsWhatsappTemplatesRouteImport } from './routes/_authenticated/settings.whatsapp-templates'
 import { Route as AuthenticatedSettingsWhatsappCatalogsRouteImport } from './routes/_authenticated/settings.whatsapp-catalogs'
@@ -771,6 +772,12 @@ const AuthenticatedSettingsWorkflowsRoute =
   AuthenticatedSettingsWorkflowsRouteImport.update({
     id: '/workflows',
     path: '/workflows',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsWorkflowSubscriptionsRoute =
+  AuthenticatedSettingsWorkflowSubscriptionsRouteImport.update({
+    id: '/workflow-subscriptions',
+    path: '/workflow-subscriptions',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsWidgetRoute =
@@ -2389,6 +2396,7 @@ export interface FileRoutesByFullPath {
   '/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
   '/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
+  '/settings/workflow-subscriptions': typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/settings/zapier': typeof AuthenticatedSettingsZapierRoute
@@ -2711,6 +2719,7 @@ export interface FileRoutesByTo {
   '/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
   '/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
+  '/settings/workflow-subscriptions': typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/settings/zapier': typeof AuthenticatedSettingsZapierRoute
@@ -3040,6 +3049,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/whatsapp-catalogs': typeof AuthenticatedSettingsWhatsappCatalogsRoute
   '/_authenticated/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/_authenticated/settings/widget': typeof AuthenticatedSettingsWidgetRoute
+  '/_authenticated/settings/workflow-subscriptions': typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
   '/_authenticated/settings/workspace-team': typeof AuthenticatedSettingsWorkspaceTeamRoute
   '/_authenticated/settings/zapier': typeof AuthenticatedSettingsZapierRoute
@@ -3369,6 +3379,7 @@ export interface FileRouteTypes {
     | '/settings/whatsapp-catalogs'
     | '/settings/whatsapp-templates'
     | '/settings/widget'
+    | '/settings/workflow-subscriptions'
     | '/settings/workflows'
     | '/settings/workspace-team'
     | '/settings/zapier'
@@ -3691,6 +3702,7 @@ export interface FileRouteTypes {
     | '/settings/whatsapp-catalogs'
     | '/settings/whatsapp-templates'
     | '/settings/widget'
+    | '/settings/workflow-subscriptions'
     | '/settings/workflows'
     | '/settings/workspace-team'
     | '/settings/zapier'
@@ -4019,6 +4031,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/whatsapp-catalogs'
     | '/_authenticated/settings/whatsapp-templates'
     | '/_authenticated/settings/widget'
+    | '/_authenticated/settings/workflow-subscriptions'
     | '/_authenticated/settings/workflows'
     | '/_authenticated/settings/workspace-team'
     | '/_authenticated/settings/zapier'
@@ -4843,6 +4856,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows'
       fullPath: '/settings/workflows'
       preLoaderRoute: typeof AuthenticatedSettingsWorkflowsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/workflow-subscriptions': {
+      id: '/_authenticated/settings/workflow-subscriptions'
+      path: '/workflow-subscriptions'
+      fullPath: '/settings/workflow-subscriptions'
+      preLoaderRoute: typeof AuthenticatedSettingsWorkflowSubscriptionsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/widget': {
@@ -6773,6 +6793,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsWhatsappCatalogsRoute: typeof AuthenticatedSettingsWhatsappCatalogsRoute
   AuthenticatedSettingsWhatsappTemplatesRoute: typeof AuthenticatedSettingsWhatsappTemplatesRoute
   AuthenticatedSettingsWidgetRoute: typeof AuthenticatedSettingsWidgetRoute
+  AuthenticatedSettingsWorkflowSubscriptionsRoute: typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
   AuthenticatedSettingsZapierRoute: typeof AuthenticatedSettingsZapierRoute
@@ -6870,6 +6891,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsWhatsappTemplatesRoute:
     AuthenticatedSettingsWhatsappTemplatesRoute,
   AuthenticatedSettingsWidgetRoute: AuthenticatedSettingsWidgetRoute,
+  AuthenticatedSettingsWorkflowSubscriptionsRoute:
+    AuthenticatedSettingsWorkflowSubscriptionsRoute,
   AuthenticatedSettingsWorkflowsRoute: AuthenticatedSettingsWorkflowsRoute,
   AuthenticatedSettingsWorkspaceTeamRoute:
     AuthenticatedSettingsWorkspaceTeamRoute,

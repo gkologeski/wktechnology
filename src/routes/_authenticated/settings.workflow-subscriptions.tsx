@@ -93,7 +93,7 @@ function WorkflowSubscriptionsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["workflow-subscriptions"],
-    queryFn: () => list({ data: {} }),
+    queryFn: () => list(),
   });
 
   const [open, setOpen] = useState(false);
