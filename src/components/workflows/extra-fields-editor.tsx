@@ -630,6 +630,15 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
               {filledCount}
             </span>
           )}
+          {errorCount > 0 && (
+            <span
+              className="flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
+              title="Existem campos com pendências"
+            >
+              <AlertCircle className="h-2.5 w-2.5" />
+              {errorCount} pendência{errorCount > 1 ? "s" : ""}
+            </span>
+          )}
         </span>
         <span className="text-[10px] text-muted-foreground">
           {isLoading ? "carregando..." : `${visibleFields.length} campos`}
