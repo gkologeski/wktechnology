@@ -16160,6 +16160,32 @@ export type Database = {
         }
         Relationships: []
       }
+      people_documents_expiring: {
+        Row: {
+          days_left: number | null
+          doc_number: string | null
+          doc_type: string | null
+          expires_at: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string | null
+          owner_id: string | null
+          person_id: string | null
+          person_name: string | null
+          person_photo_url: string | null
+          status: Database["public"]["Enums"]["people_doc_status"] | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_documents_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_branding_public: {
         Row: {
           accent_color: string | null
@@ -16379,6 +16405,10 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      people_document_derive_status: {
+        Args: { _expires: string }
+        Returns: Database["public"]["Enums"]["people_doc_status"]
       }
       platform_cron_status: {
         Args: never
