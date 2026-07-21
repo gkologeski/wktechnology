@@ -10019,6 +10019,173 @@ export type Database = {
           },
         ]
       }
+      people_onboarding_plans: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          kind: string
+          notes: string | null
+          owner_id: string
+          person_id: string
+          started_at: string | null
+          status: string
+          target_completion_date: string | null
+          template_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          notes?: string | null
+          owner_id: string
+          person_id: string
+          started_at?: string | null
+          status?: string
+          target_completion_date?: string | null
+          template_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          notes?: string | null
+          owner_id?: string
+          person_id?: string
+          started_at?: string | null
+          status?: string
+          target_completion_date?: string | null
+          template_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_onboarding_plans_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_onboarding_plans_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "people_onboarding_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_onboarding_tasks: {
+        Row: {
+          assignee_id: string | null
+          category: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          order_index: number
+          plan_id: string
+          status: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          category?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          order_index?: number
+          plan_id: string
+          status?: string
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          assignee_id?: string | null
+          category?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          order_index?: number
+          plan_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_onboarding_tasks_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "people_onboarding_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_onboarding_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          employment_type: string | null
+          id: string
+          is_active: boolean
+          items: Json
+          kind: string
+          name: string
+          owner_id: string
+          role_title: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          employment_type?: string | null
+          id?: string
+          is_active?: boolean
+          items?: Json
+          kind: string
+          name: string
+          owner_id: string
+          role_title?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          employment_type?: string | null
+          id?: string
+          is_active?: boolean
+          items?: Json
+          kind?: string
+          name?: string
+          owner_id?: string
+          role_title?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       people_one_on_ones: {
         Row: {
           action_items: Json
