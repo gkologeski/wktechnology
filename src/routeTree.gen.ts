@@ -175,6 +175,7 @@ import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authe
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedPeopleOnboardingTemplatesRouteImport } from './routes/_authenticated/people.onboarding-templates'
 import { Route as AuthenticatedPeopleDocumentsRouteImport } from './routes/_authenticated/people.documents'
+import { Route as AuthenticatedPeopleContractMarginRouteImport } from './routes/_authenticated/people.contract-margin'
 import { Route as AuthenticatedPeopleBillingRouteImport } from './routes/_authenticated/people.billing'
 import { Route as AuthenticatedPeopleAnalyticsRouteImport } from './routes/_authenticated/people.analytics'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
@@ -1271,6 +1272,12 @@ const AuthenticatedPeopleDocumentsRoute =
     path: '/people/documents',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPeopleContractMarginRoute =
+  AuthenticatedPeopleContractMarginRouteImport.update({
+    id: '/people/contract-margin',
+    path: '/people/contract-margin',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPeopleBillingRoute =
   AuthenticatedPeopleBillingRouteImport.update({
     id: '/people/billing',
@@ -2330,6 +2337,7 @@ export interface FileRoutesByFullPath {
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
+  '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -2656,6 +2664,7 @@ export interface FileRoutesByTo {
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
+  '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -2987,6 +2996,7 @@ export interface FileRoutesById {
   '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
   '/_authenticated/people/billing': typeof AuthenticatedPeopleBillingRoute
+  '/_authenticated/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/_authenticated/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/_authenticated/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -3319,6 +3329,7 @@ export interface FileRouteTypes {
     | '/people/$id'
     | '/people/analytics'
     | '/people/billing'
+    | '/people/contract-margin'
     | '/people/documents'
     | '/people/onboarding-templates'
     | '/projects/$id'
@@ -3645,6 +3656,7 @@ export interface FileRouteTypes {
     | '/people/$id'
     | '/people/analytics'
     | '/people/billing'
+    | '/people/contract-margin'
     | '/people/documents'
     | '/people/onboarding-templates'
     | '/projects/$id'
@@ -3975,6 +3987,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people/$id'
     | '/_authenticated/people/analytics'
     | '/_authenticated/people/billing'
+    | '/_authenticated/people/contract-margin'
     | '/_authenticated/people/documents'
     | '/_authenticated/people/onboarding-templates'
     | '/_authenticated/projects/$id'
@@ -5463,6 +5476,13 @@ declare module '@tanstack/react-router' {
       path: '/people/documents'
       fullPath: '/people/documents'
       preLoaderRoute: typeof AuthenticatedPeopleDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/contract-margin': {
+      id: '/_authenticated/people/contract-margin'
+      path: '/people/contract-margin'
+      fullPath: '/people/contract-margin'
+      preLoaderRoute: typeof AuthenticatedPeopleContractMarginRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/billing': {
@@ -7101,6 +7121,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedPeopleAnalyticsRoute: typeof AuthenticatedPeopleAnalyticsRoute
   AuthenticatedPeopleBillingRoute: typeof AuthenticatedPeopleBillingRoute
+  AuthenticatedPeopleContractMarginRoute: typeof AuthenticatedPeopleContractMarginRoute
   AuthenticatedPeopleDocumentsRoute: typeof AuthenticatedPeopleDocumentsRoute
   AuthenticatedPeopleOnboardingTemplatesRoute: typeof AuthenticatedPeopleOnboardingTemplatesRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
@@ -7223,6 +7244,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedPeopleAnalyticsRoute: AuthenticatedPeopleAnalyticsRoute,
   AuthenticatedPeopleBillingRoute: AuthenticatedPeopleBillingRoute,
+  AuthenticatedPeopleContractMarginRoute:
+    AuthenticatedPeopleContractMarginRoute,
   AuthenticatedPeopleDocumentsRoute: AuthenticatedPeopleDocumentsRoute,
   AuthenticatedPeopleOnboardingTemplatesRoute:
     AuthenticatedPeopleOnboardingTemplatesRoute,
@@ -7471,13 +7494,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
