@@ -77,7 +77,7 @@ export const getContract = createServerFn({ method: "POST" })
     if (!row) return null;
 
     // parent (contrato de venda ao qual este contrato de compra está vinculado)
-    let parent: {
+    type ParentInfo = {
       id: string;
       number: string | null;
       title: string;
@@ -85,14 +85,15 @@ export const getContract = createServerFn({ method: "POST" })
       total_value: number;
       currency: string;
       role: "provider" | "client";
-    } | null = null;
+    };
+    let parent: ParentInfo | null = null;
     if (row.parent_contract_id) {
       const { data: p } = await supabase
         .from("contracts")
         .select("id, number, title, status, total_value, currency, role")
         .eq("id", row.parent_contract_id)
         .maybeSingle();
-      if (p) parent = p as typeof parent;
+      if (p) parent = p as ParentInfo;
     }
 
     // children (contratos de compra vinculados a este contrato de prestação)
