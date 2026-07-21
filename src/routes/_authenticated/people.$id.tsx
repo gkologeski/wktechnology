@@ -393,6 +393,11 @@ function PersonForm({
           />
         </TabsContent>
 
+        <TabsContent value="timesheet" className="pt-4">
+          <TimesheetPanel personId={p.id} />
+        </TabsContent>
+
+
         <TabsContent value="goals" className="pt-4">
           <GoalsPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
