@@ -179,6 +179,10 @@ function PeopleAnalyticsPage() {
               </Link>
             </Button>
           </div>
+        }
+      />
+
+
 
 
       {isLoading || !data ? (
