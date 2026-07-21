@@ -429,7 +429,8 @@ export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
     if (targets.length === 0) return { ok: true, sent: 0 };
 
     const uniqueIds = Array.from(new Set(targets.map((t) => t.userId)));
-    const { data: prefRows } = await supabase
+    const { supabaseAdmin: prefAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: prefRows } = await prefAdmin
       .from("profiles")
       .select("id, notification_preferences")
       .in("id", uniqueIds);
