@@ -174,6 +174,7 @@ import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authe
 import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authenticated/projects.my-work'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedPeopleOnboardingTemplatesRouteImport } from './routes/_authenticated/people.onboarding-templates'
+import { Route as AuthenticatedPeopleMyTeamRouteImport } from './routes/_authenticated/people.my-team'
 import { Route as AuthenticatedPeopleDocumentsRouteImport } from './routes/_authenticated/people.documents'
 import { Route as AuthenticatedPeopleContractMarginRouteImport } from './routes/_authenticated/people.contract-margin'
 import { Route as AuthenticatedPeopleBillingRouteImport } from './routes/_authenticated/people.billing'
@@ -1266,6 +1267,12 @@ const AuthenticatedPeopleOnboardingTemplatesRoute =
     path: '/people/onboarding-templates',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPeopleMyTeamRoute =
+  AuthenticatedPeopleMyTeamRouteImport.update({
+    id: '/people/my-team',
+    path: '/people/my-team',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPeopleDocumentsRoute =
   AuthenticatedPeopleDocumentsRouteImport.update({
     id: '/people/documents',
@@ -2339,6 +2346,7 @@ export interface FileRoutesByFullPath {
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
@@ -2666,6 +2674,7 @@ export interface FileRoutesByTo {
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
@@ -2998,6 +3007,7 @@ export interface FileRoutesById {
   '/_authenticated/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/_authenticated/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/_authenticated/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/_authenticated/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
   '/_authenticated/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
@@ -3331,6 +3341,7 @@ export interface FileRouteTypes {
     | '/people/billing'
     | '/people/contract-margin'
     | '/people/documents'
+    | '/people/my-team'
     | '/people/onboarding-templates'
     | '/projects/$id'
     | '/projects/my-work'
@@ -3658,6 +3669,7 @@ export interface FileRouteTypes {
     | '/people/billing'
     | '/people/contract-margin'
     | '/people/documents'
+    | '/people/my-team'
     | '/people/onboarding-templates'
     | '/projects/$id'
     | '/projects/my-work'
@@ -3989,6 +4001,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people/billing'
     | '/_authenticated/people/contract-margin'
     | '/_authenticated/people/documents'
+    | '/_authenticated/people/my-team'
     | '/_authenticated/people/onboarding-templates'
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/my-work'
@@ -5469,6 +5482,13 @@ declare module '@tanstack/react-router' {
       path: '/people/onboarding-templates'
       fullPath: '/people/onboarding-templates'
       preLoaderRoute: typeof AuthenticatedPeopleOnboardingTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/my-team': {
+      id: '/_authenticated/people/my-team'
+      path: '/people/my-team'
+      fullPath: '/people/my-team'
+      preLoaderRoute: typeof AuthenticatedPeopleMyTeamRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/documents': {
@@ -7123,6 +7143,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPeopleBillingRoute: typeof AuthenticatedPeopleBillingRoute
   AuthenticatedPeopleContractMarginRoute: typeof AuthenticatedPeopleContractMarginRoute
   AuthenticatedPeopleDocumentsRoute: typeof AuthenticatedPeopleDocumentsRoute
+  AuthenticatedPeopleMyTeamRoute: typeof AuthenticatedPeopleMyTeamRoute
   AuthenticatedPeopleOnboardingTemplatesRoute: typeof AuthenticatedPeopleOnboardingTemplatesRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedProjectsMyWorkRoute: typeof AuthenticatedProjectsMyWorkRoute
@@ -7247,6 +7268,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPeopleContractMarginRoute:
     AuthenticatedPeopleContractMarginRoute,
   AuthenticatedPeopleDocumentsRoute: AuthenticatedPeopleDocumentsRoute,
+  AuthenticatedPeopleMyTeamRoute: AuthenticatedPeopleMyTeamRoute,
   AuthenticatedPeopleOnboardingTemplatesRoute:
     AuthenticatedPeopleOnboardingTemplatesRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
