@@ -1,61 +1,32 @@
-## Contexto
+## Problema
 
-- Tabela `public.contracts` já tem `parent_contract_id uuid` (FK auto-referente) e `role contract_role` com valores `provider` (nós prestamos — contrato de venda) e `client` (nós compramos — contrato de compra). O campo `parent_contract_id` **já existe** mas hoje não é usado em nenhum lugar do app (não aparece em nenhum arquivo `.tsx`/`.ts` fora dos types gerados) e nenhuma linha o utiliza (`0 rows`).
-- Vou **reaproveitar** `parent_contract_id` como vínculo pai→filho: contrato **provider** (venda p/ cliente final) é o pai; contratos **client** (compra de desenvolvedor/fornecedor) são filhos. Isso modela outsourcing 1:N (uma venda pode ser executada por N compras).
+No `ExtraFieldsEditor` (workflow), os campos carregados via `getEntityFieldCatalog` seguem uma ordem "amigável" própria (select → outros → data, depois alfabético por label). Isso não bate com a ordem que o usuário vê nos formulários reais de criação (ex.: QuickCreateContractDialog, criar deal, criar contato), causando estranheza.
 
-Nada em `_authenticated/contracts.*.tsx`, `deal-contracts.tsx` ou `quick-create-contract-dialog.tsx` referencia `parent_contract_id` hoje — não há regressão de comportamento existente.
+## Objetivo
 
-## Escopo
+Fazer com que a ordem dos campos no editor de ações do workflow espelhe a ordem canônica dos formulários de criação de cada entidade, para que o usuário reconheça a sequência.
 
-1. **Modelo (migration)**
-   - Manter `parent_contract_id`. Adicionar trigger `validate_contract_parent_link()`:
-     - Impede ciclos (pai não pode apontar para o próprio filho; self-reference proibida).
-     - Exige `workspace_id` igual entre pai e filho (mesmo workspace).
-     - Regra de papéis: se `parent_contract_id IS NOT NULL`, então `parent.role = 'provider'` e `child.role = 'client'` (outsourcing).
-   - Índice `contracts_parent_contract_id_idx` para listar filhos rapidamente.
-   - Sem mudança em RLS: as policies existentes já cobrem leitura/escrita por workspace.
+## Abordagem
 
-2. **Server functions** (`src/lib/contracts.functions.ts` — arquivo já usado pelo módulo)
-   - `listLinkableContracts({ role, excludeId, q })`: busca contratos do mesmo workspace filtrando por `role` oposta (para o seletor). Server-side `ilike` no título/número com debounce.
-   - Estender `getContract(id)` para retornar `parent` (contrato pai resumido) e `children` (lista de contratos filhos com id, número, título, status, total_value, moeda).
-   - `linkContractParent({ childId, parentId | null })`: atualiza `parent_contract_id`. Valida via trigger.
+1. **Definir ordem canônica por entidade** em um novo arquivo `src/lib/workflows/entity-field-order.ts`:
+   - Mapear, por entidade suportada (`contracts`, `deals`, `contacts`, `companies`, `leads`, `tickets`, `activities`, `projects`, `project_tasks`, `financial_entries`, `quotes`, `proposals`, `products`, `services`, `ats_jobs`, `ats_candidates`, etc.), a lista ordenada dos campos principais espelhando o respectivo formulário de criação (ler `quick-create-*`, `create-*-dialog.tsx` e páginas de criação para extrair a ordem real).
+   - Ex. `contracts`: title, contract_number, role, type, status, contact_id, company_id, deal_id, parent_contract_id, value, currency, start_at, end_at, description...
+   - Campos não listados na ordem canônica caem depois, mantendo o ordenamento atual como fallback.
 
-3. **UI — detalhe do contrato** (`src/routes/_authenticated/contracts.$id.tsx`)
-   - Seção **"Vínculo de outsourcing"**:
-     - Se `role = 'client'`: mostrar contrato de venda pai (link + resumo) com botão "Alterar/Remover vínculo" (abre combobox de contratos `provider`).
-     - Se `role = 'provider'`: lista de contratos de compra filhos (tabela compacta com número, fornecedor, período, valor, status) + botão "Vincular contrato de compra" (combobox de contratos `client` do workspace).
-   - Card de **Margem de outsourcing** no detalhe do provider: `total_value` do pai − soma dos `total_value` dos filhos ativos, com % e alerta quando margem < 0.
+2. **Aplicar a ordem** onde os campos são consumidos:
+   - Em `src/components/workflows/extra-fields-editor.tsx` (e/ou onde o array de fields do catálogo é iterado para renderização), reordenar `fields` com base no mapa canônico antes de agrupar/renderizar.
+   - Preservar o layout personalizado do usuário (via `field-layout.ts`) quando existir — a nova ordem só vale para o grupo padrão / entidades sem layout salvo.
 
-4. **UI — criação/edição** (`quick-create-contract-dialog.tsx` e formulário do detalhe)
-   - Campo opcional **"Vincular a contrato de venda"** aparece só quando `role = 'client'`. Combobox usando `listLinkableContracts`.
-   - No cabeçalho do detalhe do contrato filho, badge "Vinculado a #NUMERO_PAI".
+3. **Não alterar** `getEntityFieldCatalog` no servidor (a ordem "amigável" continua sendo o fallback para entidades sem mapa canônico e para o filter builder que também consome esse endpoint).
 
-5. **Timeline / eventos**
-   - `contract_events` já existe: registrar eventos `parent_linked` / `parent_unlinked` quando o vínculo mudar (mesmo padrão dos eventos atuais do módulo).
+## Arquivos
 
-## Fora de escopo
+- Criar: `src/lib/workflows/entity-field-order.ts`
+- Editar: `src/components/workflows/extra-fields-editor.tsx` (aplicar reordenação antes de renderizar; manter respeito ao layout persistido)
 
-- Alterar RLS ou o enum `contract_role`.
-- Vincular financial_entries / faturas às pontas da cadeia (fica para uma iteração seguinte de margem realizada).
-- Suporte a N níveis (sub-sub-contratos) — trigger impede pai que já é filho.
+## Validação
 
-## Como validar manualmente
-
-1. Criar contrato `provider` (venda) com cliente final e valor R$ 20.000.
-2. Criar contrato `client` (compra) para o desenvolvedor no valor R$ 12.000 e vincular ao provider acima.
-3. Abrir o detalhe do provider → conferir lista de filhos + card de margem R$ 8.000 (40%).
-4. Tentar vincular um provider a outro provider → erro do trigger.
-5. Tentar vincular um contrato de workspace diferente → erro do trigger.
-
-## Detalhes técnicos
-
-- Trigger `BEFORE INSERT OR UPDATE OF parent_contract_id`:
-  ```sql
-  IF NEW.parent_contract_id = NEW.id THEN raise ...;
-  SELECT role, workspace_id INTO p FROM contracts WHERE id = NEW.parent_contract_id;
-  IF p.workspace_id <> NEW.workspace_id THEN raise ...;
-  IF p.role <> 'provider' OR NEW.role <> 'client' THEN raise ...;
-  -- ciclo: pai não pode ter este contrato como ancestral (WITH RECURSIVE)
-  ```
-- Seletor de contratos usa o mesmo padrão do `FkPicker` (combobox com busca debounce 200ms via server fn).
-- Cálculo de margem no client após `getContract` retornar `children` — sem view materializada.
+- Abrir uma ação "Criar Contrato" no workflow builder e conferir que a ordem dos campos bate com o `QuickCreateContractDialog`.
+- Repetir para "Criar Negócio", "Criar Contato", "Criar Ticket".
+- Confirmar que entidades sem mapa canônico continuam funcionando (fallback = ordem atual).
+- Confirmar que layouts personalizados salvos continuam sendo respeitados.

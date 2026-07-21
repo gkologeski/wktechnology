@@ -44,6 +44,7 @@ import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
 import type { WorkflowWritableTable } from "@/lib/workflows/types";
+import { sortFieldsByCanonicalOrder } from "@/lib/workflows/entity-field-order";
 
 type EntityName = WorkflowWritableTable;
 
@@ -462,8 +463,8 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
   const catalog = data?.fields ?? [];
 
   const visibleFields = useMemo(
-    () => catalog.filter((f) => !hidden.has(f.name)),
-    [catalog, hidden],
+    () => sortFieldsByCanonicalOrder(entity, catalog.filter((f) => !hidden.has(f.name))),
+    [catalog, hidden, entity],
   );
 
   const fieldByName = useMemo(() => {
