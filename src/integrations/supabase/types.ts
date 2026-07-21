@@ -16284,6 +16284,45 @@ export type Database = {
           },
         ]
       }
+      workflow_subscriptions: {
+        Row: {
+          action: Json
+          created_at: string
+          created_by: string | null
+          description: string | null
+          enabled: boolean
+          event_pattern: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          action: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          event_pattern: string
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          action?: Json
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          enabled?: boolean
+          event_pattern?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workflow_time_cursors: {
         Row: {
           entity_id: string
