@@ -4,7 +4,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown, Wand2, AlertCircle } from "lucide-react";
+import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown, Wand2, AlertCircle, GripVertical, Pencil, Settings2, RotateCcw, FolderPlus } from "lucide-react";
+import {
+  loadFieldLayout,
+  saveFieldLayout,
+  clearFieldLayout,
+  newGroupId,
+  insertFieldInGroup,
+  removeFieldFromGroups,
+  reorderGroups,
+  type FieldLayout,
+  type FieldGroup,
+} from "./field-layout";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
