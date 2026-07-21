@@ -251,6 +251,9 @@ function CandidateDetailPage() {
             candidateName={c.full_name}
           />
         )}
+        <Button variant="default" size="sm" onClick={() => setHireOpen(true)}>
+          <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Contratar
+        </Button>
         <Button variant="outline" size="sm" onClick={handleDelete}>
           <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
         </Button>
