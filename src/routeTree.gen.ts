@@ -128,6 +128,7 @@ import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authe
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
 import { Route as AuthenticatedSettingsPaymentsRouteImport } from './routes/_authenticated/settings.payments'
+import { Route as AuthenticatedSettingsOnboardingTemplatesRouteImport } from './routes/_authenticated/settings.onboarding-templates'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedSettingsNfseRouteImport } from './routes/_authenticated/settings.nfse'
 import { Route as AuthenticatedSettingsMyPermissionsRouteImport } from './routes/_authenticated/settings.my-permissions'
@@ -993,6 +994,12 @@ const AuthenticatedSettingsPaymentsRoute =
   AuthenticatedSettingsPaymentsRouteImport.update({
     id: '/payments',
     path: '/payments',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsOnboardingTemplatesRoute =
+  AuthenticatedSettingsOnboardingTemplatesRouteImport.update({
+    id: '/onboarding-templates',
+    path: '/onboarding-templates',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsNotificationsRoute =
@@ -2401,6 +2408,7 @@ export interface FileRoutesByFullPath {
   '/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
+  '/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -2730,6 +2738,7 @@ export interface FileRoutesByTo {
   '/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
+  '/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -3064,6 +3073,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
   '/_authenticated/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
+  '/_authenticated/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
   '/_authenticated/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
@@ -3399,6 +3409,7 @@ export interface FileRouteTypes {
     | '/settings/my-permissions'
     | '/settings/nfse'
     | '/settings/notifications'
+    | '/settings/onboarding-templates'
     | '/settings/payments'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -3728,6 +3739,7 @@ export interface FileRouteTypes {
     | '/settings/my-permissions'
     | '/settings/nfse'
     | '/settings/notifications'
+    | '/settings/onboarding-templates'
     | '/settings/payments'
     | '/settings/pipelines'
     | '/settings/playbooks'
@@ -4061,6 +4073,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/my-permissions'
     | '/_authenticated/settings/nfse'
     | '/_authenticated/settings/notifications'
+    | '/_authenticated/settings/onboarding-templates'
     | '/_authenticated/settings/payments'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
@@ -5173,6 +5186,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/settings/payments'
       preLoaderRoute: typeof AuthenticatedSettingsPaymentsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/onboarding-templates': {
+      id: '/_authenticated/settings/onboarding-templates'
+      path: '/onboarding-templates'
+      fullPath: '/settings/onboarding-templates'
+      preLoaderRoute: typeof AuthenticatedSettingsOnboardingTemplatesRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/notifications': {
@@ -6858,6 +6878,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsMyPermissionsRoute: typeof AuthenticatedSettingsMyPermissionsRoute
   AuthenticatedSettingsNfseRoute: typeof AuthenticatedSettingsNfseRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRouteWithChildren
+  AuthenticatedSettingsOnboardingTemplatesRoute: typeof AuthenticatedSettingsOnboardingTemplatesRoute
   AuthenticatedSettingsPaymentsRoute: typeof AuthenticatedSettingsPaymentsRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
@@ -6949,6 +6970,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsNfseRoute: AuthenticatedSettingsNfseRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRouteWithChildren,
+  AuthenticatedSettingsOnboardingTemplatesRoute:
+    AuthenticatedSettingsOnboardingTemplatesRoute,
   AuthenticatedSettingsPaymentsRoute: AuthenticatedSettingsPaymentsRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
