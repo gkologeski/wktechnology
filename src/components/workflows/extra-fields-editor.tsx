@@ -620,9 +620,26 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
             </div>
           )}
 
+          {empty.length > 0 && autofillableCount > 0 && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={autofillFromWorkflow}
+                title="Preenche os campos vazios com variáveis do workflow, ex.: {{title}}"
+              >
+                <Wand2 className="mr-1 h-3 w-3" />
+                Preencher com variáveis do workflow ({autofillableCount})
+              </Button>
+            </div>
+          )}
+
           <p className="pt-1 text-[10px] text-muted-foreground">
             Use tokens <code className="text-[10px]">{`{{campo}}`}</code> nos campos texto para reutilizar valores do registro que disparou o workflow.
           </p>
+
         </div>
       )}
     </div>
