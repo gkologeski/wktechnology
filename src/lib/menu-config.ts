@@ -238,6 +238,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager" },
       { to: "/settings/macros", label: "Macros", icon: LayoutTemplate, need: "manager" },
       { to: "/settings/snippets", label: "Snippets", icon: LayoutTemplate },
+      { to: "/settings/onboarding-templates", label: "Modelos de onboarding", icon: LayoutTemplate, need: "manager" },
       { to: "/settings/kb", label: "Base de conhecimento", icon: BookOpen, need: "manager" },
     ],
   },
