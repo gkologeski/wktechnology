@@ -642,7 +642,30 @@ function TaskDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+            <div className="flex items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <Label className="text-sm">Item crítico de compliance</Label>
+                <p className="text-xs text-muted-foreground">
+                  Marque tarefas obrigatórias de desligamento (revogação de acesso, backup de dados,
+                  termos assinados) para acompanhamento no painel de compliance.
+                </p>
+              </div>
+              <Switch checked={isCritical} onCheckedChange={setIsCritical} />
+            </div>
+            {isCritical ? (
+              <div className="space-y-2">
+                <Label>Sistema alvo da revogação</Label>
+                <Input
+                  value={revocationSystem}
+                  onChange={(e) => setRevocationSystem(e.target.value)}
+                  placeholder="Google Workspace, Slack, GitHub, VPN…"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar
