@@ -137,7 +137,10 @@ const templateItemSchema = z.object({
   description: z.string().max(2000).nullable().optional(),
   category: z.string().max(80).nullable().optional(),
   due_offset_days: z.number().int().nullable().optional(),
+  is_critical: z.boolean().nullable().optional(),
+  revocation_system: z.string().max(120).nullable().optional(),
 });
+
 
 const templateSchema = z.object({
   id: z.string().uuid().nullable().optional(),
