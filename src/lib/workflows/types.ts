@@ -462,10 +462,9 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "create_task",
     ],
   },
-  {
-    label: "Registros (qualquer módulo)",
-    actions: ["create_record", "update_record", "delete_record"],
-  },
+  // "Registros (qualquer módulo)" agora é renderizado via RECORD_ACTION_MODULES
+  // com submenu por módulo → entidade → operação. Mantido fora do array plano.
+
   {
     label: "Comunicação",
     actions: ["create_activity", "send_notification", "send_email", "send_whatsapp", "send_slack", "send_teams"],
