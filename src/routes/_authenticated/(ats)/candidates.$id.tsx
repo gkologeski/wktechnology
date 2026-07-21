@@ -16,8 +16,10 @@ import {
   Users,
   Flag,
   ShieldCheck,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
+import { HireCandidateDialog } from "@/components/people/hire-candidate-dialog";
 import { Button } from "@/components/ui/button";
 import { RecordLayout } from "@/components/record/record-layout";
 import { ScoreBadge, SourceBadge } from "@/components/ats/ui/badges";
@@ -120,6 +122,7 @@ function CandidateDetailPage() {
 
   const [data, setData] = useState<CandidateDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hireOpen, setHireOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -249,6 +252,9 @@ function CandidateDetailPage() {
             candidateName={c.full_name}
           />
         )}
+        <Button variant="default" size="sm" onClick={() => setHireOpen(true)}>
+          <UserPlus className="h-3.5 w-3.5 mr-1.5" /> Contratar
+        </Button>
         <Button variant="outline" size="sm" onClick={handleDelete}>
           <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Excluir
         </Button>
@@ -257,8 +263,16 @@ function CandidateDetailPage() {
   );
 
   return (
-    <RecordLayout
-      header={header}
+    <>
+      <HireCandidateDialog
+        open={hireOpen}
+        onOpenChange={setHireOpen}
+        candidateId={c.id}
+        candidateName={c.full_name}
+        suggestedRole={c.current_position ?? null}
+      />
+      <RecordLayout
+        header={header}
       left={
         <div className="space-y-4">
           <IdentityBlock candidate={c} />
@@ -325,7 +339,8 @@ function CandidateDetailPage() {
           <CaptureMetaBlock candidate={c} />
         </div>
       }
-    />
+      />
+    </>
   );
 }
 

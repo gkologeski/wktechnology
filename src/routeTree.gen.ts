@@ -172,6 +172,7 @@ import { Route as AuthenticatedProjectsTasksRouteImport } from './routes/_authen
 import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authenticated/projects.spaces'
 import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authenticated/projects.my-work'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedPeopleDocumentsRouteImport } from './routes/_authenticated/people.documents'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
@@ -1248,6 +1249,12 @@ const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   path: '/projects/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPeopleDocumentsRoute =
+  AuthenticatedPeopleDocumentsRouteImport.update({
+    id: '/people/documents',
+    path: '/people/documents',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
   id: '/people/$id',
   path: '/people/$id',
@@ -2293,6 +2300,7 @@ export interface FileRoutesByFullPath {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -2614,6 +2622,7 @@ export interface FileRoutesByTo {
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -2940,6 +2949,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
+  '/_authenticated/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/_authenticated/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -3267,6 +3277,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/people/$id'
+    | '/people/documents'
     | '/projects/$id'
     | '/projects/my-work'
     | '/projects/spaces'
@@ -3588,6 +3599,7 @@ export interface FileRouteTypes {
     | '/leads/import-hubspot'
     | '/marketplace/$slug'
     | '/people/$id'
+    | '/people/documents'
     | '/projects/$id'
     | '/projects/my-work'
     | '/projects/spaces'
@@ -3913,6 +3925,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/import-hubspot'
     | '/_authenticated/marketplace/$slug'
     | '/_authenticated/people/$id'
+    | '/_authenticated/people/documents'
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/my-work'
     | '/_authenticated/projects/spaces'
@@ -5377,6 +5390,13 @@ declare module '@tanstack/react-router' {
       path: '/projects/$id'
       fullPath: '/projects/$id'
       preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/documents': {
+      id: '/_authenticated/people/documents'
+      path: '/people/documents'
+      fullPath: '/people/documents'
+      preLoaderRoute: typeof AuthenticatedPeopleDocumentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/$id': {
@@ -6996,6 +7016,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
+  AuthenticatedPeopleDocumentsRoute: typeof AuthenticatedPeopleDocumentsRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedProjectsMyWorkRoute: typeof AuthenticatedProjectsMyWorkRoute
   AuthenticatedProjectsSpacesRoute: typeof AuthenticatedProjectsSpacesRoute
@@ -7114,6 +7135,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
+  AuthenticatedPeopleDocumentsRoute: AuthenticatedPeopleDocumentsRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedProjectsMyWorkRoute: AuthenticatedProjectsMyWorkRoute,
   AuthenticatedProjectsSpacesRoute: AuthenticatedProjectsSpacesRoute,
