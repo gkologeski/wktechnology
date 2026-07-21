@@ -4,7 +4,17 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowLeft, Save, UserCog, FileCheck2, Clock } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  UserCog,
+  FileCheck2,
+  Clock,
+  Plus,
+  Download,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -35,7 +45,11 @@ import {
 import {
   listPersonDocuments,
   listPersonTimeline,
+  deletePersonDocument,
+  getDocumentDownloadUrl,
+  type PeopleDocumentRow,
 } from "@/lib/people/documents.functions";
+import { PersonDocumentDialog } from "@/components/people/document-dialog";
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
