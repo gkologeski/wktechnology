@@ -33,6 +33,8 @@ export const PEOPLE_EMPLOYMENT_LABELS: Record<PeopleEmploymentType, string> = {
   other: "Outro",
 };
 
+export type PersonDocMap = Record<string, string | number | boolean | null>;
+
 export type PersonRow = {
   id: string;
   owner_id: string;
