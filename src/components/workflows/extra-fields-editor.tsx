@@ -561,13 +561,25 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
 
 
   function renderRow(field: EntityFieldDef | undefined, key: string, value: unknown) {
+    const err = field ? fieldErrors.get(field.name) : undefined;
+    const required = Boolean(field?.required);
     return (
       <div
         key={key}
-        className="space-y-1.5 rounded border border-border/40 bg-background p-2"
+        className={cn(
+          "space-y-1.5 rounded border bg-background p-2 transition-colors",
+          err ? "border-destructive/60 ring-1 ring-destructive/30" : "border-border/40",
+        )}
       >
         <div className="flex items-start justify-between gap-2">
-          <Label className="text-xs font-medium">{field?.label ?? key}</Label>
+          <Label className="text-xs font-medium flex items-center gap-1">
+            <span>{field?.label ?? key}</span>
+            {required && (
+              <span className="text-destructive" aria-label="obrigatório" title="Campo obrigatório">
+                *
+              </span>
+            )}
+          </Label>
           {hasValue(key) && (
             <Button
               type="button"
@@ -592,6 +604,12 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
             />
           )}
         </div>
+        {err && (
+          <p className="flex items-center gap-1 text-[11px] font-medium text-destructive">
+            <AlertCircle className="h-3 w-3" />
+            {err}
+          </p>
+        )}
       </div>
     );
   }
