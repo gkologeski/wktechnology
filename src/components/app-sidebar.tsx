@@ -60,9 +60,11 @@ export function AppSidebar() {
                 ? SERVICES_SIDEBAR_GROUPS
                 : effectiveModuleId === "projects"
                   ? PROJECTS_SIDEBAR_GROUPS
-                  : effectiveModuleId === "finance"
-                    ? FINANCE_SIDEBAR_GROUPS
-                    : SIDEBAR_GROUPS;
+                    : effectiveModuleId === "finance"
+                      ? FINANCE_SIDEBAR_GROUPS
+                      : effectiveModuleId === "people"
+                        ? PEOPLE_SIDEBAR_GROUPS
+                        : SIDEBAR_GROUPS;
         // Prepend "Cadastros" (Core ERP) para módulos consumidores.
         return shouldInjectCoreGroups(effectiveModuleId)
           ? [...CORE_SIDEBAR_GROUPS, ...moduleGroups]
