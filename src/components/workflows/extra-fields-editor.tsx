@@ -477,6 +477,45 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     onChange(Object.keys(next).length ? next : undefined);
   }
 
+  // Aliases: alguns campos da entidade alvo têm nomes diferentes do payload
+  // do registro-gatilho. Mapeia para o token mais provável.
+  const TOKEN_ALIAS: Record<string, string> = {
+    counterparty_company_id: "{{company_id}}",
+    primary_contact_id: "{{contact_id}}",
+    assigned_user_id: "{{owner_id}}",
+    assignee_id: "{{owner_id}}",
+    hiring_manager_id: "{{owner_id}}",
+    approver_user_id: "{{owner_id}}",
+  };
+
+  function tokenForField(field: EntityFieldDef): string | null {
+    // tipos que aceitam token livre
+    if (
+      field.type !== "text" &&
+      field.type !== "number" &&
+      !(field.type === "reference" || field.name.endsWith("_id"))
+    ) {
+      return null;
+    }
+    if (field.name === "custom_fields") return null;
+    return TOKEN_ALIAS[field.name] ?? `{{${field.name}}}`;
+  }
+
+  function autofillFromWorkflow() {
+    const next: Record<string, unknown> = { ...values };
+    let changed = 0;
+    for (const f of empty) {
+      const tk = tokenForField(f);
+      if (!tk) continue;
+      next[f.name] = tk;
+      changed++;
+    }
+    if (changed > 0) onChange(next);
+  }
+
+  const autofillableCount = empty.filter((f) => tokenForField(f) !== null).length;
+
+
   function renderRow(field: EntityFieldDef | undefined, key: string, value: unknown) {
     return (
       <div
