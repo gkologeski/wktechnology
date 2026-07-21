@@ -59,6 +59,22 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
+        // Authorization: only platform admins may relay platform-branded emails
+        // through this endpoint. In-app flows (workspace invites, dunning, mention
+        // notifications) call server-only helpers directly (email-send.server.ts,
+        // workspace-invites.functions.ts) and do NOT hit this route — so limiting
+        // access here does not affect legitimate product flows and closes the
+        // "any signed-in user can send platform-branded emails to any address"
+        // abuse vector.
+        const { data: adminRow, error: adminError } = await supabase
+          .from('platform_admins')
+          .select('user_id')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        if (adminError || !adminRow) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 })
+        }
+
         // Parse request body
         let templateName: string
         let recipientEmail: string
