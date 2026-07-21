@@ -7,7 +7,52 @@ export type WorkflowEntity =
   | "ats_jobs"
   | "ats_candidates"
   | "ats_applications"
-  | "ats_interviews";
+  | "ats_interviews"
+  // Cross-módulo (Fase workflows-erp)
+  | "projects"
+  | "project_tasks"
+  | "project_milestones"
+  | "contracts"
+  | "financial_entries"
+  | "bank_payments"
+  | "quotes"
+  | "proposals"
+  | "products"
+  | "services"
+  | "recurring_plans"
+  | "subscription_invoices"
+  | "customer_invoices";
+
+/**
+ * Tabelas permitidas em ações genéricas create_record / update_record / delete_record.
+ * Precisa bater 1:1 com as policies RLS e triggers do engine.
+ */
+export const WORKFLOW_WRITABLE_TABLES = [
+  "leads",
+  "contacts",
+  "companies",
+  "deals",
+  "tickets",
+  "ats_jobs",
+  "ats_candidates",
+  "ats_applications",
+  "ats_interviews",
+  "activities",
+  "projects",
+  "project_tasks",
+  "project_milestones",
+  "contracts",
+  "financial_entries",
+  "bank_payments",
+  "quotes",
+  "proposals",
+  "products",
+  "services",
+  "recurring_plans",
+  "subscription_invoices",
+  "customer_invoices",
+] as const;
+export type WorkflowWritableTable = (typeof WORKFLOW_WRITABLE_TABLES)[number];
 
 export type WorkflowEventType = "created" | "updated" | "stage_changed";
 
