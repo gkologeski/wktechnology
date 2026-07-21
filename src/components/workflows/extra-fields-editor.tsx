@@ -438,6 +438,18 @@ export function FkPicker({
 export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, title, defaultOpen }: Props) {
   const [open, setOpen] = useState(Boolean(defaultOpen));
   const [showEmpty, setShowEmpty] = useState(false);
+  const [customizeMode, setCustomizeMode] = useState(false);
+  const [layout, setLayout] = useState<FieldLayout>(() => loadFieldLayout(entity));
+
+  // Recarrega layout ao trocar de entidade
+  useEffect(() => {
+    setLayout(loadFieldLayout(entity));
+  }, [entity]);
+
+  function persistLayout(next: FieldLayout) {
+    setLayout(next);
+    saveFieldLayout(entity, next);
+  }
 
   const fetchCatalog = useServerFn(getEntityFieldCatalog);
   const { data, isLoading, error } = useQuery({
@@ -454,6 +466,12 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     [catalog, hidden],
   );
 
+  const fieldByName = useMemo(() => {
+    const m = new Map<string, EntityFieldDef>();
+    for (const f of visibleFields) m.set(f.name, f);
+    return m;
+  }, [visibleFields]);
+
   const values = (extraFields ?? {}) as Record<string, unknown>;
   const hasValue = (k: string) => {
     if (!(k in values)) return false;
@@ -467,13 +485,12 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
   const isToken = (v: unknown) =>
     typeof v === "string" && /\{\{\s*[\w.]+\s*\}\}/.test(v);
 
-  // Validação em tempo real: campos obrigatórios vazios e inconsistências de tipo.
   function validateField(f: EntityFieldDef): string | null {
     const v = values[f.name];
     const filled = hasValue(f.name);
     if (f.required && !filled) return "Campo obrigatório.";
     if (!filled) return null;
-    if (isToken(v)) return null; // tokens são resolvidos em runtime
+    if (isToken(v)) return null;
     if (f.type === "number") {
       const n = typeof v === "number" ? v : Number(v);
       if (!Number.isFinite(n)) return "Valor deve ser numérico.";
@@ -503,7 +520,6 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     (f) => f.required && !hasValue(f.name),
   );
 
-  // Auto-expande quando há pendências no primeiro render após carregar catálogo.
   useEffect(() => {
     if (hasMissingRequired) {
       setOpen(true);
@@ -512,13 +528,32 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMissingRequired]);
 
-  const filled = visibleFields.filter((f) => hasValue(f.name));
-  const empty = visibleFields.filter((f) => !hasValue(f.name));
+  // Nomes já alocados em algum grupo
+  const groupedNames = useMemo(() => {
+    const s = new Set<string>();
+    for (const g of layout.groups) for (const n of g.fieldNames) s.add(n);
+    return s;
+  }, [layout]);
+
+  // Ungrouped = todos os visíveis fora de qualquer grupo
+  const ungrouped = useMemo(
+    () => visibleFields.filter((f) => !groupedNames.has(f.name)),
+    [visibleFields, groupedNames],
+  );
+
+  const filled = ungrouped.filter((f) => hasValue(f.name));
+  const empty = ungrouped.filter((f) => !hasValue(f.name));
   const orphanKeys = Object.keys(values).filter(
     (k) => !hidden.has(k) && !visibleFields.some((f) => f.name === k),
   );
 
-  const filledCount = filled.length + orphanKeys.length;
+  const filledCount =
+    filled.length +
+    orphanKeys.length +
+    layout.groups.reduce(
+      (acc, g) => acc + g.fieldNames.filter((n) => hasValue(n)).length,
+      0,
+    );
 
   function setKey(key: string, value: unknown) {
     const next: Record<string, unknown> = { ...values };
@@ -536,8 +571,6 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     onChange(Object.keys(next).length ? next : undefined);
   }
 
-  // Aliases: alguns campos da entidade alvo têm nomes diferentes do payload
-  // do registro-gatilho. Mapeia para o token mais provável.
   const TOKEN_ALIAS: Record<string, string> = {
     counterparty_company_id: "{{company_id}}",
     primary_contact_id: "{{contact_id}}",
@@ -549,7 +582,6 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
 
   function tokenForField(field: EntityFieldDef): string | null {
     if (field.name === "custom_fields") return null;
-    // boolean/date/select têm valores fechados — não fazem sentido com token
     if (field.type === "boolean" || field.type === "date" || field.type === "select") {
       return null;
     }
@@ -559,7 +591,8 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
   function autofillFromWorkflow() {
     const next: Record<string, unknown> = { ...values };
     let changed = 0;
-    for (const f of empty) {
+    for (const f of visibleFields) {
+      if (hasValue(f.name)) continue;
       const tk = tokenForField(f);
       if (!tk) continue;
       next[f.name] = tk;
@@ -568,22 +601,132 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     if (changed > 0) onChange(next);
   }
 
-  const autofillableCount = empty.filter((f) => tokenForField(f) !== null).length;
+  const autofillableCount = visibleFields.filter(
+    (f) => !hasValue(f.name) && tokenForField(f) !== null,
+  ).length;
 
+  // ---- Layout ops ----
+  function addGroup() {
+    const label = window.prompt("Nome do grupo (ex.: Contratante, Valores, Datas)")?.trim();
+    if (!label) return;
+    persistLayout({
+      ...layout,
+      groups: [...layout.groups, { id: newGroupId(), label, fieldNames: [], collapsed: false }],
+    });
+  }
 
-  function renderRow(field: EntityFieldDef | undefined, key: string, value: unknown) {
+  function renameGroup(gid: string) {
+    const current = layout.groups.find((g) => g.id === gid);
+    if (!current) return;
+    const label = window.prompt("Renomear grupo", current.label)?.trim();
+    if (!label) return;
+    persistLayout({
+      ...layout,
+      groups: layout.groups.map((g) => (g.id === gid ? { ...g, label } : g)),
+    });
+  }
+
+  function deleteGroup(gid: string) {
+    if (!window.confirm("Remover este grupo? Os campos voltam para 'Sem grupo'.")) return;
+    persistLayout({
+      ...layout,
+      groups: layout.groups.filter((g) => g.id !== gid),
+    });
+  }
+
+  function toggleGroupCollapsed(gid: string) {
+    persistLayout({
+      ...layout,
+      groups: layout.groups.map((g) =>
+        g.id === gid ? { ...g, collapsed: !g.collapsed } : g,
+      ),
+    });
+  }
+
+  function resetLayout() {
+    if (!window.confirm("Restaurar layout padrão? Todos os grupos serão removidos.")) return;
+    clearFieldLayout(entity);
+    setLayout({ version: 1, groups: [] });
+  }
+
+  // Drag state — usamos dataTransfer para segurança e leveza.
+  function onFieldDragStart(e: React.DragEvent, fieldName: string) {
+    e.dataTransfer.setData("application/x-wf-field", fieldName);
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function onFieldDropInGroup(e: React.DragEvent, groupId: string, index?: number) {
+    const fieldName = e.dataTransfer.getData("application/x-wf-field");
+    if (!fieldName) return;
+    e.preventDefault();
+    e.stopPropagation();
+    persistLayout(insertFieldInGroup(layout, fieldName, groupId, index));
+  }
+
+  function onFieldDropUngrouped(e: React.DragEvent) {
+    const fieldName = e.dataTransfer.getData("application/x-wf-field");
+    if (!fieldName) return;
+    e.preventDefault();
+    e.stopPropagation();
+    persistLayout(removeFieldFromGroups(layout, fieldName));
+  }
+
+  function onGroupDragStart(e: React.DragEvent, index: number) {
+    e.dataTransfer.setData("application/x-wf-group", String(index));
+    e.dataTransfer.effectAllowed = "move";
+  }
+
+  function onGroupDrop(e: React.DragEvent, toIndex: number) {
+    const raw = e.dataTransfer.getData("application/x-wf-group");
+    if (!raw) return;
+    const from = Number(raw);
+    if (!Number.isFinite(from)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    persistLayout(reorderGroups(layout, from, toIndex));
+  }
+
+  function allowDrop(e: React.DragEvent) {
+    if (
+      e.dataTransfer.types.includes("application/x-wf-field") ||
+      e.dataTransfer.types.includes("application/x-wf-group")
+    ) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    }
+  }
+
+  function renderRow(
+    field: EntityFieldDef | undefined,
+    key: string,
+    value: unknown,
+    opts?: { draggable?: boolean; groupId?: string; index?: number },
+  ) {
     const err = field ? fieldErrors.get(field.name) : undefined;
     const required = Boolean(field?.required);
+    const draggable = Boolean(customizeMode && opts?.draggable && field);
     return (
       <div
         key={key}
+        draggable={draggable}
+        onDragStart={draggable ? (e) => onFieldDragStart(e, key) : undefined}
+        onDragOver={customizeMode && opts?.groupId ? allowDrop : undefined}
+        onDrop={
+          customizeMode && opts?.groupId
+            ? (e) => onFieldDropInGroup(e, opts.groupId!, opts.index)
+            : undefined
+        }
         className={cn(
           "space-y-1.5 rounded border bg-background p-2 transition-colors",
           err ? "border-destructive/60 ring-1 ring-destructive/30" : "border-border/40",
+          draggable && "cursor-grab active:cursor-grabbing",
         )}
       >
         <div className="flex items-start justify-between gap-2">
           <Label className="text-xs font-medium flex items-center gap-1">
+            {customizeMode && field && (
+              <GripVertical className="h-3 w-3 text-muted-foreground" aria-hidden />
+            )}
             <span>{field?.label ?? key}</span>
             {required && (
               <span className="text-destructive" aria-label="obrigatório" title="Campo obrigatório">
@@ -591,7 +734,7 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
               </span>
             )}
           </Label>
-          {hasValue(key) && (
+          {hasValue(key) && !customizeMode && (
             <Button
               type="button"
               variant="ghost"
@@ -604,22 +747,134 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
             </Button>
           )}
         </div>
-        <div>
-          {field ? (
-            <FieldInput field={field} value={value} onChange={(v) => setKey(key, v)} />
-          ) : (
-            <Input
-              value={typeof value === "string" ? value : value == null ? "" : String(value)}
-              onChange={(e) => setKey(key, e.target.value)}
-              placeholder="valor"
-            />
-          )}
-        </div>
-        {err && (
+        {!customizeMode && (
+          <div>
+            {field ? (
+              <FieldInput field={field} value={value} onChange={(v) => setKey(key, v)} />
+            ) : (
+              <Input
+                value={typeof value === "string" ? value : value == null ? "" : String(value)}
+                onChange={(e) => setKey(key, e.target.value)}
+                placeholder="valor"
+              />
+            )}
+          </div>
+        )}
+        {err && !customizeMode && (
           <p className="flex items-center gap-1 text-[11px] font-medium text-destructive">
             <AlertCircle className="h-3 w-3" />
             {err}
           </p>
+        )}
+      </div>
+    );
+  }
+
+  function renderGroup(g: FieldGroup, index: number) {
+    const fields = g.fieldNames
+      .map((n) => fieldByName.get(n))
+      .filter((f): f is EntityFieldDef => Boolean(f));
+    const filledInGroup = fields.filter((f) => hasValue(f.name)).length;
+    const errsInGroup = fields.filter((f) => fieldErrors.has(f.name)).length;
+
+    return (
+      <div
+        key={g.id}
+        className="rounded-md border border-border/60 bg-background"
+        draggable={customizeMode}
+        onDragStart={customizeMode ? (e) => onGroupDragStart(e, index) : undefined}
+        onDragOver={customizeMode ? allowDrop : undefined}
+        onDrop={
+          customizeMode
+            ? (e) => {
+                // Se estiver arrastando um campo, cai como último item
+                const fieldName = e.dataTransfer.getData("application/x-wf-field");
+                if (fieldName) {
+                  onFieldDropInGroup(e, g.id);
+                  return;
+                }
+                onGroupDrop(e, index);
+              }
+            : undefined
+        }
+      >
+        <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-border/60 bg-muted/30">
+          <button
+            type="button"
+            onClick={() => toggleGroupCollapsed(g.id)}
+            className="flex items-center gap-1.5 text-xs font-medium text-foreground/90 hover:text-foreground"
+          >
+            {customizeMode && <GripVertical className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />}
+            {g.collapsed ? (
+              <ChevronRight className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronDown className="h-3.5 w-3.5" />
+            )}
+            <span>{g.label}</span>
+            {filledInGroup > 0 && (
+              <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                {filledInGroup}/{fields.length}
+              </span>
+            )}
+            {errsInGroup > 0 && (
+              <span
+                className="flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive"
+                title="Pendências neste grupo"
+              >
+                <AlertCircle className="h-2.5 w-2.5" />
+                {errsInGroup}
+              </span>
+            )}
+          </button>
+          {customizeMode && (
+            <div className="flex items-center gap-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                title="Renomear"
+                onClick={() => renameGroup(g.id)}
+              >
+                <Pencil className="h-3 w-3" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-destructive hover:text-destructive"
+                title="Remover grupo"
+                onClick={() => deleteGroup(g.id)}
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+        </div>
+        {!g.collapsed && (
+          <div className="space-y-2 p-2">
+            {fields.length === 0 && (
+              <div
+                onDragOver={customizeMode ? allowDrop : undefined}
+                onDrop={customizeMode ? (e) => onFieldDropInGroup(e, g.id) : undefined}
+                className={cn(
+                  "rounded border border-dashed border-border/60 px-2 py-4 text-center text-[11px] text-muted-foreground",
+                  customizeMode && "hover:border-primary/60 hover:text-primary",
+                )}
+              >
+                {customizeMode
+                  ? "Arraste campos até aqui para agrupar."
+                  : "Nenhum campo neste grupo."}
+              </div>
+            )}
+            {fields.map((f, i) =>
+              renderRow(f, f.name, values[f.name], {
+                draggable: true,
+                groupId: g.id,
+                index: i,
+              }),
+            )}
+          </div>
         )}
       </div>
     );
@@ -658,7 +913,56 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
 
       {open && (
         <div className="space-y-2 border-t border-border/60 px-3 py-2.5">
-          {errorCount > 0 && (
+          {/* Toolbar de personalização */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant={customizeMode ? "default" : "outline"}
+                size="sm"
+                className="h-7 text-[11px]"
+                onClick={() => setCustomizeMode((v) => !v)}
+                title="Ativa arrastar campos e editar grupos"
+              >
+                <Settings2 className="mr-1 h-3 w-3" />
+                {customizeMode ? "Concluir" : "Personalizar layout"}
+              </Button>
+              {customizeMode && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-[11px]"
+                    onClick={addGroup}
+                  >
+                    <FolderPlus className="mr-1 h-3 w-3" />
+                    Novo grupo
+                  </Button>
+                  {layout.groups.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[11px] text-muted-foreground"
+                      onClick={resetLayout}
+                      title="Remover todos os grupos e voltar ao padrão"
+                    >
+                      <RotateCcw className="mr-1 h-3 w-3" />
+                      Restaurar
+                    </Button>
+                  )}
+                </>
+              )}
+            </div>
+            {customizeMode && (
+              <span className="text-[10px] text-muted-foreground">
+                Arraste campos entre grupos. Arraste o cabeçalho para reordenar.
+              </span>
+            )}
+          </div>
+
+          {errorCount > 0 && !customizeMode && (
             <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-2 text-[11px] text-destructive">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <div className="space-y-0.5">
@@ -688,39 +992,68 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
             </p>
           )}
 
-          {(filled.length > 0 || orphanKeys.length > 0) && (
+          {/* Grupos personalizados */}
+          {layout.groups.length > 0 && (
             <div className="space-y-2">
-              {filled.map((f) => renderRow(f, f.name, values[f.name]))}
-              {orphanKeys.map((k) => renderRow(undefined, k, values[k]))}
+              {layout.groups.map((g, i) => renderGroup(g, i))}
             </div>
           )}
 
-          {empty.length > 0 && (
-            <div className="space-y-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setShowEmpty((v) => !v)}
-                className="flex w-full items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
-                aria-expanded={showEmpty}
-              >
-                {showEmpty ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
+          {/* Sem grupo — bucket clássico com filled/empty */}
+          <div
+            onDragOver={customizeMode ? allowDrop : undefined}
+            onDrop={customizeMode ? onFieldDropUngrouped : undefined}
+            className={cn(
+              "space-y-2",
+              customizeMode &&
+                layout.groups.length > 0 &&
+                "rounded-md border border-dashed border-border/60 p-2",
+            )}
+          >
+            {customizeMode && layout.groups.length > 0 && (
+              <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Sem grupo — arraste para cá para desagrupar
+              </p>
+            )}
+
+            {(filled.length > 0 || orphanKeys.length > 0) && (
+              <div className="space-y-2">
+                {filled.map((f) => renderRow(f, f.name, values[f.name], { draggable: true }))}
+                {orphanKeys.map((k) => renderRow(undefined, k, values[k]))}
+              </div>
+            )}
+
+            {empty.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowEmpty((v) => !v)}
+                  className="flex w-full items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                  aria-expanded={showEmpty}
+                >
+                  {showEmpty ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                  {filled.length > 0 || orphanKeys.length > 0 || layout.groups.length > 0
+                    ? "Outros campos"
+                    : "Todos os campos"}
+                  <span className="text-[10px] text-muted-foreground">({empty.length})</span>
+                </button>
+
+                {showEmpty && (
+                  <div className="space-y-2">
+                    {empty.map((f) =>
+                      renderRow(f, f.name, values[f.name], { draggable: true }),
+                    )}
+                  </div>
                 )}
-                {filled.length > 0 || orphanKeys.length > 0 ? "Outros campos" : "Todos os campos"}
-                <span className="text-[10px] text-muted-foreground">({empty.length})</span>
-              </button>
+              </div>
+            )}
+          </div>
 
-              {showEmpty && (
-                <div className="space-y-2">
-                  {empty.map((f) => renderRow(f, f.name, values[f.name]))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {empty.length > 0 && autofillableCount > 0 && (
+          {autofillableCount > 0 && !customizeMode && (
             <div className="flex justify-end">
               <Button
                 type="button"
@@ -739,9 +1072,9 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
           <p className="pt-1 text-[10px] text-muted-foreground">
             Use tokens <code className="text-[10px]">{`{{campo}}`}</code> nos campos texto para reutilizar valores do registro que disparou o workflow.
           </p>
-
         </div>
       )}
     </div>
   );
 }
+
