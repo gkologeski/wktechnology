@@ -1,8 +1,11 @@
-// Server functions do módulo TechPeople — Sprint 6.
-// Onboarding & Offboarding: templates, planos e tarefas.
+// Server functions do módulo TechPeople — Sprint 6 & 7.
+// Onboarding & Offboarding: templates, planos, tarefas e automação.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { emitEvent } from "@/lib/events.server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 
 export const ONB_KINDS = ["onboarding", "offboarding"] as const;
 export type OnbKind = (typeof ONB_KINDS)[number];
