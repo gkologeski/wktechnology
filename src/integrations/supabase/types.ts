@@ -15194,6 +15194,54 @@ export type Database = {
           },
         ]
       }
+      workflow_action_templates: {
+        Row: {
+          action_json: Json
+          action_type: string
+          created_at: string
+          description: string | null
+          entity: string | null
+          id: string
+          name: string
+          owner_id: string
+          table_name: string | null
+          updated_at: string
+          usage_count: number
+          visibility: string
+          workspace_id: string | null
+        }
+        Insert: {
+          action_json: Json
+          action_type: string
+          created_at?: string
+          description?: string | null
+          entity?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          table_name?: string | null
+          updated_at?: string
+          usage_count?: number
+          visibility?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          action_json?: Json
+          action_type?: string
+          created_at?: string
+          description?: string | null
+          entity?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          table_name?: string | null
+          updated_at?: string
+          usage_count?: number
+          visibility?: string
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       workflow_approvals: {
         Row: {
           approver_user_id: string | null
@@ -16050,6 +16098,7 @@ export type Database = {
         Returns: boolean
       }
       increment_snippet_usage: { Args: { _id: string }; Returns: undefined }
+      increment_wat_usage: { Args: { _id: string }; Returns: undefined }
       is_chat_member: {
         Args: { _conv: string; _user: string }
         Returns: boolean
