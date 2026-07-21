@@ -9692,6 +9692,88 @@ export type Database = {
           },
         ]
       }
+      people_allocations: {
+        Row: {
+          allocation_pct: number
+          billable_rate: number | null
+          contract_id: string | null
+          cost_rate: number | null
+          created_at: string
+          currency: string
+          ends_at: string | null
+          id: string
+          notes: string | null
+          owner_id: string
+          person_id: string
+          project_id: string | null
+          role_title: string | null
+          starts_at: string
+          status: Database["public"]["Enums"]["allocation_status"]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          allocation_pct?: number
+          billable_rate?: number | null
+          contract_id?: string | null
+          cost_rate?: number | null
+          created_at?: string
+          currency?: string
+          ends_at?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          person_id: string
+          project_id?: string | null
+          role_title?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["allocation_status"]
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          allocation_pct?: number
+          billable_rate?: number | null
+          contract_id?: string | null
+          cost_rate?: number | null
+          created_at?: string
+          currency?: string
+          ends_at?: string | null
+          id?: string
+          notes?: string | null
+          owner_id?: string
+          person_id?: string
+          project_id?: string | null
+          role_title?: string | null
+          starts_at?: string
+          status?: Database["public"]["Enums"]["allocation_status"]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_allocations_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocations_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       people_documents: {
         Row: {
           created_at: string
@@ -16879,6 +16961,7 @@ export type Database = {
         | "sms"
         | "postal_mail"
         | "linkedin_message"
+      allocation_status: "active" | "paused" | "ended"
       app_role: "admin" | "manager" | "member"
       billing_interval: "week" | "month" | "quarter" | "year"
       booking_status: "confirmed" | "canceled"
@@ -17170,6 +17253,7 @@ export const Constants = {
         "postal_mail",
         "linkedin_message",
       ],
+      allocation_status: ["active", "paused", "ended"],
       app_role: ["admin", "manager", "member"],
       billing_interval: ["week", "month", "quarter", "year"],
       booking_status: ["confirmed", "canceled"],

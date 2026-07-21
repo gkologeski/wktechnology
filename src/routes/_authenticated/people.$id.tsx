@@ -55,6 +55,7 @@ import { OneOnOnesPanel } from "@/components/people/one-on-ones-panel";
 import { ReviewsPanel } from "@/components/people/reviews-panel";
 import { PsychosocialPanel } from "@/components/people/psychosocial-panel";
 import { IncidentsPanel } from "@/components/people/incidents-panel";
+import { AllocationsPanel } from "@/components/people/allocations-panel";
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
@@ -151,7 +152,7 @@ function PersonForm({
 }) {
   const p = person;
   const canWrite = true; // RLS bloqueia writes de não-admins — botão aparece, servidor decide.
-  const canViewSensitive = person.can_view_sensitive;
+  const canViewSensitive = !!person.can_view_sensitive;
 
   const [fullName, setFullName] = useState(p.full_name);
   const [preferredName, setPreferredName] = useState(p.preferred_name ?? "");
@@ -228,6 +229,7 @@ function PersonForm({
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">Perfil</TabsTrigger>
+          <TabsTrigger value="allocations">Alocações</TabsTrigger>
           <TabsTrigger value="goals">Metas</TabsTrigger>
           <TabsTrigger value="one_on_ones">1:1s</TabsTrigger>
           <TabsTrigger value="reviews">Avaliações</TabsTrigger>
@@ -379,6 +381,14 @@ function PersonForm({
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="allocations" className="pt-4">
+          <AllocationsPanel
+            personId={p.id}
+            canWrite={canWrite}
+            canViewSensitive={canViewSensitive}
+          />
         </TabsContent>
 
         <TabsContent value="goals" className="pt-4">
