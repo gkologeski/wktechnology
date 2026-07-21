@@ -16053,6 +16053,8 @@ export type Database = {
           data_type: string
           distinct_count: number
           distinct_values: string[]
+          has_default: boolean
+          is_nullable: string
         }[]
       }
       get_entity_timeline: {
