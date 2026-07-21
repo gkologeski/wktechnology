@@ -49,7 +49,10 @@ export type OnbTemplateItem = {
   description?: string | null;
   category?: string | null;
   due_offset_days?: number | null;
+  is_critical?: boolean | null;
+  revocation_system?: string | null;
 };
+
 
 export type OnbTemplateRow = {
   id: string;
@@ -97,9 +100,12 @@ export type OnbTaskRow = {
   completed_at: string | null;
   completed_by: string | null;
   order_index: number;
+  is_critical: boolean;
+  revocation_system: string | null;
   created_at: string;
   updated_at: string;
 };
+
 
 type MinimalClient = { from: (t: string) => unknown };
 async function resolveWorkspaceId(
@@ -131,7 +137,10 @@ const templateItemSchema = z.object({
   description: z.string().max(2000).nullable().optional(),
   category: z.string().max(80).nullable().optional(),
   due_offset_days: z.number().int().nullable().optional(),
+  is_critical: z.boolean().nullable().optional(),
+  revocation_system: z.string().max(120).nullable().optional(),
 });
+
 
 const templateSchema = z.object({
   id: z.string().uuid().nullable().optional(),
@@ -393,6 +402,8 @@ const taskSchema = z.object({
   due_date: z.string().nullable().optional(),
   status: z.enum(ONB_TASK_STATUSES).default("pending"),
   order_index: z.number().int().default(0),
+  is_critical: z.boolean().nullable().optional(),
+  revocation_system: z.string().max(120).nullable().optional(),
 });
 
 export const upsertOnbTask = createServerFn({ method: "POST" })
@@ -409,6 +420,9 @@ export const upsertOnbTask = createServerFn({ method: "POST" })
       due_date: data.due_date || null,
       status: data.status,
       order_index: data.order_index,
+      is_critical: data.is_critical ?? false,
+      revocation_system: data.revocation_system ?? null,
+
     };
     if (data.status === "done") {
       payload.completed_at = new Date().toISOString();
@@ -569,7 +583,10 @@ async function materializePlan(
         due_date: due,
         order_index: idx,
         status: "pending" as const,
+        is_critical: it.is_critical ?? false,
+        revocation_system: it.revocation_system ?? null,
       };
+
     });
     const { error: e2 } = await supabase
       .from("people_onboarding_tasks")
@@ -687,3 +704,125 @@ export async function runAutoStart(
   }).catch(() => undefined);
   return { status: "created", plan_id: planId, template_id: tpl.id, task_count: taskCount };
 }
+
+// ============ SPRINT 9 — OFFBOARDING TÉCNICO & COMPLIANCE ============
+//
+// Consolida o status de compliance de desligamento por pessoa:
+// - Itens críticos (revogação de acessos, backup, termos) pendentes
+// - Vencidos (due_date < hoje e não concluídos)
+// - Progresso agregado
+// Usado pelo painel de compliance na ficha 360° e para emitir alertas.
+
+export type OffboardingComplianceTask = {
+  id: string;
+  plan_id: string;
+  title: string;
+  category: string | null;
+  revocation_system: string | null;
+  due_date: string | null;
+  status: OnbTaskStatus;
+  is_overdue: boolean;
+};
+
+export type OffboardingComplianceSummary = {
+  has_plan: boolean;
+  plan_id: string | null;
+  plan_status: OnbPlanStatus | null;
+  started_at: string | null;
+  target_completion_date: string | null;
+  totals: {
+    total: number;
+    done: number;
+    critical_total: number;
+    critical_pending: number;
+    overdue: number;
+  };
+  critical_tasks: OffboardingComplianceTask[];
+};
+
+export const getOffboardingCompliance = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z.object({ person_id: z.string().uuid() }).parse(i),
+  )
+  .handler(async ({ data, context }): Promise<OffboardingComplianceSummary> => {
+    const { supabase } = context;
+    const { data: planRow } = await supabase
+      .from("people_onboarding_plans")
+      .select("id, status, started_at, target_completion_date")
+      .eq("person_id", data.person_id)
+      .eq("kind", "offboarding")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const plan = planRow as {
+      id: string;
+      status: OnbPlanStatus;
+      started_at: string | null;
+      target_completion_date: string | null;
+    } | null;
+    if (!plan) {
+      return {
+        has_plan: false,
+        plan_id: null,
+        plan_status: null,
+        started_at: null,
+        target_completion_date: null,
+        totals: { total: 0, done: 0, critical_total: 0, critical_pending: 0, overdue: 0 },
+        critical_tasks: [],
+      };
+    }
+    const { data: taskRows, error } = await supabase
+      .from("people_onboarding_tasks")
+      .select("id, plan_id, title, category, revocation_system, due_date, status, is_critical, order_index")
+      .eq("plan_id", plan.id)
+      .order("order_index", { ascending: true });
+    if (error) throw new Error(error.message);
+    const tasks = (taskRows ?? []) as Array<{
+      id: string;
+      plan_id: string;
+      title: string;
+      category: string | null;
+      revocation_system: string | null;
+      due_date: string | null;
+      status: OnbTaskStatus;
+      is_critical: boolean;
+    }>;
+    const today = new Date().toISOString().slice(0, 10);
+    let total = 0;
+    let done = 0;
+    let criticalTotal = 0;
+    let criticalPending = 0;
+    let overdue = 0;
+    const critical: OffboardingComplianceTask[] = [];
+    for (const t of tasks) {
+      total += 1;
+      const isDone = t.status === "done" || t.status === "skipped";
+      if (isDone) done += 1;
+      const isOverdue = !isDone && !!t.due_date && t.due_date < today;
+      if (isOverdue) overdue += 1;
+      if (t.is_critical) {
+        criticalTotal += 1;
+        if (!isDone) criticalPending += 1;
+        critical.push({
+          id: t.id,
+          plan_id: t.plan_id,
+          title: t.title,
+          category: t.category,
+          revocation_system: t.revocation_system,
+          due_date: t.due_date,
+          status: t.status,
+          is_overdue: isOverdue,
+        });
+      }
+    }
+    return {
+      has_plan: true,
+      plan_id: plan.id,
+      plan_status: plan.status,
+      started_at: plan.started_at,
+      target_completion_date: plan.target_completion_date,
+      totals: { total, done, critical_total: criticalTotal, critical_pending: criticalPending, overdue },
+      critical_tasks: critical,
+    };
+  });

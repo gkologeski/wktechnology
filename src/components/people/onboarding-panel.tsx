@@ -23,6 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+
 import {
   Select,
   SelectContent,
@@ -561,6 +563,8 @@ function TaskDialog({
   const [category, setCategory] = useState(task?.category ?? "");
   const [dueDate, setDueDate] = useState(task?.due_date ?? "");
   const [status, setStatus] = useState<OnbTaskStatus>(task?.status ?? "pending");
+  const [isCritical, setIsCritical] = useState<boolean>(task?.is_critical ?? false);
+  const [revocationSystem, setRevocationSystem] = useState<string>(task?.revocation_system ?? "");
 
   const mut = useMutation({
     mutationFn: () =>
@@ -574,6 +578,8 @@ function TaskDialog({
           due_date: dueDate || null,
           status,
           order_index: task?.order_index ?? nextIndex,
+          is_critical: isCritical,
+          revocation_system: revocationSystem.trim() || null,
         },
       }),
     onSuccess: () => {
@@ -582,6 +588,7 @@ function TaskDialog({
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
@@ -635,7 +642,30 @@ function TaskDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="rounded-md border p-3 space-y-3 bg-muted/30">
+            <div className="flex items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <Label className="text-sm">Item crítico de compliance</Label>
+                <p className="text-xs text-muted-foreground">
+                  Marque tarefas obrigatórias de desligamento (revogação de acesso, backup de dados,
+                  termos assinados) para acompanhamento no painel de compliance.
+                </p>
+              </div>
+              <Switch checked={isCritical} onCheckedChange={setIsCritical} />
+            </div>
+            {isCritical ? (
+              <div className="space-y-2">
+                <Label>Sistema alvo da revogação</Label>
+                <Input
+                  value={revocationSystem}
+                  onChange={(e) => setRevocationSystem(e.target.value)}
+                  placeholder="Google Workspace, Slack, GitHub, VPN…"
+                />
+              </div>
+            ) : null}
+          </div>
         </div>
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancelar

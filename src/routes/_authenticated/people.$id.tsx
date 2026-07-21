@@ -58,6 +58,8 @@ import { IncidentsPanel } from "@/components/people/incidents-panel";
 import { AllocationsPanel } from "@/components/people/allocations-panel";
 import { TimesheetPanel } from "@/components/people/timesheet-panel";
 import { OnboardingPanel } from "@/components/people/onboarding-panel";
+import { OffboardingCompliancePanel } from "@/components/people/offboarding-compliance-panel";
+
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
@@ -412,9 +414,13 @@ function PersonForm({
           <ReviewsPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
 
-        <TabsContent value="onboarding" className="pt-4">
+        <TabsContent value="onboarding" className="pt-4 space-y-4">
+          {p.status === "offboarding" || p.status === "terminated" ? (
+            <OffboardingCompliancePanel personId={p.id} />
+          ) : null}
           <OnboardingPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
+
 
         {canViewSensitive ? (
           <TabsContent value="psychosocial" className="pt-4">
