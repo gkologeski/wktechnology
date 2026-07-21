@@ -483,6 +483,90 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
   { label: "Externo", actions: ["webhook"] },
 ];
 
+// Catálogo de "Registros (qualquer módulo)" agrupado por módulo com labels
+// específicos por entidade. Consumido pelo ActionLibraryPanel para renderizar
+// navegação módulo → entidade → operação (Criar/Editar/Excluir).
+export type RecordActionEntity = {
+  table: WorkflowWritableTable;
+  singular: string; // rótulo curto para linha da entidade (ex.: "Projeto")
+  hint?: string; // texto auxiliar opcional
+};
+
+export type RecordActionModule = {
+  key: string;
+  label: string;
+  entities: RecordActionEntity[];
+};
+
+export const RECORD_ACTION_MODULES: RecordActionModule[] = [
+  {
+    key: "sales",
+    label: "Vendas",
+    entities: [
+      { table: "leads", singular: "Lead" },
+      { table: "contacts", singular: "Contato" },
+      { table: "companies", singular: "Empresa" },
+      { table: "deals", singular: "Negócio" },
+      { table: "quotes", singular: "Cotação" },
+      { table: "proposals", singular: "Proposta" },
+    ],
+  },
+  {
+    key: "support",
+    label: "Atendimento",
+    entities: [{ table: "tickets", singular: "Ticket" }],
+  },
+  {
+    key: "ats",
+    label: "Recrutamento (ATS)",
+    entities: [
+      { table: "ats_jobs", singular: "Vaga" },
+      { table: "ats_candidates", singular: "Candidato" },
+      { table: "ats_applications", singular: "Aplicação" },
+      { table: "ats_interviews", singular: "Entrevista" },
+    ],
+  },
+  {
+    key: "projects",
+    label: "Projetos",
+    entities: [
+      { table: "projects", singular: "Projeto" },
+      { table: "project_tasks", singular: "Tarefa de projeto" },
+      { table: "project_milestones", singular: "Marco de projeto" },
+    ],
+  },
+  {
+    key: "catalog",
+    label: "Contratos e catálogo",
+    entities: [
+      { table: "contracts", singular: "Contrato" },
+      { table: "products", singular: "Produto" },
+      { table: "services", singular: "Serviço" },
+    ],
+  },
+  {
+    key: "finance",
+    label: "Financeiro",
+    entities: [
+      {
+        table: "financial_entries",
+        singular: "Lançamento financeiro",
+        hint: "Contas a pagar/receber (definido pelo campo direção)",
+      },
+      { table: "bank_payments", singular: "Pagamento bancário" },
+      { table: "customer_invoices", singular: "Fatura de cliente" },
+      { table: "subscription_invoices", singular: "Fatura de assinatura" },
+      { table: "recurring_plans", singular: "Plano recorrente" },
+    ],
+  },
+  {
+    key: "activities",
+    label: "Atividades",
+    entities: [{ table: "activities", singular: "Atividade" }],
+  },
+];
+
+
 
 
 // Common fields by entity, used in filter dropdowns and set_field actions
