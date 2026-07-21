@@ -378,42 +378,7 @@ function PersonForm({
             <StatCard label="Vencidos" value={docStats.expired} tone="rose" />
             <StatCard label="Ausentes" value={docStats.missing} tone="muted" />
           </div>
-          <Card>
-            <CardContent className="p-0 divide-y">
-              {documents.length === 0 ? (
-                <div className="p-6 text-sm text-muted-foreground text-center">
-                  <FileCheck2 className="h-6 w-6 mx-auto mb-2 opacity-60" />
-                  Nenhum documento cadastrado.
-                </div>
-              ) : (
-                documents.map((d) => (
-                  <div key={d.id} className="p-4 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium">{d.doc_type}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {d.doc_number ?? "—"}
-                        {d.expires_at ? ` · vence em ${d.expires_at}` : ""}
-                      </div>
-                    </div>
-                    <Badge
-                      variant="secondary"
-                      className={
-                        d.status === "valid"
-                          ? "bg-emerald-500/10 text-emerald-700"
-                          : d.status === "expiring"
-                            ? "bg-amber-500/10 text-amber-700"
-                            : d.status === "expired"
-                              ? "bg-rose-500/10 text-rose-700"
-                              : ""
-                      }
-                    >
-                      {d.status}
-                    </Badge>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
+          <DocumentsPanel personId={p.id} documents={documents} />
         </TabsContent>
 
         <TabsContent value="timeline" className="space-y-3 pt-4">
