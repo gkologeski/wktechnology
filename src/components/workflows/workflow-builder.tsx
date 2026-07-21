@@ -455,10 +455,11 @@ export function WorkflowBuilder({
   const addAction = (
     type: WorkflowActionType,
     parentPath: StepPath,
-    overrides?: Partial<WorkflowAction>,
+    overrides?: Record<string, unknown>,
   ) => {
-    const base = defaultActionOfType(type);
-    const newAction = (overrides ? { ...base, ...overrides } : base) as WorkflowAction;
+    const base = defaultActionOfType(type) as unknown as Record<string, unknown>;
+    const newAction = (overrides ? { ...base, ...overrides } : base) as unknown as WorkflowAction;
+
     setActions((prev) => insertStep(prev, parentPath, newAction));
     setLibrary(null);
     // Seleciona o novo passo (último índice do array em que foi inserido).
