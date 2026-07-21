@@ -436,6 +436,14 @@ function PersonForm({
           </TabsContent>
         ) : null}
 
+        {canViewSensitive ? (
+          <TabsContent value="benefits" className="pt-4">
+            <BenefitsPanel personId={p.id} canWrite={canWrite} />
+          </TabsContent>
+        ) : null}
+
+
+
 
         <TabsContent value="documents" className="space-y-4 pt-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
