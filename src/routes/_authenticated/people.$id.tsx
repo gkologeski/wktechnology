@@ -383,6 +383,14 @@ function PersonForm({
           </Card>
         </TabsContent>
 
+        <TabsContent value="allocations" className="pt-4">
+          <AllocationsPanel
+            personId={p.id}
+            canWrite={canWrite}
+            canViewSensitive={canViewSensitive}
+          />
+        </TabsContent>
+
         <TabsContent value="goals" className="pt-4">
           <GoalsPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
