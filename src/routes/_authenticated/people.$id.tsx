@@ -50,6 +50,9 @@ import {
   type PeopleDocumentRow,
 } from "@/lib/people/documents.functions";
 import { PersonDocumentDialog } from "@/components/people/document-dialog";
+import { GoalsPanel } from "@/components/people/goals-panel";
+import { OneOnOnesPanel } from "@/components/people/one-on-ones-panel";
+import { ReviewsPanel } from "@/components/people/reviews-panel";
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
@@ -223,6 +226,9 @@ function PersonForm({
       <Tabs defaultValue="profile">
         <TabsList>
           <TabsTrigger value="profile">Perfil</TabsTrigger>
+          <TabsTrigger value="goals">Metas</TabsTrigger>
+          <TabsTrigger value="one_on_ones">1:1s</TabsTrigger>
+          <TabsTrigger value="reviews">Avaliações</TabsTrigger>
           <TabsTrigger value="documents">Documentos</TabsTrigger>
           <TabsTrigger value="timeline">Histórico</TabsTrigger>
         </TabsList>
@@ -369,6 +375,18 @@ function PersonForm({
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="goals" className="pt-4">
+          <GoalsPanel personId={p.id} canWrite={canWrite} />
+        </TabsContent>
+
+        <TabsContent value="one_on_ones" className="pt-4">
+          <OneOnOnesPanel personId={p.id} canWrite={canWrite} />
+        </TabsContent>
+
+        <TabsContent value="reviews" className="pt-4">
+          <ReviewsPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-4 pt-4">

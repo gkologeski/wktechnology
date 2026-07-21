@@ -9801,6 +9801,213 @@ export type Database = {
           },
         ]
       }
+      people_goals: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          current_value: number
+          description: string | null
+          id: string
+          metric_type: string
+          owner_id: string
+          period_end: string | null
+          period_start: string | null
+          person_id: string
+          progress_pct: number
+          status: string
+          target_value: number | null
+          title: string
+          unit: string | null
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          current_value?: number
+          description?: string | null
+          id?: string
+          metric_type?: string
+          owner_id: string
+          period_end?: string | null
+          period_start?: string | null
+          person_id: string
+          progress_pct?: number
+          status?: string
+          target_value?: number | null
+          title: string
+          unit?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          current_value?: number
+          description?: string | null
+          id?: string
+          metric_type?: string
+          owner_id?: string
+          period_end?: string | null
+          period_start?: string | null
+          person_id?: string
+          progress_pct?: number
+          status?: string
+          target_value?: number | null
+          title?: string
+          unit?: string | null
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_goals_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_one_on_ones: {
+        Row: {
+          action_items: Json
+          agenda: string | null
+          created_at: string
+          created_by: string | null
+          duration_min: number | null
+          held_at: string | null
+          id: string
+          manager_id: string | null
+          mood: number | null
+          notes: string | null
+          owner_id: string
+          person_id: string
+          private_notes: string | null
+          scheduled_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json
+          agenda?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_min?: number | null
+          held_at?: string | null
+          id?: string
+          manager_id?: string | null
+          mood?: number | null
+          notes?: string | null
+          owner_id: string
+          person_id: string
+          private_notes?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json
+          agenda?: string | null
+          created_at?: string
+          created_by?: string | null
+          duration_min?: number | null
+          held_at?: string | null
+          id?: string
+          manager_id?: string | null
+          mood?: number | null
+          notes?: string | null
+          owner_id?: string
+          person_id?: string
+          private_notes?: string | null
+          scheduled_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_one_on_ones_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people_reviews: {
+        Row: {
+          cadence: string
+          comments: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          improvements: string | null
+          overall_score: number | null
+          owner_id: string
+          period_end: string
+          period_start: string
+          person_id: string
+          ratings: Json
+          reviewer_id: string | null
+          reviewer_name: string | null
+          reviewer_role: string | null
+          status: string
+          strengths: string | null
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          cadence?: string
+          comments?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          improvements?: string | null
+          overall_score?: number | null
+          owner_id: string
+          period_end: string
+          period_start: string
+          person_id: string
+          ratings?: Json
+          reviewer_id?: string | null
+          reviewer_name?: string | null
+          reviewer_role?: string | null
+          status?: string
+          strengths?: string | null
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cadence?: string
+          comments?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          improvements?: string | null
+          overall_score?: number | null
+          owner_id?: string
+          period_end?: string
+          period_start?: string
+          person_id?: string
+          ratings?: Json
+          reviewer_id?: string | null
+          reviewer_name?: string | null
+          reviewer_role?: string | null
+          status?: string
+          strengths?: string | null
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "people_reviews_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       permission_set_items: {
         Row: {
           created_at: string
