@@ -44,6 +44,7 @@ import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
 import type { WorkflowWritableTable } from "@/lib/workflows/types";
+import { sortFieldsByCanonicalOrder } from "@/lib/workflows/entity-field-order";
 
 type EntityName = WorkflowWritableTable;
 
