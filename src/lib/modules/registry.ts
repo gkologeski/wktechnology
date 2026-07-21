@@ -9,6 +9,7 @@ import {
   Users,
   LayoutDashboard,
   UserPlus,
+  UserCog,
   GitBranch,
   Calendar as CalendarIcon,
   BarChart3,
@@ -31,7 +32,8 @@ export type ModuleId =
   | "contracts"
   | "services"
   | "projects"
-  | "finance";
+  | "finance"
+  | "people";
 
 export type ModuleMenuItem = {
   title: string;
