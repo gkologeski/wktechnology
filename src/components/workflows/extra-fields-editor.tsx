@@ -453,6 +453,54 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     return true;
   };
 
+  const isToken = (v: unknown) =>
+    typeof v === "string" && /\{\{\s*[\w.]+\s*\}\}/.test(v);
+
+  // Validação em tempo real: campos obrigatórios vazios e inconsistências de tipo.
+  function validateField(f: EntityFieldDef): string | null {
+    const v = values[f.name];
+    const filled = hasValue(f.name);
+    if (f.required && !filled) return "Campo obrigatório.";
+    if (!filled) return null;
+    if (isToken(v)) return null; // tokens são resolvidos em runtime
+    if (f.type === "number") {
+      const n = typeof v === "number" ? v : Number(v);
+      if (!Number.isFinite(n)) return "Valor deve ser numérico.";
+    }
+    if (f.type === "date" && typeof v === "string") {
+      const d = new Date(v);
+      if (Number.isNaN(d.getTime())) return "Data inválida.";
+    }
+    if (f.type === "select" && f.options?.length && typeof v === "string") {
+      if (!f.options.some((o) => o.value === v)) return "Valor fora das opções.";
+    }
+    return null;
+  }
+
+  const fieldErrors = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const f of visibleFields) {
+      const err = validateField(f);
+      if (err) m.set(f.name, err);
+    }
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleFields, values]);
+
+  const errorCount = fieldErrors.size;
+  const hasMissingRequired = visibleFields.some(
+    (f) => f.required && !hasValue(f.name),
+  );
+
+  // Auto-expande quando há pendências no primeiro render após carregar catálogo.
+  useEffect(() => {
+    if (hasMissingRequired) {
+      setOpen(true);
+      setShowEmpty(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMissingRequired]);
+
   const filled = visibleFields.filter((f) => hasValue(f.name));
   const empty = visibleFields.filter((f) => !hasValue(f.name));
   const orphanKeys = Object.keys(values).filter(
