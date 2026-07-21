@@ -112,6 +112,11 @@ function PeoplePage() {
         actions={
           <div className="flex items-center gap-2">
             <Button asChild variant="outline">
+              <Link to="/people/analytics">
+                <BarChart3 className="h-4 w-4 mr-2" /> Analytics
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link to="/people/onboarding-templates">
                 <ClipboardList className="h-4 w-4 mr-2" /> Modelos
               </Link>
