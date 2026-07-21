@@ -133,10 +133,35 @@ function TrendBars({
 
 function PeopleAnalyticsPage() {
   const analyticsFn = useServerFn(getPeopleAnalytics);
+  const syncFn = useServerFn(materializePeoplePayroll);
+  const [syncOpen, setSyncOpen] = useState(false);
+  const [syncResult, setSyncResult] = useState<PayrollSyncResult | null>(null);
+  const [previewMode, setPreviewMode] = useState(true);
+
   const { data, isLoading } = useQuery({
     queryKey: ["people_analytics"],
     queryFn: () => analyticsFn(),
   });
+
+  const sync = useMutation({
+    mutationFn: (dryRun: boolean) => syncFn({ data: { dryRun } }),
+    onSuccess: (r) => {
+      setSyncResult(r);
+      if (!previewMode) {
+        toast.success(
+          `Folha sincronizada · ${r.created} criadas, ${r.updated} atualizadas, ${r.deactivated} desativadas`,
+        );
+      }
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const openSync = () => {
+    setSyncResult(null);
+    setPreviewMode(true);
+    setSyncOpen(true);
+    sync.mutate(true);
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -144,13 +169,17 @@ function PeopleAnalyticsPage() {
         title="Analytics · TechPeople"
         description="Headcount, movimentação, custos e margem de alocações."
         actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/people">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
-            </Link>
-          </Button>
-        }
-      />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={openSync}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Sincronizar folha
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/people">
+                <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+              </Link>
+            </Button>
+          </div>
+
 
       {isLoading || !data ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
