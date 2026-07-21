@@ -1,4 +1,4 @@
-# Workflows cross-módulo — plano faseado
+# Workflows cross-módulo — plano faseado (CONCLUÍDO 2026-07-21)
 
 ## Situação atual (já entregue)
 
