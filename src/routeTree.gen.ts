@@ -175,6 +175,7 @@ import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authe
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
 import { Route as AuthenticatedPeopleOnboardingTemplatesRouteImport } from './routes/_authenticated/people.onboarding-templates'
 import { Route as AuthenticatedPeopleDocumentsRouteImport } from './routes/_authenticated/people.documents'
+import { Route as AuthenticatedPeopleBillingRouteImport } from './routes/_authenticated/people.billing'
 import { Route as AuthenticatedPeopleAnalyticsRouteImport } from './routes/_authenticated/people.analytics'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
 import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_authenticated/marketplace.$slug'
@@ -1270,6 +1271,12 @@ const AuthenticatedPeopleDocumentsRoute =
     path: '/people/documents',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPeopleBillingRoute =
+  AuthenticatedPeopleBillingRouteImport.update({
+    id: '/people/billing',
+    path: '/people/billing',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPeopleAnalyticsRoute =
   AuthenticatedPeopleAnalyticsRouteImport.update({
     id: '/people/analytics',
@@ -2322,6 +2329,7 @@ export interface FileRoutesByFullPath {
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
+  '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -2647,6 +2655,7 @@ export interface FileRoutesByTo {
   '/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
+  '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -2977,6 +2986,7 @@ export interface FileRoutesById {
   '/_authenticated/marketplace/$slug': typeof AuthenticatedMarketplaceSlugRoute
   '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
+  '/_authenticated/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/_authenticated/people/documents': typeof AuthenticatedPeopleDocumentsRoute
   '/_authenticated/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
@@ -3308,6 +3318,7 @@ export interface FileRouteTypes {
     | '/marketplace/$slug'
     | '/people/$id'
     | '/people/analytics'
+    | '/people/billing'
     | '/people/documents'
     | '/people/onboarding-templates'
     | '/projects/$id'
@@ -3633,6 +3644,7 @@ export interface FileRouteTypes {
     | '/marketplace/$slug'
     | '/people/$id'
     | '/people/analytics'
+    | '/people/billing'
     | '/people/documents'
     | '/people/onboarding-templates'
     | '/projects/$id'
@@ -3962,6 +3974,7 @@ export interface FileRouteTypes {
     | '/_authenticated/marketplace/$slug'
     | '/_authenticated/people/$id'
     | '/_authenticated/people/analytics'
+    | '/_authenticated/people/billing'
     | '/_authenticated/people/documents'
     | '/_authenticated/people/onboarding-templates'
     | '/_authenticated/projects/$id'
@@ -5450,6 +5463,13 @@ declare module '@tanstack/react-router' {
       path: '/people/documents'
       fullPath: '/people/documents'
       preLoaderRoute: typeof AuthenticatedPeopleDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/billing': {
+      id: '/_authenticated/people/billing'
+      path: '/people/billing'
+      fullPath: '/people/billing'
+      preLoaderRoute: typeof AuthenticatedPeopleBillingRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/analytics': {
@@ -7080,6 +7100,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedPeopleAnalyticsRoute: typeof AuthenticatedPeopleAnalyticsRoute
+  AuthenticatedPeopleBillingRoute: typeof AuthenticatedPeopleBillingRoute
   AuthenticatedPeopleDocumentsRoute: typeof AuthenticatedPeopleDocumentsRoute
   AuthenticatedPeopleOnboardingTemplatesRoute: typeof AuthenticatedPeopleOnboardingTemplatesRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
@@ -7201,6 +7222,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedPeopleAnalyticsRoute: AuthenticatedPeopleAnalyticsRoute,
+  AuthenticatedPeopleBillingRoute: AuthenticatedPeopleBillingRoute,
   AuthenticatedPeopleDocumentsRoute: AuthenticatedPeopleDocumentsRoute,
   AuthenticatedPeopleOnboardingTemplatesRoute:
     AuthenticatedPeopleOnboardingTemplatesRoute,

@@ -131,7 +131,6 @@ function PeopleBillingPage() {
       <PageHeader
         title="Faturamento de horas"
         description="Horas billable aprovadas por alocação, prontas para virar fatura."
-        icon={FileText}
         actions={
           <Button variant="outline" size="sm" asChild>
             <Link to="/people">
