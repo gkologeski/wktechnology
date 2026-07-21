@@ -50,10 +50,11 @@ export function TimesheetPanel({ personId }: { personId: string }) {
   };
 
   const entriesByDay = useMemo(() => {
-    const map = new Map<string, typeof data.entries>();
+    type Entry = NonNullable<typeof data>["entries"][number];
+    const map = new Map<string, Entry[]>();
     for (const e of data?.entries ?? []) {
       const key = e.entry_date ?? "—";
-      if (!map.has(key)) map.set(key, [] as unknown as typeof data.entries);
+      if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     }
     return Array.from(map.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
