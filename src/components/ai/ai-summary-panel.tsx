@@ -130,22 +130,18 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
         </CardTitle>
         <div className="flex items-center gap-2">
           <Select value={kind} onValueChange={(v) => setKind(v as Kind)}>
-            <SelectTrigger className="h-8 w-[140px] text-xs">
+            <SelectTrigger className="h-8 w-[150px] text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="conversation">
-                <span className="flex items-center gap-2">
-                  <MessageSquare className="h-3 w-3" />
-                  Conversa
-                </span>
-              </SelectItem>
-              <SelectItem value="call">
-                <span className="flex items-center gap-2">
-                  <Phone className="h-3 w-3" />
-                  Calls/Reuniões
-                </span>
-              </SelectItem>
+              {KIND_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  <span className="flex items-center gap-2">
+                    {opt.icon}
+                    {opt.label}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={String(windowDays)} onValueChange={(v) => setWindowDays(Number(v))}>
