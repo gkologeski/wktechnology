@@ -145,6 +145,20 @@ export const MODULES: Record<ModuleId, ModuleDefinition> = {
       { title: "A pagar", url: "/finance/payable", icon: ArrowUpCircle },
     ],
   },
+  people: {
+    id: "people",
+    name: "Pessoas",
+    productName: "TechPeople",
+    shortDescription: "Gestão de prestadores e time",
+    defaultColor: "#059669",
+    icon: UserCog,
+    hostSuffix: "crm",
+    defaultRoute: "/people",
+    menu: [
+      { title: "Pessoas", url: "/people", icon: Users },
+      { title: "Meu time", url: "/people/my-team", icon: UserCog },
+    ],
+  },
 };
 
 export const MODULE_LIST: ModuleDefinition[] = Object.values(MODULES);
