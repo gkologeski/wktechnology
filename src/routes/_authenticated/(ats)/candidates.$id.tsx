@@ -339,7 +339,8 @@ function CandidateDetailPage() {
           <CaptureMetaBlock candidate={c} />
         </div>
       }
-    />
+      />
+    </>
   );
 }
 
