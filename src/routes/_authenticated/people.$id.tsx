@@ -152,7 +152,7 @@ function PersonForm({
 }) {
   const p = person;
   const canWrite = true; // RLS bloqueia writes de não-admins — botão aparece, servidor decide.
-  const canViewSensitive = person.can_view_sensitive;
+  const canViewSensitive = !!person.can_view_sensitive;
 
   const [fullName, setFullName] = useState(p.full_name);
   const [preferredName, setPreferredName] = useState(p.preferred_name ?? "");
