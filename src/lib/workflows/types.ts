@@ -430,6 +430,9 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   send_slack: "Enviar mensagem no Slack",
   send_teams: "Enviar mensagem no Teams",
   approval_step: "Aprovação humana",
+  create_record: "Criar registro (qualquer módulo)",
+  update_record: "Atualizar registro (qualquer módulo)",
+  delete_record: "Excluir registro (qualquer módulo)",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
