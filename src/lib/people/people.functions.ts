@@ -184,10 +184,7 @@ export const getPerson = createServerFn({ method: "POST" })
           cost_hour: (sensRow as { cost_hour: number | null }).cost_hour,
           monthly_cost: (sensRow as { monthly_cost: number | null }).monthly_cost,
           personal_doc:
-            ((sensRow as { personal_doc: Record<string, unknown> }).personal_doc ?? {}) as Record<
-              string,
-              unknown
-            >,
+            ((sensRow as { personal_doc: PersonDocMap | null }).personal_doc ?? {}) as PersonDocMap,
         };
       }
     }
