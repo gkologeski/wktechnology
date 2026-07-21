@@ -4,13 +4,22 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
+export type WorkflowSubscriptionAction = {
+  type: "create_ticket";
+  subject: string;
+  description?: string | null;
+  priority?: "low" | "medium" | "high" | "urgent";
+  assignee_id?: string | null;
+  pipeline_id?: string | null;
+};
+
 export type WorkflowSubscriptionRow = {
   id: string;
   owner_id: string;
   name: string;
   description: string | null;
   event_pattern: string;
-  action: Record<string, unknown>;
+  action: WorkflowSubscriptionAction;
   enabled: boolean;
   created_at: string;
   updated_at: string;
