@@ -118,6 +118,7 @@ export const getKbArticleAdmin = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_VIEW);
     const { data: row, error } = await supabaseAdmin
       .from("kb_articles")
       .select("*")
