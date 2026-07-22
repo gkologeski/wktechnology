@@ -5,6 +5,7 @@ import { z } from "zod";
 import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
 function token() {
   return randomBytes(24).toString("hex");
@@ -196,6 +197,7 @@ export const createContract = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, ["techcontracts.contracts.create.own"]);
     const { data: row, error } = await supabase
       .from("contracts")
       .insert({
@@ -233,6 +235,7 @@ export const createContractFromDeal = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, ["techcontracts.contracts.create.own"]);
 
     const { data: deal, error: dErr } = await supabase
       .from("deals")
@@ -292,7 +295,12 @@ export const updateContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => patchInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+      "techcontracts.contracts.update.workspace",
+    ]);
     const { data: row, error } = await supabase
       .from("contracts")
       .update(data.patch)
@@ -309,7 +317,9 @@ export const deleteContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, ["techcontracts.contracts.delete.workspace"]);
     const { error } = await supabase.from("contracts").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };

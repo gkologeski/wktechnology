@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emitEvent } from "@/lib/events.server";
 import { recordAtsEvent } from "./audit.server";
 import { DEFAULT_ATS_STAGES, type AtsStage } from "./stages";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
 // ---------- helpers ---------------------------------------------------------
 
@@ -185,6 +186,11 @@ export const saveAtsJob = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => JobSaveSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
+      data.id ? "techhire.jobs.update.own" : "techhire.jobs.create.own",
+      "techhire.jobs.update.workspace",
+    ]);
     let pipelineId: string;
     if (data.pipeline_id) {
       // Confia no RLS de ats_pipelines (owner + workspace share) — não filtra
@@ -283,6 +289,8 @@ export const deleteAtsJob = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceIdForCheck, ["techhire.jobs.delete.workspace"]);
     const { error } = await supabase
       .from("ats_jobs")
       .delete()
@@ -427,6 +435,11 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CandidateSaveSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
+      "techhire.candidates.create.own",
+      "techhire.candidates.update.workspace",
+    ]);
     const base = {
       owner_id: userId,
       full_name: data.full_name,
@@ -480,6 +493,8 @@ export const deleteAtsCandidate = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceIdForCheck, ["techhire.candidates.delete.workspace"]);
     const { error } = await supabase
       .from("ats_candidates")
       .delete()
