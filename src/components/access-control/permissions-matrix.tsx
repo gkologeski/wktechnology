@@ -357,9 +357,10 @@ export function PermissionsMatrix() {
           <tbody>
             {Object.entries(grouped).map(([resource, perms]) => (
               <Fragment key={`grp-${resource}`}>
-                <tr className="bg-muted/20">
+                <tr className="bg-muted">
                   <td
-                    className="sticky left-0 z-20 bg-muted/20 p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground border-b border-r"
+                    className="sticky left-0 z-20 bg-muted p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground border-b border-r"
+
                   >
                     {resource}
                   </td>
