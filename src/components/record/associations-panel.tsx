@@ -103,6 +103,7 @@ function LeadContactsCard({ entityId }: { entityId: string }) {
     job_title: string | null;
   } | null>(null);
   const [tick, setTick] = useState(0);
+  const [createOpen, setCreateOpen] = useState(false);
   useRefreshCallback(() => setTick((t) => t + 1));
 
   useEffect(() => {
@@ -130,65 +131,112 @@ function LeadContactsCard({ entityId }: { entityId: string }) {
     };
   }, [entityId, tick]);
 
+  const linkContact = async (contactId: string) => {
+    const { error } = await supabase
+      .from("leads")
+      .update({ converted_contact_id: contactId })
+      .eq("id", entityId);
+    if (error) {
+      toast.error(error.message || "Falha ao vincular contato");
+      return;
+    }
+    toast.success("Contato vinculado");
+    setTick((t) => t + 1);
+  };
+
+  const unlinkContact = async () => {
+    const { error } = await supabase
+      .from("leads")
+      .update({ converted_contact_id: null })
+      .eq("id", entityId);
+    if (error) {
+      toast.error(error.message || "Falha ao remover vínculo");
+      return;
+    }
+    toast.success("Contato removido");
+    setTick((t) => t + 1);
+  };
+
   const rows = contact ? [contact] : [];
 
+  const action = !contact ? (
+    <ContactPickerPopover
+      label="Adicionar contato"
+      onPick={(id) => linkContact(id)}
+      onCreateNew={() => setCreateOpen(true)}
+    />
+  ) : null;
+
   return (
-    <AssocCard icon={<User className="w-4 h-4" />} title="Contatos" count={rows.length}>
-      {rows.length === 0 ? (
-        <Empty label="Nenhum contato vinculado." />
-      ) : (
-        <>
-          <ul className="space-y-2">
-            {rows.map((c) => {
-              const fullName = `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
-              const initials = ((c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")).toUpperCase();
-              const phone = c.phone || c.mobile_phone || null;
-              return (
-                <li key={c.id} className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
-                  <div className="flex items-start gap-3">
-                    <EntityAvatar initials={initials} tone="primary" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Link
-                          to="/contacts/$id"
-                          params={{ id: c.id }}
-                          className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
-                        >
-                          {fullName}
-                        </Link>
+    <>
+      <AssocCard icon={<User className="w-4 h-4" />} title="Contatos" count={rows.length} action={action}>
+        {rows.length === 0 ? (
+          <Empty label="Nenhum contato vinculado." />
+        ) : (
+          <>
+            <ul className="space-y-2">
+              {rows.map((c) => {
+                const fullName = `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
+                const initials = ((c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")).toUpperCase();
+                const phone = c.phone || c.mobile_phone || null;
+                return (
+                  <li key={c.id} className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
+                    <div className="flex items-start gap-3">
+                      <EntityAvatar initials={initials} tone="primary" />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to="/contacts/$id"
+                            params={{ id: c.id }}
+                            className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
+                          >
+                            {fullName}
+                          </Link>
+                        </div>
+                        {c.job_title && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 break-words">
+                            {c.job_title}
+                          </p>
+                        )}
+                        <div className="mt-2 space-y-1">
+                          <DetailRow
+                            label="E-mail"
+                            value={c.email}
+                            href={c.email ? `mailto:${c.email}` : undefined}
+                            copyable
+                          />
+                          <DetailRow
+                            label="Telefone"
+                            value={phone}
+                            href={phone ? `tel:${phone}` : undefined}
+                            copyable
+                          />
+                        </div>
                       </div>
-                      {c.job_title && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5 break-words">
-                          {c.job_title}
-                        </p>
-                      )}
-                      <div className="mt-2 space-y-1">
-                        <DetailRow
-                          label="E-mail"
-                          value={c.email}
-                          href={c.email ? `mailto:${c.email}` : undefined}
-                          copyable
-                        />
-                        <DetailRow
-                          label="Telefone"
-                          value={phone}
-                          href={phone ? `tel:${phone}` : undefined}
-                          copyable
-                        />
-                      </div>
+                      <AssocItemActions
+                        link={{ to: "/contacts/$id", params: { id: c.id } }}
+                        onRemove={unlinkContact}
+                      />
                     </div>
-                    <AssocItemActions link={{ to: "/contacts/$id", params: { id: c.id } }} />
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          <ViewAllFooter href="/contacts" label="Exibir todos os Contatos associados" />
-        </>
-      )}
-    </AssocCard>
+                  </li>
+                );
+              })}
+            </ul>
+            <ViewAllFooter href="/contacts" label="Exibir todos os Contatos associados" />
+          </>
+        )}
+      </AssocCard>
+      <CreateContactDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreated={(id) => {
+          void linkContact(id);
+        }}
+      />
+    </>
   );
 }
+
 
 function LeadDealsCard({ entityId }: { entityId: string }) {
   const [deal, setDeal] = useState<{
