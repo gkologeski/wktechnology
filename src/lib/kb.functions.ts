@@ -4,6 +4,17 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { assertAnyPermission } from "@/lib/access-control/enforce.server";
+
+const KB_VIEW = ["techservice.kb.view.workspace", "techservice.kb.manage.workspace"];
+const KB_CREATE = [
+  "techservice.kb.create.own",
+  "techservice.kb.update.workspace",
+  "techservice.kb.manage.workspace",
+];
+const KB_UPDATE = ["techservice.kb.update.workspace", "techservice.kb.manage.workspace"];
+const KB_DELETE = ["techservice.kb.delete.workspace", "techservice.kb.manage.workspace"];
+const KB_MANAGE = ["techservice.kb.manage.workspace"];
 
 const slugify = (s: string) =>
   s
