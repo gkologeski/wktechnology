@@ -127,6 +127,7 @@ import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
 import { Route as AuthenticatedSettingsPipelinesRouteImport } from './routes/_authenticated/settings.pipelines'
+import { Route as AuthenticatedSettingsPermissionsRouteImport } from './routes/_authenticated/settings.permissions'
 import { Route as AuthenticatedSettingsPaymentsRouteImport } from './routes/_authenticated/settings.payments'
 import { Route as AuthenticatedSettingsOnboardingTemplatesRouteImport } from './routes/_authenticated/settings.onboarding-templates'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
@@ -988,6 +989,12 @@ const AuthenticatedSettingsPipelinesRoute =
   AuthenticatedSettingsPipelinesRouteImport.update({
     id: '/pipelines',
     path: '/pipelines',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPermissionsRoute =
+  AuthenticatedSettingsPermissionsRouteImport.update({
+    id: '/permissions',
+    path: '/permissions',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsPaymentsRoute =
@@ -2410,6 +2417,7 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
+  '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -2740,6 +2748,7 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
   '/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
+  '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -3075,6 +3084,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/_authenticated/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
   '/_authenticated/settings/payments': typeof AuthenticatedSettingsPaymentsRoute
+  '/_authenticated/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/_authenticated/settings/pipelines': typeof AuthenticatedSettingsPipelinesRoute
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
@@ -3411,6 +3421,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/onboarding-templates'
     | '/settings/payments'
+    | '/settings/permissions'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -3741,6 +3752,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/settings/onboarding-templates'
     | '/settings/payments'
+    | '/settings/permissions'
     | '/settings/pipelines'
     | '/settings/playbooks'
     | '/settings/portal'
@@ -4075,6 +4087,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/onboarding-templates'
     | '/_authenticated/settings/payments'
+    | '/_authenticated/settings/permissions'
     | '/_authenticated/settings/pipelines'
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
@@ -5179,6 +5192,13 @@ declare module '@tanstack/react-router' {
       path: '/pipelines'
       fullPath: '/settings/pipelines'
       preLoaderRoute: typeof AuthenticatedSettingsPipelinesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/permissions': {
+      id: '/_authenticated/settings/permissions'
+      path: '/permissions'
+      fullPath: '/settings/permissions'
+      preLoaderRoute: typeof AuthenticatedSettingsPermissionsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/payments': {
@@ -6880,6 +6900,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRouteWithChildren
   AuthenticatedSettingsOnboardingTemplatesRoute: typeof AuthenticatedSettingsOnboardingTemplatesRoute
   AuthenticatedSettingsPaymentsRoute: typeof AuthenticatedSettingsPaymentsRoute
+  AuthenticatedSettingsPermissionsRoute: typeof AuthenticatedSettingsPermissionsRoute
   AuthenticatedSettingsPipelinesRoute: typeof AuthenticatedSettingsPipelinesRoute
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
@@ -6973,6 +6994,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsOnboardingTemplatesRoute:
     AuthenticatedSettingsOnboardingTemplatesRoute,
   AuthenticatedSettingsPaymentsRoute: AuthenticatedSettingsPaymentsRoute,
+  AuthenticatedSettingsPermissionsRoute: AuthenticatedSettingsPermissionsRoute,
   AuthenticatedSettingsPipelinesRoute: AuthenticatedSettingsPipelinesRoute,
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
@@ -7561,13 +7583,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
