@@ -151,8 +151,10 @@ export function CreateLeadDialog({
           last_name: form.last_name.trim() || null,
           email: form.email.trim() || null,
           phone: phoneE164,
+          company_id: company.id ?? null,
           company_name: company.name.trim() || null,
           source: form.source.trim() || null,
+
         })
         .select("id")
         .single();
