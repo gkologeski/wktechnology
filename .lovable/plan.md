@@ -1,78 +1,48 @@
-## Objetivo
+## Causa
 
-Corrigir dois problemas em `/settings/permissions`:
+Ao editar as permissões de um cargo de sistema (`is_system=true`, `owner_id=NULL`), o servidor chama `ensureBundle`, que cria um `permission_set` do tipo bundle (owned pelo usuário) e faz `upsert` em `public.job_role_sets` ligando o bundle ao cargo.
 
-1. Ao rolar horizontalmente, a coluna "Recurso / Ação" desaparece — o usuário perde a referência do que está marcando.
-2. Cargos de sistema estão totalmente bloqueados; o usuário quer poder editá-los, com um botão "Restaurar padrões" para desfazer.
+A política `jrs_write` de `job_role_sets` exige:
 
----
-
-## Escopo
-
-Arquivos alterados:
-- `src/components/access-control/permissions-matrix.tsx` — sticky column + habilitar edição de cargos de sistema + botão "Restaurar padrões".
-- `src/lib/access-control/role-bundle.functions.ts` — remover bloqueio de `is_system` nas mutations de permissão; adicionar server function `restoreRoleDefaults`.
-- 1 migration nova — snapshot da configuração padrão de cada cargo de sistema em uma nova tabela `public.job_role_default_permissions (role_id, permission_key)`, populada a partir do estado atual (`permission_set_items` das bundles vinculadas aos cargos `is_system`). Isso serve como fonte de verdade para o restore.
-
-Fora do escopo: renomear/excluir cargos de sistema (permanecem bloqueados — só permissões passam a ser editáveis), alterar catálogo de `permissions`, RLS.
-
----
-
-## Mudanças
-
-### 1. Sticky da 1ª coluna (UX)
-
-Na tabela em `permissions-matrix.tsx`:
-- Adicionar `sticky left-0 z-20 bg-background` na `<th>` "Recurso / Ação" e nas `<td>` correspondentes de cada linha.
-- Cabeçalho do grupo (linha do resource) recebe `sticky left-0 bg-muted/40 z-20` na célula visível.
-- Ajustar `z-index` do `thead` para que sticky vertical + horizontal coexistam (topo `z-30`, célula canto `z-40`).
-- Container mantém `overflow-auto`; adicionar `border-r` sutil na coluna sticky para separação visual durante o scroll.
-
-### 2. Edição de cargos de sistema
-
-- `role-bundle.functions.ts`: remover a chamada `assertRoleEditable` em `setRolePermission` e `bulkSetRolePermissions` (mantê-la apenas em `renameJobRole` e `deleteJobRole`, pois nome/exclusão continuam bloqueados).
-- `ensureBundle` já funciona para qualquer `role_id` — cria uma bundle de propriedade do usuário atual, sem tocar em registros do sistema.
-- Na UI: remover `disabled={r.is_system}` dos checkboxes e das barras de "Conceder/Remover todas". Remover o banner amarelo "todos os cargos são padrão…". Manter o cadeado no header como indicador visual de que o cargo é do sistema (renomear/excluir continuam bloqueados no dropdown).
-
-### 3. Restaurar padrões
-
-**Migration:**
-```sql
-CREATE TABLE public.job_role_default_permissions (
-  role_id uuid REFERENCES public.job_roles(id) ON DELETE CASCADE,
-  permission_key text REFERENCES public.permissions(key) ON DELETE CASCADE,
-  PRIMARY KEY (role_id, permission_key)
-);
-GRANT SELECT ON public.job_role_default_permissions TO authenticated;
-GRANT ALL ON public.job_role_default_permissions TO service_role;
-ALTER TABLE public.job_role_default_permissions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "read defaults" ON public.job_role_default_permissions
-  FOR SELECT TO authenticated USING (true);
-
--- Snapshot do estado atual dos cargos de sistema
-INSERT INTO public.job_role_default_permissions (role_id, permission_key)
-SELECT DISTINCT jrs.role_id, psi.permission_key
-FROM public.job_roles jr
-JOIN public.job_role_sets jrs ON jrs.role_id = jr.id
-JOIN public.permission_set_items psi ON psi.set_id = jrs.set_id
-WHERE jr.is_system = true
-ON CONFLICT DO NOTHING;
+```
+EXISTS (SELECT 1 FROM job_roles r WHERE r.id = role_id AND r.owner_id = auth.uid())
 ```
 
-**Server function `restoreRoleDefaults`** em `role-bundle.functions.ts`:
-- Input: `{ role_id }`.
-- Se o cargo não é `is_system`, erro amigável ("Restauração disponível apenas para cargos padrão").
-- Lê defaults da nova tabela.
-- Recria a bundle do usuário (`ensureBundle`): deleta todos os `permission_set_items` da bundle e insere apenas as chaves default.
-- Retorna `{ ok, count }`.
+Cargos de sistema têm `owner_id = NULL`, então o `WITH CHECK` falha com “new row violates row-level security policy for table "job_role_sets"”. Isso bloqueia a edição de qualquer cargo padrão via matriz — recentemente destravada na UI, mas ainda barrada no banco.
 
-**UI:** novo item "Restaurar padrões" no `DropdownMenu` do cargo, visível apenas quando `r.is_system`. Confirmação inline via toast/mutation. Invalida `["access", "matrix"]`.
+O mesmo padrão existe em `permission_sets` e `permission_set_items` para o caso simétrico de vincular/editar itens de bundles ligados a cargos de sistema (o bundle em si é do usuário, então `psi_write` já passa; não precisa mexer). O ponto real de bloqueio é apenas `jrs_write`.
 
----
+## Correção
 
-## Validação manual
+Migration ajustando a política de escrita de `public.job_role_sets` para permitir vincular um bundle a um cargo quando **ou** o cargo é do usuário **ou** o set sendo vinculado é um bundle do próprio usuário (module `__bundle__`, `owner_id = auth.uid()`), preservando o caso atual.
 
-1. Rolar horizontalmente a matriz — coluna "Recurso / Ação" permanece visível.
-2. Marcar/desmarcar permissão em um cargo de sistema (ex.: "Admin") — persiste após reload.
-3. Clicar "Restaurar padrões" no dropdown do cargo de sistema — permissões voltam ao seed original.
-4. Cargos personalizados continuam funcionando (criar, duplicar, renomear, excluir).
+```sql
+DROP POLICY jrs_write ON public.job_role_sets;
+
+CREATE POLICY jrs_write ON public.job_role_sets
+FOR ALL
+USING (
+  EXISTS (SELECT 1 FROM public.job_roles r
+          WHERE r.id = job_role_sets.role_id AND r.owner_id = auth.uid())
+  OR EXISTS (SELECT 1 FROM public.permission_sets s
+             WHERE s.id = job_role_sets.set_id
+               AND s.owner_id = auth.uid()
+               AND s.module = '__bundle__')
+)
+WITH CHECK (
+  EXISTS (SELECT 1 FROM public.job_roles r
+          WHERE r.id = job_role_sets.role_id AND r.owner_id = auth.uid())
+  OR EXISTS (SELECT 1 FROM public.permission_sets s
+             WHERE s.id = job_role_sets.set_id
+               AND s.owner_id = auth.uid()
+               AND s.module = '__bundle__')
+);
+```
+
+Isso mantém a segurança (só vincula bundles do próprio usuário, e cargos custom continuam restritos ao dono) e desbloqueia a edição de cargos de sistema já suportada pela UI e pelas server functions.
+
+## Validação
+
+- Reabrir `/settings/permissions`, marcar/desmarcar uma permissão em um cargo de sistema (ex.: “Administrador”) e confirmar persistência.
+- Repetir em um cargo custom para garantir que não houve regressão.
+- Rodar “Restaurar padrões” em um cargo de sistema e confirmar sucesso.
