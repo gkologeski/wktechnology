@@ -376,7 +376,7 @@ export function PermissionsMatrix() {
                           ? true
                           : "indeterminate";
                     return (
-                      <td key={r.id} className="p-2 text-center border-b bg-muted/20">
+                      <td key={r.id} className="p-2 text-center border-b bg-muted">
                         <Checkbox
                           checked={state}
                           disabled={toggleMut.isPending}
