@@ -124,12 +124,38 @@ function DealDetail() {
     void load();
   };
 
+  const { can } = usePermissions();
+  const { user } = useAuth();
+  const canDelete =
+    can("techsales.deals.delete.workspace") ||
+    can("techsales.deals.delete.team") ||
+    (can("techsales.deals.delete.own") &&
+      !!user?.id &&
+      (deal as unknown as { owner_id?: string | null }).owner_id === user.id);
+
   const remove = async () => {
+    if (!canDelete) {
+      toast.error("Você não tem permissão para excluir este negócio.");
+      return;
+    }
     if (!confirm("Excluir negócio?")) return;
-    await supabase.from("deals").delete().eq("id", deal.id);
+    const { data: deleted, error } = await supabase
+      .from("deals")
+      .delete()
+      .eq("id", deal.id)
+      .select("id");
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (!deleted || deleted.length === 0) {
+      toast.error("Você não tem permissão para excluir este negócio.");
+      return;
+    }
     toast.success("Excluído");
     navigate({ to: "/deals" });
   };
+
 
   const header = (
     <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 space-y-5">
