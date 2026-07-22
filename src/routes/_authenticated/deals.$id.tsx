@@ -28,6 +28,9 @@ import { usePipelines } from "@/lib/pipelines";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
 import type { Deal } from "@/lib/db-types";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useAuth } from "@/lib/auth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/deals/$id")({
@@ -121,12 +124,38 @@ function DealDetail() {
     void load();
   };
 
+  const { can } = usePermissions();
+  const { user } = useAuth();
+  const canDelete =
+    can("techsales.deals.delete.workspace") ||
+    can("techsales.deals.delete.team") ||
+    (can("techsales.deals.delete.own") &&
+      !!user?.id &&
+      (deal as unknown as { owner_id?: string | null }).owner_id === user.id);
+
   const remove = async () => {
+    if (!canDelete) {
+      toast.error("Você não tem permissão para excluir este negócio.");
+      return;
+    }
     if (!confirm("Excluir negócio?")) return;
-    await supabase.from("deals").delete().eq("id", deal.id);
+    const { data: deleted, error } = await supabase
+      .from("deals")
+      .delete()
+      .eq("id", deal.id)
+      .select("id");
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (!deleted || deleted.length === 0) {
+      toast.error("Você não tem permissão para excluir este negócio.");
+      return;
+    }
     toast.success("Excluído");
     navigate({ to: "/deals" });
   };
+
 
   const header = (
     <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 space-y-5">
@@ -178,14 +207,27 @@ function DealDetail() {
               </SelectContent>
             </Select>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-            onClick={remove}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg disabled:opacity-50"
+                    onClick={remove}
+                    disabled={!canDelete}
+                    aria-label="Excluir negócio"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!canDelete && (
+                <TooltipContent>Você não tem permissão para excluir este negócio.</TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
       <StageTracker stages={stages} current={currentStage} onChange={setStage} />

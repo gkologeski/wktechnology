@@ -31,6 +31,9 @@ import { DealQuotes } from "@/components/deals/deal-quotes";
 import { toast } from "sonner";
 import { Database, Trash2, Package, FileText } from "lucide-react";
 import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useAuth } from "@/lib/auth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -153,8 +156,21 @@ export function DealDetailDrawer({
     await persist({ closed_lost_reason: notes });
   };
 
+  const { can } = usePermissions();
+  const { user } = useAuth();
+  const dealOwnerId = (deal as unknown as { owner_id?: string | null } | null)?.owner_id ?? null;
+  const canDelete =
+    !!deal &&
+    (can("techsales.deals.delete.workspace") ||
+      can("techsales.deals.delete.team") ||
+      (can("techsales.deals.delete.own") && !!user?.id && dealOwnerId === user.id));
+
   const remove = async () => {
     if (!deal) return;
+    if (!canDelete) {
+      toast.error("Você não tem permissão para excluir este negócio.");
+      return;
+    }
     if (!confirm("Excluir este negócio?")) return;
     const id = deal.id;
     // Optimistic: remover de todas as queries de deals em cache imediatamente
@@ -165,11 +181,22 @@ export function DealDetailDrawer({
       }
     }
     onOpenChange(false);
-    const { error } = await supabase.from("deals").delete().eq("id", id);
+    const { data: deleted, error } = await supabase
+      .from("deals")
+      .delete()
+      .eq("id", id)
+      .select("id");
     if (error) {
-      // Reverter cache em caso de erro
       for (const [key, data] of snapshots) qc.setQueryData(key, data);
       toast.error(error.message);
+      qc.invalidateQueries({ queryKey: ["deals"] });
+      return;
+    }
+    if (!deleted || deleted.length === 0) {
+      // RLS bloqueou silenciosamente (0 linhas afetadas)
+      for (const [key, data] of snapshots) qc.setQueryData(key, data);
+      toast.error("Você não tem permissão para excluir este negócio.");
+      qc.invalidateQueries({ queryKey: ["deals"] });
       return;
     }
     toast.success("Excluído");
@@ -427,9 +454,26 @@ export function DealDetailDrawer({
 
         <div className="border-t px-5 py-3 flex items-center justify-between bg-background">
           {!isNew ? (
-            <Button variant="ghost" size="sm" onClick={remove}>
-              <Trash2 className="h-4 w-4 mr-1" /> Excluir
-            </Button>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={remove}
+                      disabled={!canDelete}
+                      className="disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!canDelete && (
+                  <TooltipContent>Você não tem permissão para excluir este negócio.</TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           ) : (
             <span />
           )}
