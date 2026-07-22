@@ -62,15 +62,17 @@ export const getFolderPath = createServerFn({ method: "GET" })
     const trail: { id: string; name: string }[] = [];
     let current: string | null = data.folderId;
     for (let i = 0; i < 32 && current; i++) {
-      const { data: row, error } = await supabase
+      const res = await supabase
         .from("user_file_folders")
         .select("id, name, parent_id")
         .eq("id", current)
         .eq("owner_id", userId)
         .maybeSingle();
-      if (error || !row) break;
+      const row = res.data as { id: string; name: string; parent_id: string | null } | null;
+      if (res.error || !row) break;
       trail.unshift({ id: row.id, name: row.name });
-      current = (row as { parent_id: string | null }).parent_id;
+      current = row.parent_id;
+
     }
     return trail;
   });
