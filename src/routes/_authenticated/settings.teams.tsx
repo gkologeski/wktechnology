@@ -761,11 +761,38 @@ function UsersPage() {
                       </Select>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <button
+                      type="button"
+                      onClick={() => openRolesDialog(r)}
+                      className="text-left text-sm text-primary hover:underline underline-offset-2"
+                    >
+                      {r.primary_role_id
+                        ? (jobRoles.find((j) => j.id === r.primary_role_id)?.name ?? "Cargo atribuído")
+                        : r.role_ids.length > 0
+                          ? `${r.role_ids.length} cargo(s)`
+                          : "Nenhum cargo"}
+                    </button>
+                    {r.extra_set_ids.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        +{r.extra_set_ids.length} pacote(s)
+                      </p>
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {r.created_at ? formatDateTime(r.created_at) : "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openRolesDialog(r)}
+                        aria-label="Editar cargos"
+                        title="Editar cargos"
+                      >
+                        <ShieldCheck className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
