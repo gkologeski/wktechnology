@@ -140,7 +140,7 @@ async function syncLegacyRole(workspaceId: string, userId: string, role: TeamRol
   );
 }
 
-/** Lista membros + email (do auth.users via admin). */
+/** Lista membros + email (do auth.users via admin) + cargos funcionais. */
 export const listTeamMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -191,6 +191,40 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       }),
     );
 
+    // Cargos funcionais (user_job_roles) e pacotes extras (user_permission_sets).
+    // owner_id nessas tabelas é o auth.uid do criador do workspace, então usamos
+    // supabaseAdmin para ler todos os membros do workspace.
+    const workspaceOwnerId = workspace.created_by ?? userId;
+    const { data: userJobRoles } = await supabaseAdmin
+      .from("user_job_roles")
+      .select("user_id, role_id, is_primary")
+      .eq("owner_id", workspaceOwnerId)
+      .in("user_id", ids);
+    const { data: userPermissionSets } = await supabaseAdmin
+      .from("user_permission_sets")
+      .select("user_id, set_id")
+      .eq("owner_id", workspaceOwnerId)
+      .in("user_id", ids);
+
+    const primaryRoleByUser = new Map<string, string>();
+    const roleIdsByUser = new Map<string, string[]>();
+    for (const r of (userJobRoles ?? []) as Array<{
+      user_id: string;
+      role_id: string;
+      is_primary: boolean;
+    }>) {
+      const arr = roleIdsByUser.get(r.user_id) ?? [];
+      arr.push(r.role_id);
+      roleIdsByUser.set(r.user_id, arr);
+      if (r.is_primary) primaryRoleByUser.set(r.user_id, r.role_id);
+    }
+    const extraSetIdsByUser = new Map<string, string[]>();
+    for (const s of (userPermissionSets ?? []) as Array<{ user_id: string; set_id: string }>) {
+      const arr = extraSetIdsByUser.get(s.user_id) ?? [];
+      arr.push(s.set_id);
+      extraSetIdsByUser.set(s.user_id, arr);
+    }
+
     const memberRows = (members ?? []).map((m) => ({
       id: `${m.workspace_id as string}:${m.user_id as string}`,
       user_id: m.user_id as string,
@@ -201,6 +235,9 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       is_owner: (m.user_id as string) === userId,
       pending: !confirmedById.get(m.user_id as string),
       created_at: m.joined_at as string,
+      primary_role_id: primaryRoleByUser.get(m.user_id as string) ?? null,
+      role_ids: roleIdsByUser.get(m.user_id as string) ?? [],
+      extra_set_ids: extraSetIdsByUser.get(m.user_id as string) ?? [],
     }));
 
     return memberRows;
@@ -662,4 +699,155 @@ export const removeTeamMember = createServerFn({ method: "POST" })
       .eq("workspace_owner_id", workspace.id)
       .eq("member_user_id", data.member_user_id);
     return { ok: true, reassigned };
+  });
+
+/** Lista cargos funcionais (job_roles) disponíveis no workspace. */
+export const listWorkspaceJobRoles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+
+    const { data: roles, error } = await supabaseAdmin
+      .from("job_roles")
+      .select("id, name, description, color, is_system, data_scope")
+      .or(`is_system.eq.true,and(is_system.eq.false,owner_id.eq.${workspace.created_by ?? userId})`)
+      .order("is_system", { ascending: false })
+      .order("name");
+    if (error) throw new Error(error.message);
+
+    return (roles ?? []) as Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      color: string | null;
+      is_system: boolean;
+      data_scope: string;
+    }>;
+  });
+
+/** Lista pacotes de permissões disponíveis no workspace. */
+export const listWorkspacePermissionSets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+
+    const { data: sets, error: setsErr } = await supabaseAdmin
+      .from("permission_sets")
+      .select("id, name, module, description, is_system, owner_id")
+      .or(`is_system.eq.true,and(is_system.eq.false,owner_id.eq.${workspace.created_by ?? userId})`)
+      .order("module")
+      .order("name");
+    if (setsErr) throw new Error(setsErr.message);
+
+    const ids = (sets ?? []).map((s) => s.id as string);
+    const { data: items } = await supabaseAdmin
+      .from("permission_set_items")
+      .select("set_id, permission_key")
+      .in("set_id", ids);
+    const keysBySet = new Map<string, string[]>();
+    for (const it of (items ?? []) as Array<{ set_id: string; permission_key: string }>) {
+      const arr = keysBySet.get(it.set_id) ?? [];
+      arr.push(it.permission_key);
+      keysBySet.set(it.set_id, arr);
+    }
+
+    return (sets ?? []).map((s) => ({
+      id: s.id as string,
+      name: s.name as string,
+      module: s.module as string,
+      description: (s.description ?? null) as string | null,
+      is_system: Boolean(s.is_system),
+      permission_keys: keysBySet.get(s.id as string) ?? [],
+    }));
+  });
+
+const SetMemberJobRolesInput = z.object({
+  member_user_id: z.string().uuid(),
+  primary_role_id: z.string().uuid().nullable(),
+  extra_role_ids: z.array(z.string().uuid()).default([]),
+  extra_set_ids: z.array(z.string().uuid()).default([]),
+});
+
+/** Define o cargo principal, cargos extras e pacotes extras de um membro.
+ *  Usa supabaseAdmin porque as RLS de user_job_roles/user_permission_sets
+ *  restringem escrita ao owner_id (criador do workspace), mas a tela de
+ *  membros permite que qualquer admin do workspace gerencie atribuições.
+ */
+export const setMemberJobRoles = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => SetMemberJobRolesInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+    await assertTargetMember(workspace.id, data.member_user_id);
+
+    const workspaceOwnerId = workspace.created_by ?? userId;
+
+    // Reconstrói user_job_roles
+    const { error: delErr } = await supabaseAdmin
+      .from("user_job_roles")
+      .delete()
+      .eq("owner_id", workspaceOwnerId)
+      .eq("user_id", data.member_user_id);
+    if (delErr) throw new Error(delErr.message);
+
+    const roleRows: Array<{
+      user_id: string;
+      owner_id: string;
+      role_id: string;
+      is_primary: boolean;
+    }> = [];
+    const seen = new Set<string>();
+    if (data.primary_role_id) {
+      roleRows.push({
+        user_id: data.member_user_id,
+        owner_id: workspaceOwnerId,
+        role_id: data.primary_role_id,
+        is_primary: true,
+      });
+      seen.add(data.primary_role_id);
+    }
+    for (const rid of data.extra_role_ids) {
+      if (seen.has(rid)) continue;
+      roleRows.push({
+        user_id: data.member_user_id,
+        owner_id: workspaceOwnerId,
+        role_id: rid,
+        is_primary: false,
+      });
+      seen.add(rid);
+    }
+    if (roleRows.length > 0) {
+      const { error: insErr } = await supabaseAdmin
+        .from("user_job_roles")
+        .insert(roleRows as never);
+      if (insErr) throw new Error(insErr.message);
+    }
+
+    // Reconstrói user_permission_sets
+    const { error: delSetsErr } = await supabaseAdmin
+      .from("user_permission_sets")
+      .delete()
+      .eq("owner_id", workspaceOwnerId)
+      .eq("user_id", data.member_user_id);
+    if (delSetsErr) throw new Error(delSetsErr.message);
+
+    if (data.extra_set_ids.length > 0) {
+      const setRows = data.extra_set_ids.map((sid) => ({
+        user_id: data.member_user_id,
+        owner_id: workspaceOwnerId,
+        set_id: sid,
+      }));
+      const { error: insSetsErr } = await supabaseAdmin
+        .from("user_permission_sets")
+        .insert(setRows as never);
+      if (insSetsErr) throw new Error(insSetsErr.message);
+    }
+
+    return { ok: true };
   });

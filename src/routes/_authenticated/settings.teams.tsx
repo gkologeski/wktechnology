@@ -71,6 +71,9 @@ import {
   updateTeamMemberRole,
   updateTeamMember,
   removeTeamMember,
+  listWorkspaceJobRoles,
+  listWorkspacePermissionSets,
+  setMemberJobRoles,
   TEAM_ROLE_LABELS,
   type TeamRole,
 } from "@/lib/teams.functions";
@@ -79,6 +82,7 @@ import {
   resendWorkspaceInvite,
   revokeWorkspaceInvite,
 } from "@/lib/workspace-invites.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useEntitlements } from "@/lib/use-entitlements";
 import { ENT, PLAN_LABELS } from "@/lib/entitlements";
 
@@ -128,8 +132,13 @@ function UsersPage() {
   const updateFn = useServerFn(updateTeamMemberRole);
   const updateMemberFn = useServerFn(updateTeamMember);
   const removeFn = useServerFn(removeTeamMember);
+  const listRolesFn = useServerFn(listWorkspaceJobRoles);
+  const listSetsFn = useServerFn(listWorkspacePermissionSets);
+  const setMemberRolesFn = useServerFn(setMemberJobRoles);
 
   type Row = Awaited<ReturnType<typeof listTeamMembers>>[number];
+  type RoleOption = Awaited<ReturnType<typeof listWorkspaceJobRoles>>[number];
+  type SetOption = Awaited<ReturnType<typeof listWorkspacePermissionSets>>[number];
   type InviteRow = Awaited<ReturnType<typeof listPendingTeamInvites>>[number];
 
   const {
@@ -144,6 +153,16 @@ function UsersPage() {
   const { data: invites = [], refetch: refetchInvites } = useQuery<InviteRow[]>({
     queryKey: ["settings-teams", "pending-invites"],
     queryFn: () => listInvitesFn(),
+  });
+
+  const { data: jobRoles = [] } = useQuery<RoleOption[]>({
+    queryKey: ["settings-teams", "job-roles"],
+    queryFn: () => listRolesFn(),
+  });
+
+  const { data: permissionSets = [] } = useQuery<SetOption[]>({
+    queryKey: ["settings-teams", "permission-sets"],
+    queryFn: () => listSetsFn(),
   });
 
   const [query, setQuery] = useState("");
@@ -194,6 +213,49 @@ function UsersPage() {
   const [editPhone, setEditPhone] = useState("");
   const [editRole, setEditRole] = useState<TeamRole>("member");
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // roles dialog
+  const [rolesDialog, setRolesDialog] = useState<Row | null>(null);
+  const [primaryRoleId, setPrimaryRoleId] = useState<string | null>(null);
+  const [extraRoleIds, setExtraRoleIds] = useState<string[]>([]);
+  const [extraSetIds, setExtraSetIds] = useState<string[]>([]);
+  const [savingRoles, setSavingRoles] = useState(false);
+
+  const openRolesDialog = (r: Row) => {
+    setRolesDialog(r);
+    setPrimaryRoleId(r.primary_role_id ?? null);
+    setExtraRoleIds(r.role_ids ?? []);
+    setExtraSetIds(r.extra_set_ids ?? []);
+  };
+
+  const closeRolesDialog = () => {
+    setRolesDialog(null);
+    setPrimaryRoleId(null);
+    setExtraRoleIds([]);
+    setExtraSetIds([]);
+  };
+
+  const handleSaveRoles = async () => {
+    if (!rolesDialog) return;
+    setSavingRoles(true);
+    try {
+      await setMemberRolesFn({
+        data: {
+          member_user_id: rolesDialog.user_id,
+          primary_role_id: primaryRoleId,
+          extra_role_ids: extraRoleIds,
+          extra_set_ids: extraSetIds,
+        },
+      });
+      toast.success("Cargos atualizados");
+      closeRolesDialog();
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar cargos");
+    } finally {
+      setSavingRoles(false);
+    }
+  };
 
   const openEdit = (r: Row) => {
     setEditing(r);
@@ -614,7 +676,8 @@ function UsersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Usuário</TableHead>
-                <TableHead>Papel</TableHead>
+                <TableHead>Papel workspace</TableHead>
+                <TableHead>Cargos funcionais</TableHead>
                 <TableHead>Membro desde</TableHead>
                 <TableHead className="w-[60px]" />
               </TableRow>
@@ -622,14 +685,14 @@ function UsersPage() {
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
                     Carregando…
                   </TableCell>
                 </TableRow>
               )}
               {!loading && filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
                     Nenhum usuário encontrado.
                   </TableCell>
                 </TableRow>
@@ -698,11 +761,38 @@ function UsersPage() {
                       </Select>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <button
+                      type="button"
+                      onClick={() => openRolesDialog(r)}
+                      className="text-left text-sm text-primary hover:underline underline-offset-2"
+                    >
+                      {r.primary_role_id
+                        ? (jobRoles.find((j) => j.id === r.primary_role_id)?.name ?? "Cargo atribuído")
+                        : r.role_ids.length > 0
+                          ? `${r.role_ids.length} cargo(s)`
+                          : "Nenhum cargo"}
+                    </button>
+                    {r.extra_set_ids.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        +{r.extra_set_ids.length} pacote(s)
+                      </p>
+                    )}
+                  </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {r.created_at ? formatDateTime(r.created_at) : "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openRolesDialog(r)}
+                        aria-label="Editar cargos"
+                        title="Editar cargos"
+                      >
+                        <ShieldCheck className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -913,6 +1003,140 @@ function UsersPage() {
             </Button>
             <Button onClick={handleSaveEdit} disabled={savingEdit || !canSaveEdit}>
               {savingEdit ? "Salvando…" : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Roles dialog */}
+      <Dialog open={!!rolesDialog} onOpenChange={(o) => !o && closeRolesDialog()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar cargos do usuário</DialogTitle>
+            <DialogDescription>
+              Escolha o cargo principal, cargos extras e pacotes de permissões para{" "}
+              <span className="font-medium text-foreground">
+                {rolesDialog?.full_name || rolesDialog?.email}
+              </span>
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="space-y-2">
+              <Label>Cargo principal</Label>
+              <Select
+                value={primaryRoleId ?? "__none__"}
+                onValueChange={(v) => setPrimaryRoleId(v === "__none__" ? null : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cargo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nenhum cargo principal</SelectItem>
+                  {jobRoles.map((j) => (
+                    <SelectItem key={j.id} value={j.id}>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: j.color ?? "currentColor" }}
+                        />
+                        <span>{j.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Define o papel padrão do usuário nos módulos (ex: Vendedor, Recrutador).
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Cargos extras</Label>
+              <div className="rounded-md border divide-y">
+                {jobRoles.map((j) => {
+                  const checked = extraRoleIds.includes(j.id);
+                  const isPrimary = primaryRoleId === j.id;
+                  return (
+                    <label
+                      key={j.id}
+                      className="flex items-center justify-between gap-3 p-3 cursor-pointer hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: j.color ?? "currentColor" }}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{j.name}</p>
+                          {j.description && (
+                            <p className="text-xs text-muted-foreground truncate">{j.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Checkbox
+                        checked={checked || isPrimary}
+                        disabled={isPrimary}
+                        onCheckedChange={(c) => {
+                          setExtraRoleIds((prev) =>
+                            c ? [...prev, j.id] : prev.filter((id) => id !== j.id),
+                          );
+                        }}
+                        aria-label={`Selecionar ${j.name}`}
+                      />
+                    </label>
+                  );
+                })}
+                {jobRoles.length === 0 && (
+                  <p className="p-3 text-sm text-muted-foreground">Nenhum cargo disponível.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Pacotes de permissões extras</Label>
+              <div className="rounded-md border divide-y">
+                {permissionSets
+                  .filter((s) => s.module !== "__bundle__")
+                  .map((s) => (
+                    <label
+                      key={s.id}
+                      className="flex items-center justify-between gap-3 p-3 cursor-pointer hover:bg-muted/50"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{s.name}</p>
+                        {s.description && (
+                          <p className="text-xs text-muted-foreground truncate">{s.description}</p>
+                        )}
+                        {s.permission_keys.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {s.permission_keys.length} permissão(ões)
+                          </p>
+                        )}
+                      </div>
+                      <Checkbox
+                        checked={extraSetIds.includes(s.id)}
+                        onCheckedChange={(c) => {
+                          setExtraSetIds((prev) =>
+                            c ? [...prev, s.id] : prev.filter((id) => id !== s.id),
+                          );
+                        }}
+                        aria-label={`Selecionar ${s.name}`}
+                      />
+                    </label>
+                  ))}
+                {permissionSets.filter((s) => s.module !== "__bundle__").length === 0 && (
+                  <p className="p-3 text-sm text-muted-foreground">Nenhum pacote disponível.</p>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={closeRolesDialog} disabled={savingRoles}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveRoles} disabled={savingRoles}>
+              {savingRoles ? "Salvando…" : "Salvar cargos"}
             </Button>
           </DialogFooter>
         </DialogContent>
