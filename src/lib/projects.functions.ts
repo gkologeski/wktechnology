@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
 const projectStatusEnum = z.enum(["planning", "active", "on_hold", "done", "cancelled"]);
 const taskStatusEnum = z.enum(["todo", "doing", "review", "done"]);
