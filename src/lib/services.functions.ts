@@ -43,7 +43,12 @@ export const listServices = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.view.workspace",
+      "techservice.services.view.own",
+    ]);
     let q = supabase
       .from("services")
       .select("*, contracts(id, number, title, counterparty_company_id)")
