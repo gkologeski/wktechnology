@@ -23,10 +23,10 @@ export const Route = createFileRoute("/_authenticated/people/offboarding")({
 });
 
 const STATUS_TONE: Record<OnbPlanStatus, string> = {
-  draft: "bg-slate-500/15 text-slate-700 border-slate-500/30",
+  not_started: "bg-slate-500/15 text-slate-700 border-slate-500/30",
   in_progress: "bg-orange-500/15 text-orange-700 border-orange-500/30",
   completed: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
-  cancelled: "bg-rose-500/15 text-rose-700 border-rose-500/30",
+  canceled: "bg-rose-500/15 text-rose-700 border-rose-500/30",
 };
 
 function OffboardingListPage() {
