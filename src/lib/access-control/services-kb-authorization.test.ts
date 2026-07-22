@@ -95,7 +95,7 @@ describe("kb.functions.ts — gate de permissão por handler", () => {
   const handlers = extractHandlers(src);
 
   // Endpoints públicos de leitura (sem requireSupabaseAuth) são intencionais.
-  const publicByDesign = new Set(["listKbCategoriesPublic", "listKbArticlesPublic", "getKbArticlePublic"]);
+  const publicByDesign = new Set(["listKbPublic", "getKbArticlePublic"]);
 
   it("todo handler admin usa requireSupabaseAuth", () => {
     for (const [name, body] of handlers) {
