@@ -71,6 +71,9 @@ import {
   updateTeamMemberRole,
   updateTeamMember,
   removeTeamMember,
+  listWorkspaceJobRoles,
+  listWorkspacePermissionSets,
+  setMemberJobRoles,
   TEAM_ROLE_LABELS,
   type TeamRole,
 } from "@/lib/teams.functions";
@@ -79,6 +82,7 @@ import {
   resendWorkspaceInvite,
   revokeWorkspaceInvite,
 } from "@/lib/workspace-invites.functions";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useEntitlements } from "@/lib/use-entitlements";
 import { ENT, PLAN_LABELS } from "@/lib/entitlements";
 
