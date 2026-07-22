@@ -300,6 +300,7 @@ import { Route as ApiPublicHooksAtsEmailsTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/public/hooks/ai-summary-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
+import { Route as ApiPublicFilesTokenRouteImport } from './routes/api/public/files/$token'
 import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/booking/$slug'
 import { Route as ApiPublicBankingInterWebhookRouteImport } from './routes/api/public/banking/inter-webhook'
 import { Route as AuthenticatedSettingsRolesMatrixRouteImport } from './routes/_authenticated/settings.roles.matrix'
@@ -1999,6 +2000,11 @@ const ApiPublicFormsSlugRoute = ApiPublicFormsSlugRouteImport.update({
   path: '/api/public/forms/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicFilesTokenRoute = ApiPublicFilesTokenRouteImport.update({
+  id: '/api/public/files/$token',
+  path: '/api/public/files/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicBookingSlugRoute = ApiPublicBookingSlugRouteImport.update({
   id: '/api/public/booking/$slug',
   path: '/api/public/booking/$slug',
@@ -2501,6 +2507,7 @@ export interface FileRoutesByFullPath {
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
   '/api/public/banking/inter-webhook': typeof ApiPublicBankingInterWebhookRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
+  '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
@@ -2831,6 +2838,7 @@ export interface FileRoutesByTo {
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
   '/api/public/banking/inter-webhook': typeof ApiPublicBankingInterWebhookRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
+  '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
@@ -3168,6 +3176,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
   '/api/public/banking/inter-webhook': typeof ApiPublicBankingInterWebhookRoute
   '/api/public/booking/$slug': typeof ApiPublicBookingSlugRouteWithChildren
+  '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
@@ -3505,6 +3514,7 @@ export interface FileRouteTypes {
     | '/settings/roles/matrix'
     | '/api/public/banking/inter-webhook'
     | '/api/public/booking/$slug'
+    | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
@@ -3835,6 +3845,7 @@ export interface FileRouteTypes {
     | '/settings/roles/matrix'
     | '/api/public/banking/inter-webhook'
     | '/api/public/booking/$slug'
+    | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
@@ -4171,6 +4182,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/roles/matrix'
     | '/api/public/banking/inter-webhook'
     | '/api/public/booking/$slug'
+    | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/ai-summary-tick'
@@ -4294,6 +4306,7 @@ export interface RootRouteChildren {
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBankingInterWebhookRoute: typeof ApiPublicBankingInterWebhookRoute
   ApiPublicBookingSlugRoute: typeof ApiPublicBookingSlugRouteWithChildren
+  ApiPublicFilesTokenRoute: typeof ApiPublicFilesTokenRoute
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksAiSummaryTickRoute: typeof ApiPublicHooksAiSummaryTickRoute
@@ -6405,6 +6418,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFormsSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/files/$token': {
+      id: '/api/public/files/$token'
+      path: '/api/public/files/$token'
+      fullPath: '/api/public/files/$token'
+      preLoaderRoute: typeof ApiPublicFilesTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/booking/$slug': {
       id: '/api/public/booking/$slug'
       path: '/api/public/booking/$slug'
@@ -7498,6 +7518,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBankingInterWebhookRoute: ApiPublicBankingInterWebhookRoute,
   ApiPublicBookingSlugRoute: ApiPublicBookingSlugRouteWithChildren,
+  ApiPublicFilesTokenRoute: ApiPublicFilesTokenRoute,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
   ApiPublicHooksAiSummaryTickRoute: ApiPublicHooksAiSummaryTickRoute,

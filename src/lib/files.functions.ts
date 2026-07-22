@@ -15,28 +15,34 @@ export const listFiles = createServerFn({ method: "GET" })
   .inputValidator((d) => z.object({ folderId: z.string().uuid().nullable() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const [foldersQ, filesQ, usedQ] = await Promise.all([
-      supabase
-        .from("user_file_folders")
-        .select("id, name, parent_id, created_at")
-        .eq("owner_id", userId)
-        .is("parent_id", data.folderId as string | null)
-        .order("name"),
-      data.folderId === null
-        ? supabase
-            .from("user_files")
-            .select("id, name, size_bytes, mime_type, is_public, public_token, created_at, folder_id")
-            .eq("owner_id", userId)
-            .is("folder_id", null)
-            .order("created_at", { ascending: false })
-        : supabase
-            .from("user_files")
-            .select("id, name, size_bytes, mime_type, is_public, public_token, created_at, folder_id")
-            .eq("owner_id", userId)
-            .eq("folder_id", data.folderId)
-            .order("created_at", { ascending: false }),
-      supabase.rpc("user_files_used_bytes", { uid: userId }),
-    ]);
+    const foldersQ = await (data.folderId === null
+      ? supabase
+          .from("user_file_folders")
+          .select("id, name, parent_id, created_at")
+          .eq("owner_id", userId)
+          .is("parent_id", null)
+          .order("name")
+      : supabase
+          .from("user_file_folders")
+          .select("id, name, parent_id, created_at")
+          .eq("owner_id", userId)
+          .eq("parent_id", data.folderId)
+          .order("name"));
+    const filesQ = await (data.folderId === null
+      ? supabase
+          .from("user_files")
+          .select("id, name, size_bytes, mime_type, is_public, public_token, created_at, folder_id")
+          .eq("owner_id", userId)
+          .is("folder_id", null)
+          .order("created_at", { ascending: false })
+      : supabase
+          .from("user_files")
+          .select("id, name, size_bytes, mime_type, is_public, public_token, created_at, folder_id")
+          .eq("owner_id", userId)
+          .eq("folder_id", data.folderId)
+          .order("created_at", { ascending: false }));
+    const usedQ = await supabase.rpc("user_files_used_bytes", { uid: userId });
+
     if (foldersQ.error) throw new Error(foldersQ.error.message);
     if (filesQ.error) throw new Error(filesQ.error.message);
     return {
