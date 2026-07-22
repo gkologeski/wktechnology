@@ -9,8 +9,8 @@ vi.mock("@tanstack/react-start/server", () => ({
 }));
 
 // Mock the admin client dynamic import used by auditDenial.
-const insertMock = vi.fn(() => Promise.resolve({ error: null }));
-const fromMock = vi.fn(() => ({ insert: insertMock }));
+const insertMock = vi.fn((_row: unknown) => Promise.resolve({ error: null }));
+const fromMock = vi.fn((_table: string) => ({ insert: insertMock }));
 vi.mock("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: { from: fromMock },
 }));
