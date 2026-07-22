@@ -1096,34 +1096,36 @@ function UsersPage() {
             <div className="space-y-2">
               <Label>Pacotes de permissões extras</Label>
               <div className="rounded-md border divide-y">
-                {permissionSets.map((s) => (
-                  <label
-                    key={s.id}
-                    className="flex items-center justify-between gap-3 p-3 cursor-pointer hover:bg-muted/50"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{s.name}</p>
-                      {s.description && (
-                        <p className="text-xs text-muted-foreground truncate">{s.description}</p>
-                      )}
-                      {s.permission_keys.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {s.permission_keys.length} permissão(ões)
-                        </p>
-                      )}
-                    </div>
-                    <Checkbox
-                      checked={extraSetIds.includes(s.id)}
-                      onCheckedChange={(c) => {
-                        setExtraSetIds((prev) =>
-                          c ? [...prev, s.id] : prev.filter((id) => id !== s.id),
-                        );
-                      }}
-                      aria-label={`Selecionar ${s.name}`}
-                    />
-                  </label>
-                ))}
-                {permissionSets.length === 0 && (
+                {permissionSets
+                  .filter((s) => s.module !== "__bundle__")
+                  .map((s) => (
+                    <label
+                      key={s.id}
+                      className="flex items-center justify-between gap-3 p-3 cursor-pointer hover:bg-muted/50"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{s.name}</p>
+                        {s.description && (
+                          <p className="text-xs text-muted-foreground truncate">{s.description}</p>
+                        )}
+                        {s.permission_keys.length > 0 && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {s.permission_keys.length} permissão(ões)
+                          </p>
+                        )}
+                      </div>
+                      <Checkbox
+                        checked={extraSetIds.includes(s.id)}
+                        onCheckedChange={(c) => {
+                          setExtraSetIds((prev) =>
+                            c ? [...prev, s.id] : prev.filter((id) => id !== s.id),
+                          );
+                        }}
+                        aria-label={`Selecionar ${s.name}`}
+                      />
+                    </label>
+                  ))}
+                {permissionSets.filter((s) => s.module !== "__bundle__").length === 0 && (
                   <p className="p-3 text-sm text-muted-foreground">Nenhum pacote disponível.</p>
                 )}
               </div>
