@@ -191,10 +191,8 @@ const sections: Section[] = [
   {
     label: "Pessoas & Acesso",
     tabs: [
-      { to: "/settings/teams", label: "Membros", icon: Users, need: "admin" },
-      { to: "/settings/user-groups", label: "Times", icon: UsersRound, need: "manager" },
-      { to: "/settings/permissions", label: "Permissões", icon: Shield, need: "admin" },
       { to: "/settings/access-policy", label: "Política de acesso", icon: Lock, need: "admin" },
+
       
       { to: "/settings/scim", label: "SCIM", icon: Users, need: "admin" },
       { to: "/settings/audit-log", label: "Auditoria", icon: ScrollText, need: "admin" },
