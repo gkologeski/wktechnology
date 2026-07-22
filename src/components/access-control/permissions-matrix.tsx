@@ -282,13 +282,14 @@ export function PermissionsMatrix() {
         <table className="w-full text-sm border-separate border-spacing-0">
           <thead className="bg-muted/40">
             <tr>
-              <th className="sticky left-0 top-0 z-40 bg-muted/40 text-left p-2 min-w-[360px] font-medium border-r border-b">
+              <th className="sticky left-0 top-0 z-40 bg-muted text-left p-2 min-w-[360px] font-medium border-r border-b">
                 Recurso / Ação
               </th>
               {roles.map((r) => (
                 <th
                   key={r.id}
-                  className="sticky top-0 z-30 bg-muted/40 p-2 text-center font-medium whitespace-nowrap border-b"
+                  className="sticky top-0 z-30 bg-muted p-2 text-center font-medium whitespace-nowrap border-b"
+
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{r.name}</span>
