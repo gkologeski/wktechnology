@@ -35,5 +35,5 @@ export const QUICK_COMMANDS: QuickCommand[] = [
   { id: "nav-settings", label: "Configurações", keywords: ["configuracoes", "settings"], icon: Settings, to: "/settings", group: "Configurar" },
   { id: "nav-members", label: "Membros", keywords: ["membros", "usuarios", "equipe", "convites"], icon: Users, to: "/settings/teams", group: "Configurar" },
   { id: "nav-teams", label: "Times", keywords: ["times", "grupos", "equipes"], icon: UsersRound, to: "/settings/user-groups", group: "Configurar" },
-  { id: "nav-access", label: "Controle de Acesso", keywords: ["permissoes", "cargos", "acesso", "matriz", "papeis", "perfis", "roles"], icon: Shield, to: "/home/access", group: "Configurar" },
+  { id: "nav-access", label: "Permissões", keywords: ["permissoes", "cargos", "acesso", "matriz", "papeis", "perfis", "roles"], icon: Shield, to: "/settings/permissions", group: "Configurar" },
 ];

@@ -195,7 +195,7 @@ type Shortcut = {
 
 const SHORTCUTS: Shortcut[] = [
   { to: "/settings/teams", title: "Membros", desc: "Convites, papéis e acessos.", icon: UsersRound },
-  { to: "/home/access", title: "Controle de Acesso", desc: "Cargos e pacotes de permissão.", icon: Shield },
+  { to: "/settings/permissions", title: "Permissões", desc: "Cargos e pacotes de permissão.", icon: Shield },
   { to: "/marketplace", title: "Marketplace", desc: "Add-ons e integrações.", icon: Store },
   { to: "/invoices", title: "Faturas", desc: "Histórico de pagamentos.", icon: Receipt },
 ];
