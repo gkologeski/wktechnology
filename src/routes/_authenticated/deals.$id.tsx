@@ -207,14 +207,27 @@ function DealDetail() {
               </SelectContent>
             </Select>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
-            onClick={remove}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg disabled:opacity-50"
+                    onClick={remove}
+                    disabled={!canDelete}
+                    aria-label="Excluir negócio"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!canDelete && (
+                <TooltipContent>Você não tem permissão para excluir este negócio.</TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
       <StageTracker stages={stages} current={currentStage} onChange={setStage} />
