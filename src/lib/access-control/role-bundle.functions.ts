@@ -311,7 +311,9 @@ export const renameJobRole = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     await assertRoleEditable(supabase, data.role_id);
-    const patch: Record<string, unknown> = { name: data.name };
+    const patch: { name: string; description?: string | null; color?: string | null } = {
+      name: data.name,
+    };
     if (data.description !== undefined) patch.description = data.description;
     if (data.color !== undefined) patch.color = data.color;
     const { error } = await supabase.from("job_roles").update(patch).eq("id", data.role_id);
