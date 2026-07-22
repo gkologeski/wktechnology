@@ -1,0 +1,2 @@
+ALTER TABLE public.job_role_permission_overrides
+DROP CONSTRAINT IF EXISTS job_role_permission_overrides_created_by_fkey;

@@ -1,7 +1,8 @@
 // Server functions to manage a per-role "permission bundle".
 // A role bundle is a dedicated permission_set (module='__bundle__') linked 1:1 to a
 // job_role via job_role_sets. Toggling a permission for a role inserts/removes rows
-// in permission_set_items on the bundle. System roles are read-only.
+// in permission_set_items and persists explicit workspace overrides so inherited
+// system permissions can be disabled without being re-enabled on the next refetch.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
@@ -9,10 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const BUNDLE_MODULE = "__bundle__";
 
-async function resolveActiveWorkspace(
-  supabase: SupabaseClient,
-  userId: string,
-): Promise<string> {
+async function resolveActiveWorkspace(supabase: SupabaseClient, userId: string): Promise<string> {
   const m = await supabase
     .from("workspace_members")
     .select("workspace_id")
@@ -33,6 +31,42 @@ async function resolveActiveWorkspace(
     )?.id;
   if (!wsId) throw new Error("Workspace ativo não encontrado");
   return wsId;
+}
+
+async function assertWorkspaceAdmin(
+  supabase: SupabaseClient,
+  userId: string,
+  workspaceId: string,
+): Promise<void> {
+  const { data, error } = await supabase.rpc("is_workspace_admin_v2", {
+    _workspace: workspaceId,
+    _user: userId,
+  });
+  if (error) throw new Error(`Falha ao verificar administrador do workspace: ${error.message}`);
+  if (!data) {
+    throw new Error("Você não tem permissão para alterar cargos e permissões deste workspace.");
+  }
+}
+
+async function upsertRoleOverride(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  userId: string,
+  roleId: string,
+  permissionKey: string,
+  effect: "grant" | "deny",
+): Promise<void> {
+  const { error } = await supabase.from("job_role_permission_overrides").upsert(
+    {
+      workspace_id: workspaceId,
+      role_id: roleId,
+      permission_key: permissionKey,
+      effect,
+      created_by: userId,
+    },
+    { onConflict: "workspace_id,role_id,permission_key" },
+  );
+  if (error) throw new Error(error.message);
 }
 
 async function assertRoleEditable(supabase: SupabaseClient, roleId: string) {
@@ -93,9 +127,7 @@ async function ensureBundle(
       .maybeSingle();
     if (q.data?.id) {
       // Ensure link
-      await supabase
-        .from("job_role_sets")
-        .upsert({ role_id: roleId, set_id: q.data.id as string });
+      await supabase.from("job_role_sets").upsert({ role_id: roleId, set_id: q.data.id as string });
       return q.data.id as string;
     }
     throw new Error(insErr.message);
@@ -119,9 +151,11 @@ export const setRolePermission = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => SetPermInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await resolveActiveWorkspace(supabase, userId);
-    const setId = await ensureBundle(supabase, userId, data.role_id);
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
+    let setId: string | null = null;
     if (data.granted) {
+      setId = await ensureBundle(supabase, userId, data.role_id);
       const { error } = await supabase
         .from("permission_set_items")
         .upsert(
@@ -129,13 +163,41 @@ export const setRolePermission = createServerFn({ method: "POST" })
           { onConflict: "set_id,permission_key" },
         );
       if (error) throw new Error(error.message);
+      await upsertRoleOverride(
+        supabase,
+        workspaceId,
+        userId,
+        data.role_id,
+        data.permission_key,
+        "grant",
+      );
     } else {
-      const { error } = await supabase
-        .from("permission_set_items")
-        .delete()
-        .eq("set_id", setId)
-        .eq("permission_key", data.permission_key);
-      if (error) throw new Error(error.message);
+      const existing = await supabase
+        .from("job_role_sets")
+        .select("set_id, permission_sets!inner(id, module, owner_id)")
+        .eq("role_id", data.role_id);
+      if (existing.error) throw new Error(existing.error.message);
+      for (const row of (existing.data ?? []) as unknown as Array<{
+        set_id: string;
+        permission_sets: { module: string; owner_id: string | null };
+      }>) {
+        if (row.permission_sets?.module !== BUNDLE_MODULE) continue;
+        if (row.permission_sets?.owner_id !== userId) continue;
+        const { error } = await supabase
+          .from("permission_set_items")
+          .delete()
+          .eq("set_id", row.set_id)
+          .eq("permission_key", data.permission_key);
+        if (error) throw new Error(error.message);
+      }
+      await upsertRoleOverride(
+        supabase,
+        workspaceId,
+        userId,
+        data.role_id,
+        data.permission_key,
+        "deny",
+      );
     }
     return { ok: true, set_id: setId };
   });
@@ -151,22 +213,49 @@ export const bulkSetRolePermissions = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => BulkInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await resolveActiveWorkspace(supabase, userId);
-    const setId = await ensureBundle(supabase, userId, data.role_id);
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
+    let setId: string | null = null;
     if (data.granted) {
-      const rows = data.keys.map((k) => ({ set_id: setId, permission_key: k }));
+      const grantedSetId = await ensureBundle(supabase, userId, data.role_id);
+      setId = grantedSetId;
+      const rows = data.keys.map((k) => ({ set_id: grantedSetId, permission_key: k }));
       const { error } = await supabase
         .from("permission_set_items")
         .upsert(rows, { onConflict: "set_id,permission_key" });
       if (error) throw new Error(error.message);
     } else {
-      const { error } = await supabase
-        .from("permission_set_items")
-        .delete()
-        .eq("set_id", setId)
-        .in("permission_key", data.keys);
-      if (error) throw new Error(error.message);
+      const existing = await supabase
+        .from("job_role_sets")
+        .select("set_id, permission_sets!inner(id, module, owner_id)")
+        .eq("role_id", data.role_id);
+      if (existing.error) throw new Error(existing.error.message);
+      for (const row of (existing.data ?? []) as unknown as Array<{
+        set_id: string;
+        permission_sets: { module: string; owner_id: string | null };
+      }>) {
+        if (row.permission_sets?.module !== BUNDLE_MODULE) continue;
+        if (row.permission_sets?.owner_id !== userId) continue;
+        const { error } = await supabase
+          .from("permission_set_items")
+          .delete()
+          .eq("set_id", row.set_id)
+          .in("permission_key", data.keys);
+        if (error) throw new Error(error.message);
+      }
     }
+    const effect: "grant" | "deny" = data.granted ? "grant" : "deny";
+    const overrideRows = data.keys.map((permissionKey) => ({
+      workspace_id: workspaceId,
+      role_id: data.role_id,
+      permission_key: permissionKey,
+      effect,
+      created_by: userId,
+    }));
+    const { error: overrideErr } = await supabase
+      .from("job_role_permission_overrides")
+      .upsert(overrideRows, { onConflict: "workspace_id,role_id,permission_key" });
+    if (overrideErr) throw new Error(overrideErr.message);
     return { ok: true, set_id: setId, count: data.keys.length };
   });
 
@@ -177,7 +266,8 @@ export const restoreRoleDefaults = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => RestoreInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await resolveActiveWorkspace(supabase, userId);
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
     const role = await supabase
       .from("job_roles")
       .select("id, is_system")
@@ -206,6 +296,12 @@ export const restoreRoleDefaults = createServerFn({ method: "POST" })
         .upsert(rows, { onConflict: "set_id,permission_key" });
       if (error) throw new Error(error.message);
     }
+    const overrides = await supabase
+      .from("job_role_permission_overrides")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("role_id", data.role_id);
+    if (overrides.error) throw new Error(overrides.error.message);
     return { ok: true, count: keys.length };
   });
 
@@ -218,7 +314,8 @@ export type RoleBundleMap = Record<string, Set<string>>;
 export const getMatrixState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
     const links = await supabase
       .from("job_role_sets")
       .select("role_id, set_id, permission_sets!inner(permission_set_items(permission_key))");
@@ -228,15 +325,28 @@ export const getMatrixState = createServerFn({ method: "GET" })
       role_id: string;
       permission_sets: { permission_set_items: Array<{ permission_key: string }> };
     }>) {
-      const keys = (row.permission_sets?.permission_set_items ?? []).map(
-        (i) => i.permission_key,
-      );
+      const keys = (row.permission_sets?.permission_set_items ?? []).map((i) => i.permission_key);
       if (!map[row.role_id]) map[row.role_id] = [];
       map[row.role_id].push(...keys);
     }
     // Deduplicate.
     const out: Record<string, string[]> = {};
     for (const [rid, arr] of Object.entries(map)) out[rid] = Array.from(new Set(arr));
+    const overrides = await supabase
+      .from("job_role_permission_overrides")
+      .select("role_id, permission_key, effect")
+      .eq("workspace_id", workspaceId);
+    if (overrides.error) throw new Error(overrides.error.message);
+    for (const row of (overrides.data ?? []) as Array<{
+      role_id: string;
+      permission_key: string;
+      effect: "grant" | "deny";
+    }>) {
+      const cur = new Set(out[row.role_id] ?? []);
+      if (row.effect === "grant") cur.add(row.permission_key);
+      else cur.delete(row.permission_key);
+      out[row.role_id] = Array.from(cur);
+    }
     return out;
   });
 
@@ -372,11 +482,16 @@ export const deleteJobRole = createServerFn({ method: "POST" })
       .select("set_id, permission_sets!inner(id, module, owner_id)")
       .eq("role_id", data.role_id);
     if (links.error) throw new Error(links.error.message);
-    const bundleIds = ((links.data ?? []) as Array<{
-      set_id: string;
-      permission_sets: { module: string; owner_id: string | null };
-    }>)
-      .filter((r) => r.permission_sets?.module === BUNDLE_MODULE && r.permission_sets?.owner_id === userId)
+    const bundleIds = (
+      (links.data ?? []) as Array<{
+        set_id: string;
+        permission_sets: { module: string; owner_id: string | null };
+      }>
+    )
+      .filter(
+        (r) =>
+          r.permission_sets?.module === BUNDLE_MODULE && r.permission_sets?.owner_id === userId,
+      )
       .map((r) => r.set_id);
 
     // Remove all role-set links.
