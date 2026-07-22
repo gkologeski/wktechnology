@@ -13,6 +13,7 @@ import {
   duplicateJobRole,
   renameJobRole,
   deleteJobRole,
+  restoreRoleDefaults,
 } from "@/lib/access-control/role-bundle.functions";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
