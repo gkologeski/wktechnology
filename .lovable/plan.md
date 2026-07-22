@@ -1,89 +1,99 @@
-## Opção C — RLS + assertPermission nos 5 módulos PSA
+# Fase 3 — Estender assertPermission aos handlers restantes de PSA
 
-Replicar o padrão canônico do TechSales (RLS por `user_has_permission` no banco + `assertPermission` nas server functions) nos módulos hoje sem cobertura de escopo real.
+## Contexto
 
-Permissões já semeadas em `public.permissions` (verifiquei — todas presentes). O trabalho é só ligar as chaves ao runtime.
+A Fase 1 aplicou RLS RESTRICTIVE em todas as tabelas dos módulos PSA (proteção real do banco). A Fase 2 aplicou `assertPermission` nos handlers principais de **contracts, projects (core), people (core), ats jobs e ats candidates**.
 
-### Escopo por módulo
+Restam ~15 arquivos de server functions com mutações que hoje contam apenas com RLS — funciona, mas devolve erros PostgREST crus em vez de mensagens PT-BR amigáveis e não registra auditoria em `access_audit_log`.
 
-**TechHire** — `ats_jobs`, `ats_candidates`, `ats_applications`, `ats_interviews`, `ats_offers`, `ats_scorecards`
+O objetivo desta fase é **paridade de UX + defense-in-depth** nos módulos restantes, sem alterar RLS nem lógica de negócio.
 
-**TechPeople** — `people`, `people_documents`, `people_goals`, `people_reviews`, `people_incidents`, `people_psychosocial_assessments`, `people_allocations`, `people_one_on_ones`, `people_benefits`, `project_time_entries` (timesheet), `people_onboarding_plans`, `people_onboarding_tasks`
+## Escopo
 
-**TechContracts** — `contracts`, `contract_approvals`, `proposal_clauses`, `esign_documents`, `esign_signers`
+### TechService (2 arquivos)
+- `src/lib/services.functions.ts` — `createService`, `updateService`, `deleteService`, `activateService`.
+- `src/lib/kb.functions.ts` — `upsertKbCategory`, `deleteKbCategory`, `upsertKbArticle`, `deleteKbArticle`, `seedStarterKb`.
 
-**TechService** — `services`, `service_catalog`, `sla_policies`, `macros`, `kb_articles` (leitura publicada continua anon; escrita muda), `kb_categories`
+### TechPeople sub-módulos (7 arquivos)
+- `allocations.functions.ts` — CRUD de alocações.
+- `benefits.functions.ts` — CRUD de benefícios.
+- `documents.functions.ts` — CRUD de documentos (com atenção à sensibilidade PII).
+- `performance.functions.ts` — goals, reviews, 1:1s.
+- `wellbeing.functions.ts` — incidentes e avaliações psicossociais.
+- `timesheet.functions.ts` — apontamentos e aprovações.
+- `onboarding.functions.ts` — templates, planos, tarefas, offboarding.
 
-**TechProjects** — `project_spaces`, `project_folders`, `project_lists`, `projects`, `project_tasks`, `project_milestones`, `project_time_entries` (compartilha com Timesheet)
+### TechHire complementares (1 arquivo)
+- `src/lib/ats/candidate-detail.functions.ts` — `removeCandidateFromPool` e handlers auxiliares que fazem write.
 
-### Fase 1 — Migrations RLS (uma por módulo, 5 no total)
+### TechService — Tickets (writes espalhados)
+- `src/lib/tickets-notify.functions.ts`
+- `src/lib/live-chat.functions.ts` (writes em `tickets` e `live_chat_messages`)
+- `src/lib/portal.functions.ts` (portal externo — checar se aplica RBAC ou é público)
 
-Para cada tabela, replicar o shape usado em `techsales.activities` / `techsales.tickets`:
+## Padrão a aplicar
 
-```sql
--- SELECT: workspace scope OU own scope + ownership
-CREATE POLICY "<t>_ws_select" ON public.<t> FOR SELECT USING (
-  workspace_id IN (SELECT current_user_workspaces())
-  AND (
-    public.user_has_permission(auth.uid(), workspace_id, '<mod>.<obj>.view.workspace')
-    OR (public.user_has_permission(auth.uid(), workspace_id, '<mod>.<obj>.view.own')
-        AND owner_id = auth.uid())
-  )
-);
-
--- INSERT: create.own
-CREATE POLICY "<t>_ws_insert" ON public.<t> FOR INSERT WITH CHECK (
-  workspace_id IN (SELECT current_user_workspaces())
-  AND owner_id = auth.uid()
-  AND public.user_has_permission(auth.uid(), workspace_id, '<mod>.<obj>.create.own')
-);
-
--- UPDATE: workspace ou own+ownership
--- DELETE: delete.workspace (por padrão) ou delete.own quando existir a chave
-```
-
-Preserva as policies existentes de admin/service_role. Onde a tabela tem `assignee_id` (tickets, tasks, one_on_ones), o predicado `own` também aceita `assignee_id = auth.uid()`, seguindo o padrão de `techsales.tickets`.
-
-Cargos do sistema (10) já têm cobertura via seed anterior — nada quebra, apenas passa a ser enforçado no banco.
-
-### Fase 2 — assertPermission em server functions de escrita
-
-Aplicar em todas as mutations (create/update/delete/approve/export) de:
-- `src/lib/ats/*.functions.ts` (jobs, candidates, applications, interviews, offers, scorecards)
-- `src/lib/people/*.functions.ts` (people, documents, goals, reviews, incidents, allocations, one_on_ones, benefits, timesheet, onboarding)
-- `src/lib/contracts/*.functions.ts` (contracts, approvals, clauses, esign)
-- `src/lib/services/*.functions.ts` + `src/lib/tickets/*.functions.ts` + `src/lib/kb/*.functions.ts` + `src/lib/macros/*.functions.ts` + `src/lib/sla/*.functions.ts`
-- `src/lib/projects/*.functions.ts` (spaces, folders, lists, projects, tasks, milestones, time_entries)
-
-Padrão fixo (igual a `webhooks.functions.ts`):
+Idêntico ao usado na Fase 2:
 
 ```ts
-import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
-// dentro do .handler:
-const ws = await getActiveWorkspaceId(supabase, userId);
-await assertPermission(supabase, userId, ws, "techpeople.people.create.own");
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+
+// dentro do .handler():
+const workspaceId = await getActiveWorkspaceId(supabase, userId);
+await assertAnyPermission(supabase, userId, workspaceId, [
+  "<módulo>.<recurso>.<ação>.own",
+  "<módulo>.<recurso>.<ação>.workspace",
+]);
 ```
 
-Leituras (list/get) permanecem contando só com RLS — como no TechSales.
+Regras:
+- **create** → `.create.own` (ou `.create.own` + `.update.workspace` quando não existir `.create.workspace`).
+- **update** → `.update.own` + `.update.workspace`.
+- **delete** → `.delete.workspace`.
+- **approve/publish/assign** → chave específica do domínio.
 
-### Fase 3 — Verificação
+Handlers de **leitura** (`list*`, `get*`) permanecem sem asserção — RLS já filtra os resultados; adicionar seria redundante e degradaria UX (tela em branco vs. lista filtrada).
 
-1. `supabase--linter` para detectar policies redundantes/conflitantes.
-2. Login manual como cargo "Vendedor" (sem permissões TechPeople) → confirmar 403 ao criar pessoa via UI e 401/permission_denied via chamada direta.
-3. Login como "RH" → confirmar create/update/delete em `people` funcionando.
-4. `access_audit_log` recebe registros `permission_denied` em cada negação (já implementado em `enforce.server.ts`).
+## Pré-requisitos (checagem antes de codificar)
 
-### Detalhes técnicos
+1. Confirmar que todas as chaves de permissão já existem em `public.permissions` para os recursos-alvo (`techpeople.allocations.*`, `techpeople.benefits.*`, `techpeople.performance.goals.*`, `techpeople.performance.reviews.*`, `techpeople.performance.one_on_ones.*`, `techpeople.wellbeing.incidents.*`, `techpeople.wellbeing.assessments.*`, `techpeople.timesheet.*`, `techpeople.onboarding.*`, `techservice.services.*`, `techservice.kb.*`, `techservice.tickets.*`).
+2. Para chaves faltantes, **criar migration** que:
+   - Insere as chaves em `public.permissions`.
+   - Concede a cada `system_role` do módulo o tier apropriado (Admin=workspace, Manager=workspace, Viewer=view, Own=own) — seguindo o padrão já usado nos módulos PSA.
+3. Confirmar semântica de `owner_id` em cada tabela nova alcançada (workspace_id vs auth.uid()).
 
-- **Sem alteração de schema**: só CREATE POLICY + DROP POLICY das legadas amplas quando redundantes.
-- **Sem breaking change de UI**: `usePermissions` já lê as mesmas chaves; cargos default já cobrem tudo.
-- **Ordem de execução**: Fase 1 (migration por módulo, com aprovação) → Fase 2 (código) → Fase 3 (verificação).
-- **Escopo `.team`**: onde já existir estrutura de time (`user_groups`), incluir predicado `team`; caso contrário só `own` e `workspace` (mesma decisão do TechSales hoje).
-- **Não altero**: `platform_admins`, `is_workspace_admin_v2`, service_role — mantém governança.
+## Fora do escopo
 
-### Riscos
+- Alterar RLS já aplicada na Fase 1.
+- Alterar lógica de negócio dos handlers.
+- Adicionar RBAC a rotas públicas do portal (`portal.functions.ts` só se comprovadamente autenticado).
+- Refatorar UX ou componentes.
+- `analytics.functions.ts`, `my-team.functions.ts`, `contract-margin.functions.ts`, `finance-sync.functions.ts` (somente leitura ou jobs internos).
 
-- Uma tabela sem `owner_id` na coluna esperada falha o predicado `own`; vou auditar cada tabela antes da migration. Timesheet e time_entries já usam `owner_id`; verificarei `assignee_id` para one_on_ones/tasks.
-- Se algum cargo customizado do cliente estiver sem uma chave que hoje passa por cobertura ampla, o usuário perde acesso. Mitigação: matriz `/settings/permissions` deixa o admin corrigir na hora, e o log em `access_audit_log` mostra o que foi negado.
+## Entregas
 
-Volume estimado: **5 migrations + ~15 arquivos de server functions editados**. Sem breaking change de UI, sem novas dependências.
+1. **Migration** (se necessário) adicionando chaves de permissão faltantes + seed de bundles.
+2. **Edição de ~12 arquivos** de server functions adicionando `assertAnyPermission` em cada mutação.
+3. **Typecheck** limpo (`bunx tsgo --noEmit`).
+4. **Relatório final** listando arquivos alterados, chaves de permissão adicionadas, e handlers agora protegidos vs. handlers deixados apenas com RLS (com justificativa).
+
+## Validação manual sugerida
+
+1. Login como usuário `viewer` → tentar criar/editar/deletar em Services, KB, People (goals, reviews, incidents, timesheet, onboarding), Candidatos → esperar toast **"Permissão negada: ..."** (HTTP 403).
+2. Verificar registro em `access_audit_log` com `action='permission_denied'`.
+3. Login como admin → todas as operações devem passar.
+
+## Riscos
+
+- Usuários legados sem `job_role` ou sem cargo mapeado para o novo recurso podem ser bloqueados. Mitigar rodando query de auditoria antes do deploy para identificar quem ficaria sem permissão.
+- `onboarding.functions.ts` tem 13 handlers com muitas transições de estado — risco maior de quebra; deve ser o último a ser modificado, com revisão dedicada.
+
+## Sub-fases sugeridas (execução incremental)
+
+- **3.1** Services + KB (5 handlers).
+- **3.2** People / allocations + benefits + documents (16 handlers).
+- **3.3** People / performance + wellbeing + timesheet (22 handlers).
+- **3.4** People / onboarding (13 handlers).
+- **3.5** Tickets writes (portal, live-chat, notify).
+
+Cada sub-fase entrega isoladamente: migration (se necessário) → asserts → typecheck → relatório.
