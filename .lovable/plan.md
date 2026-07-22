@@ -1,33 +1,22 @@
-## Objetivo
-Em `/settings/permissions`, adicionar um checkbox mestre por grupo (linha de cabeçalho de Recurso) em cada coluna de cargo, que marca/desmarca todas as permissões daquele Recurso × Cargo de uma vez.
+## Problema
+Na matriz de `/settings/permissions`, ao rolar horizontalmente, o texto do cabeçalho e das linhas de grupo da coluna sticky "Recurso/Ação" fica visível *sobre* (ou atrás) do texto dos cargos, dando aparência de sobreposição.
+
+## Causa
+As células sticky-left usam fundos translúcidos:
+- `<th>` cabeçalho: `bg-muted/40` (40% opaco)
+- `<td>` linha de grupo do Recurso: `bg-muted/20` (20% opaco)
+
+Como o fundo não é sólido, o conteúdo das colunas de cargos passa por baixo e aparece através da coluna fixa quando rola para o lado.
 
 ## Escopo
-- Arquivo único: `src/components/access-control/permissions-matrix.tsx`.
-- Nenhuma alteração de RLS, schema, server functions ou lógica de autorização.
-- Reaproveita a mutation existente (`toggleMut`) — sem novo endpoint.
+Arquivo único: `src/components/access-control/permissions-matrix.tsx`. Nenhuma mudança de lógica, RLS ou dados.
 
 ## Mudanças
-
-1. **Linha de cabeçalho do Recurso (linha ~359)**
-   - Hoje é um único `<td colSpan={roles.length + 1}>` com só o nome do Recurso.
-   - Passa a ter uma coluna sticky com o nome do Recurso + uma célula por cargo, cada uma com um `<Checkbox>` mestre.
-
-2. **Estado do checkbox mestre (por Recurso × Cargo)**
-   - `all` → todas as permissões do grupo estão concedidas → `checked=true`.
-   - `none` → nenhuma concedida → `checked=false`.
-   - `some` → estado indeterminado (`checked="indeterminate"` do shadcn Checkbox).
-
-3. **Ação ao clicar**
-   - Se estava `all`, desmarca todas do grupo para aquele cargo.
-   - Se estava `none` ou `some`, marca todas as faltantes.
-   - Dispara `toggleMut.mutate(...)` para cada permissão que efetivamente muda de estado (evita chamadas redundantes).
-   - Desabilita durante `toggleMut.isPending`.
-
-4. **Acessibilidade / UX**
-   - `aria-label` no formato `Marcar todas as permissões de {Recurso} para {Cargo}`.
-   - Mantém o visual atual da linha de grupo (fundo `bg-muted/20`, tipografia menor).
+1. **Cabeçalho sticky (linha 285)**: trocar `bg-muted/40` da célula sticky-left por fundo sólido (`bg-muted`) — mantendo `z-40`.
+2. **Linha de grupo de Recurso (linha 361)**: trocar `bg-muted/20` da célula sticky-left por fundo sólido equivalente ao restante da linha (usar um tom sólido como `bg-secondary` ou `bg-muted` para não haver transparência). As demais `<td>` da mesma linha (linha 377) permanecem como estão para não alterar o visual geral da linha de grupo — ou, se necessário para consistência visual, alinhar ambas para o mesmo token sólido.
+3. **Linha de permissão sticky (linha 402)**: já usa `bg-background` (sólido) — apenas verificar que continua correto sob dark mode.
+4. Garantir que a borda direita da coluna sticky (`border-r`) permaneça visível para reforçar a separação visual durante o scroll.
 
 ## Fora de escopo
-- Não altera o botão "Aplicar em massa (módulo atual)" já existente no rodapé.
-- Não altera busca, filtros nem a criação/edição/exclusão de cargos.
-- Não adiciona checkbox mestre por coluna inteira nem por linha de permissão.
+- Não altera colunas de cargos, checkboxes mestres, filtros ou tabs de módulo.
+- Não altera larguras nem o layout de pills Ação/Escopo.
