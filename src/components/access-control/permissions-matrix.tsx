@@ -36,7 +36,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, Info } from "lucide-react";
+import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 export const MODULE_META: Record<string, { label: string; tone: string }> = {
