@@ -1,102 +1,114 @@
-# Sprint Timesheet na ficha da pessoa
+# Área unificada de Gestão de Permissões (todos os módulos)
 
-Fechar as lacunas da aba **Timesheet** em `/people/$id`, cobrindo KPIs, filtros, subtotais, exportação, ações operacionais e visão de alocações com tarifas corretas.
+## Objetivo
 
-## Escopo confirmado (respostas)
-- Completar KPIs + filtros/presets + subtotais/export
-- Ações operacionais na ficha (aprovar/rejeitar/lançar)
-- Alocações + tarifas corretas
+Consolidar o RBAC em **uma tela unificada** com editor visual Cargo × Recurso × Ação × Escopo, cobrindo **todos os módulos existentes**: TechSales, TechHire, TechPeople, TechContracts, TechService, TechFinance, TechProjects e Sistema. Reutiliza as tabelas atuais (`permissions`, `permission_sets`, `permission_set_items`, `job_roles`, `job_role_sets`, `user_job_roles`, `access_audit_log`) e apenas **expande o catálogo `permissions`** para os módulos que ainda não estão lá.
 
-Fora do escopo: mexer em módulo Projects, mudar schema de `project_time_entries`, alterar workflows/permissões existentes.
+Hoje o catálogo `permissions` só tem `techsales`, `techhire` e `system`. Falta cadastrar entradas para `techpeople`, `techcontracts`, `techservice`, `techfinance`, `techprojects`.
 
----
+## Rota
 
-## Fase 1 — KPIs e cálculo de tarifas corretas
+Nova: `/_authenticated/settings/permissions`.
+`/home/access` e `/settings/roles*` redirecionam para ela. `/settings/my-permissions` permanece como visão do próprio usuário.
 
-Server: `src/lib/people/timesheet.functions.ts`
-- `listPersonTimesheet` passa a considerar tarifa efetiva por linha, com fallback em ordem:
-  1. `project_time_entries.hourly_rate` (existente)
-  2. `people_allocations.bill_rate` da alocação vigente no `entry_date`
-  3. `null` (não conta em receita)
-- Custo por hora efetivo por linha, com fallback:
-  1. `people_allocations.cost_rate`
-  2. `people.cost_hour`
-- Totais expostos passam a incluir: `hours`, `billableHours`, `approvedHours`, `pendingHours`, `revenue`, `cost`, `margin`, `capacityHours` (soma de horas contratadas nas alocações vigentes no período), `utilization` (billableHours ÷ capacityHours).
-- Sem mudança de schema; usa `people_allocations` já existente.
+## Migration (única alteração de schema/dados)
 
-UI: `src/components/people/timesheet-panel.tsx`
-- Grade de KPIs de 4 → 6 cards: Horas totais, Billable, Aprovadas, Utilização (%), Receita, Custo, Margem (agrupados em duas linhas).
-- Margem mantém sinal (verde/vermelho); Utilização mostra % com barra.
+Um `INSERT ... ON CONFLICT DO NOTHING` em `public.permissions` com as chaves faltantes. Formato `<module>.<resource>.<action>.<scope>`, escopos `own|team|workspace`, ações padrão por recurso:
 
-## Fase 2 — Filtros e presets
+| Módulo | Recursos | Ações padrão |
+|---|---|---|
+| techpeople | people, allocations, timesheet, reviews, one_on_ones, goals, incidents, documents, benefits, onboarding | ver, criar, atualizar, excluir, exportar, aprovar |
+| techcontracts | contracts, clauses, approvals, esign | ver, criar, atualizar, excluir, aprovar, publicar |
+| techservice | tickets, kb, sla, macros | ver, criar, atualizar, excluir, atribuir, exportar |
+| techfinance | entries, payments, invoices, recurrences, legal_entities, cost_centers, banking, dunning, nfse | ver, criar, atualizar, excluir, exportar, importar, aprovar |
+| techprojects | projects, tasks, milestones, time_entries, spaces, folders, lists | ver, criar, atualizar, excluir, atribuir, exportar |
 
-Estado local (não vai para URL para não poluir a rota da pessoa):
-- Presets: "Semana", "Mês atual", "Últimos 30 dias", "Trimestre", "Personalizado".
-- Filtro por Projeto (multi) — options vindas dos entries carregados.
-- Filtro por Status: Todos / Pendente aprovação / Aprovado.
-- Filtro por Tipo: Todos / Billable / Interno.
-- Botão "Limpar filtros".
+Cada linha ganha as três variantes `own | team | workspace` **apenas quando fizer sentido** (ex.: `importar/exportar/publicar/aprovar` só em `workspace`).
+Rótulos PT-BR em `label_pt` seguindo o padrão já existente. `docs/rbac-mvp.md` é atualizado com o novo total.
 
-Aplicação dos filtros: totais e tabela são recalculados no cliente sobre o resultado do server para responsividade; a query só refaz quando muda período.
+Sem novas policies RLS, sem alterar tabelas — só INSERTs idempotentes no catálogo.
 
-## Fase 3 — Subtotais por dia, links e export
+## Modelo de edição
 
-Tabela em `TimesheetPanel`:
-- Renderiza linhas de cabeçalho de dia com total de horas e valor do dia.
-- Coluna Projeto vira link para `/projects/$id` quando existir.
-- Coluna Tarefa vira link para a tarefa (rota já existente do módulo Projects).
-- Botão "Exportar CSV" no header do card "Apontamentos" — gera CSV no cliente com os apontamentos filtrados (data, projeto, tarefa, descrição, horas, valor, custo, status). Sem servidor.
+- Cada cargo tem, sob o capô, um `permission_set` "bundle do cargo" (`is_system=false`, nome `__role_bundle:<role_id>`), vinculado via `job_role_sets`. A UI só edita esse bundle; pacotes públicos existentes ficam intactos.
+- Marcar/desmarcar célula → `upsert/delete` em `permission_set_items` do bundle.
+- Cargos `is_system=true` são somente leitura; botão "Duplicar cargo" cria cópia editável.
 
-## Fase 4 — Ações operacionais (aprovar / rejeitar / lançar horas)
+## Layout
 
-Novos server functions em `src/lib/people/timesheet.functions.ts`:
-- `approveTimesheetEntries({ ids: uuid[] })` — atualiza `approved_at = now()`, `approved_by = auth.uid()` respeitando RLS. Retorna contagem.
-- `unapproveTimesheetEntries({ ids: uuid[] })` — limpa `approved_at`/`approved_by`.
-- `upsertTimeEntry({ id?, project_id, task_id?, allocation_id?, person_id, entry_date, hours, billable, hourly_rate?, description? })` — cria/edita apontamento em `project_time_entries`. Sem alterar schema; usa colunas já existentes.
-- `deleteTimeEntry({ id })` — remove apontamento.
+```text
+[Header] Permissões · Configure quem pode ler, criar, atualizar, excluir, aprovar, exportar por escopo
 
-Todos com `.middleware([requireSupabaseAuth])` e queries via `context.supabase` (RLS aplicada).
+[Filtros] Módulo (Todos | TechSales | TechHire | TechPeople | TechContracts | TechService | TechFinance | TechProjects | Sistema)
+          Busca recurso...   [+ Novo cargo] [Duplicar] [Exportar CSV]
 
-UI:
-- Checkbox por linha + checkbox "selecionar tudo" no cabeçalho.
-- Barra flutuante com contagem selecionada e ações: "Aprovar", "Remover aprovação", "Excluir".
-- Botão "Lançar horas" no header do card, abrindo dialog `TimeEntryDialog` (Popover não — precisa de campos suficientes). Campos: projeto (Combobox), tarefa (opcional), alocação (auto-preenche a partir de projeto+data), data, horas (numérico com step 0.25), billable (switch), taxa/h (opcional, com preview do valor), descrição.
-- Ação "Editar" no menu contextual (ícone `...`) de cada linha reabre o mesmo dialog em modo edição.
-- Confirmação em "Excluir" via `AlertDialog`.
-- Todas as mutations invalidam `["person-timesheet", personId, ...]`.
+[Aba 1: Matriz]  ← padrão
+  Recurso ▸ Ação    │ Sales Rep │ Recruiter │ Finance │ PM │ … cargos como colunas
+  ─────────────────
+  TechSales · Contatos
+    Ler        │ [own ▾] │ [—] │ [—] │ [ws ▾] │
+    Criar      │ [own ▾] │ [—] │ [—] │ [ws ▾] │
+    …
+  TechPeople · Pessoas
+    Ler        │ [—] │ [ws ▾] │ [—] │ [team ▾] │
+    …
+  TechFinance · Lançamentos
+    …
+  Célula = dropdown [—, own, team, workspace]; opção não catalogada fica desabilitada com tooltip.
 
-Permissões: as políticas atuais de `project_time_entries` já permitem que o dono aponte e que gestores aprovem — a UI apenas expõe os botões; qualquer ausência de permissão retorna erro tratado com toast (`Não foi possível aprovar…`). Sem alteração de RLS neste plano.
+[Aba 2: Cargos]     Cards de cargos + membros
+[Aba 3: Membros]    Filtro + atribuição em massa de cargo
+[Aba 4: Campos]     Regras de campo sensíveis (reaproveita FieldsTab)
+[Aba 5: Auditoria]  Reaproveita AuditTab
+```
 
-## Fase 5 — Visão de alocações no período
+## Arquivos
 
-Novo card "Alocações no período" acima do card de apontamentos:
-- Server: `listPersonAllocations({ person_id, start, end })` — lista `people_allocations` cujo intervalo intercepta o período, com `contract_id/project_id/role/bill_rate/cost_rate/hours_per_week/start/end`.
-- UI: tabela compacta mostrando Contrato/Projeto, Papel, Período, Horas contratadas no período, Horas apontadas (billable), Utilização % e Margem estimada.
-- Se não houver alocações: `EmptyState` com CTA "Adicionar alocação" que abre o dialog já existente na aba Alocações (se disponível) ou apenas informa.
+Novos:
 
----
+- `src/routes/_authenticated/settings.permissions.tsx` — rota + `PageHeader` + tabs
+- `src/components/access-control/permissions-matrix.tsx` — matriz editável
+- `src/components/access-control/permissions-matrix-cell.tsx` — dropdown de escopo por célula
+- `src/lib/access-control/role-bundle.functions.ts`:
+  - `ensureRoleBundle(role_id)` — cria/retorna bundle do cargo
+  - `setRolePermission({ role_id, permission_key, granted })`
+  - `bulkSetRolePermissions(role_id, keys[], mode)` — linha, coluna ou limpar
+  - Todas com `assertPermission("system.roles.manage.workspace")` + `logAudit`
 
-## Detalhes técnicos
+Alterados:
 
-- Sem migrations; nenhuma coluna nova.
-- Reaproveita `project_time_entries`, `people_allocations`, `projects`, `project_tasks`, `people` (já existentes).
-- Segue tokens semânticos e componentes shadcn já usados no painel (`Card`, `Table`, `Badge`, `Button`, `Dialog`, `AlertDialog`, `Checkbox`, `Popover`, `Combobox`).
-- `useQuery` continua sendo a fonte; mutations usam `useMutation` + `queryClient.invalidateQueries`.
-- CSV gerado com `Blob`/`URL.createObjectURL`; nome `timesheet-<pessoa>-<periodo>.csv`.
-- Zero mudança em rotas, sidebar ou permissões RLS.
+- `src/lib/access-control/access.functions.ts` — expor `MODULE_META` extendido (labels PT-BR: TechPeople, TechContracts, TechService, TechFinance, TechProjects)
+- `src/routes/_authenticated/home.access.tsx` → redireciona para `/settings/permissions`
+- `src/routes/_authenticated/settings.roles.tsx` → redireciona para `/settings/permissions`
+- `src/components/settings-menu.tsx` (ou equivalente) — item "Permissões"; oculta duplicados
+- `docs/rbac-mvp.md` — atualiza tabela de módulos/recursos
 
-## Riscos
-- Aprovar/rejeitar depende de política RLS já existente para `approved_at`; se estiver restrita a gestor, usuário comum verá toast de erro — comportamento correto, sem regressão.
-- `hourly_rate` fallback por alocação pode diferir de valores históricos; explicitado em tooltip "Tarifa efetiva".
+Migration:
+
+- `public.permissions` — INSERTs idempotentes para os 5 módulos faltantes
+
+Preservado sem alteração:
+
+- Todas as tabelas de RBAC, RLS, policies, simulador, regras de campo.
+
+## Guardas
+
+- Toda mutação exige `assertPermission("system.roles.manage.workspace")`.
+- Cargos `is_system=true` bloqueiam edição.
+- Cada save grava em `access_audit_log`.
+
+## Fora de escopo
+
+- Novas RLS policies consultando `user_has_permission()` nos CRUDs cliente-direto (segue como pendência em `docs/rbac-mvp.md`).
+- Escopo `custom` (filtros por pipeline/unidade).
+- Enforcement server-side de novas chaves além dos fluxos que já usam `assertPermission`.
 
 ## Como validar
-1. Abrir `/people/<id>` → aba Timesheet.
-2. Trocar preset para "Últimos 30 dias" e conferir KPIs e barra de utilização.
-3. Filtrar por projeto e status pendente; conferir subtotais por dia.
-4. Selecionar 2 linhas e aprovar; ver KPI "Aprovadas" e "Utilização" reagirem.
-5. Clicar "Lançar horas", criar entry, ver aparecer no dia certo.
-6. Exportar CSV e abrir na planilha.
-7. Conferir card "Alocações no período" com bill/cost rate refletindo em Receita/Margem.
 
-## Próximo passo recomendado (não incluído)
-- Aprovação em lote via workflow (notificação ao gestor) e widget de Timesheet no dashboard do gestor.
+1. `/settings/permissions` abre com aba **Matriz** e mostra todos os módulos no filtro.
+2. Filtrar por "TechFinance" mostra linhas de lançamentos, pagamentos, faturas, recorrências, CNPJs, centros de custo, banking, dunning, NFS-e.
+3. Filtrar por "TechPeople" mostra pessoas, alocações, timesheet, reviews, 1:1s, metas, incidentes, documentos, benefícios, onboarding.
+4. Alterar `Sales Rep · Contatos · Ler` de `own → workspace` reflete na aba Cargos e em `/settings/my-permissions` do usuário.
+5. Cargo `Admin` (`is_system`) fica cinza; "Duplicar" cria cópia editável.
+6. Registro aparece em **Auditoria**.
+7. `/home/access` e `/settings/roles` redirecionam para `/settings/permissions`.
