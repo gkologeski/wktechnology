@@ -1,67 +1,62 @@
-## 1. Empresa/contato não aparecem nos detalhes do lead
+# Plano: Atribuição de cargos na tela de Membros
 
-**Causa:** o `CreateLeadDialog` salva apenas `company_name` (texto), nunca `company_id`. Sem `company_id`, o `CompanyCard` em `AssociationsPanel` fica vazio na ficha do lead.
+## Contexto
+Hoje o workspace tem três telas de controle de acesso:
+- **Membros (`/settings/teams`)**: quem tem acesso ao workspace e o papel do workspace (`admin`/`manager`/`member`).
+- **Times (`/settings/user-groups`)**: agrupamentos nomeados de membros para organização.
+- **Permissões (`/settings/permissions`)**: cargos funcionais (`job_roles`) e a matriz de permissões por módulo.
 
-**Correção:** persistir `company_id: company.id ?? null` no insert de `leads` em `src/components/leads/create-lead-dialog.tsx`. Fazer o mesmo em `src/components/leads/quick-create-lead-*` se existir. Backfill opcional via SQL (ligar `leads.company_id` por `company_name` idêntico) — só depois de confirmar com o usuário.
+A relação prática é: ao aceitar um convite, o sistema mapeia automaticamente o papel do workspace para um `job_role` padrão (`member` → Vendedor, `manager` → Gestor, `admin` → Admin). A partir daí, as permissões editadas em `/settings/permissions` afetam esses cargos. Porém, **não existe na UI um lugar para o administrador escolher manualmente qual `job_role` cada membro terá**.
 
-## 2. Botão "Adicionar contato" ausente no lead
+## Objetivo
+Permitir que um admin do workspace visualize e edite o cargo principal e os cargos extras de cada membro diretamente em `/settings/teams`, sem sair da tela.
 
-**Causa:** `LeadContactsCard` (em `src/components/record/associations-panel.tsx`) exibe somente `leads.converted_contact_id` e não oferece ação de vincular.
+## O que será construído
 
-**Correção:** adicionar ação **Adicionar contato** no header do card (usando `AssocCard` padrão do arquivo) que abra o `ContactPickerPopover` (existente) para escolher um contato existente ou criar um novo via `CreateContactDialog`. Ao confirmar, atualiza `leads.converted_contact_id` e refaz o fetch. Adicionar também opção **Remover** no item quando houver contato vinculado.
+### 1. Dados: listar cargos atuais dos membros
+- Estender `listTeamMembers` em `src/lib/teams.functions.ts` para também retornar, para cada membro:
+  - `primary_role_id`
+  - `role_ids` (todos os cargos, incluindo o primário)
+  - `extra_set_ids` (pacotes extras avulsos)
+- Buscar esses dados de `public.user_job_roles` e `public.user_permission_sets` usando `supabaseAdmin` (já que as políticas RLS de `user_job_roles` restringem leitura ao próprio usuário/dono e a tela de admin precisa ver todos).
 
-## 3. Novo módulo global: Arquivos (TechERP)
+### 2. Dados: listar cargos disponíveis
+- Criar server function `listWorkspaceJobRoles` em `src/lib/teams.functions.ts` que retorne os `job_roles` do workspace (sistema + customizados) para preencher o seletor.
 
-Área global de arquivos com 100 MB por usuário e link público de leitura.
+### 3. Persistência: salvar atribuições
+- Reaproveitar `setMemberAssignments` de `src/lib/access-control/access-mutations.functions.ts`.
+- **Atenção**: a política RLS atual de `user_job_roles` (`ujr_write`) exige `owner_id = auth.uid()`, ou seja, apenas o criador do workspace pode editar. Como `/settings/teams` permite que qualquer `admin` do workspace gerencie membros, será necessário ajustar a política para permitir que workspace admins também gerenciem atribuições, **ou** executar a escrita via `supabaseAdmin` após verificar que o usuário logado é admin do workspace.
+- Decisão recomendada: manter a consistência com a tela de membros e permitir que qualquer workspace admin atribua cargos, validando a permissão no server function e usando `supabaseAdmin` para escrita (o mesmo padrão já usado em `teams.functions.ts` para gerenciamento de membros).
 
-### Backend (migration)
+### 4. UI: exibir cargos na lista
+- Adicionar uma coluna "Cargo(s)" na tabela de membros em `src/routes/_authenticated/settings.teams.tsx`.
+- Exibir o nome do cargo principal como badge; se houver cargos extras, mostrar `+N`.
 
-- Storage bucket `user-files` (privado) via `storage_create_bucket`.
-- Tabela `public.user_files`:
-  - `id`, `owner_id` (auth.users), `folder_id` (nullable → `public.user_file_folders`), `name`, `storage_path` (`<owner_id>/<uuid>-<name>`), `size_bytes` (bigint), `mime_type`, `is_public` (bool), `public_token` (text unique nullable), `created_at`, `updated_at`.
-- Tabela `public.user_file_folders`: `id`, `owner_id`, `parent_id` (self-fk), `name`, `created_at`.
-- GRANTs para `authenticated` + `service_role`. RLS: `owner_id = auth.uid()`.
-- Function `public.user_files_used_bytes(uid uuid)` retornando `sum(size_bytes)`.
-- Trigger `BEFORE INSERT` em `user_files` que rejeita se `used + NEW.size_bytes > 100 * 1024 * 1024`.
-- RLS em `storage.objects` para o bucket `user-files`: permitir CRUD apenas quando `bucket_id = 'user-files' AND (storage.foldername(name))[1] = auth.uid()::text`.
+### 5. UI: diálogo de edição de cargos
+- Adicionar botão de ação "Cargos" (ou ícone) em cada linha da tabela.
+- Abrir um diálogo com:
+  - Select de "Cargo principal" (opcional).
+  - Lista de checkboxes de "Cargos adicionais".
+  - Lista de checkboxes de "Pacotes extras" (opcional, reaproveitando o mesmo modelo de `MemberAssignmentDialog`).
+- Usar `useMutation` com otimistic update e invalidação de cache.
 
-### Server routes / functions
+### 6. UX e acessibilidade
+- Desabilitar a edição para o próprio usuário logado? Não necessariamente, mas avaliar se faz sentido.
+- Garantir labels/aria-labels, estados de loading e feedback de erro.
+- Manter responsividade: em telas menores, o diálogo deve funcionar bem.
 
-- `src/lib/files.functions.ts` (createServerFn, `requireSupabaseAuth`):
-  - `listUserFiles({ folderId })`
-  - `createFolder({ name, parentId })`
-  - `renameFile({ id, name })` / `renameFolder`
-  - `deleteFile({ id })` / `deleteFolder` (remove no storage + na tabela)
-  - `togglePublicLink({ id, enable })` gera/revoga `public_token` (nanoid).
-- `src/routes/api/public/files/$token.ts` (server route): busca `user_files` por `public_token`, se `is_public` verdadeiro cria signed URL no bucket privado via `supabaseAdmin` e redireciona.
+### 7. Validações
+- Typecheck (`bunx tsc --noEmit` ou comando do projeto).
+- Build.
+- Teste manual: convidar um membro, alterar seu cargo principal para outro `job_role`, verificar se as permissões refletem imediatamente.
 
-### Frontend
+## Arquivos que serão alterados
+- `src/lib/teams.functions.ts` — novas queries e server functions.
+- `src/routes/_authenticated/settings.teams.tsx` — coluna de cargo, botão e diálogo de edição.
+- `src/lib/access-control/access-mutations.functions.ts` — possível ajuste na validação de admin (se necessário).
+- Possível migration para ajustar RLS de `user_job_roles` (a decidir durante implementação).
 
-- Rota `src/routes/_authenticated/files.tsx` (novo layout):
-  - Header padrão (`PageHeader`).
-  - Coluna esquerda: árvore de pastas.
-  - Área central: grid/list de arquivos, breadcrumbs, uploader (drag-and-drop), barra de quota (KB/100MB).
-  - Ações por arquivo (menu): Baixar, Renomear, Excluir, Compartilhar link (toggle público + copiar URL).
-  - Diálogos de renomear / criar pasta / confirmar exclusão via `AlertDialog`.
-  - Estados: `LoadingSkeleton`, `EmptyState`, `ErrorState`.
-- Upload: chunked via `supabase.storage.from('user-files').upload(path, file)`, validando quota do lado cliente (chamando a server fn para saber uso atual) e o trigger garante do lado servidor.
-- Entrada no sidebar: adicionar `{ title: "Arquivos", url: "/files", icon: FolderIcon }` no grupo **ERP** de `src/lib/menu-config-erp.ts`.
-
-### Segurança
-
-- Nunca expor `storage_path` sem passar pelo signed URL (60s).
-- `public_token` é 32 chars, único, revogável.
-- Sem PII no path; apenas UUID + nome sanitizado.
-- Auditoria: registro em `access_audit_log` opcional em delete/share.
-
-### Validação
-
-- `tsgo` + `eslint`.
-- Teste manual: upload → cota atualiza → gerar link → abrir aba anônima → revogar link → 404.
-- Verificar `supabase--linter` após migration.
-
-## Fora do escopo
-
-- Preview de PDF/imagem in-app (fica para próxima iteração).
-- Compartilhamento com usuários específicos do workspace.
-- Versionamento.
+## Riscos e pendências
+- A política RLS `ujr_write` restringe escrita ao `owner_id`. Se optarmos por ajustar a política, precisamos garantir que não abra brecha de segurança.
+- A tabela `user_job_roles` usa `owner_id` como o `auth.uid()` do criador do workspace, não o `workspace_id`. Isso é um modelo legado que pode exigir cuidado na escrita via `supabaseAdmin`.
+- Não alteraremos a tela de Times nem a de Permissões, apenas a integração entre Membros e Permissões.
