@@ -224,8 +224,9 @@ export const bulkSetRolePermissions = createServerFn({ method: "POST" })
     await assertWorkspaceAdmin(supabase, userId, workspaceId);
     let setId: string | null = null;
     if (data.granted) {
-      setId = await ensureBundle(supabase, userId, data.role_id);
-      const rows = data.keys.map((k) => ({ set_id: setId, permission_key: k }));
+      const grantedSetId = await ensureBundle(supabase, userId, data.role_id);
+      setId = grantedSetId;
+      const rows = data.keys.map((k) => ({ set_id: grantedSetId, permission_key: k }));
       const { error } = await supabase
         .from("permission_set_items")
         .upsert(rows, { onConflict: "set_id,permission_key" });
@@ -250,11 +251,12 @@ export const bulkSetRolePermissions = createServerFn({ method: "POST" })
         if (error) throw new Error(error.message);
       }
     }
+    const effect: "grant" | "deny" = data.granted ? "grant" : "deny";
     const overrideRows = data.keys.map((permissionKey) => ({
       workspace_id: workspaceId,
       role_id: data.role_id,
       permission_key: permissionKey,
-      effect: data.granted ? "grant" : "deny",
+      effect,
       created_by: userId,
     }));
     const { error: overrideErr } = await supabase
