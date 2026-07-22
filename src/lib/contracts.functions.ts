@@ -317,7 +317,9 @@ export const deleteContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, ["techcontracts.contracts.delete.workspace"]);
     const { error } = await supabase.from("contracts").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
