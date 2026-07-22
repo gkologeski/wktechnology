@@ -88,6 +88,7 @@ export function PermissionsMatrix() {
   const bulkFn = useServerFn(bulkSetRolePermissions);
   const createRoleFn = useServerFn(createJobRole);
   const duplicateRoleFn = useServerFn(duplicateJobRole);
+  const renameRoleFn = useServerFn(renameJobRole);
   const deleteRoleFn = useServerFn(deleteJobRole);
   const restoreFn = useServerFn(restoreRoleDefaults);
   const qc = useQueryClient();
