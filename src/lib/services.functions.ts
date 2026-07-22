@@ -291,6 +291,9 @@ export const runServicesBillingNow = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.update.workspace",
+    ]);
     const today = new Date().toISOString().slice(0, 10);
 
     const { data: due, error: dErr } = await supabase
