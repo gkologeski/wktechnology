@@ -676,7 +676,8 @@ function UsersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Usuário</TableHead>
-                <TableHead>Papel</TableHead>
+                <TableHead>Papel workspace</TableHead>
+                <TableHead>Cargos funcionais</TableHead>
                 <TableHead>Membro desde</TableHead>
                 <TableHead className="w-[60px]" />
               </TableRow>
@@ -684,14 +685,14 @@ function UsersPage() {
             <TableBody>
               {loading && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
                     Carregando…
                   </TableCell>
                 </TableRow>
               )}
               {!loading && filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
                     Nenhum usuário encontrado.
                   </TableCell>
                 </TableRow>
