@@ -176,11 +176,16 @@ import { Route as AuthenticatedProjectsTasksRouteImport } from './routes/_authen
 import { Route as AuthenticatedProjectsSpacesRouteImport } from './routes/_authenticated/projects.spaces'
 import { Route as AuthenticatedProjectsMyWorkRouteImport } from './routes/_authenticated/projects.my-work'
 import { Route as AuthenticatedProjectsIdRouteImport } from './routes/_authenticated/projects.$id'
+import { Route as AuthenticatedPeoplePsychosocialRouteImport } from './routes/_authenticated/people.psychosocial'
 import { Route as AuthenticatedPeopleOnboardingTemplatesRouteImport } from './routes/_authenticated/people.onboarding-templates'
+import { Route as AuthenticatedPeopleOnboardingRouteImport } from './routes/_authenticated/people.onboarding'
+import { Route as AuthenticatedPeopleOffboardingRouteImport } from './routes/_authenticated/people.offboarding'
 import { Route as AuthenticatedPeopleMyTeamRouteImport } from './routes/_authenticated/people.my-team'
+import { Route as AuthenticatedPeopleIncidentsRouteImport } from './routes/_authenticated/people.incidents'
 import { Route as AuthenticatedPeopleDocumentsRouteImport } from './routes/_authenticated/people.documents'
 import { Route as AuthenticatedPeopleContractMarginRouteImport } from './routes/_authenticated/people.contract-margin'
 import { Route as AuthenticatedPeopleBillingRouteImport } from './routes/_authenticated/people.billing'
+import { Route as AuthenticatedPeopleBenefitsRouteImport } from './routes/_authenticated/people.benefits'
 import { Route as AuthenticatedPeopleAnalyticsRouteImport } from './routes/_authenticated/people.analytics'
 import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
 import { Route as AuthenticatedOnboardingEntityRouteImport } from './routes/_authenticated/onboarding.$entity'
@@ -1283,16 +1288,40 @@ const AuthenticatedProjectsIdRoute = AuthenticatedProjectsIdRouteImport.update({
   path: '/projects/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPeoplePsychosocialRoute =
+  AuthenticatedPeoplePsychosocialRouteImport.update({
+    id: '/people/psychosocial',
+    path: '/people/psychosocial',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPeopleOnboardingTemplatesRoute =
   AuthenticatedPeopleOnboardingTemplatesRouteImport.update({
     id: '/people/onboarding-templates',
     path: '/people/onboarding-templates',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPeopleOnboardingRoute =
+  AuthenticatedPeopleOnboardingRouteImport.update({
+    id: '/people/onboarding',
+    path: '/people/onboarding',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPeopleOffboardingRoute =
+  AuthenticatedPeopleOffboardingRouteImport.update({
+    id: '/people/offboarding',
+    path: '/people/offboarding',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPeopleMyTeamRoute =
   AuthenticatedPeopleMyTeamRouteImport.update({
     id: '/people/my-team',
     path: '/people/my-team',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPeopleIncidentsRoute =
+  AuthenticatedPeopleIncidentsRouteImport.update({
+    id: '/people/incidents',
+    path: '/people/incidents',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPeopleDocumentsRoute =
@@ -1311,6 +1340,12 @@ const AuthenticatedPeopleBillingRoute =
   AuthenticatedPeopleBillingRouteImport.update({
     id: '/people/billing',
     path: '/people/billing',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPeopleBenefitsRoute =
+  AuthenticatedPeopleBenefitsRouteImport.update({
+    id: '/people/benefits',
+    path: '/people/benefits',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPeopleAnalyticsRoute =
@@ -2378,11 +2413,16 @@ export interface FileRoutesByFullPath {
   '/onboarding/$entity': typeof AuthenticatedOnboardingEntityRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
+  '/people/benefits': typeof AuthenticatedPeopleBenefitsRoute
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
   '/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
+  '/people/offboarding': typeof AuthenticatedPeopleOffboardingRoute
+  '/people/onboarding': typeof AuthenticatedPeopleOnboardingRoute
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
+  '/people/psychosocial': typeof AuthenticatedPeoplePsychosocialRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -2711,11 +2751,16 @@ export interface FileRoutesByTo {
   '/onboarding/$entity': typeof AuthenticatedOnboardingEntityRoute
   '/people/$id': typeof AuthenticatedPeopleIdRoute
   '/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
+  '/people/benefits': typeof AuthenticatedPeopleBenefitsRoute
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
   '/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
+  '/people/offboarding': typeof AuthenticatedPeopleOffboardingRoute
+  '/people/onboarding': typeof AuthenticatedPeopleOnboardingRoute
   '/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
+  '/people/psychosocial': typeof AuthenticatedPeoplePsychosocialRoute
   '/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -3049,11 +3094,16 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/$entity': typeof AuthenticatedOnboardingEntityRoute
   '/_authenticated/people/$id': typeof AuthenticatedPeopleIdRoute
   '/_authenticated/people/analytics': typeof AuthenticatedPeopleAnalyticsRoute
+  '/_authenticated/people/benefits': typeof AuthenticatedPeopleBenefitsRoute
   '/_authenticated/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/_authenticated/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/_authenticated/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/_authenticated/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
   '/_authenticated/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
+  '/_authenticated/people/offboarding': typeof AuthenticatedPeopleOffboardingRoute
+  '/_authenticated/people/onboarding': typeof AuthenticatedPeopleOnboardingRoute
   '/_authenticated/people/onboarding-templates': typeof AuthenticatedPeopleOnboardingTemplatesRoute
+  '/_authenticated/people/psychosocial': typeof AuthenticatedPeoplePsychosocialRoute
   '/_authenticated/projects/$id': typeof AuthenticatedProjectsIdRoute
   '/_authenticated/projects/my-work': typeof AuthenticatedProjectsMyWorkRoute
   '/_authenticated/projects/spaces': typeof AuthenticatedProjectsSpacesRoute
@@ -3388,11 +3438,16 @@ export interface FileRouteTypes {
     | '/onboarding/$entity'
     | '/people/$id'
     | '/people/analytics'
+    | '/people/benefits'
     | '/people/billing'
     | '/people/contract-margin'
     | '/people/documents'
+    | '/people/incidents'
     | '/people/my-team'
+    | '/people/offboarding'
+    | '/people/onboarding'
     | '/people/onboarding-templates'
+    | '/people/psychosocial'
     | '/projects/$id'
     | '/projects/my-work'
     | '/projects/spaces'
@@ -3721,11 +3776,16 @@ export interface FileRouteTypes {
     | '/onboarding/$entity'
     | '/people/$id'
     | '/people/analytics'
+    | '/people/benefits'
     | '/people/billing'
     | '/people/contract-margin'
     | '/people/documents'
+    | '/people/incidents'
     | '/people/my-team'
+    | '/people/offboarding'
+    | '/people/onboarding'
     | '/people/onboarding-templates'
+    | '/people/psychosocial'
     | '/projects/$id'
     | '/projects/my-work'
     | '/projects/spaces'
@@ -4058,11 +4118,16 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding/$entity'
     | '/_authenticated/people/$id'
     | '/_authenticated/people/analytics'
+    | '/_authenticated/people/benefits'
     | '/_authenticated/people/billing'
     | '/_authenticated/people/contract-margin'
     | '/_authenticated/people/documents'
+    | '/_authenticated/people/incidents'
     | '/_authenticated/people/my-team'
+    | '/_authenticated/people/offboarding'
+    | '/_authenticated/people/onboarding'
     | '/_authenticated/people/onboarding-templates'
+    | '/_authenticated/people/psychosocial'
     | '/_authenticated/projects/$id'
     | '/_authenticated/projects/my-work'
     | '/_authenticated/projects/spaces'
@@ -5562,6 +5627,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/people/psychosocial': {
+      id: '/_authenticated/people/psychosocial'
+      path: '/people/psychosocial'
+      fullPath: '/people/psychosocial'
+      preLoaderRoute: typeof AuthenticatedPeoplePsychosocialRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/people/onboarding-templates': {
       id: '/_authenticated/people/onboarding-templates'
       path: '/people/onboarding-templates'
@@ -5569,11 +5641,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPeopleOnboardingTemplatesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/people/onboarding': {
+      id: '/_authenticated/people/onboarding'
+      path: '/people/onboarding'
+      fullPath: '/people/onboarding'
+      preLoaderRoute: typeof AuthenticatedPeopleOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/offboarding': {
+      id: '/_authenticated/people/offboarding'
+      path: '/people/offboarding'
+      fullPath: '/people/offboarding'
+      preLoaderRoute: typeof AuthenticatedPeopleOffboardingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/people/my-team': {
       id: '/_authenticated/people/my-team'
       path: '/people/my-team'
       fullPath: '/people/my-team'
       preLoaderRoute: typeof AuthenticatedPeopleMyTeamRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/incidents': {
+      id: '/_authenticated/people/incidents'
+      path: '/people/incidents'
+      fullPath: '/people/incidents'
+      preLoaderRoute: typeof AuthenticatedPeopleIncidentsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/documents': {
@@ -5595,6 +5688,13 @@ declare module '@tanstack/react-router' {
       path: '/people/billing'
       fullPath: '/people/billing'
       preLoaderRoute: typeof AuthenticatedPeopleBillingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/benefits': {
+      id: '/_authenticated/people/benefits'
+      path: '/people/benefits'
+      fullPath: '/people/benefits'
+      preLoaderRoute: typeof AuthenticatedPeopleBenefitsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/analytics': {
@@ -7246,11 +7346,16 @@ interface AuthenticatedRouteChildren {
   AuthenticatedOnboardingEntityRoute: typeof AuthenticatedOnboardingEntityRoute
   AuthenticatedPeopleIdRoute: typeof AuthenticatedPeopleIdRoute
   AuthenticatedPeopleAnalyticsRoute: typeof AuthenticatedPeopleAnalyticsRoute
+  AuthenticatedPeopleBenefitsRoute: typeof AuthenticatedPeopleBenefitsRoute
   AuthenticatedPeopleBillingRoute: typeof AuthenticatedPeopleBillingRoute
   AuthenticatedPeopleContractMarginRoute: typeof AuthenticatedPeopleContractMarginRoute
   AuthenticatedPeopleDocumentsRoute: typeof AuthenticatedPeopleDocumentsRoute
+  AuthenticatedPeopleIncidentsRoute: typeof AuthenticatedPeopleIncidentsRoute
   AuthenticatedPeopleMyTeamRoute: typeof AuthenticatedPeopleMyTeamRoute
+  AuthenticatedPeopleOffboardingRoute: typeof AuthenticatedPeopleOffboardingRoute
+  AuthenticatedPeopleOnboardingRoute: typeof AuthenticatedPeopleOnboardingRoute
   AuthenticatedPeopleOnboardingTemplatesRoute: typeof AuthenticatedPeopleOnboardingTemplatesRoute
+  AuthenticatedPeoplePsychosocialRoute: typeof AuthenticatedPeoplePsychosocialRoute
   AuthenticatedProjectsIdRoute: typeof AuthenticatedProjectsIdRoute
   AuthenticatedProjectsMyWorkRoute: typeof AuthenticatedProjectsMyWorkRoute
   AuthenticatedProjectsSpacesRoute: typeof AuthenticatedProjectsSpacesRoute
@@ -7372,13 +7477,18 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedOnboardingEntityRoute: AuthenticatedOnboardingEntityRoute,
   AuthenticatedPeopleIdRoute: AuthenticatedPeopleIdRoute,
   AuthenticatedPeopleAnalyticsRoute: AuthenticatedPeopleAnalyticsRoute,
+  AuthenticatedPeopleBenefitsRoute: AuthenticatedPeopleBenefitsRoute,
   AuthenticatedPeopleBillingRoute: AuthenticatedPeopleBillingRoute,
   AuthenticatedPeopleContractMarginRoute:
     AuthenticatedPeopleContractMarginRoute,
   AuthenticatedPeopleDocumentsRoute: AuthenticatedPeopleDocumentsRoute,
+  AuthenticatedPeopleIncidentsRoute: AuthenticatedPeopleIncidentsRoute,
   AuthenticatedPeopleMyTeamRoute: AuthenticatedPeopleMyTeamRoute,
+  AuthenticatedPeopleOffboardingRoute: AuthenticatedPeopleOffboardingRoute,
+  AuthenticatedPeopleOnboardingRoute: AuthenticatedPeopleOnboardingRoute,
   AuthenticatedPeopleOnboardingTemplatesRoute:
     AuthenticatedPeopleOnboardingTemplatesRoute,
+  AuthenticatedPeoplePsychosocialRoute: AuthenticatedPeoplePsychosocialRoute,
   AuthenticatedProjectsIdRoute: AuthenticatedProjectsIdRoute,
   AuthenticatedProjectsMyWorkRoute: AuthenticatedProjectsMyWorkRoute,
   AuthenticatedProjectsSpacesRoute: AuthenticatedProjectsSpacesRoute,
