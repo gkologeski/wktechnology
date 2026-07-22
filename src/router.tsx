@@ -1,7 +1,8 @@
-import { QueryClient } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { createRouter, Link, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 import { bindDialogRefreshClient } from "@/lib/dialog-refresh";
+import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
 
 function DefaultErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
@@ -45,6 +46,16 @@ function DefaultNotFoundComponent() {
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error) => {
+        handlePermissionError(error);
+      },
+    }),
+    mutationCache: new MutationCache({
+      onError: (error) => {
+        handlePermissionError(error);
+      },
+    }),
     defaultOptions: {
       queries: {
         staleTime: 60_000, // 1 min — evita refetch agressivo ao navegar
@@ -53,7 +64,12 @@ export const getRouter = () => {
         // outra aba, modal ou processo apareçam sem F5.
         refetchOnWindowFocus: true,
         refetchOnReconnect: true,
-        retry: 1,
+        retry: (failureCount, error) => {
+          // Não faz retry em erros de permissão — mostrar toast imediatamente.
+          const status = (error as { status?: number } | null)?.status;
+          if (status === 403 || status === 401) return false;
+          return failureCount < 1;
+        },
       },
     },
   });
