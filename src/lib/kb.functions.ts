@@ -94,6 +94,7 @@ export const deleteKbCategory = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_DELETE);
     await supabaseAdmin.from("kb_categories").delete().eq("id", data.id).eq("owner_id", ws);
     return { ok: true };
   });
