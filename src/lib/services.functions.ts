@@ -4,6 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
 const typeEnum = z.enum(["one_time", "recurring", "usage_based", "milestone"]);
 const statusEnum = z.enum(["pending", "active", "paused", "cancelled", "completed"]);
@@ -42,7 +43,12 @@ export const listServices = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.view.workspace",
+      "techservice.services.view.own",
+    ]);
     let q = supabase
       .from("services")
       .select("*, contracts(id, number, title, counterparty_company_id)")
@@ -64,7 +70,12 @@ export const getService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.view.workspace",
+      "techservice.services.view.own",
+    ]);
     const { data: row, error } = await supabase
       .from("services")
       .select("*, contracts(id, number, title, counterparty_company_id, currency)")
@@ -96,6 +107,11 @@ export const createService = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.create.own",
+    ]);
+
+
 
     // herda role e currency do contrato
     const { data: contract, error: cErr } = await supabase
@@ -161,7 +177,12 @@ export const updateService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => patchInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.update.workspace",
+      "techservice.services.update.own",
+    ]);
     const { data: row, error } = await supabase
       .from("services")
       .update(data.patch)
@@ -178,7 +199,11 @@ export const deleteService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.delete.workspace",
+    ]);
     const { error } = await supabase.from("services").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
@@ -200,6 +225,10 @@ export const activateService = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.update.workspace",
+      "techservice.services.update.own",
+    ]);
 
     const { data: svc, error: sErr } = await supabase
       .from("services")
@@ -262,6 +291,9 @@ export const runServicesBillingNow = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.update.workspace",
+    ]);
     const today = new Date().toISOString().slice(0, 10);
 
     const { data: due, error: dErr } = await supabase
