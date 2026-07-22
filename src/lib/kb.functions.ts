@@ -281,6 +281,9 @@ export const seedStarterKb = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_MANAGE);
+
+
 
     // Cria categorias (idempotente por slug)
     const catBySlug = new Map<string, string>();
