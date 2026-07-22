@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAutoStart } from "@/lib/people/onboarding.functions";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
 
 export const PEOPLE_EMPLOYMENT_TYPES = ["pj", "clt", "contractor", "intern", "other"] as const;
@@ -206,6 +207,12 @@ export const upsertPerson = createServerFn({ method: "POST" })
   .inputValidator((i) => upsertSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
+      data.id ? "techpeople.people.update.own" : "techpeople.people.create.own",
+      "techpeople.people.update.workspace",
+    ]);
+
 
     // owner_id vem do workspace ativo do usuário (via profiles.active_workspace_id).
     let ownerId: string | null = null;
@@ -294,6 +301,12 @@ export const archivePerson = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), archived: z.boolean() }).parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
+      "techpeople.people.update.workspace",
+      "techpeople.people.delete.workspace",
+    ]);
     const { error } = await context.supabase
       .from("people")
       .update({ archived: data.archived } as never)
@@ -301,6 +314,7 @@ export const archivePerson = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
 /**
  * Promove um candidato aprovado para uma pessoa (Sprint 1).
