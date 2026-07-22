@@ -107,6 +107,11 @@ export const createService = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.create.own",
+    ]);
+
+
 
     // herda role e currency do contrato
     const { data: contract, error: cErr } = await supabase
