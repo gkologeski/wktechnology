@@ -1,41 +1,44 @@
-## Escopo
+## Contexto
 
-1. Substituir `/home/access` pela nova matriz `/settings/permissions` (redirect definitivo).
-2. Tornar `/settings/permissions` visível no sidebar do ERP e na página `/settings` (grupo "Pessoas & Acesso").
-3. Atualizar demais pontos que ainda apontam para `/home/access` (GlobalSearch, atalho da Home, menu-config).
+Os cargos de sistema (`job_roles.is_system = true`) hoje só têm bundles configurados para `system`, `techsales` e `techhire`. Nenhum cargo tem permissões seed para **TechPeople, TechContracts, TechService, TechFinance e TechProjects** — por isso, ao abrir `/settings/permissions` e filtrar por esses módulos, tudo aparece desmarcado.
 
-Sem mudanças de banco, RLS, server functions ou lógica de negócio.
+Como cargos de sistema são read-only na UI (trigger bloqueia edição), o seed precisa vir por migration.
 
-## Alterações
+## Proposta de defaults por cargo × módulo
 
-### 1. Aposentar `/home/access`
-- `src/routes/_authenticated/home.access.tsx`: reduzir a arquivo apenas com `beforeLoad` que faz `redirect({ to: "/settings/permissions", replace: true })`, mesmo padrão já usado em `settings.roles.index.tsx`. Toda a UI antiga (abas Cargos, Pacotes, Matriz, Governance, Atribuições) fica inacessível pela UI — a nova matriz cobre Cargo × Recurso × Ação × Escopo por módulo, que é o caso de uso principal.
-- Não deletar o arquivo para não invalidar links salvos/bookmarks; redirect basta.
+Escopo: `view/create.own` = próprio, `.workspace` = todo o workspace.
 
-### 2. Sidebar do ERP (grupo Workspace)
-- `src/lib/menu-config-erp.ts`: adicionar item "Permissões" ao grupo `Workspace`, apontando para `/settings/permissions`, com ícone `Shield` (lucide-react). Ordem: acima de "Configurações".
+| Cargo | techcontracts | techservice | techfinance | techprojects | techpeople |
+|---|---|---|---|---|---|
+| **Workspace Owner** | full (todas ações .workspace) | full | full | full | full |
+| **Workspace Admin** | full | full | full | full | full |
+| **Diretor** | view/create/update/approve .workspace | view/manage .workspace | view/approve/manage .workspace | view/update/manage .workspace | view/update/approve .workspace |
+| **Auditor** | view.workspace + export | view.workspace | view.workspace + export | view.workspace + export | view.workspace + export |
+| **Financeiro** | view.workspace | view.workspace | full (todas) | view.workspace | view.workspace (people + timesheet approve) |
+| **Gerente Comercial** | view/create/update/approve .workspace | view/create/update/manage .workspace | view.workspace | view/update .workspace | view.workspace (people, timesheet, allocations) |
+| **Vendedor** | contracts.view.own + create.own + clauses.view | tickets.view.own + create.own | — | projects.view.own + tasks.view.own/create.own | — |
+| **Head de RH** | view.workspace | — | view.workspace | view.workspace | full (todas ações .workspace) |
+| **Recrutador** | — | — | — | — | view.workspace (people, onboarding, documents) |
+| **External Collaborator** | contracts.view.own | tickets.view.own/create.own | — | tasks.view.own/update.own + time_entries.create.own/view.own | — |
 
-### 3. Página `/settings` (grupo Pessoas & Acesso)
-- `src/routes/_authenticated/settings.tsx`: no grupo "Pessoas & Acesso", substituir o item atual `{ to: "/home/access", label: "Controle de Acesso", icon: Shield, need: "admin" }` por `{ to: "/settings/permissions", label: "Permissões", icon: Shield, need: "admin" }`. Manter "Política de acesso".
+## Implementação
 
-### 4. Menu principal e atalhos legados
-- `src/lib/menu-config.ts` (linha ~230): mesma troca — `/home/access` → `/settings/permissions`, label "Permissões".
-- `src/components/global-search/commands.ts` (linha 38): comando `nav-access` passa a apontar para `/settings/permissions`, label "Permissões", keywords mantidas.
-- `src/routes/_authenticated/home.index.tsx` (SHORTCUTS, linha ~198): atalho "Controle de Acesso" passa a apontar para `/settings/permissions` e label "Permissões".
+**Uma migration idempotente** que:
 
-### 5. Guarda de rota
-- `src/routes/_authenticated.tsx`: `ADMIN_ONLY` já cobre qualquer subrota de `/settings/*` via prefixo? Verificar — hoje lista rotas específicas de settings. Adicionar `"/settings/permissions"` a `ADMIN_ONLY` para preservar o `need: "admin"` do menu.
+1. Para cada `job_role` do sistema, garante existência do bundle (`permission_sets` com `module='__bundle__'`, `owner_id = job_roles.owner_id`, ligado via `job_role_sets`).
+2. `INSERT ... ON CONFLICT DO NOTHING` em `permission_set_items` com todas as chaves da tabela acima, resolvidas a partir de `public.permissions.key`.
+3. Não toca chaves já existentes (`techsales`, `techhire`, `system`) — só adiciona os 5 módulos faltantes.
+4. Não cria/altera cargos, apenas popula bundles existentes.
 
-## Validação manual
+Depois de aplicar, `/settings/permissions` filtrado por cada módulo mostra os cargos com marcações corretas.
 
-1. Acessar `/home/access` → redireciona para `/settings/permissions`.
-2. Sidebar do ERP mostra "Permissões" no grupo Workspace e navega para a matriz.
-3. `/settings` lista "Permissões" no grupo Pessoas & Acesso; item legado "Controle de Acesso" não aparece mais.
-4. Cmd+K → "permissões" / "cargos" / "acesso" abre `/settings/permissions`.
-5. Card "Controle de Acesso" da Home leva à nova matriz.
-6. Usuário não-admin recebe tela de "Acesso restrito" ao tentar abrir `/settings/permissions`.
+## Fora do escopo
 
-## Fora de escopo
+- Cargos customizados (usuário duplica/cria pela UI se quiser variantes).
+- Alterar UI da matriz.
+- Alterar RLS/tabelas.
 
-- Não excluir server functions/componentes usados só por `/home/access` (pacotes de permissão, governance tabs, atribuições por usuário). Ficam órfãos e podem ser removidos depois se confirmada não-utilização.
-- Nenhuma mudança em `permission_sets`, `job_role_sets`, RLS, catálogo de permissões ou UI da própria matriz.
+## Validação
+
+- Reabrir `/settings/permissions`, alternar filtro por módulo e conferir que cada cargo de sistema tem as marcações da tabela acima.
+- `SELECT` de contagem por `role × module` deve mostrar linhas para os 5 novos módulos.
