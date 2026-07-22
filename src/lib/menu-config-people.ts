@@ -7,6 +7,11 @@ import {
   TrendingUp,
   BarChart3,
   LayoutTemplate,
+  Brain,
+  ShieldAlert,
+  HeartHandshake,
+  ClipboardList,
+  UserMinus,
 } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
@@ -16,12 +21,26 @@ export const PEOPLE_SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Pessoas", url: "/people", icon: Users },
       { title: "Meu time", url: "/people/my-team", icon: UserCog },
+      { title: "Onboarding", url: "/people/onboarding", icon: ClipboardList, need: "manager" },
+      { title: "Offboarding", url: "/people/offboarding", icon: UserMinus, need: "manager" },
       { title: "Documentos a vencer", url: "/people/documents", icon: FileCheck2, need: "manager" },
-      { title: "Faturamento de horas", url: "/people/billing", icon: Receipt, need: "manager" },
-      { title: "Margem por contrato", url: "/people/contract-margin", icon: TrendingUp, need: "manager" },
-      { title: "Analytics", url: "/people/analytics", icon: BarChart3, need: "manager" },
       { title: "Modelos de onboarding", url: "/people/onboarding-templates", icon: LayoutTemplate, need: "manager" },
     ],
   },
+  {
+    label: "Saúde & segurança",
+    items: [
+      { title: "Riscos psicossociais", url: "/people/psychosocial", icon: Brain, need: "manager" },
+      { title: "Incidentes", url: "/people/incidents", icon: ShieldAlert, need: "manager" },
+    ],
+  },
+  {
+    label: "Benefícios & custos",
+    items: [
+      { title: "Benefícios", url: "/people/benefits", icon: HeartHandshake, need: "manager" },
+      { title: "Faturamento de horas", url: "/people/billing", icon: Receipt, need: "manager" },
+      { title: "Margem por contrato", url: "/people/contract-margin", icon: TrendingUp, need: "manager" },
+      { title: "Analytics", url: "/people/analytics", icon: BarChart3, need: "manager" },
+    ],
+  },
 ];
-

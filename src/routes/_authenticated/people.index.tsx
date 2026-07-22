@@ -268,28 +268,75 @@ function NewPersonDialog({
   upsert: ReturnType<typeof useServerFn<typeof upsertPerson>>;
 }) {
   const [fullName, setFullName] = useState("");
+  const [preferredName, setPreferredName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [role, setRole] = useState("");
+  const [seniority, setSeniority] = useState("");
+  const [location, setLocation] = useState("");
+  const [timezone, setTimezone] = useState("America/Sao_Paulo");
+  const [hireDate, setHireDate] = useState("");
   const [employment, setEmployment] = useState<PeopleEmploymentType>("pj");
+  const [status, setStatus] = useState<PeopleStatus>("active");
+  const [legalEntity, setLegalEntity] = useState("");
+  const [cnpj, setCnpj] = useState("");
+  const [costHour, setCostHour] = useState("");
+  const [monthlyCost, setMonthlyCost] = useState("");
+  const [currency, setCurrency] = useState("BRL");
+  const [tags, setTags] = useState("");
+  const [notes, setNotes] = useState("");
+
+  function reset() {
+    setFullName("");
+    setPreferredName("");
+    setEmail("");
+    setPhone("");
+    setRole("");
+    setSeniority("");
+    setLocation("");
+    setTimezone("America/Sao_Paulo");
+    setHireDate("");
+    setEmployment("pj");
+    setStatus("active");
+    setLegalEntity("");
+    setCnpj("");
+    setCostHour("");
+    setMonthlyCost("");
+    setCurrency("BRL");
+    setTags("");
+    setNotes("");
+  }
 
   const mut = useMutation({
     mutationFn: () =>
       upsert({
         data: {
-          full_name: fullName,
-          email: email || null,
-          role_title: role || null,
+          full_name: fullName.trim(),
+          preferred_name: preferredName.trim() || null,
+          email: email.trim() || null,
+          phone: phone.trim() || null,
+          role_title: role.trim() || null,
+          seniority: seniority.trim() || null,
+          location: location.trim() || null,
+          timezone: timezone.trim() || null,
+          hire_date: hireDate || null,
           employment_type: employment,
-          status: "active",
-          currency: "BRL",
-          tags: [],
+          status,
+          legal_entity_name: legalEntity.trim() || null,
+          cnpj: cnpj.trim() || null,
+          cost_hour: costHour ? Number(costHour) : null,
+          monthly_cost: monthlyCost ? Number(monthlyCost) : null,
+          currency: currency.trim() || "BRL",
+          tags: tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter((t) => t.length > 0)
+            .slice(0, 20),
+          notes: notes.trim() || null,
         },
       }),
     onSuccess: () => {
-      setFullName("");
-      setEmail("");
-      setRole("");
-      setEmployment("pj");
+      reset();
       onOpenChange(false);
       onSaved();
     },
@@ -298,65 +345,143 @@ function NewPersonDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nova pessoa</DialogTitle>
           <DialogDescription>
-            Cadastro básico. Você pode completar dados sensíveis (custo, docs) na ficha depois.
+            Preencha os campos abaixo. Financeiros são visíveis apenas para quem tem permissão.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="p-name">Nome completo *</Label>
-            <Input
-              id="p-name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Ex: Maria Silva"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="p-email">E-mail</Label>
-            <Input
-              id="p-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="p-role">Cargo / posição</Label>
-            <Input id="p-role" value={role} onChange={(e) => setRole(e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Vínculo</Label>
-            <Select
-              value={employment}
-              onValueChange={(v) => setEmployment(v as PeopleEmploymentType)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PEOPLE_EMPLOYMENT_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {PEOPLE_EMPLOYMENT_LABELS[t]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
+        <div className="space-y-6">
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Identificação
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="p-name">Nome completo *</Label>
+                <Input id="p-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ex: Maria Silva" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-preferred">Como prefere ser chamado(a)</Label>
+                <Input id="p-preferred" value={preferredName} onChange={(e) => setPreferredName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-email">E-mail</Label>
+                <Input id="p-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-phone">Telefone</Label>
+                <Input id="p-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-location">Localização</Label>
+                <Input id="p-location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Cidade / UF" />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Trabalho
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="p-role">Cargo / posição</Label>
+                <Input id="p-role" value={role} onChange={(e) => setRole(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-seniority">Senioridade</Label>
+                <Input id="p-seniority" value={seniority} onChange={(e) => setSeniority(e.target.value)} placeholder="Ex: Pleno, Sênior" />
+              </div>
+              <div className="space-y-2">
+                <Label>Vínculo</Label>
+                <Select value={employment} onValueChange={(v) => setEmployment(v as PeopleEmploymentType)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PEOPLE_EMPLOYMENT_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{PEOPLE_EMPLOYMENT_LABELS[t]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={status} onValueChange={(v) => setStatus(v as PeopleStatus)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {PEOPLE_STATUSES.map((s) => (
+                      <SelectItem key={s} value={s}>{PEOPLE_STATUS_LABELS[s]}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-hire">Data de contratação</Label>
+                <Input id="p-hire" type="date" value={hireDate} onChange={(e) => setHireDate(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-tz">Fuso horário</Label>
+                <Input id="p-tz" value={timezone} onChange={(e) => setTimezone(e.target.value)} />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Dados legais
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="p-legal">Razão social</Label>
+                <Input id="p-legal" value={legalEntity} onChange={(e) => setLegalEntity(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-cnpj">CNPJ / CPF</Label>
+                <Input id="p-cnpj" value={cnpj} onChange={(e) => setCnpj(e.target.value)} />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Financeiro
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="p-cost-hour">Custo/hora</Label>
+                <Input id="p-cost-hour" type="number" step="0.01" min="0" value={costHour} onChange={(e) => setCostHour(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-monthly">Custo mensal</Label>
+                <Input id="p-monthly" type="number" step="0.01" min="0" value={monthlyCost} onChange={(e) => setMonthlyCost(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="p-cur">Moeda</Label>
+                <Input id="p-cur" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} />
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Notas & tags
+            </h3>
+            <div className="space-y-2">
+              <Label htmlFor="p-tags">Tags (separadas por vírgula)</Label>
+              <Input id="p-tags" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="ex: pj-recorrente, sp, dev" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="p-notes">Notas internas</Label>
+              <textarea id="p-notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full min-h-[80px] rounded-md border bg-background p-2 text-sm" placeholder="Observações relevantes..." />
+            </div>
+          </section>
         </div>
+
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button
-            disabled={mut.isPending || fullName.trim().length < 2}
-            onClick={() => mut.mutate()}
-          >
-            Cadastrar
-          </Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button disabled={mut.isPending || fullName.trim().length < 2} onClick={() => mut.mutate()}>Cadastrar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
