@@ -10,10 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const BUNDLE_MODULE = "__bundle__";
 
-async function resolveActiveWorkspace(
-  supabase: SupabaseClient,
-  userId: string,
-): Promise<string> {
+async function resolveActiveWorkspace(supabase: SupabaseClient, userId: string): Promise<string> {
   const m = await supabase
     .from("workspace_members")
     .select("workspace_id")
@@ -47,9 +44,7 @@ async function assertWorkspaceAdmin(
   });
   if (error) throw new Error(`Falha ao verificar administrador do workspace: ${error.message}`);
   if (!data) {
-    throw new Error(
-      "Você não tem permissão para alterar cargos e permissões deste workspace.",
-    );
+    throw new Error("Você não tem permissão para alterar cargos e permissões deste workspace.");
   }
 }
 
@@ -132,9 +127,7 @@ async function ensureBundle(
       .maybeSingle();
     if (q.data?.id) {
       // Ensure link
-      await supabase
-        .from("job_role_sets")
-        .upsert({ role_id: roleId, set_id: q.data.id as string });
+      await supabase.from("job_role_sets").upsert({ role_id: roleId, set_id: q.data.id as string });
       return q.data.id as string;
     }
     throw new Error(insErr.message);
@@ -332,9 +325,7 @@ export const getMatrixState = createServerFn({ method: "GET" })
       role_id: string;
       permission_sets: { permission_set_items: Array<{ permission_key: string }> };
     }>) {
-      const keys = (row.permission_sets?.permission_set_items ?? []).map(
-        (i) => i.permission_key,
-      );
+      const keys = (row.permission_sets?.permission_set_items ?? []).map((i) => i.permission_key);
       if (!map[row.role_id]) map[row.role_id] = [];
       map[row.role_id].push(...keys);
     }
@@ -491,11 +482,16 @@ export const deleteJobRole = createServerFn({ method: "POST" })
       .select("set_id, permission_sets!inner(id, module, owner_id)")
       .eq("role_id", data.role_id);
     if (links.error) throw new Error(links.error.message);
-    const bundleIds = ((links.data ?? []) as Array<{
-      set_id: string;
-      permission_sets: { module: string; owner_id: string | null };
-    }>)
-      .filter((r) => r.permission_sets?.module === BUNDLE_MODULE && r.permission_sets?.owner_id === userId)
+    const bundleIds = (
+      (links.data ?? []) as Array<{
+        set_id: string;
+        permission_sets: { module: string; owner_id: string | null };
+      }>
+    )
+      .filter(
+        (r) =>
+          r.permission_sets?.module === BUNDLE_MODULE && r.permission_sets?.owner_id === userId,
+      )
       .map((r) => r.set_id);
 
     // Remove all role-set links.
