@@ -282,13 +282,14 @@ export function PermissionsMatrix() {
         <table className="w-full text-sm border-separate border-spacing-0">
           <thead className="bg-muted/40">
             <tr>
-              <th className="sticky left-0 top-0 z-40 bg-muted/40 text-left p-2 min-w-[360px] font-medium border-r border-b">
+              <th className="sticky left-0 top-0 z-40 bg-muted text-left p-2 min-w-[360px] font-medium border-r border-b">
                 Recurso / Ação
               </th>
               {roles.map((r) => (
                 <th
                   key={r.id}
-                  className="sticky top-0 z-30 bg-muted/40 p-2 text-center font-medium whitespace-nowrap border-b"
+                  className="sticky top-0 z-30 bg-muted p-2 text-center font-medium whitespace-nowrap border-b"
+
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{r.name}</span>
@@ -356,9 +357,10 @@ export function PermissionsMatrix() {
           <tbody>
             {Object.entries(grouped).map(([resource, perms]) => (
               <Fragment key={`grp-${resource}`}>
-                <tr className="bg-muted/20">
+                <tr className="bg-muted">
                   <td
-                    className="sticky left-0 z-20 bg-muted/20 p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground border-b border-r"
+                    className="sticky left-0 z-20 bg-muted p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground border-b border-r"
+
                   >
                     {resource}
                   </td>
@@ -374,7 +376,7 @@ export function PermissionsMatrix() {
                           ? true
                           : "indeterminate";
                     return (
-                      <td key={r.id} className="p-2 text-center border-b bg-muted/20">
+                      <td key={r.id} className="p-2 text-center border-b bg-muted">
                         <Checkbox
                           checked={state}
                           disabled={toggleMut.isPending}
