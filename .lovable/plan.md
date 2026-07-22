@@ -1,67 +1,67 @@
-## Problema
+## 1. Empresa/contato não aparecem nos detalhes do lead
 
-Ao clicar em "Excluir" um negócio, a Cristiane vê o toast "Excluído" e o drawer fecha, mas o card reaparece no kanban ao invalidar as queries. Além disso, botões de ações sem permissão hoje ficam habilitados, dando falsa impressão de que a ação vai funcionar.
+**Causa:** o `CreateLeadDialog` salva apenas `company_name` (texto), nunca `company_id`. Sem `company_id`, o `CompanyCard` em `AssociationsPanel` fica vazio na ficha do lead.
 
-Causa técnica: a policy `ws_delete_deals` exige `techsales.deals.delete.workspace`. Sem essa permissão, o RLS silencia o DELETE (0 linhas afetadas, sem erro), e o client trata como sucesso. Somado a isso, a UI não consulta as permissões efetivas do usuário para desabilitar preventivamente o botão.
+**Correção:** persistir `company_id: company.id ?? null` no insert de `leads` em `src/components/leads/create-lead-dialog.tsx`. Fazer o mesmo em `src/components/leads/quick-create-lead-*` se existir. Backfill opcional via SQL (ligar `leads.company_id` por `company_name` idêntico) — só depois de confirmar com o usuário.
 
-## Escopo
+## 2. Botão "Adicionar contato" ausente no lead
 
-### 1. Desabilitar botões/ações sem permissão (padrão global)
+**Causa:** `LeadContactsCard` (em `src/components/record/associations-panel.tsx`) exibe somente `leads.converted_contact_id` e não oferece ação de vincular.
 
-- Criar/usar um hook `usePermission(key)` (ou `useHasPermission`) baseado nas permissões efetivas do usuário no workspace ativo (já expostas por `user_effective_permissions` / bundle de acesso do client).
-- Padrão de uso nos botões sensíveis:
-  - `disabled` quando o usuário não tem nenhum tier da ação;
-  - `Tooltip` explicando "Você não tem permissão para esta ação";
-  - manter o layout — nunca esconder o botão silenciosamente, para não confundir.
-- Aplicar imediatamente no botão **Excluir negócio** do `deal-detail-drawer.tsx` e da rota `deals.$id.tsx` (foco do bug reportado).
-- Estender o mesmo padrão para as demais ações críticas de deals já presentes nesses arquivos (mudança de estágio, edição de campos, envio de proposta) usando as chaves `techsales.deals.update.*` que já existem.
-- Fora do escopo desta entrega: varrer todos os outros módulos. Apenas documentar o padrão em `docs/rbac-mvp.md` para ser adotado incrementalmente.
+**Correção:** adicionar ação **Adicionar contato** no header do card (usando `AssocCard` padrão do arquivo) que abra o `ContactPickerPopover` (existente) para escolher um contato existente ou criar um novo via `CreateContactDialog`. Ao confirmar, atualiza `leads.converted_contact_id` e refaz o fetch. Adicionar também opção **Remover** no item quando houver contato vinculado.
 
-### 2. Corrigir o feedback do client no delete
+## 3. Novo módulo global: Arquivos (TechERP)
 
-- Encadear `.select("id")` no `delete` para detectar DELETE bloqueado por RLS.
-- Se `data.length === 0`: reverter cache otimista, manter o drawer aberto e exibir toast "Você não tem permissão para excluir este negócio."
-- Manter fluxo atual (invalidação + toast de sucesso) quando ao menos uma linha for removida.
-- Aplicar em `src/components/deals/deal-detail-drawer.tsx` e `src/routes/_authenticated/deals.$id.tsx`.
+Área global de arquivos com 100 MB por usuário e link público de leitura.
 
-### 3. Granularidade de permissão de exclusão de deals (migration)
+### Backend (migration)
 
-- Inserir em `public.permissions` as chaves `techsales.deals.delete.own` e `techsales.deals.delete.team` (padrão já usado em `update`).
-- Substituir `ws_delete_deals` para aceitar os três tiers:
-  - `delete.workspace` → qualquer deal do workspace;
-  - `delete.team` → mesma expressão usada em `update.team`;
-  - `delete.own` → `owner_id = auth.uid()`.
-- Semear (`job_role_default_permissions` + bundles ativos) o tier correspondente nos cargos que hoje têm `update.own` / `update.team` de deals, para que gerentes/vendedores possam excluir seus próprios negócios.
+- Storage bucket `user-files` (privado) via `storage_create_bucket`.
+- Tabela `public.user_files`:
+  - `id`, `owner_id` (auth.users), `folder_id` (nullable → `public.user_file_folders`), `name`, `storage_path` (`<owner_id>/<uuid>-<name>`), `size_bytes` (bigint), `mime_type`, `is_public` (bool), `public_token` (text unique nullable), `created_at`, `updated_at`.
+- Tabela `public.user_file_folders`: `id`, `owner_id`, `parent_id` (self-fk), `name`, `created_at`.
+- GRANTs para `authenticated` + `service_role`. RLS: `owner_id = auth.uid()`.
+- Function `public.user_files_used_bytes(uid uuid)` retornando `sum(size_bytes)`.
+- Trigger `BEFORE INSERT` em `user_files` que rejeita se `used + NEW.size_bytes > 100 * 1024 * 1024`.
+- RLS em `storage.objects` para o bucket `user-files`: permitir CRUD apenas quando `bucket_id = 'user-files' AND (storage.foldername(name))[1] = auth.uid()::text`.
 
-## Detalhes técnicos
+### Server routes / functions
 
-- Hook de permissão (esqueleto):
-  ```ts
-  const canDelete = useHasAnyPermission([
-    "techsales.deals.delete.workspace",
-    "techsales.deals.delete.team",
-    "techsales.deals.delete.own",
-  ], { ownerId: deal.owner_id });
-  ```
-  O helper considera o tier `.own` só quando `ownerId === auth.uid()` e `.team` conforme o mesmo helper usado no RLS. Reutilizar o `AccessBundle` já carregado pelo `access.functions.ts`.
+- `src/lib/files.functions.ts` (createServerFn, `requireSupabaseAuth`):
+  - `listUserFiles({ folderId })`
+  - `createFolder({ name, parentId })`
+  - `renameFile({ id, name })` / `renameFolder`
+  - `deleteFile({ id })` / `deleteFolder` (remove no storage + na tabela)
+  - `togglePublicLink({ id, enable })` gera/revoga `public_token` (nanoid).
+- `src/routes/api/public/files/$token.ts` (server route): busca `user_files` por `public_token`, se `is_public` verdadeiro cria signed URL no bucket privado via `supabaseAdmin` e redireciona.
 
-- Delete com detecção de RLS:
-  ```ts
-  const { data, error } = await supabase.from("deals").delete().eq("id", id).select("id");
-  if (error) { /* revert + toast(error) */ return; }
-  if (!data || data.length === 0) { /* revert + toast permissão negada */ return; }
-  ```
+### Frontend
 
-- A nova policy segue o shape de `ws_update_deals`, trocando `update` por `delete` e acrescentando o ramo `owner_id = auth.uid()` para `.own`.
+- Rota `src/routes/_authenticated/files.tsx` (novo layout):
+  - Header padrão (`PageHeader`).
+  - Coluna esquerda: árvore de pastas.
+  - Área central: grid/list de arquivos, breadcrumbs, uploader (drag-and-drop), barra de quota (KB/100MB).
+  - Ações por arquivo (menu): Baixar, Renomear, Excluir, Compartilhar link (toggle público + copiar URL).
+  - Diálogos de renomear / criar pasta / confirmar exclusão via `AlertDialog`.
+  - Estados: `LoadingSkeleton`, `EmptyState`, `ErrorState`.
+- Upload: chunked via `supabase.storage.from('user-files').upload(path, file)`, validando quota do lado cliente (chamando a server fn para saber uso atual) e o trigger garante do lado servidor.
+- Entrada no sidebar: adicionar `{ title: "Arquivos", url: "/files", icon: FolderIcon }` no grupo **ERP** de `src/lib/menu-config-erp.ts`.
 
-## Validação manual
+### Segurança
 
-1. Como Cristiane, sem permissão de delete: botão "Excluir" aparece desabilitado com tooltip; cliques via atalho/API resultam em toast de permissão negada e o card permanece.
-2. Após seed de `delete.own`: Cristiane consegue excluir negócios próprios; negócios de outros donos continuam bloqueados.
-3. Como admin: exclusão funciona como antes.
-4. Recarregar o kanban após cada tentativa para confirmar a persistência real.
+- Nunca expor `storage_path` sem passar pelo signed URL (60s).
+- `public_token` é 32 chars, único, revogável.
+- Sem PII no path; apenas UUID + nome sanitizado.
+- Auditoria: registro em `access_audit_log` opcional em delete/share.
+
+### Validação
+
+- `tsgo` + `eslint`.
+- Teste manual: upload → cota atualiza → gerar link → abrir aba anônima → revogar link → 404.
+- Verificar `supabase--linter` após migration.
 
 ## Fora do escopo
 
-- Aplicar o padrão de "botão desabilitado por permissão" em todos os módulos (será feito incrementalmente, guiado pelo doc).
-- Redesenho do drawer, kanban, wizard, engine de workflows ou permissões de outras entidades.
+- Preview de PDF/imagem in-app (fica para próxima iteração).
+- Compartilhamento com usuários específicos do workspace.
+- Versionamento.

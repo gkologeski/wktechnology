@@ -2,7 +2,7 @@
 // Não pertence a nenhum módulo — apresenta apenas atalhos administrativos primários.
 // Itens administrativos detalhados (Membros, Controle de acesso, Billing, etc.) vivem
 // em /settings, para não duplicar entre Sidebar, Home e Configurações.
-import { Home, Store, Receipt, Settings as SettingsIcon, Shield } from "lucide-react";
+import { Home, Store, Receipt, Settings as SettingsIcon, Shield, FolderOpen } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
 export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
@@ -10,10 +10,12 @@ export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "ERP",
     items: [
       { title: "Home", url: "/home", icon: Home },
+      { title: "Arquivos", url: "/files", icon: FolderOpen },
       { title: "Marketplace", url: "/marketplace", icon: Store },
       { title: "Faturas", url: "/invoices", icon: Receipt },
     ],
   },
+
   {
     label: "Workspace",
     items: [
@@ -31,7 +33,9 @@ export const WORKSPACE_ROUTE_PREFIXES: readonly string[] = [
   "/admin",
   "/marketplace",
   "/invoices",
+  "/files",
 ];
+
 
 export function isWorkspacePathname(pathname: string): boolean {
   return WORKSPACE_ROUTE_PREFIXES.some(
