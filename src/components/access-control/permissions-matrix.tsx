@@ -228,7 +228,7 @@ export function PermissionsMatrix() {
   }, [filteredPerms]);
 
   const roles = useMemo(() => bundleQ.data?.job_roles ?? [], [bundleQ.data]);
-  const hasCustomRoles = roles.some((r) => !r.is_system);
+  
 
   if (bundleQ.isLoading || matrixQ.isLoading) {
     return (
