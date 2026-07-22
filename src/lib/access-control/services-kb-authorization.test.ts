@@ -104,25 +104,16 @@ describe("kb.functions.ts — gate de permissão por handler", () => {
     }
   });
 
-  it("listKbCategoriesAdmin exige view/manage", () => {
-    expectAsserts(handlers.get("listKbCategoriesAdmin"), [
-      "techservice.kb.view.workspace",
-      "techservice.kb.manage.workspace",
-    ]);
+  it("listKbCategoriesAdmin exige KB_VIEW", () => {
+    expectAsserts(handlers.get("listKbCategoriesAdmin"), ["KB_VIEW"]);
   });
 
-  it("listKbArticlesAdmin exige view/manage", () => {
-    expectAsserts(handlers.get("listKbArticlesAdmin"), [
-      "techservice.kb.view.workspace",
-      "techservice.kb.manage.workspace",
-    ]);
+  it("listKbArticlesAdmin exige KB_VIEW", () => {
+    expectAsserts(handlers.get("listKbArticlesAdmin"), ["KB_VIEW"]);
   });
 
-  it("getKbArticleAdmin exige view/manage", () => {
-    expectAsserts(handlers.get("getKbArticleAdmin"), [
-      "techservice.kb.view.workspace",
-      "techservice.kb.manage.workspace",
-    ]);
+  it("getKbArticleAdmin exige KB_VIEW", () => {
+    expectAsserts(handlers.get("getKbArticleAdmin"), ["KB_VIEW"]);
   });
 
   it("upsertKbCategory usa a lista KB_CREATE ou KB_UPDATE dependendo do id", () => {
