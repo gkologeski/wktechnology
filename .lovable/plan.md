@@ -1,114 +1,59 @@
-# Área unificada de Gestão de Permissões (todos os módulos)
+## Escopo
 
-## Objetivo
+Em `/settings/permissions`, dois problemas:
 
-Consolidar o RBAC em **uma tela unificada** com editor visual Cargo × Recurso × Ação × Escopo, cobrindo **todos os módulos existentes**: TechSales, TechHire, TechPeople, TechContracts, TechService, TechFinance, TechProjects e Sistema. Reutiliza as tabelas atuais (`permissions`, `permission_sets`, `permission_set_items`, `job_roles`, `job_role_sets`, `user_job_roles`, `access_audit_log`) e apenas **expande o catálogo `permissions`** para os módulos que ainda não estão lá.
+1. **Alinhamento**: na primeira coluna (Recurso / Ação), os dois badges (Ação e Escopo) têm larguras variáveis, então o rótulo textual "vaza" para posições diferentes em cada linha, dando aparência desalinhada.
+2. **Sem edição possível**: consultei `public.job_roles` e todos os 10 cargos existentes têm `is_system=true`. A matriz desabilita o checkbox para cargos de sistema (`disabled = r.is_system || toggleMut.isPending`), então nenhum toggle é permitido. Não existe hoje UI para criar cargos customizados nem para duplicar um cargo de sistema, então o usuário fica travado.
 
-Hoje o catálogo `permissions` só tem `techsales`, `techhire` e `system`. Falta cadastrar entradas para `techpeople`, `techcontracts`, `techservice`, `techfinance`, `techprojects`.
+## Correções
 
-## Rota
+### 1. Alinhar colunas dentro da célula Recurso/Ação
+Em `src/components/access-control/permissions-matrix.tsx`, substituir o `flex items-center gap-2` por um grid com trilhas fixas para os badges, mantendo o rótulo em coluna própria:
 
-Nova: `/_authenticated/settings/permissions`.
-`/home/access` e `/settings/roles*` redirecionam para ela. `/settings/my-permissions` permanece como visão do próprio usuário.
-
-## Migration (única alteração de schema/dados)
-
-Um `INSERT ... ON CONFLICT DO NOTHING` em `public.permissions` com as chaves faltantes. Formato `<module>.<resource>.<action>.<scope>`, escopos `own|team|workspace`, ações padrão por recurso:
-
-| Módulo | Recursos | Ações padrão |
-|---|---|---|
-| techpeople | people, allocations, timesheet, reviews, one_on_ones, goals, incidents, documents, benefits, onboarding | ver, criar, atualizar, excluir, exportar, aprovar |
-| techcontracts | contracts, clauses, approvals, esign | ver, criar, atualizar, excluir, aprovar, publicar |
-| techservice | tickets, kb, sla, macros | ver, criar, atualizar, excluir, atribuir, exportar |
-| techfinance | entries, payments, invoices, recurrences, legal_entities, cost_centers, banking, dunning, nfse | ver, criar, atualizar, excluir, exportar, importar, aprovar |
-| techprojects | projects, tasks, milestones, time_entries, spaces, folders, lists | ver, criar, atualizar, excluir, atribuir, exportar |
-
-Cada linha ganha as três variantes `own | team | workspace` **apenas quando fizer sentido** (ex.: `importar/exportar/publicar/aprovar` só em `workspace`).
-Rótulos PT-BR em `label_pt` seguindo o padrão já existente. `docs/rbac-mvp.md` é atualizado com o novo total.
-
-Sem novas policies RLS, sem alterar tabelas — só INSERTs idempotentes no catálogo.
-
-## Modelo de edição
-
-- Cada cargo tem, sob o capô, um `permission_set` "bundle do cargo" (`is_system=false`, nome `__role_bundle:<role_id>`), vinculado via `job_role_sets`. A UI só edita esse bundle; pacotes públicos existentes ficam intactos.
-- Marcar/desmarcar célula → `upsert/delete` em `permission_set_items` do bundle.
-- Cargos `is_system=true` são somente leitura; botão "Duplicar cargo" cria cópia editável.
-
-## Layout
-
-```text
-[Header] Permissões · Configure quem pode ler, criar, atualizar, excluir, aprovar, exportar por escopo
-
-[Filtros] Módulo (Todos | TechSales | TechHire | TechPeople | TechContracts | TechService | TechFinance | TechProjects | Sistema)
-          Busca recurso...   [+ Novo cargo] [Duplicar] [Exportar CSV]
-
-[Aba 1: Matriz]  ← padrão
-  Recurso ▸ Ação    │ Sales Rep │ Recruiter │ Finance │ PM │ … cargos como colunas
-  ─────────────────
-  TechSales · Contatos
-    Ler        │ [own ▾] │ [—] │ [—] │ [ws ▾] │
-    Criar      │ [own ▾] │ [—] │ [—] │ [ws ▾] │
-    …
-  TechPeople · Pessoas
-    Ler        │ [—] │ [ws ▾] │ [—] │ [team ▾] │
-    …
-  TechFinance · Lançamentos
-    …
-  Célula = dropdown [—, own, team, workspace]; opção não catalogada fica desabilitada com tooltip.
-
-[Aba 2: Cargos]     Cards de cargos + membros
-[Aba 3: Membros]    Filtro + atribuição em massa de cargo
-[Aba 4: Campos]     Regras de campo sensíveis (reaproveita FieldsTab)
-[Aba 5: Auditoria]  Reaproveita AuditTab
+```
+grid grid-cols-[72px_92px_minmax(0,1fr)] items-center gap-2
 ```
 
-## Arquivos
+- Badge de Ação com `w-full justify-center`.
+- Badge de Escopo com `w-full justify-center`.
+- Rótulo com `truncate`.
 
-Novos:
+Resultado: badges e textos alinhados verticalmente entre linhas.
 
-- `src/routes/_authenticated/settings.permissions.tsx` — rota + `PageHeader` + tabs
-- `src/components/access-control/permissions-matrix.tsx` — matriz editável
-- `src/components/access-control/permissions-matrix-cell.tsx` — dropdown de escopo por célula
-- `src/lib/access-control/role-bundle.functions.ts`:
-  - `ensureRoleBundle(role_id)` — cria/retorna bundle do cargo
-  - `setRolePermission({ role_id, permission_key, granted })`
-  - `bulkSetRolePermissions(role_id, keys[], mode)` — linha, coluna ou limpar
-  - Todas com `assertPermission("system.roles.manage.workspace")` + `logAudit`
+Ajuste secundário: também aplicar `grid-cols-[minmax(0,1fr)_auto]` ao header do módulo/pesquisa se necessário (verificar no build).
 
-Alterados:
+### 2. Permitir edição criando/duplicando cargos
+No mesmo componente, adicionar uma barra de ações acima da tabela:
 
-- `src/lib/access-control/access.functions.ts` — expor `MODULE_META` extendido (labels PT-BR: TechPeople, TechContracts, TechService, TechFinance, TechProjects)
-- `src/routes/_authenticated/home.access.tsx` → redireciona para `/settings/permissions`
-- `src/routes/_authenticated/settings.roles.tsx` → redireciona para `/settings/permissions`
-- `src/components/settings-menu.tsx` (ou equivalente) — item "Permissões"; oculta duplicados
-- `docs/rbac-mvp.md` — atualiza tabela de módulos/recursos
+- **Novo cargo**: abre um pequeno dialog (nome, descrição, cor opcional) e cria uma `job_role` custom (`is_system=false`, `owner_id = auth.uid()`, `data_scope='workspace'`).
+- **Duplicar**: em cada coluna de cargo de sistema, ícone "copiar" que cria uma cópia editável (nome "<Original> (cópia)", `is_system=false`) e replica as permissões atualmente concedidas via `bulkSetRolePermissions`.
+- **Renomear/Excluir** cargos não-sistema (menu de contexto na coluna).
 
-Migration:
+Backend novo em `src/lib/access-control/role-bundle.functions.ts`:
+- `createJobRole({ name, description?, color? })`
+- `duplicateJobRole({ source_role_id, name? })` — copia permissões concedidas do cargo fonte (usa `getMatrixState` internamente) para o novo bundle.
+- `renameJobRole({ role_id, name, description?, color? })` — bloqueia cargos de sistema.
+- `deleteJobRole({ role_id })` — bloqueia cargos de sistema e faz cascade seguro (remove `job_role_sets` + `permission_sets` do bundle órfão).
 
-- `public.permissions` — INSERTs idempotentes para os 5 módulos faltantes
+Todas usam `requireSupabaseAuth` e delegam RLS ao Supabase (não usam `supabaseAdmin`). Chamada de `assertRoleEditable` reutilizada onde aplicável.
 
-Preservado sem alteração:
+### 3. Mensagem quando só há cargos de sistema
+Se `roles.every(r => r.is_system)`, exibir um banner discreto no topo:
 
-- Todas as tabelas de RBAC, RLS, policies, simulador, regras de campo.
+> "Todos os cargos exibidos são padrão do sistema e não podem ser editados. Crie um novo cargo ou duplique um existente para personalizar permissões."
 
-## Guardas
+Com botões "Novo cargo" e "Duplicar cargo de sistema".
 
-- Toda mutação exige `assertPermission("system.roles.manage.workspace")`.
-- Cargos `is_system=true` bloqueiam edição.
-- Cada save grava em `access_audit_log`.
+## Não escopo
 
-## Fora de escopo
+- Não alterar catálogo de `permissions`, nem RLS de `job_roles`/`permission_sets` (assumindo policies existentes já permitem inserts do owner — se um insert falhar por RLS na execução, tratamos como issue separada).
+- Não alterar comportamento dos cargos de sistema (permanecem read-only e visíveis).
+- Nenhuma mudança em `access.functions.ts` além da tipagem, se necessário.
 
-- Novas RLS policies consultando `user_has_permission()` nos CRUDs cliente-direto (segue como pendência em `docs/rbac-mvp.md`).
-- Escopo `custom` (filtros por pipeline/unidade).
-- Enforcement server-side de novas chaves além dos fluxos que já usam `assertPermission`.
+## Validação manual
 
-## Como validar
-
-1. `/settings/permissions` abre com aba **Matriz** e mostra todos os módulos no filtro.
-2. Filtrar por "TechFinance" mostra linhas de lançamentos, pagamentos, faturas, recorrências, CNPJs, centros de custo, banking, dunning, NFS-e.
-3. Filtrar por "TechPeople" mostra pessoas, alocações, timesheet, reviews, 1:1s, metas, incidentes, documentos, benefícios, onboarding.
-4. Alterar `Sales Rep · Contatos · Ler` de `own → workspace` reflete na aba Cargos e em `/settings/my-permissions` do usuário.
-5. Cargo `Admin` (`is_system`) fica cinza; "Duplicar" cria cópia editável.
-6. Registro aparece em **Auditoria**.
-7. `/home/access` e `/settings/roles` redirecionam para `/settings/permissions`.
+1. Abrir `/settings/permissions` → colunas Ação/Escopo/Rótulo alinhadas em todas as linhas.
+2. Clicar em "Novo cargo" → informar nome → cargo aparece como coluna editável.
+3. Marcar/desmarcar permissões → persiste (refresh mantém estado).
+4. "Duplicar" cargo Vendedor → nova coluna editável com as mesmas marcações do original.
+5. Cargos de sistema seguem com cadeado e checkboxes desabilitados.
