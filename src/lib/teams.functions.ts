@@ -700,3 +700,154 @@ export const removeTeamMember = createServerFn({ method: "POST" })
       .eq("member_user_id", data.member_user_id);
     return { ok: true, reassigned };
   });
+
+/** Lista cargos funcionais (job_roles) disponíveis no workspace. */
+export const listWorkspaceJobRoles = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+
+    const { data: roles, error } = await supabaseAdmin
+      .from("job_roles")
+      .select("id, name, description, color, is_system, data_scope")
+      .or(`is_system.eq.true,and(is_system.eq.false,owner_id.eq.${workspace.created_by ?? userId})`)
+      .order("is_system", { ascending: false })
+      .order("name");
+    if (error) throw new Error(error.message);
+
+    return (roles ?? []) as Array<{
+      id: string;
+      name: string;
+      description: string | null;
+      color: string | null;
+      is_system: boolean;
+      data_scope: string;
+    }>;
+  });
+
+/** Lista pacotes de permissões disponíveis no workspace. */
+export const listWorkspacePermissionSets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+
+    const { data: sets, error: setsErr } = await supabaseAdmin
+      .from("permission_sets")
+      .select("id, name, module, description, is_system, owner_id")
+      .or(`is_system.eq.true,and(is_system.eq.false,owner_id.eq.${workspace.created_by ?? userId})`)
+      .order("module")
+      .order("name");
+    if (setsErr) throw new Error(setsErr.message);
+
+    const ids = (sets ?? []).map((s) => s.id as string);
+    const { data: items } = await supabaseAdmin
+      .from("permission_set_items")
+      .select("set_id, permission_key")
+      .in("set_id", ids);
+    const keysBySet = new Map<string, string[]>();
+    for (const it of (items ?? []) as Array<{ set_id: string; permission_key: string }>) {
+      const arr = keysBySet.get(it.set_id) ?? [];
+      arr.push(it.permission_key);
+      keysBySet.set(it.set_id, arr);
+    }
+
+    return (sets ?? []).map((s) => ({
+      id: s.id as string,
+      name: s.name as string,
+      module: s.module as string,
+      description: (s.description ?? null) as string | null,
+      is_system: Boolean(s.is_system),
+      permission_keys: keysBySet.get(s.id as string) ?? [],
+    }));
+  });
+
+const SetMemberJobRolesInput = z.object({
+  member_user_id: z.string().uuid(),
+  primary_role_id: z.string().uuid().nullable(),
+  extra_role_ids: z.array(z.string().uuid()).default([]),
+  extra_set_ids: z.array(z.string().uuid()).default([]),
+});
+
+/** Define o cargo principal, cargos extras e pacotes extras de um membro.
+ *  Usa supabaseAdmin porque as RLS de user_job_roles/user_permission_sets
+ *  restringem escrita ao owner_id (criador do workspace), mas a tela de
+ *  membros permite que qualquer admin do workspace gerencie atribuições.
+ */
+export const setMemberJobRoles = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => SetMemberJobRolesInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const workspace = await resolveActiveWorkspace(userId);
+    await assertCanManageWorkspace(workspace.id, userId);
+    await assertTargetMember(workspace.id, data.member_user_id);
+
+    const workspaceOwnerId = workspace.created_by ?? userId;
+
+    // Reconstrói user_job_roles
+    const { error: delErr } = await supabaseAdmin
+      .from("user_job_roles")
+      .delete()
+      .eq("owner_id", workspaceOwnerId)
+      .eq("user_id", data.member_user_id);
+    if (delErr) throw new Error(delErr.message);
+
+    const roleRows: Array<{
+      user_id: string;
+      owner_id: string;
+      role_id: string;
+      is_primary: boolean;
+    }> = [];
+    const seen = new Set<string>();
+    if (data.primary_role_id) {
+      roleRows.push({
+        user_id: data.member_user_id,
+        owner_id: workspaceOwnerId,
+        role_id: data.primary_role_id,
+        is_primary: true,
+      });
+      seen.add(data.primary_role_id);
+    }
+    for (const rid of data.extra_role_ids) {
+      if (seen.has(rid)) continue;
+      roleRows.push({
+        user_id: data.member_user_id,
+        owner_id: workspaceOwnerId,
+        role_id: rid,
+        is_primary: false,
+      });
+      seen.add(rid);
+    }
+    if (roleRows.length > 0) {
+      const { error: insErr } = await supabaseAdmin
+        .from("user_job_roles")
+        .insert(roleRows as never);
+      if (insErr) throw new Error(insErr.message);
+    }
+
+    // Reconstrói user_permission_sets
+    const { error: delSetsErr } = await supabaseAdmin
+      .from("user_permission_sets")
+      .delete()
+      .eq("owner_id", workspaceOwnerId)
+      .eq("user_id", data.member_user_id);
+    if (delSetsErr) throw new Error(delSetsErr.message);
+
+    if (data.extra_set_ids.length > 0) {
+      const setRows = data.extra_set_ids.map((sid) => ({
+        user_id: data.member_user_id,
+        owner_id: workspaceOwnerId,
+        set_id: sid,
+      }));
+      const { error: insSetsErr } = await supabaseAdmin
+        .from("user_permission_sets")
+        .insert(setRows as never);
+      if (insSetsErr) throw new Error(insSetsErr.message);
+    }
+
+    return { ok: true };
+  });
