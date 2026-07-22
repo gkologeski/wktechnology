@@ -132,8 +132,13 @@ function UsersPage() {
   const updateFn = useServerFn(updateTeamMemberRole);
   const updateMemberFn = useServerFn(updateTeamMember);
   const removeFn = useServerFn(removeTeamMember);
+  const listRolesFn = useServerFn(listWorkspaceJobRoles);
+  const listSetsFn = useServerFn(listWorkspacePermissionSets);
+  const setMemberRolesFn = useServerFn(setMemberJobRoles);
 
   type Row = Awaited<ReturnType<typeof listTeamMembers>>[number];
+  type RoleOption = Awaited<ReturnType<typeof listWorkspaceJobRoles>>[number];
+  type SetOption = Awaited<ReturnType<typeof listWorkspacePermissionSets>>[number];
   type InviteRow = Awaited<ReturnType<typeof listPendingTeamInvites>>[number];
 
   const {
