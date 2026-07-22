@@ -121,7 +121,7 @@ describe("assertAnyPermission", () => {
     expect((caught as PermissionDeniedError).status).toBe(403);
     // Auditoria recebe TODAS as chaves testadas.
     expect(insertMock).toHaveBeenCalledTimes(1);
-    const payload = insertMock.mock.calls[0][0] as {
+    const payload = insertMock.mock.calls[0]?.[0] as unknown as {
       details: { permission_keys: string[] };
     };
     expect(payload.details.permission_keys).toEqual([
