@@ -356,14 +356,47 @@ export function PermissionsMatrix() {
           <tbody>
             {Object.entries(grouped).map(([resource, perms]) => (
               <Fragment key={`grp-${resource}`}>
-                <tr>
+                <tr className="bg-muted/20">
                   <td
-                    colSpan={roles.length + 1}
                     className="sticky left-0 z-20 bg-muted/20 p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground border-b border-r"
                   >
                     {resource}
                   </td>
+                  {roles.map((r) => {
+                    const grantedCount = perms.reduce(
+                      (n, p) => n + (isGranted(r.id, p.key) ? 1 : 0),
+                      0,
+                    );
+                    const state: boolean | "indeterminate" =
+                      grantedCount === 0
+                        ? false
+                        : grantedCount === perms.length
+                          ? true
+                          : "indeterminate";
+                    return (
+                      <td key={r.id} className="p-2 text-center border-b bg-muted/20">
+                        <Checkbox
+                          checked={state}
+                          disabled={toggleMut.isPending}
+                          onCheckedChange={() => {
+                            const shouldGrant = state !== true;
+                            for (const p of perms) {
+                              if (isGranted(r.id, p.key) !== shouldGrant) {
+                                toggleMut.mutate({
+                                  role_id: r.id,
+                                  permission_key: p.key,
+                                  granted: shouldGrant,
+                                });
+                              }
+                            }
+                          }}
+                          aria-label={`Marcar todas as permissões de ${resource} para ${r.name}`}
+                        />
+                      </td>
+                    );
+                  })}
                 </tr>
+
                 {perms.map((p) => (
                   <tr key={p.key} className="hover:bg-muted/20">
                     <td className="sticky left-0 z-10 bg-background p-2 border-b border-r">
