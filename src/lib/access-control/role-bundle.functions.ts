@@ -120,7 +120,6 @@ export const setRolePermission = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await resolveActiveWorkspace(supabase, userId);
-    await assertRoleEditable(supabase, data.role_id);
     const setId = await ensureBundle(supabase, userId, data.role_id);
     if (data.granted) {
       const { error } = await supabase
@@ -153,7 +152,6 @@ export const bulkSetRolePermissions = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await resolveActiveWorkspace(supabase, userId);
-    await assertRoleEditable(supabase, data.role_id);
     const setId = await ensureBundle(supabase, userId, data.role_id);
     if (data.granted) {
       const rows = data.keys.map((k) => ({ set_id: setId, permission_key: k }));
@@ -170,6 +168,45 @@ export const bulkSetRolePermissions = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
     return { ok: true, set_id: setId, count: data.keys.length };
+  });
+
+const RestoreInput = z.object({ role_id: z.string().uuid() });
+
+export const restoreRoleDefaults = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => RestoreInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await resolveActiveWorkspace(supabase, userId);
+    const role = await supabase
+      .from("job_roles")
+      .select("id, is_system")
+      .eq("id", data.role_id)
+      .maybeSingle();
+    if (role.error) throw new Error(role.error.message);
+    if (!role.data) throw new Error("Cargo não encontrado.");
+    if (!(role.data as { is_system: boolean }).is_system) {
+      throw new Error("Restauração disponível apenas para cargos padrão.");
+    }
+    const defaults = await supabase
+      .from("job_role_default_permissions")
+      .select("permission_key")
+      .eq("role_id", data.role_id);
+    if (defaults.error) throw new Error(defaults.error.message);
+    const keys = ((defaults.data ?? []) as Array<{ permission_key: string }>).map(
+      (r) => r.permission_key,
+    );
+    const setId = await ensureBundle(supabase, userId, data.role_id);
+    const del = await supabase.from("permission_set_items").delete().eq("set_id", setId);
+    if (del.error) throw new Error(del.error.message);
+    if (keys.length > 0) {
+      const rows = keys.map((k) => ({ set_id: setId, permission_key: k }));
+      const { error } = await supabase
+        .from("permission_set_items")
+        .upsert(rows, { onConflict: "set_id,permission_key" });
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true, count: keys.length };
   });
 
 export type RoleBundleMap = Record<string, Set<string>>;
