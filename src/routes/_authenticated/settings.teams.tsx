@@ -1007,6 +1007,138 @@ function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Roles dialog */}
+      <Dialog open={!!rolesDialog} onOpenChange={(o) => !o && closeRolesDialog()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Editar cargos do usuário</DialogTitle>
+            <DialogDescription>
+              Escolha o cargo principal, cargos extras e pacotes de permissões para{" "}
+              <span className="font-medium text-foreground">
+                {rolesDialog?.full_name || rolesDialog?.email}
+              </span>
+              .
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+            <div className="space-y-2">
+              <Label>Cargo principal</Label>
+              <Select
+                value={primaryRoleId ?? "__none__"}
+                onValueChange={(v) => setPrimaryRoleId(v === "__none__" ? null : v)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cargo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nenhum cargo principal</SelectItem>
+                  {jobRoles.map((j) => (
+                    <SelectItem key={j.id} value={j.id}>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: j.color ?? "currentColor" }}
+                        />
+                        <span>{j.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Define o papel padrão do usuário nos módulos (ex: Vendedor, Recrutador).
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Cargos extras</Label>
+              <div className="rounded-md border divide-y">
+                {jobRoles.map((j) => {
+                  const checked = extraRoleIds.includes(j.id);
+                  const isPrimary = primaryRoleId === j.id;
+                  return (
+                    <label
+                      key={j.id}
+                      className="flex items-center justify-between gap-3 p-3 cursor-pointer hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{ backgroundColor: j.color ?? "currentColor" }}
+                        />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{j.name}</p>
+                          {j.description && (
+                            <p className="text-xs text-muted-foreground truncate">{j.description}</p>
+                          )}
+                        </div>
+                      </div>
+                      <Checkbox
+                        checked={checked || isPrimary}
+                        disabled={isPrimary}
+                        onCheckedChange={(c) => {
+                          setExtraRoleIds((prev) =>
+                            c ? [...prev, j.id] : prev.filter((id) => id !== j.id),
+                          );
+                        }}
+                        aria-label={`Selecionar ${j.name}`}
+                      />
+                    </label>
+                  );
+                })}
+                {jobRoles.length === 0 && (
+                  <p className="p-3 text-sm text-muted-foreground">Nenhum cargo disponível.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Pacotes de permissões extras</Label>
+              <div className="rounded-md border divide-y">
+                {permissionSets.map((s) => (
+                  <label
+                    key={s.id}
+                    className="flex items-center justify-between gap-3 p-3 cursor-pointer hover:bg-muted/50"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{s.name}</p>
+                      {s.description && (
+                        <p className="text-xs text-muted-foreground truncate">{s.description}</p>
+                      )}
+                      {s.permission_keys.length > 0 && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {s.permission_keys.length} permissão(ões)
+                        </p>
+                      )}
+                    </div>
+                    <Checkbox
+                      checked={extraSetIds.includes(s.id)}
+                      onCheckedChange={(c) => {
+                        setExtraSetIds((prev) =>
+                          c ? [...prev, s.id] : prev.filter((id) => id !== s.id),
+                        );
+                      }}
+                      aria-label={`Selecionar ${s.name}`}
+                    />
+                  </label>
+                ))}
+                {permissionSets.length === 0 && (
+                  <p className="p-3 text-sm text-muted-foreground">Nenhum pacote disponível.</p>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={closeRolesDialog} disabled={savingRoles}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSaveRoles} disabled={savingRoles}>
+              {savingRoles ? "Salvando…" : "Salvar cargos"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
