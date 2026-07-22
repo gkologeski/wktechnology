@@ -4,6 +4,17 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { assertAnyPermission } from "@/lib/access-control/enforce.server";
+
+const KB_VIEW = ["techservice.kb.view.workspace", "techservice.kb.manage.workspace"];
+const KB_CREATE = [
+  "techservice.kb.create.own",
+  "techservice.kb.update.workspace",
+  "techservice.kb.manage.workspace",
+];
+const KB_UPDATE = ["techservice.kb.update.workspace", "techservice.kb.manage.workspace"];
+const KB_DELETE = ["techservice.kb.delete.workspace", "techservice.kb.manage.workspace"];
+const KB_MANAGE = ["techservice.kb.manage.workspace"];
 
 const slugify = (s: string) =>
   s
@@ -20,6 +31,7 @@ export const listKbCategoriesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_VIEW);
     const { data, error } = await supabaseAdmin
       .from("kb_categories")
       .select("id, name, slug, description, position")
@@ -45,6 +57,12 @@ export const upsertKbCategory = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(
+      context.supabase,
+      context.userId,
+      ws,
+      data.id ? KB_UPDATE : KB_CREATE,
+    );
     const slug = data.slug || slugify(data.name);
     const payload = {
       owner_id: ws,
@@ -76,6 +94,7 @@ export const deleteKbCategory = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_DELETE);
     await supabaseAdmin.from("kb_categories").delete().eq("id", data.id).eq("owner_id", ws);
     return { ok: true };
   });
@@ -84,6 +103,7 @@ export const listKbArticlesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_VIEW);
     const { data, error } = await supabaseAdmin
       .from("kb_articles")
       .select("id, title, slug, excerpt, category_id, published, published_at, views, updated_at")
@@ -98,6 +118,7 @@ export const getKbArticleAdmin = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_VIEW);
     const { data: row, error } = await supabaseAdmin
       .from("kb_articles")
       .select("*")
@@ -126,6 +147,12 @@ export const upsertKbArticle = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(
+      context.supabase,
+      context.userId,
+      ws,
+      data.id ? KB_UPDATE : KB_CREATE,
+    );
     const slug = data.slug || slugify(data.title);
     const payload = {
       owner_id: ws,
@@ -160,6 +187,7 @@ export const deleteKbArticle = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_DELETE);
     await supabaseAdmin.from("kb_articles").delete().eq("id", data.id).eq("owner_id", ws);
     return { ok: true };
   });
@@ -253,6 +281,9 @@ export const seedStarterKb = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_MANAGE);
+
+
 
     // Cria categorias (idempotente por slug)
     const catBySlug = new Map<string, string>();
