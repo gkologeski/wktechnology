@@ -147,6 +147,12 @@ export const upsertKbArticle = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(
+      context.supabase,
+      context.userId,
+      ws,
+      data.id ? KB_UPDATE : KB_CREATE,
+    );
     const slug = data.slug || slugify(data.title);
     const payload = {
       owner_id: ws,
