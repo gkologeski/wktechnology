@@ -13,6 +13,7 @@ import {
   duplicateJobRole,
   renameJobRole,
   deleteJobRole,
+  restoreRoleDefaults,
 } from "@/lib/access-control/role-bundle.functions";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -35,7 +36,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, Info } from "lucide-react";
+import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 export const MODULE_META: Record<string, { label: string; tone: string }> = {
@@ -89,6 +90,7 @@ export function PermissionsMatrix() {
   const duplicateRoleFn = useServerFn(duplicateJobRole);
   const renameRoleFn = useServerFn(renameJobRole);
   const deleteRoleFn = useServerFn(deleteJobRole);
+  const restoreFn = useServerFn(restoreRoleDefaults);
   const qc = useQueryClient();
 
   const bundleQ = useQuery<AccessBundle>({
@@ -193,6 +195,15 @@ export function PermissionsMatrix() {
     onError: (err: Error) => toast.error(err.message ?? "Falha ao excluir cargo"),
   });
 
+  const restoreMut = useMutation({
+    mutationFn: (v: { role_id: string }) => restoreFn({ data: v }),
+    onSuccess: (res) => {
+      invalidateAll();
+      toast.success(`Padrões restaurados (${(res as { count: number }).count} permissões).`);
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Falha ao restaurar padrões"),
+  });
+
   const modulesWithData = useMemo(() => {
     const present = new Set((bundleQ.data?.permissions ?? []).map((p) => p.module));
     return MODULE_ORDER.filter((m) => present.has(m));
@@ -217,7 +228,7 @@ export function PermissionsMatrix() {
   }, [filteredPerms]);
 
   const roles = useMemo(() => bundleQ.data?.job_roles ?? [], [bundleQ.data]);
-  const hasCustomRoles = roles.some((r) => !r.is_system);
+  
 
   if (bundleQ.isLoading || matrixQ.isLoading) {
     return (
@@ -257,16 +268,6 @@ export function PermissionsMatrix() {
         </Button>
       </div>
 
-      {!hasCustomRoles && (
-        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm flex items-start gap-2">
-          <Info className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-          <div className="flex-1">
-            Todos os cargos exibidos são padrão do sistema e não podem ser editados. Crie um novo
-            cargo ou duplique um existente para personalizar permissões.
-          </div>
-        </div>
-      )}
-
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -278,16 +279,24 @@ export function PermissionsMatrix() {
       </div>
 
       <div className="rounded-md border overflow-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 sticky top-0 z-10">
+        <table className="w-full text-sm border-separate border-spacing-0">
+          <thead className="bg-muted/40">
             <tr>
-              <th className="text-left p-2 min-w-[360px] font-medium">Recurso / Ação</th>
+              <th className="sticky left-0 top-0 z-40 bg-muted/40 text-left p-2 min-w-[360px] font-medium border-r border-b">
+                Recurso / Ação
+              </th>
               {roles.map((r) => (
-                <th key={r.id} className="p-2 text-center font-medium whitespace-nowrap">
+                <th
+                  key={r.id}
+                  className="sticky top-0 z-30 bg-muted/40 p-2 text-center font-medium whitespace-nowrap border-b"
+                >
                   <div className="flex items-center justify-center gap-1">
                     <span>{r.name}</span>
                     {r.is_system ? (
-                      <Lock className="h-3 w-3 text-muted-foreground" aria-label="Cargo do sistema" />
+                      <Lock
+                        className="h-3 w-3 text-muted-foreground"
+                        aria-label="Cargo padrão do sistema"
+                      />
                     ) : null}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -310,6 +319,15 @@ export function PermissionsMatrix() {
                           <Copy className="h-4 w-4 mr-2" />
                           Duplicar
                         </DropdownMenuItem>
+                        {r.is_system && (
+                          <DropdownMenuItem
+                            disabled={restoreMut.isPending}
+                            onClick={() => restoreMut.mutate({ role_id: r.id })}
+                          >
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Restaurar padrões
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem
                           disabled={r.is_system}
                           onClick={() => {
@@ -338,17 +356,17 @@ export function PermissionsMatrix() {
           <tbody>
             {Object.entries(grouped).map(([resource, perms]) => (
               <Fragment key={`grp-${resource}`}>
-                <tr className="bg-muted/20">
+                <tr>
                   <td
                     colSpan={roles.length + 1}
-                    className="p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground"
+                    className="sticky left-0 z-20 bg-muted/20 p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground border-b border-r"
                   >
                     {resource}
                   </td>
                 </tr>
                 {perms.map((p) => (
-                  <tr key={p.key} className="border-t hover:bg-muted/20">
-                    <td className="p-2">
+                  <tr key={p.key} className="hover:bg-muted/20">
+                    <td className="sticky left-0 z-10 bg-background p-2 border-b border-r">
                       <div className="grid grid-cols-[80px_104px_minmax(0,1fr)] items-center gap-2">
                         <Badge
                           variant="outline"
@@ -367,12 +385,11 @@ export function PermissionsMatrix() {
                     </td>
                     {roles.map((r) => {
                       const granted = isGranted(r.id, p.key);
-                      const disabled = r.is_system || toggleMut.isPending;
                       return (
-                        <td key={r.id} className="p-2 text-center">
+                        <td key={r.id} className="p-2 text-center border-b">
                           <Checkbox
                             checked={granted}
-                            disabled={disabled}
+                            disabled={toggleMut.isPending}
                             onCheckedChange={(v) =>
                               toggleMut.mutate({
                                 role_id: r.id,
@@ -400,14 +417,12 @@ export function PermissionsMatrix() {
         </table>
       </div>
 
-      {roles.some((r) => !r.is_system) && filteredPerms.length > 0 && (
+      {roles.length > 0 && filteredPerms.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-2 border-t">
           <span className="text-xs text-muted-foreground self-center mr-2">
             Aplicar em massa (módulo atual):
           </span>
-          {roles
-            .filter((r) => !r.is_system)
-            .map((r) => (
+          {roles.map((r) => (
               <div key={r.id} className="flex items-center gap-1">
                 <span className="text-xs">{r.name}</span>
                 <Button

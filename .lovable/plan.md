@@ -1,99 +1,78 @@
-# Fase 3 — Estender assertPermission aos handlers restantes de PSA
+## Objetivo
 
-## Contexto
+Corrigir dois problemas em `/settings/permissions`:
 
-A Fase 1 aplicou RLS RESTRICTIVE em todas as tabelas dos módulos PSA (proteção real do banco). A Fase 2 aplicou `assertPermission` nos handlers principais de **contracts, projects (core), people (core), ats jobs e ats candidates**.
+1. Ao rolar horizontalmente, a coluna "Recurso / Ação" desaparece — o usuário perde a referência do que está marcando.
+2. Cargos de sistema estão totalmente bloqueados; o usuário quer poder editá-los, com um botão "Restaurar padrões" para desfazer.
 
-Restam ~15 arquivos de server functions com mutações que hoje contam apenas com RLS — funciona, mas devolve erros PostgREST crus em vez de mensagens PT-BR amigáveis e não registra auditoria em `access_audit_log`.
-
-O objetivo desta fase é **paridade de UX + defense-in-depth** nos módulos restantes, sem alterar RLS nem lógica de negócio.
+---
 
 ## Escopo
 
-### TechService (2 arquivos)
-- `src/lib/services.functions.ts` — `createService`, `updateService`, `deleteService`, `activateService`.
-- `src/lib/kb.functions.ts` — `upsertKbCategory`, `deleteKbCategory`, `upsertKbArticle`, `deleteKbArticle`, `seedStarterKb`.
+Arquivos alterados:
+- `src/components/access-control/permissions-matrix.tsx` — sticky column + habilitar edição de cargos de sistema + botão "Restaurar padrões".
+- `src/lib/access-control/role-bundle.functions.ts` — remover bloqueio de `is_system` nas mutations de permissão; adicionar server function `restoreRoleDefaults`.
+- 1 migration nova — snapshot da configuração padrão de cada cargo de sistema em uma nova tabela `public.job_role_default_permissions (role_id, permission_key)`, populada a partir do estado atual (`permission_set_items` das bundles vinculadas aos cargos `is_system`). Isso serve como fonte de verdade para o restore.
 
-### TechPeople sub-módulos (7 arquivos)
-- `allocations.functions.ts` — CRUD de alocações.
-- `benefits.functions.ts` — CRUD de benefícios.
-- `documents.functions.ts` — CRUD de documentos (com atenção à sensibilidade PII).
-- `performance.functions.ts` — goals, reviews, 1:1s.
-- `wellbeing.functions.ts` — incidentes e avaliações psicossociais.
-- `timesheet.functions.ts` — apontamentos e aprovações.
-- `onboarding.functions.ts` — templates, planos, tarefas, offboarding.
+Fora do escopo: renomear/excluir cargos de sistema (permanecem bloqueados — só permissões passam a ser editáveis), alterar catálogo de `permissions`, RLS.
 
-### TechHire complementares (1 arquivo)
-- `src/lib/ats/candidate-detail.functions.ts` — `removeCandidateFromPool` e handlers auxiliares que fazem write.
+---
 
-### TechService — Tickets (writes espalhados)
-- `src/lib/tickets-notify.functions.ts`
-- `src/lib/live-chat.functions.ts` (writes em `tickets` e `live_chat_messages`)
-- `src/lib/portal.functions.ts` (portal externo — checar se aplica RBAC ou é público)
+## Mudanças
 
-## Padrão a aplicar
+### 1. Sticky da 1ª coluna (UX)
 
-Idêntico ao usado na Fase 2:
+Na tabela em `permissions-matrix.tsx`:
+- Adicionar `sticky left-0 z-20 bg-background` na `<th>` "Recurso / Ação" e nas `<td>` correspondentes de cada linha.
+- Cabeçalho do grupo (linha do resource) recebe `sticky left-0 bg-muted/40 z-20` na célula visível.
+- Ajustar `z-index` do `thead` para que sticky vertical + horizontal coexistam (topo `z-30`, célula canto `z-40`).
+- Container mantém `overflow-auto`; adicionar `border-r` sutil na coluna sticky para separação visual durante o scroll.
 
-```ts
-import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+### 2. Edição de cargos de sistema
 
-// dentro do .handler():
-const workspaceId = await getActiveWorkspaceId(supabase, userId);
-await assertAnyPermission(supabase, userId, workspaceId, [
-  "<módulo>.<recurso>.<ação>.own",
-  "<módulo>.<recurso>.<ação>.workspace",
-]);
+- `role-bundle.functions.ts`: remover a chamada `assertRoleEditable` em `setRolePermission` e `bulkSetRolePermissions` (mantê-la apenas em `renameJobRole` e `deleteJobRole`, pois nome/exclusão continuam bloqueados).
+- `ensureBundle` já funciona para qualquer `role_id` — cria uma bundle de propriedade do usuário atual, sem tocar em registros do sistema.
+- Na UI: remover `disabled={r.is_system}` dos checkboxes e das barras de "Conceder/Remover todas". Remover o banner amarelo "todos os cargos são padrão…". Manter o cadeado no header como indicador visual de que o cargo é do sistema (renomear/excluir continuam bloqueados no dropdown).
+
+### 3. Restaurar padrões
+
+**Migration:**
+```sql
+CREATE TABLE public.job_role_default_permissions (
+  role_id uuid REFERENCES public.job_roles(id) ON DELETE CASCADE,
+  permission_key text REFERENCES public.permissions(key) ON DELETE CASCADE,
+  PRIMARY KEY (role_id, permission_key)
+);
+GRANT SELECT ON public.job_role_default_permissions TO authenticated;
+GRANT ALL ON public.job_role_default_permissions TO service_role;
+ALTER TABLE public.job_role_default_permissions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "read defaults" ON public.job_role_default_permissions
+  FOR SELECT TO authenticated USING (true);
+
+-- Snapshot do estado atual dos cargos de sistema
+INSERT INTO public.job_role_default_permissions (role_id, permission_key)
+SELECT DISTINCT jrs.role_id, psi.permission_key
+FROM public.job_roles jr
+JOIN public.job_role_sets jrs ON jrs.role_id = jr.id
+JOIN public.permission_set_items psi ON psi.set_id = jrs.set_id
+WHERE jr.is_system = true
+ON CONFLICT DO NOTHING;
 ```
 
-Regras:
-- **create** → `.create.own` (ou `.create.own` + `.update.workspace` quando não existir `.create.workspace`).
-- **update** → `.update.own` + `.update.workspace`.
-- **delete** → `.delete.workspace`.
-- **approve/publish/assign** → chave específica do domínio.
+**Server function `restoreRoleDefaults`** em `role-bundle.functions.ts`:
+- Input: `{ role_id }`.
+- Se o cargo não é `is_system`, erro amigável ("Restauração disponível apenas para cargos padrão").
+- Lê defaults da nova tabela.
+- Recria a bundle do usuário (`ensureBundle`): deleta todos os `permission_set_items` da bundle e insere apenas as chaves default.
+- Retorna `{ ok, count }`.
 
-Handlers de **leitura** (`list*`, `get*`) permanecem sem asserção — RLS já filtra os resultados; adicionar seria redundante e degradaria UX (tela em branco vs. lista filtrada).
+**UI:** novo item "Restaurar padrões" no `DropdownMenu` do cargo, visível apenas quando `r.is_system`. Confirmação inline via toast/mutation. Invalida `["access", "matrix"]`.
 
-## Pré-requisitos (checagem antes de codificar)
+---
 
-1. Confirmar que todas as chaves de permissão já existem em `public.permissions` para os recursos-alvo (`techpeople.allocations.*`, `techpeople.benefits.*`, `techpeople.performance.goals.*`, `techpeople.performance.reviews.*`, `techpeople.performance.one_on_ones.*`, `techpeople.wellbeing.incidents.*`, `techpeople.wellbeing.assessments.*`, `techpeople.timesheet.*`, `techpeople.onboarding.*`, `techservice.services.*`, `techservice.kb.*`, `techservice.tickets.*`).
-2. Para chaves faltantes, **criar migration** que:
-   - Insere as chaves em `public.permissions`.
-   - Concede a cada `system_role` do módulo o tier apropriado (Admin=workspace, Manager=workspace, Viewer=view, Own=own) — seguindo o padrão já usado nos módulos PSA.
-3. Confirmar semântica de `owner_id` em cada tabela nova alcançada (workspace_id vs auth.uid()).
+## Validação manual
 
-## Fora do escopo
-
-- Alterar RLS já aplicada na Fase 1.
-- Alterar lógica de negócio dos handlers.
-- Adicionar RBAC a rotas públicas do portal (`portal.functions.ts` só se comprovadamente autenticado).
-- Refatorar UX ou componentes.
-- `analytics.functions.ts`, `my-team.functions.ts`, `contract-margin.functions.ts`, `finance-sync.functions.ts` (somente leitura ou jobs internos).
-
-## Entregas
-
-1. **Migration** (se necessário) adicionando chaves de permissão faltantes + seed de bundles.
-2. **Edição de ~12 arquivos** de server functions adicionando `assertAnyPermission` em cada mutação.
-3. **Typecheck** limpo (`bunx tsgo --noEmit`).
-4. **Relatório final** listando arquivos alterados, chaves de permissão adicionadas, e handlers agora protegidos vs. handlers deixados apenas com RLS (com justificativa).
-
-## Validação manual sugerida
-
-1. Login como usuário `viewer` → tentar criar/editar/deletar em Services, KB, People (goals, reviews, incidents, timesheet, onboarding), Candidatos → esperar toast **"Permissão negada: ..."** (HTTP 403).
-2. Verificar registro em `access_audit_log` com `action='permission_denied'`.
-3. Login como admin → todas as operações devem passar.
-
-## Riscos
-
-- Usuários legados sem `job_role` ou sem cargo mapeado para o novo recurso podem ser bloqueados. Mitigar rodando query de auditoria antes do deploy para identificar quem ficaria sem permissão.
-- `onboarding.functions.ts` tem 13 handlers com muitas transições de estado — risco maior de quebra; deve ser o último a ser modificado, com revisão dedicada.
-
-## Sub-fases sugeridas (execução incremental)
-
-- **3.1** Services + KB (5 handlers).
-- **3.2** People / allocations + benefits + documents (16 handlers).
-- **3.3** People / performance + wellbeing + timesheet (22 handlers).
-- **3.4** People / onboarding (13 handlers).
-- **3.5** Tickets writes (portal, live-chat, notify).
-
-Cada sub-fase entrega isoladamente: migration (se necessário) → asserts → typecheck → relatório.
+1. Rolar horizontalmente a matriz — coluna "Recurso / Ação" permanece visível.
+2. Marcar/desmarcar permissão em um cargo de sistema (ex.: "Admin") — persiste após reload.
+3. Clicar "Restaurar padrões" no dropdown do cargo de sistema — permissões voltam ao seed original.
+4. Cargos personalizados continuam funcionando (criar, duplicar, renomear, excluir).
