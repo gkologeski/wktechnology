@@ -265,7 +265,7 @@ export const duplicateJobRole = createServerFn({ method: "POST" })
         description: source.description,
         color: source.color,
         is_system: false,
-        data_scope: source.data_scope ?? "workspace",
+        data_scope: (source.data_scope as "own" | "team" | "workspace" | "custom") ?? "workspace",
       })
       .select("id")
       .single();
