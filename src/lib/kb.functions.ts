@@ -31,6 +31,7 @@ export const listKbCategoriesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_VIEW);
     const { data, error } = await supabaseAdmin
       .from("kb_categories")
       .select("id, name, slug, description, position")
