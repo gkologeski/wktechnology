@@ -4,6 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
 const typeEnum = z.enum(["one_time", "recurring", "usage_based", "milestone"]);
 const statusEnum = z.enum(["pending", "active", "paused", "cancelled", "completed"]);
