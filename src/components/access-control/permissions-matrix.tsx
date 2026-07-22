@@ -417,14 +417,12 @@ export function PermissionsMatrix() {
         </table>
       </div>
 
-      {roles.some((r) => !r.is_system) && filteredPerms.length > 0 && (
+      {roles.length > 0 && filteredPerms.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-2 border-t">
           <span className="text-xs text-muted-foreground self-center mr-2">
             Aplicar em massa (módulo atual):
           </span>
-          {roles
-            .filter((r) => !r.is_system)
-            .map((r) => (
+          {roles.map((r) => (
               <div key={r.id} className="flex items-center gap-1">
                 <span className="text-xs">{r.name}</span>
                 <Button
