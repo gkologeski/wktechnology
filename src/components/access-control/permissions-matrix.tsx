@@ -1,7 +1,7 @@
 // Unified matrix editor: Role × (Resource × Action × Scope).
 // Reads catalog + roles via getAccessBundle; toggles bundles via setRolePermission.
-// System roles are rendered as read-only.
-import { useMemo, useState } from "react";
+// System roles are read-only. Custom roles can be created / duplicated / renamed / deleted.
+import { useMemo, useState, Fragment } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
@@ -9,6 +9,10 @@ import {
   setRolePermission,
   bulkSetRolePermissions,
   getMatrixState,
+  createJobRole,
+  duplicateJobRole,
+  renameJobRole,
+  deleteJobRole,
 } from "@/lib/access-control/role-bundle.functions";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,9 +20,23 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Lock, Search } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { Label } from "@/components/ui/label";
+import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, Info } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 
 export const MODULE_META: Record<string, { label: string; tone: string }> = {
   techsales: { label: "TechSales", tone: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
@@ -60,11 +78,17 @@ const MODULE_ORDER = [
   "system",
 ];
 
+type Role = AccessBundle["job_roles"][number];
+
 export function PermissionsMatrix() {
   const getBundleFn = useServerFn(getAccessBundle);
   const getMatrixFn = useServerFn(getMatrixState);
   const setPermFn = useServerFn(setRolePermission);
   const bulkFn = useServerFn(bulkSetRolePermissions);
+  const createRoleFn = useServerFn(createJobRole);
+  const duplicateRoleFn = useServerFn(duplicateJobRole);
+  const renameRoleFn = useServerFn(renameJobRole);
+  const deleteRoleFn = useServerFn(deleteJobRole);
   const qc = useQueryClient();
 
   const bundleQ = useQuery<AccessBundle>({
@@ -78,6 +102,20 @@ export function PermissionsMatrix() {
 
   const [activeModule, setActiveModule] = useState<string>("techsales");
   const [search, setSearch] = useState("");
+
+  // Dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createName, setCreateName] = useState("");
+  const [createDesc, setCreateDesc] = useState("");
+  const [renameTarget, setRenameTarget] = useState<Role | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
+  const [duplicateTarget, setDuplicateTarget] = useState<Role | null>(null);
+  const [duplicateName, setDuplicateName] = useState("");
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["access"] });
+  };
 
   const toggleMut = useMutation({
     mutationFn: (v: { role_id: string; permission_key: string; granted: boolean }) =>
@@ -99,19 +137,60 @@ export function PermissionsMatrix() {
       if (ctx?.prev) qc.setQueryData(["access", "matrix"], ctx.prev);
       toast.error(err.message ?? "Falha ao atualizar permissão");
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["access"] });
-    },
+    onSuccess: invalidateAll,
   });
 
   const bulkMut = useMutation({
     mutationFn: (v: { role_id: string; keys: string[]; granted: boolean }) =>
       bulkFn({ data: v }),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["access"] });
+      invalidateAll();
       toast.success("Permissões atualizadas.");
     },
     onError: (err: Error) => toast.error(err.message ?? "Falha ao atualizar em massa"),
+  });
+
+  const createMut = useMutation({
+    mutationFn: (v: { name: string; description?: string | null }) => createRoleFn({ data: v }),
+    onSuccess: () => {
+      invalidateAll();
+      setCreateOpen(false);
+      setCreateName("");
+      setCreateDesc("");
+      toast.success("Cargo criado.");
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Falha ao criar cargo"),
+  });
+
+  const duplicateMut = useMutation({
+    mutationFn: (v: { source_role_id: string; name?: string }) => duplicateRoleFn({ data: v }),
+    onSuccess: () => {
+      invalidateAll();
+      setDuplicateTarget(null);
+      setDuplicateName("");
+      toast.success("Cargo duplicado.");
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Falha ao duplicar cargo"),
+  });
+
+  const renameMut = useMutation({
+    mutationFn: (v: { role_id: string; name: string }) => renameRoleFn({ data: v }),
+    onSuccess: () => {
+      invalidateAll();
+      setRenameTarget(null);
+      toast.success("Cargo renomeado.");
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Falha ao renomear cargo"),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (v: { role_id: string }) => deleteRoleFn({ data: v }),
+    onSuccess: () => {
+      invalidateAll();
+      setDeleteTarget(null);
+      toast.success("Cargo excluído.");
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Falha ao excluir cargo"),
   });
 
   const modulesWithData = useMemo(() => {
@@ -131,7 +210,6 @@ export function PermissionsMatrix() {
     );
   }, [bundleQ.data, activeModule, search]);
 
-  // Group by resource for readability.
   const grouped = useMemo(() => {
     const g: Record<string, typeof filteredPerms> = {};
     for (const p of filteredPerms) (g[p.resource] ??= []).push(p);
@@ -139,6 +217,7 @@ export function PermissionsMatrix() {
   }, [filteredPerms]);
 
   const roles = useMemo(() => bundleQ.data?.job_roles ?? [], [bundleQ.data]);
+  const hasCustomRoles = roles.some((r) => !r.is_system);
 
   if (bundleQ.isLoading || matrixQ.isLoading) {
     return (
@@ -161,15 +240,32 @@ export function PermissionsMatrix() {
 
   return (
     <div className="space-y-4">
-      <Tabs value={activeModule} onValueChange={setActiveModule}>
-        <TabsList className="flex-wrap h-auto">
-          {modulesWithData.map((m) => (
-            <TabsTrigger key={m} value={m}>
-              {MODULE_META[m]?.label ?? m}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Tabs value={activeModule} onValueChange={setActiveModule} className="min-w-0">
+          <TabsList className="flex-wrap h-auto">
+            {modulesWithData.map((m) => (
+              <TabsTrigger key={m} value={m}>
+                {MODULE_META[m]?.label ?? m}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <Button size="sm" onClick={() => setCreateOpen(true)} className="shrink-0">
+          <Plus className="h-4 w-4 mr-1" />
+          Novo cargo
+        </Button>
+      </div>
+
+      {!hasCustomRoles && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3 text-sm flex items-start gap-2">
+          <Info className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+          <div className="flex-1">
+            Todos os cargos exibidos são padrão do sistema e não podem ser editados. Crie um novo
+            cargo ou duplique um existente para personalizar permissões.
+          </div>
+        </div>
+      )}
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -185,12 +281,55 @@ export function PermissionsMatrix() {
         <table className="w-full text-sm">
           <thead className="bg-muted/40 sticky top-0 z-10">
             <tr>
-              <th className="text-left p-2 min-w-[280px] font-medium">Recurso / Ação</th>
+              <th className="text-left p-2 min-w-[360px] font-medium">Recurso / Ação</th>
               {roles.map((r) => (
                 <th key={r.id} className="p-2 text-center font-medium whitespace-nowrap">
                   <div className="flex items-center justify-center gap-1">
                     <span>{r.name}</span>
-                    {r.is_system && <Lock className="h-3 w-3 text-muted-foreground" />}
+                    {r.is_system ? (
+                      <Lock className="h-3 w-3 text-muted-foreground" aria-label="Cargo do sistema" />
+                    ) : null}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          aria-label={`Ações para ${r.name}`}
+                        >
+                          <MoreVertical className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setDuplicateTarget(r);
+                            setDuplicateName(`${r.name} (cópia)`);
+                          }}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Duplicar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={r.is_system}
+                          onClick={() => {
+                            setRenameTarget(r);
+                            setRenameValue(r.name);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Renomear
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={r.is_system}
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setDeleteTarget(r)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </th>
               ))}
@@ -198,23 +337,32 @@ export function PermissionsMatrix() {
           </thead>
           <tbody>
             {Object.entries(grouped).map(([resource, perms]) => (
-              <>
-                <tr key={`hdr-${resource}`} className="bg-muted/20">
-                  <td colSpan={roles.length + 1} className="p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground">
+              <Fragment key={`grp-${resource}`}>
+                <tr className="bg-muted/20">
+                  <td
+                    colSpan={roles.length + 1}
+                    className="p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground"
+                  >
                     {resource}
                   </td>
                 </tr>
                 {perms.map((p) => (
                   <tr key={p.key} className="border-t hover:bg-muted/20">
                     <td className="p-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px]">
+                      <div className="grid grid-cols-[80px_104px_minmax(0,1fr)] items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] w-full justify-center font-normal"
+                        >
                           {ACTION_LABEL[p.action] ?? p.action}
                         </Badge>
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] w-full justify-center font-normal"
+                        >
                           {SCOPE_LABEL[p.scope] ?? p.scope}
                         </Badge>
-                        <span className="text-foreground">{p.label_pt}</span>
+                        <span className="text-foreground truncate">{p.label_pt}</span>
                       </div>
                     </td>
                     {roles.map((r) => {
@@ -239,7 +387,7 @@ export function PermissionsMatrix() {
                     })}
                   </tr>
                 ))}
-              </>
+              </Fragment>
             ))}
             {filteredPerms.length === 0 && (
               <tr>
@@ -254,7 +402,9 @@ export function PermissionsMatrix() {
 
       {roles.some((r) => !r.is_system) && filteredPerms.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-2 border-t">
-          <span className="text-xs text-muted-foreground self-center mr-2">Aplicar em massa (módulo atual):</span>
+          <span className="text-xs text-muted-foreground self-center mr-2">
+            Aplicar em massa (módulo atual):
+          </span>
           {roles
             .filter((r) => !r.is_system)
             .map((r) => (
@@ -294,6 +444,166 @@ export function PermissionsMatrix() {
             ))}
         </div>
       )}
+
+      {/* Create dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo cargo</DialogTitle>
+            <DialogDescription>
+              Crie um cargo personalizado para atribuir permissões específicas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="role-name">Nome</Label>
+              <Input
+                id="role-name"
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
+                placeholder="Ex.: Coordenador Comercial"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="role-desc">Descrição (opcional)</Label>
+              <Input
+                id="role-desc"
+                value={createDesc}
+                onChange={(e) => setCreateDesc(e.target.value)}
+                placeholder="Como esse cargo é utilizado"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!createName.trim() || createMut.isPending}
+              onClick={() =>
+                createMut.mutate({
+                  name: createName.trim(),
+                  description: createDesc.trim() || null,
+                })
+              }
+            >
+              Criar cargo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate dialog */}
+      <Dialog
+        open={!!duplicateTarget}
+        onOpenChange={(o) => {
+          if (!o) setDuplicateTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Duplicar cargo</DialogTitle>
+            <DialogDescription>
+              Cria um cargo editável a partir de <strong>{duplicateTarget?.name}</strong>, copiando
+              as permissões concedidas.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Label htmlFor="dup-name">Nome do novo cargo</Label>
+            <Input
+              id="dup-name"
+              value={duplicateName}
+              onChange={(e) => setDuplicateName(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDuplicateTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!duplicateName.trim() || duplicateMut.isPending}
+              onClick={() =>
+                duplicateTarget &&
+                duplicateMut.mutate({
+                  source_role_id: duplicateTarget.id,
+                  name: duplicateName.trim(),
+                })
+              }
+            >
+              Duplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename dialog */}
+      <Dialog
+        open={!!renameTarget}
+        onOpenChange={(o) => {
+          if (!o) setRenameTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Renomear cargo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Label htmlFor="ren-name">Nome</Label>
+            <Input
+              id="ren-name"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={!renameValue.trim() || renameMut.isPending}
+              onClick={() =>
+                renameTarget &&
+                renameMut.mutate({ role_id: renameTarget.id, name: renameValue.trim() })
+              }
+            >
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete dialog */}
+      <Dialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir cargo</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir <strong>{deleteTarget?.name}</strong>? Esta ação
+              remove todas as permissões atribuídas a este cargo.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleteMut.isPending}
+              onClick={() => deleteTarget && deleteMut.mutate({ role_id: deleteTarget.id })}
+            >
+              Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
