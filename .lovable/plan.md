@@ -1,59 +1,41 @@
 ## Escopo
 
-Em `/settings/permissions`, dois problemas:
+1. Substituir `/home/access` pela nova matriz `/settings/permissions` (redirect definitivo).
+2. Tornar `/settings/permissions` visível no sidebar do ERP e na página `/settings` (grupo "Pessoas & Acesso").
+3. Atualizar demais pontos que ainda apontam para `/home/access` (GlobalSearch, atalho da Home, menu-config).
 
-1. **Alinhamento**: na primeira coluna (Recurso / Ação), os dois badges (Ação e Escopo) têm larguras variáveis, então o rótulo textual "vaza" para posições diferentes em cada linha, dando aparência desalinhada.
-2. **Sem edição possível**: consultei `public.job_roles` e todos os 10 cargos existentes têm `is_system=true`. A matriz desabilita o checkbox para cargos de sistema (`disabled = r.is_system || toggleMut.isPending`), então nenhum toggle é permitido. Não existe hoje UI para criar cargos customizados nem para duplicar um cargo de sistema, então o usuário fica travado.
+Sem mudanças de banco, RLS, server functions ou lógica de negócio.
 
-## Correções
+## Alterações
 
-### 1. Alinhar colunas dentro da célula Recurso/Ação
-Em `src/components/access-control/permissions-matrix.tsx`, substituir o `flex items-center gap-2` por um grid com trilhas fixas para os badges, mantendo o rótulo em coluna própria:
+### 1. Aposentar `/home/access`
+- `src/routes/_authenticated/home.access.tsx`: reduzir a arquivo apenas com `beforeLoad` que faz `redirect({ to: "/settings/permissions", replace: true })`, mesmo padrão já usado em `settings.roles.index.tsx`. Toda a UI antiga (abas Cargos, Pacotes, Matriz, Governance, Atribuições) fica inacessível pela UI — a nova matriz cobre Cargo × Recurso × Ação × Escopo por módulo, que é o caso de uso principal.
+- Não deletar o arquivo para não invalidar links salvos/bookmarks; redirect basta.
 
-```
-grid grid-cols-[72px_92px_minmax(0,1fr)] items-center gap-2
-```
+### 2. Sidebar do ERP (grupo Workspace)
+- `src/lib/menu-config-erp.ts`: adicionar item "Permissões" ao grupo `Workspace`, apontando para `/settings/permissions`, com ícone `Shield` (lucide-react). Ordem: acima de "Configurações".
 
-- Badge de Ação com `w-full justify-center`.
-- Badge de Escopo com `w-full justify-center`.
-- Rótulo com `truncate`.
+### 3. Página `/settings` (grupo Pessoas & Acesso)
+- `src/routes/_authenticated/settings.tsx`: no grupo "Pessoas & Acesso", substituir o item atual `{ to: "/home/access", label: "Controle de Acesso", icon: Shield, need: "admin" }` por `{ to: "/settings/permissions", label: "Permissões", icon: Shield, need: "admin" }`. Manter "Política de acesso".
 
-Resultado: badges e textos alinhados verticalmente entre linhas.
+### 4. Menu principal e atalhos legados
+- `src/lib/menu-config.ts` (linha ~230): mesma troca — `/home/access` → `/settings/permissions`, label "Permissões".
+- `src/components/global-search/commands.ts` (linha 38): comando `nav-access` passa a apontar para `/settings/permissions`, label "Permissões", keywords mantidas.
+- `src/routes/_authenticated/home.index.tsx` (SHORTCUTS, linha ~198): atalho "Controle de Acesso" passa a apontar para `/settings/permissions` e label "Permissões".
 
-Ajuste secundário: também aplicar `grid-cols-[minmax(0,1fr)_auto]` ao header do módulo/pesquisa se necessário (verificar no build).
-
-### 2. Permitir edição criando/duplicando cargos
-No mesmo componente, adicionar uma barra de ações acima da tabela:
-
-- **Novo cargo**: abre um pequeno dialog (nome, descrição, cor opcional) e cria uma `job_role` custom (`is_system=false`, `owner_id = auth.uid()`, `data_scope='workspace'`).
-- **Duplicar**: em cada coluna de cargo de sistema, ícone "copiar" que cria uma cópia editável (nome "<Original> (cópia)", `is_system=false`) e replica as permissões atualmente concedidas via `bulkSetRolePermissions`.
-- **Renomear/Excluir** cargos não-sistema (menu de contexto na coluna).
-
-Backend novo em `src/lib/access-control/role-bundle.functions.ts`:
-- `createJobRole({ name, description?, color? })`
-- `duplicateJobRole({ source_role_id, name? })` — copia permissões concedidas do cargo fonte (usa `getMatrixState` internamente) para o novo bundle.
-- `renameJobRole({ role_id, name, description?, color? })` — bloqueia cargos de sistema.
-- `deleteJobRole({ role_id })` — bloqueia cargos de sistema e faz cascade seguro (remove `job_role_sets` + `permission_sets` do bundle órfão).
-
-Todas usam `requireSupabaseAuth` e delegam RLS ao Supabase (não usam `supabaseAdmin`). Chamada de `assertRoleEditable` reutilizada onde aplicável.
-
-### 3. Mensagem quando só há cargos de sistema
-Se `roles.every(r => r.is_system)`, exibir um banner discreto no topo:
-
-> "Todos os cargos exibidos são padrão do sistema e não podem ser editados. Crie um novo cargo ou duplique um existente para personalizar permissões."
-
-Com botões "Novo cargo" e "Duplicar cargo de sistema".
-
-## Não escopo
-
-- Não alterar catálogo de `permissions`, nem RLS de `job_roles`/`permission_sets` (assumindo policies existentes já permitem inserts do owner — se um insert falhar por RLS na execução, tratamos como issue separada).
-- Não alterar comportamento dos cargos de sistema (permanecem read-only e visíveis).
-- Nenhuma mudança em `access.functions.ts` além da tipagem, se necessário.
+### 5. Guarda de rota
+- `src/routes/_authenticated.tsx`: `ADMIN_ONLY` já cobre qualquer subrota de `/settings/*` via prefixo? Verificar — hoje lista rotas específicas de settings. Adicionar `"/settings/permissions"` a `ADMIN_ONLY` para preservar o `need: "admin"` do menu.
 
 ## Validação manual
 
-1. Abrir `/settings/permissions` → colunas Ação/Escopo/Rótulo alinhadas em todas as linhas.
-2. Clicar em "Novo cargo" → informar nome → cargo aparece como coluna editável.
-3. Marcar/desmarcar permissões → persiste (refresh mantém estado).
-4. "Duplicar" cargo Vendedor → nova coluna editável com as mesmas marcações do original.
-5. Cargos de sistema seguem com cadeado e checkboxes desabilitados.
+1. Acessar `/home/access` → redireciona para `/settings/permissions`.
+2. Sidebar do ERP mostra "Permissões" no grupo Workspace e navega para a matriz.
+3. `/settings` lista "Permissões" no grupo Pessoas & Acesso; item legado "Controle de Acesso" não aparece mais.
+4. Cmd+K → "permissões" / "cargos" / "acesso" abre `/settings/permissions`.
+5. Card "Controle de Acesso" da Home leva à nova matriz.
+6. Usuário não-admin recebe tela de "Acesso restrito" ao tentar abrir `/settings/permissions`.
+
+## Fora de escopo
+
+- Não excluir server functions/componentes usados só por `/home/access` (pacotes de permissão, governance tabs, atribuições por usuário). Ficam órfãos e podem ser removidos depois se confirmada não-utilização.
+- Nenhuma mudança em `permission_sets`, `job_role_sets`, RLS, catálogo de permissões ou UI da própria matriz.

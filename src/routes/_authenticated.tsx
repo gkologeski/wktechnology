@@ -41,6 +41,7 @@ const ADMIN_ONLY = [
   "/leads/import-hubspot",
   "/settings/mobile",
   "/settings/language",
+  "/settings/permissions",
 ];
 const MANAGER_PLUS = [
   "/settings/workflows",
