@@ -195,6 +195,15 @@ export function PermissionsMatrix() {
     onError: (err: Error) => toast.error(err.message ?? "Falha ao excluir cargo"),
   });
 
+  const restoreMut = useMutation({
+    mutationFn: (v: { role_id: string }) => restoreFn({ data: v }),
+    onSuccess: (res) => {
+      invalidateAll();
+      toast.success(`Padrões restaurados (${(res as { count: number }).count} permissões).`);
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Falha ao restaurar padrões"),
+  });
+
   const modulesWithData = useMemo(() => {
     const present = new Set((bundleQ.data?.permissions ?? []).map((p) => p.module));
     return MODULE_ORDER.filter((m) => present.has(m));
