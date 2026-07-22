@@ -214,6 +214,49 @@ function UsersPage() {
   const [editRole, setEditRole] = useState<TeamRole>("member");
   const [savingEdit, setSavingEdit] = useState(false);
 
+  // roles dialog
+  const [rolesDialog, setRolesDialog] = useState<Row | null>(null);
+  const [primaryRoleId, setPrimaryRoleId] = useState<string | null>(null);
+  const [extraRoleIds, setExtraRoleIds] = useState<string[]>([]);
+  const [extraSetIds, setExtraSetIds] = useState<string[]>([]);
+  const [savingRoles, setSavingRoles] = useState(false);
+
+  const openRolesDialog = (r: Row) => {
+    setRolesDialog(r);
+    setPrimaryRoleId(r.primary_role_id ?? null);
+    setExtraRoleIds(r.role_ids ?? []);
+    setExtraSetIds(r.extra_set_ids ?? []);
+  };
+
+  const closeRolesDialog = () => {
+    setRolesDialog(null);
+    setPrimaryRoleId(null);
+    setExtraRoleIds([]);
+    setExtraSetIds([]);
+  };
+
+  const handleSaveRoles = async () => {
+    if (!rolesDialog) return;
+    setSavingRoles(true);
+    try {
+      await setMemberRolesFn({
+        data: {
+          member_user_id: rolesDialog.user_id,
+          primary_role_id: primaryRoleId,
+          extra_role_ids: extraRoleIds,
+          extra_set_ids: extraSetIds,
+        },
+      });
+      toast.success("Cargos atualizados");
+      closeRolesDialog();
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar cargos");
+    } finally {
+      setSavingRoles(false);
+    }
+  };
+
   const openEdit = (r: Row) => {
     setEditing(r);
     setEditName(r.full_name || "");
