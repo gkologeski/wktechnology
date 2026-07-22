@@ -28,6 +28,9 @@ import { usePipelines } from "@/lib/pipelines";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
 import type { Deal } from "@/lib/db-types";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useAuth } from "@/lib/auth";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/deals/$id")({
