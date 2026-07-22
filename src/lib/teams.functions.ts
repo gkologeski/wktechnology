@@ -738,6 +738,7 @@ export const listWorkspacePermissionSets = createServerFn({ method: "GET" })
     const { data: sets, error: setsErr } = await supabaseAdmin
       .from("permission_sets")
       .select("id, name, module, description, is_system, owner_id")
+      .neq("module", "__bundle__")
       .or(`is_system.eq.true,and(is_system.eq.false,owner_id.eq.${workspace.created_by ?? userId})`)
       .order("module")
       .order("name");
