@@ -155,6 +155,16 @@ function UsersPage() {
     queryFn: () => listInvitesFn(),
   });
 
+  const { data: jobRoles = [] } = useQuery<RoleOption[]>({
+    queryKey: ["settings-teams", "job-roles"],
+    queryFn: () => listRolesFn(),
+  });
+
+  const { data: permissionSets = [] } = useQuery<SetOption[]>({
+    queryKey: ["settings-teams", "permission-sets"],
+    queryFn: () => listSetsFn(),
+  });
+
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | TeamRole>("all");
 
