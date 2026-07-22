@@ -454,9 +454,26 @@ export function DealDetailDrawer({
 
         <div className="border-t px-5 py-3 flex items-center justify-between bg-background">
           {!isNew ? (
-            <Button variant="ghost" size="sm" onClick={remove}>
-              <Trash2 className="h-4 w-4 mr-1" /> Excluir
-            </Button>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={remove}
+                      disabled={!canDelete}
+                      className="disabled:opacity-50"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" /> Excluir
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!canDelete && (
+                  <TooltipContent>Você não tem permissão para excluir este negócio.</TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           ) : (
             <span />
           )}
