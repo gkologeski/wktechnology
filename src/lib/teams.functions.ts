@@ -140,7 +140,7 @@ async function syncLegacyRole(workspaceId: string, userId: string, role: TeamRol
   );
 }
 
-/** Lista membros + email (do auth.users via admin). */
+/** Lista membros + email (do auth.users via admin) + cargos funcionais. */
 export const listTeamMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -191,6 +191,40 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       }),
     );
 
+    // Cargos funcionais (user_job_roles) e pacotes extras (user_permission_sets).
+    // owner_id nessas tabelas é o auth.uid do criador do workspace, então usamos
+    // supabaseAdmin para ler todos os membros do workspace.
+    const workspaceOwnerId = workspace.created_by ?? userId;
+    const { data: userJobRoles } = await supabaseAdmin
+      .from("user_job_roles")
+      .select("user_id, role_id, is_primary")
+      .eq("owner_id", workspaceOwnerId)
+      .in("user_id", ids);
+    const { data: userPermissionSets } = await supabaseAdmin
+      .from("user_permission_sets")
+      .select("user_id, set_id")
+      .eq("owner_id", workspaceOwnerId)
+      .in("user_id", ids);
+
+    const primaryRoleByUser = new Map<string, string>();
+    const roleIdsByUser = new Map<string, string[]>();
+    for (const r of (userJobRoles ?? []) as Array<{
+      user_id: string;
+      role_id: string;
+      is_primary: boolean;
+    }>) {
+      const arr = roleIdsByUser.get(r.user_id) ?? [];
+      arr.push(r.role_id);
+      roleIdsByUser.set(r.user_id, arr);
+      if (r.is_primary) primaryRoleByUser.set(r.user_id, r.role_id);
+    }
+    const extraSetIdsByUser = new Map<string, string[]>();
+    for (const s of (userPermissionSets ?? []) as Array<{ user_id: string; set_id: string }>) {
+      const arr = extraSetIdsByUser.get(s.user_id) ?? [];
+      arr.push(s.set_id);
+      extraSetIdsByUser.set(s.user_id, arr);
+    }
+
     const memberRows = (members ?? []).map((m) => ({
       id: `${m.workspace_id as string}:${m.user_id as string}`,
       user_id: m.user_id as string,
@@ -201,6 +235,9 @@ export const listTeamMembers = createServerFn({ method: "GET" })
       is_owner: (m.user_id as string) === userId,
       pending: !confirmedById.get(m.user_id as string),
       created_at: m.joined_at as string,
+      primary_role_id: primaryRoleByUser.get(m.user_id as string) ?? null,
+      role_ids: roleIdsByUser.get(m.user_id as string) ?? [],
+      extra_set_ids: extraSetIdsByUser.get(m.user_id as string) ?? [],
     }));
 
     return memberRows;
