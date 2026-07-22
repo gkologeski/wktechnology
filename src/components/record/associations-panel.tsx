@@ -215,8 +215,9 @@ function LeadContactsCard({ entityId }: { entityId: string }) {
                       </div>
                       <AssocItemActions
                         link={{ to: "/contacts/$id", params: { id: c.id } }}
-                        onRemove={unlinkContact}
+                        onUnlink={() => void unlinkContact()}
                       />
+
                     </div>
                   </li>
                 );
