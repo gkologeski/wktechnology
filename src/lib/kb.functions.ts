@@ -103,6 +103,7 @@ export const listKbArticlesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, KB_VIEW);
     const { data, error } = await supabaseAdmin
       .from("kb_articles")
       .select("id, title, slug, excerpt, category_id, published, published_at, views, updated_at")
