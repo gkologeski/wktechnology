@@ -225,6 +225,10 @@ export const activateService = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.update.workspace",
+      "techservice.services.update.own",
+    ]);
 
     const { data: svc, error: sErr } = await supabase
       .from("services")
