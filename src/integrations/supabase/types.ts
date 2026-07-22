@@ -15316,6 +15316,91 @@ export type Database = {
         }
         Relationships: []
       }
+      user_file_folders: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_file_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "user_file_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_files: {
+        Row: {
+          created_at: string
+          folder_id: string | null
+          id: string
+          is_public: boolean
+          mime_type: string | null
+          name: string
+          owner_id: string
+          public_token: string | null
+          size_bytes: number
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          is_public?: boolean
+          mime_type?: string | null
+          name: string
+          owner_id: string
+          public_token?: string | null
+          size_bytes: number
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          folder_id?: string | null
+          id?: string
+          is_public?: boolean
+          mime_type?: string | null
+          name?: string
+          owner_id?: string
+          public_token?: string | null
+          size_bytes?: number
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_files_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "user_file_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_grid_preferences: {
         Row: {
           created_at: string
@@ -17526,6 +17611,7 @@ export type Database = {
         Args: { _field: string; _resource: string; _user: string }
         Returns: Database["public"]["Enums"]["field_mode"]
       }
+      user_files_used_bytes: { Args: { uid: string }; Returns: number }
       user_has_permission:
         | { Args: { _perm: string; _user: string }; Returns: boolean }
         | {
