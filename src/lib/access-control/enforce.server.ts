@@ -48,6 +48,41 @@ export async function assertPermission(
   }
 }
 
+/**
+ * Assert que o usuário tem pelo menos UMA das permissões informadas.
+ * Útil quando .own OU .workspace concedem a ação.
+ */
+export async function assertAnyPermission(
+  supabase: SupabaseClient,
+  userId: string,
+  workspaceId: string,
+  permissionKeys: string[],
+): Promise<void> {
+  for (const key of permissionKeys) {
+    const { data } = await supabase.rpc("user_has_permission", {
+      _user_id: userId,
+      _workspace_id: workspaceId,
+      _permission_key: key,
+    });
+    if (data) return;
+  }
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("access_audit_log").insert({
+      workspace_id: workspaceId,
+      actor_id: userId,
+      action: "permission_denied",
+      entity_type: "permission",
+      details: { permission_keys: permissionKeys } as never,
+    } as never);
+  } catch {
+    /* ignore */
+  }
+  throw new PermissionDeniedError(permissionKeys.join(" | "));
+}
+
+
+
 
 /**
  * Retorna true/false sem lançar. Útil para lógica condicional server-side.
