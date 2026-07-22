@@ -177,7 +177,12 @@ export const updateService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => patchInput.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.update.workspace",
+      "techservice.services.update.own",
+    ]);
     const { data: row, error } = await supabase
       .from("services")
       .update(data.patch)
