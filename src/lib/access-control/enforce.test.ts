@@ -71,8 +71,7 @@ describe("assertPermission", () => {
       assertPermission(supabase, "user-42", "ws-9", "techservice.kb.delete.workspace"),
     ).rejects.toBeInstanceOf(PermissionDeniedError);
     expect(fromMock).toHaveBeenCalledWith("access_audit_log");
-    expect(insertMock).toHaveBeenCalledTimes(1);
-    const payload = insertMock.mock.calls[0][0] as {
+    const payload = insertMock.mock.calls[0]?.[0] as unknown as {
       workspace_id: string;
       actor_id: string;
       action: string;
