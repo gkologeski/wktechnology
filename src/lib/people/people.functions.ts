@@ -201,31 +201,51 @@ export const getPerson = createServerFn({ method: "POST" })
       cost_hour: number | null;
       monthly_cost: number | null;
       personal_doc: PersonDocMap;
-    } = { cost_hour: null, monthly_cost: null, personal_doc: {} };
+      bank: string | null;
+      bank_agency: string | null;
+      bank_account: string | null;
+      pix_key: string | null;
+      address: string | null;
+    } = {
+      cost_hour: null,
+      monthly_cost: null,
+      personal_doc: {},
+      bank: null,
+      bank_agency: null,
+      bank_account: null,
+      pix_key: null,
+      address: null,
+    };
 
     if (canViewSensitive) {
       const { data: sensRow, error: sensErr } = await supabase
         .from("people")
-        .select("cost_hour, monthly_cost, personal_doc")
+        .select("cost_hour, monthly_cost, personal_doc, bank, bank_agency, bank_account, pix_key, address")
         .eq("id", data.id)
         .maybeSingle();
       if (sensErr) throw new Error(sensErr.message);
       if (sensRow) {
+        const r = sensRow as Record<string, unknown>;
         sensitive = {
-          cost_hour: (sensRow as { cost_hour: number | null }).cost_hour,
-          monthly_cost: (sensRow as { monthly_cost: number | null }).monthly_cost,
-          personal_doc:
-            ((sensRow as { personal_doc: PersonDocMap | null }).personal_doc ?? {}) as PersonDocMap,
+          cost_hour: (r.cost_hour as number | null) ?? null,
+          monthly_cost: (r.monthly_cost as number | null) ?? null,
+          personal_doc: ((r.personal_doc as PersonDocMap | null) ?? {}) as PersonDocMap,
+          bank: (r.bank as string | null) ?? null,
+          bank_agency: (r.bank_agency as string | null) ?? null,
+          bank_account: (r.bank_account as string | null) ?? null,
+          pix_key: (r.pix_key as string | null) ?? null,
+          address: (r.address as string | null) ?? null,
         };
       }
     }
 
     return {
-      ...(base as Omit<PersonRow, "cost_hour" | "monthly_cost" | "personal_doc">),
+      ...(base as Omit<PersonRow, "cost_hour" | "monthly_cost" | "personal_doc" | "bank" | "bank_agency" | "bank_account" | "pix_key" | "address">),
       ...sensitive,
       can_view_sensitive: canViewSensitive,
     } as PersonRow;
   });
+
 
 /**
  * Cria ou atualiza uma pessoa. Apenas admin do workspace tem write (RLS).
