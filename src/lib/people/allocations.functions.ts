@@ -139,6 +139,7 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       person_id: data.person_id,
       contract_id: data.contract_id ?? null,
       project_id: data.project_id ?? null,
+      manager_id: data.manager_id ?? null,
       role_title: data.role_title ?? null,
       allocation_pct: data.allocation_pct,
       billable_rate: data.billable_rate ?? null,
