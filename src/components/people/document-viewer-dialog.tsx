@@ -134,7 +134,7 @@ export function PersonDocumentViewerDialog({ open, onOpenChange, document }: Pro
 
   const handleDownload = () => {
     if (!url) return;
-    const a = document.createElement("a");
+    const a = window.document.createElement("a");
     a.href = url;
     a.download = fileName;
     a.target = "_blank";
