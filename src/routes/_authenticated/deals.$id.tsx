@@ -127,9 +127,8 @@ function DealDetail() {
     void load();
   };
 
-  const { can } = usePermissions();
-  const { user } = useAuth();
   const canDelete =
+
     can("techsales.deals.delete.workspace") ||
     can("techsales.deals.delete.team") ||
     (can("techsales.deals.delete.own") &&
