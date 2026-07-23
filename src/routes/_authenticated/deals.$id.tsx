@@ -42,6 +42,9 @@ function DealDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { pipelines } = usePipelines("deal");
+  const { can } = usePermissions();
+  const { user } = useAuth();
+
 
   const { data: deal } = useQuery({
     queryKey: qk.deal(id),
@@ -124,9 +127,8 @@ function DealDetail() {
     void load();
   };
 
-  const { can } = usePermissions();
-  const { user } = useAuth();
   const canDelete =
+
     can("techsales.deals.delete.workspace") ||
     can("techsales.deals.delete.team") ||
     (can("techsales.deals.delete.own") &&
