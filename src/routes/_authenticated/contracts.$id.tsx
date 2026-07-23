@@ -347,6 +347,13 @@ function ContractDetail() {
           </CardContent>
         </Card>
       )}
+
+      <ContractFileViewerDialog
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        contractId={contract.id}
+        fileName={contract.source_file_path?.split("/").pop() ?? null}
+      />
     </div>
   );
 }
