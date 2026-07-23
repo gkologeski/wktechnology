@@ -65,6 +65,7 @@ const allocationSchema = z.object({
   person_id: z.string().uuid(),
   contract_id: z.string().uuid().nullable().optional(),
   project_id: z.string().uuid().nullable().optional(),
+  manager_id: z.string().uuid().nullable().optional(),
   role_title: z.string().max(200).nullable().optional(),
   allocation_pct: z.number().min(0).max(100).default(100),
   billable_rate: z.number().nullable().optional(),
