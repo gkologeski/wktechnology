@@ -83,6 +83,7 @@ function ContractDetail() {
   const [noticeDays, setNoticeDays] = useState<number>(30);
   const [bodyHtml, setBodyHtml] = useState("");
   const [saving, setSaving] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   useEffect(() => {
     if (!contract) return;
@@ -180,6 +181,11 @@ function ContractDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {contract.source_file_path ? (
+              <Button variant="outline" onClick={() => setViewerOpen(true)}>
+                <Eye className="h-4 w-4 mr-1" /> Visualizar
+              </Button>
+            ) : null}
             <Button onClick={save} disabled={saving}>
               <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
             </Button>
