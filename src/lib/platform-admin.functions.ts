@@ -389,6 +389,7 @@ export const softDeleteWorkspaceAdmin = createServerFn({ method: "POST" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin.rpc("soft_delete_workspace", {
       _workspace: data.workspace_id,
+      _actor: context.userId,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -403,6 +404,7 @@ export const restoreWorkspaceAdmin = createServerFn({ method: "POST" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin.rpc("restore_workspace", {
       _workspace: data.workspace_id,
+      _actor: context.userId,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -425,6 +427,7 @@ export const purgeWorkspaceAdmin = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.rpc("purge_workspace", {
       _workspace: data.workspace_id,
       _confirm_name: data.confirm_name,
+      _actor: context.userId,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
