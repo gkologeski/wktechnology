@@ -312,10 +312,10 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             <Button onClick={submit} disabled={saving}>
               {saving ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando…
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando…
                 </>
               ) : (
-                "Criar contrato"
+                "Finalizar"
               )}
             </Button>
           )}
