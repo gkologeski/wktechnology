@@ -103,6 +103,8 @@ const upsertSchema = z.object({
   termination_date: z.string().nullable().optional(),
   legal_entity_name: z.string().max(200).nullable().optional(),
   cnpj: z.string().max(20).nullable().optional(),
+  trade_name: z.string().max(200).nullable().optional(),
+  simples_optante: z.boolean().nullable().optional(),
   manager_id: z.string().uuid().nullable().optional(),
   profile_id: z.string().uuid().nullable().optional(),
   candidate_id: z.string().uuid().nullable().optional(),
@@ -111,7 +113,19 @@ const upsertSchema = z.object({
   currency: z.string().length(3).default("BRL"),
   tags: z.array(z.string().min(1).max(40)).max(20).default([]),
   notes: z.string().max(4000).nullable().optional(),
+  education: z.string().max(120).nullable().optional(),
+  shirt_size: z.string().max(20).nullable().optional(),
+  emergency_phone: z.string().max(40).nullable().optional(),
+  emergency_relationship: z.string().max(120).nullable().optional(),
+  marital_status: z.string().max(60).nullable().optional(),
+  spouse_name: z.string().max(160).nullable().optional(),
+  bank: z.string().max(160).nullable().optional(),
+  bank_agency: z.string().max(40).nullable().optional(),
+  bank_account: z.string().max(60).nullable().optional(),
+  pix_key: z.string().max(160).nullable().optional(),
+  address: z.string().max(400).nullable().optional(),
 });
+
 
 function normalize(value: string | null | undefined): string | null {
   if (value === undefined || value === null) return null;
