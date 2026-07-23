@@ -427,6 +427,7 @@ export const purgeWorkspaceAdmin = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.rpc("purge_workspace", {
       _workspace: data.workspace_id,
       _confirm_name: data.confirm_name,
+      _actor: context.userId,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
