@@ -716,6 +716,8 @@ function DocumentsPanel({
   const downloadFn = useServerFn(getDocumentDownloadUrl);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PeopleDocumentRow | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [viewing, setViewing] = useState<PeopleDocumentRow | null>(null);
 
   const del = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
@@ -733,6 +735,11 @@ function DocumentsPanel({
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao gerar link");
     }
+  }
+
+  function handleView(d: PeopleDocumentRow) {
+    setViewing(d);
+    setViewerOpen(true);
   }
 
   return (
@@ -774,8 +781,20 @@ function DocumentsPanel({
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => handleView(d)}
+                      title="Visualizar"
+                      aria-label="Visualizar"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  ) : null}
+                  {d.file_url ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleDownload(d.id)}
                       title="Baixar"
+                      aria-label="Baixar"
                     >
                       <Download className="h-4 w-4" />
                     </Button>
@@ -788,6 +807,7 @@ function DocumentsPanel({
                       setOpen(true);
                     }}
                     title="Editar"
+                    aria-label="Editar"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -798,6 +818,7 @@ function DocumentsPanel({
                       if (confirm(`Remover documento "${d.doc_type}"?`)) del.mutate(d.id);
                     }}
                     title="Remover"
+                    aria-label="Remover"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -812,6 +833,11 @@ function DocumentsPanel({
         onOpenChange={setOpen}
         personId={personId}
         document={editing}
+      />
+      <PersonDocumentViewerDialog
+        open={viewerOpen}
+        onOpenChange={setViewerOpen}
+        document={viewing}
       />
     </>
   );
