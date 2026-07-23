@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -15,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/settings/scim")({
   component: ScimPage,
 });
 
-const BASE = typeof window !== "undefined" ? window.location.origin : "";
+const BASE = getPublicAppUrl();
 
 function ScimPage() {
   const list = useServerFn(listScimTokens);

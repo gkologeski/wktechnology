@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -409,7 +410,7 @@ function ViewerBody({ form }: { form: FormRow }) {
     queryKey: ["form_submissions", form.id],
     queryFn: () => listSubs({ data: { form_id: form.id } }),
   });
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getPublicAppUrl();
   const publicUrl = `${origin}/api/public/forms/${form.slug}`;
   const isPopup = form.display_mode === "popup" || form.display_mode === "slidein";
   const embedHtml = isPopup

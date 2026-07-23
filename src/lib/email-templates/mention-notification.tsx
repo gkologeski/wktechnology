@@ -107,6 +107,6 @@ export const template = {
     mentionerName: "João",
     category: "mention",
     snippet: "Olá Maria, pode revisar a proposta do cliente X?",
-    link: "https://ats.wktechnology.com.br/deals/abc",
+    link: "https://app.wktechnology.com.br/deals/abc",
   },
 } satisfies TemplateEntry;

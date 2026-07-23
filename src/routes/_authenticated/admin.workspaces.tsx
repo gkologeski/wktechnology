@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 // Super-admin: lista e cria workspaces da plataforma.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
@@ -101,7 +102,7 @@ function WorkspacesAdminPage() {
           admin_email: form.admin_email.trim(),
           admin_name: form.admin_name.trim(),
           admin_phone: form.admin_phone.trim() || undefined,
-          redirect_origin: window.location.origin,
+          redirect_origin: getPublicAppUrl(),
         },
       }),
     onSuccess: () => {
@@ -122,7 +123,7 @@ function WorkspacesAdminPage() {
           full_name: inviteForm.full_name.trim(),
           phone: inviteForm.phone.trim() || undefined,
           role: inviteForm.role,
-          redirect_origin: window.location.origin,
+          redirect_origin: getPublicAppUrl(),
         },
       }),
     onSuccess: () => {

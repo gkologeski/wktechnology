@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 // Indicações (Referrals) — Onda 5 / Slice 5.3.
 // Abas: Indicações · Programas (com portal público) · Ranking.
 import { createFileRoute } from "@tanstack/react-router";
@@ -288,7 +289,7 @@ function ReferralsPrograms() {
   });
 
   function copyLink(slug: string) {
-    const url = `${window.location.origin}/refer/${slug}`;
+    const url = `${getPublicAppUrl()}/refer/${slug}`;
     navigator.clipboard.writeText(url);
     toast.success("Link copiado");
   }

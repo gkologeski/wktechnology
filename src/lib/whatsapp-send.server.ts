@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 const SANDBOX_FROM = "whatsapp:+14155238886";
-const DEFAULT_PUBLIC_BASE = "https://wktechnology.lovable.app";
+const DEFAULT_PUBLIC_BASE = "https://app.wktechnology.com.br";
 
 function twilioHeaders() {
   const LOVABLE_API_KEY = process.env.LOVABLE_API_KEY;

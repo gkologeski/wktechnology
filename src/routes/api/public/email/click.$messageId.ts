@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { recordTrackingEvent, verifyTrackedUrl } from "@/lib/email-tracking.server";
 
-const FALLBACK = "https://wktechnology.lovable.app";
+const FALLBACK = "https://app.wktechnology.com.br";
 
 function parseTarget(raw: string | null): string | null {
   if (!raw) return null;

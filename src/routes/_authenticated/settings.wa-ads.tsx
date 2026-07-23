@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -40,7 +41,7 @@ function WaAdsPage() {
   const [utmCampaign, setUtmCampaign] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+  const baseUrl = getPublicAppUrl();
 
   async function refresh() {
     setLoading(true);

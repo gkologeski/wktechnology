@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -137,7 +138,7 @@ export function SurveysPage() {
   }, [filtered, ticketAgents, agentNames]);
 
   function copyLink(token: string) {
-    const url = `${window.location.origin}/survey/${token}`;
+    const url = `${getPublicAppUrl()}/survey/${token}`;
     navigator.clipboard.writeText(url);
     toast.success("Link copiado.");
   }

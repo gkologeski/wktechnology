@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -117,7 +118,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const hasLineItems = lineItems.length > 0;
 
   function publicUrl(token: string) {
-    return `${window.location.origin}/quote/${token}`;
+    return `${getPublicAppUrl()}/quote/${token}`;
   }
   async function copyLink(token: string) {
     await navigator.clipboard.writeText(publicUrl(token));
@@ -231,7 +232,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                       <DropdownMenuItem
                         onSelect={() =>
                           window.open(
-                            `${window.location.origin}/api/public/quotes/${q.public_token}/pdf`,
+                            `${getPublicAppUrl()}/api/public/quotes/${q.public_token}/pdf`,
                             "_blank",
                           )
                         }

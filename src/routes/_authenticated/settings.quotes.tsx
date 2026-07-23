@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -37,7 +38,7 @@ function QuotesPage() {
     qc.invalidateQueries({ queryKey: ["quotes"] });
   }
   async function copyLink(token: string) {
-    await navigator.clipboard.writeText(`${window.location.origin}/quote/${token}`);
+    await navigator.clipboard.writeText(`${getPublicAppUrl()}/quote/${token}`);
     toast.success("Link copiado.");
   }
 

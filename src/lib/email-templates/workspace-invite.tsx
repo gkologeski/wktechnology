@@ -121,7 +121,7 @@ export const template = {
     workspaceName: "WK Technology",
     inviterName: "Maria",
     roleLabel: "member",
-    inviteUrl: "https://ats.wktechnology.com.br/accept-invite/exemplo-token",
+    inviteUrl: "https://app.wktechnology.com.br/accept-invite/exemplo-token",
     expiresAt: new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString(),
   },
 } satisfies TemplateEntry;

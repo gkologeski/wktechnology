@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { formatDateTime } from "@/lib/crm";
 // Página /settings/teams — gestão unificada de usuários do workspace.
 // Convite por link (token, tabela workspace_invites) + membros + reassign-on-remove.
@@ -327,7 +328,7 @@ function UsersPage() {
           email: email.trim(),
           role,
           redirect_origin:
-            typeof window !== "undefined" ? window.location.origin : "https://ats.wktechnology.com.br",
+            getPublicAppUrl(),
         },
       });
       setInviteUrl(res.url);
@@ -365,7 +366,7 @@ function UsersPage() {
         data: {
           invite_id: inviteId,
           redirect_origin:
-            typeof window !== "undefined" ? window.location.origin : "https://ats.wktechnology.com.br",
+            getPublicAppUrl(),
         },
       });
       toast.success("Convite reenviado");

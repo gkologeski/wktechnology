@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { suggestKbArticles } from "@/lib/kb-suggest.functions";
@@ -32,7 +33,7 @@ export function KbSuggestions({ subject, description }: Props) {
   if (items.length === 0) return null;
 
   const copyLink = async (slug: string) => {
-    const url = `${window.location.origin}/kb/${slug}`;
+    const url = `${getPublicAppUrl()}/kb/${slug}`;
     try {
       await navigator.clipboard.writeText(url);
       toast.success("Link copiado");

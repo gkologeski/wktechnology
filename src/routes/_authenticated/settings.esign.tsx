@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { formatDateTime } from "@/lib/crm";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
@@ -366,7 +367,7 @@ function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }
   const [newSigner, setNewSigner] = useState({ name: "", email: "", sign_order: 1 });
 
   function publicUrl(token: string) {
-    return `${window.location.origin}/sign/${token}`;
+    return `${getPublicAppUrl()}/sign/${token}`;
   }
 
   return (

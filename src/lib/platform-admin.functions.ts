@@ -16,7 +16,7 @@ async function getSupabaseAdmin(): Promise<SupabaseClient<Database>> {
 
 const WsRole = z.enum(["admin", "member"]);
 
-const CANONICAL_APP_URL = "https://ats.wktechnology.com.br";
+const CANONICAL_APP_URL = "https://app.wktechnology.com.br";
 function resolveInviteOrigin(origin: string | undefined): string {
   if (!origin) return CANONICAL_APP_URL;
   try {

@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -215,7 +216,7 @@ function FilesPage() {
   }
 
   async function copyPublicLink(token: string) {
-    const url = `${window.location.origin}/api/public/files/${token}`;
+    const url = `${getPublicAppUrl()}/api/public/files/${token}`;
     await navigator.clipboard.writeText(url);
     toast.success("Link copiado");
   }
