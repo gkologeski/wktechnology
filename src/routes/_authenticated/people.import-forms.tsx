@@ -67,12 +67,14 @@ const zero: Totals = {
 
 function ImportFormsPage() {
   const runImport = useServerFn(importPeopleFromPublicSheet);
+  const runReimport = useServerFn(reimportBrokenAttachments);
   const [sheetUrl, setSheetUrl] = useState(DEFAULT_URL);
-  const [running, setRunning] = useState<null | "dry" | "exec">(null);
+  const [running, setRunning] = useState<null | "dry" | "exec" | "reimport">(null);
   const [totalUnique, setTotalUnique] = useState(0);
   const [processed, setProcessed] = useState(0);
   const [totals, setTotals] = useState<Totals>(zero);
   const [dryResult, setDryResult] = useState<ImportBatchResult | null>(null);
+  const [reimport, setReimport] = useState<ReimportResult | null>(null);
 
   async function simulate() {
     setRunning("dry");
