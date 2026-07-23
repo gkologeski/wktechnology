@@ -45,6 +45,8 @@ export function PersonDocumentViewerDialog({ open, onOpenChange, document }: Pro
   const downloadFn = useServerFn(getDocumentDownloadUrl);
   const [url, setUrl] = useState<string | null>(null);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   const [textPreview, setTextPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,12 +58,19 @@ export function PersonDocumentViewerDialog({ open, onOpenChange, document }: Pro
     if (!open || !document?.file_url) {
       setUrl(null);
       setPdfBlobUrl(null);
+      setPdfLoading(false);
+      setPdfError(null);
       setTextPreview(null);
       setError(null);
       return;
     }
 
     let cancelled = false;
+    setUrl(null);
+    setPdfBlobUrl(null);
+    setPdfLoading(false);
+    setPdfError(null);
+    setTextPreview(null);
     setLoading(true);
     setError(null);
 
@@ -85,23 +94,35 @@ export function PersonDocumentViewerDialog({ open, onOpenChange, document }: Pro
     };
   }, [open, document?.id, document?.file_url, downloadFn]);
 
-  // PDF: baixa como Blob para contornar Content-Disposition: attachment.
+  // PDF: baixa como Blob e renderiza somente blob: URL para evitar bloqueios/downloads do Chrome.
   useEffect(() => {
-    if (!url || kind !== "pdf") return;
+    if (!url || kind !== "pdf") {
+      setPdfBlobUrl(null);
+      setPdfLoading(false);
+      setPdfError(null);
+      return;
+    }
     let cancelled = false;
     let createdUrl: string | null = null;
+    setPdfBlobUrl(null);
+    setPdfLoading(true);
+    setPdfError(null);
 
     (async () => {
       try {
         const r = await fetch(url);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        if (!r.ok) throw new Error(`Falha ao carregar PDF (HTTP ${r.status})`);
         const raw = await r.blob();
         const blob = raw.type === "application/pdf" ? raw : raw.slice(0, raw.size, "application/pdf");
         createdUrl = URL.createObjectURL(blob);
         if (!cancelled) setPdfBlobUrl(createdUrl);
         else if (createdUrl) URL.revokeObjectURL(createdUrl);
-      } catch {
-        /* fallback: usa a signed URL diretamente no iframe */
+      } catch (e) {
+        if (!cancelled) {
+          setPdfError(e instanceof Error ? e.message : "Falha ao carregar PDF para visualização");
+        }
+      } finally {
+        if (!cancelled) setPdfLoading(false);
       }
     })();
 
@@ -227,10 +248,31 @@ export function PersonDocumentViewerDialog({ open, onOpenChange, document }: Pro
     }
 
     if (kind === "pdf") {
-      const pdfSrc = pdfBlobUrl ?? url;
+      if (pdfLoading || !pdfBlobUrl) {
+        return (
+          <div className="flex h-96 flex-col items-center justify-center gap-3 px-6 text-center text-sm text-muted-foreground">
+            {pdfError ? (
+              <>
+                <FileText className="h-8 w-8" />
+                <p className="text-destructive">{pdfError}</p>
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Download className="mr-1.5 h-4 w-4" />
+                  Baixar arquivo
+                </Button>
+              </>
+            ) : (
+              <>
+                <Loader2 className="h-6 w-6 animate-spin" />
+                Preparando visualização do PDF…
+              </>
+            )}
+          </div>
+        );
+      }
+
       return (
         <iframe
-          src={`${pdfSrc}#toolbar=1&navpanes=0`}
+          src={`${pdfBlobUrl}#toolbar=1&navpanes=0`}
           title={fileName}
           className="h-[70vh] w-full bg-muted/20"
         />
