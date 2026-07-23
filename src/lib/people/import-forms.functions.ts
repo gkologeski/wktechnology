@@ -304,24 +304,124 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/gif": "gif",
   "image/webp": "webp",
   "image/heic": "heic",
+  "image/heif": "heif",
+  "image/tiff": "tiff",
+  "image/bmp": "bmp",
   "application/pdf": "pdf",
   "application/msword": "doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/vnd.ms-excel": "xls",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+  "text/plain": "txt",
+  "application/zip": "zip",
 };
+
+// Sniff pelos primeiros bytes quando o content-type é opaco.
+function sniffExt(bytes: Uint8Array): { ext: string; mime: string } | null {
+  if (bytes.length < 4) return null;
+  const b = bytes;
+  // %PDF
+  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46)
+    return { ext: "pdf", mime: "application/pdf" };
+  // JPEG
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff)
+    return { ext: "jpg", mime: "image/jpeg" };
+  // PNG
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47)
+    return { ext: "png", mime: "image/png" };
+  // GIF
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46)
+    return { ext: "gif", mime: "image/gif" };
+  // ZIP / DOCX / XLSX
+  if (b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04)
+    return { ext: "zip", mime: "application/zip" };
+  // RIFF (webp)
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46)
+    return { ext: "webp", mime: "image/webp" };
+  return null;
+}
+
+function parseFilenameFromDisposition(header: string | null): string | null {
+  if (!header) return null;
+  // filename*=UTF-8''encoded
+  const mStar = header.match(/filename\*\s*=\s*(?:UTF-8''|utf-8'')?([^;]+)/i);
+  if (mStar) {
+    try {
+      return decodeURIComponent(mStar[1].trim().replace(/^"|"$/g, ""));
+    } catch {
+      return mStar[1].trim().replace(/^"|"$/g, "");
+    }
+  }
+  const m = header.match(/filename\s*=\s*"?([^";]+)"?/i);
+  if (m) return m[1].trim();
+  return null;
+}
+
+function extFromName(name: string | null): string | null {
+  if (!name) return null;
+  const i = name.lastIndexOf(".");
+  if (i < 0 || i >= name.length - 1) return null;
+  const e = name.slice(i + 1).toLowerCase().replace(/[^a-z0-9]/g, "");
+  return e.length > 0 && e.length <= 5 ? e : null;
+}
+
+// Extrai do HTML de confirmação do Drive o formulário de download com uuid/at/id.
+function extractDriveConfirmUrl(html: string): string | null {
+  // Formato atual: <form action="https://drive.usercontent.google.com/download" ...>
+  // com <input name="id"|"export"|"confirm"|"uuid"|"at" value="...">.
+  const formMatch = html.match(/<form[^>]*action="([^"]+)"[^>]*>([\s\S]*?)<\/form>/i);
+  if (!formMatch) {
+    // Fallback antigo: link direto com ?confirm=t
+    const link = html.match(/href="(\/uc\?export=download[^"]*confirm=[^"]+)"/i);
+    if (link) return `https://drive.google.com${link[1].replace(/&amp;/g, "&")}`;
+    return null;
+  }
+  const action = formMatch[1];
+  const body = formMatch[2];
+  const inputs = [...body.matchAll(/<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"[^>]*>/gi)];
+  const params = new URLSearchParams();
+  for (const [, name, value] of inputs) params.set(name, value);
+  return `${action}?${params.toString()}`;
+}
 
 async function downloadDriveFile(
   fileId: string,
-): Promise<{ bytes: Uint8Array; mime: string; ext: string } | null> {
-  const url = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
-  const res = await fetch(url, { redirect: "follow" });
+): Promise<{ bytes: Uint8Array; mime: string; ext: string; original_name: string | null } | null> {
+  const initialUrl = `https://drive.usercontent.google.com/download?id=${fileId}&export=download`;
+  let res = await fetch(initialUrl, { redirect: "follow" });
   if (!res.ok) return null;
-  const contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-  const buf = new Uint8Array(await res.arrayBuffer());
-  // Arquivo grande: Drive devolve uma página HTML "confirmação" ao invés do binário.
-  if (contentType.startsWith("text/html")) return null;
-  const mime = contentType || "application/octet-stream";
-  const ext = EXT_BY_MIME[mime] ?? "bin";
-  return { bytes: buf, mime, ext };
+  let contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+
+  // Se veio HTML de confirmação (arquivo grande), extrai o form e refaz o GET.
+  if (contentType.startsWith("text/html")) {
+    const html = await res.text();
+    const confirmUrl = extractDriveConfirmUrl(html);
+    if (!confirmUrl) return null;
+    res = await fetch(confirmUrl, { redirect: "follow" });
+    if (!res.ok) return null;
+    contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    if (contentType.startsWith("text/html")) return null;
+  }
+
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  if (bytes.length === 0) return null;
+
+  const original_name = parseFilenameFromDisposition(res.headers.get("content-disposition"));
+  const extFromDisposition = extFromName(original_name);
+
+  let mime = contentType || "application/octet-stream";
+  let ext = extFromDisposition ?? EXT_BY_MIME[mime] ?? null;
+
+  // Se ainda opaco, sniff pelos primeiros bytes.
+  if (!ext || ext === "bin") {
+    const sniff = sniffExt(bytes);
+    if (sniff) {
+      ext = sniff.ext;
+      if (mime === "application/octet-stream") mime = sniff.mime;
+    }
+  }
+
+  return { bytes, mime, ext: ext ?? "bin", original_name };
 }
 
 // ---------- Server function ----------
