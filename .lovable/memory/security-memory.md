@@ -21,6 +21,8 @@ type: feature
 - `integrations`: owner-scoped (`owner_id = auth.uid()`) por design — admin do workspace gerencia via server function com service_role.
 - `audit_export_runs`: SELECT apenas para admins; INSERT/UPDATE/DELETE somente via service_role (cron `audit-export-tick`). Default-deny para `authenticated` é intencional.
 - `esign_audit` e `esign_signers`: INSERT exige `owner_id = auth.uid()`, admin do workspace, ou ownership/admin no `esign_documents` pai. Não recriar INSERT amplo `workspace_id IN current_user_workspaces()`.
+- `customer_invoices`: INSERT exige `workspace_id IN current_user_workspaces()` **e** `owner_id = auth.uid()`. Não voltar para policy só de membership.
+- `customer_payments` e `nfse_invoices`: INSERT restrito a `is_workspace_admin_v2(workspace_id, auth.uid())`. Webhooks/emissão de NFS-e por serviços usam service_role (bypass RLS). Não recriar policy ampla de membership.
 - `whatsapp-media` (storage): `media_url` em `whatsapp_messages` guarda APENAS o path do objeto; a policy `whatsapp_media_workspace_read` junta `wm.media_url = objects.name` + `is_workspace_member`. Não trocar para URL completa.
 
 ## Webhooks & cron
