@@ -453,7 +453,7 @@ function ReviewStep({
       <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3 text-sm">
         <Sparkles className="h-4 w-4 text-primary" />
         <div className="flex-1">
-          Campos preenchidos pela IA — edite o que precisar antes de criar.
+          Rascunho salvo. Edite o que precisar e clique em Finalizar — ou feche: o rascunho continua em Contratos.
         </div>
         {confidence !== null && (
           <Badge variant="outline">Confiança: {(confidence * 100).toFixed(0)}%</Badge>
