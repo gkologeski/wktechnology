@@ -266,6 +266,16 @@ function PersonForm({
               <UserCog className="h-3 w-3" /> Desde {p.hire_date}
             </Badge>
           ) : null}
+          {(p as unknown as { manager_name?: string | null }).manager_name ? (
+            <Badge variant="outline" className="gap-1">
+              <UserCog className="h-3 w-3" />
+              Gestor: {(p as unknown as { manager_name: string }).manager_name}
+            </Badge>
+          ) : p.manager_id ? null : (
+            <Badge variant="outline" className="gap-1 text-muted-foreground">
+              Sem gestor · definir em Alocações
+            </Badge>
+          )}
         </div>
       </div>
 
