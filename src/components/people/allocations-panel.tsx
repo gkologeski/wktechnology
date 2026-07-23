@@ -270,6 +270,7 @@ function AllocationDialog({
   const upsertFn = useServerFn(upsertAllocation);
   const [contractId, setContractId] = useState<string | null>(editing?.contract_id ?? null);
   const [projectId, setProjectId] = useState<string | null>(editing?.project_id ?? null);
+  const [managerId, setManagerId] = useState<string | null>(editing?.manager_id ?? null);
   const [roleTitle, setRoleTitle] = useState(editing?.role_title ?? "");
   const [pct, setPct] = useState<string>(editing?.allocation_pct?.toString() ?? "100");
   const [billable, setBillable] = useState<string>(
