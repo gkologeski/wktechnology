@@ -807,7 +807,7 @@ export const reimportBrokenAttachments = createServerFn({ method: "POST" })
     for (const row of slice) {
       try {
         // Extrai Drive ID de notes.
-        const m = row.notes?.match(DRIVE_ID_RE);
+        const m = row.notes?.match(REIMPORT_DRIVE_ID_RE);
         if (!m) {
           stillFailed++;
           failures.push({ id: row.id, person_id: row.person_id, reason: "Drive ID não encontrado nas notas" });
