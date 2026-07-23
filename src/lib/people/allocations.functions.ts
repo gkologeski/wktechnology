@@ -20,6 +20,7 @@ export type AllocationRow = {
   person_id: string;
   contract_id: string | null;
   project_id: string | null;
+  manager_id: string | null;
   role_title: string | null;
   allocation_pct: number;
   billable_rate: number | null;
@@ -33,6 +34,7 @@ export type AllocationRow = {
   updated_at: string;
   // joined
   person_name?: string | null;
+  manager_name?: string | null;
   contract_title?: string | null;
   contract_number?: string | null;
   project_name?: string | null;
@@ -63,6 +65,7 @@ const allocationSchema = z.object({
   person_id: z.string().uuid(),
   contract_id: z.string().uuid().nullable().optional(),
   project_id: z.string().uuid().nullable().optional(),
+  manager_id: z.string().uuid().nullable().optional(),
   role_title: z.string().max(200).nullable().optional(),
   allocation_pct: z.number().min(0).max(100).default(100),
   billable_rate: z.number().nullable().optional(),
@@ -81,21 +84,23 @@ export const listAllocationsByPerson = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("people_allocations")
       .select(
-        "*, contracts(id,title,number), projects(id,name)",
+        "*, contracts(id,title,number), projects(id,name), manager:people!people_allocations_manager_id_fkey(id,full_name)",
       )
       .eq("person_id", data.person_id)
       .order("starts_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (rows ?? []).map((r) => {
-      const row = r as AllocationRow & {
+      const row = r as unknown as AllocationRow & {
         contracts?: { title: string | null; number: string | null } | null;
         projects?: { name: string | null } | null;
+        manager?: { full_name: string | null } | null;
       };
       return {
         ...row,
         contract_title: row.contracts?.title ?? null,
         contract_number: row.contracts?.number ?? null,
         project_name: row.projects?.name ?? null,
+        manager_name: row.manager?.full_name ?? null,
       } as AllocationRow;
     });
   });
@@ -106,15 +111,22 @@ export const listAllocationsByContract = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: rows, error } = await context.supabase
       .from("people_allocations")
-      .select("*, people(id,full_name)")
+      .select(
+        "*, person:people!people_allocations_person_id_fkey(id,full_name), manager:people!people_allocations_manager_id_fkey(id,full_name)",
+      )
       .eq("contract_id", data.contract_id)
       .order("starts_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (rows ?? []).map((r) => {
-      const row = r as AllocationRow & {
-        people?: { full_name: string | null } | null;
+      const row = r as unknown as AllocationRow & {
+        person?: { full_name: string | null } | null;
+        manager?: { full_name: string | null } | null;
       };
-      return { ...row, person_name: row.people?.full_name ?? null } as AllocationRow;
+      return {
+        ...row,
+        person_name: row.person?.full_name ?? null,
+        manager_name: row.manager?.full_name ?? null,
+      } as AllocationRow;
     });
   });
 
@@ -127,6 +139,7 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       person_id: data.person_id,
       contract_id: data.contract_id ?? null,
       project_id: data.project_id ?? null,
+      manager_id: data.manager_id ?? null,
       role_title: data.role_title ?? null,
       allocation_pct: data.allocation_pct,
       billable_rate: data.billable_rate ?? null,

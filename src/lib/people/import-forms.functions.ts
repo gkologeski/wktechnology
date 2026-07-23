@@ -304,24 +304,124 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/gif": "gif",
   "image/webp": "webp",
   "image/heic": "heic",
+  "image/heif": "heif",
+  "image/tiff": "tiff",
+  "image/bmp": "bmp",
   "application/pdf": "pdf",
   "application/msword": "doc",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+  "application/vnd.ms-excel": "xls",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+  "text/plain": "txt",
+  "application/zip": "zip",
 };
+
+// Sniff pelos primeiros bytes quando o content-type é opaco.
+function sniffExt(bytes: Uint8Array): { ext: string; mime: string } | null {
+  if (bytes.length < 4) return null;
+  const b = bytes;
+  // %PDF
+  if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46)
+    return { ext: "pdf", mime: "application/pdf" };
+  // JPEG
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff)
+    return { ext: "jpg", mime: "image/jpeg" };
+  // PNG
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47)
+    return { ext: "png", mime: "image/png" };
+  // GIF
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46)
+    return { ext: "gif", mime: "image/gif" };
+  // ZIP / DOCX / XLSX
+  if (b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04)
+    return { ext: "zip", mime: "application/zip" };
+  // RIFF (webp)
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46)
+    return { ext: "webp", mime: "image/webp" };
+  return null;
+}
+
+function parseFilenameFromDisposition(header: string | null): string | null {
+  if (!header) return null;
+  // filename*=UTF-8''encoded
+  const mStar = header.match(/filename\*\s*=\s*(?:UTF-8''|utf-8'')?([^;]+)/i);
+  if (mStar) {
+    try {
+      return decodeURIComponent(mStar[1].trim().replace(/^"|"$/g, ""));
+    } catch {
+      return mStar[1].trim().replace(/^"|"$/g, "");
+    }
+  }
+  const m = header.match(/filename\s*=\s*"?([^";]+)"?/i);
+  if (m) return m[1].trim();
+  return null;
+}
+
+function extFromName(name: string | null): string | null {
+  if (!name) return null;
+  const i = name.lastIndexOf(".");
+  if (i < 0 || i >= name.length - 1) return null;
+  const e = name.slice(i + 1).toLowerCase().replace(/[^a-z0-9]/g, "");
+  return e.length > 0 && e.length <= 5 ? e : null;
+}
+
+// Extrai do HTML de confirmação do Drive o formulário de download com uuid/at/id.
+function extractDriveConfirmUrl(html: string): string | null {
+  // Formato atual: <form action="https://drive.usercontent.google.com/download" ...>
+  // com <input name="id"|"export"|"confirm"|"uuid"|"at" value="...">.
+  const formMatch = html.match(/<form[^>]*action="([^"]+)"[^>]*>([\s\S]*?)<\/form>/i);
+  if (!formMatch) {
+    // Fallback antigo: link direto com ?confirm=t
+    const link = html.match(/href="(\/uc\?export=download[^"]*confirm=[^"]+)"/i);
+    if (link) return `https://drive.google.com${link[1].replace(/&amp;/g, "&")}`;
+    return null;
+  }
+  const action = formMatch[1];
+  const body = formMatch[2];
+  const inputs = [...body.matchAll(/<input[^>]*name="([^"]+)"[^>]*value="([^"]*)"[^>]*>/gi)];
+  const params = new URLSearchParams();
+  for (const [, name, value] of inputs) params.set(name, value);
+  return `${action}?${params.toString()}`;
+}
 
 async function downloadDriveFile(
   fileId: string,
-): Promise<{ bytes: Uint8Array; mime: string; ext: string } | null> {
-  const url = `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`;
-  const res = await fetch(url, { redirect: "follow" });
+): Promise<{ bytes: Uint8Array; mime: string; ext: string; original_name: string | null } | null> {
+  const initialUrl = `https://drive.usercontent.google.com/download?id=${fileId}&export=download`;
+  let res = await fetch(initialUrl, { redirect: "follow" });
   if (!res.ok) return null;
-  const contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
-  const buf = new Uint8Array(await res.arrayBuffer());
-  // Arquivo grande: Drive devolve uma página HTML "confirmação" ao invés do binário.
-  if (contentType.startsWith("text/html")) return null;
-  const mime = contentType || "application/octet-stream";
-  const ext = EXT_BY_MIME[mime] ?? "bin";
-  return { bytes: buf, mime, ext };
+  let contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+
+  // Se veio HTML de confirmação (arquivo grande), extrai o form e refaz o GET.
+  if (contentType.startsWith("text/html")) {
+    const html = await res.text();
+    const confirmUrl = extractDriveConfirmUrl(html);
+    if (!confirmUrl) return null;
+    res = await fetch(confirmUrl, { redirect: "follow" });
+    if (!res.ok) return null;
+    contentType = (res.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    if (contentType.startsWith("text/html")) return null;
+  }
+
+  const bytes = new Uint8Array(await res.arrayBuffer());
+  if (bytes.length === 0) return null;
+
+  const original_name = parseFilenameFromDisposition(res.headers.get("content-disposition"));
+  const extFromDisposition = extFromName(original_name);
+
+  let mime = contentType || "application/octet-stream";
+  let ext = extFromDisposition ?? EXT_BY_MIME[mime] ?? null;
+
+  // Se ainda opaco, sniff pelos primeiros bytes.
+  if (!ext || ext === "bin") {
+    const sniff = sniffExt(bytes);
+    if (sniff) {
+      ext = sniff.ext;
+      if (mime === "application/octet-stream") mime = sniff.mime;
+    }
+  }
+
+  return { bytes, mime, ext: ext ?? "bin", original_name };
 }
 
 // ---------- Server function ----------
@@ -596,6 +696,9 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
                 attachmentsFailed++;
                 continue;
               }
+              const displayName = dl.original_name && dl.original_name.trim().length > 0
+                ? dl.original_name
+                : `${att.label}.${dl.ext}`;
               const { error: docErr } = await supabaseAdmin
                 .from("people_documents")
                 .insert({
@@ -604,7 +707,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
                   person_id: personId,
                   doc_type: att.label,
                   file_url: path,
-                  file_name: `${att.label}.${dl.ext}`,
+                  file_name: displayName,
                   is_sensitive: true,
                   status: "valid",
                   notes: `Importado do Google Forms (Drive ID ${att.drive_id})`,
@@ -642,5 +745,129 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
         attachments_failed: attachmentsFailed,
         failures,
       },
+    };
+  });
+
+// ---------- Reimport de anexos quebrados (.bin) ----------
+
+const REIMPORT_DRIVE_ID_RE = /Drive ID ([A-Za-z0-9_-]{15,})/;
+
+export type ReimportResult = {
+  scanned: number;
+  fixed: number;
+  still_failed: number;
+  processed: number;
+  next_offset: number;
+  done: boolean;
+  failures: { id: string; person_id: string; reason: string }[];
+};
+
+const reimportInputSchema = z.object({
+  offset: z.number().int().min(0).default(0),
+  batch_size: z.number().int().min(1).max(30).default(10),
+});
+
+export const reimportBrokenAttachments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => reimportInputSchema.parse(i ?? {}))
+  .handler(async ({ data, context }): Promise<ReimportResult> => {
+    const { supabase, userId } = context;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techpeople.people.update.workspace",
+    ]);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Encontra documentos com extensão .bin ou nome terminando em .bin.
+    const { data: all, error } = await supabaseAdmin
+      .from("people_documents")
+      .select("id, owner_id, person_id, doc_type, file_url, file_name, notes")
+      .or("file_url.ilike.%.bin,file_name.ilike.%.bin")
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    const rows = (all ?? []) as Array<{
+      id: string;
+      owner_id: string;
+      person_id: string;
+      doc_type: string;
+      file_url: string | null;
+      file_name: string | null;
+      notes: string | null;
+    }>;
+
+    const scanned = rows.length;
+    const slice = rows.slice(data.offset, data.offset + data.batch_size);
+
+    let fixed = 0;
+    let stillFailed = 0;
+    const failures: { id: string; person_id: string; reason: string }[] = [];
+
+    for (const row of slice) {
+      try {
+        // Extrai Drive ID de notes.
+        const m = row.notes?.match(REIMPORT_DRIVE_ID_RE);
+        if (!m) {
+          stillFailed++;
+          failures.push({ id: row.id, person_id: row.person_id, reason: "Drive ID não encontrado nas notas" });
+          continue;
+        }
+        const driveId = m[1];
+        const dl = await downloadDriveFile(driveId);
+        if (!dl || dl.ext === "bin") {
+          stillFailed++;
+          failures.push({
+            id: row.id,
+            person_id: row.person_id,
+            reason: dl ? `Não foi possível identificar o tipo (${dl.mime})` : "Falha no download do Drive",
+          });
+          continue;
+        }
+        const newPath = `${row.owner_id}/${row.person_id}/forms-import/${driveId}.${dl.ext}`;
+        const { error: upErr } = await supabaseAdmin.storage
+          .from("people-documents")
+          .upload(newPath, dl.bytes, { contentType: dl.mime, upsert: true });
+        if (upErr) {
+          stillFailed++;
+          failures.push({ id: row.id, person_id: row.person_id, reason: upErr.message });
+          continue;
+        }
+        // Remove o arquivo antigo .bin se path era diferente.
+        if (row.file_url && row.file_url !== newPath) {
+          await supabaseAdmin.storage.from("people-documents").remove([row.file_url]);
+        }
+        const displayName = dl.original_name && dl.original_name.trim().length > 0
+          ? dl.original_name
+          : `${row.doc_type}.${dl.ext}`;
+        const { error: updErr } = await supabaseAdmin
+          .from("people_documents")
+          .update({ file_url: newPath, file_name: displayName } as never)
+          .eq("id", row.id);
+        if (updErr) {
+          stillFailed++;
+          failures.push({ id: row.id, person_id: row.person_id, reason: updErr.message });
+          continue;
+        }
+        fixed++;
+      } catch (e) {
+        stillFailed++;
+        failures.push({
+          id: row.id,
+          person_id: row.person_id,
+          reason: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+
+    const nextOffset = data.offset + slice.length;
+    return {
+      scanned,
+      fixed,
+      still_failed: stillFailed,
+      processed: nextOffset,
+      next_offset: nextOffset,
+      done: nextOffset >= scanned,
+      failures,
     };
   });

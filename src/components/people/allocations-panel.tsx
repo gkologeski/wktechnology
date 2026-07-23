@@ -38,6 +38,7 @@ import {
 } from "@/lib/people/allocations.functions";
 import { listContracts } from "@/lib/contracts.functions";
 import { listProjects } from "@/lib/projects.functions";
+import { listPeople } from "@/lib/people/people.functions";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -157,6 +158,11 @@ export function AllocationsPanel({
                             ? `Projeto: ${r.project_name}`
                             : "Sem vínculo"}
                       </div>
+                      {r.manager_name ? (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Gestor: {r.manager_name}
+                        </div>
+                      ) : null}
                       <div className="text-xs text-muted-foreground mt-1">
                         {r.starts_at} → {r.ends_at ?? "aberta"}
                       </div>
@@ -264,6 +270,7 @@ function AllocationDialog({
   const upsertFn = useServerFn(upsertAllocation);
   const [contractId, setContractId] = useState<string | null>(editing?.contract_id ?? null);
   const [projectId, setProjectId] = useState<string | null>(editing?.project_id ?? null);
+  const [managerId, setManagerId] = useState<string | null>(editing?.manager_id ?? null);
   const [roleTitle, setRoleTitle] = useState(editing?.role_title ?? "");
   const [pct, setPct] = useState<string>(editing?.allocation_pct?.toString() ?? "100");
   const [billable, setBillable] = useState<string>(
@@ -287,6 +294,7 @@ function AllocationDialog({
           person_id: personId,
           contract_id: contractId,
           project_id: projectId,
+          manager_id: managerId,
           role_title: roleTitle || null,
           allocation_pct: Number(pct) || 0,
           billable_rate: billable ? Number(billable) : null,
@@ -323,6 +331,10 @@ function AllocationDialog({
           <div className="space-y-2 md:col-span-2">
             <Label>Projeto (opcional)</Label>
             <ProjectSelect value={projectId} onChange={setProjectId} />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Gestor</Label>
+            <ManagerSelect value={managerId} onChange={setManagerId} excludePersonId={personId} />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Cargo/Função na alocação</Label>
@@ -471,6 +483,44 @@ function ProjectSelect({
         {(rows as Array<{ id: string; name: string }>).map((p) => (
           <SelectItem key={p.id} value={p.id}>
             {p.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function ManagerSelect({
+  value,
+  onChange,
+  excludePersonId,
+}: {
+  value: string | null;
+  onChange: (v: string | null) => void;
+  excludePersonId?: string;
+}) {
+  const listFn = useServerFn(listPeople);
+  const { data: rows = [] } = useQuery({
+    queryKey: ["allocations-managers"],
+    queryFn: () => listFn({ data: { include_archived: false } }),
+    staleTime: 60_000,
+  });
+  const options = (rows as Array<{ id: string; full_name: string }>).filter(
+    (p) => p.id !== excludePersonId,
+  );
+  return (
+    <Select
+      value={value ?? "__none"}
+      onValueChange={(v) => onChange(v === "__none" ? null : v)}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder="Selecionar gestor…" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none">Sem gestor</SelectItem>
+        {options.map((p) => (
+          <SelectItem key={p.id} value={p.id}>
+            {p.full_name}
           </SelectItem>
         ))}
       </SelectContent>

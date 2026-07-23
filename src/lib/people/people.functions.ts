@@ -239,11 +239,23 @@ export const getPerson = createServerFn({ method: "POST" })
       }
     }
 
+    let manager_name: string | null = null;
+    const managerId = (base as { manager_id: string | null }).manager_id;
+    if (managerId) {
+      const { data: mgr } = await supabase
+        .from("people")
+        .select("full_name")
+        .eq("id", managerId)
+        .maybeSingle();
+      manager_name = (mgr as { full_name: string | null } | null)?.full_name ?? null;
+    }
+
     return {
       ...(base as Omit<PersonRow, "cost_hour" | "monthly_cost" | "personal_doc" | "bank" | "bank_agency" | "bank_account" | "pix_key" | "address">),
       ...sensitive,
       can_view_sensitive: canViewSensitive,
-    } as PersonRow;
+      manager_name,
+    } as PersonRow & { manager_name: string | null };
   });
 
 
