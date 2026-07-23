@@ -20,6 +20,7 @@ export type AllocationRow = {
   person_id: string;
   contract_id: string | null;
   project_id: string | null;
+  manager_id: string | null;
   role_title: string | null;
   allocation_pct: number;
   billable_rate: number | null;
@@ -33,6 +34,7 @@ export type AllocationRow = {
   updated_at: string;
   // joined
   person_name?: string | null;
+  manager_name?: string | null;
   contract_title?: string | null;
   contract_number?: string | null;
   project_name?: string | null;
