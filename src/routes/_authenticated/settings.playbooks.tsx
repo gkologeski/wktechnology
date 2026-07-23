@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { CrudSettings } from "@/components/crud-settings";
 
 export function PlaybooksPage() {
@@ -33,5 +33,9 @@ export function PlaybooksPage() {
 }
 
 export const Route = createFileRoute("/_authenticated/settings/playbooks")({
+  beforeLoad: () => {
+    throw redirect({ to: "/prospecting", search: { tab: "playbooks" as const } });
+  },
   component: PlaybooksPage,
 });
+
