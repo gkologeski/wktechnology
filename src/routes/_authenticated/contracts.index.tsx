@@ -189,13 +189,20 @@ function ContractsPage() {
                     </Link>
                   </TableCell>
                   <TableCell>
-                    <Link
-                      to="/contracts/$id"
-                      params={{ id: c.id }}
-                      className="font-medium hover:underline"
-                    >
-                      {c.title}
-                    </Link>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        to="/contracts/$id"
+                        params={{ id: c.id }}
+                        className="font-medium hover:underline"
+                      >
+                        {c.title}
+                      </Link>
+                      {c.imported_from ? (
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                          Importado
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell className="text-sm">{ROLE_LABEL[c.role] ?? c.role}</TableCell>
                   <TableCell>

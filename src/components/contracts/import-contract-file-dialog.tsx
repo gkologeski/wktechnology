@@ -32,6 +32,7 @@ import {
   parseContractText,
   createContractFromImport,
 } from "@/lib/contracts/import.functions";
+import { updateContract } from "@/lib/contracts.functions";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import {
   PAYMENT_METHODS,
@@ -82,6 +83,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   const parsePdf = useServerFn(parseContractPdf);
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);
+  const updateFn = useServerFn(updateContract);
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>("upload");
@@ -89,6 +91,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [fields, setFields] = useState<ExtractedContract | null>(null);
+  const [contractId, setContractId] = useState<string | null>(null);
   const [sourceFilePath, setSourceFilePath] = useState<string | null>(null);
   const [keepFile, setKeepFile] = useState(true);
   const kind = file ? fileExt(file.name) : null;
@@ -99,22 +102,50 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     setParsing(false);
     setSaving(false);
     setFields(null);
+    setContractId(null);
     setSourceFilePath(null);
     setKeepFile(true);
   }, []);
 
   const handleClose = useCallback(
     (next: boolean) => {
-      if (!next) reset();
+      if (!next) {
+        if (contractId) {
+          toast.info("Rascunho salvo em Contratos. Você pode retomar quando quiser.");
+        }
+        reset();
+      }
       onOpenChange(next);
     },
-    [onOpenChange, reset],
+    [onOpenChange, reset, contractId],
   );
 
   const handleFile = useCallback((f: File | null) => {
     setFile(f);
     setFields(null);
+    setContractId(null);
+    setSourceFilePath(null);
   }, []);
+
+  const uploadOriginal = useCallback(
+    async (f: File) => {
+      if (!keepFile) return null;
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) return null;
+      const safeName = f.name.replace(/[^\w.\-]+/g, "_");
+      const path = `${uid}/${Date.now()}-${safeName}`;
+      const { error } = await supabase.storage
+        .from("contract-imports")
+        .upload(path, f, { contentType: f.type || undefined, upsert: false });
+      if (error) {
+        toast.warning(`Rascunho criado, mas o arquivo original não foi guardado (${error.message}).`);
+        return null;
+      }
+      return path;
+    },
+    [keepFile],
+  );
 
   const runExtraction = useCallback(async () => {
     if (!file || !kind) return;
@@ -139,57 +170,88 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
         }
         extracted = await parseText({ data: { filename: file.name, text } });
       }
+
+      // Persistir rascunho imediatamente para não perder o trabalho se a aba fechar.
+      const path = await uploadOriginal(file);
+      const result = await createFromImport({
+        data: {
+          fields: extracted,
+          source_file_path: path,
+          imported_from: kind,
+        },
+      });
+
       setFields(extracted);
+      setSourceFilePath(path);
+      setContractId(result.id);
       setStep("review");
-      toast.success("Extração concluída. Revise antes de criar o contrato.");
+      toast.success("Rascunho criado. Revise e finalize.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha na extração";
       toast.error(msg);
     } finally {
       setParsing(false);
     }
-  }, [file, kind, parsePdf, parseText]);
+  }, [file, kind, parsePdf, parseText, uploadOriginal, createFromImport]);
 
-  const uploadOriginal = useCallback(async () => {
-    if (!file || !keepFile) return null;
-    const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id;
-    if (!uid) return null;
-    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-    const path = `${uid}/${Date.now()}-${safeName}`;
-    const { error } = await supabase.storage
-      .from("contract-imports")
-      .upload(path, file, { contentType: file.type || undefined, upsert: false });
-    if (error) {
-      toast.warning(`Contrato criado, mas o arquivo original não foi guardado (${error.message}).`);
-      return null;
-    }
-    return path;
-  }, [file, keepFile]);
+  const buildPatch = useCallback((f: ExtractedContract) => {
+    const num = (v: unknown) =>
+      typeof v === "number" && Number.isFinite(v) ? v : v == null || v === "" ? null : Number(v);
+    return {
+      title: f.title?.trim() || "Contrato importado",
+      role: f.role ?? undefined,
+      total_value: (f.total_value ?? f.monthly_value ?? 0) as number,
+      currency: f.currency ?? "BRL",
+      starts_at: f.starts_at ?? null,
+      ends_at: f.ends_at ?? null,
+      auto_renew: f.auto_renew ?? false,
+      notice_days: (num(f.notice_days) ?? 30) as number,
+      monthly_value: num(f.monthly_value),
+      hours_per_month: num(f.hours_per_month),
+      payment_day: num(f.payment_day),
+      payment_method: f.payment_method ?? null,
+      late_fee_percent: num(f.late_fee_percent),
+      late_interest_monthly_percent: num(f.late_interest_monthly_percent),
+      expense_reimbursement_days: num(f.expense_reimbursement_days),
+      readjustment_index: f.readjustment_index ?? null,
+      readjustment_period: f.readjustment_period ?? null,
+      penalty_percent: num(f.penalty_percent),
+      cure_period_days: num(f.cure_period_days),
+      trial_period_days: num(f.trial_period_days),
+      unilateral_termination_notice_days: num(f.unilateral_termination_notice_days),
+      service_type: f.service_type ?? null,
+      service_scope: f.service_scope ?? null,
+      service_location: f.service_location ?? null,
+      governing_law: f.governing_law ?? null,
+      jurisdiction: f.jurisdiction ?? null,
+      confidentiality_term_months: num(f.confidentiality_term_months),
+      signature_provider: f.signature_provider ?? null,
+      signature_document_id: f.signature_document_id ?? null,
+      signature_operation_id: f.signature_operation_id ?? null,
+    };
+  }, []);
 
   const submit = useCallback(async () => {
-    if (!fields || !kind) return;
+    if (!fields || !contractId) return;
     setSaving(true);
     try {
-      const path = await uploadOriginal();
-      setSourceFilePath(path);
-      const result = await createFromImport({
-        data: {
-          fields,
-          source_file_path: path,
-          imported_from: kind,
-        },
-      });
-      toast.success("Contrato criado como rascunho.");
-      handleClose(false);
-      navigate({ to: "/contracts/$id", params: { id: result.id } });
+      await updateFn({ data: { id: contractId, patch: buildPatch(fields) } });
+      toast.success("Contrato salvo.");
+      const id = contractId;
+      reset();
+      onOpenChange(false);
+      navigate({ to: "/contracts/$id", params: { id } });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Falha ao criar contrato";
+      const msg = err instanceof Error ? err.message : "Falha ao salvar contrato";
       toast.error(msg);
     } finally {
       setSaving(false);
     }
-  }, [fields, kind, uploadOriginal, createFromImport, navigate, handleClose]);
+  }, [fields, contractId, updateFn, buildPatch, reset, onOpenChange, navigate]);
+
+  // Silence unused warnings — sourceFilePath is stored for future retry surfaces.
+  void sourceFilePath;
+
 
   const patch = useCallback(
     (p: Partial<ExtractedContract>) => setFields((prev) => (prev ? { ...prev, ...p } : prev)),
@@ -205,7 +267,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             Importar contrato
           </DialogTitle>
           <DialogDescription>
-            Faça upload de um .pdf ou .docx. A IA extrai os campos e você revisa antes de criar.
+            Faça upload de um .pdf ou .docx. A IA extrai os campos e cria um rascunho que você revisa em seguida.
           </DialogDescription>
         </DialogHeader>
 
@@ -250,10 +312,10 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             <Button onClick={submit} disabled={saving}>
               {saving ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Criando…
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando…
                 </>
               ) : (
-                "Criar contrato"
+                "Finalizar"
               )}
             </Button>
           )}
@@ -391,7 +453,7 @@ function ReviewStep({
       <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3 text-sm">
         <Sparkles className="h-4 w-4 text-primary" />
         <div className="flex-1">
-          Campos preenchidos pela IA — edite o que precisar antes de criar.
+          Rascunho salvo. Edite o que precisar e clique em Finalizar — ou feche: o rascunho continua em Contratos.
         </div>
         {confidence !== null && (
           <Badge variant="outline">Confiança: {(confidence * 100).toFixed(0)}%</Badge>
