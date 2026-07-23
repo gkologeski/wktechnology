@@ -696,6 +696,9 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
                 attachmentsFailed++;
                 continue;
               }
+              const displayName = dl.original_name && dl.original_name.trim().length > 0
+                ? dl.original_name
+                : `${att.label}.${dl.ext}`;
               const { error: docErr } = await supabaseAdmin
                 .from("people_documents")
                 .insert({
@@ -704,7 +707,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
                   person_id: personId,
                   doc_type: att.label,
                   file_url: path,
-                  file_name: `${att.label}.${dl.ext}`,
+                  file_name: displayName,
                   is_sensitive: true,
                   status: "valid",
                   notes: `Importado do Google Forms (Drive ID ${att.drive_id})`,
