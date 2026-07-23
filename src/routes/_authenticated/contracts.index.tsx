@@ -225,6 +225,14 @@ function ContractsPage() {
         onOpenChange={setOpenNew}
         onCreated={() => qc.invalidateQueries({ queryKey: ["contracts"] })}
       />
+
+      <ImportContractFileDialog
+        open={openImport}
+        onOpenChange={(next) => {
+          setOpenImport(next);
+          if (!next) qc.invalidateQueries({ queryKey: ["contracts"] });
+        }}
+      />
     </div>
   );
 }
