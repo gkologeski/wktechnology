@@ -51,6 +51,7 @@ import {
   type PeopleDocumentRow,
 } from "@/lib/people/documents.functions";
 import { PersonDocumentDialog } from "@/components/people/document-dialog";
+import { PersonDocumentViewerDialog } from "@/components/people/document-viewer-dialog";
 import { GoalsPanel } from "@/components/people/goals-panel";
 import { OneOnOnesPanel } from "@/components/people/one-on-ones-panel";
 import { ReviewsPanel } from "@/components/people/reviews-panel";
