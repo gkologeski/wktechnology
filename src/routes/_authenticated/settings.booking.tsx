@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -124,7 +125,7 @@ function BookingSettings() {
           <p className="text-sm text-muted-foreground">Nenhuma página criada ainda.</p>
         )}
         {pages.map((p: any) => {
-          const url = `${typeof window !== "undefined" ? window.location.origin : ""}/book/${p.slug}`;
+          const url = `${getPublicAppUrl()}/book/${p.slug}`;
           return (
             <Card key={p.id} className="p-4 flex items-center gap-4">
               <div className="w-2 h-12 rounded" style={{ background: p.color }} />

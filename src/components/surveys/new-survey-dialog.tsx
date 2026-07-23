@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -85,7 +86,7 @@ export function NewSurveyDialog({
         .single();
       if (error) throw error;
       if (!data) throw new Error("Falha ao criar pesquisa.");
-      const url = `${window.location.origin}/survey/${data.token}`;
+      const url = `${getPublicAppUrl()}/survey/${data.token}`;
       await navigator.clipboard.writeText(url).catch(() => undefined);
       toast.success("Pesquisa criada. Link copiado.");
       onCreated?.();

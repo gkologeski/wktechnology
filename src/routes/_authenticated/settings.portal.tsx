@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -63,7 +64,7 @@ function PortalSettingsPage() {
   });
 
   function portalUrl(token: string) {
-    return `${window.location.origin}/portal/${token}`;
+    return `${getPublicAppUrl()}/portal/${token}`;
   }
 
   function copyLink(token: string) {

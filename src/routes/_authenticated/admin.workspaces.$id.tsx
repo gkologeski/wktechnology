@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 // Super-admin: gerencia membros de um workspace específico.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
@@ -90,7 +91,7 @@ function WorkspaceDetailPage() {
           full_name: form.full_name.trim(),
           phone: form.phone.trim() || undefined,
           role: form.role,
-          redirect_origin: window.location.origin,
+          redirect_origin: getPublicAppUrl(),
         },
       }),
     onSuccess: () => {

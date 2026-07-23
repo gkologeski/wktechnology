@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { useState } from "react";
 import { Video, Loader2, Copy, ExternalLink } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
@@ -55,7 +56,7 @@ export function StartVideoButton({
           recording_consent: consent,
         },
       });
-      const origin = typeof window !== "undefined" ? window.location.origin : "";
+      const origin = getPublicAppUrl();
       const publicLink = `${origin}/meet/${meeting.public_token}`;
       const jitsi = `https://meet.jit.si/${meeting.room_name}#userInfo.displayName=%22Host%22${consent ? "&config.fileRecordingsEnabled=true" : ""}`;
       setCreatedLink(publicLink);

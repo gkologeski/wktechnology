@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -131,7 +132,7 @@ export function MeetingDialog({
         },
       });
       const origin =
-        typeof window !== "undefined" ? window.location.origin : "";
+        getPublicAppUrl();
       const publicLink = `${origin}/meet/${meeting.public_token}`;
       const finalLocation = location.trim() || publicLink;
 

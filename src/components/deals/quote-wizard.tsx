@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -373,7 +374,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
   }
 
   const publicUrl = useMemo(
-    () => (publicToken ? `${window.location.origin}/quote/${publicToken}` : ""),
+    () => (publicToken ? `${getPublicAppUrl()}/quote/${publicToken}` : ""),
     [publicToken],
   );
 

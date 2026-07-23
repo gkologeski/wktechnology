@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
@@ -18,7 +19,7 @@ function WidgetSettings() {
   const [origin, setOrigin] = useState<string>("");
 
   useEffect(() => {
-    if (typeof window !== "undefined") setOrigin(window.location.origin);
+    if (typeof window !== "undefined") setOrigin(getPublicAppUrl());
   }, []);
 
   useEffect(() => {

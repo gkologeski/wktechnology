@@ -1,3 +1,4 @@
+import { getPublicAppUrl } from "@/lib/app-url";
 import { formatDateTime } from "@/lib/crm";
 import { useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -98,7 +99,7 @@ export function MeetingDetailDrawer({ meetingId, open, onClose }: Props) {
 
   function copyLink() {
     if (!data?.meeting) return;
-    const origin = window.location.origin;
+    const origin = getPublicAppUrl();
     navigator.clipboard.writeText(`${origin}/meet/${data.meeting.public_token}`);
     toast.success("Link público copiado");
   }
