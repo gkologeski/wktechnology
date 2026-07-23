@@ -346,7 +346,15 @@ export type ImportBatchResult = {
     attachments_failed: number;
     failures: { cpf: string; name: string; reason: string }[];
   };
+  people?: Array<{
+    full_name: string;
+    phone: string | null;
+    cpf_formatted: string;
+    id_doc_drive_id: string | null;
+  }>;
 };
+
+const ID_DOC_LABEL = "Documento de identidade (CPF/RG)";
 
 export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -363,6 +371,13 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
 
     if (data.dry_run) {
       const attachmentsCount = rows.reduce((s, r) => s + r.attachments.length, 0);
+      const people = rows.map((r) => ({
+        full_name: r.full_name,
+        phone: r.phone ?? r.mobile ?? null,
+        cpf_formatted: r.cpf_formatted,
+        id_doc_drive_id:
+          r.attachments.find((a) => a.label === ID_DOC_LABEL)?.drive_id ?? null,
+      }));
       return {
         total_unique: rows.length,
         processed: rows.length,
@@ -376,8 +391,10 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
           attachments_failed: attachmentsCount,
           failures: [],
         },
+        people,
       };
     }
+
 
     // owner_id = workspace ativo do usuário.
     const { data: prof } = await supabase
