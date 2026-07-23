@@ -1,60 +1,81 @@
-
 ## Objetivo
 
-Permitir visualizar o arquivo original de um contrato importado (PDF/DOCX salvo no bucket `contract-imports`, referenciado em `contracts.source_file_path`) em um modal, seguindo o mesmo padrão do visualizador já usado em `people/documents` (`PersonDocumentViewerDialog`): PDF renderizado via `blob:` URL, DOCX via Office Online Viewer, imagens/áudio/vídeo/texto inline e fallback com "Baixar".
+Após excluir um registro (via tela de detalhe ou via grid), o usuário deve voltar automaticamente ao grid/tela de origem e o grid deve refletir a exclusão sem F5.
 
-## Escopo
+## Diagnóstico
 
-1. **Server function** para gerar URL assinada do arquivo do contrato.
-2. **Componente de visualização** dedicado a contratos.
-3. **Botão "Visualizar"** na tela de detalhe do contrato quando existir `source_file_path`.
+Auditei as telas de detalhe (`*.$id.tsx`) e vários grids. O padrão de bug é sempre o mesmo: a exclusão remove o registro e navega de volta, mas **não invalida a query da listagem**. Como a lista já está em cache, o item excluído continua aparecendo até um reload manual.
 
-Não altera schema, RLS, upload nem lógica de importação.
+Casos com bug confirmados (deletam + `navigate` mas não invalidam a lista):
 
-## Passos
+- `companies.$id.tsx` — deleta e vai para `/companies`, sem invalidar `["companies"]`.
+- `contacts.$id.tsx` — idem para `["contacts"]`.
+- `tasks.$id.tsx` — idem para `["tasks"]`/atividades.
+- `tickets.$id.tsx` — idem para `["tickets"]`.
+- `deals.$id.tsx` — idem para `["deals"]`.
+- `leads.$id.tsx` — idem para `["leads"]`.
 
-### 1. Server function `getContractSourceFileUrl`
+Casos já corretos (mantêm como referência):
+- `services.$id.tsx`, `contracts.$id.tsx`, `proposals.index.tsx`, `projects.$id.tsx` já invalidam a lista.
 
-Arquivo: `src/lib/contracts/import.functions.ts` (append).
+Além disso, alguns grids fazem `.delete()` diretamente pelo cliente Supabase (sem passar por server function) e também não invalidam a query. Farei uma varredura completa dos grids em `src/routes/_authenticated/*.index.tsx` e `src/components/**` para aplicar a mesma correção.
 
-- `createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])`.
-- Input: `{ id: uuid }`.
-- Handler:
-  - Lê `contracts` (`id, source_file_path, imported_from, title, number`) sob RLS do usuário; se sem linha ou sem `source_file_path` → erro "Arquivo não disponível".
-  - Chama `supabase.storage.from("contract-imports").createSignedUrl(source_file_path, 60 * 10)`.
-  - Retorna `{ url, fileName, kind }` (fileName = basename do path; kind = `imported_from`).
+## Escopo da correção
 
-### 2. Componente `ContractFileViewerDialog`
+1. **Telas de detalhe (delete + voltar ao grid)** — em cada uma:
+   - Antes de `navigate({...})`, chamar `qc.invalidateQueries` para a query de lista correspondente (e queries auxiliares como board/kanban quando existirem).
+   - Também invalidar a query do próprio registro (`["contact", id]` etc.) para evitar reabertura em cache.
+   - Manter o `navigate` para o grid pai já existente.
 
-Arquivo novo: `src/components/contracts/contract-file-viewer-dialog.tsx`.
+2. **Grids (delete inline em `*.index.tsx` e componentes de lista)** — auditar e garantir que toda ação de excluir chama `invalidateQueries` da lista após sucesso. Onde já usa `useMutation`, adicionar/ajustar `onSuccess`. Onde chama Supabase direto sem mutation, envolver em `useMutation` ou chamar `qc.invalidateQueries` no callback.
 
-- Estrutura idêntica a `PersonDocumentViewerDialog`: mesmos estados (`url`, `pdfBlobUrl`, `pdfLoading/Error`, `textPreview`, `loading`, `error`), mesmo `kindOf`, mesmo header com "Baixar"/"Fechar", mesmo `DialogContent max-w-4xl p-0`.
-- Diferenças mínimas:
-  - `useServerFn(getContractSourceFileUrl)` no lugar de `getDocumentDownloadUrl`.
-  - Props: `{ open, onOpenChange, contractId, fileName }`.
-  - `DialogTitle` "Visualizar contrato" (sr-only).
-- Mantém a estratégia PDF via `fetch → Blob → URL.createObjectURL` (mesma justificativa: contorna bloqueio do Chrome / força-download).
-- Mantém Office Viewer para `.docx`.
+3. **Padronização** — nas telas de detalhe que usam `supabase.from(...).delete()` direto (companies, contacts, tasks, tickets, deals), manter esse caminho (para não alterar regra de negócio/RLS), apenas adicionando a invalidação. Sem mudanças de schema, RLS ou permissões.
 
-### 3. Botão na tela de detalhe
+4. **Confirmação de exclusão** — não alterar. Onde há `AlertDialog`, mantém; onde há `confirm()`, mantém. Fora do escopo pedido.
 
-Arquivo: `src/routes/_authenticated/contracts.$id.tsx`.
+## Telas que serão alteradas
 
-- Adicionar botão `Visualizar` (ícone `Eye`) no `PageHeader` de ações do contrato, exibido apenas quando `contract.source_file_path` estiver preenchido.
-- Estado local `viewerOpen` controla o modal.
-- Renderizar `<ContractFileViewerDialog open={viewerOpen} onOpenChange={setViewerOpen} contractId={contract.id} fileName={basename(contract.source_file_path)} />` no fim do componente.
-- Na linha "Arquivo original" do card `Detalhes extraídos`, tornar o valor clicável (link que chama `setViewerOpen(true)`) para acesso rápido, mantendo o texto atual.
+Detalhe:
+- `src/routes/_authenticated/companies.$id.tsx`
+- `src/routes/_authenticated/contacts.$id.tsx`
+- `src/routes/_authenticated/tasks.$id.tsx`
+- `src/routes/_authenticated/tickets.$id.tsx`
+- `src/routes/_authenticated/deals.$id.tsx`
+- `src/routes/_authenticated/leads.$id.tsx`
 
-## Testes / Validação manual
+Grids/telas de lista (a confirmar após varredura, mas o padrão será o mesmo):
+- `src/routes/_authenticated/*.index.tsx` que fazem delete inline sem invalidar (ex.: candidatos, jobs, workflows, sequences, landing-pages, files etc.).
 
-1. Importar um `.pdf` → em `/contracts/$id`, clicar "Visualizar" → modal abre e renderiza o PDF inline; botão "Baixar" funciona.
-2. Importar um `.docx` → visualizador abre via Office Online Viewer.
-3. Contrato sem `source_file_path` → botão "Visualizar" não aparece.
-4. Rodar `bunx tsgo --noEmit`.
+Farei a varredura completa em build mode antes de aplicar as correções, corrigindo todas as ocorrências, e listarei arquivos alterados no relatório final.
+
+## Fora do escopo
+
+- Não altero RLS, permissões, políticas, schema ou lógica de negócio.
+- Não mudo confirmações, UX de botões, textos ou estilos.
+- Não mudo o destino de navegação de nenhuma tela — apenas garanto que a lista de destino esteja fresca.
+
+## Validação
+
+- `tsgo` (typecheck).
+- Verificação manual do fluxo em 2–3 telas críticas (ex.: excluir contato, empresa e ticket) para confirmar que a lista atualiza sem F5.
 
 ## Detalhes técnicos
 
-- Bucket já existente: `contract-imports` (privado). Não requer nova migration.
-- RLS já cobre `contracts` — a server function apenas gera URL assinada quando o usuário tem acesso à linha.
-- Não altera `updateContract`, `createContract`, nem o wizard de importação.
-- Fora de escopo: viewer para contratos criados manualmente (sem `source_file_path`), edição inline do arquivo, versão nova via upload.
+Padrão aplicado em cada ponto de exclusão:
+
+```ts
+await deleteOp(...);
+toast.success("Excluído");
+qc.invalidateQueries({ queryKey: ["<lista>"] });     // grid principal
+qc.invalidateQueries({ queryKey: ["<detalhe>", id] }); // detalhe em cache
+navigate({ to: "/<lista>" });
+```
+
+Para grids que já usam `useMutation`, adiciono/ajusto:
+
+```ts
+useMutation({
+  mutationFn: ...,
+  onSuccess: () => qc.invalidateQueries({ queryKey: ["<lista>"] }),
+});
+```
