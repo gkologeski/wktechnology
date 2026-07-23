@@ -404,6 +404,7 @@ export const restoreWorkspaceAdmin = createServerFn({ method: "POST" })
     const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin.rpc("restore_workspace", {
       _workspace: data.workspace_id,
+      _actor: context.userId,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
