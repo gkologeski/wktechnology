@@ -25,7 +25,9 @@ import {
 } from "@/components/ui/table";
 import {
   importPeopleFromPublicSheet,
+  reimportBrokenAttachments,
   type ImportBatchResult,
+  type ReimportResult,
 } from "@/lib/people/import-forms.functions";
 
 const DEFAULT_URL =
@@ -65,12 +67,14 @@ const zero: Totals = {
 
 function ImportFormsPage() {
   const runImport = useServerFn(importPeopleFromPublicSheet);
+  const runReimport = useServerFn(reimportBrokenAttachments);
   const [sheetUrl, setSheetUrl] = useState(DEFAULT_URL);
-  const [running, setRunning] = useState<null | "dry" | "exec">(null);
+  const [running, setRunning] = useState<null | "dry" | "exec" | "reimport">(null);
   const [totalUnique, setTotalUnique] = useState(0);
   const [processed, setProcessed] = useState(0);
   const [totals, setTotals] = useState<Totals>(zero);
   const [dryResult, setDryResult] = useState<ImportBatchResult | null>(null);
+  const [reimport, setReimport] = useState<ReimportResult | null>(null);
 
   async function simulate() {
     setRunning("dry");
@@ -118,6 +122,43 @@ function ImportFormsPage() {
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha na importação");
+    } finally {
+      setRunning(null);
+    }
+  }
+
+  async function reimportBroken() {
+    if (!window.confirm("Reimportar todos os anexos quebrados (.bin)? Pode levar alguns minutos.")) return;
+    setRunning("reimport");
+    setReimport(null);
+    try {
+      let offset = 0;
+      let done = false;
+      let scanned = 0;
+      let fixed = 0;
+      let stillFailed = 0;
+      const failures: ReimportResult["failures"] = [];
+      while (!done) {
+        const r = await runReimport({ data: { offset, batch_size: 8 } });
+        scanned = r.scanned;
+        fixed += r.fixed;
+        stillFailed += r.still_failed;
+        failures.push(...r.failures);
+        setReimport({
+          scanned,
+          fixed,
+          still_failed: stillFailed,
+          processed: r.next_offset,
+          next_offset: r.next_offset,
+          done: r.done,
+          failures,
+        });
+        offset = r.next_offset;
+        done = r.done;
+      }
+      toast.success(`Reimportação concluída — ${fixed} corrigidos, ${stillFailed} ainda falhando.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha na reimportação");
     } finally {
       setRunning(null);
     }
@@ -315,6 +356,56 @@ function ImportFormsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Reimportar anexos quebrados</CardTitle>
+          <CardDescription>
+            Varre documentos com extensão <code>.bin</code>, refaz o download do Drive com o tipo
+            correto e substitui o arquivo original.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button variant="outline" onClick={reimportBroken} disabled={running !== null}>
+            {running === "reimport" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Reimportar anexos .bin
+          </Button>
+          {reimport && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <Stat label="Encontrados" value={reimport.scanned} />
+                <Stat label="Corrigidos" value={reimport.fixed} tone="success" />
+                <Stat
+                  label="Ainda falhando"
+                  value={reimport.still_failed}
+                  tone={reimport.still_failed > 0 ? "warn" : "muted"}
+                />
+                <Stat label="Processados" value={reimport.processed} />
+              </div>
+              {reimport.failures.length > 0 && (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Documento</TableHead>
+                        <TableHead>Motivo</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reimport.failures.slice(0, 50).map((f) => (
+                        <TableRow key={f.id}>
+                          <TableCell className="font-mono text-xs">{f.id.slice(0, 8)}…</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{f.reason}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
