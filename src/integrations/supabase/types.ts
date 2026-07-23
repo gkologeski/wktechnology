@@ -17239,6 +17239,7 @@ export type Database = {
           created_by: string
           custom_domain: string | null
           data_region: string
+          deleted_at: string | null
           id: string
           logo_url: string | null
           meeting_settings: Json
@@ -17256,6 +17257,7 @@ export type Database = {
           created_by: string
           custom_domain?: string | null
           data_region?: string
+          deleted_at?: string | null
           id?: string
           logo_url?: string | null
           meeting_settings?: Json
@@ -17273,6 +17275,7 @@ export type Database = {
           created_by?: string
           custom_domain?: string | null
           data_region?: string
+          deleted_at?: string | null
           id?: string
           logo_url?: string | null
           meeting_settings?: Json
@@ -17681,6 +17684,10 @@ export type Database = {
         }
         Returns: number
       }
+      purge_workspace: {
+        Args: { _confirm_name: string; _workspace: string }
+        Returns: undefined
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
@@ -17696,6 +17703,7 @@ export type Database = {
       }
       recompute_deal_value: { Args: { _deal_id: string }; Returns: undefined }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
+      restore_workspace: { Args: { _workspace: string }; Returns: undefined }
       schedule_platform_alerts_cron: { Args: never; Returns: Json }
       security_scan_collect: { Args: never; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
@@ -17717,6 +17725,10 @@ export type Database = {
       shares_workspace_with: { Args: { _other: string }; Returns: boolean }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      soft_delete_workspace: {
+        Args: { _workspace: string }
+        Returns: undefined
+      }
       techhire_rbac_gate: {
         Args: { _perm: string; _user: string }
         Returns: boolean

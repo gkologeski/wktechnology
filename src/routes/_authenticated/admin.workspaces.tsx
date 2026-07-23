@@ -34,7 +34,21 @@ import {
   createWorkspaceWithAdmin,
   inviteUserToWorkspace,
 } from "@/lib/platform-admin.functions";
-import { Plus, Building2, ShieldAlert, Users, ChevronRight, UserPlus } from "lucide-react";
+import { Plus, Building2, ShieldAlert, Users, ChevronRight, UserPlus, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  EditWorkspaceDialog,
+  SoftDeleteWorkspaceDialog,
+  RestoreWorkspaceDialog,
+  PurgeWorkspaceDialog,
+} from "@/components/admin/workspace-lifecycle-dialogs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/admin/workspaces")({
   component: WorkspacesAdminPage,
@@ -70,6 +84,13 @@ function WorkspacesAdminPage() {
     phone: "",
     role: "member" as "admin" | "member",
   });
+
+  const [filter, setFilter] = useState<"active" | "suspended" | "deleted" | "all">("active");
+  type WsRow = NonNullable<typeof list.data>[number];
+  const [editTarget, setEditTarget] = useState<WsRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<WsRow | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<WsRow | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<WsRow | null>(null);
 
   const create = useMutation({
     mutationFn: async () =>
@@ -318,45 +339,156 @@ function WorkspacesAdminPage() {
         }
       />
 
+      <Tabs value={filter} onValueChange={(v) => setFilter(v as typeof filter)}>
+        <TabsList>
+          <TabsTrigger value="active">Ativos</TabsTrigger>
+          <TabsTrigger value="suspended">Suspensos</TabsTrigger>
+          <TabsTrigger value="deleted">Lixeira</TabsTrigger>
+          <TabsTrigger value="all">Todos</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
       {list.isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando workspaces…</div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {(list.data ?? []).map((w) => (
-            <Link
-              key={w.id}
-              to="/admin/workspaces/$id"
-              params={{ id: w.id as string }}
-              className="block"
-            >
-              <Card className="hover:border-primary transition-colors">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-base flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      {w.name}
-                    </CardTitle>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <CardDescription className="text-xs">/{w.slug}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex items-center gap-3 text-sm text-muted-foreground">
-                  <Badge variant={w.status === "active" ? "default" : "secondary"}>
-                    {w.status}
-                  </Badge>
-                  <span className="flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5" />
-                    {w.member_count}
-                  </span>
-                  {w.custom_domain && <span className="truncate text-xs">{w.custom_domain}</span>}
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-          {(list.data ?? []).length === 0 && (
-            <div className="text-sm text-muted-foreground">Nenhum workspace ainda.</div>
-          )}
-        </div>
+        (() => {
+          const rows = (list.data ?? []).filter((w) =>
+            filter === "all" ? true : w.status === filter,
+          );
+          if (rows.length === 0) {
+            return (
+              <div className="text-sm text-muted-foreground">
+                Nenhum workspace nesta visualização.
+              </div>
+            );
+          }
+          return (
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {rows.map((w) => {
+                const isDeleted = w.status === "deleted";
+                return (
+                  <Card
+                    key={w.id}
+                    className={isDeleted ? "opacity-70" : "hover:border-primary transition-colors"}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <CardTitle className="text-base flex items-center gap-2 min-w-0">
+                          <Building2 className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{w.name}</span>
+                        </CardTitle>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button size="icon" variant="ghost" className="h-7 w-7">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {!isDeleted && (
+                              <>
+                                <DropdownMenuItem asChild>
+                                  <Link
+                                    to="/admin/workspaces/$id"
+                                    params={{ id: w.id as string }}
+                                  >
+                                    Abrir
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setEditTarget(w)}>
+                                  Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onSelect={() => setDeleteTarget(w)}
+                                >
+                                  Excluir
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {isDeleted && (
+                              <>
+                                <DropdownMenuItem onSelect={() => setRestoreTarget(w)}>
+                                  Restaurar
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onSelect={() => setPurgeTarget(w)}
+                                >
+                                  Excluir definitivamente
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      <CardDescription className="text-xs">/{w.slug}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <Badge
+                        variant={
+                          w.status === "active"
+                            ? "default"
+                            : w.status === "deleted"
+                              ? "destructive"
+                              : "secondary"
+                        }
+                      >
+                        {w.status}
+                      </Badge>
+                      <span className="flex items-center gap-1">
+                        <Users className="h-3.5 w-3.5" />
+                        {w.member_count}
+                      </span>
+                      {w.custom_domain && (
+                        <span className="truncate text-xs">{w.custom_domain}</span>
+                      )}
+                      {!isDeleted && (
+                        <Link
+                          to="/admin/workspaces/$id"
+                          params={{ id: w.id as string }}
+                          className="ml-auto text-muted-foreground hover:text-foreground"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Link>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          );
+        })()
+      )}
+
+      {editTarget && (
+        <EditWorkspaceDialog
+          workspace={editTarget}
+          open={!!editTarget}
+          onOpenChange={(v) => !v && setEditTarget(null)}
+        />
+      )}
+      {deleteTarget && (
+        <SoftDeleteWorkspaceDialog
+          workspace={deleteTarget}
+          open={!!deleteTarget}
+          onOpenChange={(v) => !v && setDeleteTarget(null)}
+        />
+      )}
+      {restoreTarget && (
+        <RestoreWorkspaceDialog
+          workspace={restoreTarget}
+          open={!!restoreTarget}
+          onOpenChange={(v) => !v && setRestoreTarget(null)}
+        />
+      )}
+      {purgeTarget && (
+        <PurgeWorkspaceDialog
+          workspace={purgeTarget}
+          open={!!purgeTarget}
+          onOpenChange={(v) => !v && setPurgeTarget(null)}
+        />
       )}
     </div>
   );

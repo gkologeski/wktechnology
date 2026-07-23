@@ -1,31 +1,65 @@
-## Problema
+## Gestão de Workspaces (Platform Admin)
 
-`src/routes/_authenticated/settings.branding.tsx` renderiza abas apenas para `crm` e `ats`, mas o registro de módulos (`src/lib/modules/registry.ts`) define 7: `crm`, `ats`, `contracts`, `services`, `projects`, `finance`, `people`. Além disso, a server function `saveModuleBranding`/`getModuleBranding` em `src/lib/modules/module-branding.functions.ts` valida via Zod `z.enum(["crm","ats"])`, então mesmo se a UI expusesse mais abas o backend rejeitaria.
+Centralizar criar/editar/excluir workspaces em `/admin/workspaces`, restrito a **Platform Admin**. Admin comum do workspace continua apenas com branding/membros/módulos.
 
-## Escopo
+### Escopo
 
-Expandir o branding por módulo para cobrir todos os módulos do registry, exceto `services` (que foi consolidado dentro de Contratos na decisão 1+2 anterior — não deve ter identidade visual própria no seletor).
+**Criar** — já existe (`createWorkspaceAdmin`). Apenas revisar UX do dialog atual em `/admin/workspaces`.
 
-Módulos com aba de branding após a correção: `crm`, `ats`, `contracts`, `projects`, `finance`, `people`.
+**Editar** — expor UI usando a função `updateWorkspaceAdmin` já existente. Campos editáveis:
+- Nome
+- Slug
+- Status (`active` / `suspended` / `deleted`)
+- Plano
+- Domínio custom (se aplicável no schema)
 
-## Alterações
+**Excluir (dois níveis)**:
+1. **Soft-delete** (padrão) — botão "Excluir". Marca `status = 'deleted'` + `deleted_at = now()`. Workspace some das listagens normais, dados preservados, membros perdem acesso.
+2. **Hard-delete / Purge** — só aparece para workspaces já em `status = 'deleted'`. Botão "Excluir definitivamente" com confirmação dupla (digitar o nome do workspace). Remove workspace e todos os dados em cascata via `ON DELETE CASCADE` já existente ou cleanup dedicado.
 
-1. **`src/lib/modules/module-branding.functions.ts`**
-   - Trocar `const MODULE_IDS = ["crm", "ats"] as const;` por lista alinhada ao registry (sem `services`): `["crm","ats","contracts","projects","finance","people"]`.
-   - Mantém o resto do handler intacto (upsert em `module_branding` por `workspace_id,module_id`).
+**Restaurar** — para workspaces em `status = 'deleted'` que ainda não foram purgados, botão "Restaurar" que volta `status = 'active'` e limpa `deleted_at`.
 
-2. **`src/routes/_authenticated/settings.branding.tsx`**
-   - Gerar `TabsTrigger` e `TabsContent` iterando sobre a lista de módulos suportados, usando `MODULES[id].productName` como rótulo.
-   - Manter a aba "Workspace (ERP)" como default.
-   - Ajustar o texto descritivo para não citar apenas TechSales/TechHire.
+### Alterações técnicas
 
-## Fora de escopo
+**Banco (migration)**:
+- Adicionar coluna `deleted_at timestamptz` em `public.workspaces` (se não existir).
+- Índice parcial `WHERE status = 'deleted'` para lixeira.
+- Função `soft_delete_workspace(ws_id uuid)` e `purge_workspace(ws_id uuid)` como SECURITY DEFINER, validando `is_platform_admin(auth.uid())` no início.
+- Bloquear acesso: `has_workspace_access` / `workspace_members` policies devem tratar `status = 'deleted'` como sem acesso (revisar policies existentes que já filtram por status).
 
-- Não alterar RLS nem schema de `module_branding` (a tabela já usa `module_id text`, aceita qualquer valor; a restrição estava só no Zod).
-- Não incluir `services` (decisão prévia de consolidar em Contratos).
-- Nenhuma mudança no `BrandingBuilder` (workspace ERP).
+**Server functions** (`src/lib/admin/workspaces.functions.ts`):
+- `updateWorkspaceAdmin` — já existe, confirmar campos aceitos e uso.
+- `softDeleteWorkspaceAdmin({ id })` — chama RPC `soft_delete_workspace`.
+- `restoreWorkspaceAdmin({ id })` — status volta para `active`, `deleted_at = null`.
+- `purgeWorkspaceAdmin({ id, confirmName })` — valida nome digitado antes de chamar RPC `purge_workspace`.
+- Todas com `.middleware([requireSupabaseAuth])` + checagem `has_role(userId, 'platform_admin')` no handler antes de importar `supabaseAdmin`.
 
-## Validação
+**UI**:
+- `/admin/workspaces` (listagem): adicionar filtro "Ativos / Suspensos / Excluídos", ações por linha (Editar, Suspender/Ativar, Excluir, Restaurar, Excluir definitivamente conforme status).
+- `/admin/workspaces/$id` (detalhe existente): adicionar seção "Zona de perigo" com botões conforme status atual + dialog de edição de metadados.
+- Componentes: `EditWorkspaceDialog`, `DeleteWorkspaceDialog` (soft, com aviso), `PurgeWorkspaceDialog` (com input de confirmação do nome).
 
-- `bun run tsgo` para garantir tipos.
-- Abrir `/settings/branding` e conferir as 6 abas de módulo + aba workspace; salvar em uma delas (ex. `contracts`) e recarregar para ver o valor persistido.
+**UX/Design system**:
+- Usar `PageHeader`, `DataTable`, `StatusBadge` (verde=active, amarelo=suspended, cinza=deleted), `AlertDialog` para confirmações destrutivas.
+- Toasts pós-ação + `queryClient.invalidateQueries(['admin', 'workspaces'])`.
+- Loading/empty/error states.
+
+### Segurança
+- Todas as operações validam platform admin via `context.supabase.rpc('has_role', ...)` — nunca confiar só na UI.
+- Purge exige digitar o nome exato do workspace (defesa contra clique acidental).
+- Auditoria: inserir registro em `access_audit_log` (soft-delete, restore, purge) com `actor_id`, `workspace_id`, `action`.
+- RLS de workspaces em `deleted` bloqueia leitura para não-admin.
+
+### Fora do escopo
+- Não mudar quem é workspace admin.
+- Não criar tela `/settings/workspace` para admin comum do workspace editar o próprio.
+- Não mexer em membros/branding/módulos existentes.
+- Sem export automático de dados antes do purge (podem usar Cloud → Export data manualmente).
+
+### Validação manual
+1. Como platform admin, criar workspace → aparece na lista.
+2. Editar nome/slug → persiste.
+3. Soft-delete → some da lista padrão, aparece no filtro "Excluídos", membros deste workspace deslogados perdem acesso.
+4. Restaurar → volta para ativo.
+5. Purge com nome errado → rejeita. Com nome correto → workspace e dados sumem.
+6. Como usuário comum de workspace, tentar chamar as funções → 403.

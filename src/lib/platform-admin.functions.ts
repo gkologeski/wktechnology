@@ -65,7 +65,9 @@ export const listAllWorkspaces = createServerFn({ method: "GET" })
     await assertPlatformAdmin(context.userId);
     const { data, error } = await supabaseAdmin
       .from("workspaces")
-      .select("id, name, slug, logo_url, primary_color, custom_domain, status, created_at")
+      .select(
+        "id, name, slug, logo_url, primary_color, custom_domain, status, created_at, deleted_at",
+      )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
@@ -336,9 +338,22 @@ export const updateWorkspaceAdmin = createServerFn({ method: "POST" })
       .object({
         workspace_id: z.string().uuid(),
         name: z.string().trim().min(2).max(120).optional(),
+        slug: z
+          .string()
+          .trim()
+          .min(2)
+          .max(64)
+          .regex(/^[a-z0-9-]+$/, "Use apenas letras minúsculas, números e hífen.")
+          .optional(),
         logo_url: z.string().trim().url().max(500).nullable().optional(),
         primary_color: z.string().trim().max(32).nullable().optional(),
-        custom_domain: z.string().trim().max(255).nullable().optional(),
+        custom_domain: z
+          .string()
+          .trim()
+          .max(255)
+          .nullable()
+          .optional()
+          .transform((v) => (v === "" ? null : v)),
         status: z.enum(["active", "suspended"]).optional(),
       })
       .parse(i),
@@ -347,14 +362,70 @@ export const updateWorkspaceAdmin = createServerFn({ method: "POST" })
     await assertPlatformAdmin(context.userId);
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) patch.name = data.name;
+    if (data.slug !== undefined) patch.slug = data.slug;
     if (data.logo_url !== undefined) patch.logo_url = data.logo_url;
     if (data.primary_color !== undefined) patch.primary_color = data.primary_color;
     if (data.custom_domain !== undefined) patch.custom_domain = data.custom_domain;
     if (data.status !== undefined) patch.status = data.status;
+    const supabaseAdmin = await getSupabaseAdmin();
     const { error } = await supabaseAdmin
       .from("workspaces")
       .update(patch as never)
       .eq("id", data.workspace_id);
+    if (error) {
+      if (error.code === "23505")
+        throw new Error("Já existe um workspace com esse slug ou domínio.");
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+/** Soft-delete de workspace (super-admin). */
+export const softDeleteWorkspaceAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ workspace_id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { error } = await supabaseAdmin.rpc("soft_delete_workspace", {
+      _workspace: data.workspace_id,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Restaura workspace soft-deletado (super-admin). */
+export const restoreWorkspaceAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ workspace_id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { error } = await supabaseAdmin.rpc("restore_workspace", {
+      _workspace: data.workspace_id,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Exclusão definitiva (purge) — apaga workspace e todos os dados em cascata. */
+export const purgeWorkspaceAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) =>
+    z
+      .object({
+        workspace_id: z.string().uuid(),
+        confirm_name: z.string().trim().min(1).max(120),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertPlatformAdmin(context.userId);
+    const supabaseAdmin = await getSupabaseAdmin();
+    const { error } = await supabaseAdmin.rpc("purge_workspace", {
+      _workspace: data.workspace_id,
+      _confirm_name: data.confirm_name,
+    });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -35,7 +35,13 @@ import {
   inviteUserToWorkspace,
   removeWorkspaceMember,
 } from "@/lib/platform-admin.functions";
-import { ArrowLeft, Plus, ShieldAlert, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, ShieldAlert, Trash2, Pencil, AlertTriangle } from "lucide-react";
+import {
+  EditWorkspaceDialog,
+  SoftDeleteWorkspaceDialog,
+  RestoreWorkspaceDialog,
+  PurgeWorkspaceDialog,
+} from "@/components/admin/workspace-lifecycle-dialogs";
 
 export const Route = createFileRoute("/_authenticated/admin/workspaces/$id")({
   component: WorkspaceDetailPage,
@@ -64,6 +70,10 @@ function WorkspaceDetailPage() {
   });
 
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
   const [form, setForm] = useState({
     email: "",
     full_name: "",
@@ -141,73 +151,83 @@ function WorkspaceDetailPage() {
         title={ws?.name ?? "Workspace"}
         description={ws ? `/${ws.slug} · ${ws.status}` : "Carregando…"}
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Convidar usuário
+          <div className="flex gap-2">
+            {ws && (
+              <Button variant="outline" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Editar
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Convidar usuário</DialogTitle>
-                <DialogDescription>
-                  O usuário receberá um email para definir senha e acessar o workspace.
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={submit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="m-name">Nome completo</Label>
-                  <Input
-                    id="m-name"
-                    required
-                    value={form.full_name}
-                    onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="m-email">Email</Label>
-                  <EmailInput
-                    id="m-email"
-                    required
-                    value={form.email}
-                    onChange={(v) => setForm((f) => ({ ...f, email: v }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="m-phone">Telefone (opcional)</Label>
-                  <PhoneInput
-                    id="m-phone"
-                    value={form.phone}
-                    onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Papel</Label>
-                  <Select
-                    value={form.role}
-                    onValueChange={(v) => setForm((f) => ({ ...f, role: v as "admin" | "member" }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin do workspace</SelectItem>
-                      <SelectItem value="member">Membro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={invMut.isPending}>
-                    {invMut.isPending ? "Enviando…" : "Enviar convite"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+            )}
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button disabled={ws?.status === "deleted"}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Convidar usuário
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Convidar usuário</DialogTitle>
+                  <DialogDescription>
+                    O usuário receberá um email para definir senha e acessar o workspace.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="m-name">Nome completo</Label>
+                    <Input
+                      id="m-name"
+                      required
+                      value={form.full_name}
+                      onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="m-email">Email</Label>
+                    <EmailInput
+                      id="m-email"
+                      required
+                      value={form.email}
+                      onChange={(v) => setForm((f) => ({ ...f, email: v }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="m-phone">Telefone (opcional)</Label>
+                    <PhoneInput
+                      id="m-phone"
+                      value={form.phone}
+                      onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Papel</Label>
+                    <Select
+                      value={form.role}
+                      onValueChange={(v) =>
+                        setForm((f) => ({ ...f, role: v as "admin" | "member" }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin do workspace</SelectItem>
+                        <SelectItem value="member">Membro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={invMut.isPending}>
+                      {invMut.isPending ? "Enviando…" : "Enviar convite"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         }
       />
 
@@ -250,6 +270,55 @@ function WorkspaceDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {ws && (
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              Zona de perigo
+            </CardTitle>
+            <CardDescription>
+              Ações irreversíveis ou de alto impacto. Restritas a super-admins da plataforma.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {ws.status !== "deleted" ? (
+              <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir workspace
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setRestoreOpen(true)}>
+                  Restaurar
+                </Button>
+                <Button variant="destructive" onClick={() => setPurgeOpen(true)}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir definitivamente
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {ws && (
+        <>
+          <EditWorkspaceDialog workspace={ws} open={editOpen} onOpenChange={setEditOpen} />
+          <SoftDeleteWorkspaceDialog
+            workspace={ws}
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+          />
+          <RestoreWorkspaceDialog
+            workspace={ws}
+            open={restoreOpen}
+            onOpenChange={setRestoreOpen}
+          />
+          <PurgeWorkspaceDialog workspace={ws} open={purgeOpen} onOpenChange={setPurgeOpen} />
+        </>
+      )}
     </div>
   );
 }
