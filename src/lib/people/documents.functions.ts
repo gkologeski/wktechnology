@@ -196,7 +196,14 @@ export const getDocumentDownloadUrl = createServerFn({ method: "POST" })
       .from("people-documents")
       .createSignedUrl(path, 300);
     if (sErr) throw new Error(sErr.message);
-    return { url: signed.signedUrl };
+    // Força Content-Disposition: inline para permitir visualização no navegador
+    // (arquivos podem ter sido enviados com disposition=attachment como metadado).
+    const inlineUrl = signed.signedUrl.includes("response-content-disposition=")
+      ? signed.signedUrl
+      : signed.signedUrl +
+        (signed.signedUrl.includes("?") ? "&" : "?") +
+        "response-content-disposition=inline";
+    return { url: inlineUrl };
   });
 
 // --- Listagem global de documentos a vencer ---------------------------------
