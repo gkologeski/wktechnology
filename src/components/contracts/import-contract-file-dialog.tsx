@@ -267,7 +267,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             Importar contrato
           </DialogTitle>
           <DialogDescription>
-            Faça upload de um .pdf ou .docx. A IA extrai os campos e você revisa antes de criar.
+            Faça upload de um .pdf ou .docx. A IA extrai os campos e cria um rascunho que você revisa em seguida.
           </DialogDescription>
         </DialogHeader>
 
