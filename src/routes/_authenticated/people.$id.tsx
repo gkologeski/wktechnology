@@ -12,6 +12,7 @@ import {
   Clock,
   Plus,
   Download,
+  Eye,
   Pencil,
   Trash2,
 } from "lucide-react";
