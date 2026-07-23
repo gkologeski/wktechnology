@@ -1,73 +1,45 @@
-## Objetivo
+# Plano: Visualização de documentos em modal
 
-Expandir a ficha de Pessoa (`/people/$id`) com novos campos estruturados e migrar os dados atualmente colados no bloco "Notas internas" (importados do Google Forms) para colunas dedicadas.
+## Contexto
+Na aba **Documentos** da ficha de pessoa (`/people/:id`), cada documento com arquivo anexado atualmente possui apenas as ações **Baixar**, **Editar** e **Remover**. O objetivo é adicionar uma ação de **visualização** que abra um modal sem sair da ficha.
 
-## 1. Migração de schema (`public.people`)
+## O que será implementado
 
-Adicionar colunas nullable, sem alterar RLS:
+1. **Novo componente `PersonDocumentViewerDialog`**
+   - Local: `src/components/people/document-viewer-dialog.tsx`
+   - Recebe o documento (`PeopleDocumentRow`) e controla `open/onOpenChange`.
+   - Busca URL assinada de 5 minutos via server function existente `getDocumentDownloadUrl`.
+   - Renderiza o arquivo conforme tipo:
+     - **PDF**: iframe com Blob URL (evita `Content-Disposition: attachment`).
+     - **Imagem**: `<img>` com a signed URL.
+     - **Áudio/Video**: players nativos.
+     - **Office** (.doc/.docx): visualizador embedado do Office Online.
+     - **Texto**: pré-visualização do conteúdo.
+     - **Outros**: link para abrir/download.
+   - Estados de loading, erro e arquivo ausente.
+   - Botões no header: **Baixar** (usando a signed URL) e **Fechar**.
+   - Acessível: `aria-label`, foco no Dialog, ESC fecha.
 
-- **Dados básicos**: `education text`, `shirt_size text`, `emergency_phone text`, `emergency_relationship text`, `marital_status text`, `spouse_name text`
-- **Financeiro (restrito)**: `bank text`, `bank_agency text`, `bank_account text`, `pix_key text`, `address text`
-- **Pessoa jurídica**: `trade_name text`, `simples_optante boolean` *(reaproveita `cnpj` e `legal_entity_name` já existentes)*
+2. **Adicionar botão de visualização na lista**
+   - Local: `src/routes/_authenticated/people.$id.tsx` na função `DocumentsPanel`.
+   - Ícone `Eye` (Lucide) ao lado do botão de download, apenas quando `d.file_url` existir.
+   - Clique abre `PersonDocumentViewerDialog` com o documento selecionado.
+   - `aria-label="Visualizar"` no botão ícone-only.
 
-Nada muda em policies, grants ou triggers.
+3. **Ajustes de UX/UI**
+   - Manter consistência visual com os botões ghost/icon já existentes.
+   - Usar tokens semânticos do projeto (`bg-muted`, `border-border`, etc.).
+   - Modal com largura adequada (`max-w-4xl` para PDFs/imagens, `max-w-2xl` para fallback).
 
-## 2. Backfill dos dados
+## O que NÃO será alterado
+- Nenhuma migration, tabela, RLS, server function de negócio ou permissão.
+- O fluxo de upload/download/editar/remover existente permanece inalterado.
+- Não haverá alteração no `PersonDocumentDialog` de edição.
 
-Na mesma migration, um `UPDATE public.people` faz parse do `notes` linha a linha usando `regexp_match`/`substring`:
-
-- `Razão Social: X` → `legal_entity_name`
-- `Nome Fantasia: X` → `trade_name`
-- `Optante Simples: Sim/Não` → `simples_optante`
-- `Escolaridade: X` → `education`
-- `Camiseta: X` → `shirt_size`
-- `Recado: <texto>` → separa dígitos consecutivos (7+) em `emergency_phone`; restante (após remover o número) vira `emergency_relationship`
-- `Banco: <banco> — Ag <ag> / Conta <conta>` → `bank`, `bank_agency`, `bank_account`
-- `PIX: X` → `pix_key`
-- `Endereço: X` → `address`
-- `Estado civil: X` → `marital_status`
-- `Cônjuge: X` → `spouse_name`
-
-Aplica-se somente onde a coluna alvo está NULL (não sobrescreve dados já preenchidos). O `notes` é preservado como está — nenhum dado é apagado.
-
-## 3. Server function (`src/lib/people/people.functions.ts`)
-
-- Estender `PersonRow`, `upsertSchema` e a lista de colunas dos `SELECT` (`getPerson` / `listPeople` conforme necessário) com os novos campos.
-- Estender o `payload` do `upsertPerson` para gravar os novos campos, aplicando `normalize()` (string) e coerção booleana para `simples_optante`.
-- Sem mudança em autorização/RLS.
-
-## 4. UI (`src/routes/_authenticated/people.$id.tsx`)
-
-Card **Dados básicos** — acrescentar, mantendo o grid `md:grid-cols-2`:
-- Escolaridade (Input)
-- Tamanho de camiseta (Input)
-- Telefone de recado (Input)
-- Parentesco do telefone de recado (Input)
-- Estado civil (Input)
-- Cônjuge (Input)
-
-Novo card **Dados pessoa jurídica** (renderizado logo abaixo de "Dados básicos", visível a todos que veem o perfil):
-- CNPJ, Razão social, Nome fantasia, Optante Simples (Select Sim/Não)
-
-Card **Financeiro (restrito)** — manter Custo/hora e acrescentar:
-- Banco, Agência, Conta, PIX, Endereço
-
-Todos os campos usam os componentes já importados (`Input`, `Label`, `Select`). O botão **Salvar** existente envia tudo em um único `upsertPerson` — sem novos endpoints.
-
-## Observações técnicas
-
-- Nenhuma alteração em RLS, grants, permissões ou fluxos de importação.
-- `notes` continua exibido no card "Notas internas" — o backfill apenas duplica a informação em campos estruturados; usuário pode limpar as notas manualmente depois.
-- `simples_optante` é `boolean` nullable; UI mostra `—` quando desconhecido.
-
-## Como validar
-
-1. `/people/<id>` de uma pessoa importada do Google Forms: os novos campos devem aparecer preenchidos.
-2. Editar um campo, salvar, recarregar — persiste.
-3. Criar pessoa nova pelo diálogo existente: campos novos vazios, edição na ficha grava normalmente.
-4. Card "Financeiro (restrito)" só aparece para quem já via (sem mudança de regra).
-
-## Riscos / pendências
-
-- Parse do "Recado" é heurístico (regex de dígitos); linhas atípicas podem cair inteiras em `emergency_relationship`. O texto original permanece em `notes` como referência.
-- Nenhum teste automatizado novo — mudança é aditiva de campos e migração idempotente por `IS NULL`.
+## Validação
+- Typecheck/build (`bun run build` ou equivalente disponível).
+- Verificar na preview que:
+  - Documentos sem arquivo não exibem o botão de visualização.
+  - PDFs e imagens abrem corretamente no modal.
+  - Botão de download dentro do modal funciona.
+  - Estados de erro são exibidos quando a URL assinada falha.
