@@ -42,6 +42,9 @@ function DealDetail() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { pipelines } = usePipelines("deal");
+  const { can } = usePermissions();
+  const { user } = useAuth();
+
 
   const { data: deal } = useQuery({
     queryKey: qk.deal(id),
