@@ -489,3 +489,41 @@ function ProjectSelect({
     </Select>
   );
 }
+
+function ManagerSelect({
+  value,
+  onChange,
+  excludePersonId,
+}: {
+  value: string | null;
+  onChange: (v: string | null) => void;
+  excludePersonId?: string;
+}) {
+  const listFn = useServerFn(listPeople);
+  const { data: rows = [] } = useQuery({
+    queryKey: ["allocations-managers"],
+    queryFn: () => listFn({ data: { include_archived: false } }),
+    staleTime: 60_000,
+  });
+  const options = (rows as Array<{ id: string; full_name: string }>).filter(
+    (p) => p.id !== excludePersonId,
+  );
+  return (
+    <Select
+      value={value ?? "__none"}
+      onValueChange={(v) => onChange(v === "__none" ? null : v)}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder="Selecionar gestor…" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none">Sem gestor</SelectItem>
+        {options.map((p) => (
+          <SelectItem key={p.id} value={p.id}>
+            {p.full_name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
