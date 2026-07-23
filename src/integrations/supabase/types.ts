@@ -4572,88 +4572,167 @@ export type Database = {
         Row: {
           auto_renew: boolean
           body_html: string | null
+          confidentiality_term_months: number | null
+          contracting_legal_entity_id: string | null
           counterparty_company_id: string | null
           created_at: string
+          cure_period_days: number | null
           currency: string
           deal_id: string | null
           ends_at: string | null
+          expense_reimbursement_days: number | null
+          governing_law: string | null
+          hours_per_month: number | null
           id: string
+          import_confidence: number | null
+          imported_from: string | null
+          jurisdiction: string | null
+          late_fee_percent: number | null
+          late_interest_monthly_percent: number | null
           metadata: Json
+          monthly_value: number | null
           notice_days: number
           number: string | null
           owner_id: string
           parent_contract_id: string | null
+          payment_day: number | null
+          payment_method: string | null
           payment_terms: Json
+          penalty_percent: number | null
           public_token: string | null
           readjustment_index: string | null
           readjustment_period: string | null
           role: Database["public"]["Enums"]["contract_role"]
+          service_location: string | null
+          service_scope: string | null
+          service_type: string | null
+          signature_document_id: string | null
+          signature_operation_id: string | null
+          signature_provider: string | null
           signed_at: string | null
           signed_pdf_path: string | null
+          source_file_path: string | null
           starts_at: string | null
           status: Database["public"]["Enums"]["contract_status"]
           title: string
           total_value: number
+          trial_period_days: number | null
+          unilateral_termination_notice_days: number | null
           updated_at: string
           workspace_id: string
         }
         Insert: {
           auto_renew?: boolean
           body_html?: string | null
+          confidentiality_term_months?: number | null
+          contracting_legal_entity_id?: string | null
           counterparty_company_id?: string | null
           created_at?: string
+          cure_period_days?: number | null
           currency?: string
           deal_id?: string | null
           ends_at?: string | null
+          expense_reimbursement_days?: number | null
+          governing_law?: string | null
+          hours_per_month?: number | null
           id?: string
+          import_confidence?: number | null
+          imported_from?: string | null
+          jurisdiction?: string | null
+          late_fee_percent?: number | null
+          late_interest_monthly_percent?: number | null
           metadata?: Json
+          monthly_value?: number | null
           notice_days?: number
           number?: string | null
           owner_id: string
           parent_contract_id?: string | null
+          payment_day?: number | null
+          payment_method?: string | null
           payment_terms?: Json
+          penalty_percent?: number | null
           public_token?: string | null
           readjustment_index?: string | null
           readjustment_period?: string | null
           role?: Database["public"]["Enums"]["contract_role"]
+          service_location?: string | null
+          service_scope?: string | null
+          service_type?: string | null
+          signature_document_id?: string | null
+          signature_operation_id?: string | null
+          signature_provider?: string | null
           signed_at?: string | null
           signed_pdf_path?: string | null
+          source_file_path?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           title: string
           total_value?: number
+          trial_period_days?: number | null
+          unilateral_termination_notice_days?: number | null
           updated_at?: string
           workspace_id: string
         }
         Update: {
           auto_renew?: boolean
           body_html?: string | null
+          confidentiality_term_months?: number | null
+          contracting_legal_entity_id?: string | null
           counterparty_company_id?: string | null
           created_at?: string
+          cure_period_days?: number | null
           currency?: string
           deal_id?: string | null
           ends_at?: string | null
+          expense_reimbursement_days?: number | null
+          governing_law?: string | null
+          hours_per_month?: number | null
           id?: string
+          import_confidence?: number | null
+          imported_from?: string | null
+          jurisdiction?: string | null
+          late_fee_percent?: number | null
+          late_interest_monthly_percent?: number | null
           metadata?: Json
+          monthly_value?: number | null
           notice_days?: number
           number?: string | null
           owner_id?: string
           parent_contract_id?: string | null
+          payment_day?: number | null
+          payment_method?: string | null
           payment_terms?: Json
+          penalty_percent?: number | null
           public_token?: string | null
           readjustment_index?: string | null
           readjustment_period?: string | null
           role?: Database["public"]["Enums"]["contract_role"]
+          service_location?: string | null
+          service_scope?: string | null
+          service_type?: string | null
+          signature_document_id?: string | null
+          signature_operation_id?: string | null
+          signature_provider?: string | null
           signed_at?: string | null
           signed_pdf_path?: string | null
+          source_file_path?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["contract_status"]
           title?: string
           total_value?: number
+          trial_period_days?: number | null
+          unilateral_termination_notice_days?: number | null
           updated_at?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contracts_contracting_legal_entity_id_fkey"
+            columns: ["contracting_legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contracts_counterparty_company_id_fkey"
             columns: ["counterparty_company_id"]
