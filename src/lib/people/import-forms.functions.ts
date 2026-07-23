@@ -750,7 +750,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
 
 // ---------- Reimport de anexos quebrados (.bin) ----------
 
-const DRIVE_ID_RE = /Drive ID ([A-Za-z0-9_-]{15,})/;
+const REIMPORT_DRIVE_ID_RE = /Drive ID ([A-Za-z0-9_-]{15,})/;
 
 export type ReimportResult = {
   scanned: number;
