@@ -356,6 +356,56 @@ function ImportFormsPage() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Reimportar anexos quebrados</CardTitle>
+          <CardDescription>
+            Varre documentos com extensão <code>.bin</code>, refaz o download do Drive com o tipo
+            correto e substitui o arquivo original.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button variant="outline" onClick={reimportBroken} disabled={running !== null}>
+            {running === "reimport" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Reimportar anexos .bin
+          </Button>
+          {reimport && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <Stat label="Encontrados" value={reimport.scanned} />
+                <Stat label="Corrigidos" value={reimport.fixed} tone="success" />
+                <Stat
+                  label="Ainda falhando"
+                  value={reimport.still_failed}
+                  tone={reimport.still_failed > 0 ? "warn" : "muted"}
+                />
+                <Stat label="Processados" value={reimport.processed} />
+              </div>
+              {reimport.failures.length > 0 && (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Documento</TableHead>
+                        <TableHead>Motivo</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reimport.failures.slice(0, 50).map((f) => (
+                        <TableRow key={f.id}>
+                          <TableCell className="font-mono text-xs">{f.id.slice(0, 8)}…</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{f.reason}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
