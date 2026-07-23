@@ -34,7 +34,21 @@ import {
   createWorkspaceWithAdmin,
   inviteUserToWorkspace,
 } from "@/lib/platform-admin.functions";
-import { Plus, Building2, ShieldAlert, Users, ChevronRight, UserPlus } from "lucide-react";
+import { Plus, Building2, ShieldAlert, Users, ChevronRight, UserPlus, MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  EditWorkspaceDialog,
+  SoftDeleteWorkspaceDialog,
+  RestoreWorkspaceDialog,
+  PurgeWorkspaceDialog,
+} from "@/components/admin/workspace-lifecycle-dialogs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/admin/workspaces")({
   component: WorkspacesAdminPage,
