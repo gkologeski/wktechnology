@@ -12,6 +12,7 @@ import {
   HeartHandshake,
   ClipboardList,
   UserMinus,
+  FileUp,
 } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
@@ -25,6 +26,7 @@ export const PEOPLE_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Offboarding", url: "/people/offboarding", icon: UserMinus, need: "manager" },
       { title: "Documentos a vencer", url: "/people/documents", icon: FileCheck2, need: "manager" },
       { title: "Modelos de onboarding", url: "/people/onboarding-templates", icon: LayoutTemplate, need: "manager" },
+      { title: "Importar do Google Forms", url: "/people/import-forms", icon: FileUp, need: "manager" },
     ],
   },
   {

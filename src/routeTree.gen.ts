@@ -182,6 +182,7 @@ import { Route as AuthenticatedPeopleOnboardingRouteImport } from './routes/_aut
 import { Route as AuthenticatedPeopleOffboardingRouteImport } from './routes/_authenticated/people.offboarding'
 import { Route as AuthenticatedPeopleMyTeamRouteImport } from './routes/_authenticated/people.my-team'
 import { Route as AuthenticatedPeopleIncidentsRouteImport } from './routes/_authenticated/people.incidents'
+import { Route as AuthenticatedPeopleImportFormsRouteImport } from './routes/_authenticated/people.import-forms'
 import { Route as AuthenticatedPeopleDocumentsRouteImport } from './routes/_authenticated/people.documents'
 import { Route as AuthenticatedPeopleContractMarginRouteImport } from './routes/_authenticated/people.contract-margin'
 import { Route as AuthenticatedPeopleBillingRouteImport } from './routes/_authenticated/people.billing'
@@ -1324,6 +1325,12 @@ const AuthenticatedPeopleIncidentsRoute =
     path: '/people/incidents',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedPeopleImportFormsRoute =
+  AuthenticatedPeopleImportFormsRouteImport.update({
+    id: '/people/import-forms',
+    path: '/people/import-forms',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPeopleDocumentsRoute =
   AuthenticatedPeopleDocumentsRouteImport.update({
     id: '/people/documents',
@@ -2417,6 +2424,7 @@ export interface FileRoutesByFullPath {
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/import-forms': typeof AuthenticatedPeopleImportFormsRoute
   '/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
   '/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
   '/people/offboarding': typeof AuthenticatedPeopleOffboardingRoute
@@ -2755,6 +2763,7 @@ export interface FileRoutesByTo {
   '/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/import-forms': typeof AuthenticatedPeopleImportFormsRoute
   '/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
   '/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
   '/people/offboarding': typeof AuthenticatedPeopleOffboardingRoute
@@ -3098,6 +3107,7 @@ export interface FileRoutesById {
   '/_authenticated/people/billing': typeof AuthenticatedPeopleBillingRoute
   '/_authenticated/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/_authenticated/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/_authenticated/people/import-forms': typeof AuthenticatedPeopleImportFormsRoute
   '/_authenticated/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
   '/_authenticated/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
   '/_authenticated/people/offboarding': typeof AuthenticatedPeopleOffboardingRoute
@@ -3442,6 +3452,7 @@ export interface FileRouteTypes {
     | '/people/billing'
     | '/people/contract-margin'
     | '/people/documents'
+    | '/people/import-forms'
     | '/people/incidents'
     | '/people/my-team'
     | '/people/offboarding'
@@ -3780,6 +3791,7 @@ export interface FileRouteTypes {
     | '/people/billing'
     | '/people/contract-margin'
     | '/people/documents'
+    | '/people/import-forms'
     | '/people/incidents'
     | '/people/my-team'
     | '/people/offboarding'
@@ -4122,6 +4134,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people/billing'
     | '/_authenticated/people/contract-margin'
     | '/_authenticated/people/documents'
+    | '/_authenticated/people/import-forms'
     | '/_authenticated/people/incidents'
     | '/_authenticated/people/my-team'
     | '/_authenticated/people/offboarding'
@@ -5667,6 +5680,13 @@ declare module '@tanstack/react-router' {
       path: '/people/incidents'
       fullPath: '/people/incidents'
       preLoaderRoute: typeof AuthenticatedPeopleIncidentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/import-forms': {
+      id: '/_authenticated/people/import-forms'
+      path: '/people/import-forms'
+      fullPath: '/people/import-forms'
+      preLoaderRoute: typeof AuthenticatedPeopleImportFormsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/documents': {
@@ -7350,6 +7370,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPeopleBillingRoute: typeof AuthenticatedPeopleBillingRoute
   AuthenticatedPeopleContractMarginRoute: typeof AuthenticatedPeopleContractMarginRoute
   AuthenticatedPeopleDocumentsRoute: typeof AuthenticatedPeopleDocumentsRoute
+  AuthenticatedPeopleImportFormsRoute: typeof AuthenticatedPeopleImportFormsRoute
   AuthenticatedPeopleIncidentsRoute: typeof AuthenticatedPeopleIncidentsRoute
   AuthenticatedPeopleMyTeamRoute: typeof AuthenticatedPeopleMyTeamRoute
   AuthenticatedPeopleOffboardingRoute: typeof AuthenticatedPeopleOffboardingRoute
@@ -7482,6 +7503,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPeopleContractMarginRoute:
     AuthenticatedPeopleContractMarginRoute,
   AuthenticatedPeopleDocumentsRoute: AuthenticatedPeopleDocumentsRoute,
+  AuthenticatedPeopleImportFormsRoute: AuthenticatedPeopleImportFormsRoute,
   AuthenticatedPeopleIncidentsRoute: AuthenticatedPeopleIncidentsRoute,
   AuthenticatedPeopleMyTeamRoute: AuthenticatedPeopleMyTeamRoute,
   AuthenticatedPeopleOffboardingRoute: AuthenticatedPeopleOffboardingRoute,
