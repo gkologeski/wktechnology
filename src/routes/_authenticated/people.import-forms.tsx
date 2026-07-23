@@ -186,13 +186,70 @@ function ImportFormsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Simulação</CardTitle>
+            <CardDescription>
+              Prévia das pessoas únicas encontradas na planilha. Nada foi gravado.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <Stat label="Pessoas únicas" value={dryResult.total_unique} />
-            <Stat label="Anexos totais" value={dryResult.batch.attachments_failed} />
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <Stat label="Pessoas únicas" value={dryResult.total_unique} />
+              <Stat
+                label="Anexos totais na planilha"
+                value={dryResult.batch.attachments_failed}
+              />
+            </div>
+
+            {dryResult.people && dryResult.people.length > 0 && (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[96px]">Documento</TableHead>
+                      <TableHead>Nome completo</TableHead>
+                      <TableHead className="w-[180px]">Celular</TableHead>
+                      <TableHead className="w-[160px]">CPF</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {dryResult.people.map((p) => (
+                      <TableRow key={p.cpf_formatted}>
+                        <TableCell>
+                          {p.id_doc_drive_id ? (
+                            <a
+                              href={`https://drive.google.com/file/d/${p.id_doc_drive_id}/view`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <img
+                                src={`https://drive.google.com/thumbnail?id=${p.id_doc_drive_id}&sz=w200`}
+                                alt={`Documento de ${p.full_name}`}
+                                loading="lazy"
+                                referrerPolicy="no-referrer"
+                                className="h-16 w-16 rounded border object-cover bg-muted"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                                }}
+                              />
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="font-medium">{p.full_name}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {p.phone ?? <span className="text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{p.cpf_formatted}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
+
 
       {(running === "exec" || processed > 0) && (
         <Card>
