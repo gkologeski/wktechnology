@@ -86,10 +86,11 @@ function WorkspacesAdminPage() {
   });
 
   const [filter, setFilter] = useState<"active" | "suspended" | "deleted" | "all">("active");
-  const [editTarget, setEditTarget] = useState<(typeof list.data)[number] | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<(typeof list.data)[number] | null>(null);
-  const [restoreTarget, setRestoreTarget] = useState<(typeof list.data)[number] | null>(null);
-  const [purgeTarget, setPurgeTarget] = useState<(typeof list.data)[number] | null>(null);
+  type WsRow = NonNullable<typeof list.data>[number];
+  const [editTarget, setEditTarget] = useState<WsRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<WsRow | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<WsRow | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<WsRow | null>(null);
 
   const create = useMutation({
     mutationFn: async () =>
