@@ -89,7 +89,7 @@ const NEEDS_VALUE: Record<Op, boolean> = {
   is_not_empty: false,
 };
 
-function ScoringPage() {
+export function ScoringPage() {
   const listFn = useServerFn(listScoringRules);
   const saveFn = useServerFn(saveScoringRule);
   const delFn = useServerFn(deleteScoringRule);

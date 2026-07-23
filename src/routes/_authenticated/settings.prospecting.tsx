@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_authenticated/settings/prospecting")({
 type Row = Awaited<ReturnType<typeof listProspectSearches>>[number];
 type Result = Awaited<ReturnType<typeof listProspectResults>>[number];
 
-function ProspectingPage() {
+export function ProspectingPage() {
   const listFn = useServerFn(listProspectSearches);
   const saveFn = useServerFn(upsertProspectSearch);
   const delFn = useServerFn(deleteProspectSearch);

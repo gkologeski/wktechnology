@@ -32,7 +32,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "dest
   queued: "outline",
 };
 
-function EnrichmentHistoryPage() {
+export function EnrichmentHistoryPage() {
   const list = useServerFn(listEnrichmentJobs);
   const q = useQuery({
     queryKey: ["enrichment-jobs"],

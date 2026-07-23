@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/settings/prospecting-scrip
   component: ScriptsPage,
 });
 
-function ScriptsPage() {
+export function ScriptsPage() {
   const listFn = useServerFn(listScripts);
   const saveFn = useServerFn(upsertScript);
   const delFn = useServerFn(deleteScript);

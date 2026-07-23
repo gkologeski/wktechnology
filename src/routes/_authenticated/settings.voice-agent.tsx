@@ -27,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/settings/voice-agent")({
   component: VoiceAgentPage,
 });
 
-function VoiceAgentPage() {
+export function VoiceAgentPage() {
   const getFn = useServerFn(getVoiceAgentSettings);
   const saveFn = useServerFn(saveVoiceAgentSettings);
   const phonesFn = useServerFn(listVapiPhoneNumbers);
