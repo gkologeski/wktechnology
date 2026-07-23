@@ -73,7 +73,7 @@ function ProspectingSuite() {
         value={active}
         onValueChange={(v) =>
           navigate({
-            search: (prev) => ({ ...prev, tab: v as typeof active }),
+            search: (prev: z.infer<typeof searchSchema>) => ({ ...prev, tab: v as typeof active }),
             replace: true,
           })
         }
