@@ -59,18 +59,32 @@ export type PersonRow = {
   termination_date: string | null;
   legal_entity_name: string | null;
   cnpj: string | null;
+  trade_name: string | null;
+  simples_optante: boolean | null;
   cost_hour: number | null;
   monthly_cost: number | null;
   currency: string;
   personal_doc: PersonDocMap;
   tags: string[];
   notes: string | null;
+  education: string | null;
+  shirt_size: string | null;
+  emergency_phone: string | null;
+  emergency_relationship: string | null;
+  marital_status: string | null;
+  spouse_name: string | null;
+  bank: string | null;
+  bank_agency: string | null;
+  bank_account: string | null;
+  pix_key: string | null;
+  address: string | null;
   archived: boolean;
   created_at: string;
   updated_at: string;
   /** Preenchido no server quando o usuário pode ver dados sensíveis. */
   can_view_sensitive?: boolean;
 };
+
 
 const upsertSchema = z.object({
   id: z.string().uuid().nullable().optional(),
