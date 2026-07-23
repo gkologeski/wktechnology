@@ -127,6 +127,43 @@ function ImportFormsPage() {
     }
   }
 
+  async function reimportBroken() {
+    if (!window.confirm("Reimportar todos os anexos quebrados (.bin)? Pode levar alguns minutos.")) return;
+    setRunning("reimport");
+    setReimport(null);
+    try {
+      let offset = 0;
+      let done = false;
+      let scanned = 0;
+      let fixed = 0;
+      let stillFailed = 0;
+      const failures: ReimportResult["failures"] = [];
+      while (!done) {
+        const r = await runReimport({ data: { offset, batch_size: 8 } });
+        scanned = r.scanned;
+        fixed += r.fixed;
+        stillFailed += r.still_failed;
+        failures.push(...r.failures);
+        setReimport({
+          scanned,
+          fixed,
+          still_failed: stillFailed,
+          processed: r.next_offset,
+          next_offset: r.next_offset,
+          done: r.done,
+          failures,
+        });
+        offset = r.next_offset;
+        done = r.done;
+      }
+      toast.success(`Reimportação concluída — ${fixed} corrigidos, ${stillFailed} ainda falhando.`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha na reimportação");
+    } finally {
+      setRunning(null);
+    }
+  }
+
   const pct = totalUnique > 0 ? Math.round((processed / totalUnique) * 100) : 0;
 
   return (
