@@ -32,6 +32,7 @@ import {
   parseContractText,
   createContractFromImport,
 } from "@/lib/contracts/import.functions";
+import { updateContract } from "@/lib/contracts.functions";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import {
   PAYMENT_METHODS,
