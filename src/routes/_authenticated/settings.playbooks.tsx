@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { CrudSettings } from "@/components/crud-settings";
 
-export const Route = createFileRoute("/_authenticated/settings/playbooks")({
-  component: () => (
+export function PlaybooksPage() {
+  return (
     <CrudSettings
       table="playbooks"
       title="Playbooks"
@@ -29,5 +29,9 @@ export const Route = createFileRoute("/_authenticated/settings/playbooks")({
         },
       ]}
     />
-  ),
+  );
+}
+
+export const Route = createFileRoute("/_authenticated/settings/playbooks")({
+  component: PlaybooksPage,
 });
