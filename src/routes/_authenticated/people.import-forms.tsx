@@ -130,7 +130,6 @@ function ImportFormsPage() {
       <PageHeader
         title="Importar prestadores do Google Forms"
         description="Extraia respostas de um formulário público e cadastre as pessoas no TechPeople, com anexos vinculados."
-        icon={FileUp}
       />
 
       <Card>
