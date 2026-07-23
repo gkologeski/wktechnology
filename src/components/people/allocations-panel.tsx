@@ -38,6 +38,7 @@ import {
 } from "@/lib/people/allocations.functions";
 import { listContracts } from "@/lib/contracts.functions";
 import { listProjects } from "@/lib/projects.functions";
+import { listPeople } from "@/lib/people/people.functions";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
