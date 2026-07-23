@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, FileText, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Eye, FileText, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import {
 import { ContractServices } from "@/components/services/contract-services";
 import { ContractApprovalsPanel } from "@/components/contracts/contract-approvals-panel";
 import { ContractParentLink } from "@/components/contracts/contract-parent-link";
+import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 
