@@ -385,6 +385,103 @@ function PersonForm({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>Escolaridade</Label>
+                <Input
+                  value={education}
+                  disabled={!canWrite}
+                  onChange={(e) => setEducation(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Camiseta</Label>
+                <Input
+                  value={shirtSize}
+                  disabled={!canWrite}
+                  onChange={(e) => setShirtSize(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Telefone de recado</Label>
+                <Input
+                  value={emergencyPhone}
+                  disabled={!canWrite}
+                  onChange={(e) => setEmergencyPhone(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Parentesco do telefone de recado</Label>
+                <Input
+                  value={emergencyRelationship}
+                  disabled={!canWrite}
+                  onChange={(e) => setEmergencyRelationship(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Estado civil</Label>
+                <Input
+                  value={maritalStatus}
+                  disabled={!canWrite}
+                  onChange={(e) => setMaritalStatus(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Cônjuge</Label>
+                <Input
+                  value={spouseName}
+                  disabled={!canWrite}
+                  onChange={(e) => setSpouseName(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Dados pessoa jurídica</CardTitle>
+              <CardDescription>Informações da PJ do prestador, quando aplicável.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>CNPJ</Label>
+                <Input
+                  value={cnpj}
+                  disabled={!canWrite}
+                  onChange={(e) => setCnpj(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Razão social</Label>
+                <Input
+                  value={legalEntityName}
+                  disabled={!canWrite}
+                  onChange={(e) => setLegalEntityName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Nome fantasia</Label>
+                <Input
+                  value={tradeName}
+                  disabled={!canWrite}
+                  onChange={(e) => setTradeName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Optante simples</Label>
+                <Select
+                  value={simplesOptante}
+                  disabled={!canWrite}
+                  onValueChange={(v) => setSimplesOptante(v as "" | "yes" | "no")}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Sim</SelectItem>
+                    <SelectItem value="no">Não</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
@@ -408,9 +505,50 @@ function PersonForm({
                     onChange={(e) => setCostHour(e.target.value)}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Banco</Label>
+                  <Input
+                    value={bank}
+                    disabled={!canWrite}
+                    onChange={(e) => setBank(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Agência</Label>
+                  <Input
+                    value={bankAgency}
+                    disabled={!canWrite}
+                    onChange={(e) => setBankAgency(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Conta</Label>
+                  <Input
+                    value={bankAccount}
+                    disabled={!canWrite}
+                    onChange={(e) => setBankAccount(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>PIX</Label>
+                  <Input
+                    value={pixKey}
+                    disabled={!canWrite}
+                    onChange={(e) => setPixKey(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Endereço</Label>
+                  <Input
+                    value={address}
+                    disabled={!canWrite}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+                </div>
               </CardContent>
             </Card>
           ) : null}
+
 
           <Card>
             <CardHeader>
