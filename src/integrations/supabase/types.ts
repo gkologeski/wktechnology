@@ -12532,6 +12532,130 @@ export type Database = {
           },
         ]
       }
+      prospecting_cadence_steps: {
+        Row: {
+          body: string | null
+          cadence_id: string
+          channel: string
+          created_at: string
+          delay_days: number
+          id: string
+          max_wait_days: number | null
+          on_timeout: string | null
+          owner_id: string
+          poll_interval_hours: number | null
+          step_order: number
+          subject: string | null
+          task_instructions: string | null
+          updated_at: string
+          variant_label: string
+          variant_weight: number
+        }
+        Insert: {
+          body?: string | null
+          cadence_id: string
+          channel: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          max_wait_days?: number | null
+          on_timeout?: string | null
+          owner_id: string
+          poll_interval_hours?: number | null
+          step_order: number
+          subject?: string | null
+          task_instructions?: string | null
+          updated_at?: string
+          variant_label?: string
+          variant_weight?: number
+        }
+        Update: {
+          body?: string | null
+          cadence_id?: string
+          channel?: string
+          created_at?: string
+          delay_days?: number
+          id?: string
+          max_wait_days?: number | null
+          on_timeout?: string | null
+          owner_id?: string
+          poll_interval_hours?: number | null
+          step_order?: number
+          subject?: string | null
+          task_instructions?: string | null
+          updated_at?: string
+          variant_label?: string
+          variant_weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_cadence_steps_cadence_id_fkey"
+            columns: ["cadence_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_cadences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_cadences: {
+        Row: {
+          created_at: string
+          daily_send_limit: number | null
+          description: string | null
+          enabled: boolean
+          id: string
+          name: string
+          owner_id: string
+          queue_id: string | null
+          quiet_hours_end: number | null
+          quiet_hours_start: number | null
+          scope: string
+          send_days: number[]
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          daily_send_limit?: number | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name: string
+          owner_id: string
+          queue_id?: string | null
+          quiet_hours_end?: number | null
+          quiet_hours_start?: number | null
+          scope?: string
+          send_days?: number[]
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          daily_send_limit?: number | null
+          description?: string | null
+          enabled?: boolean
+          id?: string
+          name?: string
+          owner_id?: string
+          queue_id?: string | null
+          quiet_hours_end?: number | null
+          quiet_hours_start?: number | null
+          scope?: string
+          send_days?: number[]
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_cadences_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_queues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prospecting_call_attempts: {
         Row: {
           attempt_number: number
@@ -12771,6 +12895,255 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      prospecting_enrollments: {
+        Row: {
+          cadence_id: string
+          created_at: string
+          current_step: number
+          entity: string
+          entity_id: string
+          finished_at: string | null
+          id: string
+          last_error: string | null
+          next_run_at: string | null
+          owner_id: string
+          started_at: string
+          started_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          cadence_id: string
+          created_at?: string
+          current_step?: number
+          entity: string
+          entity_id: string
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          next_run_at?: string | null
+          owner_id: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          cadence_id?: string
+          created_at?: string
+          current_step?: number
+          entity?: string
+          entity_id?: string
+          finished_at?: string | null
+          id?: string
+          last_error?: string | null
+          next_run_at?: string | null
+          owner_id?: string
+          started_at?: string
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_enrollments_cadence_id_fkey"
+            columns: ["cadence_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_cadences"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_qualifications: {
+        Row: {
+          answers: Json
+          created_at: string
+          decision: string
+          decision_reason: string | null
+          entity: string
+          entity_id: string
+          id: string
+          owner_id: string
+          qualified_at: string | null
+          qualified_by: string | null
+          questionnaire_id: string
+          score: number
+          updated_at: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          decision?: string
+          decision_reason?: string | null
+          entity: string
+          entity_id: string
+          id?: string
+          owner_id: string
+          qualified_at?: string | null
+          qualified_by?: string | null
+          questionnaire_id: string
+          score?: number
+          updated_at?: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          decision?: string
+          decision_reason?: string | null
+          entity?: string
+          entity_id?: string
+          id?: string
+          owner_id?: string
+          qualified_at?: string | null
+          qualified_by?: string | null
+          questionnaire_id?: string
+          score?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_qualifications_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_questionnaires: {
+        Row: {
+          created_at: string
+          description: string | null
+          enabled: boolean
+          framework: string
+          id: string
+          name: string
+          owner_id: string
+          pass_threshold: number
+          pipeline_id: string | null
+          product_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          framework?: string
+          id?: string
+          name: string
+          owner_id: string
+          pass_threshold?: number
+          pipeline_id?: string | null
+          product_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          framework?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          pass_threshold?: number
+          pipeline_id?: string | null
+          product_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prospecting_questions: {
+        Row: {
+          created_at: string
+          help_text: string | null
+          id: string
+          label: string
+          options: Json
+          owner_id: string
+          position: number
+          questionnaire_id: string
+          required: boolean
+          type: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          help_text?: string | null
+          id?: string
+          label: string
+          options?: Json
+          owner_id: string
+          position?: number
+          questionnaire_id: string
+          required?: boolean
+          type: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          created_at?: string
+          help_text?: string | null
+          id?: string
+          label?: string
+          options?: Json
+          owner_id?: string
+          position?: number
+          questionnaire_id?: string
+          required?: boolean
+          type?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_questions_questionnaire_id_fkey"
+            columns: ["questionnaire_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_questionnaires"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_queues: {
+        Row: {
+          created_at: string
+          description: string | null
+          entity: string
+          filters: Json
+          id: string
+          is_shared: boolean
+          name: string
+          owner_id: string
+          sort: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          entity: string
+          filters?: Json
+          id?: string
+          is_shared?: boolean
+          name: string
+          owner_id: string
+          sort?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          entity?: string
+          filters?: Json
+          id?: string
+          is_shared?: boolean
+          name?: string
+          owner_id?: string
+          sort?: Json
+          updated_at?: string
+        }
+        Relationships: []
       }
       prospecting_results: {
         Row: {
