@@ -17685,7 +17685,7 @@ export type Database = {
         Returns: number
       }
       purge_workspace: {
-        Args: { _confirm_name: string; _workspace: string }
+        Args: { _actor: string; _confirm_name: string; _workspace: string }
         Returns: undefined
       }
       read_email_batch: {
@@ -17703,7 +17703,10 @@ export type Database = {
       }
       recompute_deal_value: { Args: { _deal_id: string }; Returns: undefined }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
-      restore_workspace: { Args: { _workspace: string }; Returns: undefined }
+      restore_workspace: {
+        Args: { _actor: string; _workspace: string }
+        Returns: undefined
+      }
       schedule_platform_alerts_cron: { Args: never; Returns: Json }
       security_scan_collect: { Args: never; Returns: Json }
       seed_access_profiles: { Args: { _workspace: string }; Returns: undefined }
@@ -17726,7 +17729,7 @@ export type Database = {
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       soft_delete_workspace: {
-        Args: { _workspace: string }
+        Args: { _actor: string; _workspace: string }
         Returns: undefined
       }
       techhire_rbac_gate: {
