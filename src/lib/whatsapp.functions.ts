@@ -50,7 +50,7 @@ async function getIntegrationConfig(supabase: any, workspaceId: string) {
   };
 }
 
-const DEFAULT_PUBLIC_BASE = "https://wktechnology.lovable.app";
+const DEFAULT_PUBLIC_BASE = "https://app.wktechnology.com.br";
 async function resolvePublicBase(supabase: any, workspaceId: string): Promise<string> {
   const cfg = await getIntegrationConfig(supabase, workspaceId);
   return (cfg.public_base_url || DEFAULT_PUBLIC_BASE).replace(/\/$/, "");

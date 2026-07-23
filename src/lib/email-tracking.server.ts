@@ -6,7 +6,7 @@ export function trackingBaseUrl(): string {
   return (
     process.env.APP_BASE_URL ||
     process.env.PUBLIC_APP_URL ||
-    "https://wktechnology.lovable.app"
+    "https://app.wktechnology.com.br"
   ).replace(/\/+$/, "");
 }
 

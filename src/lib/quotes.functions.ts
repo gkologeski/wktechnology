@@ -268,7 +268,7 @@ export const regenerateQuoteToken = createServerFn({ method: "POST" })
 
 function siteOrigin() {
   return (
-    process.env.SITE_URL || process.env.LOVABLE_PROJECT_URL || "https://wktechnology.lovable.app"
+    process.env.SITE_URL || process.env.LOVABLE_PROJECT_URL || "https://app.wktechnology.com.br"
   );
 }
 

@@ -10,7 +10,7 @@ export type TeamRole = z.infer<typeof TeamRole>;
 type ActiveWorkspace = { id: string; created_by: string | null };
 
 /** URL canônica de produção do CRM — usada para links de convite por email. */
-const CANONICAL_APP_URL = "https://ats.wktechnology.com.br";
+const CANONICAL_APP_URL = "https://app.wktechnology.com.br";
 
 /**
  * Resolve o origin para o link do convite. Se vier de um host do Lovable

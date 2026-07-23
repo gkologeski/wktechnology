@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/settings/whatsapp")({
   component: WhatsAppSettings,
 });
 
-const WEBHOOK_URL = "https://wktechnology.lovable.app/api/public/meta/whatsapp-webhook";
+const WEBHOOK_URL = "https://app.wktechnology.com.br/api/public/meta/whatsapp-webhook";
 
 function WhatsAppSettings() {
   const fetchWabas = useServerFn(listWabas);

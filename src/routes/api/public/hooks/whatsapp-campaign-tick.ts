@@ -5,7 +5,7 @@ import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/twilio";
 const SANDBOX_FROM = "whatsapp:+14155238886";
-const DEFAULT_PUBLIC_BASE = "https://wktechnology.lovable.app";
+const DEFAULT_PUBLIC_BASE = "https://app.wktechnology.com.br";
 
 function normalizePhone(raw: string): string {
   const digits = raw.replace(/[^\d+]/g, "");

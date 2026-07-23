@@ -141,7 +141,7 @@ function PaymentsSettingsPage() {
             <code>asaas</code>, <code>pagarme</code> ou <code>mercadopago</code>):
           </p>
           <code className="block rounded-md border bg-muted/40 p-2 text-xs">
-            https://wktechnology.lovable.app/api/public/payments/br-webhook/:provider
+            https://app.wktechnology.com.br/api/public/payments/br-webhook/:provider
           </code>
         </CardContent>
       </Card>

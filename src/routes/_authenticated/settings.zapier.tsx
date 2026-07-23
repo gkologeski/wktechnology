@@ -25,7 +25,7 @@ function ZapierSettingsPage() {
   const { data, isLoading, refetch } = useQuery({ queryKey: ["zapier-subs"], queryFn: list });
   const [busy, setBusy] = useState(false);
 
-  const baseUrl = "https://wktechnology.lovable.app";
+  const baseUrl = "https://app.wktechnology.com.br";
 
   async function remove(id: string) {
     setBusy(true);
