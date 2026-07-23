@@ -151,73 +151,83 @@ function WorkspaceDetailPage() {
         title={ws?.name ?? "Workspace"}
         description={ws ? `/${ws.slug} · ${ws.status}` : "Carregando…"}
         actions={
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Convidar usuário
+          <div className="flex gap-2">
+            {ws && (
+              <Button variant="outline" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Editar
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Convidar usuário</DialogTitle>
-                <DialogDescription>
-                  O usuário receberá um email para definir senha e acessar o workspace.
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={submit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="m-name">Nome completo</Label>
-                  <Input
-                    id="m-name"
-                    required
-                    value={form.full_name}
-                    onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="m-email">Email</Label>
-                  <EmailInput
-                    id="m-email"
-                    required
-                    value={form.email}
-                    onChange={(v) => setForm((f) => ({ ...f, email: v }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="m-phone">Telefone (opcional)</Label>
-                  <PhoneInput
-                    id="m-phone"
-                    value={form.phone}
-                    onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Papel</Label>
-                  <Select
-                    value={form.role}
-                    onValueChange={(v) => setForm((f) => ({ ...f, role: v as "admin" | "member" }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin do workspace</SelectItem>
-                      <SelectItem value="member">Membro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" disabled={invMut.isPending}>
-                    {invMut.isPending ? "Enviando…" : "Enviar convite"}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+            )}
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button disabled={ws?.status === "deleted"}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Convidar usuário
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Convidar usuário</DialogTitle>
+                  <DialogDescription>
+                    O usuário receberá um email para definir senha e acessar o workspace.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={submit} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="m-name">Nome completo</Label>
+                    <Input
+                      id="m-name"
+                      required
+                      value={form.full_name}
+                      onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="m-email">Email</Label>
+                    <EmailInput
+                      id="m-email"
+                      required
+                      value={form.email}
+                      onChange={(v) => setForm((f) => ({ ...f, email: v }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="m-phone">Telefone (opcional)</Label>
+                    <PhoneInput
+                      id="m-phone"
+                      value={form.phone}
+                      onChange={(v) => setForm((f) => ({ ...f, phone: v }))}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Papel</Label>
+                    <Select
+                      value={form.role}
+                      onValueChange={(v) =>
+                        setForm((f) => ({ ...f, role: v as "admin" | "member" }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin do workspace</SelectItem>
+                        <SelectItem value="member">Membro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={invMut.isPending}>
+                      {invMut.isPending ? "Enviando…" : "Enviar convite"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         }
       />
 
