@@ -87,8 +87,14 @@ function ContactDetail() {
 
   const remove = async () => {
     if (!confirm("Excluir contato?")) return;
-    await supabase.from("contacts").delete().eq("id", contact.id);
+    const { error } = await supabase.from("contacts").delete().eq("id", contact.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Excluído");
+    qc.removeQueries({ queryKey: qk.contact(id) });
+    await qc.invalidateQueries({ queryKey: ["contacts"] });
     navigate({ to: "/contacts" });
   };
 

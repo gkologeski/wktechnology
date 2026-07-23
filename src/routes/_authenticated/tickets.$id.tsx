@@ -119,6 +119,8 @@ function TicketDetail() {
       return;
     }
     toast.success("Excluído");
+    qc.removeQueries({ queryKey: qk.ticket(id) });
+    await qc.invalidateQueries({ queryKey: ["tickets"] });
     navigate({ to: "/tickets" });
   };
 

@@ -153,6 +153,8 @@ function DealDetail() {
       return;
     }
     toast.success("Excluído");
+    qc.removeQueries({ queryKey: qk.deal(id) });
+    await qc.invalidateQueries({ queryKey: ["deals"] });
     navigate({ to: "/deals" });
   };
 

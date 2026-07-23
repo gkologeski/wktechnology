@@ -59,8 +59,15 @@ function TaskDetail() {
   if (!task) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const remove = async () => {
-    await supabase.from("activities").delete().eq("id", task.id);
+    const { error } = await supabase.from("activities").delete().eq("id", task.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Excluída");
+    qc.removeQueries({ queryKey: ["task", task.id] });
+    await qc.invalidateQueries({ queryKey: ["tasks"] });
+    await qc.invalidateQueries({ queryKey: ["activities"] });
     navigate({ to: "/tasks" });
   };
 
