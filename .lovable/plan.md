@@ -1,49 +1,23 @@
 ## Problema
 
-O e-mail da cotação do deal `8da84ad6-…` foi enviado ANTES do fix do `getPublicAppUrl()` e ficou gravado em `email_messages` com o host de preview (`https://id-preview--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app/quote/…`). O fix anterior corrige apenas envios futuros — não reescreve o histórico. Ao clicar no link salvo na timeline, o cliente cai na tela de login do editor Lovable.
+E-mails legados na timeline contêm URLs corrompidas onde o host antigo `https://wktechnology.lovable.app` (ou preview) ficou colado imediatamente antes da URL canônica, gerando links como:
 
-## Diagnóstico confirmado
+`https://wktechnology.lovable.apphttps://app.wktechnology.com.br/quote/…`
 
-Query em `email_messages`:
-- 2 linhas ainda contêm `id-preview--68dcfa85-…lovable.app` em `body_text`/`body_html` (cotações Q-202607-6826 e Q-202607-7713).
-- Nenhuma outra tabela textual do schema tem esse host (varredura em `body_html`, `body_text`, `notes`, `description`, `content`, `message`).
+Isso é resíduo do backfill anterior, que substituiu o corpo do link de rastreio mas manteve o prefixo original do host. Confirmado no banco: 2 registros com esse padrão exato, incluindo o e-mail reportado do deal `8da84ad6-…`.
 
-## Correção proposta
+## Correção
 
-### 1. Migration de backfill (única, idempotente)
+Migration única no banco para normalizar `email_messages`:
 
-Substituir em `email_messages.body_html` e `email_messages.body_text` toda ocorrência de `https://id-preview--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app` por `https://app.wktechnology.com.br`. Preserva o path/token da cotação — só troca o host.
+- Em `body_html` e `body_text`, remover qualquer prefixo `https?://<host-lovable>` que esteja **imediatamente colado** a outro `https?://`, mantendo somente a URL canônica que vem depois.
+- Regex aplicada:
+  - `regexp_replace(col, 'https?://[^"'' <>]*lovable\.app(?=https?://)', '', 'g')`
+- Escopo restrito a linhas onde o padrão existe, para não tocar em e-mails saudáveis.
 
-```sql
-UPDATE public.email_messages
-SET body_html = REPLACE(body_html,
-      'https://id-preview--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app',
-      'https://app.wktechnology.com.br'),
-    body_text = REPLACE(body_text,
-      'https://id-preview--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app',
-      'https://app.wktechnology.com.br')
-WHERE body_html ILIKE '%id-preview--%'
-   OR body_text ILIKE '%id-preview--%';
-```
+Não altera código de aplicação — o helper `getPublicAppUrl()` já emite links corretos para envios novos.
 
-Também rodar o mesmo `REPLACE` genérico por segurança em:
-- `email_broadcasts` (`body_html`, `body_text`)
-- `ats_candidate_email_queue` (`body_html`, `body_text`)
-- `email_templates` (`body_html`, `body_text`)
+## Validação
 
-Com `WHERE … ILIKE '%id-preview--%'` para não tocar linhas limpas. Se count = 0, é no-op.
-
-### 2. Reenvio ao cliente (fora do backfill automático)
-
-O link ORIGINAL entregue no e-mail SMTP do cliente continua com o host de preview — o REPLACE só corrige a timeline interna. Para o destinatário efetivamente receber um link válido, o vendedor precisa reenviar a cotação a partir do wizard (que agora usa `getPublicAppUrl`). Vou deixar isso como passo manual no relatório final — não reenvio automático.
-
-### 3. Verificação
-
-- `SELECT count(*) FROM email_messages WHERE body_html ILIKE '%id-preview--%' OR body_text ILIKE '%id-preview--%';` → 0.
-- Abrir o deal `8da84ad6-…` na timeline e confirmar que o link do e-mail antigo agora aponta para `app.wktechnology.com.br/quote/…`.
-
-## Fora do escopo
-
-- Reenvio automático das cotações aos clientes.
-- Alteração de qualquer código de aplicação (o fix já está em produção via `getPublicAppUrl()`).
-- Tokens de cotação — permanecem os mesmos, apenas o host muda.
+- `SELECT count(*)` do padrão antes/depois (esperado: 2 → 0).
+- Conferir o e-mail `b273d45f-…` do deal reportado renderiza um link único apontando para `https://app.wktechnology.com.br/quote/d188ba86…`.
