@@ -294,6 +294,7 @@ function AllocationDialog({
           person_id: personId,
           contract_id: contractId,
           project_id: projectId,
+          manager_id: managerId,
           role_title: roleTitle || null,
           allocation_pct: Number(pct) || 0,
           billable_rate: billable ? Number(billable) : null,
