@@ -35,7 +35,13 @@ import {
   inviteUserToWorkspace,
   removeWorkspaceMember,
 } from "@/lib/platform-admin.functions";
-import { ArrowLeft, Plus, ShieldAlert, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, ShieldAlert, Trash2, Pencil, AlertTriangle } from "lucide-react";
+import {
+  EditWorkspaceDialog,
+  SoftDeleteWorkspaceDialog,
+  RestoreWorkspaceDialog,
+  PurgeWorkspaceDialog,
+} from "@/components/admin/workspace-lifecycle-dialogs";
 
 export const Route = createFileRoute("/_authenticated/admin/workspaces/$id")({
   component: WorkspaceDetailPage,
