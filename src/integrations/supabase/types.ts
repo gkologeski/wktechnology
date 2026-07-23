@@ -9775,14 +9775,21 @@ export type Database = {
       }
       people: {
         Row: {
+          address: string | null
           archived: boolean
+          bank: string | null
+          bank_account: string | null
+          bank_agency: string | null
           candidate_id: string | null
           cnpj: string | null
           cost_hour: number | null
           created_at: string
           created_by: string | null
           currency: string
+          education: string | null
           email: string | null
+          emergency_phone: string | null
+          emergency_relationship: string | null
           employment_type: Database["public"]["Enums"]["people_employment_type"]
           full_name: string
           hire_date: string | null
@@ -9790,31 +9797,44 @@ export type Database = {
           legal_entity_name: string | null
           location: string | null
           manager_id: string | null
+          marital_status: string | null
           monthly_cost: number | null
           notes: string | null
           owner_id: string
           personal_doc: Json
           phone: string | null
           photo_url: string | null
+          pix_key: string | null
           preferred_name: string | null
           profile_id: string | null
           role_title: string | null
           seniority: string | null
+          shirt_size: string | null
+          simples_optante: boolean | null
+          spouse_name: string | null
           status: Database["public"]["Enums"]["people_status"]
           tags: string[]
           termination_date: string | null
           timezone: string | null
+          trade_name: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
           archived?: boolean
+          bank?: string | null
+          bank_account?: string | null
+          bank_agency?: string | null
           candidate_id?: string | null
           cnpj?: string | null
           cost_hour?: number | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          education?: string | null
           email?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
           employment_type?: Database["public"]["Enums"]["people_employment_type"]
           full_name: string
           hire_date?: string | null
@@ -9822,31 +9842,44 @@ export type Database = {
           legal_entity_name?: string | null
           location?: string | null
           manager_id?: string | null
+          marital_status?: string | null
           monthly_cost?: number | null
           notes?: string | null
           owner_id: string
           personal_doc?: Json
           phone?: string | null
           photo_url?: string | null
+          pix_key?: string | null
           preferred_name?: string | null
           profile_id?: string | null
           role_title?: string | null
           seniority?: string | null
+          shirt_size?: string | null
+          simples_optante?: boolean | null
+          spouse_name?: string | null
           status?: Database["public"]["Enums"]["people_status"]
           tags?: string[]
           termination_date?: string | null
           timezone?: string | null
+          trade_name?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
           archived?: boolean
+          bank?: string | null
+          bank_account?: string | null
+          bank_agency?: string | null
           candidate_id?: string | null
           cnpj?: string | null
           cost_hour?: number | null
           created_at?: string
           created_by?: string | null
           currency?: string
+          education?: string | null
           email?: string | null
+          emergency_phone?: string | null
+          emergency_relationship?: string | null
           employment_type?: Database["public"]["Enums"]["people_employment_type"]
           full_name?: string
           hire_date?: string | null
@@ -9854,20 +9887,26 @@ export type Database = {
           legal_entity_name?: string | null
           location?: string | null
           manager_id?: string | null
+          marital_status?: string | null
           monthly_cost?: number | null
           notes?: string | null
           owner_id?: string
           personal_doc?: Json
           phone?: string | null
           photo_url?: string | null
+          pix_key?: string | null
           preferred_name?: string | null
           profile_id?: string | null
           role_title?: string | null
           seniority?: string | null
+          shirt_size?: string | null
+          simples_optante?: boolean | null
+          spouse_name?: string | null
           status?: Database["public"]["Enums"]["people_status"]
           tags?: string[]
           termination_date?: string | null
           timezone?: string | null
+          trade_name?: string | null
           updated_at?: string
         }
         Relationships: [
