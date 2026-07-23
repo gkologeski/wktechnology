@@ -291,3 +291,34 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     if (error) throw error;
     return row as { id: string };
   });
+
+// ============= VIEW ORIGINAL FILE =============
+// Gera URL assinada temporária do arquivo original importado (bucket `contract-imports`).
+export const getContractSourceFileUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: row, error } = await supabase
+      .from("contracts")
+      .select("id, source_file_path, imported_from")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!row || !row.source_file_path) {
+      throw new Error("Arquivo original não disponível para este contrato.");
+    }
+    const path = row.source_file_path as string;
+    const { data: signed, error: sErr } = await supabase.storage
+      .from("contract-imports")
+      .createSignedUrl(path, 60 * 10);
+    if (sErr || !signed?.signedUrl) {
+      throw new Error(sErr?.message ?? "Falha ao gerar URL do arquivo.");
+    }
+    const fileName = path.split("/").pop() ?? "contrato";
+    return {
+      url: signed.signedUrl,
+      fileName,
+      kind: (row.imported_from as string | null) ?? null,
+    };
+  });
