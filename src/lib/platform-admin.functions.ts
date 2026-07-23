@@ -65,7 +65,9 @@ export const listAllWorkspaces = createServerFn({ method: "GET" })
     await assertPlatformAdmin(context.userId);
     const { data, error } = await supabaseAdmin
       .from("workspaces")
-      .select("id, name, slug, logo_url, primary_color, custom_domain, status, created_at")
+      .select(
+        "id, name, slug, logo_url, primary_color, custom_domain, status, created_at, deleted_at",
+      )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
 
