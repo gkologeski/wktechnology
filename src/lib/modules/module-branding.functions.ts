@@ -25,7 +25,7 @@ async function resolveActiveWorkspace(supabase: any, userId: string): Promise<st
   return member.workspace_id as string;
 }
 
-const MODULE_IDS = ["crm", "ats"] as const;
+const MODULE_IDS = ["crm", "ats", "contracts", "projects", "finance", "people"] as const;
 
 export const getModuleBranding = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

@@ -1,54 +1,31 @@
-## Objetivo
-Aplicar as opções 1+2 combinadas para eliminar a percepção de duplicidade entre `/catalog/services`, `/services` e `/contracts`, deixando claro que:
+## Problema
 
-- **Catálogo de Serviços** = biblioteca de templates reutilizáveis.
-- **Contratos** = instrumento jurídico (dono do relacionamento com o cliente).
-- **Serviços em Execução** = linhas faturáveis vinculadas a contratos (visão operacional/financeira).
-
-O módulo "Services" deixa de ser um módulo independente no seletor de módulos e passa a ser uma visão consumida por Contratos e Financeiro. As rotas `/services` e `/services/:id` continuam existindo (nada é removido), apenas mudam de posição no menu e ganham rótulos mais claros.
+`src/routes/_authenticated/settings.branding.tsx` renderiza abas apenas para `crm` e `ats`, mas o registro de módulos (`src/lib/modules/registry.ts`) define 7: `crm`, `ats`, `contracts`, `services`, `projects`, `finance`, `people`. Além disso, a server function `saveModuleBranding`/`getModuleBranding` em `src/lib/modules/module-branding.functions.ts` valida via Zod `z.enum(["crm","ats"])`, então mesmo se a UI expusesse mais abas o backend rejeitaria.
 
 ## Escopo
 
-### 1. Renomear rótulos (Opção 1)
-- `src/lib/menu-config-core.ts`: "Serviços" (linha 15) → **"Catálogo de Serviços"** (mantém `/catalog/services`). "Produtos" (linha 14) → **"Catálogo de Produtos"** para simetria.
-- `src/lib/menu-config-contracts.ts`: adicionar o item **"Serviços em execução"** apontando para `/services`, logo abaixo de "Contratos".
-- `src/lib/menu-config-finance.ts` (se existir grupo apropriado — verificar): adicionar atalho **"Faturamento de Serviços"** para `/services` na seção de recebíveis/faturamento. Se o menu não existir estruturado, apenas manter em Contratos.
-- `src/routes/_authenticated/services.index.tsx`:
-  - `PageHeader.title`: "Serviços" → **"Serviços em execução"**.
-  - Breadcrumb (linha 31): ajustar para "Contratos › Serviços em execução".
-  - Subtítulo/descrição curta explicando que cada linha vem de um contrato.
-- `src/routes/_authenticated/services.$id.tsx`: breadcrumb passa a partir de "Contratos".
-- `src/routes/_authenticated/catalog.services.tsx`: PageHeader.title → **"Catálogo de Serviços"** (título e breadcrumb).
+Expandir o branding por módulo para cobrir todos os módulos do registry, exceto `services` (que foi consolidado dentro de Contratos na decisão 1+2 anterior — não deve ter identidade visual própria no seletor).
 
-### 2. Reposicionar /services (Opção 2)
-- Remover o módulo "services" do seletor de módulos do sidebar (registry) para que ele deixe de aparecer como módulo independente. Investigar `src/lib/modules/registry.ts` e remover/ocultar apenas o item de UI — sem apagar as rotas.
-- Remover `"services"` de `CORE_CONSUMER_MODULES` em `menu-config-core.ts` (não precisa mais injetar Cadastros, pois deixa de ser módulo próprio).
-- Arquivo `src/lib/menu-config-services.ts`: manter o arquivo por segurança (sem breaking imports) mas deixar de ser referenciado; ou apagar se nenhum outro arquivo importar. Verificar em `app-sidebar.tsx` (linha 25) e ajustar o branch `effectiveModuleId === "services"`.
-- Em `contracts.$id.tsx`, o componente `ContractServices` já mostra os serviços do contrato — nenhuma mudança de dados necessária; apenas garantir que o link do card leve para `/services/:id` (visão operacional).
-- Redirecionamento amigável: adicionar link "Ver todos os serviços em execução" dentro da listagem de Contratos, apontando para `/services`.
+Módulos com aba de branding após a correção: `crm`, `ats`, `contracts`, `projects`, `finance`, `people`.
 
-### 3. Verificações e ajustes secundários
-- Ajustar textos de `EmptyState` em `/services` mencionando que serviços nascem de contratos (link "Ir para Contratos").
-- Verificar se algum lugar do app rota para `activeModule=services` (deep-links de módulo). Se sim, redirecionar para `contracts`.
-- Rodar `tsgo` para confirmar imports e tipagens.
+## Alterações
 
-## Fora do escopo
-- Não haverá alteração de schema, RLS, server functions, migrations ou lógica de negócio.
-- Não haverá mudança em `/services/products` além de eventual rótulo.
-- Não haverá consolidação de tabelas (rejeitada anteriormente).
+1. **`src/lib/modules/module-branding.functions.ts`**
+   - Trocar `const MODULE_IDS = ["crm", "ats"] as const;` por lista alinhada ao registry (sem `services`): `["crm","ats","contracts","projects","finance","people"]`.
+   - Mantém o resto do handler intacto (upsert em `module_branding` por `workspace_id,module_id`).
 
-## Arquivos previstos
-- `src/lib/menu-config-core.ts` (rótulos + remover "services" de consumers)
-- `src/lib/menu-config-contracts.ts` (adicionar "Serviços em execução")
-- `src/lib/menu-config-finance.ts` (adicionar atalho, se aplicável)
-- `src/lib/modules/registry.ts` (ocultar módulo "services")
-- `src/components/app-sidebar.tsx` (ajustar branch do módulo services)
-- `src/routes/_authenticated/services.index.tsx` (título/breadcrumb/EmptyState)
-- `src/routes/_authenticated/services.$id.tsx` (breadcrumb)
-- `src/routes/_authenticated/catalog.services.tsx` (título)
+2. **`src/routes/_authenticated/settings.branding.tsx`**
+   - Gerar `TabsTrigger` e `TabsContent` iterando sobre a lista de módulos suportados, usando `MODULES[id].productName` como rótulo.
+   - Manter a aba "Workspace (ERP)" como default.
+   - Ajustar o texto descritivo para não citar apenas TechSales/TechHire.
+
+## Fora de escopo
+
+- Não alterar RLS nem schema de `module_branding` (a tabela já usa `module_id text`, aceita qualquer valor; a restrição estava só no Zod).
+- Não incluir `services` (decisão prévia de consolidar em Contratos).
+- Nenhuma mudança no `BrandingBuilder` (workspace ERP).
 
 ## Validação
-- `tsgo` sem erros.
-- Navegar por Contratos → clicar em "Serviços em execução" → verificar título e volta para contratos.
-- Verificar que o seletor de módulos não exibe mais "Services".
-- Conferir que `/services` e `/services/:id` continuam acessíveis diretamente.
+
+- `bun run tsgo` para garantir tipos.
+- Abrir `/settings/branding` e conferir as 6 abas de módulo + aba workspace; salvar em uma delas (ex. `contracts`) e recarregar para ver o valor persistido.
