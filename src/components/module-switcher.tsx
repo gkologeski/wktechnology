@@ -86,7 +86,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
           Módulos do ERP
         </div>
 
-        {MODULE_LIST.map((m) => {
+        {MODULE_LIST.filter((m) => m.id !== "services").map((m) => {
           const Icon = m.icon;
           const isActive = !isWorkspaceContext && m.id === active;
           return (

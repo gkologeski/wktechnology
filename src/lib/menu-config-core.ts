@@ -11,8 +11,8 @@ export const CORE_SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Empresas", url: "/companies", icon: Building2 },
       { title: "Contatos", url: "/contacts", icon: Users },
-      { title: "Produtos", url: "/catalog/products", icon: Package },
-      { title: "Serviços", url: "/catalog/services", icon: Wrench },
+      { title: "Catálogo de Produtos", url: "/catalog/products", icon: Package },
+      { title: "Catálogo de Serviços", url: "/catalog/services", icon: Wrench },
     ],
   },
 ];
@@ -20,11 +20,11 @@ export const CORE_SIDEBAR_GROUPS: SidebarGroup[] = [
 /**
  * Módulos que consomem o Core (Cadastros) no sidebar.
  * ATS/TechHire fica fora — tem candidatos e vagas, não produtos/serviços.
+ * "services" foi absorvido por "contracts" (visão de execução/faturamento).
  */
 export const CORE_CONSUMER_MODULES: readonly ModuleId[] = [
   "crm",
   "contracts",
-  "services",
   "projects",
   "finance",
 ];

@@ -31,8 +31,10 @@ export function detectModuleFromHost(hostname: string | undefined | null): Modul
 
 // Paths que pertencem exclusivamente a cada módulo.
 const MODULE_PATH_MATCHERS: Array<{ id: ModuleId; prefixes: string[] }> = [
-  { id: "contracts", prefixes: ["/contracts"] },
-  { id: "services", prefixes: ["/services"] },
+  // /services é uma visão operacional/faturamento consumida por Contratos.
+  // Mantemos as rotas, mas o path é tratado como parte do módulo Contratos
+  // para que o sidebar e o breadcrumb reflitam essa hierarquia.
+  { id: "contracts", prefixes: ["/contracts", "/services"] },
   { id: "projects", prefixes: ["/projects"] },
   { id: "finance", prefixes: ["/finance"] },
   { id: "people", prefixes: ["/people"] },

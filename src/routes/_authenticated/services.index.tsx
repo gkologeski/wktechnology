@@ -28,8 +28,8 @@ import { formatCurrency, formatDateTime } from "@/lib/crm";
 export const Route = createFileRoute("/_authenticated/services/")({
   head: () => ({
     meta: [
-      { title: "Serviços" },
-      { name: "description", content: "Serviços contratados e prestados." },
+      { title: "Serviços em execução" },
+      { name: "description", content: "Serviços em execução vinculados a contratos, com cadência de faturamento e entrega." },
     ],
   }),
   component: ServicesPage,
@@ -79,11 +79,12 @@ function ServicesPage() {
   return (
     <div className="p-6 space-y-5">
       <PageHeader
-        title="Serviços"
-        description="Serviços vinculados a contratos, com cadência de faturamento e entrega."
+        title="Serviços em execução"
+        description="Visão operacional dos serviços vinculados a contratos, com cadência de faturamento e entrega. Novos serviços nascem dentro de um contrato."
         count={rows.length}
         countLabel={rows.length === 1 ? "serviço" : "serviços"}
       />
+
 
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-64">
