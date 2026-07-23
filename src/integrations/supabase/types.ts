@@ -9936,6 +9936,7 @@ export type Database = {
           currency: string
           ends_at: string | null
           id: string
+          manager_id: string | null
           notes: string | null
           owner_id: string
           person_id: string
@@ -9955,6 +9956,7 @@ export type Database = {
           currency?: string
           ends_at?: string | null
           id?: string
+          manager_id?: string | null
           notes?: string | null
           owner_id?: string
           person_id: string
@@ -9974,6 +9976,7 @@ export type Database = {
           currency?: string
           ends_at?: string | null
           id?: string
+          manager_id?: string | null
           notes?: string | null
           owner_id?: string
           person_id?: string
@@ -9991,6 +9994,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "contracts"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocations_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocations_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
           },
           {
             foreignKeyName: "people_allocations_person_id_fkey"
