@@ -1,81 +1,54 @@
 ## Objetivo
+Aplicar as opções 1+2 combinadas para eliminar a percepção de duplicidade entre `/catalog/services`, `/services` e `/contracts`, deixando claro que:
 
-Após excluir um registro (via tela de detalhe ou via grid), o usuário deve voltar automaticamente ao grid/tela de origem e o grid deve refletir a exclusão sem F5.
+- **Catálogo de Serviços** = biblioteca de templates reutilizáveis.
+- **Contratos** = instrumento jurídico (dono do relacionamento com o cliente).
+- **Serviços em Execução** = linhas faturáveis vinculadas a contratos (visão operacional/financeira).
 
-## Diagnóstico
+O módulo "Services" deixa de ser um módulo independente no seletor de módulos e passa a ser uma visão consumida por Contratos e Financeiro. As rotas `/services` e `/services/:id` continuam existindo (nada é removido), apenas mudam de posição no menu e ganham rótulos mais claros.
 
-Auditei as telas de detalhe (`*.$id.tsx`) e vários grids. O padrão de bug é sempre o mesmo: a exclusão remove o registro e navega de volta, mas **não invalida a query da listagem**. Como a lista já está em cache, o item excluído continua aparecendo até um reload manual.
+## Escopo
 
-Casos com bug confirmados (deletam + `navigate` mas não invalidam a lista):
+### 1. Renomear rótulos (Opção 1)
+- `src/lib/menu-config-core.ts`: "Serviços" (linha 15) → **"Catálogo de Serviços"** (mantém `/catalog/services`). "Produtos" (linha 14) → **"Catálogo de Produtos"** para simetria.
+- `src/lib/menu-config-contracts.ts`: adicionar o item **"Serviços em execução"** apontando para `/services`, logo abaixo de "Contratos".
+- `src/lib/menu-config-finance.ts` (se existir grupo apropriado — verificar): adicionar atalho **"Faturamento de Serviços"** para `/services` na seção de recebíveis/faturamento. Se o menu não existir estruturado, apenas manter em Contratos.
+- `src/routes/_authenticated/services.index.tsx`:
+  - `PageHeader.title`: "Serviços" → **"Serviços em execução"**.
+  - Breadcrumb (linha 31): ajustar para "Contratos › Serviços em execução".
+  - Subtítulo/descrição curta explicando que cada linha vem de um contrato.
+- `src/routes/_authenticated/services.$id.tsx`: breadcrumb passa a partir de "Contratos".
+- `src/routes/_authenticated/catalog.services.tsx`: PageHeader.title → **"Catálogo de Serviços"** (título e breadcrumb).
 
-- `companies.$id.tsx` — deleta e vai para `/companies`, sem invalidar `["companies"]`.
-- `contacts.$id.tsx` — idem para `["contacts"]`.
-- `tasks.$id.tsx` — idem para `["tasks"]`/atividades.
-- `tickets.$id.tsx` — idem para `["tickets"]`.
-- `deals.$id.tsx` — idem para `["deals"]`.
-- `leads.$id.tsx` — idem para `["leads"]`.
+### 2. Reposicionar /services (Opção 2)
+- Remover o módulo "services" do seletor de módulos do sidebar (registry) para que ele deixe de aparecer como módulo independente. Investigar `src/lib/modules/registry.ts` e remover/ocultar apenas o item de UI — sem apagar as rotas.
+- Remover `"services"` de `CORE_CONSUMER_MODULES` em `menu-config-core.ts` (não precisa mais injetar Cadastros, pois deixa de ser módulo próprio).
+- Arquivo `src/lib/menu-config-services.ts`: manter o arquivo por segurança (sem breaking imports) mas deixar de ser referenciado; ou apagar se nenhum outro arquivo importar. Verificar em `app-sidebar.tsx` (linha 25) e ajustar o branch `effectiveModuleId === "services"`.
+- Em `contracts.$id.tsx`, o componente `ContractServices` já mostra os serviços do contrato — nenhuma mudança de dados necessária; apenas garantir que o link do card leve para `/services/:id` (visão operacional).
+- Redirecionamento amigável: adicionar link "Ver todos os serviços em execução" dentro da listagem de Contratos, apontando para `/services`.
 
-Casos já corretos (mantêm como referência):
-- `services.$id.tsx`, `contracts.$id.tsx`, `proposals.index.tsx`, `projects.$id.tsx` já invalidam a lista.
-
-Além disso, alguns grids fazem `.delete()` diretamente pelo cliente Supabase (sem passar por server function) e também não invalidam a query. Farei uma varredura completa dos grids em `src/routes/_authenticated/*.index.tsx` e `src/components/**` para aplicar a mesma correção.
-
-## Escopo da correção
-
-1. **Telas de detalhe (delete + voltar ao grid)** — em cada uma:
-   - Antes de `navigate({...})`, chamar `qc.invalidateQueries` para a query de lista correspondente (e queries auxiliares como board/kanban quando existirem).
-   - Também invalidar a query do próprio registro (`["contact", id]` etc.) para evitar reabertura em cache.
-   - Manter o `navigate` para o grid pai já existente.
-
-2. **Grids (delete inline em `*.index.tsx` e componentes de lista)** — auditar e garantir que toda ação de excluir chama `invalidateQueries` da lista após sucesso. Onde já usa `useMutation`, adicionar/ajustar `onSuccess`. Onde chama Supabase direto sem mutation, envolver em `useMutation` ou chamar `qc.invalidateQueries` no callback.
-
-3. **Padronização** — nas telas de detalhe que usam `supabase.from(...).delete()` direto (companies, contacts, tasks, tickets, deals), manter esse caminho (para não alterar regra de negócio/RLS), apenas adicionando a invalidação. Sem mudanças de schema, RLS ou permissões.
-
-4. **Confirmação de exclusão** — não alterar. Onde há `AlertDialog`, mantém; onde há `confirm()`, mantém. Fora do escopo pedido.
-
-## Telas que serão alteradas
-
-Detalhe:
-- `src/routes/_authenticated/companies.$id.tsx`
-- `src/routes/_authenticated/contacts.$id.tsx`
-- `src/routes/_authenticated/tasks.$id.tsx`
-- `src/routes/_authenticated/tickets.$id.tsx`
-- `src/routes/_authenticated/deals.$id.tsx`
-- `src/routes/_authenticated/leads.$id.tsx`
-
-Grids/telas de lista (a confirmar após varredura, mas o padrão será o mesmo):
-- `src/routes/_authenticated/*.index.tsx` que fazem delete inline sem invalidar (ex.: candidatos, jobs, workflows, sequences, landing-pages, files etc.).
-
-Farei a varredura completa em build mode antes de aplicar as correções, corrigindo todas as ocorrências, e listarei arquivos alterados no relatório final.
+### 3. Verificações e ajustes secundários
+- Ajustar textos de `EmptyState` em `/services` mencionando que serviços nascem de contratos (link "Ir para Contratos").
+- Verificar se algum lugar do app rota para `activeModule=services` (deep-links de módulo). Se sim, redirecionar para `contracts`.
+- Rodar `tsgo` para confirmar imports e tipagens.
 
 ## Fora do escopo
+- Não haverá alteração de schema, RLS, server functions, migrations ou lógica de negócio.
+- Não haverá mudança em `/services/products` além de eventual rótulo.
+- Não haverá consolidação de tabelas (rejeitada anteriormente).
 
-- Não altero RLS, permissões, políticas, schema ou lógica de negócio.
-- Não mudo confirmações, UX de botões, textos ou estilos.
-- Não mudo o destino de navegação de nenhuma tela — apenas garanto que a lista de destino esteja fresca.
+## Arquivos previstos
+- `src/lib/menu-config-core.ts` (rótulos + remover "services" de consumers)
+- `src/lib/menu-config-contracts.ts` (adicionar "Serviços em execução")
+- `src/lib/menu-config-finance.ts` (adicionar atalho, se aplicável)
+- `src/lib/modules/registry.ts` (ocultar módulo "services")
+- `src/components/app-sidebar.tsx` (ajustar branch do módulo services)
+- `src/routes/_authenticated/services.index.tsx` (título/breadcrumb/EmptyState)
+- `src/routes/_authenticated/services.$id.tsx` (breadcrumb)
+- `src/routes/_authenticated/catalog.services.tsx` (título)
 
 ## Validação
-
-- `tsgo` (typecheck).
-- Verificação manual do fluxo em 2–3 telas críticas (ex.: excluir contato, empresa e ticket) para confirmar que a lista atualiza sem F5.
-
-## Detalhes técnicos
-
-Padrão aplicado em cada ponto de exclusão:
-
-```ts
-await deleteOp(...);
-toast.success("Excluído");
-qc.invalidateQueries({ queryKey: ["<lista>"] });     // grid principal
-qc.invalidateQueries({ queryKey: ["<detalhe>", id] }); // detalhe em cache
-navigate({ to: "/<lista>" });
-```
-
-Para grids que já usam `useMutation`, adiciono/ajusto:
-
-```ts
-useMutation({
-  mutationFn: ...,
-  onSuccess: () => qc.invalidateQueries({ queryKey: ["<lista>"] }),
-});
-```
+- `tsgo` sem erros.
+- Navegar por Contratos → clicar em "Serviços em execução" → verificar título e volta para contratos.
+- Verificar que o seletor de módulos não exibe mais "Services".
+- Conferir que `/services` e `/services/:id` continuam acessíveis diretamente.
