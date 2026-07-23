@@ -181,7 +181,7 @@ function QueueWorkspace({
         ) : (
           <div className="divide-y">
             {data.items.map((it) => (
-              <QueueItemRow key={(it as { id: string }).id} entity={data.entity} item={it as Record<string, unknown>} />
+              <QueueItemRow key={(it as unknown as { id: string }).id} entity={data.entity} item={it as unknown as Record<string, unknown>} />
             ))}
           </div>
         )}
