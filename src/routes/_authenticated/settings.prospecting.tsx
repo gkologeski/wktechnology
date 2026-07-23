@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,13 +27,17 @@ import {
 } from "@/lib/prospecting.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/prospecting")({
+  beforeLoad: () => {
+    throw redirect({ to: "/prospecting", search: { tab: "prospecting" as const } });
+  },
   component: ProspectingPage,
 });
+
 
 type Row = Awaited<ReturnType<typeof listProspectSearches>>[number];
 type Result = Awaited<ReturnType<typeof listProspectResults>>[number];
 
-function ProspectingPage() {
+export function ProspectingPage() {
   const listFn = useServerFn(listProspectSearches);
   const saveFn = useServerFn(upsertProspectSearch);
   const delFn = useServerFn(deleteProspectSearch);

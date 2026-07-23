@@ -98,11 +98,12 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
       {
-        title: "Prospecção por voz",
-        url: "/prospecting/campaigns",
+        title: "Prospecção",
+        url: "/prospecting",
         icon: PlayCircle,
         need: "manager",
       },
+
       { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles, need: "manager" },
     ],
   },
@@ -172,7 +173,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Sequências", url: "/settings/sequences", icon: RouteIcon, need: "manager" },
       { title: "Distribuição", url: "/settings/rotation", icon: RouteIcon, need: "manager" },
       { title: "SLA por etapa", url: "/settings/sla", icon: Activity, need: "manager" },
-      { title: "Pontuação", url: "/settings/scoring", icon: Star, need: "manager" },
+
       { title: "Macros", url: "/settings/macros", icon: LayoutTemplate, need: "manager" },
     ],
   },

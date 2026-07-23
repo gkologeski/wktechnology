@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent } from "@/components/ui/card";
@@ -24,10 +24,14 @@ import {
 import { previewVoice, CURATED_VOICES } from "@/lib/voice-agent.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/prospecting-scripts")({
+  beforeLoad: () => {
+    throw redirect({ to: "/prospecting", search: { tab: "scripts" as const } });
+  },
   component: ScriptsPage,
 });
 
-function ScriptsPage() {
+
+export function ScriptsPage() {
   const listFn = useServerFn(listScripts);
   const saveFn = useServerFn(upsertScript);
   const delFn = useServerFn(deleteScript);

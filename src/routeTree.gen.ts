@@ -73,6 +73,7 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedServicesIndexRouteImport } from './routes/_authenticated/services.index'
+import { Route as AuthenticatedProspectingIndexRouteImport } from './routes/_authenticated/prospecting.index'
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedPeopleIndexRouteImport } from './routes/_authenticated/people.index'
@@ -680,6 +681,12 @@ const AuthenticatedServicesIndexRoute =
     id: '/services/',
     path: '/services/',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedProspectingIndexRoute =
+  AuthenticatedProspectingIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
 const AuthenticatedProposalsIndexRoute =
   AuthenticatedProposalsIndexRouteImport.update({
@@ -2534,6 +2541,7 @@ export interface FileRoutesByFullPath {
   '/people/': typeof AuthenticatedPeopleIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
+  '/prospecting/': typeof AuthenticatedProspectingIndexRoute
   '/services/': typeof AuthenticatedServicesIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/workspace/': typeof AuthenticatedWorkspaceIndexRoute
@@ -2679,7 +2687,6 @@ export interface FileRoutesByTo {
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
-  '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/reports': typeof AuthenticatedReportsRoute
   '/surveys': typeof AuthenticatedSurveysRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
@@ -2872,6 +2879,7 @@ export interface FileRoutesByTo {
   '/people': typeof AuthenticatedPeopleIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
+  '/prospecting': typeof AuthenticatedProspectingIndexRoute
   '/services': typeof AuthenticatedServicesIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/workspace': typeof AuthenticatedWorkspaceIndexRoute
@@ -3217,6 +3225,7 @@ export interface FileRoutesById {
   '/_authenticated/people/': typeof AuthenticatedPeopleIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
+  '/_authenticated/prospecting/': typeof AuthenticatedProspectingIndexRoute
   '/_authenticated/services/': typeof AuthenticatedServicesIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/workspace/': typeof AuthenticatedWorkspaceIndexRoute
@@ -3562,6 +3571,7 @@ export interface FileRouteTypes {
     | '/people/'
     | '/projects/'
     | '/proposals/'
+    | '/prospecting/'
     | '/services/'
     | '/settings/'
     | '/workspace/'
@@ -3707,7 +3717,6 @@ export interface FileRouteTypes {
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
-    | '/prospecting'
     | '/reports'
     | '/surveys'
     | '/tasks'
@@ -3900,6 +3909,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/projects'
     | '/proposals'
+    | '/prospecting'
     | '/services'
     | '/settings'
     | '/workspace'
@@ -4244,6 +4254,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people/'
     | '/_authenticated/projects/'
     | '/_authenticated/proposals/'
+    | '/_authenticated/prospecting/'
     | '/_authenticated/services/'
     | '/_authenticated/settings/'
     | '/_authenticated/workspace/'
@@ -4918,6 +4929,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/services/'
       preLoaderRoute: typeof AuthenticatedServicesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/prospecting/': {
+      id: '/_authenticated/prospecting/'
+      path: '/'
+      fullPath: '/prospecting/'
+      preLoaderRoute: typeof AuthenticatedProspectingIndexRouteImport
+      parentRoute: typeof AuthenticatedProspectingRoute
     }
     '/_authenticated/proposals/': {
       id: '/_authenticated/proposals/'
@@ -6968,12 +6986,14 @@ const AuthenticatedProposalsRouteWithChildren =
   )
 
 interface AuthenticatedProspectingRouteChildren {
+  AuthenticatedProspectingIndexRoute: typeof AuthenticatedProspectingIndexRoute
   AuthenticatedProspectingCampaignsIdRoute: typeof AuthenticatedProspectingCampaignsIdRoute
   AuthenticatedProspectingCampaignsIndexRoute: typeof AuthenticatedProspectingCampaignsIndexRoute
 }
 
 const AuthenticatedProspectingRouteChildren: AuthenticatedProspectingRouteChildren =
   {
+    AuthenticatedProspectingIndexRoute: AuthenticatedProspectingIndexRoute,
     AuthenticatedProspectingCampaignsIdRoute:
       AuthenticatedProspectingCampaignsIdRoute,
     AuthenticatedProspectingCampaignsIndexRoute:

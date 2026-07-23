@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,10 +24,14 @@ import {
 } from "@/lib/voice-agent.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/voice-agent")({
+  beforeLoad: () => {
+    throw redirect({ to: "/prospecting", search: { tab: "voice" as const } });
+  },
   component: VoiceAgentPage,
 });
 
-function VoiceAgentPage() {
+
+export function VoiceAgentPage() {
   const getFn = useServerFn(getVoiceAgentSettings);
   const saveFn = useServerFn(saveVoiceAgentSettings);
   const phonesFn = useServerFn(listVapiPhoneNumbers);

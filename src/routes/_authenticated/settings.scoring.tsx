@@ -1,5 +1,5 @@
 // Página /settings/scoring — gerenciador de regras de Lead Scoring + log de aplicações.
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,12 @@ import {
 } from "@/lib/scoring.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/scoring")({
+  beforeLoad: () => {
+    throw redirect({ to: "/prospecting", search: { tab: "scoring" as const } });
+  },
   component: ScoringPage,
 });
+
 
 type RuleEntity = "lead" | "contact" | "company";
 type Op =
@@ -89,7 +93,7 @@ const NEEDS_VALUE: Record<Op, boolean> = {
   is_not_empty: false,
 };
 
-function ScoringPage() {
+export function ScoringPage() {
   const listFn = useServerFn(listScoringRules);
   const saveFn = useServerFn(saveScoringRule);
   const delFn = useServerFn(deleteScoringRule);

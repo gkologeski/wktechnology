@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -21,8 +21,12 @@ import { Eye } from "lucide-react";
 type Job = Awaited<ReturnType<typeof listEnrichmentJobs>>["jobs"][number];
 
 export const Route = createFileRoute("/_authenticated/settings/enrichment")({
+  beforeLoad: () => {
+    throw redirect({ to: "/prospecting", search: { tab: "enrichment" as const } });
+  },
   component: EnrichmentHistoryPage,
 });
+
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   done: "default",
@@ -32,7 +36,7 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "dest
   queued: "outline",
 };
 
-function EnrichmentHistoryPage() {
+export function EnrichmentHistoryPage() {
   const list = useServerFn(listEnrichmentJobs);
   const q = useQuery({
     queryKey: ["enrichment-jobs"],
