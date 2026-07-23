@@ -79,6 +79,8 @@ function LeadDetail() {
     try {
       await deleteLeadsByIds(supabase, [lead.id]);
       toast.success("Excluído");
+      qc.removeQueries({ queryKey: qk.lead(id) });
+      await qc.invalidateQueries({ queryKey: ["leads"] });
       navigate({ to: "/leads" });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao excluir");

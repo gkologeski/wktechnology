@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import DOMPurify from "dompurify";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +40,7 @@ const isHtml = (s: string) => /<\/?[a-z][\s\S]*>/i.test(s);
 function TaskDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [task, setTask] = useState<TaskRow | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const { data: members, nameFor } = useWorkspaceMembers();
@@ -59,8 +61,15 @@ function TaskDetail() {
   if (!task) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const remove = async () => {
-    await supabase.from("activities").delete().eq("id", task.id);
+    const { error } = await supabase.from("activities").delete().eq("id", task.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Excluída");
+    qc.removeQueries({ queryKey: ["task", task.id] });
+    await qc.invalidateQueries({ queryKey: ["tasks"] });
+    await qc.invalidateQueries({ queryKey: ["activities"] });
     navigate({ to: "/tasks" });
   };
 

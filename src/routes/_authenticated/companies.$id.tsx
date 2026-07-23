@@ -52,8 +52,14 @@ function CompanyDetail() {
 
   const remove = async () => {
     if (!confirm("Excluir empresa?")) return;
-    await supabase.from("companies").delete().eq("id", company.id);
+    const { error } = await supabase.from("companies").delete().eq("id", company.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Excluído");
+    qc.removeQueries({ queryKey: qk.company(id) });
+    await qc.invalidateQueries({ queryKey: ["companies"] });
     navigate({ to: "/companies" });
   };
 
