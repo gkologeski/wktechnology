@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileText, Plus, Search } from "lucide-react";
+import { FileText, Plus, Search, Upload } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/table";
 import { listContracts } from "@/lib/contracts.functions";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
+import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/contracts/")({
@@ -71,6 +72,7 @@ function ContractsPage() {
   const [role, setRole] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
+  const [openImport, setOpenImport] = useState(false);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["contracts", { role, status, search }],
@@ -105,9 +107,14 @@ function ContractsPage() {
         count={filtered.length}
         countLabel={filtered.length === 1 ? "contrato" : "contratos"}
         actions={
-          <Button onClick={() => setOpenNew(true)}>
-            <Plus className="h-4 w-4 mr-1" /> Novo contrato
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => setOpenImport(true)}>
+              <Upload className="h-4 w-4 mr-1" /> Importar contrato
+            </Button>
+            <Button onClick={() => setOpenNew(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Novo contrato
+            </Button>
+          </div>
         }
       />
 
@@ -217,6 +224,14 @@ function ContractsPage() {
         open={openNew}
         onOpenChange={setOpenNew}
         onCreated={() => qc.invalidateQueries({ queryKey: ["contracts"] })}
+      />
+
+      <ImportContractFileDialog
+        open={openImport}
+        onOpenChange={(next) => {
+          setOpenImport(next);
+          if (!next) qc.invalidateQueries({ queryKey: ["contracts"] });
+        }}
       />
     </div>
   );

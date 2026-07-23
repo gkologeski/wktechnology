@@ -304,6 +304,10 @@ function ContractDetail() {
 
       <ContractApprovalsPanel contractId={contract.id} />
 
+      <ImportedFieldsCard contract={contract} />
+
+
+
 
       <Card>
         <CardHeader className="pb-3">
@@ -337,5 +341,107 @@ function ContractDetail() {
         </Card>
       )}
     </div>
+  );
+}
+
+type ImportedFields = {
+  imported_from?: string | null;
+  import_confidence?: number | null;
+  monthly_value?: number | null;
+  hours_per_month?: number | null;
+  payment_day?: number | null;
+  payment_method?: string | null;
+  late_fee_percent?: number | null;
+  late_interest_monthly_percent?: number | null;
+  expense_reimbursement_days?: number | null;
+  penalty_percent?: number | null;
+  cure_period_days?: number | null;
+  trial_period_days?: number | null;
+  unilateral_termination_notice_days?: number | null;
+  service_type?: string | null;
+  service_scope?: string | null;
+  service_location?: string | null;
+  governing_law?: string | null;
+  jurisdiction?: string | null;
+  confidentiality_term_months?: number | null;
+  signature_provider?: string | null;
+  signature_document_id?: string | null;
+  signature_operation_id?: string | null;
+  source_file_path?: string | null;
+  currency?: string | null;
+};
+
+function ImportedFieldsCard({ contract }: { contract: ImportedFields }) {
+  const rows: Array<[string, string | null]> = [
+    ["Origem", contract.imported_from ? contract.imported_from.toUpperCase() : null],
+    [
+      "Confiança da extração",
+      typeof contract.import_confidence === "number"
+        ? `${(contract.import_confidence * 100).toFixed(0)}%`
+        : null,
+    ],
+    [
+      "Valor mensal",
+      contract.monthly_value != null
+        ? formatCurrency(Number(contract.monthly_value), contract.currency ?? "BRL")
+        : null,
+    ],
+    ["Horas/mês", contract.hours_per_month != null ? String(contract.hours_per_month) : null],
+    ["Dia de pagamento", contract.payment_day != null ? String(contract.payment_day) : null],
+    ["Método de pagamento", contract.payment_method ?? null],
+    ["Multa de mora", contract.late_fee_percent != null ? `${contract.late_fee_percent}%` : null],
+    [
+      "Juros ao mês",
+      contract.late_interest_monthly_percent != null
+        ? `${contract.late_interest_monthly_percent}%`
+        : null,
+    ],
+    [
+      "Reembolso de despesas (dias)",
+      contract.expense_reimbursement_days != null ? String(contract.expense_reimbursement_days) : null,
+    ],
+    ["Multa compensatória", contract.penalty_percent != null ? `${contract.penalty_percent}%` : null],
+    ["Prazo para sanar (dias)", contract.cure_period_days != null ? String(contract.cure_period_days) : null],
+    ["Carência sem multa (dias)", contract.trial_period_days != null ? String(contract.trial_period_days) : null],
+    [
+      "Aviso resilição unilateral (dias)",
+      contract.unilateral_termination_notice_days != null
+        ? String(contract.unilateral_termination_notice_days)
+        : null,
+    ],
+    ["Tipo de serviço", contract.service_type ?? null],
+    ["Local de execução", contract.service_location ?? null],
+    ["Objeto / escopo", contract.service_scope ?? null],
+    ["Lei aplicável", contract.governing_law ?? null],
+    ["Foro", contract.jurisdiction ?? null],
+    [
+      "Sigilo (meses)",
+      contract.confidentiality_term_months != null
+        ? String(contract.confidentiality_term_months)
+        : null,
+    ],
+    ["Provedor de assinatura", contract.signature_provider ?? null],
+    ["ID do documento", contract.signature_document_id ?? null],
+    ["ID da operação", contract.signature_operation_id ?? null],
+    ["Arquivo original", contract.source_file_path ?? null],
+  ];
+  const filled = rows.filter(([, v]) => v != null && v !== "");
+  if (filled.length === 0) return null;
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Detalhes extraídos</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          {filled.map(([k, v]) => (
+            <div key={k} className="flex justify-between gap-3 border-b border-border/40 py-1.5">
+              <dt className="text-muted-foreground">{k}</dt>
+              <dd className="text-right font-medium truncate max-w-[60%]">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </CardContent>
+    </Card>
   );
 }
