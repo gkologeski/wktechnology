@@ -158,6 +158,11 @@ export function AllocationsPanel({
                             ? `Projeto: ${r.project_name}`
                             : "Sem vínculo"}
                       </div>
+                      {r.manager_name ? (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Gestor: {r.manager_name}
+                        </div>
+                      ) : null}
                       <div className="text-xs text-muted-foreground mt-1">
                         {r.starts_at} → {r.ends_at ?? "aberta"}
                       </div>
