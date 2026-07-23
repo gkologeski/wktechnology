@@ -270,6 +270,55 @@ function WorkspaceDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {ws && (
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              Zona de perigo
+            </CardTitle>
+            <CardDescription>
+              Ações irreversíveis ou de alto impacto. Restritas a super-admins da plataforma.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            {ws.status !== "deleted" ? (
+              <Button variant="destructive" onClick={() => setDeleteOpen(true)}>
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir workspace
+              </Button>
+            ) : (
+              <>
+                <Button variant="outline" onClick={() => setRestoreOpen(true)}>
+                  Restaurar
+                </Button>
+                <Button variant="destructive" onClick={() => setPurgeOpen(true)}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir definitivamente
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {ws && (
+        <>
+          <EditWorkspaceDialog workspace={ws} open={editOpen} onOpenChange={setEditOpen} />
+          <SoftDeleteWorkspaceDialog
+            workspace={ws}
+            open={deleteOpen}
+            onOpenChange={setDeleteOpen}
+          />
+          <RestoreWorkspaceDialog
+            workspace={ws}
+            open={restoreOpen}
+            onOpenChange={setRestoreOpen}
+          />
+          <PurgeWorkspaceDialog workspace={ws} open={purgeOpen} onOpenChange={setPurgeOpen} />
+        </>
+      )}
     </div>
   );
 }
