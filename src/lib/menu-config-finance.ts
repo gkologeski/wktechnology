@@ -1,6 +1,6 @@
 // Menu lateral do módulo TechFinance.
 // Renderizado pelo AppSidebar quando `activeModule === 'finance'`.
-import { DollarSign, FileText, BarChart3, TrendingUp, Receipt, Landmark, Repeat, Building2, FolderTree, ShieldCheck, Bell, Mail } from "lucide-react";
+import { DollarSign, FileText, BarChart3, TrendingUp, Receipt, Landmark, Repeat, Building2, FolderTree, ShieldCheck, Bell, Mail, Package } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
 export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
@@ -22,6 +22,7 @@ export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Conciliação", url: "/finance/banking/reconciliation", icon: Landmark, need: "manager" },
 
       { title: "Faturas", url: "/invoices", icon: FileText },
+      { title: "Faturamento de Serviços", url: "/services", icon: Package, need: "manager" },
       { title: "NFS-e", url: "/finance/nfse", icon: Receipt, need: "manager" },
       { title: "Auditoria", url: "/finance/audit", icon: ShieldCheck, need: "admin" },
       { title: "Régua de cobrança", url: "/settings/dunning", icon: Bell, need: "manager" },
