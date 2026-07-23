@@ -170,6 +170,26 @@ function PersonForm({
   const [employment, setEmployment] = useState<PeopleEmploymentType>(p.employment_type);
   const [notes, setNotes] = useState(p.notes ?? "");
   const [costHour, setCostHour] = useState<string>(p.cost_hour != null ? String(p.cost_hour) : "");
+  const [education, setEducation] = useState(p.education ?? "");
+  const [shirtSize, setShirtSize] = useState(p.shirt_size ?? "");
+  const [emergencyPhone, setEmergencyPhone] = useState(p.emergency_phone ?? "");
+  const [emergencyRelationship, setEmergencyRelationship] = useState(
+    p.emergency_relationship ?? "",
+  );
+  const [maritalStatus, setMaritalStatus] = useState(p.marital_status ?? "");
+  const [spouseName, setSpouseName] = useState(p.spouse_name ?? "");
+  const [bank, setBank] = useState(p.bank ?? "");
+  const [bankAgency, setBankAgency] = useState(p.bank_agency ?? "");
+  const [bankAccount, setBankAccount] = useState(p.bank_account ?? "");
+  const [pixKey, setPixKey] = useState(p.pix_key ?? "");
+  const [address, setAddress] = useState(p.address ?? "");
+  const [cnpj, setCnpj] = useState(p.cnpj ?? "");
+  const [legalEntityName, setLegalEntityName] = useState(p.legal_entity_name ?? "");
+  const [tradeName, setTradeName] = useState(p.trade_name ?? "");
+  const [simplesOptante, setSimplesOptante] = useState<"" | "yes" | "no">(
+    p.simples_optante === true ? "yes" : p.simples_optante === false ? "no" : "",
+  );
+
 
   const mut = useMutation({
     mutationFn: () =>
