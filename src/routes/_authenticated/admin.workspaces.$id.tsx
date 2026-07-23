@@ -70,6 +70,10 @@ function WorkspaceDetailPage() {
   });
 
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false);
+  const [purgeOpen, setPurgeOpen] = useState(false);
   const [form, setForm] = useState({
     email: "",
     full_name: "",
