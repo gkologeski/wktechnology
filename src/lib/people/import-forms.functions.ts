@@ -747,3 +747,127 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
       },
     };
   });
+
+// ---------- Reimport de anexos quebrados (.bin) ----------
+
+const DRIVE_ID_RE = /Drive ID ([A-Za-z0-9_-]{15,})/;
+
+export type ReimportResult = {
+  scanned: number;
+  fixed: number;
+  still_failed: number;
+  processed: number;
+  next_offset: number;
+  done: boolean;
+  failures: { id: string; person_id: string; reason: string }[];
+};
+
+const reimportInputSchema = z.object({
+  offset: z.number().int().min(0).default(0),
+  batch_size: z.number().int().min(1).max(30).default(10),
+});
+
+export const reimportBrokenAttachments = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => reimportInputSchema.parse(i ?? {}))
+  .handler(async ({ data, context }): Promise<ReimportResult> => {
+    const { supabase, userId } = context;
+    const workspaceId = await getActiveWorkspaceId(supabase, userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techpeople.people.update.workspace",
+    ]);
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Encontra documentos com extensão .bin ou nome terminando em .bin.
+    const { data: all, error } = await supabaseAdmin
+      .from("people_documents")
+      .select("id, owner_id, person_id, doc_type, file_url, file_name, notes")
+      .or("file_url.ilike.%.bin,file_name.ilike.%.bin")
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    const rows = (all ?? []) as Array<{
+      id: string;
+      owner_id: string;
+      person_id: string;
+      doc_type: string;
+      file_url: string | null;
+      file_name: string | null;
+      notes: string | null;
+    }>;
+
+    const scanned = rows.length;
+    const slice = rows.slice(data.offset, data.offset + data.batch_size);
+
+    let fixed = 0;
+    let stillFailed = 0;
+    const failures: { id: string; person_id: string; reason: string }[] = [];
+
+    for (const row of slice) {
+      try {
+        // Extrai Drive ID de notes.
+        const m = row.notes?.match(DRIVE_ID_RE);
+        if (!m) {
+          stillFailed++;
+          failures.push({ id: row.id, person_id: row.person_id, reason: "Drive ID não encontrado nas notas" });
+          continue;
+        }
+        const driveId = m[1];
+        const dl = await downloadDriveFile(driveId);
+        if (!dl || dl.ext === "bin") {
+          stillFailed++;
+          failures.push({
+            id: row.id,
+            person_id: row.person_id,
+            reason: dl ? `Não foi possível identificar o tipo (${dl.mime})` : "Falha no download do Drive",
+          });
+          continue;
+        }
+        const newPath = `${row.owner_id}/${row.person_id}/forms-import/${driveId}.${dl.ext}`;
+        const { error: upErr } = await supabaseAdmin.storage
+          .from("people-documents")
+          .upload(newPath, dl.bytes, { contentType: dl.mime, upsert: true });
+        if (upErr) {
+          stillFailed++;
+          failures.push({ id: row.id, person_id: row.person_id, reason: upErr.message });
+          continue;
+        }
+        // Remove o arquivo antigo .bin se path era diferente.
+        if (row.file_url && row.file_url !== newPath) {
+          await supabaseAdmin.storage.from("people-documents").remove([row.file_url]);
+        }
+        const displayName = dl.original_name && dl.original_name.trim().length > 0
+          ? dl.original_name
+          : `${row.doc_type}.${dl.ext}`;
+        const { error: updErr } = await supabaseAdmin
+          .from("people_documents")
+          .update({ file_url: newPath, file_name: displayName } as never)
+          .eq("id", row.id);
+        if (updErr) {
+          stillFailed++;
+          failures.push({ id: row.id, person_id: row.person_id, reason: updErr.message });
+          continue;
+        }
+        fixed++;
+      } catch (e) {
+        stillFailed++;
+        failures.push({
+          id: row.id,
+          person_id: row.person_id,
+          reason: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+
+    const nextOffset = data.offset + slice.length;
+    return {
+      scanned,
+      fixed,
+      still_failed: stillFailed,
+      processed: nextOffset,
+      next_offset: nextOffset,
+      done: nextOffset >= scanned,
+      failures,
+    };
+  });
