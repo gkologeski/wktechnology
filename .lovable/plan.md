@@ -1,124 +1,73 @@
+## Problema
 
-## Objetivo
+Links públicos (cotação, portal, formulário, arquivo, reunião, convite, survey, etc.) são montados com `window.location.origin` no cliente e com fallbacks inconsistentes no servidor (`wktechnology.lovable.app`, `ats.wktechnology.com.br`). Quando o usuário está no preview (`id-preview--…lovable.app`) ou em um custom domain diferente, esse host vaza para e-mails/mensagens e o destinatário externo cai numa tela de login do editor. Regra unificada: todo link público destinado a terceiros deve usar `https://app.wktechnology.com.br`.
 
-Criar uma **Suíte de Prospecção** no TechSales que centralize toda a operação de Sales Engagement em `/prospecting`, com abas internas. A tela principal é uma **fila configurável** de leads/contatos para o SDR/BDR trabalhar (qualificar → cadenciar → agendar). Consolida as engines de cadência (ATS `ats_sourcing_sequences` + TechSales `sequences`) em uma **camada unificada nova** e adiciona **questionários de qualificação** (framework pronto + customizável, com score automático e decisão manual).
+## Correção proposta
 
-## Boas práticas incorporadas (Outreach, Salesloft, Apollo, HubSpot, Reply.io, Lemlist, Amplemarket)
+### 1. Helper canônico único
 
-- **Fila unificada de trabalho ("Today's tasks")** por prioridade/SLA — não por status estático.
-- **Cadências multi-canal** com passos: email, LinkedIn (invite/message/task), WhatsApp, chamada, tarefa manual, wait, wait_invite_accept.
-- **A/B por passo**, quiet hours, dias úteis, limite diário por canal.
-- **Qualificação via framework** (BANT/MEDDIC/CHAMP/GPCT) + questionários customizáveis com peso por resposta → **score** somado ao lead scoring existente.
-- **Decisão final manual** do SDR (qualificado / desqualificado / nutrição / agendado) sempre sobrepõe o score.
-- **Handoff automatizado**: qualificado → cria negócio + agenda com AE.
-- **Playbooks** ligados ao passo/pipeline; scripts ligados a call/canal.
-- **Enrichment on-demand** dentro da própria fila.
-- **Voice agent** como um dos canais opcionais da cadência.
+Em `src/lib/app-url.ts`:
 
-## Arquitetura de rotas
+- `CANONICAL_PUBLIC_URL = "https://app.wktechnology.com.br"`.
+- `PROD_HOSTS = ["app.wktechnology.com.br", "crm.wktechnology.com.br", "ats.wktechnology.com.br", "wktechnology.lovable.app"]`.
+- `getPublicAppUrl()`:
+  - Browser: se `window.location.hostname ∈ PROD_HOSTS`, retorna `window.location.origin`; senão retorna `CANONICAL_PUBLIC_URL`.
+  - Servidor: se `process.env.PUBLIC_APP_URL` estiver definido e for um host de produção, usa-o; senão `CANONICAL_PUBLIC_URL`.
+- Mantém `getAppUrl()` existente para usos internos (redirect intra-app, OAuth) — sem alteração.
 
-Nova estrutura em `src/routes/_authenticated/`:
+### 2. Substituir `window.location.origin` em geradores de link públicos (cliente)
 
-```text
-prospecting.tsx                 (layout com <Outlet />, já existe)
-prospecting.index.tsx           (Suite: layout de abas)
-  ├── aba "Fila"                  → default, fila configurável
-  ├── aba "Cadências"             → sequences unificadas
-  ├── aba "Questionários"         → templates BANT/MEDDIC + custom
-  ├── aba "Scoring"               → move de /settings/scoring
-  ├── aba "Playbooks"             → move de /settings/playbooks
-  ├── aba "Enrichment"            → move de /settings/enrichment
-  ├── aba "Scripts"               → move de /settings/prospecting-scripts
-  ├── aba "Voice Agent"           → move de /settings/voice-agent
-  └── aba "Campanhas voz"         → link para /prospecting/campaigns
-prospecting.leads.$id.tsx        (detalhe do lead na fila, com painel de qualificação)
-prospecting.campaigns.*          (mantém)
-```
+Todos passam a chamar `getPublicAppUrl()`:
 
-Rotas antigas em `/settings/*` viram **redirects** para a aba correspondente (via `beforeLoad` com `redirect`). O `menu-config` remove essas entradas de settings e adiciona apenas **"Prospecção"** em Captar (já existe `Prospecção por voz`, será substituída por "Prospecção" apontando para `/prospecting`).
+- Cotações: `src/components/deals/quote-wizard.tsx`, `src/components/deals/deal-quotes.tsx` (link público e PDF), `src/routes/_authenticated/settings.quotes.tsx`.
+- Surveys: `src/components/surveys/new-survey-dialog.tsx`, `src/routes/_authenticated/settings.surveys.tsx`.
+- E-sign: `src/routes/_authenticated/settings.esign.tsx`.
+- Portal do cliente: `src/routes/_authenticated/settings.portal.tsx`.
+- Booking: `src/routes/_authenticated/settings.booking.tsx`.
+- Formulários públicos: `src/routes/_authenticated/settings.forms.tsx`.
+- Arquivos compartilhados: `src/routes/_authenticated/files.tsx`.
+- KB: `src/components/tickets/kb-suggestions.tsx`.
+- Referral: `src/routes/_authenticated/(ats)/sourcing/referrals.tsx`.
+- WhatsApp Ads: `src/routes/_authenticated/settings.wa-ads.tsx`.
+- Widget embed: `src/routes/_authenticated/settings.widget.tsx`.
+- SCIM: `src/routes/_authenticated/settings.scim.tsx` (URL exposta a IdP externo).
+- Reuniões: `src/components/meetings/start-video-button.tsx`, `meeting-dialog.tsx`, `meeting-detail-drawer.tsx`.
+- Convites: `src/routes/_authenticated/settings.teams.tsx`, `src/routes/_authenticated/admin.workspaces.tsx`, `admin.workspaces.$id.tsx` (parâmetro `redirect_origin`).
 
-## Modelo de dados (novas tabelas)
+### 3. Fallbacks do servidor unificados
 
-Migrations (com GRANTs + RLS `owner_id = auth.uid()`):
+Trocar todo fallback `"https://wktechnology.lovable.app"` / `"https://ats.wktechnology.com.br"` por `"https://app.wktechnology.com.br"`, preservando `process.env.PUBLIC_APP_URL` como override:
 
-1. `prospecting_queues` — filas configuráveis por usuário/workspace.
-   - `id`, `owner_id`, `name`, `description`, `entity` (`lead|contact`), `filters` (jsonb: status, source, score min/max, segment, owner, tags, updated_at range), `sort` (jsonb), `is_shared` (bool), timestamps.
-2. `prospecting_questionnaires` — templates de qualificação.
-   - `id`, `owner_id`, `name`, `framework` (`bant|meddic|champ|gpct|custom`), `pipeline_id` (nullable), `product_id` (nullable), `enabled`, `pass_threshold` (int), timestamps.
-3. `prospecting_questions` — perguntas do questionário.
-   - `id`, `questionnaire_id`, `owner_id`, `order`, `label`, `type` (`single|multi|number|text|boolean`), `options` (jsonb: `[{ label, points }]`), `weight` (int), `required` (bool).
-4. `prospecting_qualifications` — respostas + resultado por lead/contato.
-   - `id`, `owner_id`, `questionnaire_id`, `entity` (`lead|contact`), `entity_id`, `answers` (jsonb), `score` (int), `decision` (`qualified|disqualified|nurture|scheduled|pending`), `decision_reason`, `qualified_by`, `qualified_at`.
-5. `prospecting_cadences` — engine unificada de cadência (extensão das colunas comuns de `sequences` + `ats_sourcing_sequences`).
-   - `id`, `owner_id`, `name`, `enabled`, `scope` (`sales|hr`), `queue_id` (nullable), timezone, quiet hours, daily limits, send days, timestamps.
-6. `prospecting_cadence_steps` — passos, com colunas idênticas aos atuais `ats_sourcing_sequence_steps` (channel, delay_days, subject/body, task_instructions, variant, wait_invite_accept props).
-7. `prospecting_enrollments` — inscrição por entidade (lead/contact/candidate) na cadência.
-   - Espelha `ats_sourcing_enrollments`, com `entity` (`lead|contact|candidate`) + `entity_id`.
+- `src/lib/quotes.functions.ts` (checkout success/cancel).
+- `src/lib/invoices.functions.ts`.
+- `src/lib/email-tracking.server.ts` e `src/lib/email-broadcast/engine.server.ts`.
+- `src/lib/whatsapp.functions.ts`, `src/lib/whatsapp-send.server.ts`, `src/routes/api/public/hooks/whatsapp-campaign-tick.ts`.
+- `src/lib/prospecting-campaigns.functions.ts`.
+- `src/lib/ats/interviews.functions.ts`.
+- `src/lib/teams.functions.ts` e `src/lib/platform-admin.functions.ts` (`CANONICAL_APP_URL`).
+- `src/routes/api/public/email/click.$messageId.ts` (`FALLBACK`).
+- Rótulos exibidos em `src/routes/_authenticated/settings.zapier.tsx`, `settings.whatsapp.tsx`, `settings.payments.tsx` (webhook URLs mostradas ao usuário).
 
-**Migração das engines existentes**: manter `sequences` (email-only TechSales) e `ats_sourcing_sequences` intactas para retrocompatibilidade; o novo módulo lê/escreve nas tabelas `prospecting_*`. Adicionar server function `migrateLegacyCadences` (idempotente, opt-in via botão em Cadências) que copia sequências legadas.
+### 4. NÃO alterar (dependem do host atual do navegador)
 
-Sem alteração de outras tabelas.
+Estes usam `window.location.origin` intencionalmente por causa de allowlist OAuth / postMessage / pareamento de dispositivo:
 
-## Server functions (novos módulos em `src/lib/prospecting/`)
+- `src/routes/login.tsx`, `src/routes/reset-password.tsx`.
+- `src/routes/_authenticated/settings.email.tsx`, `settings.calendars.tsx` (Google OAuth message origin).
+- `src/routes/api/public/oauth/google-callback.ts`.
+- `src/routes/_authenticated/auth/extension-link.tsx` e `src/components/ats/hunting/pairing-status-panel.tsx`.
+- `src/routes/quote.$token.tsx` (chamada de PDF a partir da própria página pública — já roda no host público).
 
-- `queues.functions.ts` — CRUD filas + `listQueueItems` (paginado, aplica filtros JSON contra `leads`/`contacts`).
-- `questionnaires.functions.ts` — CRUD questionários + perguntas; seeds dos frameworks (BANT/MEDDIC/CHAMP/GPCT).
-- `qualifications.functions.ts` — `saveQualification` (calcula score somando `option.points * weight`), `setDecision`, `listByEntity`.
-- `cadences.functions.ts` — CRUD cadências, passos, `enrollEntities`, `stopEnrollment`, `tickCadences` (equivalente ao tick atual do ATS, com suporte a `lead|contact|candidate`).
-- `handoff.functions.ts` — `qualifyAndCreateDeal` (converte lead → contato+empresa+negócio, opcionalmente agenda reunião com AE via booking existente).
+## Validação
 
-Todas com `.middleware([requireSupabaseAuth])` e validação Zod. Handoff reusa `convertLead` já existente onde aplicável.
-
-## UI (componentes em `src/components/prospecting/`)
-
-Design system TechHire/TechSales oficial (`PageHeader`, `SectionHeader`, `FilterBar`, `DataTable`, `EmptyState`, `LoadingSkeleton`, `MetricCard`, `StatusBadge`, `FormSection`).
-
-- `prospecting-suite-tabs.tsx` — shell com abas dentro de `PageHeader`.
-- `queue-builder-dialog.tsx` — cria/edita fila (nome + `FilterBuilder` reutilizado).
-- `queue-workspace.tsx` — split view: lista à esquerda (cards com nome, empresa, score, última interação, SLA), painel à direita com abas **Detalhes | Qualificação | Cadências | Timeline**.
-- `qualification-panel.tsx` — renderiza questionário ativo, calcula score em tempo real, botões de decisão (Qualificar / Desqualificar / Nutrição / Agendar) — decisão manual sempre disponível independente do score.
-- `questionnaire-editor.tsx` — CRUD com sortable de perguntas, editor de opções com pontos.
-- `cadence-builder.tsx` — reaproveita `sequence-builder.tsx` já existente, ampliado para escopo sales/hr e novo channel `call` (via voice agent).
-- Abas Scoring/Playbooks/Enrichment/Scripts/Voice: **movem o conteúdo** dos componentes atuais das rotas `/settings/*` (não a rota), envolvendo em um wrapper leve. Nenhuma lógica de negócio muda.
-
-## Sidebar / navegação
-
-- `menu-config.ts`:
-  - Em "Captar": substitui "Prospecção por voz" por **"Prospecção"** → `/prospecting`.
-  - Em "Otimizar / Configurações": remove Scoring, Playbooks, Enrichment, Prospecção (voz), Scripts, Voice Agent do menu de settings. Mantém rotas legadas somente como redirects.
-- Breadcrumbs e títulos das abas em PT-BR.
-
-## Redirects (compatibilidade)
-
-Rotas `/settings/scoring`, `/settings/playbooks`, `/settings/enrichment`, `/settings/prospecting`, `/settings/prospecting-scripts`, `/settings/voice-agent` passam a redirecionar para `/prospecting?tab=<slug>` via `beforeLoad`. Isso preserva bookmarks.
-
-## Segurança
-
-- Todas as novas tabelas: `GRANT` explícito + `ENABLE ROW LEVEL SECURITY` + policy `owner_id = auth.uid()` (sem anon).
-- Server functions: `requireSupabaseAuth`; handoff valida permissão via matriz `permissions` existente (`leads.update`, `deals.create`).
-- `prospecting_questionnaires.pipeline_id` valida FK/pertence ao workspace.
-
-## Entregas por fase (implementação incremental)
-
-1. **Fase 1** — Migrations + seeds de frameworks + server functions base.
-2. **Fase 2** — Rota `/prospecting` com aba **Fila** (queue builder + workspace) e aba **Questionários**.
-3. **Fase 3** — Painel de qualificação com score/decisão + handoff (criar negócio + agendar).
-4. **Fase 4** — Aba **Cadências** unificada + inscrição a partir da fila; migração opt-in dos dados legados.
-5. **Fase 5** — Migrar abas Scoring/Playbooks/Enrichment/Scripts/Voice para dentro da suíte; redirects; atualização de sidebar; documentação.
-
-Cada fase entrega telas navegáveis, com loading/empty/error states, respeitando light/dark e responsividade.
+- Manual no preview: gerar/copiar link em cada superfície acima → todos devem apontar para `https://app.wktechnology.com.br/...`.
+- Manual em produção (`app.wktechnology.com.br`, `crm.…`, `ats.…`): links continuam no host atual.
+- OAuth Google (e-mail e calendário), reset de senha, login social, pareamento de extensão → continuam funcionando no preview.
+- `bun run typecheck` + `tests/e2e/quotes-smoke.spec.ts` + `tests/e2e/public-smoke.spec.ts`.
 
 ## Fora do escopo
 
-- Não altera engines legadas `sequences` e `ats_sourcing_sequences` além de leitura para migração opt-in.
-- Não modifica RLS de leads/contatos/deals.
-- Não altera Voice Agent internamente — apenas realoca a UI.
-- Sem integração nova com provedores externos.
-
-## Como validar
-
-- Criar fila "Leads novos SP" com filtro `status = new AND state = SP`.
-- Criar questionário BANT customizado, aplicar em um lead, ver score somado ao `lead_score` existente.
-- Qualificar manualmente e converter para negócio via handoff.
-- Inscrever 3 leads em uma cadência multi-canal e ver o tick agendar o primeiro passo.
-- Abrir `/settings/scoring` → deve redirecionar para `/prospecting?tab=scoring`.
+- Reenvio de links já entregues com host de preview (usuário pode regenerar/reenviar).
+- Meta tags SEO (`og:url`, `canonical`) que hoje apontam para `ats.wktechnology.com.br` — troca separada por afetar SEO/indexação.
+- Redirect global de `id-preview--…lovable.app` → domínio canônico.
+- Card "Emails recentes" da lateral do negócio.
