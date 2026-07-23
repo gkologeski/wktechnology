@@ -290,6 +290,8 @@ export const upsertPerson = createServerFn({ method: "POST" })
       termination_date: data.termination_date || null,
       legal_entity_name: normalize(data.legal_entity_name ?? null),
       cnpj: normalize(data.cnpj ?? null),
+      trade_name: normalize(data.trade_name ?? null),
+      simples_optante: data.simples_optante ?? null,
       manager_id: data.manager_id ?? null,
       profile_id: data.profile_id ?? null,
       candidate_id: data.candidate_id ?? null,
@@ -298,7 +300,19 @@ export const upsertPerson = createServerFn({ method: "POST" })
       currency: data.currency,
       tags: data.tags,
       notes: normalize(data.notes ?? null),
+      education: normalize(data.education ?? null),
+      shirt_size: normalize(data.shirt_size ?? null),
+      emergency_phone: normalize(data.emergency_phone ?? null),
+      emergency_relationship: normalize(data.emergency_relationship ?? null),
+      marital_status: normalize(data.marital_status ?? null),
+      spouse_name: normalize(data.spouse_name ?? null),
+      bank: normalize(data.bank ?? null),
+      bank_agency: normalize(data.bank_agency ?? null),
+      bank_account: normalize(data.bank_account ?? null),
+      pix_key: normalize(data.pix_key ?? null),
+      address: normalize(data.address ?? null),
     };
+
 
     if (data.id) {
       // Detecta transição de status para `offboarding` para disparar automação.
