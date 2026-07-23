@@ -59,18 +59,32 @@ export type PersonRow = {
   termination_date: string | null;
   legal_entity_name: string | null;
   cnpj: string | null;
+  trade_name: string | null;
+  simples_optante: boolean | null;
   cost_hour: number | null;
   monthly_cost: number | null;
   currency: string;
   personal_doc: PersonDocMap;
   tags: string[];
   notes: string | null;
+  education: string | null;
+  shirt_size: string | null;
+  emergency_phone: string | null;
+  emergency_relationship: string | null;
+  marital_status: string | null;
+  spouse_name: string | null;
+  bank: string | null;
+  bank_agency: string | null;
+  bank_account: string | null;
+  pix_key: string | null;
+  address: string | null;
   archived: boolean;
   created_at: string;
   updated_at: string;
   /** Preenchido no server quando o usuário pode ver dados sensíveis. */
   can_view_sensitive?: boolean;
 };
+
 
 const upsertSchema = z.object({
   id: z.string().uuid().nullable().optional(),
@@ -89,6 +103,8 @@ const upsertSchema = z.object({
   termination_date: z.string().nullable().optional(),
   legal_entity_name: z.string().max(200).nullable().optional(),
   cnpj: z.string().max(20).nullable().optional(),
+  trade_name: z.string().max(200).nullable().optional(),
+  simples_optante: z.boolean().nullable().optional(),
   manager_id: z.string().uuid().nullable().optional(),
   profile_id: z.string().uuid().nullable().optional(),
   candidate_id: z.string().uuid().nullable().optional(),
@@ -97,7 +113,19 @@ const upsertSchema = z.object({
   currency: z.string().length(3).default("BRL"),
   tags: z.array(z.string().min(1).max(40)).max(20).default([]),
   notes: z.string().max(4000).nullable().optional(),
+  education: z.string().max(120).nullable().optional(),
+  shirt_size: z.string().max(20).nullable().optional(),
+  emergency_phone: z.string().max(40).nullable().optional(),
+  emergency_relationship: z.string().max(120).nullable().optional(),
+  marital_status: z.string().max(60).nullable().optional(),
+  spouse_name: z.string().max(160).nullable().optional(),
+  bank: z.string().max(160).nullable().optional(),
+  bank_agency: z.string().max(40).nullable().optional(),
+  bank_account: z.string().max(60).nullable().optional(),
+  pix_key: z.string().max(160).nullable().optional(),
+  address: z.string().max(400).nullable().optional(),
 });
+
 
 function normalize(value: string | null | undefined): string | null {
   if (value === undefined || value === null) return null;
@@ -126,7 +154,7 @@ export const listPeople = createServerFn({ method: "POST" })
       .from("people")
       .select(
         // Campos sensíveis omitidos aqui — carregados no getPerson quando permitido.
-        "id, owner_id, profile_id, candidate_id, manager_id, full_name, preferred_name, email, phone, photo_url, employment_type, status, role_title, seniority, location, timezone, hire_date, termination_date, legal_entity_name, cnpj, currency, tags, archived, created_at, updated_at",
+        "id, owner_id, profile_id, candidate_id, manager_id, full_name, preferred_name, email, phone, photo_url, employment_type, status, role_title, seniority, location, timezone, hire_date, termination_date, legal_entity_name, cnpj, trade_name, simples_optante, currency, tags, education, shirt_size, emergency_phone, emergency_relationship, marital_status, spouse_name, archived, created_at, updated_at",
       )
       .order("full_name", { ascending: true })
       .limit(500);
@@ -156,7 +184,7 @@ export const getPerson = createServerFn({ method: "POST" })
     const { data: base, error } = await supabase
       .from("people")
       .select(
-        "id, owner_id, profile_id, candidate_id, manager_id, full_name, preferred_name, email, phone, photo_url, employment_type, status, role_title, seniority, location, timezone, hire_date, termination_date, legal_entity_name, cnpj, currency, tags, notes, archived, created_at, updated_at",
+        "id, owner_id, profile_id, candidate_id, manager_id, full_name, preferred_name, email, phone, photo_url, employment_type, status, role_title, seniority, location, timezone, hire_date, termination_date, legal_entity_name, cnpj, trade_name, simples_optante, currency, tags, notes, education, shirt_size, emergency_phone, emergency_relationship, marital_status, spouse_name, archived, created_at, updated_at",
       )
       .eq("id", data.id)
       .maybeSingle();
@@ -173,31 +201,51 @@ export const getPerson = createServerFn({ method: "POST" })
       cost_hour: number | null;
       monthly_cost: number | null;
       personal_doc: PersonDocMap;
-    } = { cost_hour: null, monthly_cost: null, personal_doc: {} };
+      bank: string | null;
+      bank_agency: string | null;
+      bank_account: string | null;
+      pix_key: string | null;
+      address: string | null;
+    } = {
+      cost_hour: null,
+      monthly_cost: null,
+      personal_doc: {},
+      bank: null,
+      bank_agency: null,
+      bank_account: null,
+      pix_key: null,
+      address: null,
+    };
 
     if (canViewSensitive) {
       const { data: sensRow, error: sensErr } = await supabase
         .from("people")
-        .select("cost_hour, monthly_cost, personal_doc")
+        .select("cost_hour, monthly_cost, personal_doc, bank, bank_agency, bank_account, pix_key, address")
         .eq("id", data.id)
         .maybeSingle();
       if (sensErr) throw new Error(sensErr.message);
       if (sensRow) {
+        const r = sensRow as Record<string, unknown>;
         sensitive = {
-          cost_hour: (sensRow as { cost_hour: number | null }).cost_hour,
-          monthly_cost: (sensRow as { monthly_cost: number | null }).monthly_cost,
-          personal_doc:
-            ((sensRow as { personal_doc: PersonDocMap | null }).personal_doc ?? {}) as PersonDocMap,
+          cost_hour: (r.cost_hour as number | null) ?? null,
+          monthly_cost: (r.monthly_cost as number | null) ?? null,
+          personal_doc: ((r.personal_doc as PersonDocMap | null) ?? {}) as PersonDocMap,
+          bank: (r.bank as string | null) ?? null,
+          bank_agency: (r.bank_agency as string | null) ?? null,
+          bank_account: (r.bank_account as string | null) ?? null,
+          pix_key: (r.pix_key as string | null) ?? null,
+          address: (r.address as string | null) ?? null,
         };
       }
     }
 
     return {
-      ...(base as Omit<PersonRow, "cost_hour" | "monthly_cost" | "personal_doc">),
+      ...(base as Omit<PersonRow, "cost_hour" | "monthly_cost" | "personal_doc" | "bank" | "bank_agency" | "bank_account" | "pix_key" | "address">),
       ...sensitive,
       can_view_sensitive: canViewSensitive,
     } as PersonRow;
   });
+
 
 /**
  * Cria ou atualiza uma pessoa. Apenas admin do workspace tem write (RLS).
@@ -242,6 +290,8 @@ export const upsertPerson = createServerFn({ method: "POST" })
       termination_date: data.termination_date || null,
       legal_entity_name: normalize(data.legal_entity_name ?? null),
       cnpj: normalize(data.cnpj ?? null),
+      trade_name: normalize(data.trade_name ?? null),
+      simples_optante: data.simples_optante ?? null,
       manager_id: data.manager_id ?? null,
       profile_id: data.profile_id ?? null,
       candidate_id: data.candidate_id ?? null,
@@ -250,7 +300,19 @@ export const upsertPerson = createServerFn({ method: "POST" })
       currency: data.currency,
       tags: data.tags,
       notes: normalize(data.notes ?? null),
+      education: normalize(data.education ?? null),
+      shirt_size: normalize(data.shirt_size ?? null),
+      emergency_phone: normalize(data.emergency_phone ?? null),
+      emergency_relationship: normalize(data.emergency_relationship ?? null),
+      marital_status: normalize(data.marital_status ?? null),
+      spouse_name: normalize(data.spouse_name ?? null),
+      bank: normalize(data.bank ?? null),
+      bank_agency: normalize(data.bank_agency ?? null),
+      bank_account: normalize(data.bank_account ?? null),
+      pix_key: normalize(data.pix_key ?? null),
+      address: normalize(data.address ?? null),
     };
+
 
     if (data.id) {
       // Detecta transição de status para `offboarding` para disparar automação.

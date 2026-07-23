@@ -170,6 +170,26 @@ function PersonForm({
   const [employment, setEmployment] = useState<PeopleEmploymentType>(p.employment_type);
   const [notes, setNotes] = useState(p.notes ?? "");
   const [costHour, setCostHour] = useState<string>(p.cost_hour != null ? String(p.cost_hour) : "");
+  const [education, setEducation] = useState(p.education ?? "");
+  const [shirtSize, setShirtSize] = useState(p.shirt_size ?? "");
+  const [emergencyPhone, setEmergencyPhone] = useState(p.emergency_phone ?? "");
+  const [emergencyRelationship, setEmergencyRelationship] = useState(
+    p.emergency_relationship ?? "",
+  );
+  const [maritalStatus, setMaritalStatus] = useState(p.marital_status ?? "");
+  const [spouseName, setSpouseName] = useState(p.spouse_name ?? "");
+  const [bank, setBank] = useState(p.bank ?? "");
+  const [bankAgency, setBankAgency] = useState(p.bank_agency ?? "");
+  const [bankAccount, setBankAccount] = useState(p.bank_account ?? "");
+  const [pixKey, setPixKey] = useState(p.pix_key ?? "");
+  const [address, setAddress] = useState(p.address ?? "");
+  const [cnpj, setCnpj] = useState(p.cnpj ?? "");
+  const [legalEntityName, setLegalEntityName] = useState(p.legal_entity_name ?? "");
+  const [tradeName, setTradeName] = useState(p.trade_name ?? "");
+  const [simplesOptante, setSimplesOptante] = useState<"" | "yes" | "no">(
+    p.simples_optante === true ? "yes" : p.simples_optante === false ? "no" : "",
+  );
+
 
   const mut = useMutation({
     mutationFn: () =>
@@ -189,8 +209,24 @@ function PersonForm({
           cost_hour: costHour ? Number(costHour) : null,
           currency: "BRL",
           tags: p.tags ?? [],
+          education: education || null,
+          shirt_size: shirtSize || null,
+          emergency_phone: emergencyPhone || null,
+          emergency_relationship: emergencyRelationship || null,
+          marital_status: maritalStatus || null,
+          spouse_name: spouseName || null,
+          bank: bank || null,
+          bank_agency: bankAgency || null,
+          bank_account: bankAccount || null,
+          pix_key: pixKey || null,
+          address: address || null,
+          cnpj: cnpj || null,
+          legal_entity_name: legalEntityName || null,
+          trade_name: tradeName || null,
+          simples_optante: simplesOptante === "yes" ? true : simplesOptante === "no" ? false : null,
         },
       }),
+
     onSuccess: onSaved,
     onError: (e: Error) => toast.error(e.message),
   });
@@ -349,6 +385,103 @@ function PersonForm({
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>Escolaridade</Label>
+                <Input
+                  value={education}
+                  disabled={!canWrite}
+                  onChange={(e) => setEducation(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Camiseta</Label>
+                <Input
+                  value={shirtSize}
+                  disabled={!canWrite}
+                  onChange={(e) => setShirtSize(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Telefone de recado</Label>
+                <Input
+                  value={emergencyPhone}
+                  disabled={!canWrite}
+                  onChange={(e) => setEmergencyPhone(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Parentesco do telefone de recado</Label>
+                <Input
+                  value={emergencyRelationship}
+                  disabled={!canWrite}
+                  onChange={(e) => setEmergencyRelationship(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Estado civil</Label>
+                <Input
+                  value={maritalStatus}
+                  disabled={!canWrite}
+                  onChange={(e) => setMaritalStatus(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Cônjuge</Label>
+                <Input
+                  value={spouseName}
+                  disabled={!canWrite}
+                  onChange={(e) => setSpouseName(e.target.value)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Dados pessoa jurídica</CardTitle>
+              <CardDescription>Informações da PJ do prestador, quando aplicável.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>CNPJ</Label>
+                <Input
+                  value={cnpj}
+                  disabled={!canWrite}
+                  onChange={(e) => setCnpj(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Razão social</Label>
+                <Input
+                  value={legalEntityName}
+                  disabled={!canWrite}
+                  onChange={(e) => setLegalEntityName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Nome fantasia</Label>
+                <Input
+                  value={tradeName}
+                  disabled={!canWrite}
+                  onChange={(e) => setTradeName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Optante simples</Label>
+                <Select
+                  value={simplesOptante}
+                  disabled={!canWrite}
+                  onValueChange={(v) => setSimplesOptante(v as "" | "yes" | "no")}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Sim</SelectItem>
+                    <SelectItem value="no">Não</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardContent>
           </Card>
 
@@ -372,9 +505,50 @@ function PersonForm({
                     onChange={(e) => setCostHour(e.target.value)}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Banco</Label>
+                  <Input
+                    value={bank}
+                    disabled={!canWrite}
+                    onChange={(e) => setBank(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Agência</Label>
+                  <Input
+                    value={bankAgency}
+                    disabled={!canWrite}
+                    onChange={(e) => setBankAgency(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Conta</Label>
+                  <Input
+                    value={bankAccount}
+                    disabled={!canWrite}
+                    onChange={(e) => setBankAccount(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>PIX</Label>
+                  <Input
+                    value={pixKey}
+                    disabled={!canWrite}
+                    onChange={(e) => setPixKey(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Endereço</Label>
+                  <Input
+                    value={address}
+                    disabled={!canWrite}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+                </div>
               </CardContent>
             </Card>
           ) : null}
+
 
           <Card>
             <CardHeader>

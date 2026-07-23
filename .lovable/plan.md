@@ -1,46 +1,73 @@
 ## Objetivo
 
-Na tela `/people/import-forms`, ao clicar em **Simular**, além dos contadores atuais, exibir uma tabela com as pessoas únicas encontradas na planilha, com **Nome completo**, **Celular** e **prévia da imagem** do anexo "Anexar foto legível do documento de Identificação que conste o CPF frente/verso".
+Expandir a ficha de Pessoa (`/people/$id`) com novos campos estruturados e migrar os dados atualmente colados no bloco "Notas internas" (importados do Google Forms) para colunas dedicadas.
 
-Escopo restrito à simulação (dry-run). Nenhuma alteração no fluxo de execução real, no banco, em RLS ou em permissões.
+## 1. Migração de schema (`public.people`)
 
-## Mudanças
+Adicionar colunas nullable, sem alterar RLS:
 
-### 1. `src/lib/people/import-forms.functions.ts`
+- **Dados básicos**: `education text`, `shirt_size text`, `emergency_phone text`, `emergency_relationship text`, `marital_status text`, `spouse_name text`
+- **Financeiro (restrito)**: `bank text`, `bank_agency text`, `bank_account text`, `pix_key text`, `address text`
+- **Pessoa jurídica**: `trade_name text`, `simples_optante boolean` *(reaproveita `cnpj` e `legal_entity_name` já existentes)*
 
-- No handler, quando `dry_run=true`, montar e retornar uma lista `people` com os campos mínimos necessários:
-  - `full_name`
-  - `phone` (já normalizado para E.164 no `normalizeRow`)
-  - `cpf_formatted` (útil para o usuário identificar duplicatas)
-  - `id_doc_drive_id`: o primeiro `drive_id` cujo `label === "Documento de identidade (CPF/RG)"` (é exatamente o anexo pedido; o rótulo já é atribuído em `normalizeRow` para a coluna "Anexar foto legível do documento de Identificação...").
-- Adicionar `people?: Array<{ full_name: string; phone: string | null; cpf_formatted: string; id_doc_drive_id: string | null }>` ao tipo `ImportBatchResult`.
-- Sem paginação: são ~171 registros, cabem em uma única resposta.
-- Nada muda no ramo de execução real.
+Nada muda em policies, grants ou triggers.
 
-### 2. `src/routes/_authenticated/people.import-forms.tsx`
+## 2. Backfill dos dados
 
-- Estender o card "Simulação" para renderizar uma tabela após a simulação:
-  - Colunas: Documento (thumb), Nome completo, Celular, CPF.
-  - Thumb: `<img src="https://drive.google.com/thumbnail?id={id}&sz=w200" alt="Documento" />` com `loading="lazy"`, `referrerPolicy="no-referrer"` e placeholder ("—") quando `id_doc_drive_id` for nulo.
-  - Reaproveitar os componentes `Table`, `TableHeader`, `TableRow`, `TableCell` já importados.
-- Manter os KPIs existentes (Pessoas únicas / Anexos totais). Ajustar o rótulo "Anexos totais" para ficar claro que soma todos os tipos de anexo.
-- Não alterar o fluxo de **Executar importação**.
+Na mesma migration, um `UPDATE public.people` faz parse do `notes` linha a linha usando `regexp_match`/`substring`:
+
+- `Razão Social: X` → `legal_entity_name`
+- `Nome Fantasia: X` → `trade_name`
+- `Optante Simples: Sim/Não` → `simples_optante`
+- `Escolaridade: X` → `education`
+- `Camiseta: X` → `shirt_size`
+- `Recado: <texto>` → separa dígitos consecutivos (7+) em `emergency_phone`; restante (após remover o número) vira `emergency_relationship`
+- `Banco: <banco> — Ag <ag> / Conta <conta>` → `bank`, `bank_agency`, `bank_account`
+- `PIX: X` → `pix_key`
+- `Endereço: X` → `address`
+- `Estado civil: X` → `marital_status`
+- `Cônjuge: X` → `spouse_name`
+
+Aplica-se somente onde a coluna alvo está NULL (não sobrescreve dados já preenchidos). O `notes` é preservado como está — nenhum dado é apagado.
+
+## 3. Server function (`src/lib/people/people.functions.ts`)
+
+- Estender `PersonRow`, `upsertSchema` e a lista de colunas dos `SELECT` (`getPerson` / `listPeople` conforme necessário) com os novos campos.
+- Estender o `payload` do `upsertPerson` para gravar os novos campos, aplicando `normalize()` (string) e coerção booleana para `simples_optante`.
+- Sem mudança em autorização/RLS.
+
+## 4. UI (`src/routes/_authenticated/people.$id.tsx`)
+
+Card **Dados básicos** — acrescentar, mantendo o grid `md:grid-cols-2`:
+- Escolaridade (Input)
+- Tamanho de camiseta (Input)
+- Telefone de recado (Input)
+- Parentesco do telefone de recado (Input)
+- Estado civil (Input)
+- Cônjuge (Input)
+
+Novo card **Dados pessoa jurídica** (renderizado logo abaixo de "Dados básicos", visível a todos que veem o perfil):
+- CNPJ, Razão social, Nome fantasia, Optante Simples (Select Sim/Não)
+
+Card **Financeiro (restrito)** — manter Custo/hora e acrescentar:
+- Banco, Agência, Conta, PIX, Endereço
+
+Todos os campos usam os componentes já importados (`Input`, `Label`, `Select`). O botão **Salvar** existente envia tudo em um único `upsertPerson` — sem novos endpoints.
 
 ## Observações técnicas
 
-- O endpoint `https://drive.google.com/thumbnail?id=...&sz=w200` funciona para arquivos com compartilhamento "Qualquer pessoa com o link — Leitor" e é servido inline pelo Google (sem CORS bloqueando `<img>`). É o mesmo pré-requisito de publicação já exigido pela importação.
-- Nenhuma imagem é baixada no servidor durante a simulação — o navegador do usuário carrega direto do Drive.
-- Nenhum impacto em RLS, permissões, banco ou schema.
+- Nenhuma alteração em RLS, grants, permissões ou fluxos de importação.
+- `notes` continua exibido no card "Notas internas" — o backfill apenas duplica a informação em campos estruturados; usuário pode limpar as notas manualmente depois.
+- `simples_optante` é `boolean` nullable; UI mostra `—` quando desconhecido.
 
 ## Como validar
 
-1. Abrir `/people/import-forms`.
-2. Manter a URL padrão da planilha e clicar **Simular**.
-3. Verificar que o card mostra ~171 pessoas únicas e uma tabela com Nome, Celular e thumb do documento.
-4. Conferir uma linha sem anexo de identidade — deve mostrar "—".
-5. Executar em seguida a importação real e confirmar que o comportamento permanece igual ao atual.
+1. `/people/<id>` de uma pessoa importada do Google Forms: os novos campos devem aparecer preenchidos.
+2. Editar um campo, salvar, recarregar — persiste.
+3. Criar pessoa nova pelo diálogo existente: campos novos vazios, edição na ficha grava normalmente.
+4. Card "Financeiro (restrito)" só aparece para quem já via (sem mudança de regra).
 
 ## Riscos / pendências
 
-- Se o usuário não publicou a pasta de anexos como "Qualquer pessoa com o link", as miniaturas aparecerão quebradas — o próprio ícone de imagem quebrada já sinaliza. Sem impacto no restante da simulação.
-- Nenhum teste automatizado novo; a mudança é apenas de leitura/apresentação.
+- Parse do "Recado" é heurístico (regex de dígitos); linhas atípicas podem cair inteiras em `emergency_relationship`. O texto original permanece em `notes` como referência.
+- Nenhum teste automatizado novo — mudança é aditiva de campos e migração idempotente por `IS NULL`.
