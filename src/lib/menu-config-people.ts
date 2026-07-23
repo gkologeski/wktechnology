@@ -12,6 +12,7 @@ import {
   HeartHandshake,
   ClipboardList,
   UserMinus,
+  FileUp,
 } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
