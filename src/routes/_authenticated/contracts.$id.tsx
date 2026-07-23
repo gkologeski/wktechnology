@@ -304,6 +304,10 @@ function ContractDetail() {
 
       <ContractApprovalsPanel contractId={contract.id} />
 
+      <ImportedFieldsCard contract={contract} />
+
+
+
 
       <Card>
         <CardHeader className="pb-3">
