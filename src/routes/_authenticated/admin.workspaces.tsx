@@ -85,6 +85,12 @@ function WorkspacesAdminPage() {
     role: "member" as "admin" | "member",
   });
 
+  const [filter, setFilter] = useState<"active" | "suspended" | "deleted" | "all">("active");
+  const [editTarget, setEditTarget] = useState<(typeof list.data)[number] | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<(typeof list.data)[number] | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<(typeof list.data)[number] | null>(null);
+  const [purgeTarget, setPurgeTarget] = useState<(typeof list.data)[number] | null>(null);
+
   const create = useMutation({
     mutationFn: async () =>
       createFn({
