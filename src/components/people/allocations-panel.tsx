@@ -333,6 +333,10 @@ function AllocationDialog({
             <ProjectSelect value={projectId} onChange={setProjectId} />
           </div>
           <div className="space-y-2 md:col-span-2">
+            <Label>Gestor</Label>
+            <ManagerSelect value={managerId} onChange={setManagerId} excludePersonId={personId} />
+          </div>
+          <div className="space-y-2 md:col-span-2">
             <Label>Cargo/Função na alocação</Label>
             <Input
               value={roleTitle}
