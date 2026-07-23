@@ -25,7 +25,9 @@ import {
 } from "@/components/ui/table";
 import {
   importPeopleFromPublicSheet,
+  reimportBrokenAttachments,
   type ImportBatchResult,
+  type ReimportResult,
 } from "@/lib/people/import-forms.functions";
 
 const DEFAULT_URL =
