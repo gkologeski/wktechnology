@@ -1,27 +1,34 @@
-## Ajustes na Fila de Prospecção (`/prospecting`)
+## Objetivo
 
-Alvo: `src/components/prospecting/queue-tab.tsx` (apenas apresentação).
+Deixar a UI de "Condição" na criação/edição de regras de Scoring (/prospecting → Scoring → Nova regra) igual ao padrão usado no Workflow Builder (`FilterRow`), com Campo/Operador/Valor todos formatados como Selects tipados usando o catálogo de campos da entidade.
 
-### 1. Nome do lead aparecendo como "—"
-Em `QueueItemRow`, para `entity === "lead"` o código lê `item.name`, mas o SELECT no server retorna `first_name` + `last_name` (e há também `company_name`). Ajustar a montagem do nome:
-- Lead: `` `${first_name ?? ""} ${last_name ?? ""}`.trim() `` → fallback para `email` → fallback para `company_name` → `"—"`.
-- Contato: manter lógica atual (já correta).
+## Escopo
 
-Também corrigir o campo de score: o SELECT retorna `score` (não `lead_score`). Ajustar `QueueItemRow` para ler `item.score`.
+Arquivo único: `src/routes/_authenticated/settings.scoring.tsx` (a mesma página é reutilizada pela aba Scoring de `/prospecting`). Nenhuma alteração de backend, RLS, schema ou server functions.
 
-### 2. Status em Português-BR
-Criar um pequeno mapa local no arquivo (`LEAD_STATUS_LABELS` / `CONTACT_LIFECYCLE_LABELS`) cobrindo os valores usados no sistema:
+## Mudanças
 
-- Leads (`status`): `new → Novo`, `working → Em trabalho`, `contacted → Contatado`, `qualified → Qualificado`, `unqualified → Desqualificado`, `converted → Convertido`, `lost → Perdido`, `nurturing → Em nutrição`.
-- Contatos (`lifecycle_stage`): `subscriber → Assinante`, `lead → Lead`, `mql → MQL`, `sql → SQL`, `opportunity → Oportunidade`, `customer → Cliente`, `evangelist → Evangelista`, `other → Outro`.
+1. **Buscar campos da entidade selecionada** via `getEntityFieldCatalog` de `@/lib/entity-fields.functions`, mapeando o `entity` da regra (singular: `lead`/`contact`/`company`) para o valor plural aceito pelo catálogo (`leads`/`contacts`/`companies`) com `useQuery` + `useServerFn`, seguindo exatamente a mesma forma do `useEntityFieldOptions` do workflow-builder.
+2. **Substituir o `Input` texto do "Campo"** por um `Select` com as opções do catálogo (mesma UX do `FilterRow`): trigger com placeholder "Selecionar propriedade", `SelectContent` com `max-h-72`, itens exibindo `f.label`.
+3. **Renderização adaptativa do "Valor"**, replicando o `FilterRow`:
+   - Se o campo selecionado tem `options` (select/status/stage): `Select` com essas opções.
+   - Senão: `Input` com `type` derivado (`number`/`date`/`text`) e coerção numérica quando aplicável, exatamente como no workflow.
+   - Mantém a regra de "não exibir valor" para operadores `is_empty` / `is_not_empty` (já existente via `NEEDS_VALUE`).
+4. **Reset defensivo do valor** ao trocar de campo (evita "site" persistir quando o novo campo é numérico/date), mesmo comportamento efetivo do workflow.
+5. **Manter tudo mais igual**: nome, entidade, pontos, operadores, salvamento, layout do Sheet, textos, atalhos.
 
-Fallback: valor original com primeira letra maiúscula. Usar o label no `<Badge>` do item.
+## Fora de escopo
 
-### 3. Quantidade na lista lateral de filas
-Na sidebar (`queues.map`), exibir o count ao lado do nome:
+- Não altero a shape do payload salvo (`condition: { field, op, value }`) — apenas a UI de entrada. O engine de scoring segue funcionando com os mesmos valores.
+- Não mexo em `src/components/workflows/*` nem extraio hook compartilhado (para não arrastar refactor); reuso a mesma implementação inline de 6 linhas.
+- Não altero a listagem de regras nem o log de aplicações.
 
-- Fila `manual`: já mostra `Manual · N` — manter, com N = `item_ids.length`.
-- Fila `dynamic`: adicionar badge com o total. Para evitar N+1 chamadas ao `listQueueItems`, buscar somente `count` via um novo helper leve no servidor: adicionar `countQueueItems(queue_id)` em `src/lib/prospecting/queues.functions.ts` (mesma lógica de filtros de `listQueueItems`, porém `select("id", { count: "exact", head: true })`). Usar um `useQuery` por fila (chaves independentes) para renderizar `Badge` com o total. Alternativa mais simples se preferir: exibir o total apenas na fila ativa (já disponível em `data.total` do workspace). Recomendo a primeira para atender o pedido literal.
+## Validação
 
-### Fora de escopo
-Sem mudanças em RLS, schema ou regras de negócio; apenas UI + um SELECT `head:true` de contagem.
+- `bun run typecheck` (ou script equivalente do projeto).
+- Verificação manual em /prospecting → Scoring → Nova regra:
+  - Campo vira dropdown com labels do catálogo para Lead/Contato/Empresa.
+  - Trocar Entidade recarrega os campos.
+  - Campo com options (ex.: status/stage) exibe Select no Valor; campos numéricos abrem input `number`; datas abrem `date`.
+  - Operadores `is_empty`/`is_not_empty` continuam ocultando o Valor.
+  - Salvar/editar regra existente preserva `condition.field`.
