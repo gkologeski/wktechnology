@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { tickScoring } from "@/lib/scoring/engine.server";
+import { runScoringFullScan } from "@/lib/scoring/engine.server";
 
 const EntityEnum = z.enum(["lead", "contact", "company"]);
 const OpEnum = z.enum([
@@ -94,6 +94,6 @@ export const listRecentScoreEvents = createServerFn({ method: "GET" })
 export const runScoringTickNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    // Usa o client autenticado do usuário; processa só os eventos do próprio owner.
-    return await tickScoring(context.supabase, 500);
+    // Full-scan: aplica todas as regras habilitadas sobre a base visível ao caller (RLS).
+    return await runScoringFullScan(context.supabase);
   });
