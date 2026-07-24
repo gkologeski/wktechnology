@@ -1219,6 +1219,13 @@ function LeadsHubspotView() {
         onDone={() => qc.invalidateQueries({ queryKey: ["leads"] })}
       />
 
+      <AddToProspectingDialog
+        open={!!prospectingIds}
+        onOpenChange={(o) => !o && setProspectingIds(null)}
+        entity="lead"
+        ids={prospectingIds ?? []}
+      />
+
       <CreateLeadDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
