@@ -1,55 +1,29 @@
-## Objetivo
+## Problema
 
-Refinar o fluxo de ações da tela de execução de fila de Prospecção (`/prospecting/queues/$queueId/play`) para alinhar com o fluxo padrão de Leads e simplificar a interface.
+Ao qualificar o lead na fila (`/prospecting/queues/$queueId/play`), o `CreateDealFromLeadDialog` abre corretamente, mas a tela não avança após a criação do negócio. Nas outras decisões (desqualificar / nutrição), também não há avanço automático.
 
-## Decisões confirmadas
+## Regra de avanço
 
-1. **Nutrição**: manter botão como "Enviar para nutrição" (remove da fila ativa, mantém lead vivo com status `nurturing`).
-2. **Escopo da fila**: filas de prospecção passam a aceitar **apenas leads**. Contatos e empresas não são elegíveis.
-3. **Desqualificação**: motivo **obrigatório**.
-4. **Agendado**: botão removido.
+Avançar para o próximo lead **somente** quando houver ação efetiva sobre o lead atual:
 
-## Mudanças
+- **Qualificar**: avança apenas se o negócio for realmente criado no `CreateDealFromLeadDialog` (`onCreated` disparado). Se o modal for fechado/cancelado sem criar negócio, permanece no mesmo lead.
+- **Desqualificar**: avança após confirmação com motivo obrigatório.
+- **Enviar para nutrição**: avança após confirmação.
 
-### 1. Restringir filas a leads apenas
-- Em `src/components/prospecting/add-to-queue-dialog.tsx` (e telas equivalentes em `/contacts` e `/companies`): remover a opção de adicionar contatos/empresas à fila de prospecção. Manter apenas em `/leads`.
-- Em `src/lib/prospecting/queues.functions.ts`: validar no `addItemsToQueue` que apenas `entity_type = 'lead'` é aceito; retornar erro claro caso contrário.
-- Na UI de listagem da fila (`queue-tab.tsx` e `play.tsx`): remover branches que tratam `contact`/`company`.
+## Mudança
 
-### 2. Botão "Qualificar" → abre CreateDealFromLeadDialog
-- Em `qualification-panel.tsx`: substituir a lógica atual de qualificação pelo mesmo diálogo usado em `/leads` (`CreateDealFromLeadDialog`).
-- Após criação do negócio: registrar `qualification` na prospecção (score + respostas do questionário) e marcar item da fila como `qualified`, avançando para o próximo.
+Arquivo único: `src/routes/_authenticated/prospecting.queues.$queueId.play.tsx`.
 
-### 3. Botão "Desqualificar" com motivo obrigatório
-- Abrir modal com `Select` de motivos + campo texto opcional para observação.
-- Validação: submit desabilitado até motivo ser escolhido.
-- Ação: atualizar `leads.status = 'disqualified'`, `lost_reason`, e marcar item da fila como `disqualified`. Avançar para próximo.
-
-### 4. Botão "Enviar para nutrição"
-- Renomear botão "Nutrição" → "Enviar para nutrição".
-- Ação: atualizar `leads.status = 'nurturing'` (adicionar valor ao enum se não existir), marcar item da fila como `nurturing`/removido, e avançar.
-
-### 5. Remover botão "Agendado"
-- Remover do `qualification-panel.tsx` e da tela `play.tsx`.
-
-## Detalhes técnicos
-
-- **Migration necessária**: adicionar `'nurturing'` ao enum `lead_status` se ainda não existir; adicionar valor `'nurturing'` aos status possíveis de item da fila.
-- **Sem alteração** em RLS, autenticação ou schema além do enum.
-- Reaproveitar `CreateDealFromLeadDialog` sem duplicação.
-- Manter atalhos de teclado (N/S) e navegação sequencial.
+- Passar `onDecided` para `<QualificationPanel>` executando `setIdx((i) => Math.min(i + 1, total))`.
+- O `QualificationPanel` já dispara `onDecided("qualified")` apenas dentro de `onDealCreated`, que é chamado exclusivamente após criação bem-sucedida do negócio (fechar/cancelar o dialog não chama). Portanto o comportamento pedido já é garantido pelo callback do dialog — basta plugá-lo.
 
 ## Como validar
 
-1. Em `/leads`, adicionar leads à fila de prospecção — deve funcionar.
-2. Em `/contacts` e `/companies`, a opção "Adicionar à prospecção" não deve mais aparecer.
-3. Em `/prospecting/queues/:id/play`:
-   - "Qualificar" abre o mesmo modal do `/leads` e cria um negócio.
-   - "Desqualificar" exige motivo.
-   - "Enviar para nutrição" remove da fila e muda status do lead.
-   - Não há mais botão "Agendado".
+1. Abrir `/prospecting/queues/:id/play` com múltiplos leads.
+2. Clicar em "Qualificar", **fechar** o modal sem criar negócio → deve permanecer no mesmo lead.
+3. Clicar em "Qualificar" novamente e **concluir** a criação do negócio → deve avançar para o próximo lead.
+4. "Desqualificar" (com motivo) e "Enviar para nutrição" → também avançam.
 
 ## Fora de escopo
 
-- Migração de itens já existentes na fila que sejam contact/company (será tratado à parte se necessário).
-- Redesenho visual da tela `play`.
+- Nenhuma alteração em `QualificationPanel`, `CreateDealFromLeadDialog`, RLS, schema ou lógica de negócio.
