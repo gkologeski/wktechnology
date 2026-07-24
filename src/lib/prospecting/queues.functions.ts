@@ -10,6 +10,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const EntityEnum = z.enum(["lead", "contact"]);
+const KindEnum = z.enum(["dynamic", "manual"]);
 
 const FiltersSchema = z
   .object({
