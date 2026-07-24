@@ -201,6 +201,56 @@ export const deleteQueue = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const countQueueItems = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ queue_id: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const { data: queue, error: qErr } = await context.supabase
+      .from("prospecting_queues")
+      .select("entity, kind, item_ids, filters")
+      .eq("id", data.queue_id)
+      .maybeSingle();
+    if (qErr) throw new Error(qErr.message);
+    if (!queue) return { total: 0 };
+
+    if ((queue as { kind?: string }).kind === "manual") {
+      const ids = (((queue as { item_ids?: string[] }).item_ids) ?? []) as string[];
+      return { total: ids.length };
+    }
+
+    const table = queue.entity === "lead" ? "leads" : "contacts";
+    const filters = (queue.filters ?? {}) as Record<string, unknown>;
+    let query = context.supabase.from(table).select("id", { count: "exact", head: true });
+    if (Array.isArray(filters.status) && filters.status.length > 0) {
+      query = query.in("status", filters.status as string[]);
+    }
+    if (Array.isArray(filters.source) && filters.source.length > 0) {
+      query = query.in("source", filters.source as string[]);
+    }
+    if (typeof filters.owner_id === "string") {
+      query = query.eq("owner_id", filters.owner_id);
+    }
+    if (typeof filters.score_min === "number" && queue.entity === "lead") {
+      query = query.gte("score", filters.score_min);
+    }
+    if (typeof filters.score_max === "number" && queue.entity === "lead") {
+      query = query.lte("score", filters.score_max);
+    }
+    if (typeof filters.search === "string" && filters.search.trim()) {
+      const s = `%${filters.search.trim()}%`;
+      query =
+        queue.entity === "lead"
+          ? query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s},company_name.ilike.${s}`)
+          : query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`);
+    }
+    if (typeof filters.updated_after === "string") {
+      query = query.gte("updated_at", filters.updated_after);
+    }
+    const { count, error } = await query;
+    if (error) throw new Error(error.message);
+    return { total: count ?? 0 };
+  });
+
 /**
  * Aplica os filtros de uma fila contra a tabela alvo (leads/contacts) e retorna
  * a página de itens para o workspace de prospecção.

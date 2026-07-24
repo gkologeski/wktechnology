@@ -33,7 +33,39 @@ import {
   upsertQueue,
   deleteQueue,
   listQueueItems,
+  countQueueItems,
 } from "@/lib/prospecting/queues.functions";
+
+const LEAD_STATUS_LABELS: Record<string, string> = {
+  new: "Novo",
+  working: "Em trabalho",
+  contacted: "Contatado",
+  qualified: "Qualificado",
+  unqualified: "Desqualificado",
+  converted: "Convertido",
+  lost: "Perdido",
+  nurturing: "Em nutrição",
+};
+
+const CONTACT_LIFECYCLE_LABELS: Record<string, string> = {
+  subscriber: "Assinante",
+  lead: "Lead",
+  mql: "MQL",
+  sql: "SQL",
+  opportunity: "Oportunidade",
+  customer: "Cliente",
+  evangelist: "Evangelista",
+  other: "Outro",
+};
+
+function titleCase(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+function statusLabel(entity: string, raw: string): string {
+  const map = entity === "lead" ? LEAD_STATUS_LABELS : CONTACT_LIFECYCLE_LABELS;
+  return map[raw?.toLowerCase?.() ?? ""] ?? titleCase(raw);
+}
 
 type QueueEntity = "lead" | "contact";
 
@@ -92,32 +124,12 @@ export function QueueTab() {
         <div className="grid grid-cols-12 gap-4">
           <aside className="col-span-12 lg:col-span-3 space-y-2">
             {queues.map((q) => (
-              <button
+              <QueueSidebarItem
                 key={q.id}
+                queue={q as unknown as Record<string, unknown>}
+                active={activeQueue?.id === q.id}
                 onClick={() => setActiveId(q.id)}
-                className={`w-full text-left rounded-md border p-3 transition-colors ${
-                  activeQueue?.id === q.id ? "bg-accent border-accent-foreground/20" : "hover:bg-muted/50"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {q.entity === "lead" ? (
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                  ) : (
-                    <User className="w-4 h-4 text-muted-foreground" />
-                  )}
-                  <span className="text-sm font-medium truncate">{q.name}</span>
-                  {(q as { kind?: string }).kind === "manual" ? (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Manual · {(((q as { item_ids?: string[] }).item_ids) ?? []).length}
-                    </Badge>
-                  ) : null}
-                </div>
-                {q.description ? (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {q.description}
-                  </p>
-                ) : null}
-              </button>
+              />
             ))}
           </aside>
           <section className="col-span-12 lg:col-span-9">
@@ -203,13 +215,25 @@ function QueueItemRow({
   item: Record<string, unknown>;
 }) {
   const id = String(item.id);
+  const leadName = `${item.first_name ?? ""} ${item.last_name ?? ""}`.trim();
+  const contactName = `${item.first_name ?? ""} ${item.last_name ?? ""}`.trim();
   const name =
     entity === "lead"
-      ? String(item.name ?? "—")
-      : `${item.first_name ?? ""} ${item.last_name ?? ""}`.trim() || "—";
+      ? leadName ||
+        (item.email ? String(item.email) : "") ||
+        (item.company_name ? String(item.company_name) : "") ||
+        "—"
+      : contactName || (item.email ? String(item.email) : "") || "—";
   const email = item.email ? String(item.email) : null;
-  const status = item.status ? String(item.status) : null;
-  const score = typeof item.lead_score === "number" ? item.lead_score : null;
+  const statusRaw =
+    entity === "lead"
+      ? item.status
+        ? String(item.status)
+        : null
+      : item.lifecycle_stage
+        ? String(item.lifecycle_stage)
+        : null;
+  const score = typeof item.score === "number" ? item.score : null;
   const detailHref = entity === "lead" ? `/leads/${id}` : `/contacts/${id}`;
 
   return (
@@ -217,9 +241,9 @@ function QueueItemRow({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium truncate">{name}</span>
-          {status ? (
+          {statusRaw ? (
             <Badge variant="outline" className="text-[10px]">
-              {status}
+              {statusLabel(entity, statusRaw)}
             </Badge>
           ) : null}
           {score != null ? (
@@ -240,6 +264,55 @@ function QueueItemRow({
     </div>
   );
 }
+
+function QueueSidebarItem({
+  queue,
+  active,
+  onClick,
+}: {
+  queue: Record<string, unknown>;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const countFn = useServerFn(countQueueItems);
+  const id = String(queue.id);
+  const kind = (queue.kind as string | undefined) ?? "dynamic";
+  const manualCount = ((queue.item_ids as string[] | undefined) ?? []).length;
+  const { data } = useQuery({
+    queryKey: ["prospecting", "queue-count", id],
+    queryFn: () => countFn({ data: { queue_id: id } }),
+    enabled: kind !== "manual",
+    staleTime: 30_000,
+  });
+  const total = kind === "manual" ? manualCount : (data?.total ?? 0);
+
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left rounded-md border p-3 transition-colors ${
+        active ? "bg-accent border-accent-foreground/20" : "hover:bg-muted/50"
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        {queue.entity === "lead" ? (
+          <Users className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <User className="w-4 h-4 text-muted-foreground" />
+        )}
+        <span className="text-sm font-medium truncate flex-1">{String(queue.name)}</span>
+        <Badge variant={kind === "manual" ? "secondary" : "outline"} className="text-[10px] shrink-0">
+          {kind === "manual" ? `Manual · ${total}` : total}
+        </Badge>
+      </div>
+      {queue.description ? (
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+          {String(queue.description)}
+        </p>
+      ) : null}
+    </button>
+  );
+}
+
 
 function QueueDialog({
   open,
