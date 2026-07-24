@@ -156,6 +156,63 @@ export const deleteQuestion = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const duplicateQuestionnaire = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ context, data }) => {
+    const { data: src, error: srcErr } = await context.supabase
+      .from("prospecting_questionnaires")
+      .select("name, description, framework, pipeline_id, product_id, pass_threshold")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (srcErr) throw new Error(srcErr.message);
+    if (!src) throw new Error("Questionário não encontrado");
+
+    const { data: qs, error: qsErr } = await context.supabase
+      .from("prospecting_questions")
+      .select("position, label, help_text, type, options, weight, required")
+      .eq("questionnaire_id", data.id)
+      .order("position", { ascending: true });
+    if (qsErr) throw new Error(qsErr.message);
+
+    const { data: created, error: insErr } = await context.supabase
+      .from("prospecting_questionnaires")
+      .insert({
+        owner_id: context.userId,
+        name: `${src.name} (cópia)`,
+        description: src.description,
+        framework: src.framework,
+        pipeline_id: src.pipeline_id,
+        product_id: src.product_id,
+        pass_threshold: src.pass_threshold,
+        enabled: true,
+        is_template: false,
+      } as never)
+      .select("id")
+      .single();
+    if (insErr) throw new Error(insErr.message);
+
+    if (qs && qs.length > 0) {
+      const rows = qs.map((q) => ({
+        owner_id: context.userId,
+        questionnaire_id: created.id,
+        position: q.position,
+        label: q.label,
+        help_text: q.help_text,
+        type: q.type,
+        options: q.options,
+        weight: q.weight,
+        required: q.required,
+      }));
+      const { error: qInsErr } = await context.supabase
+        .from("prospecting_questions")
+        .insert(rows as never);
+      if (qInsErr) throw new Error(qInsErr.message);
+    }
+
+    return { id: created.id };
+  });
+
 /**
  * Semeia um questionário pronto a partir de um dos frameworks. Cria o
  * questionário e todas as perguntas com pesos e opções padrão de mercado.
