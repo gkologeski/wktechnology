@@ -2,7 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { tickScoring } from "@/lib/scoring/engine.server";
+import { tickScoring, runScoringFullScan } from "@/lib/scoring/engine.server";
 
 const EntityEnum = z.enum(["lead", "contact", "company"]);
 const OpEnum = z.enum([
