@@ -248,7 +248,7 @@ function QueueItemRow({
         ? String(item.lifecycle_stage)
         : null;
   const score = typeof item.score === "number" ? item.score : null;
-  const detailHref = entity === "lead" ? `/leads/${id}` : `/contacts/${id}`;
+  
 
   return (
     <div className="flex items-center justify-between py-3 gap-3">
