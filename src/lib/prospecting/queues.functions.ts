@@ -253,16 +253,16 @@ export const listQueueItems = createServerFn({ method: "POST" })
         query = query.eq("owner_id", filters.owner_id);
       }
       if (typeof filters.score_min === "number" && queue.entity === "lead") {
-        query = query.gte("lead_score", filters.score_min);
+        query = query.gte("score", filters.score_min);
       }
       if (typeof filters.score_max === "number" && queue.entity === "lead") {
-        query = query.lte("lead_score", filters.score_max);
+        query = query.lte("score", filters.score_max);
       }
       if (typeof filters.search === "string" && filters.search.trim()) {
         const s = `%${filters.search.trim()}%`;
         query =
           queue.entity === "lead"
-            ? query.or(`name.ilike.${s},email.ilike.${s},company_name.ilike.${s}`)
+            ? query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s},company_name.ilike.${s}`)
             : query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`);
       }
       if (typeof filters.updated_after === "string") {
