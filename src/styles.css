@@ -328,14 +328,20 @@
   height: 14px;
   scrollbar-width: thin;
   scrollbar-gutter: stable;
+  overscroll-behavior-x: contain;
 }
 .kanban-top-scroll::-webkit-scrollbar { height: 12px; width: 12px; -webkit-appearance: none; display: block; }
 .kanban-top-scroll::-webkit-scrollbar-track { background: color-mix(in oklab, var(--muted) 60%, transparent); border-radius: 8px; }
 .kanban-top-scroll::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--foreground) 35%, transparent); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; min-width: 40px; }
 .kanban-top-scroll::-webkit-scrollbar-thumb:hover { background: color-mix(in oklab, var(--foreground) 55%, transparent); background-clip: padding-box; border: 2px solid transparent; }
 /* Hide the bottom (content) horizontal scrollbar — top one is the source of truth */
-.kanban-content-scroll { scrollbar-width: none; }
+.kanban-content-scroll { scrollbar-width: none; overscroll-behavior-x: contain; }
 .kanban-content-scroll::-webkit-scrollbar { height: 0; display: none; }
+
+/* Utility: prevent horizontal overscroll from triggering browser back/forward
+   navigation on trackpad swipes. Apply to any horizontally scrollable container. */
+[class*="overflow-x-auto"], [class*="overflow-x-scroll"] { overscroll-behavior-x: contain; }
+
 
 /* Globally enable custom scrollbar styling so the arrow-button hide rule
    actually takes effect (Webkit only matches ::-webkit-scrollbar-* pseudo
