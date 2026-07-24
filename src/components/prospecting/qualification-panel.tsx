@@ -447,7 +447,7 @@ export function QualificationPanel({
                   <SelectValue placeholder="Selecione um motivo" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(lossReasons ?? []).map((r) => (
+                  {(lossReasons?.options ?? []).map((r) => (
                     <SelectItem key={r.id} value={r.label}>
                       {r.label}
                     </SelectItem>
