@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Sparkles, GripVertical } from "lucide-react";
+import { Plus, Trash2, Pencil, GripVertical, Copy, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,7 +42,7 @@ import {
   deleteQuestionnaire,
   upsertQuestion,
   deleteQuestion,
-  seedFramework,
+  duplicateQuestionnaire,
 } from "@/lib/prospecting/questionnaires.functions";
 
 type Framework = "bant" | "meddic" | "champ" | "gpct" | "custom";
@@ -66,9 +66,8 @@ const TYPE_LABELS: Record<QuestionType, string> = {
 
 export function QuestionnairesTab() {
   const list = useServerFn(listQuestionnaires);
-  const seed = useServerFn(seedFramework);
-  const upsert = useServerFn(upsertQuestionnaire);
   const del = useServerFn(deleteQuestionnaire);
+  const duplicate = useServerFn(duplicateQuestionnaire);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -78,12 +77,14 @@ export function QuestionnairesTab() {
 
   const [openNew, setOpenNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
-  const seedMut = useMutation({
-    mutationFn: (framework: Framework) => seed({ data: { framework } }),
-    onSuccess: () => {
-      toast.success("Questionário criado a partir do template.");
+  const duplicateMut = useMutation({
+    mutationFn: (id: string) => duplicate({ data: { id } }),
+    onSuccess: (res) => {
+      toast.success("Questionário duplicado. Edite a cópia.");
       qc.invalidateQueries({ queryKey: ["prospecting", "questionnaires"] });
+      setEditingId(res.id);
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -98,50 +99,87 @@ export function QuestionnairesTab() {
   });
 
   const items = data ?? [];
+  const templates = items.filter((q) => q.is_template);
+  const mine = items.filter((q) => !q.is_template);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AtsSectionHeader
-        title="Questionários de qualificação"
-        description="Templates prontos (BANT/MEDDIC/CHAMP/GPCT) ou crie do zero. Cada resposta pode somar pontos ao score."
-        action={
-          <div className="flex items-center gap-2">
-            <Select onValueChange={(v) => seedMut.mutate(v as Framework)}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Criar a partir de..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bant">
-                  <Sparkles className="inline w-3 h-3 mr-1" /> BANT
-                </SelectItem>
-                <SelectItem value="meddic">
-                  <Sparkles className="inline w-3 h-3 mr-1" /> MEDDIC
-                </SelectItem>
-                <SelectItem value="champ">
-                  <Sparkles className="inline w-3 h-3 mr-1" /> CHAMP
-                </SelectItem>
-                <SelectItem value="gpct">
-                  <Sparkles className="inline w-3 h-3 mr-1" /> GPCT
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button size="sm" onClick={() => setOpenNew(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Novo
-            </Button>
-          </div>
-        }
+        title="Modelos"
+        description="Frameworks prontos (BANT, MEDDIC, CHAMP, GPCT). São somente leitura — duplique para personalizar."
       />
-
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
-      ) : items.length === 0 ? (
+      ) : templates.length === 0 ? (
+        <EmptyState title="Nenhum modelo disponível" description="Peça ao administrador para carregar os modelos padrão." />
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {templates.map((q) => (
+            <Card key={q.id} className="hover:shadow-sm transition-shadow border-dashed">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-sm">{q.name}</CardTitle>
+                  <div className="flex items-center gap-1">
+                    <Badge variant="secondary" className="text-[10px]">
+                      Modelo
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {FRAMEWORK_LABELS[q.framework as Framework] ?? q.framework}
+                    </Badge>
+                  </div>
+                </div>
+                {q.description ? (
+                  <p className="text-xs text-muted-foreground line-clamp-2">{q.description}</p>
+                ) : null}
+              </CardHeader>
+              <CardContent className="pt-0 flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                  Corte: <span className="font-medium text-foreground">{q.pass_threshold}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setViewingId(q.id)}
+                    aria-label="Visualizar"
+                  >
+                    <Eye className="w-4 h-4 mr-1" /> Visualizar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={duplicateMut.isPending}
+                    onClick={() => duplicateMut.mutate(q.id)}
+                    aria-label="Duplicar"
+                  >
+                    <Copy className="w-4 h-4 mr-1" /> Duplicar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <AtsSectionHeader
+        title="Meus questionários"
+        description="Questionários editáveis do seu workspace. Duplique um modelo ou crie do zero."
+        action={
+          <Button size="sm" onClick={() => setOpenNew(true)}>
+            <Plus className="w-4 h-4 mr-1" /> Novo
+          </Button>
+        }
+      />
+      {isLoading ? (
+        <div className="text-sm text-muted-foreground">Carregando...</div>
+      ) : mine.length === 0 ? (
         <EmptyState
           title="Nenhum questionário ainda"
-          description="Crie um questionário customizado ou use um framework pronto para começar a qualificar leads."
+          description="Duplique um modelo acima ou crie um questionário do zero."
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((q) => (
+          {mine.map((q) => (
             <Card key={q.id} className="hover:shadow-sm transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
@@ -171,6 +209,15 @@ export function QuestionnairesTab() {
                     aria-label="Editar"
                   >
                     <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => duplicateMut.mutate(q.id)}
+                    disabled={duplicateMut.isPending}
+                    aria-label="Duplicar"
+                  >
+                    <Copy className="w-4 h-4" />
                   </Button>
                   <Button
                     size="icon"
@@ -205,6 +252,15 @@ export function QuestionnairesTab() {
           onChanged={() =>
             qc.invalidateQueries({ queryKey: ["prospecting", "questionnaires"] })
           }
+        />
+      ) : null}
+
+      {viewingId ? (
+        <QuestionnaireEditorSheet
+          id={viewingId}
+          readOnly
+          onClose={() => setViewingId(null)}
+          onChanged={() => {}}
         />
       ) : null}
     </div>
@@ -310,10 +366,12 @@ function QuestionnaireEditorSheet({
   id,
   onClose,
   onChanged,
+  readOnly = false,
 }: {
   id: string;
   onClose: () => void;
   onChanged: () => void;
+  readOnly?: boolean;
 }) {
   const get = useServerFn(getQuestionnaire);
   const upsertMeta = useServerFn(upsertQuestionnaire);
@@ -382,24 +440,31 @@ function QuestionnaireEditorSheet({
     <Sheet open onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{data?.questionnaire.name ?? "Carregando..."}</SheetTitle>
+          <SheetTitle className="flex items-center gap-2">
+            {data?.questionnaire.name ?? "Carregando..."}
+            {readOnly ? (
+              <Badge variant="secondary" className="text-[10px]">Modelo</Badge>
+            ) : null}
+          </SheetTitle>
         </SheetHeader>
         {isLoading || !data ? (
           <div className="text-sm text-muted-foreground mt-4">Carregando...</div>
         ) : (
           <div className="space-y-6 mt-4">
-            <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
-              <div>
-                <p className="text-sm font-medium">Ativo</p>
-                <p className="text-xs text-muted-foreground">
-                  Questionários ativos aparecem no painel de qualificação.
-                </p>
+            {readOnly ? null : (
+              <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
+                <div>
+                  <p className="text-sm font-medium">Ativo</p>
+                  <p className="text-xs text-muted-foreground">
+                    Questionários ativos aparecem no painel de qualificação.
+                  </p>
+                </div>
+                <Switch
+                  checked={data.questionnaire.enabled}
+                  onCheckedChange={(v) => toggleEnabled.mutate(v)}
+                />
               </div>
-              <Switch
-                checked={data.questionnaire.enabled}
-                onCheckedChange={(v) => toggleEnabled.mutate(v)}
-              />
-            </div>
+            )}
 
             <div>
               <AtsSectionHeader title="Perguntas" description="Cada resposta pontuada soma no score final." />
@@ -413,47 +478,50 @@ function QuestionnaireEditorSheet({
                       question={q}
                       onDeleted={invalidate}
                       onSaved={invalidate}
+                      readOnly={readOnly}
                     />
                   ))
                 )}
               </div>
             </div>
 
-            <div className="rounded-md border p-3 space-y-3">
-              <p className="text-sm font-medium">Adicionar pergunta</p>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2 space-y-1">
-                  <Label className="text-xs">Enunciado</Label>
-                  <Input
-                    value={addingLabel}
-                    onChange={(e) => setAddingLabel(e.target.value)}
-                    placeholder="Qual o orçamento aprovado?"
-                  />
+            {readOnly ? null : (
+              <div className="rounded-md border p-3 space-y-3">
+                <p className="text-sm font-medium">Adicionar pergunta</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2 space-y-1">
+                    <Label className="text-xs">Enunciado</Label>
+                    <Input
+                      value={addingLabel}
+                      onChange={(e) => setAddingLabel(e.target.value)}
+                      placeholder="Qual o orçamento aprovado?"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Tipo</Label>
+                    <Select value={addingType} onValueChange={(v) => setAddingType(v as QuestionType)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(TYPE_LABELS) as QuestionType[]).map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {TYPE_LABELS[t]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Tipo</Label>
-                  <Select value={addingType} onValueChange={(v) => setAddingType(v as QuestionType)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(TYPE_LABELS) as QuestionType[]).map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {TYPE_LABELS[t]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Button
+                  size="sm"
+                  disabled={!addingLabel || addQ.isPending}
+                  onClick={() => addQ.mutate()}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Adicionar
+                </Button>
               </div>
-              <Button
-                size="sm"
-                disabled={!addingLabel || addQ.isPending}
-                onClick={() => addQ.mutate()}
-              >
-                <Plus className="w-4 h-4 mr-1" /> Adicionar
-              </Button>
-            </div>
+            )}
           </div>
         )}
       </SheetContent>
@@ -465,6 +533,7 @@ function QuestionRow({
   question,
   onDeleted,
   onSaved,
+  readOnly = false,
 }: {
   question: {
     id: string;
@@ -478,6 +547,7 @@ function QuestionRow({
   };
   onDeleted: () => void;
   onSaved: () => void;
+  readOnly?: boolean;
 }) {
   const upsertQ = useServerFn(upsertQuestion);
   const delQ = useServerFn(deleteQuestion);
@@ -542,26 +612,28 @@ function QuestionRow({
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">Peso: {question.weight}</p>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setExpanded((v) => !v)}
-            aria-label="Editar"
-          >
-            <Pencil className="w-4 h-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => {
-              if (confirm("Excluir esta pergunta?")) del.mutate();
-            }}
-            aria-label="Excluir"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
+        {readOnly ? null : (
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setExpanded((v) => !v)}
+              aria-label="Editar"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                if (confirm("Excluir esta pergunta?")) del.mutate();
+              }}
+              aria-label="Excluir"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {expanded ? (

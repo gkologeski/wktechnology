@@ -1,30 +1,37 @@
 ## Objetivo
+Transformar os questionários base (BANT/MEDDIC/CHAMP/GPCT) em **modelos read-only** e adicionar ação de **Duplicar** para que o usuário trabalhe sobre uma cópia editável.
 
-Criar em `/prospecting → Questionários` os três modelos prontos (MEDDIC, CHAMP e GPCT) para o workspace atual, reutilizando os templates já definidos em `src/lib/prospecting/questionnaires.functions.ts` (`FRAMEWORK_TEMPLATES`).
+## Comportamento
 
-## Contexto verificado
+- Modelos aparecem em uma seção separada "Modelos" com badge "Modelo".
+- Nos modelos, o usuário só pode **Visualizar** e **Duplicar** — sem editar, sem excluir, sem adicionar/remover perguntas, sem toggle "Ativo".
+- Duplicar cria um novo questionário editável do usuário (com sufixo "(cópia)") + clona todas as perguntas.
+- Os questionários "do usuário" mantêm o comportamento atual (editar, excluir, ativar/desativar).
+- O botão "Criar a partir de..." atual passa a ter função equivalente a "Duplicar modelo" (mantém a experiência de partir de um framework pronto).
 
-- A UI da aba Questionários já expõe um seletor "Criar a partir de..." que chama a server function `seedFramework` — uma opção é apenas clicar 3 vezes ali. O pedido, porém, é que os modelos já apareçam prontos.
-- Os templates BANT/MEDDIC/CHAMP/GPCT existem no código com perguntas, pesos, opções e `pass_threshold` (linhas ~224–352 de `questionnaires.functions.ts`).
-- As tabelas `prospecting_questionnaires` e `prospecting_questions` exigem `owner_id` (RLS impõe `owner_id = auth.uid()` no INSERT).
+## Mudanças
 
-## Plano
+**1. Banco (migration)**
+- Adicionar coluna `is_template boolean NOT NULL DEFAULT false` em `prospecting_questionnaires`.
+- Marcar os questionários seed atuais (BANT/MEDDIC/CHAMP/GPCT já criados no workspace) como `is_template = true`.
+- Ajustar RLS: bloquear `UPDATE`/`DELETE` quando `is_template = true` (policies com `WITH CHECK NOT is_template` e `USING NOT is_template` para write/delete; SELECT continua liberado). Análogo para `prospecting_questions` via join no questionário.
 
-1. Identificar o `owner_id` do usuário atual (dono do workspace ativo em `/prospecting`) via `supabase--read_query` em `profiles` / `workspace_members`, para confirmar quem receberá os questionários.
-2. Rodar um `supabase--insert` único que, em uma transação:
-   - Insere 3 linhas em `prospecting_questionnaires` (MEDDIC, CHAMP, GPCT) com `framework`, `name`, `description`, `pass_threshold`, `enabled = true` e `owner_id` = usuário identificado, usando `ON CONFLICT DO NOTHING` por `(owner_id, framework, name)` quando houver constraint — caso não haja, um `WHERE NOT EXISTS` evita duplicar caso o usuário já tenha semeado.
-   - Insere as respectivas perguntas em `prospecting_questions` com `position`, `label`, `type`, `options` (JSON), `weight` e `required` idênticos aos definidos em `FRAMEWORK_TEMPLATES`.
-3. Validar via `supabase--read_query` que os 3 questionários aparecem com o número correto de perguntas (MEDDIC=6, CHAMP=4, GPCT=4).
+**2. Server functions (`src/lib/prospecting/questionnaires.functions.ts`)**
+- `listQuestionnaires`: incluir `is_template` no select.
+- `upsertQuestionnaire` (update) e `deleteQuestionnaire`: rejeitar se `is_template = true`.
+- `upsertQuestion` / `deleteQuestion`: validar via join que o questionário não é modelo.
+- Nova `duplicateQuestionnaire({ id })`: clona o questionário (força `is_template=false`, `framework='custom'` ou mantém framework mas sem flag) + copia todas as perguntas preservando ordem/pesos/opções.
+- `seedFramework`: manter, mas agora atua como "duplicar do modelo padrão" (nunca marca como template).
+
+**3. UI (`src/components/prospecting/questionnaires-tab.tsx`)**
+- Separar em duas seções: **Modelos** (grid dos `is_template=true`) e **Meus questionários** (grid dos demais).
+- Card do modelo: sem ícones de editar/excluir; apenas botão "Duplicar" (chama `duplicateQuestionnaire`) e "Visualizar" (abre um Sheet somente-leitura reutilizando o editor com `readOnly=true`).
+- `QuestionnaireEditorSheet` recebe prop `readOnly` para desabilitar inputs, toggles, botões de adicionar/remover e o `QuestionRow`.
+- Card dos "Meus questionários": adicionar botão "Duplicar" ao lado de Editar/Excluir.
+
+**4. Seed inicial**
+- Migration marca como modelo os questionários existentes cujo `framework != 'custom'` e cujo nome bate com os templates padrão, para não afetar customizações do usuário que possam ter framework preenchido.
 
 ## Fora do escopo
-
-- Nenhuma alteração de UI, RLS, schema ou lógica de negócio.
-- BANT (o usuário não pediu; preservamos qualquer BANT já criado).
-
-## Como validar
-
-Abrir `/prospecting?tab=questionarios` e conferir os 3 novos cards (MEDDIC, CHAMP, GPCT). Abrir cada um pelo lápis e verificar as perguntas listadas.
-
-## Pergunta antes de executar
-
-Confirma que o alvo é o seu usuário/workspace atual (o mesmo em que você está logado agora no preview)? Se quiser semear para todos os workspaces ou para um workspace específico, me diga qual.
+- Modelos globais compartilhados entre workspaces (permanecem por workspace).
+- Alterações no `QualificationPanel` (usa `listQuestionnaires` filtrando por `enabled`, continuará funcional; modelos ficam com `enabled=false` por padrão para não poluir a fila).
