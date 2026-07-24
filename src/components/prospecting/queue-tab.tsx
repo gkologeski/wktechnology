@@ -33,7 +33,39 @@ import {
   upsertQueue,
   deleteQueue,
   listQueueItems,
+  countQueueItems,
 } from "@/lib/prospecting/queues.functions";
+
+const LEAD_STATUS_LABELS: Record<string, string> = {
+  new: "Novo",
+  working: "Em trabalho",
+  contacted: "Contatado",
+  qualified: "Qualificado",
+  unqualified: "Desqualificado",
+  converted: "Convertido",
+  lost: "Perdido",
+  nurturing: "Em nutrição",
+};
+
+const CONTACT_LIFECYCLE_LABELS: Record<string, string> = {
+  subscriber: "Assinante",
+  lead: "Lead",
+  mql: "MQL",
+  sql: "SQL",
+  opportunity: "Oportunidade",
+  customer: "Cliente",
+  evangelist: "Evangelista",
+  other: "Outro",
+};
+
+function titleCase(s: string) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+function statusLabel(entity: string, raw: string): string {
+  const map = entity === "lead" ? LEAD_STATUS_LABELS : CONTACT_LIFECYCLE_LABELS;
+  return map[raw?.toLowerCase?.() ?? ""] ?? titleCase(raw);
+}
 
 type QueueEntity = "lead" | "contact";
 
