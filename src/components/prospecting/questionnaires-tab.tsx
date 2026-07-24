@@ -367,10 +367,12 @@ function QuestionnaireEditorSheet({
   id,
   onClose,
   onChanged,
+  readOnly = false,
 }: {
   id: string;
   onClose: () => void;
   onChanged: () => void;
+  readOnly?: boolean;
 }) {
   const get = useServerFn(getQuestionnaire);
   const upsertMeta = useServerFn(upsertQuestionnaire);
