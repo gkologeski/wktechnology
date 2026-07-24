@@ -174,6 +174,7 @@ function QueueWorkspace({
     queryFn: () => listItems({ data: { queue_id: queueId, limit: 50, offset: 0 } }),
   });
 
+  const hasItems = (data?.items?.length ?? 0) > 0;
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -183,9 +184,20 @@ function QueueWorkspace({
             {data?.total ?? 0} {data?.entity === "lead" ? "leads" : "contatos"}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
-          <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild size="sm" disabled={!hasItems}>
+            <Link
+              to="/prospecting/queues/$queueId/play"
+              params={{ queueId }}
+              disabled={!hasItems}
+            >
+              <Play className="w-4 h-4 mr-1" /> Iniciar fila
+            </Link>
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
+            <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
