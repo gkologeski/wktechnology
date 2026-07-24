@@ -349,6 +349,7 @@ import { Route as ApiPublicEmailPixelMessageIdRouteImport } from './routes/api/p
 import { Route as ApiPublicEmailClickMessageIdRouteImport } from './routes/api/public/email/click.$messageId'
 import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/public/booking/$slug/submit'
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
+import { Route as AuthenticatedProspectingQueuesQueueIdPlayRouteImport } from './routes/_authenticated/prospecting.queues.$queueId.play'
 import { Route as AuthenticatedatsSourcingSequencesIdRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences_.$id'
 import { Route as ApiPublicScimV2UsersIdRouteImport } from './routes/api/public/scim/v2/Users.$id'
 import { Route as ApiPublicV1AtsApplicationsIdHireRouteImport } from './routes/api/public/v1/ats/applications.$id.hire'
@@ -2293,6 +2294,12 @@ const AuthenticatedTasksQueuesQueueIdPlayRoute =
     path: '/$queueId/play',
     getParentRoute: () => AuthenticatedTasksQueuesRoute,
   } as any)
+const AuthenticatedProspectingQueuesQueueIdPlayRoute =
+  AuthenticatedProspectingQueuesQueueIdPlayRouteImport.update({
+    id: '/queues/$queueId/play',
+    path: '/queues/$queueId/play',
+    getParentRoute: () => AuthenticatedProspectingRoute,
+  } as any)
 const AuthenticatedatsSourcingSequencesIdRoute =
   AuthenticatedatsSourcingSequencesIdRouteImport.update({
     id: '/(ats)/sourcing/sequences_/$id',
@@ -2637,6 +2644,7 @@ export interface FileRoutesByFullPath {
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -2975,6 +2983,7 @@ export interface FileRoutesByTo {
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -3321,6 +3330,7 @@ export interface FileRoutesById {
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/(ats)/sourcing/sequences_/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/_authenticated/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
   '/_authenticated/tasks/queues/$queueId/play': typeof AuthenticatedTasksQueuesQueueIdPlayRoute
   '/api/public/booking/$slug/submit': typeof ApiPublicBookingSlugSubmitRoute
   '/api/public/email/click/$messageId': typeof ApiPublicEmailClickMessageIdRoute
@@ -3667,6 +3677,7 @@ export interface FileRouteTypes {
     | '/prospecting/campaigns/'
     | '/settings/roles/'
     | '/sourcing/sequences/$id'
+    | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -4005,6 +4016,7 @@ export interface FileRouteTypes {
     | '/prospecting/campaigns'
     | '/settings/roles'
     | '/sourcing/sequences/$id'
+    | '/prospecting/queues/$queueId/play'
     | '/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -4350,6 +4362,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
     | '/_authenticated/(ats)/sourcing/sequences_/$id'
+    | '/_authenticated/prospecting/queues/$queueId/play'
     | '/_authenticated/tasks/queues/$queueId/play'
     | '/api/public/booking/$slug/submit'
     | '/api/public/email/click/$messageId'
@@ -6862,6 +6875,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksQueuesQueueIdPlayRouteImport
       parentRoute: typeof AuthenticatedTasksQueuesRoute
     }
+    '/_authenticated/prospecting/queues/$queueId/play': {
+      id: '/_authenticated/prospecting/queues/$queueId/play'
+      path: '/queues/$queueId/play'
+      fullPath: '/prospecting/queues/$queueId/play'
+      preLoaderRoute: typeof AuthenticatedProspectingQueuesQueueIdPlayRouteImport
+      parentRoute: typeof AuthenticatedProspectingRoute
+    }
     '/_authenticated/(ats)/sourcing/sequences_/$id': {
       id: '/_authenticated/(ats)/sourcing/sequences_/$id'
       path: '/sourcing/sequences/$id'
@@ -6989,6 +7009,7 @@ interface AuthenticatedProspectingRouteChildren {
   AuthenticatedProspectingIndexRoute: typeof AuthenticatedProspectingIndexRoute
   AuthenticatedProspectingCampaignsIdRoute: typeof AuthenticatedProspectingCampaignsIdRoute
   AuthenticatedProspectingCampaignsIndexRoute: typeof AuthenticatedProspectingCampaignsIndexRoute
+  AuthenticatedProspectingQueuesQueueIdPlayRoute: typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
 }
 
 const AuthenticatedProspectingRouteChildren: AuthenticatedProspectingRouteChildren =
@@ -6998,6 +7019,8 @@ const AuthenticatedProspectingRouteChildren: AuthenticatedProspectingRouteChildr
       AuthenticatedProspectingCampaignsIdRoute,
     AuthenticatedProspectingCampaignsIndexRoute:
       AuthenticatedProspectingCampaignsIndexRoute,
+    AuthenticatedProspectingQueuesQueueIdPlayRoute:
+      AuthenticatedProspectingQueuesQueueIdPlayRoute,
   }
 
 const AuthenticatedProspectingRouteWithChildren =

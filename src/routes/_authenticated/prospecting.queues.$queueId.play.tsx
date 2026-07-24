@@ -77,7 +77,7 @@ function PlayProspectingQueue() {
 
   const queue = queuesQ.data?.find((q) => q.id === queueId);
   const entity = (itemsQ.data?.entity ?? "lead") as "lead" | "contact";
-  const items = (itemsQ.data?.items ?? []) as Array<Record<string, unknown>>;
+  const items = (itemsQ.data?.items ?? []) as unknown as Array<Record<string, unknown>>;
   const total = items.length;
   const current = items[idx];
 
