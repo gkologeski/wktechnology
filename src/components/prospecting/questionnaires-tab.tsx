@@ -441,24 +441,31 @@ function QuestionnaireEditorSheet({
     <Sheet open onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader>
-          <SheetTitle>{data?.questionnaire.name ?? "Carregando..."}</SheetTitle>
+          <SheetTitle className="flex items-center gap-2">
+            {data?.questionnaire.name ?? "Carregando..."}
+            {readOnly ? (
+              <Badge variant="secondary" className="text-[10px]">Modelo</Badge>
+            ) : null}
+          </SheetTitle>
         </SheetHeader>
         {isLoading || !data ? (
           <div className="text-sm text-muted-foreground mt-4">Carregando...</div>
         ) : (
           <div className="space-y-6 mt-4">
-            <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
-              <div>
-                <p className="text-sm font-medium">Ativo</p>
-                <p className="text-xs text-muted-foreground">
-                  Questionários ativos aparecem no painel de qualificação.
-                </p>
+            {readOnly ? null : (
+              <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
+                <div>
+                  <p className="text-sm font-medium">Ativo</p>
+                  <p className="text-xs text-muted-foreground">
+                    Questionários ativos aparecem no painel de qualificação.
+                  </p>
+                </div>
+                <Switch
+                  checked={data.questionnaire.enabled}
+                  onCheckedChange={(v) => toggleEnabled.mutate(v)}
+                />
               </div>
-              <Switch
-                checked={data.questionnaire.enabled}
-                onCheckedChange={(v) => toggleEnabled.mutate(v)}
-              />
-            </div>
+            )}
 
             <div>
               <AtsSectionHeader title="Perguntas" description="Cada resposta pontuada soma no score final." />
@@ -472,47 +479,50 @@ function QuestionnaireEditorSheet({
                       question={q}
                       onDeleted={invalidate}
                       onSaved={invalidate}
+                      readOnly={readOnly}
                     />
                   ))
                 )}
               </div>
             </div>
 
-            <div className="rounded-md border p-3 space-y-3">
-              <p className="text-sm font-medium">Adicionar pergunta</p>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2 space-y-1">
-                  <Label className="text-xs">Enunciado</Label>
-                  <Input
-                    value={addingLabel}
-                    onChange={(e) => setAddingLabel(e.target.value)}
-                    placeholder="Qual o orçamento aprovado?"
-                  />
+            {readOnly ? null : (
+              <div className="rounded-md border p-3 space-y-3">
+                <p className="text-sm font-medium">Adicionar pergunta</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2 space-y-1">
+                    <Label className="text-xs">Enunciado</Label>
+                    <Input
+                      value={addingLabel}
+                      onChange={(e) => setAddingLabel(e.target.value)}
+                      placeholder="Qual o orçamento aprovado?"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Tipo</Label>
+                    <Select value={addingType} onValueChange={(v) => setAddingType(v as QuestionType)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(TYPE_LABELS) as QuestionType[]).map((t) => (
+                          <SelectItem key={t} value={t}>
+                            {TYPE_LABELS[t]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Tipo</Label>
-                  <Select value={addingType} onValueChange={(v) => setAddingType(v as QuestionType)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(TYPE_LABELS) as QuestionType[]).map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {TYPE_LABELS[t]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Button
+                  size="sm"
+                  disabled={!addingLabel || addQ.isPending}
+                  onClick={() => addQ.mutate()}
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Adicionar
+                </Button>
               </div>
-              <Button
-                size="sm"
-                disabled={!addingLabel || addQ.isPending}
-                onClick={() => addQ.mutate()}
-              >
-                <Plus className="w-4 h-4 mr-1" /> Adicionar
-              </Button>
-            </div>
+            )}
           </div>
         )}
       </SheetContent>
