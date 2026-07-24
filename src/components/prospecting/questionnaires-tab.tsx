@@ -534,6 +534,7 @@ function QuestionRow({
   question,
   onDeleted,
   onSaved,
+  readOnly = false,
 }: {
   question: {
     id: string;
@@ -547,6 +548,7 @@ function QuestionRow({
   };
   onDeleted: () => void;
   onSaved: () => void;
+  readOnly?: boolean;
 }) {
   const upsertQ = useServerFn(upsertQuestion);
   const delQ = useServerFn(deleteQuestion);
