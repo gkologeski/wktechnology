@@ -106,6 +106,11 @@ export function QueueTab() {
                     <User className="w-4 h-4 text-muted-foreground" />
                   )}
                   <span className="text-sm font-medium truncate">{q.name}</span>
+                  {(q as { kind?: string }).kind === "manual" ? (
+                    <Badge variant="secondary" className="text-[10px]">
+                      Manual · {(((q as { item_ids?: string[] }).item_ids) ?? []).length}
+                    </Badge>
+                  ) : null}
                 </div>
                 {q.description ? (
                   <p className="text-xs text-muted-foreground mt-1 line-clamp-2">

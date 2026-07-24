@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
+import { AddToProspectingDialog } from "@/components/prospecting/add-to-prospecting-dialog";
 import { useMyTools } from "@/lib/use-my-tools";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
@@ -198,6 +199,7 @@ function LeadsHubspotView() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
+  const [prospectingIds, setProspectingIds] = useState<string[] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   useAutoCreateParam(() => setCreateOpen(true));
   const [pendingAction, setPendingAction] = useState<{
@@ -1042,6 +1044,14 @@ function LeadsHubspotView() {
                 >
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setProspectingIds(Array.from(selectedIds))}
+                >
+                  <Play className="mr-1 h-3.5 w-3.5" /> Adicionar à prospecção
+                </Button>
                 <Can any={["techsales.leads.delete.own", "techsales.leads.delete.workspace"]}>
                   <Button
                     variant="ghost"
@@ -1207,6 +1217,13 @@ function LeadsHubspotView() {
         ids={enrichIds ?? []}
         entity="lead"
         onDone={() => qc.invalidateQueries({ queryKey: ["leads"] })}
+      />
+
+      <AddToProspectingDialog
+        open={!!prospectingIds}
+        onOpenChange={(o) => !o && setProspectingIds(null)}
+        entity="lead"
+        ids={prospectingIds ?? []}
       />
 
       <CreateLeadDialog

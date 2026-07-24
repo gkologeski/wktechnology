@@ -13114,6 +13114,8 @@ export type Database = {
           filters: Json
           id: string
           is_shared: boolean
+          item_ids: string[]
+          kind: string
           name: string
           owner_id: string
           sort: Json
@@ -13126,6 +13128,8 @@ export type Database = {
           filters?: Json
           id?: string
           is_shared?: boolean
+          item_ids?: string[]
+          kind?: string
           name: string
           owner_id: string
           sort?: Json
@@ -13138,6 +13142,8 @@ export type Database = {
           filters?: Json
           id?: string
           is_shared?: boolean
+          item_ids?: string[]
+          kind?: string
           name?: string
           owner_id?: string
           sort?: Json
