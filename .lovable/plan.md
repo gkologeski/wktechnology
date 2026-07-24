@@ -1,54 +1,55 @@
 ## Objetivo
-Trazer para **Prospecção → Fila** a mesma experiência de execução sequencial que existe em `/tasks/queues/:id/play`, adicionar link direto no nome do lead/contato e criar uma tela de trabalho focada com escolha de questionário, dados do lead, timeline e painel de qualificação.
 
-## Escopo
+Refinar o fluxo de ações da tela de execução de fila de Prospecção (`/prospecting/queues/$queueId/play`) para alinhar com o fluxo padrão de Leads e simplificar a interface.
 
-### 1. Ajustes na lista da fila (`src/components/prospecting/queue-tab.tsx`)
-- **`QueueWorkspace`**: adicionar botão **"Iniciar fila"** no cabeçalho, ao lado de "Excluir fila", que navega para a nova rota de play. Desabilitado quando a fila estiver vazia.
-- **`QueueItemRow`**:
-  - Remover o botão **"Abrir"** à direita.
-  - Transformar o **nome** em `<Link>` para `/leads/:id` ou `/contacts/:id` (mantém `detailHref` já calculado), com estilo `hover:underline`.
-  - Nenhuma outra alteração de layout/badges.
+## Decisões confirmadas
 
-### 2. Nova rota de execução: `src/routes/_authenticated/prospecting.queues.$queueId.play.tsx`
-Segue o padrão de `tasks.queues.$queueId.play.tsx` (mesma UX, mesmos atalhos), adaptado ao domínio de prospecção.
+1. **Nutrição**: manter botão como "Enviar para nutrição" (remove da fila ativa, mantém lead vivo com status `nurturing`).
+2. **Escopo da fila**: filas de prospecção passam a aceitar **apenas leads**. Contatos e empresas não são elegíveis.
+3. **Desqualificação**: motivo **obrigatório**.
+4. **Agendado**: botão removido.
 
-Fluxo em dois estados:
+## Mudanças
 
-**Estado A — Escolha do questionário** (renderizado enquanto `selectedQuestionnaireId` for null):
-- Carrega `listQuestionnaires` (server fn já existente) e mostra apenas os `enabled`.
-- Card central com `Select` dos questionários e botão **"Começar"**.
-- Se não houver questionário habilitado, `EmptyState` com CTA para `/prospecting?tab=questionnaires`.
+### 1. Restringir filas a leads apenas
+- Em `src/components/prospecting/add-to-queue-dialog.tsx` (e telas equivalentes em `/contacts` e `/companies`): remover a opção de adicionar contatos/empresas à fila de prospecção. Manter apenas em `/leads`.
+- Em `src/lib/prospecting/queues.functions.ts`: validar no `addItemsToQueue` que apenas `entity_type = 'lead'` é aceito; retornar erro claro caso contrário.
+- Na UI de listagem da fila (`queue-tab.tsx` e `play.tsx`): remover branches que tratam `contact`/`company`.
 
-**Estado B — Workspace por item** (após seleção):
-- Header: nome da fila + `idx de total` + botão **Voltar** para `/prospecting?tab=fila`.
-- Coluna esquerda (dados do lead/contato, ~1/3):
-  - Nome (link para detalhe), e-mail, telefone, empresa (`company_name` para lead / `company.name` para contato quando disponível), status/lifecycle e score.
-  - Botões rápidos: **Ligar** (`tel:`), **Abrir registro** (`/leads/:id` ou `/contacts/:id`).
-- Coluna direita (~2/3), em duas seções empilhadas:
-  1. **Timeline de interações** — reutiliza `<ActivityTimeline entityType={entity} entityId={item.id} />` já existente.
-  2. **Qualificação** — reutiliza `<QualificationPanel entity={entity} entityId={item.id} />` com prop nova opcional `preselectedQuestionnaireId` para forçar o questionário escolhido no Estado A (default = permanece no primeiro habilitado, comportamento atual preservado).
-- Rodapé fixo: **Pular (S)** e **Próximo (N/→)**. `Concluir` não se aplica aqui — o próprio salvamento da qualificação no painel já persiste o estado. Atalhos de teclado idênticos ao Play de tasks (ignorar em `INPUT`/`TEXTAREA`).
-- Ao chegar no fim: card "Fila concluída" com link de volta.
+### 2. Botão "Qualificar" → abre CreateDealFromLeadDialog
+- Em `qualification-panel.tsx`: substituir a lógica atual de qualificação pelo mesmo diálogo usado em `/leads` (`CreateDealFromLeadDialog`).
+- Após criação do negócio: registrar `qualification` na prospecção (score + respostas do questionário) e marcar item da fila como `qualified`, avançando para o próximo.
 
-Sem novas mutations; a navegação entre itens é apenas index local (`useState`) sobre a lista carregada.
+### 3. Botão "Desqualificar" com motivo obrigatório
+- Abrir modal com `Select` de motivos + campo texto opcional para observação.
+- Validação: submit desabilitado até motivo ser escolhido.
+- Ação: atualizar `leads.status = 'disqualified'`, `lost_reason`, e marcar item da fila como `disqualified`. Avançar para próximo.
 
-### 3. Dados
-- Reutilizar `listQueueItems({ queue_id, limit: 500, offset: 0 })` (mesma server fn usada no `QueueWorkspace`) — sem alterações na server function.
-- Reutilizar `listQuestionnaires`.
-- Nenhuma migration. Nenhuma alteração de RLS.
+### 4. Botão "Enviar para nutrição"
+- Renomear botão "Nutrição" → "Enviar para nutrição".
+- Ação: atualizar `leads.status = 'nurturing'` (adicionar valor ao enum se não existir), marcar item da fila como `nurturing`/removido, e avançar.
 
-### 4. Pequena extensão em `QualificationPanel`
-- Aceitar prop opcional `preselectedQuestionnaireId?: string | null`. Quando presente e válida, inicializa `selectedId` com esse valor e esconde o `Select` de questionário (o SDR já escolheu na tela anterior). Comportamento atual (sem a prop) permanece intacto para os demais usos.
+### 5. Remover botão "Agendado"
+- Remover do `qualification-panel.tsx` e da tela `play.tsx`.
+
+## Detalhes técnicos
+
+- **Migration necessária**: adicionar `'nurturing'` ao enum `lead_status` se ainda não existir; adicionar valor `'nurturing'` aos status possíveis de item da fila.
+- **Sem alteração** em RLS, autenticação ou schema além do enum.
+- Reaproveitar `CreateDealFromLeadDialog` sem duplicação.
+- Manter atalhos de teclado (N/S) e navegação sequencial.
+
+## Como validar
+
+1. Em `/leads`, adicionar leads à fila de prospecção — deve funcionar.
+2. Em `/contacts` e `/companies`, a opção "Adicionar à prospecção" não deve mais aparecer.
+3. Em `/prospecting/queues/:id/play`:
+   - "Qualificar" abre o mesmo modal do `/leads` e cria um negócio.
+   - "Desqualificar" exige motivo.
+   - "Enviar para nutrição" remove da fila e muda status do lead.
+   - Não há mais botão "Agendado".
 
 ## Fora de escopo
-- Nenhuma mudança em backend, RLS, schema, cadências ou scoring.
-- Nenhuma alteração em `/tasks/queues` (referência apenas).
-- Nenhum novo tipo de fila ou ordenação; a ordem é a mesma retornada por `listQueueItems`.
 
-## Como validar manualmente
-1. `/prospecting?tab=fila` → nome do lead abre a página do lead; não há mais botão "Abrir".
-2. Cabeçalho da fila mostra **Iniciar fila**; desabilitado se vazio.
-3. Ao clicar, abre a tela de escolha de questionário; depois de "Começar", entra no workspace.
-4. Cada item mostra dados básicos + timeline + painel de qualificação com o questionário escolhido.
-5. **S** pula, **N/→** avança; ao fim, aparece "Fila concluída".
+- Migração de itens já existentes na fila que sejam contact/company (será tratado à parte se necessário).
+- Redesenho visual da tela `play`.
