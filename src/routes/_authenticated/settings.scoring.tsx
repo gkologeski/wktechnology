@@ -371,62 +371,8 @@ export function ScoringPage() {
                 </div>
               </div>
 
-              <section className="rounded-md border p-3 space-y-3">
-                <h3 className="text-sm font-semibold">Condição</h3>
-                <div className="grid grid-cols-[1fr_180px] gap-2">
-                  <div>
-                    <Label>Campo</Label>
-                    <Input
-                      value={draft.condition.field}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          condition: { ...draft.condition, field: e.target.value },
-                        })
-                      }
-                      placeholder="ex.: source, status, email"
-                    />
-                  </div>
-                  <div>
-                    <Label>Operador</Label>
-                    <Select
-                      value={draft.condition.op}
-                      onValueChange={(v) =>
-                        setDraft({ ...draft, condition: { ...draft.condition, op: v as Op } })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(Object.keys(OP_LABEL) as Op[]).map((op) => (
-                          <SelectItem key={op} value={op}>
-                            {OP_LABEL[op]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                {NEEDS_VALUE[draft.condition.op] && (
-                  <div>
-                    <Label>Valor</Label>
-                    <Input
-                      value={String(draft.condition.value ?? "")}
-                      onChange={(e) =>
-                        setDraft({
-                          ...draft,
-                          condition: { ...draft.condition, value: e.target.value },
-                        })
-                      }
-                      placeholder="ex.: site"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Para "está em (lista)" use valores separados por vírgula.
-                    </p>
-                  </div>
-                )}
-              </section>
+              <ConditionSection draft={draft} setDraft={setDraft} />
+
 
               <p className="text-xs text-muted-foreground">
                 Cada combinação regra + registro só pontua uma vez (idempotente).
