@@ -129,7 +129,6 @@ function ContactsHubspotView() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
-  const [prospectingIds, setProspectingIds] = useState<string[] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   useAutoCreateParam(() => setCreateOpen(true));
 
