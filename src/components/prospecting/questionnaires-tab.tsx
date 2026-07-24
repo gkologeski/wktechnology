@@ -67,9 +67,8 @@ const TYPE_LABELS: Record<QuestionType, string> = {
 
 export function QuestionnairesTab() {
   const list = useServerFn(listQuestionnaires);
-  const seed = useServerFn(seedFramework);
-  const upsert = useServerFn(upsertQuestionnaire);
   const del = useServerFn(deleteQuestionnaire);
+  const duplicate = useServerFn(duplicateQuestionnaire);
   const qc = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -79,12 +78,14 @@ export function QuestionnairesTab() {
 
   const [openNew, setOpenNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
-  const seedMut = useMutation({
-    mutationFn: (framework: Framework) => seed({ data: { framework } }),
-    onSuccess: () => {
-      toast.success("Questionário criado a partir do template.");
+  const duplicateMut = useMutation({
+    mutationFn: (id: string) => duplicate({ data: { id } }),
+    onSuccess: (res) => {
+      toast.success("Questionário duplicado. Edite a cópia.");
       qc.invalidateQueries({ queryKey: ["prospecting", "questionnaires"] });
+      setEditingId(res.id);
     },
     onError: (e) => toast.error((e as Error).message),
   });
@@ -99,50 +100,87 @@ export function QuestionnairesTab() {
   });
 
   const items = data ?? [];
+  const templates = items.filter((q) => q.is_template);
+  const mine = items.filter((q) => !q.is_template);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AtsSectionHeader
-        title="Questionários de qualificação"
-        description="Templates prontos (BANT/MEDDIC/CHAMP/GPCT) ou crie do zero. Cada resposta pode somar pontos ao score."
-        action={
-          <div className="flex items-center gap-2">
-            <Select onValueChange={(v) => seedMut.mutate(v as Framework)}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Criar a partir de..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="bant">
-                  <Sparkles className="inline w-3 h-3 mr-1" /> BANT
-                </SelectItem>
-                <SelectItem value="meddic">
-                  <Sparkles className="inline w-3 h-3 mr-1" /> MEDDIC
-                </SelectItem>
-                <SelectItem value="champ">
-                  <Sparkles className="inline w-3 h-3 mr-1" /> CHAMP
-                </SelectItem>
-                <SelectItem value="gpct">
-                  <Sparkles className="inline w-3 h-3 mr-1" /> GPCT
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button size="sm" onClick={() => setOpenNew(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Novo
-            </Button>
-          </div>
-        }
+        title="Modelos"
+        description="Frameworks prontos (BANT, MEDDIC, CHAMP, GPCT). São somente leitura — duplique para personalizar."
       />
-
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
-      ) : items.length === 0 ? (
+      ) : templates.length === 0 ? (
+        <EmptyState title="Nenhum modelo disponível" description="Peça ao administrador para carregar os modelos padrão." />
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {templates.map((q) => (
+            <Card key={q.id} className="hover:shadow-sm transition-shadow border-dashed">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-sm">{q.name}</CardTitle>
+                  <div className="flex items-center gap-1">
+                    <Badge variant="secondary" className="text-[10px]">
+                      Modelo
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {FRAMEWORK_LABELS[q.framework as Framework] ?? q.framework}
+                    </Badge>
+                  </div>
+                </div>
+                {q.description ? (
+                  <p className="text-xs text-muted-foreground line-clamp-2">{q.description}</p>
+                ) : null}
+              </CardHeader>
+              <CardContent className="pt-0 flex items-center justify-between">
+                <div className="text-xs text-muted-foreground">
+                  Corte: <span className="font-medium text-foreground">{q.pass_threshold}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setViewingId(q.id)}
+                    aria-label="Visualizar"
+                  >
+                    <Eye className="w-4 h-4 mr-1" /> Visualizar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={duplicateMut.isPending}
+                    onClick={() => duplicateMut.mutate(q.id)}
+                    aria-label="Duplicar"
+                  >
+                    <Copy className="w-4 h-4 mr-1" /> Duplicar
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <AtsSectionHeader
+        title="Meus questionários"
+        description="Questionários editáveis do seu workspace. Duplique um modelo ou crie do zero."
+        action={
+          <Button size="sm" onClick={() => setOpenNew(true)}>
+            <Plus className="w-4 h-4 mr-1" /> Novo
+          </Button>
+        }
+      />
+      {isLoading ? (
+        <div className="text-sm text-muted-foreground">Carregando...</div>
+      ) : mine.length === 0 ? (
         <EmptyState
           title="Nenhum questionário ainda"
-          description="Crie um questionário customizado ou use um framework pronto para começar a qualificar leads."
+          description="Duplique um modelo acima ou crie um questionário do zero."
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((q) => (
+          {mine.map((q) => (
             <Card key={q.id} className="hover:shadow-sm transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
@@ -172,6 +210,15 @@ export function QuestionnairesTab() {
                     aria-label="Editar"
                   >
                     <Pencil className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => duplicateMut.mutate(q.id)}
+                    disabled={duplicateMut.isPending}
+                    aria-label="Duplicar"
+                  >
+                    <Copy className="w-4 h-4" />
                   </Button>
                   <Button
                     size="icon"
@@ -206,6 +253,15 @@ export function QuestionnairesTab() {
           onChanged={() =>
             qc.invalidateQueries({ queryKey: ["prospecting", "questionnaires"] })
           }
+        />
+      ) : null}
+
+      {viewingId ? (
+        <QuestionnaireEditorSheet
+          id={viewingId}
+          readOnly
+          onClose={() => setViewingId(null)}
+          onChanged={() => {}}
         />
       ) : null}
     </div>
