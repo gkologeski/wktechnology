@@ -482,6 +482,19 @@ function QuestionnaireEditorSheet({
         ) : (
           <div className="space-y-6 mt-4">
             {readOnly ? null : (
+              <div className="space-y-1">
+                <Label>Nome</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => {
+                    if (name && name !== data.questionnaire.name) saveName.mutate(name);
+                  }}
+                  disabled={saveName.isPending}
+                />
+              </div>
+            )}
+            {readOnly ? null : (
               <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
                 <div>
                   <p className="text-sm font-medium">Ativo</p>
