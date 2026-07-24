@@ -22,7 +22,8 @@ export const listQuestionnaires = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("prospecting_questionnaires")
-      .select("id, name, description, framework, pipeline_id, product_id, enabled, pass_threshold, updated_at")
+      .select("id, name, description, framework, pipeline_id, product_id, enabled, pass_threshold, is_template, updated_at")
+      .order("is_template", { ascending: false })
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
