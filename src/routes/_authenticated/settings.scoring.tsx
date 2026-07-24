@@ -2,6 +2,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +26,38 @@ import {
   listRecentScoreEvents,
   runScoringTickNow,
 } from "@/lib/scoring.functions";
+import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
+
+type FieldOpt = {
+  name: string;
+  label: string;
+  type?: "text" | "number" | "date" | "select" | "boolean";
+  options?: { value: string; label: string }[];
+};
+
+const ENTITY_TO_CATALOG = {
+  lead: "leads",
+  contact: "contacts",
+  company: "companies",
+} as const;
+
+function useEntityFieldOptions(entity: "lead" | "contact" | "company"): FieldOpt[] {
+  const fetchCatalog = useServerFn(getEntityFieldCatalog);
+  const { data } = useQuery({
+    queryKey: ["scoring-entity-fields", entity],
+    queryFn: () => fetchCatalog({ data: { entity: ENTITY_TO_CATALOG[entity] } }),
+    staleTime: 5 * 60_000,
+  });
+  if (data?.fields?.length) {
+    return data.fields.map((f) => ({
+      name: f.name,
+      label: f.label,
+      type: f.type,
+      options: f.options,
+    }));
+  }
+  return [];
+}
 
 export const Route = createFileRoute("/_authenticated/settings/scoring")({
   beforeLoad: () => {
