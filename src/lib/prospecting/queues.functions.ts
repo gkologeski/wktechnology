@@ -243,37 +243,36 @@ export const listQueueItems = createServerFn({ method: "POST" })
       if (ids.length === 0) return { items: [], total: 0, entity: queue.entity };
       query = query.in("id", ids);
     } else {
-
-    if (Array.isArray(filters.status) && filters.status.length > 0) {
-      query = query.in("status", filters.status as string[]);
-    }
-    if (Array.isArray(filters.source) && filters.source.length > 0) {
-      query = query.in("source", filters.source as string[]);
-    }
-    if (typeof filters.owner_id === "string") {
-      query = query.eq("owner_id", filters.owner_id);
-    }
-    if (typeof filters.score_min === "number" && queue.entity === "lead") {
-      query = query.gte("lead_score", filters.score_min);
-    }
-    if (typeof filters.score_max === "number" && queue.entity === "lead") {
-      query = query.lte("lead_score", filters.score_max);
-    }
-    if (typeof filters.search === "string" && filters.search.trim()) {
-      const s = `%${filters.search.trim()}%`;
-      query =
-        queue.entity === "lead"
-          ? query.or(`name.ilike.${s},email.ilike.${s},company_name.ilike.${s}`)
-          : query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`);
-    }
-    if (typeof filters.updated_after === "string") {
-      query = query.gte("updated_at", filters.updated_after);
+      if (Array.isArray(filters.status) && filters.status.length > 0) {
+        query = query.in("status", filters.status as string[]);
+      }
+      if (Array.isArray(filters.source) && filters.source.length > 0) {
+        query = query.in("source", filters.source as string[]);
+      }
+      if (typeof filters.owner_id === "string") {
+        query = query.eq("owner_id", filters.owner_id);
+      }
+      if (typeof filters.score_min === "number" && queue.entity === "lead") {
+        query = query.gte("lead_score", filters.score_min);
+      }
+      if (typeof filters.score_max === "number" && queue.entity === "lead") {
+        query = query.lte("lead_score", filters.score_max);
+      }
+      if (typeof filters.search === "string" && filters.search.trim()) {
+        const s = `%${filters.search.trim()}%`;
+        query =
+          queue.entity === "lead"
+            ? query.or(`name.ilike.${s},email.ilike.${s},company_name.ilike.${s}`)
+            : query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`);
+      }
+      if (typeof filters.updated_after === "string") {
+        query = query.gte("updated_at", filters.updated_after);
+      }
     }
     const sortField = sort.field ?? "updated_at";
     const sortDir = sort.dir ?? "desc";
     query = query.order(sortField, { ascending: sortDir === "asc" });
     query = query.range(data.offset, data.offset + data.limit - 1);
-    }
 
     const { data: rows, error, count } = await query;
     if (error) throw new Error(error.message);
