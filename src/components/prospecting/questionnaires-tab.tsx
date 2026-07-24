@@ -393,6 +393,11 @@ function QuestionnaireEditorSheet({
 
   const [addingLabel, setAddingLabel] = useState("");
   const [addingType, setAddingType] = useState<QuestionType>("single");
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    if (data?.questionnaire.name) setName(data.questionnaire.name);
+  }, [data?.questionnaire.name]);
 
   const invalidate = () => {
     refetch();
