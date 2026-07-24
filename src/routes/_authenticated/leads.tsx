@@ -1044,6 +1044,14 @@ function LeadsHubspotView() {
                 >
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setProspectingIds(Array.from(selectedIds))}
+                >
+                  <Play className="mr-1 h-3.5 w-3.5" /> Adicionar à prospecção
+                </Button>
                 <Can any={["techsales.leads.delete.own", "techsales.leads.delete.workspace"]}>
                   <Button
                     variant="ghost"
