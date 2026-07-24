@@ -185,3 +185,103 @@ export async function tickScoring(
 
   return result;
 }
+
+const RULE_ENTITY_TO_TABLE: Record<"lead" | "contact" | "company", ScoringEntity> = {
+  lead: "leads",
+  contact: "contacts",
+  company: "companies",
+};
+
+export interface FullScanResult {
+  rules: number;
+  scanned: number;
+  applied: number;
+  skipped: number;
+}
+
+/**
+ * Executa cada regra de scoring do caller sobre a base inteira visível por RLS,
+ * avaliando a condição contra o estado atual do registro. Idempotente via
+ * unique constraint em score_events (rule_id, entity, entity_id).
+ */
+export async function runScoringFullScan(
+  supabase: SupabaseClient,
+  opts: { pageSize?: number } = {},
+): Promise<FullScanResult> {
+  const pageSize = opts.pageSize ?? 500;
+  const result: FullScanResult = { rules: 0, scanned: 0, applied: 0, skipped: 0 };
+
+  const { data: rules, error: rErr } = await supabase
+    .from("scoring_rules")
+    .select("id, owner_id, name, entity, condition, points, enabled")
+    .eq("enabled", true);
+  if (rErr) throw new Error(rErr.message);
+  if (!rules?.length) return result;
+  result.rules = rules.length;
+
+  for (const rule of rules) {
+    const ruleEntity = rule.entity as "lead" | "contact" | "company";
+    const table = RULE_ENTITY_TO_TABLE[ruleEntity];
+    if (!table) continue;
+    const points = Number(rule.points ?? 0);
+    if (!points) continue;
+    const condition = (rule.condition as Condition) ?? {};
+
+    let lastId: string | null = null;
+    // paginação keyset por id
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      let q = supabase
+        .from(table)
+        .select("*")
+        .order("id", { ascending: true })
+        .limit(pageSize);
+      if (lastId) q = q.gt("id", lastId);
+      const { data: rows, error: eErr } = await q;
+      if (eErr) {
+        console.error(`[scoring:full-scan] ${table}`, eErr);
+        break;
+      }
+      if (!rows?.length) break;
+
+      for (const row of rows as AnyRow[]) {
+        result.scanned += 1;
+        lastId = (row.id as string) ?? lastId;
+        if (!evalCondition(condition, row, null)) continue;
+
+        const { error: insErr } = await supabase
+          .from("score_events")
+          .insert({
+            owner_id: rule.owner_id,
+            rule_id: rule.id,
+            entity: table,
+            entity_id: row.id,
+            points,
+            reason: rule.name,
+          })
+          .select("id")
+          .single();
+        if (insErr) {
+          if (/duplicate key/i.test(insErr.message)) {
+            result.skipped += 1;
+          } else {
+            console.error("[scoring:full-scan] insert", insErr);
+          }
+          continue;
+        }
+
+        const current = Number((row.score as number | null) ?? 0);
+        await supabase
+          .from(table)
+          .update({ score: current + points })
+          .eq("id", row.id as string);
+        result.applied += 1;
+      }
+
+      if (rows.length < pageSize) break;
+    }
+  }
+
+  return result;
+}
+
