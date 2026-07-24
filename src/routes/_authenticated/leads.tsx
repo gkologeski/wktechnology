@@ -1222,7 +1222,6 @@ function LeadsHubspotView() {
       <AddToProspectingDialog
         open={!!prospectingIds}
         onOpenChange={(o) => !o && setProspectingIds(null)}
-        entity="lead"
         ids={prospectingIds ?? []}
       />
 

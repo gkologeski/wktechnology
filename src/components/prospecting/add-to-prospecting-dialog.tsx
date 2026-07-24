@@ -34,17 +34,16 @@ import {
 } from "@/lib/prospecting/queues.functions";
 import { listCadences } from "@/lib/prospecting/cadences.functions";
 
-type Entity = "lead" | "contact";
+// Suíte de Prospecção aceita apenas leads.
+const entity = "lead" as const;
 
 export function AddToProspectingDialog({
   open,
   onOpenChange,
-  entity,
   ids,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  entity: Entity;
   ids: string[];
 }) {
   const qc = useQueryClient();

@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import { startFocusQueue } from "@/lib/focus-queue";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
-import { AddToProspectingDialog } from "@/components/prospecting/add-to-prospecting-dialog";
+
 import { useMyTools } from "@/lib/use-my-tools";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
@@ -129,7 +129,6 @@ function ContactsHubspotView() {
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
-  const [prospectingIds, setProspectingIds] = useState<string[] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   useAutoCreateParam(() => setCreateOpen(true));
 
@@ -653,14 +652,6 @@ function ContactsHubspotView() {
                 >
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7"
-                  onClick={() => setProspectingIds(Array.from(selectedIds))}
-                >
-                  <Play className="mr-1 h-3.5 w-3.5" /> Adicionar à prospecção
-                </Button>
                 {can("bulk_delete") && (
                   <Can permission="techsales.contacts.delete.workspace">
                     <Button
@@ -844,12 +835,6 @@ function ContactsHubspotView() {
         onDone={() => qc.invalidateQueries({ queryKey: ["contacts"] })}
       />
 
-      <AddToProspectingDialog
-        open={!!prospectingIds}
-        onOpenChange={(o) => !o && setProspectingIds(null)}
-        entity="contact"
-        ids={prospectingIds ?? []}
-      />
 
       <CreateContactDialog
         open={createOpen}
