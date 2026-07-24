@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
+import { AddToProspectingDialog } from "@/components/prospecting/add-to-prospecting-dialog";
 import { useMyTools } from "@/lib/use-my-tools";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
