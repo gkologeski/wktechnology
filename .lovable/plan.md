@@ -1,56 +1,54 @@
-## Problema
-
-Ao rolar horizontalmente com o trackpad dentro dos grids (Kanban e tabelas com rolagem horizontal), o gesto para a esquerda no fim/início da rolagem é interpretado pelo navegador como "voltar página" (swipe-back nativo do macOS/Chrome/Safari). Isso acontece porque os containers não isolam o overscroll horizontal, deixando o navegador tomar controle do gesto.
-
-## Solução
-
-Aplicar `overscroll-behavior-x: contain` nos containers com rolagem horizontal. Isso mantém o gesto do trackpad dentro do container e impede a navegação de histórico do navegador, sem alterar comportamento visual nem funcional.
+## Objetivo
+Trazer para **Prospecção → Fila** a mesma experiência de execução sequencial que existe em `/tasks/queues/:id/play`, adicionar link direto no nome do lead/contato e criar uma tela de trabalho focada com escolha de questionário, dados do lead, timeline e painel de qualificação.
 
 ## Escopo
 
-Alteração apenas de CSS/utilitários de apresentação. Nada de lógica, dados, RLS ou rotas.
+### 1. Ajustes na lista da fila (`src/components/prospecting/queue-tab.tsx`)
+- **`QueueWorkspace`**: adicionar botão **"Iniciar fila"** no cabeçalho, ao lado de "Excluir fila", que navega para a nova rota de play. Desabilitado quando a fila estiver vazia.
+- **`QueueItemRow`**:
+  - Remover o botão **"Abrir"** à direita.
+  - Transformar o **nome** em `<Link>` para `/leads/:id` ou `/contacts/:id` (mantém `detailHref` já calculado), com estilo `hover:underline`.
+  - Nenhuma outra alteração de layout/badges.
 
-### 1. `src/styles.css`
+### 2. Nova rota de execução: `src/routes/_authenticated/prospecting.queues.$queueId.play.tsx`
+Segue o padrão de `tasks.queues.$queueId.play.tsx` (mesma UX, mesmos atalhos), adaptado ao domínio de prospecção.
 
-Acrescentar `overscroll-behavior-x: contain` nas regras existentes do Kanban:
+Fluxo em dois estados:
 
-```css
-.kanban-top-scroll { overscroll-behavior-x: contain; ... }
-.kanban-content-scroll { overscroll-behavior-x: contain; scrollbar-width: none; }
-```
+**Estado A — Escolha do questionário** (renderizado enquanto `selectedQuestionnaireId` for null):
+- Carrega `listQuestionnaires` (server fn já existente) e mostra apenas os `enabled`.
+- Card central com `Select` dos questionários e botão **"Começar"**.
+- Se não houver questionário habilitado, `EmptyState` com CTA para `/prospecting?tab=questionnaires`.
 
-E adicionar uma classe utilitária global para reutilizar em tabelas:
+**Estado B — Workspace por item** (após seleção):
+- Header: nome da fila + `idx de total` + botão **Voltar** para `/prospecting?tab=fila`.
+- Coluna esquerda (dados do lead/contato, ~1/3):
+  - Nome (link para detalhe), e-mail, telefone, empresa (`company_name` para lead / `company.name` para contato quando disponível), status/lifecycle e score.
+  - Botões rápidos: **Ligar** (`tel:`), **Abrir registro** (`/leads/:id` ou `/contacts/:id`).
+- Coluna direita (~2/3), em duas seções empilhadas:
+  1. **Timeline de interações** — reutiliza `<ActivityTimeline entityType={entity} entityId={item.id} />` já existente.
+  2. **Qualificação** — reutiliza `<QualificationPanel entity={entity} entityId={item.id} />` com prop nova opcional `preselectedQuestionnaireId` para forçar o questionário escolhido no Estado A (default = permanece no primeiro habilitado, comportamento atual preservado).
+- Rodapé fixo: **Pular (S)** e **Próximo (N/→)**. `Concluir` não se aplica aqui — o próprio salvamento da qualificação no painel já persiste o estado. Atalhos de teclado idênticos ao Play de tasks (ignorar em `INPUT`/`TEXTAREA`).
+- Ao chegar no fim: card "Fila concluída" com link de volta.
 
-```css
-.h-scroll-contain { overscroll-behavior-x: contain; }
-```
+Sem novas mutations; a navegação entre itens é apenas index local (`useState`) sobre a lista carregada.
 
-### 2. Aplicar `overscroll-behavior-x: contain` (via classe Tailwind `overscroll-x-contain`) nos containers principais com rolagem horizontal de dados:
+### 3. Dados
+- Reutilizar `listQueueItems({ queue_id, limit: 500, offset: 0 })` (mesma server fn usada no `QueueWorkspace`) — sem alterações na server function.
+- Reutilizar `listQuestionnaires`.
+- Nenhuma migration. Nenhuma alteração de RLS.
 
-- `src/routes/_authenticated/(ats)/candidates.index.tsx` (tabela de candidatos)
-- `src/routes/_authenticated/(ats)/jobs.index.tsx` (tabela de vagas)
-- `src/routes/_authenticated/(ats)/jobs.$id.tsx` (linha rolável do detalhe da vaga)
-- `src/routes/_authenticated/reports.tsx` (tabela de relatórios)
-- `src/routes/_authenticated/settings.billing.tsx` (tabela de faturas)
-- `src/routes/_authenticated/settings.audit-log.tsx` (tabela do audit log)
-- `src/routes/_authenticated/settings.notifications.tsx` (tabela de notificações)
-- `src/components/projects/list-views.tsx` (lista rolável)
-- `src/components/hubspot/import-wizard.tsx` (preview tabular)
-- `src/components/stage-tracker.tsx` (trilho de estágios)
-- `src/components/activity-timeline.tsx` (linha de filtros/pills)
-- `src/routes/_authenticated/projects.lists.$id.tsx` (colunas de listas)
+### 4. Pequena extensão em `QualificationPanel`
+- Aceitar prop opcional `preselectedQuestionnaireId?: string | null`. Quando presente e válida, inicializa `selectedId` com esse valor e esconde o `Select` de questionário (o SDR já escolheu na tela anterior). Comportamento atual (sem a prop) permanece intacto para os demais usos.
 
-Containers que já são apenas barras de abas/tabs curtas (ex.: `entity-list.tsx`, `tasks.tsx`, `leads.tsx`) recebem o mesmo tratamento por consistência: o comportamento nativo do navegador se manifesta em qualquer container horizontal, mesmo que curto.
+## Fora de escopo
+- Nenhuma mudança em backend, RLS, schema, cadências ou scoring.
+- Nenhuma alteração em `/tasks/queues` (referência apenas).
+- Nenhum novo tipo de fila ou ordenação; a ordem é a mesma retornada por `listQueueItems`.
 
-## Validação manual
-
-1. Abrir uma lista com scroll horizontal (ex.: `/candidates`, `/reports`, ou o Kanban de deals).
-2. Rolar para a direita com o trackpad até o fim, depois rolar para a esquerda — a página não deve voltar no histórico.
-3. No começo do container, tentar puxar mais para a esquerda com o trackpad — o navegador não deve navegar para trás.
-4. Repetir em Chrome e Safari (macOS).
-
-## Fora do escopo
-
-- Rolagem vertical (não há relato de problema).
-- Redesign visual, scrollbars customizadas em novos componentes, novos comportamentos de teclado.
-- Qualquer alteração em RLS, server functions, dados ou lógica de negócio.
+## Como validar manualmente
+1. `/prospecting?tab=fila` → nome do lead abre a página do lead; não há mais botão "Abrir".
+2. Cabeçalho da fila mostra **Iniciar fila**; desabilitado se vazio.
+3. Ao clicar, abre a tela de escolha de questionário; depois de "Começar", entra no workspace.
+4. Cada item mostra dados básicos + timeline + painel de qualificação com o questionário escolhido.
+5. **S** pula, **N/→** avança; ao fim, aparece "Fila concluída".
