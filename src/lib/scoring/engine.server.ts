@@ -42,8 +42,16 @@ function evalCondition(c: Condition, after: AnyRow | null, before: AnyRow | null
             .map((s) => s.trim());
       return list.includes(v as never);
     }
-    case "contains":
-      return typeof v === "string" && v.toLowerCase().includes(String(c.value ?? "").toLowerCase());
+    case "contains": {
+      if (typeof v !== "string") return false;
+      const hay = v.toLowerCase();
+      const raw = String(c.value ?? "");
+      // Se o valor tem vírgulas, tratar como "contém qualquer" dos termos.
+      const terms = raw.includes(",")
+        ? raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
+        : [raw.toLowerCase()];
+      return terms.some((t) => t && hay.includes(t));
+    }
     case "gt":
       return typeof v === "number" && typeof c.value === "number" && v > c.value;
     case "lt":
