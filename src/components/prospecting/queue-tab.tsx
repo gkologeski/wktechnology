@@ -185,15 +185,17 @@ function QueueWorkspace({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button asChild size="sm" disabled={!hasItems}>
-            <Link
-              to="/prospecting/queues/$queueId/play"
-              params={{ queueId }}
-              disabled={!hasItems}
-            >
+          {hasItems ? (
+            <Button asChild size="sm">
+              <Link to="/prospecting/queues/$queueId/play" params={{ queueId }}>
+                <Play className="w-4 h-4 mr-1" /> Iniciar fila
+              </Link>
+            </Button>
+          ) : (
+            <Button size="sm" disabled>
               <Play className="w-4 h-4 mr-1" /> Iniciar fila
-            </Link>
-          </Button>
+            </Button>
+          )}
           <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
             <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
           </Button>
