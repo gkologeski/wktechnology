@@ -132,18 +132,20 @@ export function QuestionnairesTab() {
                   <p className="text-xs text-muted-foreground line-clamp-2">{q.description}</p>
                 ) : null}
               </CardHeader>
-              <CardContent className="pt-0 flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">
+              <CardContent className="pt-0 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="text-xs text-muted-foreground min-w-0">
                   Corte: <span className="font-medium text-foreground">{q.pass_threshold}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center justify-end gap-1">
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setViewingId(q.id)}
                     aria-label="Visualizar"
+                    title="Visualizar"
                   >
-                    <Eye className="w-4 h-4 mr-1" /> Visualizar
+                    <Eye className="w-4 h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Visualizar</span>
                   </Button>
                   <Button
                     size="sm"
@@ -151,8 +153,10 @@ export function QuestionnairesTab() {
                     disabled={duplicateMut.isPending}
                     onClick={() => duplicateMut.mutate(q.id)}
                     aria-label="Duplicar"
+                    title="Duplicar"
                   >
-                    <Copy className="w-4 h-4 mr-1" /> Duplicar
+                    <Copy className="w-4 h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Duplicar</span>
                   </Button>
                 </div>
               </CardContent>
