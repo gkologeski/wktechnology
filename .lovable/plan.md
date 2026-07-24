@@ -1,29 +1,30 @@
-## Problema
+## Objetivo
 
-Ao qualificar o lead na fila (`/prospecting/queues/$queueId/play`), o `CreateDealFromLeadDialog` abre corretamente, mas a tela não avança após a criação do negócio. Nas outras decisões (desqualificar / nutrição), também não há avanço automático.
+Criar em `/prospecting → Questionários` os três modelos prontos (MEDDIC, CHAMP e GPCT) para o workspace atual, reutilizando os templates já definidos em `src/lib/prospecting/questionnaires.functions.ts` (`FRAMEWORK_TEMPLATES`).
 
-## Regra de avanço
+## Contexto verificado
 
-Avançar para o próximo lead **somente** quando houver ação efetiva sobre o lead atual:
+- A UI da aba Questionários já expõe um seletor "Criar a partir de..." que chama a server function `seedFramework` — uma opção é apenas clicar 3 vezes ali. O pedido, porém, é que os modelos já apareçam prontos.
+- Os templates BANT/MEDDIC/CHAMP/GPCT existem no código com perguntas, pesos, opções e `pass_threshold` (linhas ~224–352 de `questionnaires.functions.ts`).
+- As tabelas `prospecting_questionnaires` e `prospecting_questions` exigem `owner_id` (RLS impõe `owner_id = auth.uid()` no INSERT).
 
-- **Qualificar**: avança apenas se o negócio for realmente criado no `CreateDealFromLeadDialog` (`onCreated` disparado). Se o modal for fechado/cancelado sem criar negócio, permanece no mesmo lead.
-- **Desqualificar**: avança após confirmação com motivo obrigatório.
-- **Enviar para nutrição**: avança após confirmação.
+## Plano
 
-## Mudança
+1. Identificar o `owner_id` do usuário atual (dono do workspace ativo em `/prospecting`) via `supabase--read_query` em `profiles` / `workspace_members`, para confirmar quem receberá os questionários.
+2. Rodar um `supabase--insert` único que, em uma transação:
+   - Insere 3 linhas em `prospecting_questionnaires` (MEDDIC, CHAMP, GPCT) com `framework`, `name`, `description`, `pass_threshold`, `enabled = true` e `owner_id` = usuário identificado, usando `ON CONFLICT DO NOTHING` por `(owner_id, framework, name)` quando houver constraint — caso não haja, um `WHERE NOT EXISTS` evita duplicar caso o usuário já tenha semeado.
+   - Insere as respectivas perguntas em `prospecting_questions` com `position`, `label`, `type`, `options` (JSON), `weight` e `required` idênticos aos definidos em `FRAMEWORK_TEMPLATES`.
+3. Validar via `supabase--read_query` que os 3 questionários aparecem com o número correto de perguntas (MEDDIC=6, CHAMP=4, GPCT=4).
 
-Arquivo único: `src/routes/_authenticated/prospecting.queues.$queueId.play.tsx`.
+## Fora do escopo
 
-- Passar `onDecided` para `<QualificationPanel>` executando `setIdx((i) => Math.min(i + 1, total))`.
-- O `QualificationPanel` já dispara `onDecided("qualified")` apenas dentro de `onDealCreated`, que é chamado exclusivamente após criação bem-sucedida do negócio (fechar/cancelar o dialog não chama). Portanto o comportamento pedido já é garantido pelo callback do dialog — basta plugá-lo.
+- Nenhuma alteração de UI, RLS, schema ou lógica de negócio.
+- BANT (o usuário não pediu; preservamos qualquer BANT já criado).
 
 ## Como validar
 
-1. Abrir `/prospecting/queues/:id/play` com múltiplos leads.
-2. Clicar em "Qualificar", **fechar** o modal sem criar negócio → deve permanecer no mesmo lead.
-3. Clicar em "Qualificar" novamente e **concluir** a criação do negócio → deve avançar para o próximo lead.
-4. "Desqualificar" (com motivo) e "Enviar para nutrição" → também avançam.
+Abrir `/prospecting?tab=questionarios` e conferir os 3 novos cards (MEDDIC, CHAMP, GPCT). Abrir cada um pelo lápis e verificar as perguntas listadas.
 
-## Fora de escopo
+## Pergunta antes de executar
 
-- Nenhuma alteração em `QualificationPanel`, `CreateDealFromLeadDialog`, RLS, schema ou lógica de negócio.
+Confirma que o alvo é o seu usuário/workspace atual (o mesmo em que você está logado agora no preview)? Se quiser semear para todos os workspaces ou para um workspace específico, me diga qual.
