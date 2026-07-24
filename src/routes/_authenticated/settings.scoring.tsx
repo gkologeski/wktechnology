@@ -188,7 +188,9 @@ export function ScoringPage() {
     setRunning(true);
     try {
       const r = await tickFn();
-      toast.success(`Tick concluído: ${r.applied} aplicações em ${r.events} eventos`);
+      toast.success(
+        `Tick concluído: ${r.applied} aplicações em ${r.scanned} registros (${r.skipped} já pontuados)`,
+      );
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro");
