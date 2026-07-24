@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, SkipForward, ArrowRight, Phone, Mail, Play, ListChecks } from "lucide-react";
+import { ArrowLeft, SkipForward, ArrowRight, Phone, Mail, Play, ListChecks, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,10 +17,38 @@ import { ActivityTimeline } from "@/components/activity-timeline";
 import { QualificationPanel } from "@/components/prospecting/qualification-panel";
 import { listQueues, listQueueItems } from "@/lib/prospecting/queues.functions";
 import { listQuestionnaires } from "@/lib/prospecting/questionnaires.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 export const Route = createFileRoute("/_authenticated/prospecting/queues/$queueId/play")({
-  component: PlayProspectingQueue,
+  component: PlayProspectingQueueGuarded,
 });
+
+function PlayProspectingQueueGuarded() {
+  const { can, isLoading } = usePermissions();
+  if (isLoading) return null;
+  if (!can("techsales.prospecting.queue.view")) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <ShieldOff className="h-8 w-8 text-muted-foreground" />
+            <div className="space-y-1">
+              <p className="font-medium">Sem acesso à Fila de prospecção</p>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Você não tem permissão para executar filas de prospecção. Solicite ao administrador
+                em Configurações → Controle de acesso → Permissões.
+              </p>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/prospecting">Voltar</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  return <PlayProspectingQueue />;
+}
 
 const LEAD_STATUS_LABELS: Record<string, string> = {
   new: "Novo",

@@ -1,33 +1,61 @@
-## Problema
-1. Na aba **Questionários** da Prospecção, os cards dos modelos (BANT, MEDDIC, CHAMP, GPCT) exibem os botões **Visualizar** e **Duplicar** em uma única linha ao lado do texto "Corte: X". Quando a janela é reduzida, esses botões excedem a largura do card e são cortados pela borda, conforme screenshot.
-2. Ao editar um questionário no `QuestionnaireEditorSheet`, o usuário não consegue alterar o nome do questionário — apenas as perguntas e o toggle "Ativo" são editáveis.
+## Como está hoje
 
-## Diagnóstico
-- `src/components/prospecting/questionnaires-tab.tsx` renderiza os cards de modelo com `CardContent` usando `flex items-center justify-between`, sem quebra de linha responsiva.
-- O editor (`QuestionnaireEditorSheet`) carrega `data.questionnaire.name` no título da Sheet, mas não expõe um campo editável para o nome.
-- A server function `upsertQuestionnaire` já aceita `name`, portanto basta adicionar o campo na UI e enviá-lo no payload de atualização.
+`src/routes/_authenticated/prospecting.index.tsx` renderiza uma `TabsList` fixa com 9 abas (Fila, Questionários, Cadências, Scoring, Playbooks, Enrichment, Busca de prospects, Scripts, Voice Agent). Não há filtro por permissão: qualquer usuário autenticado no workspace enxerga todas as abas e pode abrir qualquer conteúdo. Já existe infraestrutura de RBAC (`usePermissions`, `<Can>`, tabela `permissions` + `has_role`), mas nenhuma chave de permissão foi criada para o módulo de prospecção — por isso hoje é "tudo ou nada".
 
-## Plano de correção
+## O que sugiro
 
-### 1. Responsividade dos cards de modelo
-- Alterar o `CardContent` dos cards de modelo para empilhar verticalmente o bloco de informações (Corte) e as ações em telas pequenas (`flex-col sm:flex-row`).
-- Permitir quebra de linha nos botões de ação (`flex-wrap`) e usar `gap-2` consistente.
-- Garantir `min-w-0` e `truncate` no texto para evitar expansão forçada.
-- Em telas pequenas, exibir os botões de modelo como icon-only com `aria-label` e tooltip, mantendo texto completo em telas maiores.
-- Aplicar o mesmo cuidado responsivo na seção "Meus questionários" se necessário.
+Amarrar cada aba a uma permission key do módulo `techsales` e renderizar somente as abas que o usuário tem acesso, com fallback quando ele não tem nenhuma.
 
-### 2. Edição do nome do questionário
-- Adicionar um campo "Nome" editável no topo do `QuestionnaireEditorSheet`, logo abaixo do cabeçalho.
-- Manter o estado local do nome e atualizá-lo via `upsertQuestionnaire` ao perder foco (`onBlur`) ou com um botão explícito "Salvar nome".
-- Garantir que o título da Sheet reflita o nome atualizado após salvar.
-- Ajustar o payload de `toggleEnabled` para incluir o `name` atual, evitando sobrescrever o nome com valor vazio.
+### 1. Chaves de permissão (migration)
 
-## Escopo
-- Ajustes de layout/CSS no componente `src/components/prospecting/questionnaires-tab.tsx`.
-- Adição de campo editável de nome no `QuestionnaireEditorSheet`.
-- Nenhuma mudança em server functions, banco de dados, RLS ou comportamento funcional além da edição do nome.
+Inserir em `public.permissions` (module `techsales`), uma por aba, escopo `workspace`:
+
+```text
+techsales.prospecting.queue.view       → Fila
+techsales.prospecting.questionnaires.view → Questionários
+techsales.prospecting.cadences.view    → Cadências
+techsales.prospecting.scoring.view     → Scoring
+techsales.prospecting.playbooks.view   → Playbooks
+techsales.prospecting.enrichment.view  → Enrichment
+techsales.prospecting.search.view      → Busca de prospects
+techsales.prospecting.scripts.view     → Scripts
+techsales.prospecting.voice.view       → Voice Agent
+```
+
+Seed: conceder as 9 chaves ao access profile "admin" do workspace; conceder o subconjunto operacional (fila, questionários, cadências, scripts, playbooks) ao perfil "member/SDR". Perfis podem ser ajustados depois em `/settings/permissions`.
+
+### 2. UI — filtrar abas em `prospecting.index.tsx`
+
+- Ler `usePermissions()`.
+- Definir array `TABS = [{ value, label, permission, Component }, …]`.
+- `visibleTabs = TABS.filter(t => can(t.permission))`.
+- Renderizar `TabsList` e `TabsContent` a partir de `visibleTabs`.
+- Corrigir a aba ativa: se `search.tab` não estiver em `visibleTabs`, redirecionar (`navigate replace`) para a primeira visível.
+- Se `visibleTabs.length === 0`, renderizar `EmptyState` "Sem acesso à prospecção" no lugar das tabs.
+- Enquanto `isLoading` das permissões, mostrar `LoadingSkeleton` no header das tabs (evita flash de todas as abas).
+
+### 3. Rota de execução da fila
+
+`prospecting.queues.$queueId.play.tsx` também deve exigir `techsales.prospecting.queue.view` no componente (redirect para `/prospecting` com toast quando negado). Mantém o menu lateral coerente com a rota direta.
+
+### 4. Item do sidebar
+
+Onde o link "Prospecção" aparece no sidebar, envolver com `<Can any={[...9 chaves]}>` para ocultar o item inteiro quando o usuário não tem nenhuma das abas.
 
 ## Fora do escopo
-- Alterações na lógica de duplicação ou visualização.
-- Novas funcionalidades de prospecção.
-- Refatoração do editor de perguntas.
+
+- Não altero as server functions das abas (cada uma já valida owner/RLS). A permissão aqui é para a UI; a segurança de dados continua nas RLS existentes. Se quiser hardening server-side de cada função, faço em uma fase separada.
+- Não mexo em `/settings/scoring`, `/settings/playbooks`, `/settings/enrichment`, `/settings/prospecting`, `/settings/prospecting-scripts`, `/settings/voice-agent` (rotas legadas continuam existindo).
+
+## Arquivos afetados
+
+- `supabase/migrations/<timestamp>_prospecting_permissions.sql` (novo) — insere as 9 keys e concede aos access profiles padrão.
+- `src/routes/_authenticated/prospecting.index.tsx` — filtro por permissão + fallback + normalização da aba ativa.
+- `src/routes/_authenticated/prospecting.queues.$queueId.play.tsx` — guard de `queue.view`.
+- Componente do sidebar que lista "Prospecção" (identifico no build; provavelmente `src/components/layout/*`).
+
+## Validação manual
+
+1. Como admin: ver as 9 abas.
+2. Como usuário sem permissão de scoring/voice: essas abas somem; `?tab=scoring` redireciona para "fila".
+3. Como usuário sem nenhuma permissão de prospecção: item some do sidebar; acessar `/prospecting` direto mostra EmptyState.
