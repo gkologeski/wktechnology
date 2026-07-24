@@ -434,12 +434,30 @@ function QuestionnaireEditorSheet({
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const saveName = useMutation({
+    mutationFn: (nextName: string) =>
+      upsertMeta({
+        data: {
+          id,
+          name: nextName,
+          framework: data!.questionnaire.framework as Framework,
+          enabled: data!.questionnaire.enabled,
+          pass_threshold: data!.questionnaire.pass_threshold,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Nome atualizado.");
+      invalidate();
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   const toggleEnabled = useMutation({
     mutationFn: (enabled: boolean) =>
       upsertMeta({
         data: {
           id,
-          name: data!.questionnaire.name,
+          name,
           framework: data!.questionnaire.framework as Framework,
           enabled,
           pass_threshold: data!.questionnaire.pass_threshold,
