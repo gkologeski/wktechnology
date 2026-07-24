@@ -196,8 +196,8 @@ export function QuestionnairesTab() {
                   <p className="text-xs text-muted-foreground line-clamp-2">{q.description}</p>
                 ) : null}
               </CardHeader>
-              <CardContent className="pt-0 flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">
+              <CardContent className="pt-0 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="text-xs text-muted-foreground min-w-0">
                   Corte: <span className="font-medium text-foreground">{q.pass_threshold}</span>
                   {q.enabled ? null : (
                     <Badge variant="secondary" className="ml-2 text-[10px]">
@@ -205,12 +205,13 @@ export function QuestionnairesTab() {
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center justify-end gap-1">
                   <Button
                     size="icon"
                     variant="ghost"
                     onClick={() => setEditingId(q.id)}
                     aria-label="Editar"
+                    title="Editar"
                   >
                     <Pencil className="w-4 h-4" />
                   </Button>
@@ -220,6 +221,7 @@ export function QuestionnairesTab() {
                     onClick={() => duplicateMut.mutate(q.id)}
                     disabled={duplicateMut.isPending}
                     aria-label="Duplicar"
+                    title="Duplicar"
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
@@ -230,6 +232,7 @@ export function QuestionnairesTab() {
                       if (confirm(`Excluir "${q.name}"?`)) delMut.mutate(q.id);
                     }}
                     aria-label="Excluir"
+                    title="Excluir"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
