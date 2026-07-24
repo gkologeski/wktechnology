@@ -613,26 +613,28 @@ function QuestionRow({
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">Peso: {question.weight}</p>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => setExpanded((v) => !v)}
-            aria-label="Editar"
-          >
-            <Pencil className="w-4 h-4" />
-          </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => {
-              if (confirm("Excluir esta pergunta?")) del.mutate();
-            }}
-            aria-label="Excluir"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-        </div>
+        {readOnly ? null : (
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => setExpanded((v) => !v)}
+              aria-label="Editar"
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={() => {
+                if (confirm("Excluir esta pergunta?")) del.mutate();
+              }}
+              aria-label="Excluir"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {expanded ? (
