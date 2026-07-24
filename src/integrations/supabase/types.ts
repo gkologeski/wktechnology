@@ -18258,7 +18258,12 @@ export type Database = {
       job_entity: "lead" | "contact" | "company" | "deal"
       job_kind: "import" | "enrich" | "export" | "sync"
       job_status: "queued" | "running" | "done" | "failed" | "partial"
-      lead_status: "new" | "contacted" | "qualified" | "disqualified"
+      lead_status:
+        | "new"
+        | "contacted"
+        | "qualified"
+        | "disqualified"
+        | "nurturing"
       people_doc_status: "valid" | "expiring" | "expired" | "missing"
       people_employment_type: "pj" | "clt" | "contractor" | "intern" | "other"
       people_status:
@@ -18558,7 +18563,13 @@ export const Constants = {
       job_entity: ["lead", "contact", "company", "deal"],
       job_kind: ["import", "enrich", "export", "sync"],
       job_status: ["queued", "running", "done", "failed", "partial"],
-      lead_status: ["new", "contacted", "qualified", "disqualified"],
+      lead_status: [
+        "new",
+        "contacted",
+        "qualified",
+        "disqualified",
+        "nurturing",
+      ],
       people_doc_status: ["valid", "expiring", "expired", "missing"],
       people_employment_type: ["pj", "clt", "contractor", "intern", "other"],
       people_status: [
