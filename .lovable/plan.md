@@ -1,37 +1,33 @@
-## Objetivo
-Transformar os questionários base (BANT/MEDDIC/CHAMP/GPCT) em **modelos read-only** e adicionar ação de **Duplicar** para que o usuário trabalhe sobre uma cópia editável.
+## Problema
+1. Na aba **Questionários** da Prospecção, os cards dos modelos (BANT, MEDDIC, CHAMP, GPCT) exibem os botões **Visualizar** e **Duplicar** em uma única linha ao lado do texto "Corte: X". Quando a janela é reduzida, esses botões excedem a largura do card e são cortados pela borda, conforme screenshot.
+2. Ao editar um questionário no `QuestionnaireEditorSheet`, o usuário não consegue alterar o nome do questionário — apenas as perguntas e o toggle "Ativo" são editáveis.
 
-## Comportamento
+## Diagnóstico
+- `src/components/prospecting/questionnaires-tab.tsx` renderiza os cards de modelo com `CardContent` usando `flex items-center justify-between`, sem quebra de linha responsiva.
+- O editor (`QuestionnaireEditorSheet`) carrega `data.questionnaire.name` no título da Sheet, mas não expõe um campo editável para o nome.
+- A server function `upsertQuestionnaire` já aceita `name`, portanto basta adicionar o campo na UI e enviá-lo no payload de atualização.
 
-- Modelos aparecem em uma seção separada "Modelos" com badge "Modelo".
-- Nos modelos, o usuário só pode **Visualizar** e **Duplicar** — sem editar, sem excluir, sem adicionar/remover perguntas, sem toggle "Ativo".
-- Duplicar cria um novo questionário editável do usuário (com sufixo "(cópia)") + clona todas as perguntas.
-- Os questionários "do usuário" mantêm o comportamento atual (editar, excluir, ativar/desativar).
-- O botão "Criar a partir de..." atual passa a ter função equivalente a "Duplicar modelo" (mantém a experiência de partir de um framework pronto).
+## Plano de correção
 
-## Mudanças
+### 1. Responsividade dos cards de modelo
+- Alterar o `CardContent` dos cards de modelo para empilhar verticalmente o bloco de informações (Corte) e as ações em telas pequenas (`flex-col sm:flex-row`).
+- Permitir quebra de linha nos botões de ação (`flex-wrap`) e usar `gap-2` consistente.
+- Garantir `min-w-0` e `truncate` no texto para evitar expansão forçada.
+- Em telas pequenas, exibir os botões de modelo como icon-only com `aria-label` e tooltip, mantendo texto completo em telas maiores.
+- Aplicar o mesmo cuidado responsivo na seção "Meus questionários" se necessário.
 
-**1. Banco (migration)**
-- Adicionar coluna `is_template boolean NOT NULL DEFAULT false` em `prospecting_questionnaires`.
-- Marcar os questionários seed atuais (BANT/MEDDIC/CHAMP/GPCT já criados no workspace) como `is_template = true`.
-- Ajustar RLS: bloquear `UPDATE`/`DELETE` quando `is_template = true` (policies com `WITH CHECK NOT is_template` e `USING NOT is_template` para write/delete; SELECT continua liberado). Análogo para `prospecting_questions` via join no questionário.
+### 2. Edição do nome do questionário
+- Adicionar um campo "Nome" editável no topo do `QuestionnaireEditorSheet`, logo abaixo do cabeçalho.
+- Manter o estado local do nome e atualizá-lo via `upsertQuestionnaire` ao perder foco (`onBlur`) ou com um botão explícito "Salvar nome".
+- Garantir que o título da Sheet reflita o nome atualizado após salvar.
+- Ajustar o payload de `toggleEnabled` para incluir o `name` atual, evitando sobrescrever o nome com valor vazio.
 
-**2. Server functions (`src/lib/prospecting/questionnaires.functions.ts`)**
-- `listQuestionnaires`: incluir `is_template` no select.
-- `upsertQuestionnaire` (update) e `deleteQuestionnaire`: rejeitar se `is_template = true`.
-- `upsertQuestion` / `deleteQuestion`: validar via join que o questionário não é modelo.
-- Nova `duplicateQuestionnaire({ id })`: clona o questionário (força `is_template=false`, `framework='custom'` ou mantém framework mas sem flag) + copia todas as perguntas preservando ordem/pesos/opções.
-- `seedFramework`: manter, mas agora atua como "duplicar do modelo padrão" (nunca marca como template).
-
-**3. UI (`src/components/prospecting/questionnaires-tab.tsx`)**
-- Separar em duas seções: **Modelos** (grid dos `is_template=true`) e **Meus questionários** (grid dos demais).
-- Card do modelo: sem ícones de editar/excluir; apenas botão "Duplicar" (chama `duplicateQuestionnaire`) e "Visualizar" (abre um Sheet somente-leitura reutilizando o editor com `readOnly=true`).
-- `QuestionnaireEditorSheet` recebe prop `readOnly` para desabilitar inputs, toggles, botões de adicionar/remover e o `QuestionRow`.
-- Card dos "Meus questionários": adicionar botão "Duplicar" ao lado de Editar/Excluir.
-
-**4. Seed inicial**
-- Migration marca como modelo os questionários existentes cujo `framework != 'custom'` e cujo nome bate com os templates padrão, para não afetar customizações do usuário que possam ter framework preenchido.
+## Escopo
+- Ajustes de layout/CSS no componente `src/components/prospecting/questionnaires-tab.tsx`.
+- Adição de campo editável de nome no `QuestionnaireEditorSheet`.
+- Nenhuma mudança em server functions, banco de dados, RLS ou comportamento funcional além da edição do nome.
 
 ## Fora do escopo
-- Modelos globais compartilhados entre workspaces (permanecem por workspace).
-- Alterações no `QualificationPanel` (usa `listQuestionnaires` filtrando por `enabled`, continuará funcional; modelos ficam com `enabled=false` por padrão para não poluir a fila).
+- Alterações na lógica de duplicação ou visualização.
+- Novas funcionalidades de prospecção.
+- Refatoração do editor de perguntas.

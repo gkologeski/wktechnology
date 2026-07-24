@@ -2,7 +2,7 @@
  * Editor de questionários de qualificação (BANT/MEDDIC/CHAMP/GPCT/custom).
  * Aba "Questionários" da Suíte de Prospecção.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -132,18 +132,20 @@ export function QuestionnairesTab() {
                   <p className="text-xs text-muted-foreground line-clamp-2">{q.description}</p>
                 ) : null}
               </CardHeader>
-              <CardContent className="pt-0 flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">
+              <CardContent className="pt-0 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="text-xs text-muted-foreground min-w-0">
                   Corte: <span className="font-medium text-foreground">{q.pass_threshold}</span>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center justify-end gap-1">
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setViewingId(q.id)}
                     aria-label="Visualizar"
+                    title="Visualizar"
                   >
-                    <Eye className="w-4 h-4 mr-1" /> Visualizar
+                    <Eye className="w-4 h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Visualizar</span>
                   </Button>
                   <Button
                     size="sm"
@@ -151,8 +153,10 @@ export function QuestionnairesTab() {
                     disabled={duplicateMut.isPending}
                     onClick={() => duplicateMut.mutate(q.id)}
                     aria-label="Duplicar"
+                    title="Duplicar"
                   >
-                    <Copy className="w-4 h-4 mr-1" /> Duplicar
+                    <Copy className="w-4 h-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Duplicar</span>
                   </Button>
                 </div>
               </CardContent>
@@ -192,8 +196,8 @@ export function QuestionnairesTab() {
                   <p className="text-xs text-muted-foreground line-clamp-2">{q.description}</p>
                 ) : null}
               </CardHeader>
-              <CardContent className="pt-0 flex items-center justify-between">
-                <div className="text-xs text-muted-foreground">
+              <CardContent className="pt-0 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
+                <div className="text-xs text-muted-foreground min-w-0">
                   Corte: <span className="font-medium text-foreground">{q.pass_threshold}</span>
                   {q.enabled ? null : (
                     <Badge variant="secondary" className="ml-2 text-[10px]">
@@ -201,12 +205,13 @@ export function QuestionnairesTab() {
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex flex-wrap items-center justify-end gap-1">
                   <Button
                     size="icon"
                     variant="ghost"
                     onClick={() => setEditingId(q.id)}
                     aria-label="Editar"
+                    title="Editar"
                   >
                     <Pencil className="w-4 h-4" />
                   </Button>
@@ -216,6 +221,7 @@ export function QuestionnairesTab() {
                     onClick={() => duplicateMut.mutate(q.id)}
                     disabled={duplicateMut.isPending}
                     aria-label="Duplicar"
+                    title="Duplicar"
                   >
                     <Copy className="w-4 h-4" />
                   </Button>
@@ -226,6 +232,7 @@ export function QuestionnairesTab() {
                       if (confirm(`Excluir "${q.name}"?`)) delMut.mutate(q.id);
                     }}
                     aria-label="Excluir"
+                    title="Excluir"
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -386,6 +393,11 @@ function QuestionnaireEditorSheet({
 
   const [addingLabel, setAddingLabel] = useState("");
   const [addingType, setAddingType] = useState<QuestionType>("single");
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    if (data?.questionnaire.name) setName(data.questionnaire.name);
+  }, [data?.questionnaire.name]);
 
   const invalidate = () => {
     refetch();
@@ -422,12 +434,30 @@ function QuestionnaireEditorSheet({
     onError: (e) => toast.error((e as Error).message),
   });
 
+  const saveName = useMutation({
+    mutationFn: (nextName: string) =>
+      upsertMeta({
+        data: {
+          id,
+          name: nextName,
+          framework: data!.questionnaire.framework as Framework,
+          enabled: data!.questionnaire.enabled,
+          pass_threshold: data!.questionnaire.pass_threshold,
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Nome atualizado.");
+      invalidate();
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+
   const toggleEnabled = useMutation({
     mutationFn: (enabled: boolean) =>
       upsertMeta({
         data: {
           id,
-          name: data!.questionnaire.name,
+          name,
           framework: data!.questionnaire.framework as Framework,
           enabled,
           pass_threshold: data!.questionnaire.pass_threshold,
@@ -451,6 +481,19 @@ function QuestionnaireEditorSheet({
           <div className="text-sm text-muted-foreground mt-4">Carregando...</div>
         ) : (
           <div className="space-y-6 mt-4">
+            {readOnly ? null : (
+              <div className="space-y-1">
+                <Label>Nome</Label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onBlur={() => {
+                    if (name && name !== data.questionnaire.name) saveName.mutate(name);
+                  }}
+                  disabled={saveName.isPending}
+                />
+              </div>
+            )}
             {readOnly ? null : (
               <div className="flex items-center justify-between rounded-md border p-3 bg-muted/30">
                 <div>
