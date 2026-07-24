@@ -238,6 +238,12 @@ export const listQueueItems = createServerFn({ method: "POST" })
         { count: "exact" },
       );
 
+    if ((queue as { kind?: string }).kind === "manual") {
+      const ids = (((queue as { item_ids?: string[] }).item_ids) ?? []) as string[];
+      if (ids.length === 0) return { items: [], total: 0, entity: queue.entity };
+      query = query.in("id", ids);
+    } else {
+
     if (Array.isArray(filters.status) && filters.status.length > 0) {
       query = query.in("status", filters.status as string[]);
     }
