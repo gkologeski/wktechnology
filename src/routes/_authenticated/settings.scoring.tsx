@@ -390,3 +390,119 @@ export function ScoringPage() {
     </div>
   );
 }
+
+function ConditionSection({
+  draft,
+  setDraft,
+}: {
+  draft: Draft;
+  setDraft: (d: Draft) => void;
+}) {
+  const fields = useEntityFieldOptions(draft.entity);
+  const selected = fields.find((f) => f.name === draft.condition.field);
+  const options = selected?.options;
+  const type = selected?.type;
+  const needsValue = NEEDS_VALUE[draft.condition.op];
+
+  return (
+    <section className="rounded-md border p-3 space-y-3">
+      <h3 className="text-sm font-semibold">Condição</h3>
+      <div className="grid grid-cols-[1fr_180px] gap-2">
+        <div>
+          <Label>Campo</Label>
+          <Select
+            value={draft.condition.field}
+            onValueChange={(v) =>
+              setDraft({
+                ...draft,
+                // Reset value when switching field to avoid stale types
+                condition: { ...draft.condition, field: v, value: "" },
+              })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecionar propriedade" />
+            </SelectTrigger>
+            <SelectContent className="max-h-72">
+              {fields.length === 0 ? (
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                  Carregando campos…
+                </div>
+              ) : (
+                fields.map((f) => (
+                  <SelectItem key={f.name} value={f.name}>
+                    {f.label}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Operador</Label>
+          <Select
+            value={draft.condition.op}
+            onValueChange={(v) =>
+              setDraft({ ...draft, condition: { ...draft.condition, op: v as Op } })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(OP_LABEL) as Op[]).map((op) => (
+                <SelectItem key={op} value={op}>
+                  {OP_LABEL[op]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {needsValue && (
+        <div>
+          <Label>Valor</Label>
+          {options && options.length > 0 ? (
+            <Select
+              value={String(draft.condition.value ?? "")}
+              onValueChange={(v) =>
+                setDraft({ ...draft, condition: { ...draft.condition, value: v } })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecionar valor" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72">
+                {options.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              type={type === "number" ? "number" : type === "date" ? "date" : "text"}
+              value={String(draft.condition.value ?? "")}
+              onChange={(e) => {
+                const raw = e.target.value;
+                const coerced: string | number =
+                  type === "number" && raw !== "" && !Number.isNaN(Number(raw))
+                    ? Number(raw)
+                    : raw;
+                setDraft({
+                  ...draft,
+                  condition: { ...draft.condition, value: coerced },
+                });
+              }}
+              placeholder="valor"
+            />
+          )}
+          <p className="text-xs text-muted-foreground mt-1">
+            Para "está em (lista)" use valores separados por vírgula.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
