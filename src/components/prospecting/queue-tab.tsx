@@ -254,7 +254,13 @@ function QueueItemRow({
     <div className="flex items-center justify-between py-3 gap-3">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium truncate">{name}</span>
+          <Link
+            to={entity === "lead" ? "/leads/$id" : "/contacts/$id"}
+            params={{ id }}
+            className="text-sm font-medium truncate hover:underline"
+          >
+            {name}
+          </Link>
           {statusRaw ? (
             <Badge variant="outline" className="text-[10px]">
               {statusLabel(entity, statusRaw)}
@@ -269,11 +275,6 @@ function QueueItemRow({
         {email ? (
           <p className="text-xs text-muted-foreground truncate">{email}</p>
         ) : null}
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <Button asChild variant="outline" size="sm">
-          <Link to={detailHref}>Abrir</Link>
-        </Button>
       </div>
     </div>
   );
