@@ -269,11 +269,11 @@ export const listQueueItems = createServerFn({ method: "POST" })
     if (typeof filters.updated_after === "string") {
       query = query.gte("updated_at", filters.updated_after);
     }
-
     const sortField = sort.field ?? "updated_at";
     const sortDir = sort.dir ?? "desc";
     query = query.order(sortField, { ascending: sortDir === "asc" });
     query = query.range(data.offset, data.offset + data.limit - 1);
+    }
 
     const { data: rows, error, count } = await query;
     if (error) throw new Error(error.message);
