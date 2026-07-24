@@ -162,18 +162,20 @@ export function QualificationPanel({
               <span className="text-xs text-muted-foreground ml-1">/ corte {threshold}</span>
             </p>
           </div>
-          <Select value={activeId ?? ""} onValueChange={setSelectedId}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Selecionar" />
-            </SelectTrigger>
-            <SelectContent>
-              {enabled.map((q) => (
-                <SelectItem key={q.id} value={q.id}>
-                  {q.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {preselectedQuestionnaireId ? null : (
+            <Select value={activeId ?? ""} onValueChange={setSelectedId}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                {enabled.map((q) => (
+                  <SelectItem key={q.id} value={q.id}>
+                    {q.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
