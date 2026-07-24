@@ -2,7 +2,7 @@
  * Editor de questionários de qualificação (BANT/MEDDIC/CHAMP/GPCT/custom).
  * Aba "Questionários" da Suíte de Prospecção.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
