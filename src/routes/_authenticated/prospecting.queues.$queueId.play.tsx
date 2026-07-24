@@ -64,7 +64,7 @@ function PlayProspectingQueue() {
   });
   const itemsQ = useQuery({
     queryKey: ["prospecting", "queue-items", queueId, "play"],
-    queryFn: () => listItemsFn({ data: { queue_id: queueId, limit: 500, offset: 0 } }),
+    queryFn: () => listItemsFn({ data: { queue_id: queueId, limit: 200, offset: 0 } }),
   });
   const questionnairesQ = useQuery({
     queryKey: ["prospecting", "questionnaires"],
