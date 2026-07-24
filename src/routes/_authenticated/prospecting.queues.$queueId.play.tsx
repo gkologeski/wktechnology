@@ -337,6 +337,7 @@ function PlayProspectingQueue() {
             entity={entity}
             entityId={id}
             preselectedQuestionnaireId={questionnaireId}
+            onDecided={() => setIdx((i) => Math.min(i + 1, total))}
           />
           <Card>
             <CardHeader>
