@@ -13018,6 +13018,7 @@ export type Database = {
           enabled: boolean
           framework: string
           id: string
+          is_template: boolean
           name: string
           owner_id: string
           pass_threshold: number
@@ -13031,6 +13032,7 @@ export type Database = {
           enabled?: boolean
           framework?: string
           id?: string
+          is_template?: boolean
           name: string
           owner_id: string
           pass_threshold?: number
@@ -13044,6 +13046,7 @@ export type Database = {
           enabled?: boolean
           framework?: string
           id?: string
+          is_template?: boolean
           name?: string
           owner_id?: string
           pass_threshold?: number
