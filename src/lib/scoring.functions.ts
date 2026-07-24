@@ -94,6 +94,6 @@ export const listRecentScoreEvents = createServerFn({ method: "GET" })
 export const runScoringTickNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    // Usa o client autenticado do usuário; processa só os eventos do próprio owner.
-    return await tickScoring(context.supabase, 500);
+    // Full-scan: aplica todas as regras habilitadas sobre a base visível ao caller (RLS).
+    return await runScoringFullScan(context.supabase);
   });
