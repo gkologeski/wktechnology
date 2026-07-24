@@ -43,6 +43,7 @@ import {
   upsertQuestion,
   deleteQuestion,
   seedFramework,
+  duplicateQuestionnaire,
 } from "@/lib/prospecting/questionnaires.functions";
 
 type Framework = "bant" | "meddic" | "champ" | "gpct" | "custom";
