@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { Plus, Trash2, Filter, Users, User } from "lucide-react";
+import { Plus, Trash2, Filter, Users, User, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -174,6 +174,7 @@ function QueueWorkspace({
     queryFn: () => listItems({ data: { queue_id: queueId, limit: 50, offset: 0 } }),
   });
 
+  const hasItems = (data?.items?.length ?? 0) > 0;
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -183,9 +184,22 @@ function QueueWorkspace({
             {data?.total ?? 0} {data?.entity === "lead" ? "leads" : "contatos"}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
-          <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
-        </Button>
+        <div className="flex items-center gap-2">
+          {hasItems ? (
+            <Button asChild size="sm">
+              <Link to="/prospecting/queues/$queueId/play" params={{ queueId }}>
+                <Play className="w-4 h-4 mr-1" /> Iniciar fila
+              </Link>
+            </Button>
+          ) : (
+            <Button size="sm" disabled>
+              <Play className="w-4 h-4 mr-1" /> Iniciar fila
+            </Button>
+          )}
+          <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
+            <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -234,13 +248,19 @@ function QueueItemRow({
         ? String(item.lifecycle_stage)
         : null;
   const score = typeof item.score === "number" ? item.score : null;
-  const detailHref = entity === "lead" ? `/leads/${id}` : `/contacts/${id}`;
+  
 
   return (
     <div className="flex items-center justify-between py-3 gap-3">
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium truncate">{name}</span>
+          <Link
+            to={entity === "lead" ? "/leads/$id" : "/contacts/$id"}
+            params={{ id }}
+            className="text-sm font-medium truncate hover:underline"
+          >
+            {name}
+          </Link>
           {statusRaw ? (
             <Badge variant="outline" className="text-[10px]">
               {statusLabel(entity, statusRaw)}
@@ -255,11 +275,6 @@ function QueueItemRow({
         {email ? (
           <p className="text-xs text-muted-foreground truncate">{email}</p>
         ) : null}
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <Button asChild variant="outline" size="sm">
-          <Link to={detailHref}>Abrir</Link>
-        </Button>
       </div>
     </div>
   );

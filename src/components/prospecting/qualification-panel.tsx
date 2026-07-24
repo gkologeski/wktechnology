@@ -33,9 +33,11 @@ type Decision = "qualified" | "disqualified" | "nurture" | "scheduled";
 export function QualificationPanel({
   entity,
   entityId,
+  preselectedQuestionnaireId,
 }: {
   entity: Entity;
   entityId: string;
+  preselectedQuestionnaireId?: string | null;
 }) {
   const listQ = useServerFn(listQuestionnaires);
   const getQ = useServerFn(getQuestionnaire);
@@ -49,9 +51,9 @@ export function QualificationPanel({
   });
 
   const enabled = (questionnaires ?? []).filter((q) => q.enabled);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(preselectedQuestionnaireId ?? null);
 
-  const activeId = selectedId ?? enabled[0]?.id ?? null;
+  const activeId = selectedId ?? preselectedQuestionnaireId ?? enabled[0]?.id ?? null;
 
   const { data: qData } = useQuery({
     queryKey: ["prospecting", "questionnaire", activeId],
@@ -160,18 +162,20 @@ export function QualificationPanel({
               <span className="text-xs text-muted-foreground ml-1">/ corte {threshold}</span>
             </p>
           </div>
-          <Select value={activeId ?? ""} onValueChange={setSelectedId}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Selecionar" />
-            </SelectTrigger>
-            <SelectContent>
-              {enabled.map((q) => (
-                <SelectItem key={q.id} value={q.id}>
-                  {q.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {preselectedQuestionnaireId ? null : (
+            <Select value={activeId ?? ""} onValueChange={setSelectedId}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Selecionar" />
+              </SelectTrigger>
+              <SelectContent>
+                {enabled.map((q) => (
+                  <SelectItem key={q.id} value={q.id}>
+                    {q.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
