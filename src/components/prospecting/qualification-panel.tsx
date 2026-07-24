@@ -33,9 +33,11 @@ type Decision = "qualified" | "disqualified" | "nurture" | "scheduled";
 export function QualificationPanel({
   entity,
   entityId,
+  preselectedQuestionnaireId,
 }: {
   entity: Entity;
   entityId: string;
+  preselectedQuestionnaireId?: string | null;
 }) {
   const listQ = useServerFn(listQuestionnaires);
   const getQ = useServerFn(getQuestionnaire);
@@ -49,9 +51,9 @@ export function QualificationPanel({
   });
 
   const enabled = (questionnaires ?? []).filter((q) => q.enabled);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(preselectedQuestionnaireId ?? null);
 
-  const activeId = selectedId ?? enabled[0]?.id ?? null;
+  const activeId = selectedId ?? preselectedQuestionnaireId ?? enabled[0]?.id ?? null;
 
   const { data: qData } = useQuery({
     queryKey: ["prospecting", "questionnaire", activeId],
