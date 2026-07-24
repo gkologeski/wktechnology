@@ -124,32 +124,12 @@ export function QueueTab() {
         <div className="grid grid-cols-12 gap-4">
           <aside className="col-span-12 lg:col-span-3 space-y-2">
             {queues.map((q) => (
-              <button
+              <QueueSidebarItem
                 key={q.id}
+                queue={q as unknown as Record<string, unknown>}
+                active={activeQueue?.id === q.id}
                 onClick={() => setActiveId(q.id)}
-                className={`w-full text-left rounded-md border p-3 transition-colors ${
-                  activeQueue?.id === q.id ? "bg-accent border-accent-foreground/20" : "hover:bg-muted/50"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  {q.entity === "lead" ? (
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                  ) : (
-                    <User className="w-4 h-4 text-muted-foreground" />
-                  )}
-                  <span className="text-sm font-medium truncate">{q.name}</span>
-                  {(q as { kind?: string }).kind === "manual" ? (
-                    <Badge variant="secondary" className="text-[10px]">
-                      Manual · {(((q as { item_ids?: string[] }).item_ids) ?? []).length}
-                    </Badge>
-                  ) : null}
-                </div>
-                {q.description ? (
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {q.description}
-                  </p>
-                ) : null}
-              </button>
+              />
             ))}
           </aside>
           <section className="col-span-12 lg:col-span-9">
