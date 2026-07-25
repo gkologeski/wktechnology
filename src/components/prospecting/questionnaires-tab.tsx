@@ -565,6 +565,120 @@ function QuestionnaireEditorSheet({
   );
 }
 
+type QuestionRecord = {
+  id: string;
+  questionnaire_id: string;
+  position: number;
+  label: string;
+  type: string;
+  options: unknown;
+  weight: number;
+  required: boolean;
+};
+
+function QuestionsList({
+  questionnaireId,
+  questions,
+  readOnly,
+  onChanged,
+}: {
+  questionnaireId: string;
+  questions: QuestionRecord[];
+  readOnly: boolean;
+  onChanged: () => void;
+}) {
+  const reorder = useServerFn(reorderQuestions);
+  const [order, setOrder] = useState<QuestionRecord[]>(questions);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOrder(questions);
+  }, [questions]);
+
+  const reorderMut = useMutation({
+    mutationFn: (ids: string[]) =>
+      reorder({ data: { questionnaire_id: questionnaireId, ordered_ids: ids } }),
+    onSuccess: () => onChanged(),
+    onError: (e) => {
+      toast.error((e as Error).message);
+      setOrder(questions);
+    },
+  });
+
+  const onDrop = (targetId: string) => {
+    if (!dragId || dragId === targetId) {
+      setDragId(null);
+      setOverId(null);
+      return;
+    }
+    const fromIdx = order.findIndex((q) => q.id === dragId);
+    const toIdx = order.findIndex((q) => q.id === targetId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = order.slice();
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setOrder(next);
+    setDragId(null);
+    setOverId(null);
+    reorderMut.mutate(next.map((q) => q.id));
+  };
+
+  if (order.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground mt-3">Nenhuma pergunta ainda.</p>
+    );
+  }
+
+  return (
+    <div className="space-y-2 mt-3">
+      {order.map((q) => (
+        <div
+          key={q.id}
+          draggable={!readOnly}
+          onDragStart={(e) => {
+            if (readOnly) return;
+            setDragId(q.id);
+            e.dataTransfer.effectAllowed = "move";
+          }}
+          onDragOver={(e) => {
+            if (readOnly || !dragId) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            if (overId !== q.id) setOverId(q.id);
+          }}
+          onDragLeave={() => {
+            if (overId === q.id) setOverId(null);
+          }}
+          onDrop={(e) => {
+            if (readOnly) return;
+            e.preventDefault();
+            onDrop(q.id);
+          }}
+          onDragEnd={() => {
+            setDragId(null);
+            setOverId(null);
+          }}
+          className={
+            (dragId === q.id ? "opacity-50 " : "") +
+            (overId === q.id && dragId && dragId !== q.id
+              ? "ring-2 ring-primary/50 rounded-md "
+              : "")
+          }
+        >
+          <QuestionRow
+            question={q}
+            onDeleted={onChanged}
+            onSaved={onChanged}
+            readOnly={readOnly}
+            dragHandle={!readOnly}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function QuestionRow({
   question,
   onDeleted,
