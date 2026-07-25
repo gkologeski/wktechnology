@@ -49,9 +49,16 @@ export type DatePreset =
   | "this_year"
   | "last_year"
   | "next_year"
+  | "last_7d"
+  | "last_14d"
+  | "last_30d"
+  | "last_60d"
+  | "last_90d"
+  | "last_180d"
+  | "last_365d"
   | "custom";
 
-export type CustomRange = { start?: Date; end?: Date };
+export type CustomRange = { start?: Date | string; end?: Date | string };
 
 export const DATE_PRESET_LABELS: Record<DatePreset, string> = {
   any: "Qualquer data",
