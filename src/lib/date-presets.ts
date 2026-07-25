@@ -1,4 +1,5 @@
 // Presets de data padronizados em todo o sistema.
+// Use `getDateRange(preset, now?, custom?)` para obter `{ start, end }` (end exclusivo).
 // Contém DUAS APIs coexistindo por retrocompatibilidade:
 //   - API antiga (DatePreset/getDateRange/CustomRange) usada em filtros de listas/timeline.
 //   - API nova pt-BR (PresetKey/PRESETS/getPresetRange/DateRange) usada pelo DateRangePicker.
@@ -34,6 +35,13 @@ export type DatePreset =
   | "today"
   | "yesterday"
   | "tomorrow"
+  | "last_7d"
+  | "last_14d"
+  | "last_30d"
+  | "last_60d"
+  | "last_90d"
+  | "last_180d"
+  | "last_365d"
   | "this_week"
   | "last_week"
   | "next_week"
@@ -49,22 +57,20 @@ export type DatePreset =
   | "this_year"
   | "last_year"
   | "next_year"
-  | "last_7d"
-  | "last_14d"
-  | "last_30d"
-  | "last_60d"
-  | "last_90d"
-  | "last_180d"
-  | "last_365d"
   | "custom";
-
-export type CustomRange = { start?: Date | string; end?: Date | string };
 
 export const DATE_PRESET_LABELS: Record<DatePreset, string> = {
   any: "Qualquer data",
   today: "Hoje",
   yesterday: "Ontem",
   tomorrow: "Amanhã",
+  last_7d: "Últimos 7 dias",
+  last_14d: "Últimos 14 dias",
+  last_30d: "Últimos 30 dias",
+  last_60d: "Últimos 60 dias",
+  last_90d: "Últimos 90 dias",
+  last_180d: "Últimos 180 dias",
+  last_365d: "Últimos 365 dias",
   this_week: "Esta semana",
   last_week: "Semana passada",
   next_week: "Próxima semana",
@@ -80,7 +86,7 @@ export const DATE_PRESET_LABELS: Record<DatePreset, string> = {
   this_year: "Este ano",
   last_year: "Ano passado",
   next_year: "Próximo ano",
-  custom: "Personalizado",
+  custom: "Personalizar…",
 };
 
 export const DATE_PRESETS: DatePreset[] = [
@@ -88,6 +94,13 @@ export const DATE_PRESETS: DatePreset[] = [
   "today",
   "yesterday",
   "tomorrow",
+  "last_7d",
+  "last_14d",
+  "last_30d",
+  "last_60d",
+  "last_90d",
+  "last_180d",
+  "last_365d",
   "this_week",
   "last_week",
   "next_week",
@@ -110,53 +123,69 @@ export const DATE_PRESET_OPTIONS = DATE_PRESETS.map(
   (p) => [p, DATE_PRESET_LABELS[p]] as const,
 ) as readonly (readonly [DatePreset, string])[];
 
-function _localStartOfDay(d: Date): Date {
+function _legacyStartOfDay(d: Date): Date {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
   return x;
 }
-function _localAddDays(d: Date, n: number): Date {
+function _legacyAddDays(d: Date, n: number): Date {
   const x = new Date(d);
   x.setDate(x.getDate() + n);
   return x;
 }
 
+export type CustomRange = { start?: string; end?: string };
+
 /**
- * API antiga — retorna intervalo [start, end) para o preset.
- * `any` retorna `{}`. Semana ISO (segunda a domingo). Semestres = jan-jun / jul-dez.
+ * API antiga — Retorna o intervalo [start, end) correspondente ao preset.
+ * `any` retorna `{}` (sem filtro). Para `custom`, passe `custom` com
+ * strings ISO (YYYY-MM-DD) para `start`/`end` (inclusive).
  */
 export function getDateRange(
   preset: DatePreset,
   now: Date = new Date(),
-  custom: CustomRange = {},
+  custom?: CustomRange,
 ): { start?: Date; end?: Date } {
   if (preset === "any") return {};
 
-  if (preset === "custom") {
-    return {
-      start: custom.start ? _localStartOfDay(custom.start) : undefined,
-      end: custom.end ? _localAddDays(_localStartOfDay(custom.end), 1) : undefined,
-    };
-  }
+  const today = _legacyStartOfDay(now);
 
-  const today = _localStartOfDay(now);
+  if (preset === "custom") {
+    const start = custom?.start ? _legacyStartOfDay(new Date(custom.start)) : undefined;
+    const end = custom?.end ? _legacyAddDays(_legacyStartOfDay(new Date(custom.end)), 1) : undefined;
+    return { start, end };
+  }
 
   switch (preset) {
     case "today":
-      return { start: today, end: _localAddDays(today, 1) };
+      return { start: today, end: _legacyAddDays(today, 1) };
     case "yesterday":
-      return { start: _localAddDays(today, -1), end: today };
+      return { start: _legacyAddDays(today, -1), end: today };
     case "tomorrow":
-      return { start: _localAddDays(today, 1), end: _localAddDays(today, 2) };
+      return { start: _legacyAddDays(today, 1), end: _legacyAddDays(today, 2) };
+  }
+
+  const lastN: Partial<Record<DatePreset, number>> = {
+    last_7d: 7,
+    last_14d: 14,
+    last_30d: 30,
+    last_60d: 60,
+    last_90d: 90,
+    last_180d: 180,
+    last_365d: 365,
+  };
+  if (preset in lastN) {
+    const n = lastN[preset]!;
+    return { start: _legacyAddDays(today, -(n - 1)), end: _legacyAddDays(today, 1) };
   }
 
   const dow = (today.getDay() + 6) % 7;
-  const weekStart = _localAddDays(today, -dow);
-  if (preset === "this_week") return { start: weekStart, end: _localAddDays(weekStart, 7) };
+  const weekStart = _legacyAddDays(today, -dow);
+  if (preset === "this_week") return { start: weekStart, end: _legacyAddDays(weekStart, 7) };
   if (preset === "last_week")
-    return { start: _localAddDays(weekStart, -7), end: weekStart };
+    return { start: _legacyAddDays(weekStart, -7), end: weekStart };
   if (preset === "next_week")
-    return { start: _localAddDays(weekStart, 7), end: _localAddDays(weekStart, 14) };
+    return { start: _legacyAddDays(weekStart, 7), end: _legacyAddDays(weekStart, 14) };
 
   const y = today.getFullYear();
   const m = today.getMonth();
@@ -195,7 +224,7 @@ export function getDateRange(
 }
 
 // ---------------------------------------------------------------------------
-// API nova (skill date-range-picker-br)
+// API nova (skill date-range-picker-br) — usada pelo componente DateRangePicker
 // ---------------------------------------------------------------------------
 
 export type PresetKey =
