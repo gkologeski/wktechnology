@@ -1,5 +1,10 @@
+// Presets de data padronizados em todo o sistema.
+// Contém DUAS APIs coexistindo por retrocompatibilidade:
+//   - API antiga (DatePreset/getDateRange/CustomRange) usada em filtros de listas/timeline.
+//   - API nova pt-BR (PresetKey/PRESETS/getPresetRange/DateRange) usada pelo DateRangePicker.
+
 import {
-  addDays,
+  addDays as _addDays,
   addMonths,
   addQuarters,
   addWeeks,
@@ -9,7 +14,7 @@ import {
   endOfQuarter,
   endOfWeek,
   endOfYear,
-  startOfDay,
+  startOfDay as _startOfDay,
   startOfMonth,
   startOfQuarter,
   startOfWeek,
@@ -19,6 +24,172 @@ import {
   subWeeks,
   subYears,
 } from "date-fns";
+
+// ---------------------------------------------------------------------------
+// API antiga (mantida por compatibilidade com filtros existentes)
+// ---------------------------------------------------------------------------
+
+export type DatePreset =
+  | "any"
+  | "today"
+  | "yesterday"
+  | "tomorrow"
+  | "this_week"
+  | "last_week"
+  | "next_week"
+  | "this_month"
+  | "last_month"
+  | "next_month"
+  | "this_quarter"
+  | "last_quarter"
+  | "next_quarter"
+  | "this_semester"
+  | "last_semester"
+  | "next_semester"
+  | "this_year"
+  | "last_year"
+  | "next_year"
+  | "custom";
+
+export type CustomRange = { start?: Date; end?: Date };
+
+export const DATE_PRESET_LABELS: Record<DatePreset, string> = {
+  any: "Qualquer data",
+  today: "Hoje",
+  yesterday: "Ontem",
+  tomorrow: "Amanhã",
+  this_week: "Esta semana",
+  last_week: "Semana passada",
+  next_week: "Próxima semana",
+  this_month: "Este mês",
+  last_month: "Mês passado",
+  next_month: "Próximo mês",
+  this_quarter: "Este trimestre",
+  last_quarter: "Trimestre passado",
+  next_quarter: "Próximo trimestre",
+  this_semester: "Este semestre",
+  last_semester: "Semestre passado",
+  next_semester: "Próximo semestre",
+  this_year: "Este ano",
+  last_year: "Ano passado",
+  next_year: "Próximo ano",
+  custom: "Personalizado",
+};
+
+export const DATE_PRESETS: DatePreset[] = [
+  "any",
+  "today",
+  "yesterday",
+  "tomorrow",
+  "this_week",
+  "last_week",
+  "next_week",
+  "this_month",
+  "last_month",
+  "next_month",
+  "this_quarter",
+  "last_quarter",
+  "next_quarter",
+  "this_semester",
+  "last_semester",
+  "next_semester",
+  "this_year",
+  "last_year",
+  "next_year",
+  "custom",
+];
+
+export const DATE_PRESET_OPTIONS = DATE_PRESETS.map(
+  (p) => [p, DATE_PRESET_LABELS[p]] as const,
+) as readonly (readonly [DatePreset, string])[];
+
+function _localStartOfDay(d: Date): Date {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+function _localAddDays(d: Date, n: number): Date {
+  const x = new Date(d);
+  x.setDate(x.getDate() + n);
+  return x;
+}
+
+/**
+ * API antiga — retorna intervalo [start, end) para o preset.
+ * `any` retorna `{}`. Semana ISO (segunda a domingo). Semestres = jan-jun / jul-dez.
+ */
+export function getDateRange(
+  preset: DatePreset,
+  now: Date = new Date(),
+  custom: CustomRange = {},
+): { start?: Date; end?: Date } {
+  if (preset === "any") return {};
+
+  if (preset === "custom") {
+    return {
+      start: custom.start ? _localStartOfDay(custom.start) : undefined,
+      end: custom.end ? _localAddDays(_localStartOfDay(custom.end), 1) : undefined,
+    };
+  }
+
+  const today = _localStartOfDay(now);
+
+  switch (preset) {
+    case "today":
+      return { start: today, end: _localAddDays(today, 1) };
+    case "yesterday":
+      return { start: _localAddDays(today, -1), end: today };
+    case "tomorrow":
+      return { start: _localAddDays(today, 1), end: _localAddDays(today, 2) };
+  }
+
+  const dow = (today.getDay() + 6) % 7;
+  const weekStart = _localAddDays(today, -dow);
+  if (preset === "this_week") return { start: weekStart, end: _localAddDays(weekStart, 7) };
+  if (preset === "last_week")
+    return { start: _localAddDays(weekStart, -7), end: weekStart };
+  if (preset === "next_week")
+    return { start: _localAddDays(weekStart, 7), end: _localAddDays(weekStart, 14) };
+
+  const y = today.getFullYear();
+  const m = today.getMonth();
+
+  if (preset === "this_month")
+    return { start: new Date(y, m, 1), end: new Date(y, m + 1, 1) };
+  if (preset === "last_month")
+    return { start: new Date(y, m - 1, 1), end: new Date(y, m, 1) };
+  if (preset === "next_month")
+    return { start: new Date(y, m + 1, 1), end: new Date(y, m + 2, 1) };
+
+  const q = Math.floor(m / 3);
+  if (preset === "this_quarter")
+    return { start: new Date(y, q * 3, 1), end: new Date(y, q * 3 + 3, 1) };
+  if (preset === "last_quarter")
+    return { start: new Date(y, q * 3 - 3, 1), end: new Date(y, q * 3, 1) };
+  if (preset === "next_quarter")
+    return { start: new Date(y, q * 3 + 3, 1), end: new Date(y, q * 3 + 6, 1) };
+
+  const s = m < 6 ? 0 : 6;
+  if (preset === "this_semester")
+    return { start: new Date(y, s, 1), end: new Date(y, s + 6, 1) };
+  if (preset === "last_semester")
+    return { start: new Date(y, s - 6, 1), end: new Date(y, s, 1) };
+  if (preset === "next_semester")
+    return { start: new Date(y, s + 6, 1), end: new Date(y, s + 12, 1) };
+
+  if (preset === "this_year")
+    return { start: new Date(y, 0, 1), end: new Date(y + 1, 0, 1) };
+  if (preset === "last_year")
+    return { start: new Date(y - 1, 0, 1), end: new Date(y, 0, 1) };
+  if (preset === "next_year")
+    return { start: new Date(y + 1, 0, 1), end: new Date(y + 2, 0, 1) };
+
+  return {};
+}
+
+// ---------------------------------------------------------------------------
+// API nova (skill date-range-picker-br)
+// ---------------------------------------------------------------------------
 
 export type PresetKey =
   | "today" | "yesterday" | "tomorrow"
@@ -73,9 +244,9 @@ function semesterBounds(d: Date): DateRange {
 
 export function getPresetRange(key: PresetKey, now: Date = new Date()): DateRange {
   switch (key) {
-    case "today": return { from: startOfDay(now), to: endOfDay(now) };
-    case "yesterday": { const d = subDays(now, 1); return { from: startOfDay(d), to: endOfDay(d) }; }
-    case "tomorrow": { const d = addDays(now, 1); return { from: startOfDay(d), to: endOfDay(d) }; }
+    case "today": return { from: _startOfDay(now), to: endOfDay(now) };
+    case "yesterday": { const d = subDays(now, 1); return { from: _startOfDay(d), to: endOfDay(d) }; }
+    case "tomorrow": { const d = _addDays(now, 1); return { from: _startOfDay(d), to: endOfDay(d) }; }
     case "thisWeek": return { from: startOfWeek(now, WEEK_OPTS), to: endOfWeek(now, WEEK_OPTS) };
     case "lastWeek": { const d = subWeeks(now, 1); return { from: startOfWeek(d, WEEK_OPTS), to: endOfWeek(d, WEEK_OPTS) }; }
     case "nextWeek": { const d = addWeeks(now, 1); return { from: startOfWeek(d, WEEK_OPTS), to: endOfWeek(d, WEEK_OPTS) }; }
@@ -88,12 +259,12 @@ export function getPresetRange(key: PresetKey, now: Date = new Date()): DateRang
     case "thisYear": return { from: startOfYear(now), to: endOfYear(now) };
     case "lastYear": { const d = subYears(now, 1); return { from: startOfYear(d), to: endOfYear(d) }; }
     case "nextYear": { const d = addYears(now, 1); return { from: startOfYear(d), to: endOfYear(d) }; }
-    case "last7": return { from: startOfDay(subDays(now, 6)), to: endOfDay(now) };
-    case "last14": return { from: startOfDay(subDays(now, 13)), to: endOfDay(now) };
-    case "last30": return { from: startOfDay(subDays(now, 29)), to: endOfDay(now) };
-    case "last60": return { from: startOfDay(subDays(now, 59)), to: endOfDay(now) };
-    case "last90": return { from: startOfDay(subDays(now, 89)), to: endOfDay(now) };
-    case "last180": return { from: startOfDay(subDays(now, 179)), to: endOfDay(now) };
-    case "last365": return { from: startOfDay(subDays(now, 364)), to: endOfDay(now) };
+    case "last7": return { from: _startOfDay(subDays(now, 6)), to: endOfDay(now) };
+    case "last14": return { from: _startOfDay(subDays(now, 13)), to: endOfDay(now) };
+    case "last30": return { from: _startOfDay(subDays(now, 29)), to: endOfDay(now) };
+    case "last60": return { from: _startOfDay(subDays(now, 59)), to: endOfDay(now) };
+    case "last90": return { from: _startOfDay(subDays(now, 89)), to: endOfDay(now) };
+    case "last180": return { from: _startOfDay(subDays(now, 179)), to: endOfDay(now) };
+    case "last365": return { from: _startOfDay(subDays(now, 364)), to: endOfDay(now) };
   }
 }
