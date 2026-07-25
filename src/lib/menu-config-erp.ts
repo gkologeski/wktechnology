@@ -50,6 +50,7 @@ export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
 
 export const WORKSPACE_ROUTE_PREFIXES: readonly string[] = [
   "/home",
+  "/modules",
   "/workspace",
   "/settings",
   "/account",
@@ -58,6 +59,7 @@ export const WORKSPACE_ROUTE_PREFIXES: readonly string[] = [
   "/invoices",
   "/files",
 ];
+
 
 
 export function isWorkspacePathname(pathname: string): boolean {
