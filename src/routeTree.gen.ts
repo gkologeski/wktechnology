@@ -77,6 +77,7 @@ import { Route as AuthenticatedProspectingIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedProposalsIndexRouteImport } from './routes/_authenticated/proposals.index'
 import { Route as AuthenticatedProjectsIndexRouteImport } from './routes/_authenticated/projects.index'
 import { Route as AuthenticatedPeopleIndexRouteImport } from './routes/_authenticated/people.index'
+import { Route as AuthenticatedModulesIndexRouteImport } from './routes/_authenticated/modules.index'
 import { Route as AuthenticatedMarketplaceIndexRouteImport } from './routes/_authenticated/marketplace.index'
 import { Route as AuthenticatedLandingPagesIndexRouteImport } from './routes/_authenticated/landing-pages.index'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
@@ -705,6 +706,12 @@ const AuthenticatedPeopleIndexRoute =
   AuthenticatedPeopleIndexRouteImport.update({
     id: '/people/',
     path: '/people/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedModulesIndexRoute =
+  AuthenticatedModulesIndexRouteImport.update({
+    id: '/modules/',
+    path: '/modules/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMarketplaceIndexRoute =
@@ -2545,6 +2552,7 @@ export interface FileRoutesByFullPath {
   '/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/modules/': typeof AuthenticatedModulesIndexRoute
   '/people/': typeof AuthenticatedPeopleIndexRoute
   '/projects/': typeof AuthenticatedProjectsIndexRoute
   '/proposals/': typeof AuthenticatedProposalsIndexRoute
@@ -2884,6 +2892,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsIndexRoute
   '/landing-pages': typeof AuthenticatedLandingPagesIndexRoute
   '/marketplace': typeof AuthenticatedMarketplaceIndexRoute
+  '/modules': typeof AuthenticatedModulesIndexRoute
   '/people': typeof AuthenticatedPeopleIndexRoute
   '/projects': typeof AuthenticatedProjectsIndexRoute
   '/proposals': typeof AuthenticatedProposalsIndexRoute
@@ -3231,6 +3240,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations/': typeof AuthenticatedIntegrationsIndexRoute
   '/_authenticated/landing-pages/': typeof AuthenticatedLandingPagesIndexRoute
   '/_authenticated/marketplace/': typeof AuthenticatedMarketplaceIndexRoute
+  '/_authenticated/modules/': typeof AuthenticatedModulesIndexRoute
   '/_authenticated/people/': typeof AuthenticatedPeopleIndexRoute
   '/_authenticated/projects/': typeof AuthenticatedProjectsIndexRoute
   '/_authenticated/proposals/': typeof AuthenticatedProposalsIndexRoute
@@ -3578,6 +3588,7 @@ export interface FileRouteTypes {
     | '/integrations/'
     | '/landing-pages/'
     | '/marketplace/'
+    | '/modules/'
     | '/people/'
     | '/projects/'
     | '/proposals/'
@@ -3917,6 +3928,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/landing-pages'
     | '/marketplace'
+    | '/modules'
     | '/people'
     | '/projects'
     | '/proposals'
@@ -4263,6 +4275,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations/'
     | '/_authenticated/landing-pages/'
     | '/_authenticated/marketplace/'
+    | '/_authenticated/modules/'
     | '/_authenticated/people/'
     | '/_authenticated/projects/'
     | '/_authenticated/proposals/'
@@ -4969,6 +4982,13 @@ declare module '@tanstack/react-router' {
       path: '/people'
       fullPath: '/people/'
       preLoaderRoute: typeof AuthenticatedPeopleIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/modules/': {
+      id: '/_authenticated/modules/'
+      path: '/modules'
+      fullPath: '/modules/'
+      preLoaderRoute: typeof AuthenticatedModulesIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/marketplace/': {
@@ -7435,6 +7455,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHomeIndexRoute: typeof AuthenticatedHomeIndexRoute
   AuthenticatedInboxIndexRoute: typeof AuthenticatedInboxIndexRoute
   AuthenticatedLandingPagesIndexRoute: typeof AuthenticatedLandingPagesIndexRoute
+  AuthenticatedModulesIndexRoute: typeof AuthenticatedModulesIndexRoute
   AuthenticatedPeopleIndexRoute: typeof AuthenticatedPeopleIndexRoute
   AuthenticatedProjectsIndexRoute: typeof AuthenticatedProjectsIndexRoute
   AuthenticatedServicesIndexRoute: typeof AuthenticatedServicesIndexRoute
@@ -7569,6 +7590,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHomeIndexRoute: AuthenticatedHomeIndexRoute,
   AuthenticatedInboxIndexRoute: AuthenticatedInboxIndexRoute,
   AuthenticatedLandingPagesIndexRoute: AuthenticatedLandingPagesIndexRoute,
+  AuthenticatedModulesIndexRoute: AuthenticatedModulesIndexRoute,
   AuthenticatedPeopleIndexRoute: AuthenticatedPeopleIndexRoute,
   AuthenticatedProjectsIndexRoute: AuthenticatedProjectsIndexRoute,
   AuthenticatedServicesIndexRoute: AuthenticatedServicesIndexRoute,
@@ -7800,13 +7822,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

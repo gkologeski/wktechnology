@@ -12,7 +12,9 @@ import {
   Users,
   UsersRound,
   FolderOpen,
+  Boxes,
 } from "lucide-react";
+
 import type { SidebarGroup } from "@/lib/menu-config";
 
 export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
@@ -20,11 +22,13 @@ export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "ERP",
     items: [
       { title: "Home", url: "/home", icon: Home },
+      { title: "Módulos", url: "/modules", icon: Boxes },
       { title: "Arquivos", url: "/files", icon: FolderOpen },
       { title: "Marketplace", url: "/marketplace", icon: Store },
       { title: "Faturas", url: "/invoices", icon: Receipt },
     ],
   },
+
 
   {
     label: "Workspace",
@@ -46,6 +50,7 @@ export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
 
 export const WORKSPACE_ROUTE_PREFIXES: readonly string[] = [
   "/home",
+  "/modules",
   "/workspace",
   "/settings",
   "/account",
@@ -54,6 +59,7 @@ export const WORKSPACE_ROUTE_PREFIXES: readonly string[] = [
   "/invoices",
   "/files",
 ];
+
 
 
 export function isWorkspacePathname(pathname: string): boolean {
