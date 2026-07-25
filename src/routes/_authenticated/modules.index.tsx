@@ -37,6 +37,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { usePersistedDateRange } from "@/hooks/use-persisted-date-range";
 
 export const Route = createFileRoute("/_authenticated/modules/")({
   component: ErpHome,
