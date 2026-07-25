@@ -512,22 +512,14 @@ function QuestionnaireEditorSheet({
 
             <div>
               <AtsSectionHeader title="Perguntas" description="Cada resposta pontuada soma no score final." />
-              <div className="space-y-2 mt-3">
-                {data.questions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Nenhuma pergunta ainda.</p>
-                ) : (
-                  data.questions.map((q) => (
-                    <QuestionRow
-                      key={q.id}
-                      question={q}
-                      onDeleted={invalidate}
-                      onSaved={invalidate}
-                      readOnly={readOnly}
-                    />
-                  ))
-                )}
-              </div>
+              <QuestionsList
+                questionnaireId={id}
+                questions={data.questions}
+                readOnly={readOnly}
+                onChanged={invalidate}
+              />
             </div>
+
 
             {readOnly ? null : (
               <div className="rounded-md border p-3 space-y-3">
