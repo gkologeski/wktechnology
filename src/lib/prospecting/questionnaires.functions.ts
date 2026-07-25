@@ -156,6 +156,38 @@ export const deleteQuestion = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const reorderQuestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        questionnaire_id: z.string().uuid(),
+        ordered_ids: z.array(z.string().uuid()).min(1).max(500),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: qn, error: qErr } = await context.supabase
+      .from("prospecting_questionnaires")
+      .select("id, is_template, owner_id")
+      .eq("id", data.questionnaire_id)
+      .maybeSingle();
+    if (qErr) throw new Error(qErr.message);
+    if (!qn) throw new Error("Questionário não encontrado");
+    if ((qn as { is_template: boolean }).is_template) {
+      throw new Error("Modelos não podem ser reordenados. Duplique primeiro.");
+    }
+    for (let i = 0; i < data.ordered_ids.length; i++) {
+      const { error } = await context.supabase
+        .from("prospecting_questions")
+        .update({ position: i } as never)
+        .eq("id", data.ordered_ids[i])
+        .eq("questionnaire_id", data.questionnaire_id);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
 export const duplicateQuestionnaire = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
