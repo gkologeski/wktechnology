@@ -663,7 +663,8 @@ function QuestionsList({
             (dragId === q.id ? "opacity-50 " : "") +
             (overId === q.id && dragId && dragId !== q.id
               ? "ring-2 ring-primary/50 rounded-md "
-              : "")
+              : "") +
+            (readOnly ? "" : "cursor-grab active:cursor-grabbing")
           }
         >
           <QuestionRow
@@ -671,7 +672,6 @@ function QuestionsList({
             onDeleted={onChanged}
             onSaved={onChanged}
             readOnly={readOnly}
-            dragHandle={!readOnly}
           />
         </div>
       ))}
