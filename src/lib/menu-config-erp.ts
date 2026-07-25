@@ -12,7 +12,9 @@ import {
   Users,
   UsersRound,
   FolderOpen,
+  Boxes,
 } from "lucide-react";
+
 import type { SidebarGroup } from "@/lib/menu-config";
 
 export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
