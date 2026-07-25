@@ -37,6 +37,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { DateRangePicker } from "@/components/date-range-picker";
+import { usePersistedDateRange } from "@/hooks/use-persisted-date-range";
 
 export const Route = createFileRoute("/_authenticated/modules/")({
   component: ErpHome,
@@ -240,6 +242,8 @@ function ErpHome() {
     staleTime: 30_000,
   });
 
+  const { range, setRange } = usePersistedDateRange("home", "last30");
+
   const activeCount = modules?.filter((m) => m.enabled).length ?? 0;
   const contractedCount = modules?.filter((m) => m.is_contracted).length ?? 0;
 
@@ -250,12 +254,19 @@ function ErpHome() {
         title="Módulos"
         description="Acesse seus módulos contratados e gerencie o workspace."
         primaryAction={
-          <Button asChild>
-            <Link to="/workspace/modules">
-              <Boxes className="mr-2 h-4 w-4" />
-              Gerenciar módulos
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <DateRangePicker
+              value={range}
+              onChange={(r, preset) => setRange(r, preset)}
+              align="end"
+            />
+            <Button asChild>
+              <Link to="/workspace/modules">
+                <Boxes className="mr-2 h-4 w-4" />
+                Gerenciar módulos
+              </Link>
+            </Button>
+          </div>
         }
         secondaryActions={
           <Button variant="outline" asChild>

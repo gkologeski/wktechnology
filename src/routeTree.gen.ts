@@ -200,6 +200,7 @@ import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_aut
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
 import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authenticated/inbox.chat'
+import { Route as AuthenticatedHomePrintRouteImport } from './routes/_authenticated/home.print'
 import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authenticated/home.access'
 import { Route as AuthenticatedFinanceRecurrencesRouteImport } from './routes/_authenticated/finance.recurrences'
 import { Route as AuthenticatedFinanceReceivableRouteImport } from './routes/_authenticated/finance.receivable'
@@ -1432,6 +1433,11 @@ const AuthenticatedInboxChatRoute = AuthenticatedInboxChatRouteImport.update({
   path: '/inbox/chat',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedHomePrintRoute = AuthenticatedHomePrintRouteImport.update({
+  id: '/home/print',
+  path: '/home/print',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedHomeAccessRoute = AuthenticatedHomeAccessRouteImport.update({
   id: '/home/access',
   path: '/home/access',
@@ -2430,6 +2436,7 @@ export interface FileRoutesByFullPath {
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
+  '/home/print': typeof AuthenticatedHomePrintRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -2771,6 +2778,7 @@ export interface FileRoutesByTo {
   '/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
+  '/home/print': typeof AuthenticatedHomePrintRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -3118,6 +3126,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/receivable': typeof AuthenticatedFinanceReceivableRoute
   '/_authenticated/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
+  '/_authenticated/home/print': typeof AuthenticatedHomePrintRoute
   '/_authenticated/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -3466,6 +3475,7 @@ export interface FileRouteTypes {
     | '/finance/receivable'
     | '/finance/recurrences'
     | '/home/access'
+    | '/home/print'
     | '/inbox/chat'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -3807,6 +3817,7 @@ export interface FileRouteTypes {
     | '/finance/receivable'
     | '/finance/recurrences'
     | '/home/access'
+    | '/home/print'
     | '/inbox/chat'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -4153,6 +4164,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/receivable'
     | '/_authenticated/finance/recurrences'
     | '/_authenticated/home/access'
+    | '/_authenticated/home/print'
     | '/_authenticated/inbox/chat'
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
@@ -5845,6 +5857,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInboxChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/home/print': {
+      id: '/_authenticated/home/print'
+      path: '/home/print'
+      fullPath: '/home/print'
+      preLoaderRoute: typeof AuthenticatedHomePrintRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/home/access': {
       id: '/_authenticated/home/access'
       path: '/home/access'
@@ -7422,6 +7441,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceReceivableRoute: typeof AuthenticatedFinanceReceivableRoute
   AuthenticatedFinanceRecurrencesRoute: typeof AuthenticatedFinanceRecurrencesRoute
   AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
+  AuthenticatedHomePrintRoute: typeof AuthenticatedHomePrintRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
@@ -7555,6 +7575,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinanceReceivableRoute: AuthenticatedFinanceReceivableRoute,
   AuthenticatedFinanceRecurrencesRoute: AuthenticatedFinanceRecurrencesRoute,
   AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
+  AuthenticatedHomePrintRoute: AuthenticatedHomePrintRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
@@ -7822,13 +7843,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

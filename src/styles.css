@@ -415,3 +415,19 @@
 }
 .prose pre code { background: transparent; padding: 0; }
 .prose hr { border-color: var(--border); margin-block: 0.8em; }
+
+/* Impressão — dashboard exportado em PDF via window.print(). */
+@media print {
+  @page { size: A4; margin: 12mm; }
+  body > * { visibility: hidden !important; }
+  .print-root, .print-root * { visibility: visible !important; }
+  .print-root {
+    position: absolute !important;
+    inset: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+  .print-root .text-muted-foreground { color: #555 !important; }
+  .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+}
