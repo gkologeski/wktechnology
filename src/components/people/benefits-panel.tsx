@@ -96,7 +96,7 @@ export function BenefitsPanel({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{brl(cost?.monthly_cost)}</div>
+            <div className="text-2xl font-semibold truncate">{brl(cost?.monthly_cost)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -106,7 +106,7 @@ export function BenefitsPanel({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{brl(benefitsTotal)}</div>
+            <div className="text-2xl font-semibold truncate">{brl(benefitsTotal)}</div>
             <div className="text-xs text-muted-foreground">
               {activeRows.length} item(ns) · desconto do prestador {brl(employeeShareTotal)}
             </div>
@@ -119,7 +119,7 @@ export function BenefitsPanel({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-primary">
+            <div className="text-2xl font-semibold text-primary truncate">
               {brl(cost?.total_cost_monthly)}
             </div>
             <div className="text-xs text-muted-foreground">Salário/custo + benefícios ativos</div>
