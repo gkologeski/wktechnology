@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/crm";
+import { compactBRL } from "@/lib/format-compact";
 import { getFinanceDashboard } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
 import { FinanceAlertsPanel } from "@/components/finance/finance-alerts-panel";
