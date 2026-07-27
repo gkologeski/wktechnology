@@ -50,6 +50,9 @@ import {
   CartesianGrid,
 } from "recharts";
 
+const compactNumber = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(Number(v) || 0);
+
 export const Route = createFileRoute("/_authenticated/dashboards")({
   component: DashboardsPage,
 });
