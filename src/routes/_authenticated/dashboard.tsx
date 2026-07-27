@@ -196,12 +196,12 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
-            <p className="text-2xl font-semibold mt-1">{value}</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide truncate">{label}</p>
+            <p className="text-2xl font-semibold mt-1 truncate" title={value}>{value}</p>
           </div>
-          <div className="h-10 w-10 rounded-md bg-primary/10 text-primary grid place-items-center">
+          <div className="h-10 w-10 shrink-0 rounded-md bg-primary/10 text-primary grid place-items-center">
             {icon}
           </div>
         </div>
