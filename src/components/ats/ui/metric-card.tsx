@@ -63,27 +63,27 @@ export function MetricCard({
         className={cn("absolute inset-y-0 left-0 w-0.5 opacity-60", toneAccent[tone])}
       />
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
+        <span className="min-w-0 flex-1 truncate text-[11px] font-medium uppercase tracking-wider text-text-tertiary">
           {label}
         </span>
         {Icon ? <Icon className={cn("h-4 w-4 shrink-0", toneIcon[tone])} /> : null}
       </div>
-      <div className="mt-2 flex items-baseline gap-2">
+      <div className="mt-2 flex min-w-0 items-baseline gap-2">
         {loading ? (
           <div className="h-7 w-20 animate-pulse rounded bg-surface-sunken" />
         ) : (
-          <span className="text-2xl font-semibold tracking-tight text-text-primary tabular-nums">
+          <span className="min-w-0 flex-1 truncate text-2xl font-semibold tracking-tight text-text-primary tabular-nums">
             {value}
           </span>
         )}
         {delta ? (
-          <span className={cn("inline-flex items-center gap-0.5 text-xs font-medium", deltaColor)}>
+          <span className={cn("inline-flex shrink-0 items-center gap-0.5 text-xs font-medium", deltaColor)}>
             {DeltaIcon ? <DeltaIcon className="h-3 w-3" /> : null}
             {delta.value}
           </span>
         ) : null}
       </div>
-      {hint ? <div className="mt-1 text-xs text-text-secondary">{hint}</div> : null}
+      {hint ? <div className="mt-1 truncate text-xs text-text-secondary">{hint}</div> : null}
     </div>
   );
 }
