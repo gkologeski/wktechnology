@@ -18,6 +18,14 @@ import {
 } from "recharts";
 import { Briefcase, UserPlus, TrendingUp, DollarSign } from "lucide-react";
 
+const compactBRL = (v: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+    style: "currency",
+    currency: "BRL",
+  }).format(Number(v) || 0);
+
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
