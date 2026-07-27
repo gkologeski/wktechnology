@@ -582,7 +582,7 @@ function ChartRender({
             textAnchor="end"
             height={60}
           />
-          <YAxis tick={{ fontSize: 11 }} />
+          <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
           <RTooltip />
           <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
         </BarChart>
