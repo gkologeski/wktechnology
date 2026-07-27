@@ -96,7 +96,7 @@ function KpiCard({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-semibold ${toneCls}`}>{value}</div>
+        <div className={`text-2xl font-semibold ${toneCls} truncate`}>{value}</div>
         {hint ? <div className="text-xs text-muted-foreground mt-1">{hint}</div> : null}
       </CardContent>
     </Card>

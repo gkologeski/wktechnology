@@ -628,7 +628,7 @@ function StatCard({
     <Card>
       <CardContent className="pt-6">
         <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
-        <div className={`text-2xl font-semibold mt-1 ${className}`}>{value}</div>
+        <div className={`text-2xl font-semibold mt-1 ${className} truncate`}>{value}</div>
       </CardContent>
     </Card>
   );

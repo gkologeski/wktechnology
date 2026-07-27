@@ -214,7 +214,7 @@ function MetricTile({
       <div
         className={`mt-1 text-2xl font-semibold tabular-nums ${
           tone === "positive" ? "text-emerald-600 dark:text-emerald-400" : ""
-        } ${tone === "negative" ? "text-rose-600 dark:text-rose-400" : ""}`}
+        } ${tone === "negative" ? "text-rose-600 dark:text-rose-400" : ""} truncate`}
       >
         {value}
       </div>

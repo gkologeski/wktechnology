@@ -276,7 +276,7 @@ function ScenarioCard({
       <CardContent className="space-y-3">
         <div>
           <p className="text-xs text-muted-foreground">Saldo em 90 dias</p>
-          <p className={`text-2xl font-semibold tabular-nums ${finalCls}`}>
+          <p className={`text-2xl font-semibold tabular-nums ${finalCls} truncate`}>
             {formatCurrency(scenario.finalBalance)}
           </p>
         </div>
