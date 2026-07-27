@@ -127,10 +127,15 @@ function DashboardPage() {
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={valueByStage}>
+              <BarChart data={valueByStage} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="stage" stroke="var(--color-muted-foreground)" fontSize={12} />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+                <YAxis
+                  stroke="var(--color-muted-foreground)"
+                  fontSize={12}
+                  width={72}
+                  tickFormatter={compactBRL}
+                />
                 <Tooltip formatter={(v: number) => formatCurrency(v)} />
                 <Bar dataKey="value" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
               </BarChart>
