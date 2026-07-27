@@ -157,10 +157,10 @@ function DashboardPage() {
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={days}>
+              <LineChart data={days} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} allowDecimals={false} />
+                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} width={32} allowDecimals={false} />
                 <Tooltip />
                 <Line
                   type="monotone"
