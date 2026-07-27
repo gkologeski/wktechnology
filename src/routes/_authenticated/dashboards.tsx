@@ -530,7 +530,7 @@ function WidgetCard({
                 <LineChart data={rows}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="key" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
                   <RTooltip />
                   <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" />
                 </LineChart>
