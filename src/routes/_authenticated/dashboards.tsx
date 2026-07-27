@@ -50,6 +50,9 @@ import {
   CartesianGrid,
 } from "recharts";
 
+const compactNumber = (v: number) =>
+  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(Number(v) || 0);
+
 export const Route = createFileRoute("/_authenticated/dashboards")({
   component: DashboardsPage,
 });
@@ -530,7 +533,7 @@ function WidgetCard({
                 <LineChart data={rows}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="key" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
                   <RTooltip />
                   <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" />
                 </LineChart>
@@ -566,7 +569,7 @@ function WidgetCard({
                 <BarChart data={rows}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="key" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
                   <RTooltip />
                   <Bar dataKey="value" fill="hsl(var(--primary))" />
                 </BarChart>

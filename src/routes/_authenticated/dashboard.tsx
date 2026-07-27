@@ -18,6 +18,14 @@ import {
 } from "recharts";
 import { Briefcase, UserPlus, TrendingUp, DollarSign } from "lucide-react";
 
+const compactBRL = (v: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+    style: "currency",
+    currency: "BRL",
+  }).format(Number(v) || 0);
+
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 });
@@ -127,10 +135,15 @@ function DashboardPage() {
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={valueByStage}>
+              <BarChart data={valueByStage} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="stage" stroke="var(--color-muted-foreground)" fontSize={12} />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} />
+                <YAxis
+                  stroke="var(--color-muted-foreground)"
+                  fontSize={12}
+                  width={72}
+                  tickFormatter={compactBRL}
+                />
                 <Tooltip formatter={(v: number) => formatCurrency(v)} />
                 <Bar dataKey="value" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -144,10 +157,10 @@ function DashboardPage() {
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={days}>
+              <LineChart data={days} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} allowDecimals={false} />
+                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} width={32} allowDecimals={false} />
                 <Tooltip />
                 <Line
                   type="monotone"
@@ -196,12 +209,12 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
-            <p className="text-2xl font-semibold mt-1">{value}</p>
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-muted-foreground uppercase tracking-wide truncate">{label}</p>
+            <p className="text-2xl font-semibold mt-1 truncate" title={value}>{value}</p>
           </div>
-          <div className="h-10 w-10 rounded-md bg-primary/10 text-primary grid place-items-center">
+          <div className="h-10 w-10 shrink-0 rounded-md bg-primary/10 text-primary grid place-items-center">
             {icon}
           </div>
         </div>

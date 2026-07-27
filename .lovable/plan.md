@@ -1,84 +1,91 @@
+## Contexto
 
-# Dashboard: Export, Drill-down e Persistência do Período
+Na tela `/dashboard` (screenshot enviado), com o viewport reduzido, aparecem dois defeitos de responsividade típicos:
 
-Três melhorias no `/home` (dashboard consolidado) e `/modules`, mantendo o escopo em frontend + uma pequena adição server-side para o PDF.
+1. **KPI "Valor do pipeline"** — o valor `R$ 1.345.300,00` é cortado pela caixa do ícone à direita. Causa: em `StatCard` (`src/routes/_authenticated/dashboard.tsx`, linhas 195-211) o texto `text-2xl` não tem `truncate`/`min-w-0`, e o container do ícone não tem `shrink-0`. Em telas estreitas o ícone empurra o texto e o overflow é escondido.
+2. **Gráfico "Valor por estágio"** — o eixo Y renderiza `0000000` cortado. Causa: `<YAxis>` sem `width` explícito nem `tickFormatter`; com valores em reais o rótulo fica largo demais para o espaço padrão do Recharts em containers estreitos.
 
----
+Esses padrões (KPI com ícone à direita + gráfico Recharts sem `width`/`tickFormatter`) se repetem em várias telas que usam `MetricCard` do TechHire e componentes locais equivalentes.
 
-## 1. Exportação em PDF e CSV
+## Escopo
 
-### CSV (client-side)
-- Reutilizar `src/lib/csv-export.ts` (`toCsv` + `downloadCsv`).
-- Criar `src/lib/home/dashboard-export.ts` com:
-  - `buildDashboardCsv(data, range, modules)` — monta seções (KPIs por módulo) em um único CSV com blocos separados por linha em branco (padrão Excel/BR, `;`).
-  - Cada módulo contratado gera um bloco: cabeçalho do módulo + tabela `Métrica;Valor`.
-  - Inclui metadados no topo: workspace, usuário, intervalo (dd/MM/yyyy – dd/MM/yyyy), gerado em.
+Somente UI/responsividade. Sem mudanças em dados, RLS, permissões, server functions ou regras de negócio.
 
-### PDF (client-side, sem dependência nova)
-- Usar `window.print()` com uma rota dedicada de impressão: `src/routes/_authenticated/home.print.tsx`.
-  - Renderiza o mesmo dashboard em layout otimizado para A4 (sem sidebar/topbar, `@media print` em `src/styles.css`).
-  - Aceita `?from=...&to=...` na URL.
-  - Botão "Exportar PDF" abre a rota em nova aba e dispara `print()` no mount.
-- Racional: evita adicionar `jspdf`/`pdfmake` ao bundle; o navegador gera PDF nativo com fidelidade visual do dashboard.
+### 1. Corrigir os dois defeitos da `/dashboard`
 
-### UI
-- Botão "Exportar" no `PageHeader` de `/home` com menu (`DropdownMenu`): "Exportar CSV" / "Exportar PDF".
-- Respeita módulos visíveis (mesma filtragem por permissões já usada no dashboard).
+- `StatCard` (`dashboard.tsx`): aplicar o padrão do workspace responsive-layout — wrapper com `min-w-0`, `truncate` no valor, `shrink-0` no ícone. Manter o mesmo visual.
+- Ambos gráficos: adicionar `width={64}` (ou similar) e `tickFormatter` ao `<YAxis>` — no "Valor por estágio" formatar como moeda compacta (`R$ 1,3M`, `R$ 340k`) usando um helper local baseado em `Intl.NumberFormat` com `notation: "compact"`. Manter o tooltip com valor completo.
 
----
+### 2. Reforçar `MetricCard` do TechHire
 
-## 2. Drill-down nos KPIs
+`src/components/ats/ui/metric-card.tsx` é usado em ~15 telas. A linha 75 renderiza o valor com `text-2xl` sem `truncate`, e o container do ícone em `flex items-start justify-between` já usa `shrink-0` (linha 69) mas o bloco do valor não protege `min-w-0`. Ajustar:
 
-- Cada `MetricCard` ganha `href` opcional (já suportado ou adicionar prop).
-- Mapeamento por KPI → rota do módulo, preservando o intervalo via query params `?from=YYYY-MM-DD&to=YYYY-MM-DD`:
-  - CRM: Leads abertos → `/leads?from&to`; Negócios ativos / Pipeline → `/deals?from&to`; Ganhos → `/deals?stage=won&from&to`.
-  - ATS: Vagas ativas → `/ats/jobs?from&to`; Candidatos → `/ats/candidates?from&to`.
-  - Contratos: Ativos → `/contracts?status=active&from&to`.
-  - Projetos: Ativos → `/projects?from&to`.
-  - Financeiro: A receber/A pagar → `/finance/entries?direction=...&from&to`.
-  - Pessoas: Ativos → `/people?from&to`.
-- Nas telas de destino que já têm filtro de data (ex.: `deals.tsx`), ler `from`/`to` da URL e hidratar o `DateRangePicker`/filtro local (`CustomRange`). Onde não houver filtro, apenas navegar (sem quebrar).
-- Card fica clicável inteiro (hover + `focus-visible`), com `aria-label` descritivo. Se não houver `href`, comportamento atual.
+- adicionar `min-w-0` ao container do valor;
+- adicionar `truncate` na `<span>` do valor (linha 75);
+- manter tudo o mais igual (tokens, tone, delta).
 
----
+Esse único ajuste corrige simultaneamente os KPIs de: `/home`, `/modules`, `ats-dashboard`, `insights`, `scheduling`, `sourcing/analytics`, `sourcing/multi-posting`, `hunting/index`, `hunting/observability`, `briefing`, `compliance`, `projects.my-work`, `finance.banking.reconciliation`, `people.$id`, `settings.recurring`, `qa.test-cases`, `people/allocations-panel`.
 
-## 3. Persistência do DateRangePicker por usuário
+### 3. Varredura de gráficos Recharts com YAxis financeiro
 
-- Chave de armazenamento por escopo:
-  - `techerp:date-range:home`
-  - `techerp:date-range:modules`
-- Persistência em `localStorage` (por usuário local via `auth.uid()` no prefixo: `techerp:${uid}:date-range:home`).
-- Formato salvo: `{ preset: PresetKey | "custom", from: ISO, to: ISO }`.
-- Criar hook `src/hooks/use-persisted-date-range.ts`:
-  - Assinatura: `usePersistedDateRange(scope: "home" | "modules", defaultPreset = "last30")`.
-  - Retorna `[range, setRange, presetKey]`.
-  - Ao montar: se preset ≠ "custom", recomputa `getPresetRange(preset)` (para "Últimos 30 dias" continuar dinâmico). Se "custom", usa `from`/`to` salvos.
-  - SSR-safe (checa `typeof window`).
-- Integrar em `home.index.tsx` e `modules.index.tsx` (adicionar o `DateRangePicker` também em `/modules`, conforme pedido).
+Localizar `YAxis` em componentes de dashboard/analytics e, onde o `dataKey` for monetário, aplicar `width` + `tickFormatter` compacto. Alvos prováveis (a confirmar por leitura no build):
 
----
+- `src/routes/_authenticated/dashboard.tsx` (dois gráficos)
+- `src/routes/_authenticated/(ats)/ats-dashboard.tsx`
+- `src/routes/_authenticated/(ats)/insights.tsx`
+- `src/routes/_authenticated/(ats)/sourcing/analytics.tsx`
+- `src/routes/_authenticated/finance.dre.tsx`, `finance.cash-flow.tsx`, `finance.banking.reconciliation.tsx`
+- `src/routes/_authenticated/analytics.tsx`, `dashboards.tsx`
 
-## Arquivos
+Cada arquivo será lido antes do ajuste; onde já houver `tickFormatter` adequado, nada muda.
 
-**Criar:**
-- `src/lib/home/dashboard-export.ts` — CSV builder.
-- `src/routes/_authenticated/home.print.tsx` — rota de impressão.
-- `src/hooks/use-persisted-date-range.ts` — hook de persistência.
+### 4. Varredura de outros KPIs locais (não usam MetricCard)
 
-**Editar:**
-- `src/routes/_authenticated/home.index.tsx` — botão Exportar, hook de persistência, `href` nos MetricCards.
-- `src/routes/_authenticated/modules.index.tsx` — adicionar `DateRangePicker` com persistência.
-- `src/components/techhire/ui/metric-card.tsx` (se necessário) — suportar `href`/`onClick`.
-- `src/styles.css` — regras `@media print` para o layout PDF.
-- Rotas de destino do drill-down (leve, apenas leitura de `from`/`to` da URL) — priorizar `/deals`, `/leads`, `/contracts`, `/finance/entries`.
+`src/components/people/timesheet-panel.tsx` e `benefits-panel.tsx` têm `text-2xl` com valor financeiro/percentual dentro de flex rows. Aplicar `min-w-0` + `truncate` onde houver ícone/ação ao lado.
 
-**Não altera:** RLS, schema, server functions existentes de dashboard, lógica de permissões.
+### 5. Validação
 
----
+- Rodar `bun run lint` e `bun run typecheck` (ou equivalentes descobertos em `package.json`).
+- Verificar visualmente a `/dashboard` em viewport mobile (375px) e no viewport reportado (~1052px com sidebar): valor completo visível, gráficos com eixo Y legível, sem overflow horizontal.
+- Verificar amostralmente 2-3 telas do MetricCard em mobile para confirmar que o `truncate` não corta valores curtos indevidamente.
 
-## Validação manual
-1. Selecionar "Últimos 7 dias" no dashboard, recarregar → período persistido.
-2. Clicar em "Pipeline" → abre `/deals` filtrado pelo mesmo intervalo.
-3. Exportar CSV → abre no Excel com blocos por módulo, acentos OK.
-4. Exportar PDF → nova aba, `print()` dispara, layout A4 limpo.
-5. Repetir em `/modules` para persistência independente.
+## Fora do escopo
+
+- Reescrever `StatCard` para usar `MetricCard` (mudança maior, fica para outra passada).
+- Redesenhar gráficos (mudar tipo, cores, unidade).
+- Ajustar responsividade de tabelas, filtros, headers — se surgirem no caminho, listar como pendências no relatório final, sem alterar.
+
+## Detalhes técnicos
+
+Padrão aplicado (do workspace `responsive-layout-patterns`):
+
+```tsx
+// StatCard corrigido
+<div className="flex items-center justify-between gap-3">
+  <div className="min-w-0">
+    <p className="text-xs uppercase ...">{label}</p>
+    <p className="mt-1 truncate text-2xl font-semibold">{value}</p>
+  </div>
+  <div className="h-10 w-10 shrink-0 rounded-md ...">{icon}</div>
+</div>
+```
+
+```tsx
+// Formatter compacto para YAxis financeiro
+const compactBRL = (v: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    notation: "compact",
+    maximumFractionDigits: 1,
+    style: "currency",
+    currency: "BRL",
+  }).format(v);
+
+<YAxis width={64} tickFormatter={compactBRL} ... />
+```
+
+## Entregáveis
+
+- `src/routes/_authenticated/dashboard.tsx` corrigido (StatCard + YAxis dos dois gráficos).
+- `src/components/ats/ui/metric-card.tsx` com `min-w-0` + `truncate`.
+- Ajustes pontuais nos demais arquivos listados na varredura (§3, §4).
+- Relatório final conforme padrão do workspace com arquivos alterados, validações executadas e pendências (se houver).

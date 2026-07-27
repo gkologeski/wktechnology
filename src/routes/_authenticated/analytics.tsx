@@ -273,7 +273,7 @@ function AnalyticsPage() {
                       <BarChart data={cohort.rows}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} width={40} allowDecimals={false} />
                         <RTooltip />
                         <Bar dataKey="created" name="Criados" fill="hsl(var(--muted-foreground))" />
                         <Bar dataKey="won" name="Ganhos" fill="hsl(var(--primary))" />
