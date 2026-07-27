@@ -50,14 +50,21 @@ function Metric({
           ? "text-amber-600 dark:text-amber-400"
           : "text-foreground";
   return (
-    <Card>
-      <CardHeader className="pb-2 flex-row items-center justify-between">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{title}</CardTitle>
-        <Icon className={`h-4 w-4 ${toneCls}`} />
+    <Card className="min-w-0">
+      <CardHeader className="pb-2 flex-row items-center justify-between gap-2">
+        <CardTitle className="min-w-0 truncate text-sm font-medium text-muted-foreground">
+          {title}
+        </CardTitle>
+        <Icon className={`h-4 w-4 shrink-0 ${toneCls}`} />
       </CardHeader>
-      <CardContent>
-        <div className={`text-2xl font-semibold tabular-nums ${toneCls}`}>{value}</div>
-        {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+      <CardContent className="min-w-0">
+        <div
+          title={value}
+          className={`truncate text-2xl font-semibold tabular-nums ${toneCls}`}
+        >
+          {value}
+        </div>
+        {hint && <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>}
       </CardContent>
     </Card>
   );
