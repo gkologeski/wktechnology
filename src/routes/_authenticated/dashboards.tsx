@@ -566,7 +566,7 @@ function WidgetCard({
                 <BarChart data={rows}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="key" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
                   <RTooltip />
                   <Bar dataKey="value" fill="hsl(var(--primary))" />
                 </BarChart>
