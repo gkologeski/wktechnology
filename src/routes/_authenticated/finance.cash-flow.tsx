@@ -171,7 +171,7 @@ function CashFlowPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-semibold tabular-nums">
+          <div className="text-2xl font-semibold tabular-nums truncate">
             {formatCurrency(data?.openingBalance ?? 0)}
           </div>
         </CardContent>

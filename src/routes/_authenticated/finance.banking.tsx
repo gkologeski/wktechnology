@@ -427,7 +427,7 @@ function BankingPage() {
         <CardContent className="grid gap-4 text-sm md:grid-cols-3">
           <div className="rounded-md border p-3">
             <div className="text-xs uppercase text-muted-foreground">Saldo atual</div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums">
+            <div className="mt-1 text-2xl font-semibold tabular-nums truncate">
               {conn?.current_balance != null
                 ? formatCurrency(Number(conn.current_balance), "BRL")
                 : "—"}

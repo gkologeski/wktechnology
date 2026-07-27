@@ -205,7 +205,7 @@ function MetricCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-semibold tabular-nums">{value}</div>
+        <div className="text-2xl font-semibold tabular-nums truncate">{value}</div>
         {hint ? (
           <div className="text-xs text-muted-foreground mt-1 truncate">{hint}</div>
         ) : null}

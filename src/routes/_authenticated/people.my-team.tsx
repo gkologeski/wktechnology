@@ -102,7 +102,7 @@ function MyTeamPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{members.length}</div>
+            <div className="text-2xl font-semibold truncate">{members.length}</div>
             <div className="text-xs text-muted-foreground mt-1">liderado(s)</div>
           </CardContent>
         </Card>
@@ -113,7 +113,7 @@ function MyTeamPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{totals.hours.toFixed(1)}h</div>
+            <div className="text-2xl font-semibold truncate">{totals.hours.toFixed(1)}h</div>
           </CardContent>
         </Card>
         <Card>
@@ -123,7 +123,7 @@ function MyTeamPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{totals.pending.toFixed(1)}h</div>
+            <div className="text-2xl font-semibold truncate">{totals.pending.toFixed(1)}h</div>
           </CardContent>
         </Card>
         <Card>
@@ -133,7 +133,7 @@ function MyTeamPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{totals.docs}</div>
+            <div className="text-2xl font-semibold truncate">{totals.docs}</div>
           </CardContent>
         </Card>
       </div>

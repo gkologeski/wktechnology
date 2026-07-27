@@ -199,17 +199,17 @@ function CostCentersPage() {
       <div className="grid gap-3 md:grid-cols-3">
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs text-muted-foreground">Centros de custo</div>
-          <div className="text-2xl font-semibold tabular-nums">{data?.centers.length ?? 0}</div>
+          <div className="text-2xl font-semibold tabular-nums truncate">{data?.centers.length ?? 0}</div>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs text-muted-foreground">Total receitas rateadas</div>
-          <div className="text-2xl font-semibold tabular-nums text-emerald-600">
+          <div className="text-2xl font-semibold tabular-nums truncate text-emerald-600">
             {fmt(totalReceivable)}
           </div>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs text-muted-foreground">Total despesas rateadas</div>
-          <div className="text-2xl font-semibold tabular-nums text-rose-600">
+          <div className="text-2xl font-semibold tabular-nums truncate text-rose-600">
             {fmt(totalPayable)}
           </div>
         </div>
