@@ -266,7 +266,7 @@ function ReportsPage() {
               <CardTitle className="text-base">Configuração</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                 <div className="space-y-1.5">
                   <Label>Entidade</Label>
                   <Select value={config.entity} onValueChange={(v) => setEntity(v as Entity)}>
@@ -348,7 +348,7 @@ function ReportsPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
                 <div className="space-y-1.5">
                   <Label>Visualização</Label>
                   <Select

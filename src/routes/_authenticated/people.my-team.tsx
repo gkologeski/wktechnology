@@ -94,7 +94,7 @@ function MyTeamPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
@@ -102,7 +102,7 @@ function MyTeamPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{members.length}</div>
+            <div className="text-2xl font-semibold truncate">{members.length}</div>
             <div className="text-xs text-muted-foreground mt-1">liderado(s)</div>
           </CardContent>
         </Card>
@@ -113,7 +113,7 @@ function MyTeamPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{totals.hours.toFixed(1)}h</div>
+            <div className="text-2xl font-semibold truncate">{totals.hours.toFixed(1)}h</div>
           </CardContent>
         </Card>
         <Card>
@@ -123,7 +123,7 @@ function MyTeamPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{totals.pending.toFixed(1)}h</div>
+            <div className="text-2xl font-semibold truncate">{totals.pending.toFixed(1)}h</div>
           </CardContent>
         </Card>
         <Card>
@@ -133,7 +133,7 @@ function MyTeamPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{totals.docs}</div>
+            <div className="text-2xl font-semibold truncate">{totals.docs}</div>
           </CardContent>
         </Card>
       </div>

@@ -790,7 +790,7 @@ function KpiCard({
               : tone === "negative"
                 ? "text-destructive"
                 : ""
-          }`}
+          } truncate`}
         >
           {value}
         </div>

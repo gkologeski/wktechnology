@@ -127,7 +127,7 @@ function ProjectDetailPage() {
         }
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <MetricTile label="Horas apontadas" value={`${(financials?.loggedHours ?? 0).toFixed(1)}h`} />
         <MetricTile
           label="Custo realizado"
@@ -214,7 +214,7 @@ function MetricTile({
       <div
         className={`mt-1 text-2xl font-semibold tabular-nums ${
           tone === "positive" ? "text-emerald-600 dark:text-emerald-400" : ""
-        } ${tone === "negative" ? "text-rose-600 dark:text-rose-400" : ""}`}
+        } ${tone === "negative" ? "text-rose-600 dark:text-rose-400" : ""} truncate`}
       >
         {value}
       </div>
@@ -256,7 +256,7 @@ function TasksKanban({ projectId }: { projectId: string }) {
           <Plus className="h-4 w-4 mr-2" /> Nova tarefa
         </Button>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {TASK_COLUMNS.map((col) => (
           <div
             key={col.key}

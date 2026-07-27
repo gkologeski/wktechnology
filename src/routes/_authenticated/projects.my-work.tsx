@@ -129,7 +129,7 @@ function MyWorkPage() {
         description="Seu foco do dia: tarefas atribuídas, timer e horas da semana."
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <MetricCard
           icon={<TimerIcon className="h-4 w-4" />}
           label="Timer ativo"
@@ -205,7 +205,7 @@ function MetricCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-semibold tabular-nums">{value}</div>
+        <div className="text-2xl font-semibold tabular-nums truncate">{value}</div>
         {hint ? (
           <div className="text-xs text-muted-foreground mt-1 truncate">{hint}</div>
         ) : null}

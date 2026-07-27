@@ -243,7 +243,7 @@ function SourcingAnalyticsPage() {
         />
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Enrollments"
           value={data?.totals.enrollments ?? 0}

@@ -175,7 +175,7 @@ function Metric({
               : tone === "ok"
                 ? "text-emerald-600 dark:text-emerald-400"
                 : ""
-          }`}
+          } truncate`}
         >
           {value.toLocaleString("pt-BR")}
         </div>

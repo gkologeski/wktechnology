@@ -432,7 +432,7 @@ function Stat({
   return (
     <div className="rounded-md border p-3">
       <div className="text-xs text-muted-foreground">{label}</div>
-      <div className={`text-2xl font-semibold ${toneClass}`}>{value}</div>
+      <div className={`text-2xl font-semibold ${toneClass} truncate`}>{value}</div>
     </div>
   );
 }

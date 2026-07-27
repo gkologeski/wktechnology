@@ -301,7 +301,7 @@ function SummaryCard({
         <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-semibold tabular-nums ${cls}`}>{formatCurrency(value)}</div>
+        <div className={`text-2xl font-semibold tabular-nums ${cls} truncate`}>{formatCurrency(value)}</div>
       </CardContent>
     </Card>
   );

@@ -89,7 +89,7 @@ function ContractMarginPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-muted-foreground flex items-center gap-2">
@@ -97,7 +97,7 @@ function ContractMarginPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{totals.hours.toFixed(2)}h</div>
+            <div className="text-2xl font-semibold truncate">{totals.hours.toFixed(2)}h</div>
           </CardContent>
         </Card>
         <Card>
@@ -107,7 +107,7 @@ function ContractMarginPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{fmtCurrency(totals.revenue)}</div>
+            <div className="text-2xl font-semibold truncate">{fmtCurrency(totals.revenue)}</div>
             <div className="text-xs text-muted-foreground mt-1">
               Faturado: {fmtCurrency(totals.invoiced)}
             </div>
@@ -118,7 +118,7 @@ function ContractMarginPage() {
             <CardTitle className="text-sm text-muted-foreground">Custo</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{fmtCurrency(totals.cost)}</div>
+            <div className="text-2xl font-semibold truncate">{fmtCurrency(totals.cost)}</div>
           </CardContent>
         </Card>
         <Card>
@@ -128,7 +128,7 @@ function ContractMarginPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold">{fmtCurrency(totals.margin)}</div>
+            <div className="text-2xl font-semibold truncate">{fmtCurrency(totals.margin)}</div>
             <div className="text-xs text-muted-foreground mt-1">{marginPct.toFixed(1)}%</div>
           </CardContent>
         </Card>
