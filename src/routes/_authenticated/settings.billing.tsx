@@ -163,7 +163,7 @@ function BillingPage() {
             <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
               Limites de entidades
             </h3>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {ENTITY_KEYS.map(({ key, label }) => {
                 const info = ent.info(key);
                 const limit = info.limit;

@@ -186,7 +186,7 @@ function PeopleAnalyticsPage() {
 
 
       {isLoading || !data ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-28" />
           ))}
@@ -194,7 +194,7 @@ function PeopleAnalyticsPage() {
       ) : (
         <>
           {/* KPIs principais */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <KpiCard
               icon={<Users className="h-3.5 w-3.5" />}
               label="Headcount ativo"
@@ -224,7 +224,7 @@ function PeopleAnalyticsPage() {
           </div>
 
           {/* Alocações & margem */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
             <KpiCard
               icon={<Briefcase className="h-3.5 w-3.5" />}
               label="Alocações ativas"

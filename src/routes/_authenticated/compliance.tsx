@@ -112,7 +112,7 @@ function DsarTab() {
 
   return (
     <>
-      <div className="grid gap-3 md:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Pendentes" value={pending} icon={ClipboardList} tone={pending > 0 ? "warning" : "neutral"} loading={q.isLoading} />
         <MetricCard label="Em andamento" value={inProgress} icon={Clock4} loading={q.isLoading} />
         <MetricCard label="Concluídas" value={completed} icon={Shield} tone="positive" loading={q.isLoading} />

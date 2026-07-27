@@ -1272,7 +1272,7 @@ function BankingHealthCard({ providerConnected }: { providerConnected: boolean }
         </Button>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-md border p-3">
             <div className="text-xs uppercase text-muted-foreground">Última execução</div>
             <div className="mt-1 flex items-center gap-1.5 text-sm">
