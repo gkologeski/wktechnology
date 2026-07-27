@@ -30,13 +30,13 @@ export const Route = createFileRoute("/_authenticated/finance/")({
 
 function Metric({
   title,
-  value,
+  raw,
   hint,
   tone,
   icon: Icon,
 }: {
   title: string;
-  value: string;
+  raw: number;
   hint?: string;
   tone?: "positive" | "negative" | "neutral" | "warning";
   icon: React.ComponentType<{ className?: string }>;
@@ -49,6 +49,8 @@ function Metric({
         : tone === "warning"
           ? "text-amber-600 dark:text-amber-400"
           : "text-foreground";
+  const full = formatCurrency(raw);
+  const short = compactBRL(raw);
   return (
     <Card className="min-w-0">
       <CardHeader className="pb-2 flex-row items-center justify-between gap-2">
@@ -59,12 +61,12 @@ function Metric({
       </CardHeader>
       <CardContent className="min-w-0">
         <div
-          title={value}
+          title={full}
           className={`truncate text-2xl font-semibold tabular-nums ${toneCls}`}
         >
-          {value}
+          {short}
         </div>
-        {hint && <p className="mt-1 truncate text-xs text-muted-foreground">{hint}</p>}
+        {hint && <p className="mt-1 truncate text-xs text-muted-foreground" title={hint}>{hint}</p>}
       </CardContent>
     </Card>
   );
@@ -109,33 +111,34 @@ function FinanceDashboard() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Metric
           title="A receber (em aberto)"
-          value={formatCurrency(ar.open)}
+          raw={ar.open}
           hint={ar.overdue > 0 ? `${formatCurrency(ar.overdue)} vencido` : "sem atrasos"}
           tone={ar.overdue > 0 ? "warning" : "positive"}
           icon={ArrowDownCircle}
         />
         <Metric
           title="A pagar (em aberto)"
-          value={formatCurrency(ap.open)}
+          raw={ap.open}
           hint={ap.overdue > 0 ? `${formatCurrency(ap.overdue)} vencido` : "sem atrasos"}
           tone={ap.overdue > 0 ? "warning" : "neutral"}
           icon={ArrowUpCircle}
         />
         <Metric
           title="Saldo previsto 30d"
-          value={formatCurrency(net30)}
+          raw={net30}
           hint="Receber − Pagar nos próximos 30 dias"
           tone={net30 >= 0 ? "positive" : "negative"}
           icon={TrendingUp}
         />
         <Metric
           title="Recebido (180d)"
-          value={formatCurrency(ar.paid_180d)}
+          raw={ar.paid_180d}
           hint={`Pago: ${formatCurrency(ap.paid_180d)}`}
           tone="neutral"
           icon={DollarSign}
         />
       </div>
+
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
