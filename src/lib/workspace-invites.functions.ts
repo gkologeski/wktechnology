@@ -638,7 +638,7 @@ export const consumeInvite = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { data: inv } = await supabaseAdmin
       .from("workspace_invites")
-      .select("id, workspace_id, email, role, expires_at, accepted_at")
+      .select("id, workspace_id, email, role, expires_at, accepted_at, permission_set_id")
       .eq("token", data.token)
       .maybeSingle();
     if (!inv) throw new Error("Convite não encontrado.");
