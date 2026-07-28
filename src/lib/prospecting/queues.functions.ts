@@ -58,6 +58,7 @@ export const upsertQueue = createServerFn({ method: "POST" })
         filters: FiltersSchema.default({}),
         sort: SortSchema.default({}),
         is_shared: z.boolean().default(false),
+        nurture_cadence_id: z.string().uuid().nullable().optional(),
       })
       .parse(i),
   )
@@ -72,7 +73,9 @@ export const upsertQueue = createServerFn({ method: "POST" })
       filters: data.filters,
       sort: data.sort,
       is_shared: data.is_shared,
+      nurture_cadence_id: data.nurture_cadence_id ?? null,
     } as never;
+
     if (data.id) {
       const { error } = await context.supabase
         .from("prospecting_queues")
