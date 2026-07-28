@@ -50,6 +50,8 @@ export function QuickCreateContractDialog({
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [saving, setSaving] = useState(false);
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
 
   useEffect(() => {
     if (open) {
