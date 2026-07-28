@@ -253,11 +253,29 @@ export const listPendingTeamInvites = createServerFn({ method: "GET" })
 
     const { data: invites, error } = await supabaseAdmin
       .from("workspace_invites")
-      .select("id, email, role, expires_at, created_at, accepted_at")
+      .select("id, email, role, expires_at, created_at, accepted_at, permission_set_id")
       .eq("workspace_id", workspace.id)
       .is("accepted_at", null)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
+
+    const setIds = Array.from(
+      new Set(
+        ((invites ?? []) as Array<{ permission_set_id: string | null }>)
+          .map((i) => i.permission_set_id)
+          .filter((v): v is string => !!v),
+      ),
+    );
+    const setNameById = new Map<string, string>();
+    if (setIds.length) {
+      const { data: sets } = await supabaseAdmin
+        .from("permission_sets")
+        .select("id, name")
+        .in("id", setIds);
+      for (const s of (sets ?? []) as Array<{ id: string; name: string }>) {
+        setNameById.set(s.id, s.name);
+      }
+    }
 
     return (invites ?? []).map((i) => ({
       id: i.id as string,
@@ -265,8 +283,16 @@ export const listPendingTeamInvites = createServerFn({ method: "GET" })
       role: i.role as TeamRole,
       expires_at: i.expires_at as string,
       created_at: i.created_at as string,
+      permission_set_id: (i as { permission_set_id: string | null }).permission_set_id ?? null,
+      permission_set_name:
+        (i as { permission_set_id: string | null }).permission_set_id
+          ? setNameById.get(
+              (i as { permission_set_id: string }).permission_set_id,
+            ) ?? null
+          : null,
     }));
   });
+
 
 const ASSIGNED_TABLES = ["contacts", "companies", "leads", "deals"] as const;
 
