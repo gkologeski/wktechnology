@@ -227,7 +227,11 @@ export const countQueueItems = createServerFn({ method: "POST" })
     let query = context.supabase.from(table).select("id", { count: "exact", head: true });
     if (Array.isArray(filters.status) && filters.status.length > 0) {
       query = query.in("status", filters.status as string[]);
+    } else if (queue.entity === "lead") {
+      // Oculta leads já resolvidos das filas quando o filtro não é explícito
+      query = query.not("status", "in", "(nurturing,qualified,disqualified)");
     }
+
     if (Array.isArray(filters.source) && filters.source.length > 0) {
       query = query.in("source", filters.source as string[]);
     }
