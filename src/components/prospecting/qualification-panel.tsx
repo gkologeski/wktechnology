@@ -266,29 +266,27 @@ export function QualificationPanel({
   async function sendToNurturing() {
     setNurturing(true);
     try {
-      const { error: leadErr } = await supabase
-        .from("leads")
-        .update({ status: "nurturing" as never })
-        .eq("id", entityId);
-      if (leadErr) throw new Error(leadErr.message);
-      if (activeId) {
-        await save({
-          data: {
-            id: existingForActive?.id,
-            questionnaire_id: activeId,
-            entity,
-            entity_id: entityId,
-            answers,
-            decision: "nurture",
-            decision_reason: reason || null,
-          },
-        });
+      const res = await nurtureFn({
+        data: {
+          lead_id: entityId,
+          questionnaire_id: activeId ?? null,
+          answers,
+          reason: reason || null,
+          queue_id: queueId ?? null,
+          qualification_id: existingForActive?.id ?? null,
+        },
+      });
+      if (res.enrolled && res.cadence_name) {
+        toast.success(`Lead enviado para nutrição — cadência: ${res.cadence_name}.`);
+      } else {
+        toast.success("Lead enviado para nutrição.");
       }
-      toast.success("Lead enviado para nutrição.");
       qc.invalidateQueries({
         queryKey: ["prospecting", "qualifications", entity, entityId],
       });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["prospecting", "queue-items"] });
+      qc.invalidateQueries({ queryKey: ["prospecting", "queue-count"] });
       onDecided?.("nurture");
     } catch (e) {
       toast.error((e as Error).message);
@@ -296,6 +294,7 @@ export function QualificationPanel({
       setNurturing(false);
     }
   }
+
 
   if (!enabled.length) {
     return (
