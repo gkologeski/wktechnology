@@ -82,6 +82,7 @@ import {
   createWorkspaceInvite,
   resendWorkspaceInvite,
   revokeWorkspaceInvite,
+  bulkRevokeInvalidWorkspaceInvites,
 } from "@/lib/workspace-invites.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEntitlements } from "@/lib/use-entitlements";
@@ -129,6 +130,7 @@ function UsersPage() {
   const inviteFn = useServerFn(createWorkspaceInvite);
   const resendFn = useServerFn(resendWorkspaceInvite);
   const revokeFn = useServerFn(revokeWorkspaceInvite);
+  const bulkRevokeInvalidFn = useServerFn(bulkRevokeInvalidWorkspaceInvites);
   const countAssignedFn = useServerFn(countAssignedToTeamMember);
   const updateFn = useServerFn(updateTeamMemberRole);
   const updateMemberFn = useServerFn(updateTeamMember);
@@ -173,6 +175,7 @@ function UsersPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<TeamRole>("member");
+  const [invitePermissionSetId, setInvitePermissionSetId] = useState<string>("");
   const [inviting, setInviting] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
@@ -317,7 +320,8 @@ function UsersPage() {
   const usersUsed = rows.length;
   const atLimit = usersLimit !== null && usersUsed >= usersLimit;
 
-  const canInvite = !atLimit && email.trim().length > 0;
+  const canInvite =
+    !atLimit && email.trim().length > 0 && invitePermissionSetId.length > 0;
 
   const handleInvite = async () => {
     if (!canInvite) return;
@@ -327,8 +331,8 @@ function UsersPage() {
         data: {
           email: email.trim(),
           role,
-          redirect_origin:
-            getPublicAppUrl(),
+          permission_set_id: invitePermissionSetId,
+          redirect_origin: getPublicAppUrl(),
         },
       });
       setInviteUrl(res.url);
@@ -337,6 +341,7 @@ function UsersPage() {
       });
       setEmail("");
       setRole("member");
+      setInvitePermissionSetId("");
       await refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao convidar");
@@ -344,6 +349,7 @@ function UsersPage() {
       setInviting(false);
     }
   };
+
 
   const closeInviteDialog = () => {
     setInviteOpen(false);
@@ -500,7 +506,39 @@ function UsersPage() {
                         {ROLE_DESCRIPTIONS[role]}
                       </p>
                     </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="invite-permission-set">
+                        Conjunto de permissões <span className="text-destructive">*</span>
+                      </Label>
+                      <Select
+                        value={invitePermissionSetId}
+                        onValueChange={setInvitePermissionSetId}
+                      >
+                        <SelectTrigger id="invite-permission-set">
+                          <SelectValue placeholder="Selecione um conjunto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {permissionSets
+                            .filter((s) => s.module !== "__bundle__")
+                            .map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                <div className="flex flex-col">
+                                  <span>{s.name}</span>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {s.module}
+                                    {s.is_system ? " • padrão" : ""}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground pt-1">
+                        Define o que o usuário poderá ver e fazer ao aceitar o convite.
+                      </p>
+                    </div>
                   </div>
+
                   <DialogFooter>
                     <Button variant="ghost" onClick={closeInviteDialog}>
                       Cancelar
@@ -580,14 +618,40 @@ function UsersPage() {
       {/* Pending invites */}
       {invites.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4 text-amber-600" />
-              Convites pendentes ({invites.length})
-            </CardTitle>
-            <CardDescription>
-              Convites por link que ainda não foram aceitos. Expiram em 14 dias após o envio.
-            </CardDescription>
+          <CardHeader className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 space-y-0">
+            <div>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-amber-600" />
+                Convites pendentes ({invites.length})
+              </CardTitle>
+              <CardDescription>
+                Convites por link que ainda não foram aceitos. Expiram em 14 dias após o envio.
+              </CardDescription>
+            </div>
+            {invites.some((i) => !i.permission_set_id) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  if (
+                    !window.confirm(
+                      "Revogar todos os convites pendentes sem conjunto de permissões?",
+                    )
+                  )
+                    return;
+                  try {
+                    const res = await bulkRevokeInvalidFn();
+                    await refetchInvites();
+                    toast.success(`${res.revoked} convite(s) revogado(s)`);
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Erro ao revogar");
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Revogar pendentes sem permissão
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="p-0">
             <Table>
@@ -595,51 +659,70 @@ function UsersPage() {
                 <TableRow>
                   <TableHead>E-mail</TableHead>
                   <TableHead>Papel</TableHead>
+                  <TableHead>Permissões</TableHead>
                   <TableHead>Enviado em</TableHead>
                   <TableHead>Expira em</TableHead>
                   <TableHead className="w-[100px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invites.map((i) => (
-                  <TableRow key={i.id}>
-                    <TableCell className="text-sm">{i.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{TEAM_ROLE_LABELS[i.role]}</Badge>
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDateTime(i.created_at)}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDateTime(i.expires_at)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleResendInvite(i.id)}
-                          aria-label="Reenviar convite"
-                          title="Reenviar convite"
-                        >
-                          <Send className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRevokeInvite(i.id)}
-                          aria-label="Revogar convite"
-                          title="Revogar convite"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {invites.map((i) => {
+                  const hasSet = !!i.permission_set_id;
+                  return (
+                    <TableRow key={i.id}>
+                      <TableCell className="text-sm">{i.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{TEAM_ROLE_LABELS[i.role]}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {hasSet ? (
+                          <Badge variant="secondary">
+                            {i.permission_set_name ?? "Conjunto"}
+                          </Badge>
+                        ) : (
+                          <Badge variant="destructive">Sem permissão — recrie</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDateTime(i.created_at)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatDateTime(i.expires_at)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleResendInvite(i.id)}
+                            aria-label="Reenviar convite"
+                            title={
+                              hasSet
+                                ? "Reenviar convite"
+                                : "Convite sem permissão — revogue e crie um novo"
+                            }
+                            disabled={!hasSet}
+                          >
+                            <Send className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRevokeInvite(i.id)}
+                            aria-label="Revogar convite"
+                            title="Revogar convite"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
+
         </Card>
       )}
 
