@@ -19,6 +19,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShieldOff } from "lucide-react";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { QueueTab } from "@/components/prospecting/queue-tab";
+import { NurturingTab } from "@/components/prospecting/nurturing-tab";
+
 import { QuestionnairesTab } from "@/components/prospecting/questionnaires-tab";
 import { CadencesTab } from "@/components/prospecting/cadences-tab";
 import { ScoringPage } from "./settings.scoring";
