@@ -130,6 +130,7 @@ function UsersPage() {
   const inviteFn = useServerFn(createWorkspaceInvite);
   const resendFn = useServerFn(resendWorkspaceInvite);
   const revokeFn = useServerFn(revokeWorkspaceInvite);
+  const bulkRevokeInvalidFn = useServerFn(bulkRevokeInvalidWorkspaceInvites);
   const countAssignedFn = useServerFn(countAssignedToTeamMember);
   const updateFn = useServerFn(updateTeamMemberRole);
   const updateMemberFn = useServerFn(updateTeamMember);
