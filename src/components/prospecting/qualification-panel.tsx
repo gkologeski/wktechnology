@@ -4,7 +4,7 @@
  * qualificar (abre criação de negócio), desqualificar (motivo obrigatório)
  * ou enviar para nutrição.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -90,6 +90,12 @@ export function QualificationPanel({
     (existingForActive?.answers as Record<string, unknown>) ?? {},
   );
   const [reason, setReason] = useState("");
+
+  // Sincroniza respostas quando o registro existente carrega ou muda de questionário.
+  useEffect(() => {
+    setAnswers((existingForActive?.answers as Record<string, unknown>) ?? {});
+    setReason("");
+  }, [existingForActive?.id, activeId]);
 
   const score = useMemo(() => {
     if (!qData) return 0;
