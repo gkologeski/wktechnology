@@ -246,6 +246,7 @@ export function CreateDealFromLeadDialog({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => !saving && onOpenChange(v)}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
