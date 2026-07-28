@@ -384,5 +384,15 @@ export function CreateDealFromLeadDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <QuickCreateCompanyDialog
+      open={createCompanyOpen}
+      onOpenChange={setCreateCompanyOpen}
+      initialName={pendingCompanyName}
+      onCreated={(id) => {
+        setCompanyId(id);
+        setCompanyName(pendingCompanyName);
+      }}
+    />
+    </>
   );
 }
