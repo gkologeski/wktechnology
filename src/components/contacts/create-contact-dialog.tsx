@@ -211,5 +211,14 @@ export function CreateContactDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => {
+          setCompany({ id, name: pendingCompanyName });
+        }}
+      />
+    </>
   );
 }
