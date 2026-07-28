@@ -38,6 +38,7 @@ import { listQuestionnaires, getQuestionnaire } from "@/lib/prospecting/question
 import {
   saveQualification,
   listQualificationsForEntity,
+  nurtureLead,
 } from "@/lib/prospecting/qualifications.functions";
 import { getDealLossReasons } from "@/lib/deal-loss-reasons.functions";
 
@@ -47,19 +48,23 @@ export function QualificationPanel({
   entity,
   entityId,
   preselectedQuestionnaireId,
+  queueId,
   onDecided,
 }: {
   entity: Entity;
   entityId: string;
   preselectedQuestionnaireId?: string | null;
+  queueId?: string | null;
   onDecided?: (decision: "qualified" | "disqualified" | "nurture") => void;
 }) {
   const listQ = useServerFn(listQuestionnaires);
   const getQ = useServerFn(getQuestionnaire);
   const listExisting = useServerFn(listQualificationsForEntity);
   const save = useServerFn(saveQualification);
+  const nurtureFn = useServerFn(nurtureLead);
   const listLossReasons = useServerFn(getDealLossReasons);
   const qc = useQueryClient();
+
 
   const { data: questionnaires } = useQuery({
     queryKey: ["prospecting", "questionnaires"],
