@@ -358,6 +358,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             <CompanyPicker
               value={{ id: null, name: value }}
               onChange={(v: CompanyPickerValue) => setValue(v.name)}
+              onCreateNew={(name) => openCreateCompany(p.key, name)}
             />
             <div className="flex gap-1">
               <Button size="sm" className="h-8" onClick={() => save(p.key)}>
