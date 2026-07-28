@@ -175,6 +175,7 @@ function UsersPage() {
   const [inviteOpen, setInviteOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<TeamRole>("member");
+  const [invitePermissionSetId, setInvitePermissionSetId] = useState<string>("");
   const [inviting, setInviting] = useState(false);
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
