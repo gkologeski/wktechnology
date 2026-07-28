@@ -82,6 +82,7 @@ import {
   createWorkspaceInvite,
   resendWorkspaceInvite,
   revokeWorkspaceInvite,
+  bulkRevokeInvalidWorkspaceInvites,
 } from "@/lib/workspace-invites.functions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEntitlements } from "@/lib/use-entitlements";
