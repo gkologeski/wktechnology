@@ -362,6 +362,7 @@ function PlayProspectingQueue() {
 
         <section className="col-span-12 lg:col-span-8 space-y-4">
           <QualificationPanel
+            key={id}
             entity={entity}
             entityId={id}
             preselectedQuestionnaireId={questionnaireId}
