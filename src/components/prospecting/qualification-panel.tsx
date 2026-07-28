@@ -91,6 +91,12 @@ export function QualificationPanel({
   );
   const [reason, setReason] = useState("");
 
+  // Sincroniza respostas quando o registro existente carrega ou muda de questionário.
+  useEffect(() => {
+    setAnswers((existingForActive?.answers as Record<string, unknown>) ?? {});
+    setReason("");
+  }, [existingForActive?.id, activeId]);
+
   const score = useMemo(() => {
     if (!qData) return 0;
     let total = 0;
