@@ -884,6 +884,10 @@ function TicketsIndex() {
                 placeholder="Selecionar empresa…"
                 icon={Building2}
                 priorityIds={related.companies.filter((id) => id !== draft.company_id)}
+                onCreateNew={(name) => {
+                  setPendingCompanyName(name);
+                  setCreateCompanyOpen(true);
+                }}
               />
             </div>
             <div className="md:col-span-2 space-y-1.5">
