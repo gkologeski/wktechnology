@@ -223,7 +223,12 @@ function AcceptInviteTokenPage() {
                   <p className="text-xs text-destructive">As senhas não conferem.</p>
                 )}
               </div>
-              <Button type="submit" className="w-full" disabled={submitting || !canSubmit}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={submitting || !canSubmit}
+                style={primary ? { backgroundColor: primary, borderColor: primary } : undefined}
+              >
                 {submitting ? "Entrando…" : "Acessar workspace"}
               </Button>
             </form>
