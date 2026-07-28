@@ -65,6 +65,8 @@ export function CreateDealFromLeadDialog({
   const [contactId, setContactId] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
 
   const pipeline = useMemo(
     () => pipelines.find((p) => p.id === pipelineId) ?? defaultPipeline ?? null,
