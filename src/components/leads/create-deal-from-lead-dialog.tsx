@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
 import type { Lead } from "@/lib/db-types";
