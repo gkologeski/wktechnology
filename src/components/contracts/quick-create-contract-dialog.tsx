@@ -137,6 +137,10 @@ export function QuickCreateContractDialog({
               value={companyId}
               onChange={(id) => setCompanyId(id)}
               placeholder="Selecione a empresa"
+              onCreateNew={(name) => {
+                setPendingCompanyName(name);
+                setCreateCompanyOpen(true);
+              }}
             />
           </div>
 
