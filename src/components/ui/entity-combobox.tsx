@@ -323,6 +323,30 @@ export function EntityCombobox({
                     {value === item.id ? <Check className="h-4 w-4 text-primary" /> : null}
                   </CommandItem>
                 );
+                const term = search.trim();
+                const hasExact = [...priorityFiltered, ...restFiltered].some(
+                  (it) => it.label.trim().toLowerCase() === term.toLowerCase(),
+                );
+                const showCreate = !!onCreateNew && term.length > 0 && !hasExact;
+                const createNode = showCreate ? (
+                  <CommandGroup>
+                    <CommandItem
+                      key="__create__"
+                      value={`__create__:${term}`}
+                      onSelect={() => {
+                        onCreateNew?.(term);
+                        setOpen(false);
+                        setSearch("");
+                      }}
+                      className="flex items-center gap-2 text-primary"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span className="truncate">
+                        {createLabel ? createLabel(term) : `Criar "${term}"`}
+                      </span>
+                    </CommandItem>
+                  </CommandGroup>
+                ) : null;
                 if (loading) {
                   return (
                     <div className="flex items-center justify-center gap-2 py-6 text-xs text-muted-foreground">
@@ -332,7 +356,12 @@ export function EntityCombobox({
                   );
                 }
                 if (priorityFiltered.length === 0 && restFiltered.length === 0) {
-                  return <CommandEmpty>{emptyLabel}</CommandEmpty>;
+                  return (
+                    <>
+                      <CommandEmpty>{emptyLabel}</CommandEmpty>
+                      {createNode}
+                    </>
+                  );
                 }
                 return (
                   <>
@@ -346,6 +375,7 @@ export function EntityCombobox({
                         {restFiltered.map(renderItem)}
                       </CommandGroup>
                     )}
+                    {createNode}
                   </>
                 );
               })()}
