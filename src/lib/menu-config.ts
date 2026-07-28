@@ -86,6 +86,12 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Captar",
     items: [
       {
+        title: "Prospecção",
+        url: "/prospecting",
+        icon: PlayCircle,
+        need: "manager",
+      },
+      {
         title: "Leads",
         url: "/leads",
         icon: UserPlus,
@@ -97,15 +103,10 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
 
       { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
       { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
-      {
-        title: "Prospecção",
-        url: "/prospecting",
-        icon: PlayCircle,
-        need: "manager",
-      },
 
       { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles, need: "manager" },
     ],
+
   },
   {
     label: "Relacionar",
