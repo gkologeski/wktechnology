@@ -300,10 +300,16 @@ export const listQueueItems = createServerFn({ method: "POST" })
       const ids = (((queue as { item_ids?: string[] }).item_ids) ?? []) as string[];
       if (ids.length === 0) return { items: [], total: 0, entity: queue.entity };
       query = query.in("id", ids);
+      if (queue.entity === "lead") {
+        query = query.not("status", "in", "(nurturing,qualified,disqualified)");
+      }
     } else {
       if (Array.isArray(filters.status) && filters.status.length > 0) {
         query = query.in("status", filters.status as string[]);
+      } else if (queue.entity === "lead") {
+        query = query.not("status", "in", "(nurturing,qualified,disqualified)");
       }
+
       if (Array.isArray(filters.source) && filters.source.length > 0) {
         query = query.in("source", filters.source as string[]);
       }
