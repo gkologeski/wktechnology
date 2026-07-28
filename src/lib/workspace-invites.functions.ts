@@ -333,6 +333,8 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
       role: data.role,
       expiresAt: (inserted as { expires_at: string }).expires_at,
       inviteId: (inserted as { id: string }).id,
+      branding: ctx.branding,
+      settings: ctx.settings,
     });
 
     await supabaseAdmin.from("audit_logs").insert({
