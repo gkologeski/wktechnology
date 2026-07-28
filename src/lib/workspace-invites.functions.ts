@@ -390,13 +390,18 @@ export const resendWorkspaceInvite = createServerFn({ method: "POST" })
 
     const { data: inv, error } = await supabaseAdmin
       .from("workspace_invites")
-      .select("id, email, role, token, expires_at, accepted_at")
+      .select("id, email, role, token, expires_at, accepted_at, permission_set_id")
       .eq("id", data.invite_id)
       .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!inv) throw new Error("Convite não encontrado.");
     if (inv.accepted_at) throw new Error("Este convite já foi aceito.");
+    if (!(inv as { permission_set_id?: string | null }).permission_set_id) {
+      throw new Error(
+        "Este convite foi criado sem conjunto de permissões. Revogue e crie um novo.",
+      );
+    }
 
     const url = `${data.redirect_origin.replace(/\/+$/, "")}/accept-invite/${inv.token as string}`;
     const ctx = await loadInviteContext(workspaceId, userId);
