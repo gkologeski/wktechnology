@@ -1,56 +1,64 @@
-## Objetivo
+## Contexto
 
-Ao convidar um novo membro do workspace (Configurações → Controle de acesso → Membros → Convidar), o admin passa a **obrigatoriamente escolher um Conjunto de permissões (permission_set)**, além do papel base (admin/gestor/membro). Quando o convite é aceito, o conjunto escolhido é aplicado ao novo usuário automaticamente, substituindo o job_role fixo usado hoje.
+O “controle de empresa” é o componente `CompanyPicker` (`src/components/ui/company-picker.tsx`). Ele já suporta criação inline via prop `onCreateNew` + `QuickCreateCompanyDialog`, mas em vários lugares essa prop **não está conectada**, então quando a empresa não é encontrada o usuário não consegue criá-la de dentro do próprio campo.
 
-Convites pendentes atualmente na fila (sem `permission_set_id`) serão revogados em massa (por workspace) — o admin recria-os já com a permissão definida.
+## Mapeamento das ocorrências
 
-## Escopo funcional
+Levantamento via `rg "CompanyPicker" src/`:
 
-- Formulário de convite passa a exigir "Conjunto de permissões" (select carregado por workspace). Botão "Convidar" fica desabilitado enquanto não houver e-mail + papel + conjunto.
-- Reenvio de convite continua funcionando, mas exige que o convite tenha `permission_set_id`. Convites antigos sem esse campo aparecem marcados como "Sem permissão — recrie" e o botão Reenviar fica desabilitado.
-- Aceite do convite (`consumeInvite`): após criar o `workspace_members`, cria a atribuição do conjunto ao usuário (tabela de vínculo membro↔permission_set) e mantém o `user_job_roles` padrão apenas como fallback caso o `permission_set_id` esteja ausente.
-- Lista de membros/convites mostra o conjunto atribuído em cada linha (nome do conjunto).
-- Revogação em massa dos pendentes atuais: nova ação "Revogar todos os pendentes sem permissão" visível apenas para admin do workspace, com confirmação.
+| Local | Status atual | Ação |
+| --- | --- | --- |
+| `src/components/leads/create-lead-dialog.tsx` (linha 233) | Já usa `onCreateNew` + `QuickCreateCompanyDialog` | Nenhuma — referência de padrão |
+| `src/components/contacts/create-contact-dialog.tsx` (linha 178) | Sem `onCreateNew` | Adicionar criação inline |
+| `src/components/properties-panel.tsx` – edição inline (linha 325) | Sem `onCreateNew` | Adicionar criação inline |
+| `src/components/properties-panel.tsx` – diálogo “Ver todas as propriedades” via `CompanyFieldAll` (linha 719) | Sem `onCreateNew` | Adicionar criação inline |
 
-## Escopo técnico
+Fora do escopo (usam `EntityCombobox` de companies, não o `CompanyPicker`): `workflow-builder`, `quick-create-contract-dialog`, `deal-detail-drawer`, `quick-create-dialogs`, `associations-panel`, `create-deal-from-lead-dialog`, rota `companies.$id.tsx`, rota `tickets.tsx`. Esses controles têm outra semântica (seleção estrita/associação) e ficam preservados sem alteração — o `AddAssociation` do painel de associações já expõe “Criar novo” separado, então não trava a operação.
 
-### 1. Banco
-Migração:
-- Adicionar `permission_set_id uuid null` em `public.workspace_invites` (FK para `permission_sets(id) ON DELETE SET NULL`, index por workspace).
-- Confirmar (ou criar, se ausente) a tabela de vínculo `member_permission_sets (workspace_id, user_id, permission_set_id, is_primary)` com RLS restringindo a admins do workspace e leitura pelo próprio usuário. Se já existir uma tabela equivalente (a verificar com read_query em `permission_sets`, `permission_set_items` e correlatas), reutilizar sem duplicar.
-- Nenhuma mudança em `permission_sets` / `permission_set_items`.
+## Mudanças
 
-### 2. Server functions (`src/lib/workspace-invites.functions.ts`)
-- `createWorkspaceInvite`: adicionar `permission_set_id: z.string().uuid()` obrigatório no `inputValidator`. Validar que o `permission_set_id` pertence ao workspace ativo antes de inserir. Persistir na coluna nova.
-- `listPendingTeamInvites` / `listTeamMembers`: retornar `permission_set_id` e `permission_set_name` (join com `permission_sets`).
-- `resendWorkspaceInvite`: erro amigável se o convite não tiver `permission_set_id`.
-- `consumeInvite`: após inserir em `workspace_members`, se `permission_set_id` existir, gravar em `member_permission_sets`. Manter o insert de `user_job_roles` como fallback apenas se `permission_set_id` for null.
-- Novo `bulkRevokeInvalidWorkspaceInvites` (admin-only): deleta pendentes do workspace com `permission_set_id IS NULL`.
+Padrão único (mesmo já usado em `create-lead-dialog`):
 
-### 3. UI (`src/routes/_authenticated/settings.teams.tsx`)
-- Dialog "Convidar": adicionar um `Select` "Conjunto de permissões" (obrigatório) alimentado pela query `permissionSets` já existente. Atualizar `canInvite` para exigir `permissionSetId`. Passar `permission_set_id` na chamada.
-- Coluna nova em Membros e em Convites pendentes: "Permissões" (nome do conjunto).
-- Convites pendentes sem conjunto: badge "Sem permissão — recrie" e botão Reenviar desabilitado com tooltip.
-- Botão "Revogar pendentes sem permissão" no topo da lista de convites pendentes (aparece só se houver algum). Confirmação via `AlertDialog`.
+```tsx
+const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+const [pendingCompanyName, setPendingCompanyName] = useState("");
+// ...
+<CompanyPicker
+  ...
+  onCreateNew={(name) => {
+    setPendingCompanyName(name);
+    setCreateCompanyOpen(true);
+  }}
+/>
+<QuickCreateCompanyDialog
+  open={createCompanyOpen}
+  onOpenChange={setCreateCompanyOpen}
+  initialName={pendingCompanyName}
+  onCreated={({ id, name }) => { /* set value + persist */ }}
+/>
+```
 
-### 4. Ajustes visíveis ao convidado
-- Nenhum: a página `/accept-invite/$token` continua igual; a aplicação do conjunto ocorre no servidor.
+### 1. `src/components/contacts/create-contact-dialog.tsx`
+- Importar `QuickCreateCompanyDialog`.
+- Adicionar estado local para o diálogo e o nome pendente.
+- Plugar `onCreateNew` no `CompanyPicker` existente.
+- No `onCreated`, atualizar `setCompany({ id, name })` para o form salvar com o `company_id` já vinculado (comportamento consistente com o create-lead).
+
+### 2. `src/components/properties-panel.tsx`
+- Importar `QuickCreateCompanyDialog`.
+- Adicionar `createCompanyOpen` / `pendingCompanyName` e um handler `handleCompanyCreated` no componente raiz.
+- Bloco de edição inline (`p.type === "company"`, linha 325): passar `value={{ id: null, name: value }}` com `onCreateNew`, e no `handleCompanyCreated` gravar o nome no campo (`p.key`) e chamar `save(p.key)`. Se `table === "leads"` também atualizar `company_id` na mesma persistência (mantém a correção anterior de vínculo estruturado).
+- `CompanyFieldAll` (linha 689): aceitar nova prop `onCreateNew` e repassar ao `CompanyPicker`; reaproveitar o mesmo `QuickCreateCompanyDialog` renderizado uma única vez no componente raiz.
+- Renderizar `<QuickCreateCompanyDialog />` uma única vez no final do JSX do `PropertiesPanel`.
+
+### 3. Nenhuma mudança em `CompanyPicker`, `QuickCreateCompanyDialog` ou schema.
+
+## Verificação
+
+- `tsgo` (typecheck).
+- Manual: em `/leads/:id`, `/contacts/:id` (e demais telas que usam `PropertiesPanel` com `type: "company"`) e no diálogo Novo Contato — digitar um nome inexistente, ver “Criar «Nome»” dentro do campo, criar via popup, confirmar que o registro passa a exibir o vínculo com a empresa sem precisar sair da tela.
 
 ## Fora do escopo
 
-- Não alterar a matriz de permissões, `permission_sets`, `permission_set_items`, nem regras RLS de outras entidades.
-- Não trocar o modelo de `role` (admin/manager/member) — ele continua obrigatório e mantém o comportamento atual.
-- Não migrar/converter automaticamente permissões já atribuídas via `user_job_roles`.
-
-## Validação manual
-
-1. Configurações → Controle de acesso → Membros → Convidar: e-mail + papel selecionados, mas **sem** conjunto → botão "Convidar" desabilitado.
-2. Selecionar um conjunto e convidar: convite criado, e-mail enviado, linha aparece na lista de pendentes exibindo o nome do conjunto.
-3. Convites pendentes antigos aparecem com "Sem permissão — recrie" e botão de reenviar desabilitado; clicar em "Revogar pendentes sem permissão" remove todos após confirmação.
-4. Aceitar um convite novo (fluxo `/accept-invite/$token`) e conferir na tela de matriz de permissões / cargos que o conjunto escolhido foi aplicado ao novo usuário.
-5. Tentar criar convite passando um `permission_set_id` de outro workspace via chamada direta → server function rejeita.
-
-## Riscos
-
-- Se existir código legado que chama `createWorkspaceInvite` sem `permission_set_id` (scripts, testes), passará a falhar. Mitigação: buscar por chamadas remanescentes e ajustar.
-- Convidados antigos que já aceitaram continuam com o `user_job_roles` fixo aplicado no passado; não haverá backfill automático — se necessário, o admin ajusta pelo diálogo "Cargos" existente.
+- `EntityCombobox` de companies (associações, workflows, contratos, deals, tickets, rota de company).
+- Ajustes de RLS, schema ou lógica de negócio.
