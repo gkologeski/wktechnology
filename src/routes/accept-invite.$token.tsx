@@ -37,6 +37,12 @@ type InviteInfo = {
   email: string;
   role: "admin" | "manager" | "member";
   workspace: { id: string; name: string; slug: string };
+  branding?: {
+    brand_name: string | null;
+    logo_url: string | null;
+    primary_color: string | null;
+  };
+  product_name?: string;
   user_exists: boolean;
 };
 
