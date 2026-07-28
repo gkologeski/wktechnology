@@ -540,11 +540,23 @@ export const lookupInviteByToken = createServerFn({ method: "POST" })
     if (new Date(inv.expires_at as string).getTime() < Date.now())
       return { valid: false as const, reason: "expired" as const };
 
-    const { data: ws } = await supabaseAdmin
-      .from("workspaces")
-      .select("name, slug")
-      .eq("id", inv.workspace_id as string)
-      .maybeSingle();
+    const [{ data: ws }, { data: branding }, { data: settings }] = await Promise.all([
+      supabaseAdmin
+        .from("workspaces")
+        .select("name, slug")
+        .eq("id", inv.workspace_id as string)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("workspace_branding")
+        .select("brand_name, logo_url, primary_color")
+        .eq("workspace_id", inv.workspace_id as string)
+        .maybeSingle(),
+      supabaseAdmin
+        .from("workspace_invite_settings")
+        .select("product_name")
+        .eq("workspace_id", inv.workspace_id as string)
+        .maybeSingle(),
+    ]);
 
     // Verifica se já existe usuário com esse email
     const target = (inv.email as string).toLowerCase();
@@ -573,6 +585,12 @@ export const lookupInviteByToken = createServerFn({ method: "POST" })
         name: (ws?.name as string) ?? "",
         slug: (ws?.slug as string) ?? "",
       },
+      branding: {
+        brand_name: (branding?.brand_name as string) ?? null,
+        logo_url: (branding?.logo_url as string) ?? null,
+        primary_color: (branding?.primary_color as string) ?? null,
+      },
+      product_name: (settings?.product_name as string) ?? "TechERP",
       user_exists: userExists,
     };
   });
