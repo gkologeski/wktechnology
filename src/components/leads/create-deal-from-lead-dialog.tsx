@@ -306,6 +306,10 @@ export function CreateDealFromLeadDialog({
               }}
               placeholder={companyName || "Selecionar empresa…"}
               priorityIds={related.companies.filter((id) => id !== companyId)}
+              onCreateNew={(name) => {
+                setPendingCompanyName(name);
+                setCreateCompanyOpen(true);
+              }}
             />
           </div>
 
