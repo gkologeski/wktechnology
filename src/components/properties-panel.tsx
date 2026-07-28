@@ -36,6 +36,7 @@ import {
 } from "@/lib/record-layouts.functions";
 import { toE164, isEmail, isCNPJ, formatCNPJ, stripCNPJ } from "@/lib/validators";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { formatCurrency, formatDateOnly, formatDateTime } from "@/lib/crm";
 import { OwnerField } from "@/components/entity/owner-field";
 
