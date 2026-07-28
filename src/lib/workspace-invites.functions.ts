@@ -722,6 +722,25 @@ export const consumeInvite = createServerFn({ method: "POST" })
     } as never);
     if (jrErr && jrErr.code !== "23505") throw new Error(jrErr.message);
 
+    // Aplica o conjunto de permissões escolhido no convite (se houver).
+    const chosenSetId = (inv as { permission_set_id?: string | null }).permission_set_id ?? null;
+    if (chosenSetId) {
+      const { data: ws } = await supabaseAdmin
+        .from("workspaces")
+        .select("created_by")
+        .eq("id", inv.workspace_id as string)
+        .maybeSingle();
+      const workspaceOwnerId =
+        (ws as { created_by?: string } | null)?.created_by ?? (inv.workspace_id as string);
+      const { error: upsErr } = await supabaseAdmin
+        .from("user_permission_sets")
+        .insert({
+          user_id: userId,
+          owner_id: workspaceOwnerId,
+          set_id: chosenSetId,
+        } as never);
+      if (upsErr && upsErr.code !== "23505") throw new Error(upsErr.message);
+    }
 
     // Marca convite como aceito
     await supabaseAdmin
@@ -731,3 +750,40 @@ export const consumeInvite = createServerFn({ method: "POST" })
 
     return { ok: true, email };
   });
+
+/** Revoga em massa convites pendentes sem conjunto de permissões definido. */
+export const bulkRevokeInvalidWorkspaceInvites = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(workspaceId, userId);
+
+    const { data: rows, error: selErr } = await supabaseAdmin
+      .from("workspace_invites")
+      .select("id, email, role")
+      .eq("workspace_id", workspaceId)
+      .is("accepted_at", null)
+      .is("permission_set_id", null);
+    if (selErr) throw new Error(selErr.message);
+    const ids = ((rows ?? []) as Array<{ id: string }>).map((r) => r.id);
+    if (ids.length === 0) return { ok: true, revoked: 0 };
+
+    const { error: delErr } = await supabaseAdmin
+      .from("workspace_invites")
+      .delete()
+      .in("id", ids);
+    if (delErr) throw new Error(delErr.message);
+
+    await supabaseAdmin.from("audit_logs").insert({
+      workspace_owner_id: workspaceId,
+      actor_user_id: userId,
+      entity: "workspace_invite",
+      entity_id: null,
+      action: "invite.bulk_revoked_missing_permission",
+      after: { count: ids.length },
+    } as never);
+
+    return { ok: true, revoked: ids.length };
+  });
+
