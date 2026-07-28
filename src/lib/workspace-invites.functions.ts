@@ -268,6 +268,9 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
       .object({
         email: z.string().trim().email().max(255),
         role: Role,
+        permission_set_id: z
+          .string({ required_error: "Selecione um conjunto de permissões" })
+          .uuid("Selecione um conjunto de permissões"),
         redirect_origin: z.string().trim().url().max(255),
       })
       .parse(i),
@@ -279,6 +282,24 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
 
     const email = data.email.toLowerCase();
     const token = randomToken();
+
+    // Valida que o conjunto de permissões pertence ao workspace (ou é system).
+    {
+      const { data: ws } = await supabaseAdmin
+        .from("workspaces")
+        .select("created_by")
+        .eq("id", workspaceId)
+        .maybeSingle();
+      const workspaceOwnerId = (ws as { created_by?: string } | null)?.created_by ?? userId;
+      const { data: set } = await supabaseAdmin
+        .from("permission_sets")
+        .select("id, is_system, owner_id")
+        .eq("id", data.permission_set_id)
+        .maybeSingle();
+      const setRow = set as { is_system?: boolean; owner_id?: string | null } | null;
+      const belongs = !!setRow && (setRow.is_system || setRow.owner_id === workspaceOwnerId);
+      if (!belongs) throw new Error("Conjunto de permissões inválido para este workspace.");
+    }
 
     // ---- Enforcement: limite de usuários do plano ----
     // Owner conta como 1. Comparamos (membros atuais + 1) com get_entitlement_limit('users.max').
@@ -318,6 +339,7 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
         role: data.role,
         token,
         invited_by: userId,
+        permission_set_id: data.permission_set_id,
       } as never)
       .select("id, expires_at")
       .single();
@@ -343,11 +365,12 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
       entity: "workspace_invite",
       entity_id: (inserted as { id: string }).id,
       action: "invite.created",
-      after: { email, role: data.role },
+      after: { email, role: data.role, permission_set_id: data.permission_set_id },
     } as never);
 
     return { ok: true, url, token, email, emailed: true };
   });
+
 
 /** Reenvia o e-mail de um convite pendente (sem regenerar o token). */
 export const resendWorkspaceInvite = createServerFn({ method: "POST" })
