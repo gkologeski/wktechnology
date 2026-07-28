@@ -917,6 +917,12 @@ function TicketsIndex() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => setDraft((d) => ({ ...d, company_id: id }))}
+      />
     </div>
   );
 }
