@@ -66,6 +66,13 @@ export interface EntityComboboxProps {
   priorityIds?: string[];
   /** Rótulo do grupo prioritário. Default: "Relacionados". */
   priorityLabel?: string;
+  /**
+   * Habilita criação inline. Quando definido e a busca tem termo, exibe
+   * "Criar «{termo}»" no fim da lista. O callback recebe o termo digitado.
+   */
+  onCreateNew?: (name: string) => void;
+  /** Rótulo do item de criação. Default: `Criar "{termo}"`. */
+  createLabel?: (name: string) => string;
 }
 
 export function EntityCombobox({
