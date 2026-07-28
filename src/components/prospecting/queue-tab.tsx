@@ -473,6 +473,28 @@ function QueueDialog({
             <Label>Busca livre (nome/email)</Label>
             <Input value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
+          {entity === "lead" ? (
+            <div className="space-y-1">
+              <Label>Cadência de nutrição (opcional)</Label>
+              <Select value={nurtureCadenceId} onValueChange={setNurtureCadenceId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Nenhuma" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  {enabledCadences.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Leads enviados para nutrição serão inscritos automaticamente nesta cadência.
+              </p>
+            </div>
+          ) : null}
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
