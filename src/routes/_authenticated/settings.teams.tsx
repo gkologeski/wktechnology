@@ -506,7 +506,39 @@ function UsersPage() {
                         {ROLE_DESCRIPTIONS[role]}
                       </p>
                     </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="invite-permission-set">
+                        Conjunto de permissões <span className="text-destructive">*</span>
+                      </Label>
+                      <Select
+                        value={invitePermissionSetId}
+                        onValueChange={setInvitePermissionSetId}
+                      >
+                        <SelectTrigger id="invite-permission-set">
+                          <SelectValue placeholder="Selecione um conjunto" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {permissionSets
+                            .filter((s) => s.module !== "__bundle__")
+                            .map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                <div className="flex flex-col">
+                                  <span>{s.name}</span>
+                                  <span className="text-[11px] text-muted-foreground">
+                                    {s.module}
+                                    {s.is_system ? " • padrão" : ""}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground pt-1">
+                        Define o que o usuário poderá ver e fazer ao aceitar o convite.
+                      </p>
+                    </div>
                   </div>
+
                   <DialogFooter>
                     <Button variant="ghost" onClick={closeInviteDialog}>
                       Cancelar
