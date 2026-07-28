@@ -21,6 +21,20 @@ async function sendWorkspaceInviteEmail(args: {
   role: string;
   expiresAt: string;
   inviteId: string;
+  branding?: {
+    brand_name?: string | null;
+    logo_url?: string | null;
+    primary_color?: string | null;
+  } | null;
+  settings?: {
+    subject?: string | null;
+    greeting?: string | null;
+    body_intro?: string | null;
+    cta_label?: string | null;
+    footer_note?: string | null;
+    expires_note?: string | null;
+    product_name?: string | null;
+  } | null;
 }) {
   const messageId = crypto.randomUUID();
   const templateName = "workspace-invite";
@@ -32,6 +46,18 @@ async function sendWorkspaceInviteEmail(args: {
     roleLabel: args.role,
     inviteUrl: args.inviteUrl,
     expiresAt: args.expiresAt,
+    // Branding
+    brandName: args.branding?.brand_name || args.workspaceName,
+    logoUrl: args.branding?.logo_url || undefined,
+    primaryColor: args.branding?.primary_color || undefined,
+    // Textos customizáveis
+    productName: args.settings?.product_name || "TechERP",
+    subject: args.settings?.subject || undefined,
+    greeting: args.settings?.greeting || undefined,
+    bodyIntro: args.settings?.body_intro || undefined,
+    ctaLabel: args.settings?.cta_label || undefined,
+    footerNote: args.settings?.footer_note || undefined,
+    expiresNote: args.settings?.expires_note || undefined,
   };
 
   try {
@@ -91,13 +117,37 @@ async function sendWorkspaceInviteEmail(args: {
 }
 
 async function loadInviteContext(workspaceId: string, inviterId: string) {
-  const [{ data: ws }, { data: prof }] = await Promise.all([
+  const [{ data: ws }, { data: prof }, { data: branding }, { data: settings }] = await Promise.all([
     supabaseAdmin.from("workspaces").select("name").eq("id", workspaceId).maybeSingle(),
     supabaseAdmin.from("profiles").select("full_name").eq("id", inviterId).maybeSingle(),
+    supabaseAdmin
+      .from("workspace_branding")
+      .select("brand_name, logo_url, primary_color")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle(),
+    supabaseAdmin
+      .from("workspace_invite_settings")
+      .select("subject, greeting, body_intro, cta_label, footer_note, expires_note, product_name")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle(),
   ]);
   return {
     workspaceName: (ws?.name as string) ?? "WK Technology",
     inviterName: (prof?.full_name as string) ?? "Sua equipe",
+    branding: (branding ?? null) as {
+      brand_name?: string | null;
+      logo_url?: string | null;
+      primary_color?: string | null;
+    } | null,
+    settings: (settings ?? null) as {
+      subject?: string | null;
+      greeting?: string | null;
+      body_intro?: string | null;
+      cta_label?: string | null;
+      footer_note?: string | null;
+      expires_note?: string | null;
+      product_name?: string | null;
+    } | null,
   };
 }
 
