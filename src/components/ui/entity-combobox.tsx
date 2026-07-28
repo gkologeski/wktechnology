@@ -95,6 +95,8 @@ export function EntityCombobox({
   clearable = true,
   priorityIds,
   priorityLabel = "Relacionados",
+  onCreateNew,
+  createLabel,
 }: EntityComboboxProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
