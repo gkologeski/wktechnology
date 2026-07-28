@@ -17512,6 +17512,7 @@ export type Database = {
           expires_at: string
           id: string
           invited_by: string
+          permission_set_id: string | null
           role: string
           token: string
           workspace_id: string
@@ -17523,6 +17524,7 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by: string
+          permission_set_id?: string | null
           role?: string
           token: string
           workspace_id: string
@@ -17534,11 +17536,19 @@ export type Database = {
           expires_at?: string
           id?: string
           invited_by?: string
+          permission_set_id?: string | null
           role?: string
           token?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workspace_invites_permission_set_id_fkey"
+            columns: ["permission_set_id"]
+            isOneToOne: false
+            referencedRelation: "permission_sets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workspace_invites_workspace_id_fkey"
             columns: ["workspace_id"]
