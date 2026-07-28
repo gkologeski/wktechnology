@@ -546,6 +546,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                     field={p.key}
                     initial={String(row[p.key] ?? "")}
                     onSaved={onSaved}
+                    onCreateNew={(name) => openCreateCompany(p.key, name)}
                   />
                 ) : p.type === "cnpj" ? (
                   <Input
