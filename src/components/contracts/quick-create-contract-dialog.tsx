@@ -174,7 +174,14 @@ export function QuickCreateContractDialog({
             {saving ? "Criando…" : "Criar contrato"}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => setCompanyId(id)}
+      />
+    </>
   );
 }
