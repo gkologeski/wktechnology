@@ -59,6 +59,8 @@ type TabDef = {
 
 const TABS: readonly TabDef[] = [
   { value: "fila",           label: "Fila",              permission: "techsales.prospecting.queue.view",          Component: QueueTab },
+  { value: "nutricao",       label: "Nutrição",          permission: "techsales.prospecting.queue.view",          Component: NurturingTab },
+
   { value: "questionarios",  label: "Questionários",     permission: "techsales.prospecting.questionnaires.view", Component: QuestionnairesTab },
   { value: "cadencias",      label: "Cadências",         permission: "techsales.prospecting.cadences.view",       Component: CadencesTab },
   { value: "scoring",        label: "Scoring",           permission: "techsales.prospecting.scoring.view",        Component: ScoringPage },
