@@ -130,6 +130,8 @@ function TicketsIndex() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TicketRow | null>(null);
   const [draft, setDraft] = useState<Draft>({});
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
