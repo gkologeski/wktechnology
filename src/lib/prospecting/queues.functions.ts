@@ -37,11 +37,12 @@ export const listQueues = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("prospecting_queues")
-      .select("id, name, description, entity, kind, item_ids, filters, sort, is_shared, updated_at")
+      .select("id, name, description, entity, kind, item_ids, filters, sort, is_shared, nurture_cadence_id, updated_at")
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
 
 export const upsertQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -57,6 +58,7 @@ export const upsertQueue = createServerFn({ method: "POST" })
         filters: FiltersSchema.default({}),
         sort: SortSchema.default({}),
         is_shared: z.boolean().default(false),
+        nurture_cadence_id: z.string().uuid().nullable().optional(),
       })
       .parse(i),
   )
@@ -71,7 +73,9 @@ export const upsertQueue = createServerFn({ method: "POST" })
       filters: data.filters,
       sort: data.sort,
       is_shared: data.is_shared,
+      nurture_cadence_id: data.nurture_cadence_id ?? null,
     } as never;
+
     if (data.id) {
       const { error } = await context.supabase
         .from("prospecting_queues")
@@ -223,7 +227,11 @@ export const countQueueItems = createServerFn({ method: "POST" })
     let query = context.supabase.from(table).select("id", { count: "exact", head: true });
     if (Array.isArray(filters.status) && filters.status.length > 0) {
       query = query.in("status", filters.status as string[]);
+    } else if (queue.entity === "lead") {
+      // Oculta leads já resolvidos das filas quando o filtro não é explícito
+      query = query.not("status", "in", "(nurturing,qualified,disqualified)");
     }
+
     if (Array.isArray(filters.source) && filters.source.length > 0) {
       query = query.in("source", filters.source as string[]);
     }
@@ -292,10 +300,16 @@ export const listQueueItems = createServerFn({ method: "POST" })
       const ids = (((queue as { item_ids?: string[] }).item_ids) ?? []) as string[];
       if (ids.length === 0) return { items: [], total: 0, entity: queue.entity };
       query = query.in("id", ids);
+      if (queue.entity === "lead") {
+        query = query.not("status", "in", "(nurturing,qualified,disqualified)");
+      }
     } else {
       if (Array.isArray(filters.status) && filters.status.length > 0) {
         query = query.in("status", filters.status as string[]);
+      } else if (queue.entity === "lead") {
+        query = query.not("status", "in", "(nurturing,qualified,disqualified)");
       }
+
       if (Array.isArray(filters.source) && filters.source.length > 0) {
         query = query.in("source", filters.source as string[]);
       }

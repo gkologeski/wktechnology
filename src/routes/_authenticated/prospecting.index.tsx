@@ -19,6 +19,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShieldOff } from "lucide-react";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { QueueTab } from "@/components/prospecting/queue-tab";
+import { NurturingTab } from "@/components/prospecting/nurturing-tab";
+
 import { QuestionnairesTab } from "@/components/prospecting/questionnaires-tab";
 import { CadencesTab } from "@/components/prospecting/cadences-tab";
 import { ScoringPage } from "./settings.scoring";
@@ -30,6 +32,7 @@ import { VoiceAgentPage } from "./settings.voice-agent";
 
 const TAB_VALUES = [
   "fila",
+  "nutricao",
   "questionarios",
   "cadencias",
   "scoring",
@@ -39,6 +42,7 @@ const TAB_VALUES = [
   "scripts",
   "voice",
 ] as const;
+
 
 type TabValue = (typeof TAB_VALUES)[number];
 
@@ -55,6 +59,8 @@ type TabDef = {
 
 const TABS: readonly TabDef[] = [
   { value: "fila",           label: "Fila",              permission: "techsales.prospecting.queue.view",          Component: QueueTab },
+  { value: "nutricao",       label: "Nutrição",          permission: "techsales.prospecting.queue.view",          Component: NurturingTab },
+
   { value: "questionarios",  label: "Questionários",     permission: "techsales.prospecting.questionnaires.view", Component: QuestionnairesTab },
   { value: "cadencias",      label: "Cadências",         permission: "techsales.prospecting.cadences.view",       Component: CadencesTab },
   { value: "scoring",        label: "Scoring",           permission: "techsales.prospecting.scoring.view",        Component: ScoringPage },

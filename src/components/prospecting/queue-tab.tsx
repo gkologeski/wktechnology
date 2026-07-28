@@ -35,6 +35,8 @@ import {
   listQueueItems,
   countQueueItems,
 } from "@/lib/prospecting/queues.functions";
+import { listCadences } from "@/lib/prospecting/cadences.functions";
+
 
 const LEAD_STATUS_LABELS: Record<string, string> = {
   new: "Novo",
@@ -339,6 +341,7 @@ function QueueDialog({
   onSaved: () => void;
 }) {
   const upsert = useServerFn(upsertQueue);
+  const listCadFn = useServerFn(listCadences);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [entity, setEntity] = useState<QueueEntity>("lead");
@@ -347,6 +350,16 @@ function QueueDialog({
   const [scoreMin, setScoreMin] = useState<string>("");
   const [scoreMax, setScoreMax] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [nurtureCadenceId, setNurtureCadenceId] = useState<string>("none");
+
+  const { data: cadences } = useQuery({
+    queryKey: ["prospecting", "cadences"],
+    queryFn: () => listCadFn(),
+    enabled: open,
+  });
+  const enabledCadences = (cadences ?? []).filter(
+    (c) => (c as { enabled?: boolean }).enabled !== false,
+  );
 
   const save = useMutation({
     mutationFn: () =>
@@ -368,6 +381,7 @@ function QueueDialog({
           },
           sort: { field: "updated_at", dir: "desc" },
           is_shared: false,
+          nurture_cadence_id: nurtureCadenceId === "none" ? null : nurtureCadenceId,
         },
       }),
     onSuccess: () => {
@@ -379,10 +393,12 @@ function QueueDialog({
       setScoreMin("");
       setScoreMax("");
       setSearch("");
+      setNurtureCadenceId("none");
       onSaved();
     },
     onError: (e) => toast.error((e as Error).message),
   });
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -457,6 +473,28 @@ function QueueDialog({
             <Label>Busca livre (nome/email)</Label>
             <Input value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
+          {entity === "lead" ? (
+            <div className="space-y-1">
+              <Label>Cadência de nutrição (opcional)</Label>
+              <Select value={nurtureCadenceId} onValueChange={setNurtureCadenceId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Nenhuma" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhuma</SelectItem>
+                  {enabledCadences.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Leads enviados para nutrição serão inscritos automaticamente nesta cadência.
+              </p>
+            </div>
+          ) : null}
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>

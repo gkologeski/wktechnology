@@ -8402,6 +8402,7 @@ export type Database = {
           label: string | null
           last_name: string | null
           notes: string | null
+          nurture_started_at: string | null
           owner_id: string
           phone: string | null
           pipeline_id: string | null
@@ -8435,6 +8436,7 @@ export type Database = {
           label?: string | null
           last_name?: string | null
           notes?: string | null
+          nurture_started_at?: string | null
           owner_id: string
           phone?: string | null
           pipeline_id?: string | null
@@ -8468,6 +8470,7 @@ export type Database = {
           label?: string | null
           last_name?: string | null
           notes?: string | null
+          nurture_started_at?: string | null
           owner_id?: string
           phone?: string | null
           pipeline_id?: string | null
@@ -13120,6 +13123,7 @@ export type Database = {
           item_ids: string[]
           kind: string
           name: string
+          nurture_cadence_id: string | null
           owner_id: string
           sort: Json
           updated_at: string
@@ -13134,6 +13138,7 @@ export type Database = {
           item_ids?: string[]
           kind?: string
           name: string
+          nurture_cadence_id?: string | null
           owner_id: string
           sort?: Json
           updated_at?: string
@@ -13148,11 +13153,20 @@ export type Database = {
           item_ids?: string[]
           kind?: string
           name?: string
+          nurture_cadence_id?: string | null
           owner_id?: string
           sort?: Json
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_queues_nurture_cadence_id_fkey"
+            columns: ["nurture_cadence_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_cadences"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prospecting_results: {
         Row: {
