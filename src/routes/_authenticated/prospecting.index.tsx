@@ -32,6 +32,7 @@ import { VoiceAgentPage } from "./settings.voice-agent";
 
 const TAB_VALUES = [
   "fila",
+  "nutricao",
   "questionarios",
   "cadencias",
   "scoring",
@@ -41,6 +42,7 @@ const TAB_VALUES = [
   "scripts",
   "voice",
 ] as const;
+
 
 type TabValue = (typeof TAB_VALUES)[number];
 
