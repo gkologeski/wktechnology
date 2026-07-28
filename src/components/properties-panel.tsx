@@ -717,6 +717,18 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         entity={entity}
         entityId={row.id}
       />
+
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={(v) => {
+          setCreateCompanyOpen(v);
+          if (!v) setPendingCompanyField(null);
+        }}
+        initialName={pendingCompanyName}
+        onCreated={(id) => {
+          void handleCompanyCreated(id);
+        }}
+      />
     </div>
   );
 }
@@ -727,12 +739,14 @@ function CompanyFieldAll({
   field,
   initial,
   onSaved,
+  onCreateNew,
 }: {
   table: string;
   rowId: string;
   field: string;
   initial: string;
   onSaved?: () => void;
+  onCreateNew?: (name: string) => void;
 }) {
   const [val, setVal] = useState<CompanyPickerValue>({ id: null, name: initial });
   const save = async () => {
@@ -751,10 +765,11 @@ function CompanyFieldAll({
   };
   return (
     <div onBlur={save}>
-      <CompanyPicker value={val} onChange={setVal} />
+      <CompanyPicker value={val} onChange={setVal} onCreateNew={onCreateNew} />
     </div>
   );
 }
+
 
 function CustomFieldRow({
   def,
