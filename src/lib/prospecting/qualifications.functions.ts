@@ -149,3 +149,139 @@ export const setDecision = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * Envia um lead para nutrição: marca o status, grava a decisão,
+ * remove o lead da fila (se manual), e — quando houver — inscreve o lead
+ * numa cadência de nutrição (definida na fila ou padrão do workspace).
+ */
+export const nurtureLead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        lead_id: z.string().uuid(),
+        questionnaire_id: z.string().uuid().nullable().optional(),
+        answers: z.record(z.string(), z.unknown()).default({}),
+        reason: z.string().max(1000).nullable().optional(),
+        queue_id: z.string().uuid().nullable().optional(),
+        qualification_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const nowIso = new Date().toISOString();
+
+    // 1) Atualiza status do lead
+    const { error: leadErr } = await context.supabase
+      .from("leads")
+      .update({ status: "nurturing", nurture_started_at: nowIso } as never)
+      .eq("id", data.lead_id);
+    if (leadErr) throw new Error(leadErr.message);
+
+    // 2) Registra a qualificação (se houver questionário)
+    if (data.questionnaire_id) {
+      const { data: qs, error: qsErr } = await context.supabase
+        .from("prospecting_questions")
+        .select("id, type, weight, options")
+        .eq("questionnaire_id", data.questionnaire_id);
+      if (qsErr) throw new Error(qsErr.message);
+      const score = computeScore((qs ?? []) as Question[], data.answers);
+      const patch = {
+        owner_id: context.userId,
+        questionnaire_id: data.questionnaire_id,
+        entity: "lead",
+        entity_id: data.lead_id,
+        answers: data.answers,
+        score,
+        decision: "nurture",
+        decision_reason: data.reason ?? null,
+        qualified_by: context.userId,
+        qualified_at: nowIso,
+      } as never;
+      if (data.qualification_id) {
+        await context.supabase
+          .from("prospecting_qualifications")
+          .update(patch)
+          .eq("id", data.qualification_id);
+      } else {
+        await context.supabase.from("prospecting_qualifications").insert(patch);
+      }
+    }
+
+    // 3) Resolve cadência: fila → padrão do workspace → nenhuma
+    let cadenceId: string | null = null;
+    let cadenceName: string | null = null;
+    if (data.queue_id) {
+      const { data: q } = await context.supabase
+        .from("prospecting_queues")
+        .select("kind, item_ids, nurture_cadence_id")
+        .eq("id", data.queue_id)
+        .maybeSingle();
+      if (q) {
+        cadenceId = (q as { nurture_cadence_id: string | null }).nurture_cadence_id;
+        // Remove o lead da fila manual
+        if ((q as { kind?: string }).kind === "manual") {
+          const ids = (((q as { item_ids?: string[] }).item_ids) ?? []) as string[];
+          const next = ids.filter((x) => x !== data.lead_id);
+          if (next.length !== ids.length) {
+            await context.supabase
+              .from("prospecting_queues")
+              .update({ item_ids: next } as never)
+              .eq("id", data.queue_id);
+          }
+        }
+      }
+    }
+    if (!cadenceId) {
+      const { data: setting } = await context.supabase
+        .from("app_settings")
+        .select("value")
+        .eq("key", "prospecting.default_nurture_cadence_id")
+        .maybeSingle();
+      const val = (setting as { value?: string } | null)?.value ?? null;
+      if (val && /^[0-9a-f-]{36}$/i.test(val)) cadenceId = val;
+    }
+
+    // 4) Inscreve o lead na cadência resolvida (dedupe)
+    let enrolled = false;
+    if (cadenceId) {
+      const { data: cad } = await context.supabase
+        .from("prospecting_cadences")
+        .select("id, name, enabled")
+        .eq("id", cadenceId)
+        .maybeSingle();
+      const cadRow = cad as { id: string; name: string; enabled: boolean } | null;
+      if (cadRow && cadRow.enabled) {
+        cadenceName = cadRow.name;
+        const { data: exists } = await context.supabase
+          .from("prospecting_enrollments")
+          .select("id")
+          .eq("cadence_id", cadenceId)
+          .eq("entity_id", data.lead_id)
+          .eq("status", "active")
+          .maybeSingle();
+        if (!exists) {
+          const { error: enrErr } = await context.supabase
+            .from("prospecting_enrollments")
+            .insert({
+              cadence_id: cadenceId,
+              entity: "lead",
+              entity_id: data.lead_id,
+              owner_id: context.userId,
+              status: "active",
+              current_step: 1,
+              next_run_at: nowIso,
+              started_at: nowIso,
+              started_by: context.userId,
+            } as never);
+          if (!enrErr) enrolled = true;
+        } else {
+          enrolled = true;
+        }
+      }
+    }
+
+    return { ok: true, enrolled, cadence_name: cadenceName };
+  });
+
