@@ -17457,6 +17457,53 @@ export type Database = {
           },
         ]
       }
+      workspace_invite_settings: {
+        Row: {
+          body_intro: string | null
+          cta_label: string | null
+          expires_note: string | null
+          footer_note: string | null
+          greeting: string | null
+          product_name: string | null
+          subject: string | null
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          body_intro?: string | null
+          cta_label?: string | null
+          expires_note?: string | null
+          footer_note?: string | null
+          greeting?: string | null
+          product_name?: string | null
+          subject?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          body_intro?: string | null
+          cta_label?: string | null
+          expires_note?: string | null
+          footer_note?: string | null
+          greeting?: string | null
+          product_name?: string | null
+          subject?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invite_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_invites: {
         Row: {
           accepted_at: string | null

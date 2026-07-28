@@ -37,6 +37,12 @@ type InviteInfo = {
   email: string;
   role: "admin" | "manager" | "member";
   workspace: { id: string; name: string; slug: string };
+  branding?: {
+    brand_name: string | null;
+    logo_url: string | null;
+    primary_color: string | null;
+  };
+  product_name?: string;
   user_exists: boolean;
 };
 
@@ -119,19 +125,40 @@ function AcceptInviteTokenPage() {
     }
   };
 
+  const brandName = info?.branding?.brand_name || info?.workspace?.name || "";
+  const logoUrl = info?.branding?.logo_url || null;
+  const primary = info?.branding?.primary_color || null;
+  const productName = info?.product_name || "TechERP";
+  const roleLabels: Record<string, string> = {
+    admin: "Administrador",
+    manager: "Gestor",
+    member: "Membro",
+  };
+  const roleLabel = info ? (roleLabels[info.role] ?? info.role) : "";
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <h1 className="sr-only">Aceitar convite no WK Technology CRM</h1>
+      <h1 className="sr-only">Aceitar convite</h1>
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Aceitar convite</CardTitle>
+          {logoUrl && (
+            <img
+              src={logoUrl}
+              alt={brandName}
+              className="h-9 w-auto mb-3"
+              style={{ maxHeight: 36 }}
+            />
+          )}
+          <CardTitle>
+            {brandName ? `Aceitar convite — ${brandName}` : "Aceitar convite"}
+          </CardTitle>
           <CardDescription>
             {loading ? (
               "Validando convite…"
             ) : info ? (
               <>
-                Você foi convidado para o workspace <strong>{info.workspace.name}</strong> como{" "}
-                <strong>{info.role}</strong>.
+                Você foi convidado para o workspace <strong>{brandName}</strong> do{" "}
+                <strong>{productName}</strong> como <strong>{roleLabel}</strong>.
               </>
             ) : (
               "Convite indisponível."
@@ -196,7 +223,12 @@ function AcceptInviteTokenPage() {
                   <p className="text-xs text-destructive">As senhas não conferem.</p>
                 )}
               </div>
-              <Button type="submit" className="w-full" disabled={submitting || !canSubmit}>
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={submitting || !canSubmit}
+                style={primary ? { backgroundColor: primary, borderColor: primary } : undefined}
+              >
                 {submitting ? "Entrando…" : "Acessar workspace"}
               </Button>
             </form>
