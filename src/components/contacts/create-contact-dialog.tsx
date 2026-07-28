@@ -43,6 +43,8 @@ export function CreateContactDialog({
     job_title: "",
   });
   const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
 
   const reset = () => {
     setForm({ first_name: "", last_name: "", email: "", phone: "", job_title: "" });
