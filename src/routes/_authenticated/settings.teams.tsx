@@ -320,7 +320,8 @@ function UsersPage() {
   const usersUsed = rows.length;
   const atLimit = usersLimit !== null && usersUsed >= usersLimit;
 
-  const canInvite = !atLimit && email.trim().length > 0;
+  const canInvite =
+    !atLimit && email.trim().length > 0 && invitePermissionSetId.length > 0;
 
   const handleInvite = async () => {
     if (!canInvite) return;
@@ -330,8 +331,8 @@ function UsersPage() {
         data: {
           email: email.trim(),
           role,
-          redirect_origin:
-            getPublicAppUrl(),
+          permission_set_id: invitePermissionSetId,
+          redirect_origin: getPublicAppUrl(),
         },
       });
       setInviteUrl(res.url);
@@ -340,6 +341,7 @@ function UsersPage() {
       });
       setEmail("");
       setRole("member");
+      setInvitePermissionSetId("");
       await refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao convidar");
@@ -347,6 +349,7 @@ function UsersPage() {
       setInviting(false);
     }
   };
+
 
   const closeInviteDialog = () => {
     setInviteOpen(false);
