@@ -233,15 +233,9 @@ export const nurtureLead = createServerFn({ method: "POST" })
         }
       }
     }
-    if (!cadenceId) {
-      const { data: setting } = await context.supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "prospecting.default_nurture_cadence_id")
-        .maybeSingle();
-      const val = (setting as { value?: string } | null)?.value ?? null;
-      if (val && /^[0-9a-f-]{36}$/i.test(val)) cadenceId = val;
-    }
+    // (Padrão de workspace pode ser adicionado no futuro via tabela dedicada;
+    // por ora, a cadência é resolvida somente ao nível da fila.)
+
 
     // 4) Inscreve o lead na cadência resolvida (dedupe)
     let enrolled = false;
