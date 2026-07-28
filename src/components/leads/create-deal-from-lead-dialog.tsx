@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
 import type { Lead } from "@/lib/db-types";
@@ -64,6 +65,8 @@ export function CreateDealFromLeadDialog({
   const [contactId, setContactId] = useState<string | null>(null);
 
   const [saving, setSaving] = useState(false);
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
 
   const pipeline = useMemo(
     () => pipelines.find((p) => p.id === pipelineId) ?? defaultPipeline ?? null,
@@ -243,6 +246,7 @@ export function CreateDealFromLeadDialog({
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(v) => !saving && onOpenChange(v)}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
@@ -303,6 +307,10 @@ export function CreateDealFromLeadDialog({
               }}
               placeholder={companyName || "Selecionar empresa…"}
               priorityIds={related.companies.filter((id) => id !== companyId)}
+              onCreateNew={(name) => {
+                setPendingCompanyName(name);
+                setCreateCompanyOpen(true);
+              }}
             />
           </div>
 
@@ -376,5 +384,15 @@ export function CreateDealFromLeadDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <QuickCreateCompanyDialog
+      open={createCompanyOpen}
+      onOpenChange={setCreateCompanyOpen}
+      initialName={pendingCompanyName}
+      onCreated={(id) => {
+        setCompanyId(id);
+        setCompanyName(pendingCompanyName);
+      }}
+    />
+    </>
   );
 }

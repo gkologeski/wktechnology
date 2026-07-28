@@ -1,64 +1,59 @@
-## Contexto
+## Objetivo
 
-O “controle de empresa” é o componente `CompanyPicker` (`src/components/ui/company-picker.tsx`). Ele já suporta criação inline via prop `onCreateNew` + `QuickCreateCompanyDialog`, mas em vários lugares essa prop **não está conectada**, então quando a empresa não é encontrada o usuário não consegue criá-la de dentro do próprio campo.
+Garantir que, em qualquer campo de Empresa do sistema, quando o nome digitado não retornar resultados na busca, o usuário possa criar a empresa direto no picker — sem sair do fluxo.
 
-## Mapeamento das ocorrências
+## Situação atual (auditada)
 
-Levantamento via `rg "CompanyPicker" src/`:
+Existem dois componentes distintos de escolha de empresa no app:
 
-| Local | Status atual | Ação |
-| --- | --- | --- |
-| `src/components/leads/create-lead-dialog.tsx` (linha 233) | Já usa `onCreateNew` + `QuickCreateCompanyDialog` | Nenhuma — referência de padrão |
-| `src/components/contacts/create-contact-dialog.tsx` (linha 178) | Sem `onCreateNew` | Adicionar criação inline |
-| `src/components/properties-panel.tsx` – edição inline (linha 325) | Sem `onCreateNew` | Adicionar criação inline |
-| `src/components/properties-panel.tsx` – diálogo “Ver todas as propriedades” via `CompanyFieldAll` (linha 719) | Sem `onCreateNew` | Adicionar criação inline |
+### 1. `CompanyPicker` (busca por nome + criação livre)
+Já suporta `onCreateNew`. Após correções recentes, está fiado em:
+- `src/components/leads/create-lead-dialog.tsx`
+- `src/components/contacts/create-contact-dialog.tsx`
+- `src/components/properties-panel.tsx` (edição inline + "Ver todas as propriedades")
 
-Fora do escopo (usam `EntityCombobox` de companies, não o `CompanyPicker`): `workflow-builder`, `quick-create-contract-dialog`, `deal-detail-drawer`, `quick-create-dialogs`, `associations-panel`, `create-deal-from-lead-dialog`, rota `companies.$id.tsx`, rota `tickets.tsx`. Esses controles têm outra semântica (seleção estrita/associação) e ficam preservados sem alteração — o `AddAssociation` do painel de associações já expõe “Criar novo” separado, então não trava a operação.
+Nada a fazer aqui.
 
-## Mudanças
+### 2. `EntityCombobox entity="companies"` (associação estrita por FK)
+Não tem suporte a criação inline. Aparece em:
+- `src/components/deals/deal-detail-drawer.tsx:522` — vincular empresa ao negócio
+- `src/components/contracts/quick-create-contract-dialog.tsx:130` — empresa do contrato
+- `src/components/leads/create-deal-from-lead-dialog.tsx:295` — empresa ao converter lead em deal
+- `src/routes/_authenticated/tickets.tsx:875` — empresa do ticket
+- `src/components/record/associations-panel.tsx` e `add-association.tsx` — associações genéricas
 
-Padrão único (mesmo já usado em `create-lead-dialog`):
+Nesses lugares, se a empresa não existir, o usuário precisa abrir Empresas em outra aba, criar, voltar e associar. É exatamente o gap que o pedido cobre.
 
-```tsx
-const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
-const [pendingCompanyName, setPendingCompanyName] = useState("");
-// ...
-<CompanyPicker
-  ...
-  onCreateNew={(name) => {
-    setPendingCompanyName(name);
-    setCreateCompanyOpen(true);
-  }}
-/>
-<QuickCreateCompanyDialog
-  open={createCompanyOpen}
-  onOpenChange={setCreateCompanyOpen}
-  initialName={pendingCompanyName}
-  onCreated={({ id, name }) => { /* set value + persist */ }}
-/>
-```
+## Plano
 
-### 1. `src/components/contacts/create-contact-dialog.tsx`
-- Importar `QuickCreateCompanyDialog`.
-- Adicionar estado local para o diálogo e o nome pendente.
-- Plugar `onCreateNew` no `CompanyPicker` existente.
-- No `onCreated`, atualizar `setCompany({ id, name })` para o form salvar com o `company_id` já vinculado (comportamento consistente com o create-lead).
+### Passo 1 — Adicionar suporte a criação inline ao `EntityCombobox`
+Adicionar props opcionais:
+- `onCreateNew?: (name: string) => void`
+- `createLabel?: string` (default "Criar «{nome}»")
 
-### 2. `src/components/properties-panel.tsx`
-- Importar `QuickCreateCompanyDialog`.
-- Adicionar `createCompanyOpen` / `pendingCompanyName` e um handler `handleCompanyCreated` no componente raiz.
-- Bloco de edição inline (`p.type === "company"`, linha 325): passar `value={{ id: null, name: value }}` com `onCreateNew`, e no `handleCompanyCreated` gravar o nome no campo (`p.key`) e chamar `save(p.key)`. Se `table === "leads"` também atualizar `company_id` na mesma persistência (mantém a correção anterior de vínculo estruturado).
-- `CompanyFieldAll` (linha 689): aceitar nova prop `onCreateNew` e repassar ao `CompanyPicker`; reaproveitar o mesmo `QuickCreateCompanyDialog` renderizado uma única vez no componente raiz.
-- Renderizar `<QuickCreateCompanyDialog />` uma única vez no final do JSX do `PropertiesPanel`.
+Comportamento: quando `onCreateNew` estiver definido e a busca não retornar match exato, exibir no fim da lista um item "Criar «{termo}»" que dispara o callback com o termo atual. Se não passar `onCreateNew`, o combobox continua estrito como hoje (não quebra os outros usos: contatos, deals, projetos, etc.).
 
-### 3. Nenhuma mudança em `CompanyPicker`, `QuickCreateCompanyDialog` ou schema.
+### Passo 2 — Ligar `QuickCreateCompanyDialog` em cada consumidor de empresa
 
-## Verificação
+Para cada arquivo abaixo, adicionar estado local (`createCompanyOpen`, `pendingCompanyName`), renderizar `QuickCreateCompanyDialog` e passar `onCreateNew` ao `EntityCombobox`. No `onCreated(id)`, aplicar o mesmo patch de campo que o fluxo de seleção normal aplica (setar `company_id` no formulário/registro).
 
-- `tsgo` (typecheck).
-- Manual: em `/leads/:id`, `/contacts/:id` (e demais telas que usam `PropertiesPanel` com `type: "company"`) e no diálogo Novo Contato — digitar um nome inexistente, ver “Criar «Nome»” dentro do campo, criar via popup, confirmar que o registro passa a exibir o vínculo com a empresa sem precisar sair da tela.
+- `src/components/deals/deal-detail-drawer.tsx` — grava `deals.company_id`
+- `src/components/contracts/quick-create-contract-dialog.tsx` — seta `company_id` do form
+- `src/components/leads/create-deal-from-lead-dialog.tsx` — seta `company_id` do form
+- `src/routes/_authenticated/tickets.tsx` — seta `company_id` do ticket
+- `src/components/record/add-association.tsx` — quando o tipo alvo for `companies`, ao criar, já registra a associação com o novo id
+
+### Passo 3 — Revisão final
+- Rodar typecheck.
+- Verificar visualmente em `/deals/:id`, `/contracts` novo, `/leads → converter`, `/tickets` novo, e drawer de associações que o item "Criar «...»" aparece quando o termo não bate.
+- Confirmar que consumidores não relacionados a empresa (contatos, deals como associação em outras telas, projetos) continuam sem opção de criar — porque não passam `onCreateNew`.
 
 ## Fora do escopo
+- Alterar RLS, schema de `companies` ou fluxo do `QuickCreateCompanyDialog`.
+- Adicionar criação inline para outras entidades (contatos, deals, produtos) — só empresa, conforme pedido.
+- Refatorar `EntityCombobox` além da nova prop.
 
-- `EntityCombobox` de companies (associações, workflows, contratos, deals, tickets, rota de company).
-- Ajustes de RLS, schema ou lógica de negócio.
+## Como validar manualmente
+1. Em `/deals/:id`, no campo Empresa, digitar um nome inexistente → botão "Criar «Nome»" aparece → clicar → modal → salvar → empresa vinculada ao deal.
+2. Repetir em: novo contrato, converter lead em deal, novo ticket, adicionar associação de empresa em qualquer registro.
+3. Abrir novo contato (usa `CompanyPicker`) — continua funcionando como antes.

@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { useRelatedIds } from "@/hooks/use-related-ids";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -130,6 +131,8 @@ function TicketsIndex() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<TicketRow | null>(null);
   const [draft, setDraft] = useState<Draft>({});
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [priorityFilter, setPriorityFilter] = useState<string>("all");
   const [ownerFilter, setOwnerFilter] = useState<string>("all");
@@ -882,6 +885,10 @@ function TicketsIndex() {
                 placeholder="Selecionar empresa…"
                 icon={Building2}
                 priorityIds={related.companies.filter((id) => id !== draft.company_id)}
+                onCreateNew={(name) => {
+                  setPendingCompanyName(name);
+                  setCreateCompanyOpen(true);
+                }}
               />
             </div>
             <div className="md:col-span-2 space-y-1.5">
@@ -911,6 +918,12 @@ function TicketsIndex() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => setDraft((d) => ({ ...d, company_id: id }))}
+      />
     </div>
   );
 }

@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { createContract } from "@/lib/contracts.functions";
 
 type Props = {
@@ -49,6 +50,8 @@ export function QuickCreateContractDialog({
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
   const [saving, setSaving] = useState(false);
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -92,7 +95,8 @@ export function QuickCreateContractDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Novo contrato</DialogTitle>
@@ -134,6 +138,10 @@ export function QuickCreateContractDialog({
               value={companyId}
               onChange={(id) => setCompanyId(id)}
               placeholder="Selecione a empresa"
+              onCreateNew={(name) => {
+                setPendingCompanyName(name);
+                setCreateCompanyOpen(true);
+              }}
             />
           </div>
 
@@ -166,7 +174,14 @@ export function QuickCreateContractDialog({
             {saving ? "Criando…" : "Criar contrato"}
           </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => setCompanyId(id)}
+      />
+    </>
   );
 }

@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
 
@@ -515,6 +516,8 @@ function DealRelatedFields({
   const companyId = (v.company_id as string) || null;
   const contactId = (v.primary_contact_id as string) || null;
   const related = useRelatedIds({ companyId, contactId });
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
   return (
     <>
       <Field label="Empresa">
@@ -528,6 +531,10 @@ function DealRelatedFields({
           onChange={(id) => set("company_id", id)}
           placeholder="Selecionar empresa…"
           priorityIds={related.companies.filter((id) => id !== companyId)}
+          onCreateNew={(name) => {
+            setPendingCompanyName(name);
+            setCreateCompanyOpen(true);
+          }}
         />
       </Field>
       <Field label="Contato principal">
@@ -547,6 +554,12 @@ function DealRelatedFields({
           priorityIds={related.contacts.filter((id) => id !== contactId)}
         />
       </Field>
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => set("company_id", id)}
+      />
     </>
   );
 }
