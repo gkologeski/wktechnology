@@ -167,6 +167,10 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const [showHs, setShowHs] = useState(false);
   const [customDefs, setCustomDefs] = useState<CustomProp[]>([]);
   const [layoutSections, setLayoutSections] = useState<LayoutSection[] | null>(null);
+  // Criação inline de empresa (usada tanto no edit inline quanto no "Ver todas").
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
+  const [pendingCompanyField, setPendingCompanyField] = useState<string | null>(null);
   const listCustomFn = useServerFn(listCustomProperties);
   const setCustomFn = useServerFn(setCustomFieldValue);
   const getLayoutFn = useServerFn(getRecordLayout);
@@ -176,6 +180,34 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     string,
     unknown
   >;
+
+  const openCreateCompany = (field: string, name: string) => {
+    setPendingCompanyField(field);
+    setPendingCompanyName(name);
+    setCreateCompanyOpen(true);
+  };
+
+  const handleCompanyCreated = async (companyId: string) => {
+    const field = pendingCompanyField;
+    const name = pendingCompanyName.trim();
+    if (!field) return;
+    const patch: Record<string, unknown> = { [field]: name || null };
+    // Se o form usa o par company_name + company_id (leads/contacts/deals/tickets),
+    // também grava o vínculo estruturado.
+    if (field === "company_name") patch.company_id = companyId;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from(table).update(patch).eq("id", row.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Empresa vinculada");
+    setValue(name);
+    setEditing(null);
+    setPendingCompanyField(null);
+    onSaved?.();
+  };
+
 
   useEffect(() => {
     if (!isCustomEntity) return;
