@@ -16,6 +16,7 @@ import {
 import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
@@ -42,6 +43,8 @@ export function CreateContactDialog({
     job_title: "",
   });
   const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
 
   const reset = () => {
     setForm({ first_name: "", last_name: "", email: "", phone: "", job_title: "" });
@@ -116,6 +119,8 @@ export function CreateContactDialog({
   };
 
   return (
+    <>
+
     <Dialog
       open={open}
       onOpenChange={(v) => {
@@ -175,7 +180,16 @@ export function CreateContactDialog({
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="company_name">Empresa</Label>
-            <CompanyPicker id="company_name" value={company} onChange={setCompany} toastOnMatches />
+            <CompanyPicker
+              id="company_name"
+              value={company}
+              onChange={setCompany}
+              toastOnMatches
+              onCreateNew={(name) => {
+                setPendingCompanyName(name);
+                setCreateCompanyOpen(true);
+              }}
+            />
           </div>
           <OnboardingGuidedEntry entity="contact" onNavigate={() => onOpenChange(false)} />
         </div>
@@ -197,5 +211,14 @@ export function CreateContactDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => {
+          setCompany({ id, name: pendingCompanyName });
+        }}
+      />
+    </>
   );
 }

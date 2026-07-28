@@ -36,6 +36,7 @@ import {
 } from "@/lib/record-layouts.functions";
 import { toE164, isEmail, isCNPJ, formatCNPJ, stripCNPJ } from "@/lib/validators";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
+import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { formatCurrency, formatDateOnly, formatDateTime } from "@/lib/crm";
 import { OwnerField } from "@/components/entity/owner-field";
 
@@ -166,6 +167,10 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const [showHs, setShowHs] = useState(false);
   const [customDefs, setCustomDefs] = useState<CustomProp[]>([]);
   const [layoutSections, setLayoutSections] = useState<LayoutSection[] | null>(null);
+  // Criação inline de empresa (usada tanto no edit inline quanto no "Ver todas").
+  const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
+  const [pendingCompanyName, setPendingCompanyName] = useState("");
+  const [pendingCompanyField, setPendingCompanyField] = useState<string | null>(null);
   const listCustomFn = useServerFn(listCustomProperties);
   const setCustomFn = useServerFn(setCustomFieldValue);
   const getLayoutFn = useServerFn(getRecordLayout);
@@ -175,6 +180,34 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     string,
     unknown
   >;
+
+  const openCreateCompany = (field: string, name: string) => {
+    setPendingCompanyField(field);
+    setPendingCompanyName(name);
+    setCreateCompanyOpen(true);
+  };
+
+  const handleCompanyCreated = async (companyId: string) => {
+    const field = pendingCompanyField;
+    const name = pendingCompanyName.trim();
+    if (!field) return;
+    const patch: Record<string, unknown> = { [field]: name || null };
+    // Se o form usa o par company_name + company_id (leads/contacts/deals/tickets),
+    // também grava o vínculo estruturado.
+    if (field === "company_name") patch.company_id = companyId;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).from(table).update(patch).eq("id", row.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Empresa vinculada");
+    setValue(name);
+    setEditing(null);
+    setPendingCompanyField(null);
+    onSaved?.();
+  };
+
 
   useEffect(() => {
     if (!isCustomEntity) return;
@@ -325,6 +358,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             <CompanyPicker
               value={{ id: null, name: value }}
               onChange={(v: CompanyPickerValue) => setValue(v.name)}
+              onCreateNew={(name) => openCreateCompany(p.key, name)}
             />
             <div className="flex gap-1">
               <Button size="sm" className="h-8" onClick={() => save(p.key)}>
@@ -512,6 +546,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                     field={p.key}
                     initial={String(row[p.key] ?? "")}
                     onSaved={onSaved}
+                    onCreateNew={(name) => openCreateCompany(p.key, name)}
                   />
                 ) : p.type === "cnpj" ? (
                   <Input
@@ -682,6 +717,18 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         entity={entity}
         entityId={row.id}
       />
+
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={(v) => {
+          setCreateCompanyOpen(v);
+          if (!v) setPendingCompanyField(null);
+        }}
+        initialName={pendingCompanyName}
+        onCreated={(id) => {
+          void handleCompanyCreated(id);
+        }}
+      />
     </div>
   );
 }
@@ -692,12 +739,14 @@ function CompanyFieldAll({
   field,
   initial,
   onSaved,
+  onCreateNew,
 }: {
   table: string;
   rowId: string;
   field: string;
   initial: string;
   onSaved?: () => void;
+  onCreateNew?: (name: string) => void;
 }) {
   const [val, setVal] = useState<CompanyPickerValue>({ id: null, name: initial });
   const save = async () => {
@@ -716,10 +765,11 @@ function CompanyFieldAll({
   };
   return (
     <div onBlur={save}>
-      <CompanyPicker value={val} onChange={setVal} />
+      <CompanyPicker value={val} onChange={setVal} onCreateNew={onCreateNew} />
     </div>
   );
 }
+
 
 function CustomFieldRow({
   def,
