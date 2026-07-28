@@ -35,6 +35,8 @@ import {
   listQueueItems,
   countQueueItems,
 } from "@/lib/prospecting/queues.functions";
+import { listCadences } from "@/lib/prospecting/cadences.functions";
+
 
 const LEAD_STATUS_LABELS: Record<string, string> = {
   new: "Novo",
