@@ -37,11 +37,12 @@ export const listQueues = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("prospecting_queues")
-      .select("id, name, description, entity, kind, item_ids, filters, sort, is_shared, updated_at")
+      .select("id, name, description, entity, kind, item_ids, filters, sort, is_shared, nurture_cadence_id, updated_at")
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
 
 export const upsertQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
