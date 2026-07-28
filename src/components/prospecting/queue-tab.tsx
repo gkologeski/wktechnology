@@ -341,6 +341,7 @@ function QueueDialog({
   onSaved: () => void;
 }) {
   const upsert = useServerFn(upsertQueue);
+  const listCadFn = useServerFn(listCadences);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [entity, setEntity] = useState<QueueEntity>("lead");
@@ -349,6 +350,16 @@ function QueueDialog({
   const [scoreMin, setScoreMin] = useState<string>("");
   const [scoreMax, setScoreMax] = useState<string>("");
   const [search, setSearch] = useState("");
+  const [nurtureCadenceId, setNurtureCadenceId] = useState<string>("none");
+
+  const { data: cadences } = useQuery({
+    queryKey: ["prospecting", "cadences"],
+    queryFn: () => listCadFn(),
+    enabled: open,
+  });
+  const enabledCadences = (cadences ?? []).filter(
+    (c) => (c as { enabled?: boolean }).enabled !== false,
+  );
 
   const save = useMutation({
     mutationFn: () =>
@@ -370,6 +381,7 @@ function QueueDialog({
           },
           sort: { field: "updated_at", dir: "desc" },
           is_shared: false,
+          nurture_cadence_id: nurtureCadenceId === "none" ? null : nurtureCadenceId,
         },
       }),
     onSuccess: () => {
@@ -381,10 +393,12 @@ function QueueDialog({
       setScoreMin("");
       setScoreMax("");
       setSearch("");
+      setNurtureCadenceId("none");
       onSaved();
     },
     onError: (e) => toast.error((e as Error).message),
   });
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
