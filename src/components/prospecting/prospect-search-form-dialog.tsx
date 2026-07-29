@@ -187,11 +187,16 @@ export function ProspectSearchFormDialog({
 
               <div>
                 <Label>Setor / Indústria</Label>
-                <MultiSelectChips
+                <AutocompleteChips
                   value={value.filters.organization_industry_keywords ?? []}
                   onChange={(v) => setFilter("organization_industry_keywords", v)}
-                  placeholder="Ex.: SaaS, Fintech, E-commerce"
+                  options={INDUSTRY_OPTIONS}
+                  placeholder="Digite para buscar (ex.: software, saúde, varejo)"
+                  emptyLabel="Nenhum setor encontrado"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Comece a digitar e escolha um setor da lista do Apollo.
+                </p>
               </div>
 
               <div>
