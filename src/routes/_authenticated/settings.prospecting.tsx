@@ -19,6 +19,7 @@ import {
   Linkedin,
   ExternalLink,
   Pencil,
+  ListPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -33,6 +34,7 @@ import {
   ProspectSearchFormDialog,
   type ProspectSearchFormValue,
 } from "@/components/prospecting/prospect-search-form-dialog";
+import { AddToProspectingDialog } from "@/components/prospecting/add-to-prospecting-dialog";
 import { countActiveFilters, ProspectFilters } from "@/lib/prospecting-options";
 
 export const Route = createFileRoute("/_authenticated/settings/prospecting")({
@@ -75,6 +77,71 @@ export function ProspectingPage() {
   const [openSearch, setOpenSearch] = useState<Row | null>(null);
   const [results, setResults] = useState<Result[]>([]);
   const [running, setRunning] = useState<string | null>(null);
+  const [queueIds, setQueueIds] = useState<string[]>([]);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState<null | "import" | "queue">(null);
+
+  // Importa (idempotente) os prospects informados e devolve os ids dos leads.
+  const importMany = async (list: Result[]) => {
+    const ids: string[] = [];
+    let created = 0;
+    let existing = 0;
+    let failed = 0;
+    for (const r of list) {
+      try {
+        const out = (await impFn({ data: { result_id: r.id } })) as {
+          id: string;
+          already?: boolean;
+        };
+        ids.push(out.id);
+        if (out.already) existing += 1;
+        else created += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    return { ids, created, existing, failed };
+  };
+
+  const importAll = async () => {
+    if (results.length === 0) return;
+    setBulkBusy("import");
+    try {
+      const { created, existing, failed } = await importMany(results);
+      if (created > 0) {
+        toast.success(
+          `${created} lead(s) importado(s)` +
+            (existing ? ` · ${existing} já existia(m)` : "") +
+            (failed ? ` · ${failed} falha(s)` : ""),
+        );
+      } else if (failed > 0) {
+        toast.error(`Nenhum lead importado · ${failed} falha(s)`);
+      } else {
+        toast.info("Todos os prospects já haviam sido importados.");
+      }
+      if (openSearch) await openResults(openSearch);
+    } finally {
+      setBulkBusy(null);
+    }
+  };
+
+  const addToQueueFlow = async (list: Result[], kind: "import" | "queue") => {
+    if (list.length === 0) return;
+    setBulkBusy(kind);
+    try {
+      const { ids, failed } = await importMany(list);
+      if (ids.length === 0) {
+        toast.error("Não foi possível importar os prospects selecionados.");
+        return;
+      }
+      if (failed) toast.warning(`${failed} prospect(s) não puderam ser importados.`);
+      if (openSearch) await openResults(openSearch);
+      setQueueIds(ids);
+      setQueueOpen(true);
+    } finally {
+      setBulkBusy(null);
+    }
+  };
 
   const refresh = async () => setRows((await listFn()) as Row[]);
   useEffect(() => {
@@ -260,6 +327,36 @@ export function ProspectingPage() {
           <SheetHeader>
             <SheetTitle>{openSearch?.name as string}</SheetTitle>
           </SheetHeader>
+          {results.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulkBusy !== null}
+                onClick={importAll}
+              >
+                {bulkBusy === "import" ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                ) : (
+                  <UserPlus className="h-3.5 w-3.5 mr-1" />
+                )}
+                Importar todos os leads
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulkBusy !== null}
+                onClick={() => addToQueueFlow(results, "queue")}
+              >
+                {bulkBusy === "queue" ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                ) : (
+                  <ListPlus className="h-3.5 w-3.5 mr-1" />
+                )}
+                Incluir todos em uma fila
+              </Button>
+            </div>
+          )}
           <div className="mt-4 space-y-2">
             {results.length === 0 && (
               <p className="text-sm text-muted-foreground">
@@ -337,7 +434,7 @@ export function ProspectingPage() {
                     <p className="text-xs text-muted-foreground italic">{String(r.reason)}</p>
                   ) : null}
 
-                  <div className="pt-1">
+                  <div className="pt-1 flex flex-wrap items-center gap-2">
                     {r.imported_lead_id ? (
                       <Badge variant="secondary">Importado</Badge>
                     ) : (
@@ -358,6 +455,15 @@ export function ProspectingPage() {
                         Importar como Lead
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={bulkBusy !== null}
+                      onClick={() => addToQueueFlow([r], "queue")}
+                    >
+                      <ListPlus className="h-3.5 w-3.5 mr-1" />
+                      Incluir na fila
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -365,6 +471,15 @@ export function ProspectingPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <AddToProspectingDialog
+        open={queueOpen}
+        onOpenChange={(v) => {
+          setQueueOpen(v);
+          if (!v) setQueueIds([]);
+        }}
+        ids={queueIds}
+      />
     </div>
   );
 }
