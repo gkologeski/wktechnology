@@ -486,17 +486,27 @@ export const runProspectSearch = createServerFn({ method: "POST" })
         );
       }
 
+      const totalEntries = searchRes.total_entries ?? 0;
+      let notice: string | null = null;
+      if (enriched.length === 0) {
+        notice =
+          totalEntries === 0
+            ? "O Apollo.io não encontrou nenhuma pessoa com estes filtros. Tente remover palavras-chave/setores, reduzir as faixas de porte ou usar cargos em inglês (ex.: CTO, Head of IT)."
+            : `O Apollo.io encontrou ${totalEntries} pessoa(s), mas nenhuma pôde ser enriquecida. Verifique os créditos e as permissões da chave do Apollo.`;
+      }
+
       await sb
         .from("prospecting_searches")
         .update({
           status: "completed",
           ran_at: new Date().toISOString(),
           result_count: enriched.length,
-          error: null,
+          error: notice,
         })
         .eq("id", data.id);
 
-      return { count: enriched.length };
+      return { count: enriched.length, total_entries: totalEntries, notice };
+
     } catch (e) {
       const msg = e instanceof Error ? e.message : "erro";
       await sb.from("prospecting_searches").update({ status: "failed", error: msg }).eq("id", data.id);
