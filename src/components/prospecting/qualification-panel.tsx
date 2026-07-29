@@ -149,11 +149,12 @@ export function QualificationPanel({
 
   const qualificationSummary = useMemo(() => {
     if (!qData) return "";
-    const lines: string[] = [];
-    lines.push(
-      `Qualificação — ${qData.questionnaire.name} (score ${score}/${threshold})`,
-    );
-    lines.push("");
+    const esc = (s: string) =>
+      s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+    const items: string[] = [];
     for (const q of qData.questions) {
       const raw = answers[q.id];
       if (raw == null || raw === "" || (Array.isArray(raw) && raw.length === 0)) continue;
@@ -161,10 +162,25 @@ export function QualificationPanel({
       if (q.type === "boolean") formatted = raw === true ? "Sim" : "Não";
       else if (q.type === "multi" && Array.isArray(raw)) formatted = raw.join(", ");
       else formatted = String(raw);
-      lines.push(`- ${q.label}: ${formatted}`);
+      const label = q.label ?? "";
+      const sepIdx = label.indexOf(" - ");
+      let li: string;
+      if (sepIdx > 0) {
+        const prefix = label.slice(0, sepIdx).trim();
+        const rest = label.slice(sepIdx + 3).trim();
+        li = `<strong>${esc(prefix)}:</strong> ${esc(rest)}: ${esc(formatted)}`;
+      } else {
+        li = `<strong>${esc(label)}:</strong> ${esc(formatted)}`;
+      }
+      items.push(`<li>${li}</li>`);
     }
-    return lines.join("\n");
+    const header = `<p><strong>${esc(
+      `Qualificação — ${qData.questionnaire.name} (score ${score}/${threshold})`,
+    )}</strong></p>`;
+    if (items.length === 0) return header;
+    return `${header}<ol>${items.join("")}</ol>`;
   }, [qData, answers, score, threshold]);
+
 
   const saveDraft = useMutation({
     mutationFn: () =>
