@@ -19,6 +19,7 @@ import {
   Linkedin,
   ExternalLink,
   Pencil,
+  ListPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
