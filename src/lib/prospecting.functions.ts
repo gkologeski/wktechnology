@@ -567,7 +567,13 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
       })
       .select("id")
       .single();
-    if (lErr) throw new Error(lErr.message);
+    if (lErr) {
+      const message = String(lErr.message ?? "Erro ao importar prospect como lead");
+      if (message.includes("schema cache") || message.includes("column")) {
+        throw new Error(`Erro no mapeamento dos campos do lead: ${message}`);
+      }
+      throw new Error(message);
+    }
 
     await sb
       .from("prospecting_results")
