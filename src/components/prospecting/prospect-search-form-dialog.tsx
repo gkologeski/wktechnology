@@ -161,8 +161,10 @@ export function ProspectSearchFormDialog({
                   placeholder="Ex.: CEO, CTO, Diretor Comercial"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Enter, Tab ou vírgula para adicionar. Cole listas separadas por vírgula.
+                  Enter, Tab ou vírgula para adicionar. A base do Apollo é majoritariamente em
+                  inglês — prefira CTO, Head of IT, Sales Director.
                 </p>
+
               </div>
 
               <div>
