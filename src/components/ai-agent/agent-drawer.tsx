@@ -354,35 +354,6 @@ export function AgentDrawer({
   );
 }
 
-export function AgentTrigger() {
-  const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+// O gatilho flutuante vive em `@/components/ai-agent/agent-trigger` para que
+// este módulo (AI SDK + react-markdown) só seja baixado ao abrir o assistente.
 
-  // Atalho Cmd+K / Ctrl+K também abre o assistente
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault();
-        setOpen((v) => !v);
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  if (!user) return null;
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Abrir assistente do CRM"
-        className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-      >
-        <Sparkles className="h-5 w-5" />
-      </button>
-      <AgentDrawer open={open} onOpenChange={setOpen} />
-    </>
-  );
-}
