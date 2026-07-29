@@ -269,7 +269,6 @@ function buildApolloQuery(search: ProspectSearch): Record<string, string | strin
   };
 
   if (search.industry) {
-    query.organization_industry_tag_ids = [];
     query.organization_industry_keywords = search.industry;
   }
 
