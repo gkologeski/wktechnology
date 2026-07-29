@@ -80,6 +80,9 @@ export function ProspectingPage() {
   const [queueIds, setQueueIds] = useState<string[]>([]);
   const [queueOpen, setQueueOpen] = useState(false);
   const [bulkBusy, setBulkBusy] = useState<null | "import" | "queue">(null);
+  const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(
+    null,
+  );
 
   // Importa (idempotente) os prospects informados e devolve os ids dos leads.
   const importMany = async (list: Result[]) => {
@@ -87,7 +90,15 @@ export function ProspectingPage() {
     let created = 0;
     let existing = 0;
     let failed = 0;
-    for (const r of list) {
+    let firstError = "";
+    setProgress({ done: 0, total: list.length, label: "" });
+    for (let i = 0; i < list.length; i += 1) {
+      const r = list[i];
+      setProgress({
+        done: i,
+        total: list.length,
+        label: (r.contact_name as string) || (r.company_name as string) || "",
+      });
       try {
         const out = (await impFn({ data: { result_id: r.id } })) as {
           id: string;
@@ -96,18 +107,21 @@ export function ProspectingPage() {
         ids.push(out.id);
         if (out.already) existing += 1;
         else created += 1;
-      } catch {
+      } catch (e) {
         failed += 1;
+        if (!firstError) firstError = (e as Error)?.message ?? "";
       }
+      setProgress({ done: i + 1, total: list.length, label: "" });
     }
-    return { ids, created, existing, failed };
+    setProgress(null);
+    return { ids, created, existing, failed, firstError };
   };
 
   const importAll = async () => {
     if (results.length === 0) return;
     setBulkBusy("import");
     try {
-      const { created, existing, failed } = await importMany(results);
+      const { created, existing, failed, firstError } = await importMany(results);
       if (created > 0) {
         toast.success(
           `${created} lead(s) importado(s)` +
@@ -115,7 +129,9 @@ export function ProspectingPage() {
             (failed ? ` · ${failed} falha(s)` : ""),
         );
       } else if (failed > 0) {
-        toast.error(`Nenhum lead importado · ${failed} falha(s)`);
+        toast.error(`Nenhum lead importado · ${failed} falha(s)`, {
+          description: firstError || undefined,
+        });
       } else {
         toast.info("Todos os prospects já haviam sido importados.");
       }
@@ -129,9 +145,11 @@ export function ProspectingPage() {
     if (list.length === 0) return;
     setBulkBusy(kind);
     try {
-      const { ids, failed } = await importMany(list);
+      const { ids, failed, firstError } = await importMany(list);
       if (ids.length === 0) {
-        toast.error("Não foi possível importar os prospects selecionados.");
+        toast.error("Nenhum prospect foi importado, então a fila não foi aberta.", {
+          description: firstError || undefined,
+        });
         return;
       }
       if (failed) toast.warning(`${failed} prospect(s) não puderam ser importados.`);
@@ -142,6 +160,7 @@ export function ProspectingPage() {
       setBulkBusy(null);
     }
   };
+
 
   const refresh = async () => setRows((await listFn()) as Row[]);
   useEffect(() => {
