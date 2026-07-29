@@ -180,6 +180,12 @@ export function ProspectingPage() {
                     <div className="text-[10px] text-muted-foreground mt-0.5">
                       Fonte: {r.source === "apollo" ? "Apollo.io" : "IA"}
                     </div>
+                    {r.error && Number(r.result_count ?? 0) === 0 && (
+                      <p className="text-xs text-amber-600 dark:text-amber-500 mt-1 whitespace-normal">
+                        {String(r.error)}
+                      </p>
+                    )}
+
                   </button>
                   <Badge
                     variant={
