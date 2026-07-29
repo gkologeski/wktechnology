@@ -220,9 +220,14 @@ export function ProspectSearchFormDialog({
                 <MultiSelectChips
                   value={value.filters.q_keywords ?? []}
                   onChange={(v) => setFilter("q_keywords", v)}
-                  placeholder="Ex.: automação, IA, growth"
+                  placeholder="Ex.: software, fintech, logistics"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Termos aplicados à empresa (OU entre eles). Termos em português retornam poucos
+                  resultados.
+                </p>
               </div>
+
             </div>
           </section>
 
