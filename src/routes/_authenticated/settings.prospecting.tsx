@@ -327,6 +327,36 @@ export function ProspectingPage() {
           <SheetHeader>
             <SheetTitle>{openSearch?.name as string}</SheetTitle>
           </SheetHeader>
+          {results.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulkBusy !== null}
+                onClick={importAll}
+              >
+                {bulkBusy === "import" ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                ) : (
+                  <UserPlus className="h-3.5 w-3.5 mr-1" />
+                )}
+                Importar todos os leads
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={bulkBusy !== null}
+                onClick={() => addToQueueFlow(results, "queue")}
+              >
+                {bulkBusy === "queue" ? (
+                  <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
+                ) : (
+                  <ListPlus className="h-3.5 w-3.5 mr-1" />
+                )}
+                Incluir todos em uma fila
+              </Button>
+            </div>
+          )}
           <div className="mt-4 space-y-2">
             {results.length === 0 && (
               <p className="text-sm text-muted-foreground">
