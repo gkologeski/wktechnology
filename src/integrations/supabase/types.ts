@@ -13170,51 +13170,81 @@ export type Database = {
       }
       prospecting_results: {
         Row: {
+          apollo_score: number | null
+          company_domain: string | null
           company_name: string | null
+          company_size: string | null
           contact_name: string | null
           created_at: string
           domain_hint: string | null
+          email: string | null
           email_hint: string | null
+          external_id: string | null
           id: string
           imported_at: string | null
           imported_lead_id: string | null
+          industry: string | null
+          linkedin_url: string | null
           location: string | null
           owner_id: string
+          phone: string | null
+          raw_payload: Json | null
           reason: string | null
           role_title: string | null
           search_id: string
+          source: string
           workspace_id: string
         }
         Insert: {
+          apollo_score?: number | null
+          company_domain?: string | null
           company_name?: string | null
+          company_size?: string | null
           contact_name?: string | null
           created_at?: string
           domain_hint?: string | null
+          email?: string | null
           email_hint?: string | null
+          external_id?: string | null
           id?: string
           imported_at?: string | null
           imported_lead_id?: string | null
+          industry?: string | null
+          linkedin_url?: string | null
           location?: string | null
           owner_id: string
+          phone?: string | null
+          raw_payload?: Json | null
           reason?: string | null
           role_title?: string | null
           search_id: string
+          source?: string
           workspace_id?: string
         }
         Update: {
+          apollo_score?: number | null
+          company_domain?: string | null
           company_name?: string | null
+          company_size?: string | null
           contact_name?: string | null
           created_at?: string
           domain_hint?: string | null
+          email?: string | null
           email_hint?: string | null
+          external_id?: string | null
           id?: string
           imported_at?: string | null
           imported_lead_id?: string | null
+          industry?: string | null
+          linkedin_url?: string | null
           location?: string | null
           owner_id?: string
+          phone?: string | null
+          raw_payload?: Json | null
           reason?: string | null
           role_title?: string | null
           search_id?: string
+          source?: string
           workspace_id?: string
         }
         Relationships: [
@@ -13296,6 +13326,7 @@ export type Database = {
       }
       prospecting_searches: {
         Row: {
+          apollo_query: Json | null
           company_size: string | null
           created_at: string
           error: string | null
@@ -13310,11 +13341,13 @@ export type Database = {
           ran_at: string | null
           result_count: number
           role_title: string | null
+          source: string
           status: Database["public"]["Enums"]["prospecting_status"]
           updated_at: string
           workspace_id: string
         }
         Insert: {
+          apollo_query?: Json | null
           company_size?: string | null
           created_at?: string
           error?: string | null
@@ -13329,11 +13362,13 @@ export type Database = {
           ran_at?: string | null
           result_count?: number
           role_title?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["prospecting_status"]
           updated_at?: string
           workspace_id?: string
         }
         Update: {
+          apollo_query?: Json | null
           company_size?: string | null
           created_at?: string
           error?: string | null
@@ -13348,6 +13383,7 @@ export type Database = {
           ran_at?: string | null
           result_count?: number
           role_title?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["prospecting_status"]
           updated_at?: string
           workspace_id?: string
