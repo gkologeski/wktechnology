@@ -113,7 +113,14 @@ export function ProspectingPage() {
     setRunning(r.id);
     try {
       const out = await runFn({ data: { id: r.id } });
-      toast.success(`${out.count} prospects gerados`);
+      if (out.count === 0) {
+        toast.warning(out.notice ?? "Nenhum prospect encontrado com estes filtros", {
+          duration: 8000,
+        });
+      } else {
+        toast.success(`${out.count} prospects gerados`);
+      }
+
       await refresh();
       if (openSearch?.id === r.id) await openResults(r);
     } catch (e) {
