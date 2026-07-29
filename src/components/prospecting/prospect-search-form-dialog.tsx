@@ -14,10 +14,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { MultiSelectChips } from "@/components/ui/multi-select-chips";
 import { MultiSelectOptions } from "@/components/ui/multi-select-options";
+import { AutocompleteChips } from "@/components/ui/autocomplete-chips";
 import {
   DEPARTMENT_OPTIONS,
   EMAIL_STATUS_OPTIONS,
   EMPLOYEE_RANGE_OPTIONS,
+  INDUSTRY_OPTIONS,
   ProspectFilters,
   REVENUE_RANGE_OPTIONS,
   SENIORITY_OPTIONS,
