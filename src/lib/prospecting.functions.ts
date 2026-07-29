@@ -286,6 +286,10 @@ type ApolloPersonDetail = {
   } | null;
 };
 
+// Filtros enviados diretamente ao Apollo (arrays repetidos na query string).
+// `organization_industry_keywords` NÃO é suportado pelo people search do Apollo
+// (é aceito e silenciosamente ignorado); setores e palavras-chave são traduzidos
+// para `q_organization_keyword_tags`, que aceita múltiplos termos com OR.
 const STRUCTURED_FILTER_KEYS = [
   "person_titles",
   "person_not_titles",
@@ -293,15 +297,23 @@ const STRUCTURED_FILTER_KEYS = [
   "person_departments",
   "person_locations",
   "organization_locations",
-  "organization_industry_keywords",
   "organization_num_employees_ranges",
   "organization_estimated_annual_revenue_ranges",
   "organization_technology_uids",
-  "q_organization_keyword_tags",
   "contact_email_status",
   "organization_domains",
   "organization_not_domains",
 ] as const;
+
+function asStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) return value.map((v) => String(v)).filter(Boolean);
+  if (typeof value === "string" && value.trim())
+    return value
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  return [];
+}
 
 function buildApolloQuery(search: ProspectSearch): Record<string, string | string[]> {
   const query: Record<string, string | string[]> = {
@@ -316,43 +328,43 @@ function buildApolloQuery(search: ProspectSearch): Record<string, string | strin
 
   let hasStructured = false;
   for (const key of STRUCTURED_FILTER_KEYS) {
-    const value = structured[key];
-    if (Array.isArray(value) && value.length > 0) {
-      query[key] = value.map((v) => String(v)).filter(Boolean);
+    const values = asStringArray(structured[key]);
+    if (values.length > 0) {
+      query[key] = values;
       hasStructured = true;
     }
   }
 
-  const qKeywords = structured.q_keywords;
-  if (Array.isArray(qKeywords) && qKeywords.length > 0) {
-    query.q_keywords = qKeywords.map((v) => String(v)).join(" ");
+  // Setores, palavras-chave e tags viram um único conjunto OR de keyword tags.
+  const keywordTags = new Set<string>();
+  for (const key of [
+    "organization_industry_keywords",
+    "q_keywords",
+    "q_organization_keyword_tags",
+  ]) {
+    for (const term of asStringArray(structured[key])) keywordTags.add(term);
+  }
+  if (keywordTags.size === 0 && !hasStructured) {
+    // Fallback para buscas legadas salvas antes dos filtros estruturados.
+    for (const term of asStringArray(search.industry)) keywordTags.add(term);
+    for (const term of asStringArray(search.keywords)) keywordTags.add(term);
+    const titles = asStringArray(search.role_title);
+    if (titles.length) query.person_titles = titles;
+    const sizes = asStringArray(search.company_size);
+    if (sizes.length) query.organization_num_employees_ranges = sizes;
+    const locations = asStringArray(search.location);
+    if (locations.length) query.person_locations = locations;
+  } else if (keywordTags.size > 0) {
     hasStructured = true;
   }
 
-  if (hasStructured) {
-    if (search.instructions && !query.q_organization_keyword_tags) {
-      query.q_organization_keyword_tags = [search.instructions];
-    }
-    return query;
+  if (keywordTags.size > 0) {
+    query.q_organization_keyword_tags = Array.from(keywordTags);
   }
-
-  // Fallback para buscas legadas salvas antes dos filtros estruturados.
-  if (search.industry) query.organization_industry_keywords = search.industry;
-  if (search.role_title) {
-    query.person_titles = search.role_title
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-  if (search.company_size) query.organization_num_employees_ranges = search.company_size;
-  if (search.location) {
-    query.person_locations = search.location.split(",").map((s) => s.trim()).filter(Boolean);
-  }
-  if (search.keywords) query.q_keywords = search.keywords;
-  if (search.instructions) query.q_organization_keyword_tags = search.instructions;
 
   return query;
 }
+
 
 function cleanEmail(email: string | null | undefined): string | null {
   if (!email) return null;
