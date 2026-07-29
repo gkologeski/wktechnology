@@ -75,6 +75,71 @@ export function ProspectingPage() {
   const [openSearch, setOpenSearch] = useState<Row | null>(null);
   const [results, setResults] = useState<Result[]>([]);
   const [running, setRunning] = useState<string | null>(null);
+  const [queueIds, setQueueIds] = useState<string[]>([]);
+  const [queueOpen, setQueueOpen] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState<null | "import" | "queue">(null);
+
+  // Importa (idempotente) os prospects informados e devolve os ids dos leads.
+  const importMany = async (list: Result[]) => {
+    const ids: string[] = [];
+    let created = 0;
+    let existing = 0;
+    let failed = 0;
+    for (const r of list) {
+      try {
+        const out = (await impFn({ data: { result_id: r.id } })) as {
+          id: string;
+          already?: boolean;
+        };
+        ids.push(out.id);
+        if (out.already) existing += 1;
+        else created += 1;
+      } catch {
+        failed += 1;
+      }
+    }
+    return { ids, created, existing, failed };
+  };
+
+  const importAll = async () => {
+    if (results.length === 0) return;
+    setBulkBusy("import");
+    try {
+      const { created, existing, failed } = await importMany(results);
+      if (created > 0) {
+        toast.success(
+          `${created} lead(s) importado(s)` +
+            (existing ? ` · ${existing} já existia(m)` : "") +
+            (failed ? ` · ${failed} falha(s)` : ""),
+        );
+      } else if (failed > 0) {
+        toast.error(`Nenhum lead importado · ${failed} falha(s)`);
+      } else {
+        toast.info("Todos os prospects já haviam sido importados.");
+      }
+      if (openSearch) await openResults(openSearch);
+    } finally {
+      setBulkBusy(null);
+    }
+  };
+
+  const addToQueueFlow = async (list: Result[], kind: "import" | "queue") => {
+    if (list.length === 0) return;
+    setBulkBusy(kind);
+    try {
+      const { ids, failed } = await importMany(list);
+      if (ids.length === 0) {
+        toast.error("Não foi possível importar os prospects selecionados.");
+        return;
+      }
+      if (failed) toast.warning(`${failed} prospect(s) não puderam ser importados.`);
+      if (openSearch) await openResults(openSearch);
+      setQueueIds(ids);
+      setQueueOpen(true);
+    } finally {
+      setBulkBusy(null);
+    }
+  };
 
   const refresh = async () => setRows((await listFn()) as Row[]);
   useEffect(() => {
