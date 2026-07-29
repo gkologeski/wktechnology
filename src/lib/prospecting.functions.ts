@@ -1,11 +1,10 @@
-// Prospecting agent — usa Lovable AI para gerar ICP-matching prospects.
+// Prospecting agent — busca prospects reais via Apollo.io.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
-const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-2.5-flash";
+const APOLLO_GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
 
 const SearchInput = z.object({
   id: z.string().uuid().nullable().optional(),
@@ -18,6 +17,9 @@ const SearchInput = z.object({
   instructions: z.string().max(1000).optional().default(""),
   max_results: z.number().int().min(1).max(50).default(10),
 });
+
+type JsonPrimitive = string | number | boolean | null;
+type JsonValue = JsonPrimitive | { [key: string]: JsonValue } | JsonValue[];
 
 type ProspectSearch = {
   id: string;
@@ -36,7 +38,10 @@ type ProspectSearch = {
   ran_at: string | null;
   created_at: string;
   updated_at: string;
+  source: string;
+  apollo_query: JsonValue;
 };
+
 type ProspectResult = {
   id: string;
   owner_id: string;
@@ -51,6 +56,16 @@ type ProspectResult = {
   imported_lead_id: string | null;
   imported_at: string | null;
   created_at: string;
+  source: string;
+  external_id: string | null;
+  linkedin_url: string | null;
+  phone: string | null;
+  email: string | null;
+  company_domain: string | null;
+  company_size: string | null;
+  industry: string | null;
+  apollo_score: number | null;
+  raw_payload: JsonValue;
 };
 
 export const listProspectSearches = createServerFn({ method: "POST" })
@@ -84,6 +99,7 @@ export const upsertProspectSearch = createServerFn({ method: "POST" })
       keywords: data.keywords || null,
       instructions: data.instructions || null,
       max_results: data.max_results,
+      source: "apollo",
     };
     if (data.id) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -138,6 +154,164 @@ export const listProspectResults = createServerFn({ method: "POST" })
     return (rows ?? []) as ProspectResult[];
   });
 
+async function apolloRequest<T = unknown>({
+  path,
+  method = "POST",
+  query,
+  body,
+}: {
+  path: string;
+  method?: "GET" | "POST";
+  query?: Record<string, string | string[]>;
+  body?: unknown;
+}): Promise<T> {
+  const lovableKey = process.env.LOVABLE_API_KEY;
+  const apolloKey = process.env.APOLLO_API_KEY;
+  if (!lovableKey) throw new Error("LOVABLE_API_KEY ausente");
+  if (!apolloKey) throw new Error("APOLLO_API_KEY ausente. Conecte o Apollo.io em Configurações → Conectores.");
+
+  const url = new URL(`${APOLLO_GATEWAY_URL}${path}`);
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      if (Array.isArray(value)) {
+        for (const v of value) url.searchParams.append(`${key}[]`, v);
+      } else if (value !== undefined && value !== null && value !== "") {
+        url.searchParams.append(key, value);
+      }
+    }
+  }
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${lovableKey}`,
+    "X-Connection-Api-Key": apolloKey,
+  };
+  const init: RequestInit = { method, headers };
+  if (method === "POST" && body !== undefined) {
+    init.body = JSON.stringify(body);
+    headers["Content-Type"] = "application/json";
+  }
+
+  const res = await fetch(url, init);
+
+  if (res.status === 401) {
+    throw new Error("Credenciais do Apollo.io inválidas. Reconecte o conector em Configurações → Conectores.");
+  }
+  if (res.status === 403) {
+    const text = await res.text();
+    throw new Error(
+      `A chave do Apollo.io não tem acesso a este endpoint (${text}). Use uma master key com permissão para people search.`
+    );
+  }
+  if (res.status === 429) {
+    const retryAfter = res.headers.get("Retry-After");
+    throw new Error(
+      `Limite de requisições do Apollo.io atingido. ${retryAfter ? `Tente novamente em ${retryAfter}s.` : "Aguarde alguns minutos."}`
+    );
+  }
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Apollo request failed (${res.status}): ${text}`);
+  }
+
+  return (await res.json()) as T;
+}
+
+type ApolloPersonSearchItem = {
+  id: string;
+  first_name?: string;
+  last_name_obfuscated?: string;
+  title?: string;
+  organization?: {
+    name?: string;
+    has_industry?: boolean;
+    has_phone?: boolean;
+    has_city?: boolean;
+    has_state?: boolean;
+    has_country?: boolean;
+    has_employee_count?: boolean;
+  };
+};
+
+type ApolloPersonSearchResponse = {
+  total_entries?: number;
+  people?: ApolloPersonSearchItem[];
+};
+
+type ApolloPersonDetail = {
+  id: string;
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  title?: string;
+  linkedin_url?: string | null;
+  email?: string | null;
+  email_status?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  formatted_address?: string | null;
+  phone?: string | null;
+  organization?: {
+    name?: string;
+    primary_domain?: string | null;
+    website_url?: string | null;
+    industry?: string | null;
+    estimated_num_employees?: number | null;
+    primary_phone?: { number?: string | null } | null;
+    phone?: string | null;
+  } | null;
+};
+
+function buildApolloQuery(search: ProspectSearch): Record<string, string | string[]> {
+  const query: Record<string, string | string[]> = {
+    per_page: String(Math.min(search.max_results, 50)),
+    page: "1",
+  };
+
+  if (search.industry) {
+    query.organization_industry_tag_ids = [];
+    query.organization_industry_keywords = search.industry;
+  }
+
+  if (search.role_title) {
+    // Apollo espera arrays com [] no query string
+    query.person_titles = search.role_title
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+
+  if (search.company_size) {
+    query.organization_num_employees_ranges = search.company_size;
+  }
+
+  if (search.location) {
+    query.person_locations = search.location.split(",").map((s) => s.trim());
+  }
+
+  if (search.keywords) {
+    query.q_keywords = search.keywords;
+  }
+
+  if (search.instructions) {
+    query.q_organization_keyword_tags = search.instructions;
+  }
+
+  return query;
+}
+
+function cleanEmail(email: string | null | undefined): string | null {
+  if (!email) return null;
+  if (email.toLowerCase().includes("not_unlocked")) return null;
+  if (email.toLowerCase().includes("unknown")) return null;
+  return email.slice(0, 200);
+}
+
+function buildLocation(person: ApolloPersonDetail): string | null {
+  const parts = [person.city, person.state, person.country].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}
+
 export const runProspectSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
@@ -153,84 +327,112 @@ export const runProspectSearch = createServerFn({ method: "POST" })
       .eq("owner_id", workspaceId)
       .single();
     if (sErr || !s) throw new Error("Busca não encontrada");
-    const apiKey = process.env.LOVABLE_API_KEY;
-    if (!apiKey) throw new Error("LOVABLE_API_KEY ausente");
+
+    const search = s as ProspectSearch;
 
     await sb
       .from("prospecting_searches")
-      .update({ status: "running", error: null })
+      .update({ status: "running", error: null, source: "apollo" })
       .eq("id", data.id);
 
-    const sys = `Você é um agente de prospecção B2B. Gere uma lista de prospects PLAUSÍVEIS (empresas e contatos) baseada no ICP fornecido.
-Retorne APENAS JSON: {"prospects":[{"company_name":"...","contact_name":"...","role_title":"...","email_hint":"nome@dominio","domain_hint":"empresa.com","location":"Cidade, UF","reason":"por que combina com o ICP"}]}.
-Os emails devem ser HEURÍSTICOS (formato provável), nunca afirme que existem. Limite a ${s.max_results} prospects.`;
-
-    const user = [
-      `ICP:`,
-      s.industry && `- Segmento: ${s.industry}`,
-      s.role_title && `- Cargo alvo: ${s.role_title}`,
-      s.company_size && `- Porte: ${s.company_size}`,
-      s.location && `- Localização: ${s.location}`,
-      s.keywords && `- Palavras-chave: ${s.keywords}`,
-      s.instructions && `- Instruções: ${s.instructions}`,
-    ]
-      .filter(Boolean)
-      .join("\n");
-
     try {
-      const res = await fetch(AI_URL, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          model: MODEL,
-          messages: [
-            { role: "system", content: sys },
-            { role: "user", content: user || "ICP genérico — gere prospects diversos" },
-          ],
-          temperature: 0.8,
-        }),
+      const apolloQuery = buildApolloQuery(search);
+
+      await sb
+        .from("prospecting_searches")
+        .update({ apollo_query: apolloQuery })
+        .eq("id", data.id);
+
+      const searchRes = await apolloRequest<ApolloPersonSearchResponse>({
+        path: "/api/v1/mixed_people/api_search",
+        query: apolloQuery,
       });
-      if (!res.ok) throw new Error(`AI ${res.status}`);
-      const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-      const raw = (j.choices?.[0]?.message?.content ?? "")
-        .trim()
-        .replace(/^```json|^```|```$/g, "")
-        .trim();
-      const parsed = JSON.parse(raw) as { prospects?: Array<Record<string, unknown>> };
-      const prospects = Array.isArray(parsed.prospects)
-        ? parsed.prospects.slice(0, s.max_results)
-        : [];
-      if (prospects.length) {
-        await sb.from("prospecting_results").insert(
-          prospects.map((p) => ({
+
+      const people = (searchRes.people ?? []).slice(0, search.max_results);
+
+      const enriched: ProspectResult[] = [];
+      for (const personSummary of people) {
+        try {
+          const detail = await apolloRequest<{ person: ApolloPersonDetail }>({
+            path: `/api/v1/people/${encodeURIComponent(personSummary.id)}`,
+            method: "GET",
+          });
+          const p = detail.person;
+          const org = p.organization;
+          const email = cleanEmail(p.email);
+
+          enriched.push({
             owner_id: workspaceId,
             search_id: data.id,
-            company_name: String(p.company_name ?? "").slice(0, 200) || null,
-            contact_name: String(p.contact_name ?? "").slice(0, 200) || null,
-            role_title: String(p.role_title ?? "").slice(0, 200) || null,
-            email_hint: String(p.email_hint ?? "").slice(0, 200) || null,
-            domain_hint: String(p.domain_hint ?? "").slice(0, 200) || null,
-            location: String(p.location ?? "").slice(0, 200) || null,
-            reason: String(p.reason ?? "").slice(0, 1000) || null,
+            source: "apollo",
+            external_id: p.id,
+            contact_name: p.name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || null,
+            role_title: p.title || search.role_title,
+            company_name: org?.name || null,
+            company_domain: org?.primary_domain || null,
+            domain_hint: org?.primary_domain || null,
+            email: email,
+            email_hint: email,
+            phone: p.phone || org?.primary_phone?.number || org?.phone || null,
+            linkedin_url: p.linkedin_url || null,
+            location: buildLocation(p),
+            industry: org?.industry || null,
+            company_size: org?.estimated_num_employees ? String(org.estimated_num_employees) : null,
+            apollo_score: null,
+            reason: `Prospect real encontrado via Apollo.io${p.email_status ? ` · email status: ${p.email_status}` : ""}`,
+            raw_payload: p,
+            imported_lead_id: null,
+            imported_at: null,
+            created_at: new Date().toISOString(),
+            id: "",
+          });
+        } catch (e) {
+          // Falha no enrichment individual não quebra a busca toda.
+          const msg = e instanceof Error ? e.message : "erro";
+          console.error(`Apollo enrichment failed for ${personSummary.id}:`, msg);
+        }
+      }
+
+      if (enriched.length) {
+        await sb.from("prospecting_results").insert(
+          enriched.map((r) => ({
+            owner_id: r.owner_id,
+            search_id: r.search_id,
+            source: r.source,
+            external_id: r.external_id,
+            company_name: r.company_name,
+            contact_name: r.contact_name,
+            role_title: r.role_title,
+            email: r.email,
+            email_hint: r.email_hint,
+            phone: r.phone,
+            linkedin_url: r.linkedin_url,
+            domain_hint: r.domain_hint,
+            company_domain: r.company_domain,
+            location: r.location,
+            industry: r.industry,
+            company_size: r.company_size,
+            apollo_score: r.apollo_score,
+            reason: r.reason,
+            raw_payload: r.raw_payload,
           })),
         );
       }
+
       await sb
         .from("prospecting_searches")
         .update({
           status: "completed",
           ran_at: new Date().toISOString(),
-          result_count: prospects.length,
+          result_count: enriched.length,
           error: null,
         })
         .eq("id", data.id);
-      return { count: prospects.length };
+
+      return { count: enriched.length };
     } catch (e) {
       const msg = e instanceof Error ? e.message : "erro";
-      await sb
-        .from("prospecting_searches")
-        .update({ status: "failed", error: msg })
-        .eq("id", data.id);
+      await sb.from("prospecting_searches").update({ status: "failed", error: msg }).eq("id", data.id);
       throw new Error(msg);
     }
   });
@@ -251,10 +453,12 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
       .single();
     if (rErr || !r) throw new Error("Prospect não encontrado");
     if (r.imported_lead_id) return { id: r.imported_lead_id, already: true };
+
     const fullName: string = r.contact_name || r.company_name || "Prospect";
     const parts = fullName.split(" ");
     const first = parts[0] || fullName;
     const last = parts.slice(1).join(" ") || null;
+
     const { data: lead, error: lErr } = await sb
       .from("leads")
       .insert({
@@ -262,7 +466,8 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
         first_name: first,
         last_name: last,
         company: r.company_name,
-        email: r.email_hint,
+        email: r.email || r.email_hint,
+        phone: r.phone,
         title: r.role_title,
         city: r.location,
         source: "prospecting",
@@ -271,6 +476,7 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (lErr) throw new Error(lErr.message);
+
     await sb
       .from("prospecting_results")
       .update({ imported_lead_id: lead.id, imported_at: new Date().toISOString() })

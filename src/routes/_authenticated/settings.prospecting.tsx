@@ -15,7 +15,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Plus, Play, Sparkles, Trash2, UserPlus, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Play,
+  Sparkles,
+  Trash2,
+  UserPlus,
+  Loader2,
+  Database,
+  Building2,
+  MapPin,
+  Mail,
+  Phone,
+  Linkedin,
+  ExternalLink,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   listProspectSearches,
@@ -107,7 +121,7 @@ export function ProspectingPage() {
         <div>
           <h2 className="text-lg font-semibold">Prospecting Agent</h2>
           <p className="text-sm text-muted-foreground">
-            Defina seu ICP e deixe a IA gerar uma lista de prospects para revisar e importar como
+            Defina seu ICP e busque prospects reais via Apollo.io para revisar e importar como
             leads.
           </p>
         </div>
@@ -129,14 +143,17 @@ export function ProspectingPage() {
           )}
           <div className="text-sm divide-y">
             {rows.map((r) => (
-              <div key={r.id} className="py-2 flex items-center justify-between gap-3">
+              <div key={r.id} className="py-3 flex items-center justify-between gap-3">
                 <button className="text-left flex-1 min-w-0" onClick={() => openResults(r)}>
                   <div className="font-medium truncate flex items-center gap-2">
-                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    <Database className="h-3.5 w-3.5 text-primary" />
                     {String(r.name)}
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
                     {[r.industry, r.role_title, r.location].filter(Boolean).join(" · ") || "—"}
+                  </div>
+                  <div className="text-[10px] text-muted-foreground mt-0.5">
+                    Fonte: {r.source === "apollo" ? "Apollo.io" : "IA"}
                   </div>
                 </button>
                 <Badge
@@ -193,7 +210,7 @@ export function ProspectingPage() {
               <Label>Nome</Label>
               <Input
                 value={(editing?.name as string) ?? ""}
-                onChange={(e) => setEditing((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) => setEditing((f: Partial<Row> | null) => (f ? { ...f, name: e.target.value } : f))}
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -201,7 +218,7 @@ export function ProspectingPage() {
                 <Label>Segmento/Indústria</Label>
                 <Input
                   value={(editing?.industry as string) ?? ""}
-                  onChange={(e) => setEditing((f) => ({ ...f, industry: e.target.value }))}
+                  onChange={(e) => setEditing((f: Partial<Row> | null) => (f ? { ...f, industry: e.target.value } : f))}
                   placeholder="SaaS B2B, e-commerce..."
                 />
               </div>
@@ -209,7 +226,7 @@ export function ProspectingPage() {
                 <Label>Cargo alvo</Label>
                 <Input
                   value={(editing?.role_title as string) ?? ""}
-                  onChange={(e) => setEditing((f) => ({ ...f, role_title: e.target.value }))}
+                  onChange={(e) => setEditing((f: Partial<Row> | null) => (f ? { ...f, role_title: e.target.value } : f))}
                   placeholder="CMO, Head de Vendas..."
                 />
               </div>
@@ -217,7 +234,7 @@ export function ProspectingPage() {
                 <Label>Porte da empresa</Label>
                 <Input
                   value={(editing?.company_size as string) ?? ""}
-                  onChange={(e) => setEditing((f) => ({ ...f, company_size: e.target.value }))}
+                  onChange={(e) => setEditing((f: Partial<Row> | null) => (f ? { ...f, company_size: e.target.value } : f))}
                   placeholder="50-200 funcionários"
                 />
               </div>
@@ -225,7 +242,7 @@ export function ProspectingPage() {
                 <Label>Localização</Label>
                 <Input
                   value={(editing?.location as string) ?? ""}
-                  onChange={(e) => setEditing((f) => ({ ...f, location: e.target.value }))}
+                  onChange={(e) => setEditing((f: Partial<Row> | null) => (f ? { ...f, location: e.target.value } : f))}
                   placeholder="Brasil, São Paulo..."
                 />
               </div>
@@ -234,7 +251,7 @@ export function ProspectingPage() {
               <Label>Palavras-chave</Label>
               <Input
                 value={(editing?.keywords as string) ?? ""}
-                onChange={(e) => setEditing((f) => ({ ...f, keywords: e.target.value }))}
+                onChange={(e) => setEditing((f: Partial<Row> | null) => (f ? { ...f, keywords: e.target.value } : f))}
                 placeholder="automação, IA, growth"
               />
             </div>
@@ -243,7 +260,7 @@ export function ProspectingPage() {
               <Textarea
                 rows={2}
                 value={(editing?.instructions as string) ?? ""}
-                onChange={(e) => setEditing((f) => ({ ...f, instructions: e.target.value }))}
+                onChange={(e) => setEditing((f: Partial<Row> | null) => (f ? { ...f, instructions: e.target.value } : f))}
               />
             </div>
             <div>
@@ -254,7 +271,9 @@ export function ProspectingPage() {
                 max={50}
                 value={(editing?.max_results as number) ?? 10}
                 onChange={(e) =>
-                  setEditing((f) => ({ ...f, max_results: parseInt(e.target.value, 10) || 10 }))
+                  setEditing((f: Partial<Row> | null) =>
+                    f ? { ...f, max_results: parseInt(e.target.value, 10) || 10 } : f
+                  )
                 }
               />
             </div>
@@ -281,23 +300,76 @@ export function ProspectingPage() {
             )}
             {results.map((r) => (
               <Card key={r.id}>
-                <CardContent className="pt-4 space-y-1">
-                  <div className="font-medium">
-                    {String(r.contact_name || "—")}{" "}
-                    <span className="text-muted-foreground text-xs">
-                      · {String(r.role_title || "")}
-                    </span>
+                <CardContent className="pt-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-medium">
+                        {String(r.contact_name || "—")}
+                        {r.role_title ? (
+                          <span className="text-muted-foreground text-xs ml-1">
+                            · {String(r.role_title)}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="text-sm text-muted-foreground flex items-center gap-1 mt-0.5">
+                        <Building2 className="h-3 w-3" />
+                        {String(r.company_name || "—")}
+                      </div>
+                    </div>
+                    <Badge variant="outline">{r.source === "apollo" ? "Apollo.io" : "IA"}</Badge>
                   </div>
-                  <div className="text-sm">
-                    {String(r.company_name || "")} {r.location ? `· ${String(r.location)}` : ""}
+
+                  <div className="text-xs space-y-1">
+                    {r.industry ? (
+                      <div className="text-muted-foreground">Segmento: {String(r.industry)}</div>
+                    ) : null}
+                    {r.company_size ? (
+                      <div className="text-muted-foreground">
+                        Funcionários: {String(r.company_size)}
+                      </div>
+                    ) : null}
+                    {r.location ? (
+                      <div className="text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {String(r.location)}
+                      </div>
+                    ) : null}
+                    {r.email ? (
+                      <div className="flex items-center gap-1 text-foreground">
+                        <Mail className="h-3 w-3" />
+                        {String(r.email)}
+                      </div>
+                    ) : r.email_hint ? (
+                      <div className="text-muted-foreground flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        {String(r.email_hint)}
+                      </div>
+                    ) : null}
+                    {r.phone ? (
+                      <div className="flex items-center gap-1 text-foreground">
+                        <Phone className="h-3 w-3" />
+                        {String(r.phone)}
+                      </div>
+                    ) : null}
+                    {r.linkedin_url ? (
+                      <a
+                        href={String(r.linkedin_url)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 text-primary hover:underline"
+                      >
+                        <Linkedin className="h-3 w-3" />
+                        LinkedIn
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    ) : null}
                   </div>
-                  {r.email_hint ? (
-                    <div className="text-xs text-muted-foreground">{String(r.email_hint)}</div>
-                  ) : null}
+
                   {r.reason ? (
                     <p className="text-xs text-muted-foreground italic">{String(r.reason)}</p>
                   ) : null}
-                  <div className="pt-2">
+
+                  <div className="pt-1">
                     {r.imported_lead_id ? (
                       <Badge variant="secondary">Importado</Badge>
                     ) : (
