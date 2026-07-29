@@ -60,12 +60,6 @@ export function CreateDealFromLeadDialog({
   const [expectedClose, setExpectedClose] = useState<string>("");
   const [description, setDescription] = useState(initialDescription ?? "");
 
-  useEffect(() => {
-    if (open && initialDescription && !description) {
-      setDescription(initialDescription);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialDescription]);
 
   // company / contact
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -94,7 +88,7 @@ export function CreateDealFromLeadDialog({
     setValue("");
     setCurrency("BRL");
     setExpectedClose("");
-    setDescription("");
+    setDescription(initialDescription ?? "");
     setCompanyId(null);
     setCompanyName(lead.company_name ?? "");
     setContactId(null);
@@ -135,7 +129,7 @@ export function CreateDealFromLeadDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, lead, defaultPipeline, pipelines]);
+  }, [open, lead, defaultPipeline, pipelines, initialDescription]);
 
   // ensure stage matches selected pipeline
   useEffect(() => {
