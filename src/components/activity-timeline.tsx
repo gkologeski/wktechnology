@@ -1,4 +1,12 @@
-import { useEffect, useState, useRef, useMemo, type ReactNode } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  lazy,
+  Suspense,
+  type ReactNode,
+} from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -67,7 +75,11 @@ import {
 } from "@/lib/date-presets";
 
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
-import { CallDialer } from "@/components/voice/call-dialer";
+// O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
+// usuário abre a ação de ligação pela primeira vez.
+const CallDialer = lazy(() =>
+  import("@/components/voice/call-dialer").then((m) => ({ default: m.CallDialer })),
+);
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
@@ -656,6 +668,12 @@ export function ActivityTimeline({
 
   // Action dialogs open state
   const [openAction, setOpenAction] = useState<CreateAction | null>(null);
+  // Mantém o discador montado após a primeira abertura (preserva chamada em
+  // andamento ao fechar o modal), mas evita baixar o SDK de voz antes disso.
+  const [dialerMounted, setDialerMounted] = useState(false);
+  useEffect(() => {
+    if (openAction === "call") setDialerMounted(true);
+  }, [openAction]);
 
   // Contact info resolved from parent entity for action dialogs
   const [target, setTarget] = useState<{
@@ -1649,14 +1667,16 @@ export function ActivityTimeline({
           setTimeout(() => setOpenAction(null), 0);
           return null;
         })()}
-      {target.phone && (
-        <CallDialer
-          open={openAction === "call"}
-          onOpenChange={(v) => !v && setOpenAction(null)}
-          defaultTo={target.phone}
-          contactId={target.contactId}
-          contactName={target.name}
-        />
+      {target.phone && dialerMounted && (
+        <Suspense fallback={null}>
+          <CallDialer
+            open={openAction === "call"}
+            onOpenChange={(v: boolean) => !v && setOpenAction(null)}
+            defaultTo={target.phone}
+            contactId={target.contactId}
+            contactName={target.name}
+          />
+        </Suspense>
       )}
       {openAction === "whatsapp" &&
         !target.phone &&

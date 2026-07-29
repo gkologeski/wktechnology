@@ -17,10 +17,14 @@ export default defineConfig({
     server: { entry: "server" },
     router: {
       codeSplittingOptions: {
-        // Evita chunks lazy de rota (`?tsr-split=component`) carregarem
-        // dependências do Router/React com hashes Vite diferentes durante
-        // cold start ou re-otimização. Este app prioriza estabilidade do CRM.
-        defaultBehavior: [],
+        // Divide apenas o `component` de cada rota. Mantém loaders, contexto e
+        // validações no bundle principal (evita waterfall) e reduz bastante o
+        // chunk inicial, que antes carregava as ~347 rotas de uma vez.
+        // Histórico: já esteve desativado (`[]`) por causa de chunks lazy que
+        // puxavam cópias diferentes do React/Router; o dedupe + optimizeDeps
+        // abaixo cobrem esse caso. Se voltar `Cannot read properties of null
+        // (reading 'useContext')`, reverter para `defaultBehavior: []`.
+        defaultBehavior: [["component"]],
       },
     },
   },
