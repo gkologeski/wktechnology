@@ -96,7 +96,7 @@ export const listProspectSearches = createServerFn({ method: "POST" })
     const { data, error } = await (supabase as any)
       .from("prospecting_searches")
       .select("*")
-      .eq("owner_id", workspaceId)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []) as ProspectSearch[];
@@ -111,7 +111,8 @@ export const upsertProspectSearch = createServerFn({ method: "POST" })
     const f = data.filters ?? {};
     const first = (arr?: string[]) => (arr && arr.length ? arr.join(", ") : null);
     const payload = {
-      owner_id: workspaceId,
+      workspace_id: workspaceId,
+      owner_id: userId,
       name: data.name,
       // Campos legados: derivados dos filtros estruturados para compatibilidade.
       industry: first(f.organization_industry_keywords),
@@ -130,7 +131,7 @@ export const upsertProspectSearch = createServerFn({ method: "POST" })
         .from("prospecting_searches")
         .update(payload)
         .eq("id", data.id)
-        .eq("owner_id", workspaceId);
+        .eq("workspace_id", workspaceId);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
@@ -155,7 +156,7 @@ export const deleteProspectSearch = createServerFn({ method: "POST" })
       .from("prospecting_searches")
       .delete()
       .eq("id", data.id)
-      .eq("owner_id", workspaceId);
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -170,7 +171,7 @@ export const listProspectResults = createServerFn({ method: "POST" })
     const { data: rows, error } = await (supabase as any)
       .from("prospecting_results")
       .select("*")
-      .eq("owner_id", workspaceId)
+      .eq("workspace_id", workspaceId)
       .eq("search_id", data.search_id)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -377,7 +378,7 @@ export const runProspectSearch = createServerFn({ method: "POST" })
       .from("prospecting_searches")
       .select("*")
       .eq("id", data.id)
-      .eq("owner_id", workspaceId)
+      .eq("workspace_id", workspaceId)
       .single();
     if (sErr || !s) throw new Error("Busca não encontrada");
 
@@ -415,7 +416,7 @@ export const runProspectSearch = createServerFn({ method: "POST" })
           const email = cleanEmail(p.email);
 
           enriched.push({
-            owner_id: workspaceId,
+            owner_id: userId,
             search_id: data.id,
             source: "apollo",
             external_id: p.id,
@@ -449,6 +450,7 @@ export const runProspectSearch = createServerFn({ method: "POST" })
       if (enriched.length) {
         await sb.from("prospecting_results").insert(
           enriched.map((r) => ({
+            workspace_id: workspaceId,
             owner_id: r.owner_id,
             search_id: r.search_id,
             source: r.source,
@@ -502,7 +504,7 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
       .from("prospecting_results")
       .select("*")
       .eq("id", data.result_id)
-      .eq("owner_id", workspaceId)
+      .eq("workspace_id", workspaceId)
       .single();
     if (rErr || !r) throw new Error("Prospect não encontrado");
     if (r.imported_lead_id) return { id: r.imported_lead_id, already: true };

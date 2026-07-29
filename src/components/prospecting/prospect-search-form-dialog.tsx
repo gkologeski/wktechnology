@@ -14,10 +14,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { MultiSelectChips } from "@/components/ui/multi-select-chips";
 import { MultiSelectOptions } from "@/components/ui/multi-select-options";
+import { AutocompleteChips } from "@/components/ui/autocomplete-chips";
 import {
   DEPARTMENT_OPTIONS,
   EMAIL_STATUS_OPTIONS,
   EMPLOYEE_RANGE_OPTIONS,
+  INDUSTRY_OPTIONS,
   ProspectFilters,
   REVENUE_RANGE_OPTIONS,
   SENIORITY_OPTIONS,
@@ -187,11 +189,16 @@ export function ProspectSearchFormDialog({
 
               <div>
                 <Label>Setor / Indústria</Label>
-                <MultiSelectChips
+                <AutocompleteChips
                   value={value.filters.organization_industry_keywords ?? []}
                   onChange={(v) => setFilter("organization_industry_keywords", v)}
-                  placeholder="Ex.: SaaS, Fintech, E-commerce"
+                  options={INDUSTRY_OPTIONS}
+                  placeholder="Digite para buscar (ex.: software, saúde, varejo)"
+                  emptyLabel="Nenhum setor encontrado"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Comece a digitar e escolha um setor da lista do Apollo.
+                </p>
               </div>
 
               <div>
