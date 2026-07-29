@@ -199,8 +199,10 @@ export function ProspectSearchFormDialog({
                   emptyLabel="Nenhum setor encontrado"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Comece a digitar e escolha um setor da lista do Apollo.
+                  Comece a digitar e escolha um setor da lista do Apollo. Setores e palavras-chave
+                  são combinados com OU.
                 </p>
+
               </div>
 
               <div>
