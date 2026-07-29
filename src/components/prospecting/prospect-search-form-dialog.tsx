@@ -161,8 +161,10 @@ export function ProspectSearchFormDialog({
                   placeholder="Ex.: CEO, CTO, Diretor Comercial"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Enter, Tab ou vírgula para adicionar. Cole listas separadas por vírgula.
+                  Enter, Tab ou vírgula para adicionar. A base do Apollo é majoritariamente em
+                  inglês — prefira CTO, Head of IT, Sales Director.
                 </p>
+
               </div>
 
               <div>
@@ -197,8 +199,10 @@ export function ProspectSearchFormDialog({
                   emptyLabel="Nenhum setor encontrado"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Comece a digitar e escolha um setor da lista do Apollo.
+                  Comece a digitar e escolha um setor da lista do Apollo. Setores e palavras-chave
+                  são combinados com OU.
                 </p>
+
               </div>
 
               <div>
@@ -216,9 +220,14 @@ export function ProspectSearchFormDialog({
                 <MultiSelectChips
                   value={value.filters.q_keywords ?? []}
                   onChange={(v) => setFilter("q_keywords", v)}
-                  placeholder="Ex.: automação, IA, growth"
+                  placeholder="Ex.: software, fintech, logistics"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Termos aplicados à empresa (OU entre eles). Termos em português retornam poucos
+                  resultados.
+                </p>
               </div>
+
             </div>
           </section>
 
