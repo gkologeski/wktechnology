@@ -132,6 +132,40 @@ export function QualificationPanel({
   const threshold = qData?.questionnaire.pass_threshold ?? 0;
   const passesAuto = score >= threshold;
 
+  const missingRequired = useMemo(() => {
+    if (!qData) return [] as string[];
+    const missing: string[] = [];
+    for (const q of qData.questions) {
+      if (!q.required) continue;
+      const v = answers[q.id];
+      const empty =
+        v == null ||
+        (typeof v === "string" && v.trim() === "") ||
+        (Array.isArray(v) && v.length === 0);
+      if (empty) missing.push(q.label);
+    }
+    return missing;
+  }, [qData, answers]);
+
+  const qualificationSummary = useMemo(() => {
+    if (!qData) return "";
+    const lines: string[] = [];
+    lines.push(
+      `Qualificação — ${qData.questionnaire.name} (score ${score}/${threshold})`,
+    );
+    lines.push("");
+    for (const q of qData.questions) {
+      const raw = answers[q.id];
+      if (raw == null || raw === "" || (Array.isArray(raw) && raw.length === 0)) continue;
+      let formatted: string;
+      if (q.type === "boolean") formatted = raw === true ? "Sim" : "Não";
+      else if (q.type === "multi" && Array.isArray(raw)) formatted = raw.join(", ");
+      else formatted = String(raw);
+      lines.push(`- ${q.label}: ${formatted}`);
+    }
+    return lines.join("\n");
+  }, [qData, answers, score, threshold]);
+
   const saveDraft = useMutation({
     mutationFn: () =>
       save({
@@ -391,7 +425,12 @@ export function QualificationPanel({
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700"
-                disabled={busy}
+                disabled={busy || !activeId || missingRequired.length > 0}
+                title={
+                  missingRequired.length > 0
+                    ? `Responda os campos obrigatórios: ${missingRequired.join("; ")}`
+                    : undefined
+                }
                 onClick={openQualifyDialog}
               >
                 <Check className="w-4 h-4 mr-1" /> Qualificar
@@ -432,6 +471,7 @@ export function QualificationPanel({
             if (!v) setLeadRecord(null);
           }}
           lead={leadRecord}
+          initialDescription={qualificationSummary}
           onCreated={() => {
             void onDealCreated();
           }}

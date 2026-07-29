@@ -35,12 +35,14 @@ export function CreateDealFromLeadDialog({
   lead,
   onCreated,
   onSaved,
+  initialDescription,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   lead: Lead;
   onCreated?: (dealId: string) => void;
   onSaved?: (r: { id: string; action: "created" }) => void;
+  initialDescription?: string;
 }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
@@ -56,7 +58,14 @@ export function CreateDealFromLeadDialog({
   const [value, setValue] = useState<string>("");
   const [currency, setCurrency] = useState("BRL");
   const [expectedClose, setExpectedClose] = useState<string>("");
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(initialDescription ?? "");
+
+  useEffect(() => {
+    if (open && initialDescription && !description) {
+      setDescription(initialDescription);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialDescription]);
 
   // company / contact
   const [companyId, setCompanyId] = useState<string | null>(null);
