@@ -425,7 +425,12 @@ export function QualificationPanel({
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700"
-                disabled={busy}
+                disabled={busy || !activeId || missingRequired.length > 0}
+                title={
+                  missingRequired.length > 0
+                    ? `Responda os campos obrigatórios: ${missingRequired.join("; ")}`
+                    : undefined
+                }
                 onClick={openQualifyDialog}
               >
                 <Check className="w-4 h-4 mr-1" /> Qualificar
