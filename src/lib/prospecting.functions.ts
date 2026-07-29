@@ -6,14 +6,32 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const APOLLO_GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
 
+const strArr = z.array(z.string().min(1).max(200)).max(100).optional();
+const FiltersSchema = z
+  .object({
+    person_titles: strArr,
+    person_not_titles: strArr,
+    person_seniorities: strArr,
+    person_departments: strArr,
+    person_locations: strArr,
+    organization_locations: strArr,
+    organization_industry_keywords: strArr,
+    organization_num_employees_ranges: strArr,
+    organization_estimated_annual_revenue_ranges: strArr,
+    organization_technology_uids: strArr,
+    q_keywords: strArr,
+    q_organization_keyword_tags: strArr,
+    contact_email_status: strArr,
+    organization_domains: strArr,
+    organization_not_domains: strArr,
+  })
+  .partial()
+  .default({});
+
 const SearchInput = z.object({
   id: z.string().uuid().nullable().optional(),
   name: z.string().min(1).max(120),
-  industry: z.string().max(120).optional().default(""),
-  role_title: z.string().max(120).optional().default(""),
-  company_size: z.string().max(80).optional().default(""),
-  location: z.string().max(120).optional().default(""),
-  keywords: z.string().max(400).optional().default(""),
+  filters: FiltersSchema,
   instructions: z.string().max(1000).optional().default(""),
   max_results: z.number().int().min(1).max(50).default(10),
 });
@@ -40,6 +58,7 @@ type ProspectSearch = {
   updated_at: string;
   source: string;
   apollo_query: JsonValue;
+  filters: JsonValue;
 };
 
 type ProspectResult = {
@@ -89,16 +108,20 @@ export const upsertProspectSearch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    const f = data.filters ?? {};
+    const first = (arr?: string[]) => (arr && arr.length ? arr.join(", ") : null);
     const payload = {
       owner_id: workspaceId,
       name: data.name,
-      industry: data.industry || null,
-      role_title: data.role_title || null,
-      company_size: data.company_size || null,
-      location: data.location || null,
-      keywords: data.keywords || null,
+      // Campos legados: derivados dos filtros estruturados para compatibilidade.
+      industry: first(f.organization_industry_keywords),
+      role_title: first(f.person_titles),
+      company_size: first(f.organization_num_employees_ranges),
+      location: first(f.person_locations),
+      keywords: first(f.q_keywords),
       instructions: data.instructions || null,
       max_results: data.max_results,
+      filters: f as Record<string, unknown>,
       source: "apollo",
     };
     if (data.id) {
@@ -262,39 +285,70 @@ type ApolloPersonDetail = {
   } | null;
 };
 
+const STRUCTURED_FILTER_KEYS = [
+  "person_titles",
+  "person_not_titles",
+  "person_seniorities",
+  "person_departments",
+  "person_locations",
+  "organization_locations",
+  "organization_industry_keywords",
+  "organization_num_employees_ranges",
+  "organization_estimated_annual_revenue_ranges",
+  "organization_technology_uids",
+  "q_organization_keyword_tags",
+  "contact_email_status",
+  "organization_domains",
+  "organization_not_domains",
+] as const;
+
 function buildApolloQuery(search: ProspectSearch): Record<string, string | string[]> {
   const query: Record<string, string | string[]> = {
     per_page: String(Math.min(search.max_results, 50)),
     page: "1",
   };
 
-  if (search.industry) {
-    query.organization_industry_keywords = search.industry;
+  const structured =
+    search.filters && typeof search.filters === "object" && !Array.isArray(search.filters)
+      ? (search.filters as Record<string, unknown>)
+      : {};
+
+  let hasStructured = false;
+  for (const key of STRUCTURED_FILTER_KEYS) {
+    const value = structured[key];
+    if (Array.isArray(value) && value.length > 0) {
+      query[key] = value.map((v) => String(v)).filter(Boolean);
+      hasStructured = true;
+    }
   }
 
+  const qKeywords = structured.q_keywords;
+  if (Array.isArray(qKeywords) && qKeywords.length > 0) {
+    query.q_keywords = qKeywords.map((v) => String(v)).join(" ");
+    hasStructured = true;
+  }
+
+  if (hasStructured) {
+    if (search.instructions && !query.q_organization_keyword_tags) {
+      query.q_organization_keyword_tags = [search.instructions];
+    }
+    return query;
+  }
+
+  // Fallback para buscas legadas salvas antes dos filtros estruturados.
+  if (search.industry) query.organization_industry_keywords = search.industry;
   if (search.role_title) {
-    // Apollo espera arrays com [] no query string
     query.person_titles = search.role_title
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
   }
-
-  if (search.company_size) {
-    query.organization_num_employees_ranges = search.company_size;
-  }
-
+  if (search.company_size) query.organization_num_employees_ranges = search.company_size;
   if (search.location) {
-    query.person_locations = search.location.split(",").map((s) => s.trim());
+    query.person_locations = search.location.split(",").map((s) => s.trim()).filter(Boolean);
   }
-
-  if (search.keywords) {
-    query.q_keywords = search.keywords;
-  }
-
-  if (search.instructions) {
-    query.q_organization_keyword_tags = search.instructions;
-  }
+  if (search.keywords) query.q_keywords = search.keywords;
+  if (search.instructions) query.q_organization_keyword_tags = search.instructions;
 
   return query;
 }
