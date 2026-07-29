@@ -1,0 +1,1 @@
+ALTER TABLE public.prospecting_searches ADD COLUMN IF NOT EXISTS filters jsonb NOT NULL DEFAULT '{}'::jsonb;

@@ -13330,6 +13330,7 @@ export type Database = {
           company_size: string | null
           created_at: string
           error: string | null
+          filters: Json
           id: string
           industry: string | null
           instructions: string | null
@@ -13351,6 +13352,7 @@ export type Database = {
           company_size?: string | null
           created_at?: string
           error?: string | null
+          filters?: Json
           id?: string
           industry?: string | null
           instructions?: string | null
@@ -13372,6 +13374,7 @@ export type Database = {
           company_size?: string | null
           created_at?: string
           error?: string | null
+          filters?: Json
           id?: string
           industry?: string | null
           instructions?: string | null
