@@ -449,6 +449,5 @@ export function ProspectingPage() {
         ids={queueIds}
       />
     </div>
-    </div>
   );
 }
