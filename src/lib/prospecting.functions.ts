@@ -543,13 +543,27 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
         owner_id: userId,
         first_name: first,
         last_name: last,
-        company: r.company_name,
+        company_name: r.company_name,
         email: r.email || r.email_hint,
         phone: r.phone,
-        title: r.role_title,
-        city: r.location,
         source: "prospecting",
         status: "new",
+        external_ids: r.external_id ? { apollo_person: r.external_id } : {},
+        custom_fields: {
+          prospecting: {
+            result_id: r.id,
+            search_id: r.search_id,
+            source: r.source,
+            imported_at: new Date().toISOString(),
+            role_title: r.role_title,
+            location: r.location,
+            industry: r.industry,
+            company_domain: r.company_domain,
+            domain_hint: r.domain_hint,
+            linkedin_url: r.linkedin_url,
+            apollo_score: r.apollo_score,
+          },
+        },
       })
       .select("id")
       .single();
