@@ -471,6 +471,7 @@ export function QualificationPanel({
             if (!v) setLeadRecord(null);
           }}
           lead={leadRecord}
+          initialDescription={qualificationSummary}
           onCreated={() => {
             void onDealCreated();
           }}
