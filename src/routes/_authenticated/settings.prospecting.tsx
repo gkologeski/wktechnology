@@ -34,6 +34,7 @@ import {
   ProspectSearchFormDialog,
   type ProspectSearchFormValue,
 } from "@/components/prospecting/prospect-search-form-dialog";
+import { AddToProspectingDialog } from "@/components/prospecting/add-to-prospecting-dialog";
 import { countActiveFilters, ProspectFilters } from "@/lib/prospecting-options";
 
 export const Route = createFileRoute("/_authenticated/settings/prospecting")({
