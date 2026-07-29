@@ -129,7 +129,7 @@ export function CreateDealFromLeadDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, lead, defaultPipeline, pipelines]);
+  }, [open, lead, defaultPipeline, pipelines, initialDescription]);
 
   // ensure stage matches selected pipeline
   useEffect(() => {
