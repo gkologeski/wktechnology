@@ -539,7 +539,8 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
     const { data: lead, error: lErr } = await sb
       .from("leads")
       .insert({
-        owner_id: workspaceId,
+        workspace_id: workspaceId,
+        owner_id: userId,
         first_name: first,
         last_name: last,
         company: r.company_name,
