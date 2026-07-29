@@ -376,6 +376,16 @@ export function ProspectingPage() {
               </Button>
             </div>
           )}
+          {progress && progress.total > 0 && (
+            <div className="mt-3 space-y-1" aria-live="polite">
+              <Progress value={(progress.done / progress.total) * 100} />
+              <p className="text-xs text-muted-foreground">
+                Processando {progress.done} de {progress.total}
+                {progress.label ? ` · ${progress.label}` : ""}
+              </p>
+            </div>
+          )}
+
           <div className="mt-4 space-y-2">
             {results.length === 0 && (
               <p className="text-sm text-muted-foreground">
