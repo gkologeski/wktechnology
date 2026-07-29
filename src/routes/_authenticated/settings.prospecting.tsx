@@ -402,7 +402,7 @@ export function ProspectingPage() {
                     <p className="text-xs text-muted-foreground italic">{String(r.reason)}</p>
                   ) : null}
 
-                  <div className="pt-1">
+                  <div className="pt-1 flex flex-wrap items-center gap-2">
                     {r.imported_lead_id ? (
                       <Badge variant="secondary">Importado</Badge>
                     ) : (
@@ -423,6 +423,15 @@ export function ProspectingPage() {
                         Importar como Lead
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={bulkBusy !== null}
+                      onClick={() => addToQueueFlow([r], "queue")}
+                    >
+                      <ListPlus className="h-3.5 w-3.5 mr-1" />
+                      Incluir na fila
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -430,6 +439,16 @@ export function ProspectingPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <AddToProspectingDialog
+        open={queueOpen}
+        onOpenChange={(v) => {
+          setQueueOpen(v);
+          if (!v) setQueueIds([]);
+        }}
+        ids={queueIds}
+      />
+    </div>
     </div>
   );
 }
