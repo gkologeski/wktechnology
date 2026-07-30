@@ -714,10 +714,21 @@ export const consumeInvite = createServerFn({ method: "POST" })
           : inv.role === "manager"
             ? "aaaaaaaa-0000-4000-8000-000000000002"
             : "aaaaaaaa-0000-4000-8000-000000000001"; // member -> Vendedor
+
+    // Convenção do RBAC: owner_id nessas tabelas é o auth.uid do criador do
+    // workspace (é o que as policies exigem para escrita/gestão).
+    const { data: wsRow } = await supabaseAdmin
+      .from("workspaces")
+      .select("created_by")
+      .eq("id", inv.workspace_id as string)
+      .maybeSingle();
+    const workspaceOwnerId =
+      (wsRow as { created_by?: string } | null)?.created_by ?? (inv.workspace_id as string);
+
     const { error: jrErr } = await supabaseAdmin.from("user_job_roles").insert({
       user_id: userId,
       role_id: jobRoleId,
-      owner_id: inv.workspace_id, // user_effective_permissions exige owner_id = workspace_id
+      owner_id: workspaceOwnerId,
       is_primary: true,
     } as never);
     if (jrErr && jrErr.code !== "23505") throw new Error(jrErr.message);
@@ -725,13 +736,6 @@ export const consumeInvite = createServerFn({ method: "POST" })
     // Aplica o conjunto de permissões escolhido no convite (se houver).
     const chosenSetId = (inv as { permission_set_id?: string | null }).permission_set_id ?? null;
     if (chosenSetId) {
-      const { data: ws } = await supabaseAdmin
-        .from("workspaces")
-        .select("created_by")
-        .eq("id", inv.workspace_id as string)
-        .maybeSingle();
-      const workspaceOwnerId =
-        (ws as { created_by?: string } | null)?.created_by ?? (inv.workspace_id as string);
       const { error: upsErr } = await supabaseAdmin
         .from("user_permission_sets")
         .insert({
@@ -741,6 +745,7 @@ export const consumeInvite = createServerFn({ method: "POST" })
         } as never);
       if (upsErr && upsErr.code !== "23505") throw new Error(upsErr.message);
     }
+
 
     // Marca convite como aceito
     await supabaseAdmin
