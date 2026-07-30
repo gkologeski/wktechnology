@@ -15,8 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { listEnrichmentJobs, listJobItems } from "@/lib/integrations/enrichment.functions";
+import { listProspectSearches } from "@/lib/prospecting.functions";
 import { formatDateTime } from "@/lib/crm";
 import { Eye } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { AtsSectionHeader } from "@/components/ats/ui";
 
 type Job = Awaited<ReturnType<typeof listEnrichmentJobs>>["jobs"][number];
 
@@ -30,10 +33,12 @@ export const Route = createFileRoute("/_authenticated/settings/enrichment")({
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   done: "default",
+  completed: "default",
   partial: "secondary",
   failed: "destructive",
   running: "outline",
   queued: "outline",
+  pending: "outline",
 };
 
 export function EnrichmentHistoryPage() {
@@ -46,7 +51,8 @@ export function EnrichmentHistoryPage() {
   const [viewing, setViewing] = useState<Job | null>(null);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
+      <div className="space-y-4">
       <PageHeader
         title="Enriquecimento — histórico"
         description="Execuções recentes de enriquecimento (Apollo, Lusha) e seus resultados."
@@ -113,6 +119,105 @@ export function EnrichmentHistoryPage() {
       </div>
 
       <JobItemsSheet job={viewing} onClose={() => setViewing(null)} />
+      </div>
+
+      <ProspectSearchHistorySection />
+    </div>
+  );
+}
+
+const SEARCH_STATUS_LABEL: Record<string, string> = {
+  pending: "Pendente",
+  running: "Executando",
+  completed: "Concluída",
+  failed: "Falhou",
+};
+
+/** Histórico das buscas de prospects (Apollo) executadas no workspace. */
+function ProspectSearchHistorySection() {
+  const listSearches = useServerFn(listProspectSearches);
+  const q = useQuery({
+    queryKey: ["prospecting", "searches", "history"],
+    queryFn: () => listSearches(),
+    refetchInterval: 15000,
+  });
+
+  const summarize = (filters: unknown): string => {
+    if (!filters || typeof filters !== "object") return "—";
+    const entries = Object.entries(filters as Record<string, unknown>)
+      .filter(([, v]) => (Array.isArray(v) ? v.length > 0 : v != null && v !== ""))
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(", ") : String(v)}`);
+    return entries.length ? entries.join(" · ") : "—";
+  };
+
+  return (
+    <div className="space-y-4">
+      <AtsSectionHeader
+        title="Buscas de prospects"
+        description="Histórico das buscas executadas na base do Apollo.io, com filtros aplicados e resultados."
+        action={
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/prospecting" search={{ tab: "prospecting" as const }}>
+              Abrir busca de prospects
+            </Link>
+          </Button>
+        }
+      />
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Busca</TableHead>
+              <TableHead>Filtros</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Resultados</TableHead>
+              <TableHead>Executada em</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {q.isLoading && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                  Carregando…
+                </TableCell>
+              </TableRow>
+            )}
+            {q.data && q.data.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-6">
+                  Nenhuma busca de prospects executada ainda.
+                </TableCell>
+              </TableRow>
+            )}
+            {q.data?.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell className="font-medium">{s.name}</TableCell>
+                <TableCell className="max-w-md">
+                  <span className="text-xs text-muted-foreground line-clamp-2">
+                    {summarize(s.filters)}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  <div className="space-y-1">
+                    <Badge variant={STATUS_VARIANT[s.status] ?? "outline"}>
+                      {SEARCH_STATUS_LABEL[s.status] ?? s.status}
+                    </Badge>
+                    {s.error ? (
+                      <p className="text-xs text-muted-foreground line-clamp-2 max-w-xs">
+                        {s.error}
+                      </p>
+                    ) : null}
+                  </div>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">{s.result_count ?? 0}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {s.ran_at ? formatDateTime(s.ran_at) : "—"}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
