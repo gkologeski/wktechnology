@@ -418,7 +418,7 @@ export const listAtsCandidates = createServerFn({ method: "POST" })
     let q = supabase
       .from("ats_candidates")
       .select(
-        "id, full_name, email, phone, location, current_position, current_company, skills, tags, source, score, updated_at",
+        "id, full_name, email, phone, location, current_position, current_company, skills, tags, source, score, assigned_to, updated_at",
       )
       .eq("owner_id", userId)
       .order("updated_at", { ascending: false })

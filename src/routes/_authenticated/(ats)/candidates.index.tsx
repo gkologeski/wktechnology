@@ -26,6 +26,8 @@ import {
 } from "lucide-react";
 
 import { toast } from "sonner";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -290,6 +292,8 @@ function CandidatesPage() {
   });
 
   const rows: Cand[] = q.data ?? [];
+
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   const loading = q.isLoading;
   const error = q.error ? (q.error instanceof Error ? q.error.message : "Falha ao listar") : null;
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
@@ -308,10 +312,11 @@ function CandidatesPage() {
   });
   const statuses: Record<string, DerivedCandidateStatus> = statusQ.data ?? {};
 
-  const visibleRows = useMemo(() => {
+  const byStatusRows = useMemo(() => {
     if (statusFilter === "all") return rows;
     return rows.filter((r) => (statuses[r.id as string] ?? "new") === statusFilter);
   }, [rows, statuses, statusFilter]);
+  const visibleRows = filterRows(byStatusRows);
 
   const statusCounts = useMemo(() => {
     const c: Record<DerivedCandidateStatus, number> = {
@@ -983,6 +988,8 @@ function CandidatesPage() {
           </>
         }
         actions={
+          <div className="flex items-center gap-2">
+          <AssigneeFilter value={assignee} onChange={setAssignee} className="h-8 w-44 text-xs" />
           <Tabs value={view} onValueChange={(v) => setView(v as "cards" | "table" | "kanban")}>
             <TabsList className="h-8">
               <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
@@ -996,7 +1003,7 @@ function CandidatesPage() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-
+          </div>
         }
       />
 
@@ -1131,6 +1138,7 @@ function CandidatesPage() {
                 <TableHead>Localização</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Source</TableHead>
+                <TableHead>Responsável</TableHead>
                 <TableHead className="w-10" />
               </TableRow>
             </TableHeader>
@@ -1171,6 +1179,9 @@ function CandidatesPage() {
                     </TableCell>
                     <TableCell>
                       <CandidateStatusPill status={status} />
+                    </TableCell>
+                    <TableCell>
+                      <AssigneeCell assignedTo={(c as { assigned_to?: string | null }).assigned_to} />
                     </TableCell>
                     <TableCell>
                       {c.source ? (
