@@ -98,14 +98,17 @@ export function AppSidebar() {
     return groupsSource.map((g) => ({
       ...g,
       items: g.items
-        .filter((i) => canSee(i.need, perms))
+        .filter((i) => canSee(i.need, perms, i.permissionAny))
         .map((i) => ({
           ...i,
-          children: (i.children ?? []).filter((c) => canSee(c.need, perms) && matches(c.title)),
+          children: (i.children ?? []).filter(
+            (c) => canSee(c.need, perms, c.permissionAny) && matches(c.title),
+          ),
         }))
         .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
     })).filter((g) => g.items.length > 0);
-  }, [query, isAdmin, isManager, isPlatformAdmin, groupsSource]);
+  }, [query, isAdmin, isManager, isPlatformAdmin, grantedPermissions, groupsSource]);
+
 
   const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
 
