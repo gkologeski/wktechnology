@@ -246,14 +246,14 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         icon: UserPlus,
       },
 
-      { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager" },
-      { title: "Formulários", url: "/forms", icon: FileText, need: "manager" },
+      { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager", permissionAny: MENU_PERMISSIONS.landingPages },
+      { title: "Formulários", url: "/forms", icon: FileText, need: "manager", permissionAny: MENU_PERMISSIONS.forms },
       { title: "Pesquisas", url: "/surveys", icon: Star },
 
-      { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager" },
-      { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager" },
+      { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager", permissionAny: MENU_PERMISSIONS.campaigns },
+      { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager", permissionAny: MENU_PERMISSIONS.campaigns },
 
-      { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles, need: "manager" },
+      { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles, need: "manager", permissionAny: MENU_PERMISSIONS.sdrAgent },
     ],
 
   },
@@ -279,8 +279,8 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/meetings",
         icon: Video,
         children: [
-          { title: "Calendários", url: "/settings/calendars", icon: Calendar, need: "manager" },
-          { title: "Agendamentos", url: "/settings/booking", icon: Calendar, need: "manager" },
+          { title: "Calendários", url: "/settings/calendars", icon: Calendar, need: "manager", permissionAny: MENU_PERMISSIONS.calendars },
+          { title: "Agendamentos", url: "/settings/booking", icon: Calendar, need: "manager", permissionAny: MENU_PERMISSIONS.booking },
         ],
       },
       { title: "Conexão de Email", url: "/settings/email", icon: Mail },
@@ -292,7 +292,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Cotações", url: "/settings/quotes", icon: FileText },
-      { title: "Produtos", url: "/settings/products", icon: Package, need: "manager" },
+      { title: "Produtos", url: "/settings/products", icon: Package, need: "manager", permissionAny: MENU_PERMISSIONS.catalog },
       { title: "Faturas", url: "/invoices", icon: FileText },
       { title: "Portal do cliente", url: "/settings/portal", icon: Briefcase, need: "admin" },
 
@@ -309,22 +309,22 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         children: [{ title: "Filas", url: "/tasks/queues", icon: ListChecks }],
       },
 
-      { title: "Base de conhecimento", url: "/settings/kb", icon: BookOpen, need: "manager" },
+      { title: "Base de conhecimento", url: "/settings/kb", icon: BookOpen, need: "manager", permissionAny: MENU_PERMISSIONS.kb },
     ],
   },
   {
     label: "Otimizar",
     items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
-      { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard, need: "manager" },
-      { title: "Relatórios", url: "/reports", icon: BarChart3, need: "manager" },
-      { title: "Analytics", url: "/analytics", icon: TrendingUp, need: "manager" },
-      { title: "Workflows", url: "/settings/workflows", icon: Workflow, need: "manager" },
-      { title: "Sequências", url: "/settings/sequences", icon: RouteIcon, need: "manager" },
-      { title: "Distribuição", url: "/settings/rotation", icon: RouteIcon, need: "manager" },
-      { title: "SLA por etapa", url: "/settings/sla", icon: Activity, need: "manager" },
+      { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard, need: "manager", permissionAny: MENU_PERMISSIONS.dashboards },
+      { title: "Relatórios", url: "/reports", icon: BarChart3, need: "manager", permissionAny: MENU_PERMISSIONS.reports },
+      { title: "Analytics", url: "/analytics", icon: TrendingUp, need: "manager", permissionAny: MENU_PERMISSIONS.analytics },
+      { title: "Workflows", url: "/settings/workflows", icon: Workflow, need: "manager", permissionAny: MENU_PERMISSIONS.workflows },
+      { title: "Sequências", url: "/settings/sequences", icon: RouteIcon, need: "manager", permissionAny: MENU_PERMISSIONS.sequences },
+      { title: "Distribuição", url: "/settings/rotation", icon: RouteIcon, need: "manager", permissionAny: MENU_PERMISSIONS.rotation },
+      { title: "SLA por etapa", url: "/settings/sla", icon: Activity, need: "manager", permissionAny: MENU_PERMISSIONS.sla },
 
-      { title: "Macros", url: "/settings/macros", icon: LayoutTemplate, need: "manager" },
+      { title: "Macros", url: "/settings/macros", icon: LayoutTemplate, need: "manager", permissionAny: MENU_PERMISSIONS.macros },
     ],
   },
 ];
@@ -359,7 +359,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/settings/legal-entities", label: "Empresas (CNPJs)", icon: Building2, need: "admin" },
       { to: "/settings/legal-entity-groups", label: "Grupos empresariais", icon: Building2, need: "admin" },
       { to: "/settings/language", label: "Idioma", icon: Languages, need: "admin" },
-      { to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager" },
+      { to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager", permissionAny: MENU_PERMISSIONS.calendars },
       { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard, need: "admin" },
     ],
 
@@ -369,7 +369,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     items: [
       { to: "/settings/pipelines", label: "Pipelines", icon: GitBranch, need: "admin" },
       { to: "/settings/custom-properties", label: "Propriedades", icon: Tag, need: "admin" },
-      { to: "/settings/products", label: "Produtos", icon: Package, need: "manager" },
+      { to: "/settings/products", label: "Produtos", icon: Package, need: "manager", permissionAny: MENU_PERMISSIONS.catalog },
       { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin" },
     ],
   },
@@ -377,20 +377,20 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     label: "Pessoas & Acesso",
     items: [
       { to: "/settings/teams", label: "Membros", icon: UsersRound, need: "admin" },
-      { to: "/settings/user-groups", label: "Times", icon: UsersRound, need: "manager" },
+      { to: "/settings/user-groups", label: "Times", icon: UsersRound, need: "manager", permissionAny: MENU_PERMISSIONS.userGroups },
       { to: "/settings/permissions", label: "Permissões", icon: Shield, need: "admin" },
     ],
   },
   {
     label: "Automação & Engajamento",
     items: [
-      { to: "/settings/workflows", label: "Workflows", icon: Workflow, need: "manager" },
-      { to: "/settings/sequences", label: "Sequências", icon: RouteIcon, need: "manager" },
-      { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager" },
-      { to: "/settings/macros", label: "Macros", icon: LayoutTemplate, need: "manager" },
+      { to: "/settings/workflows", label: "Workflows", icon: Workflow, need: "manager", permissionAny: MENU_PERMISSIONS.workflows },
+      { to: "/settings/sequences", label: "Sequências", icon: RouteIcon, need: "manager", permissionAny: MENU_PERMISSIONS.sequences },
+      { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager", permissionAny: MENU_PERMISSIONS.emailTemplates },
+      { to: "/settings/macros", label: "Macros", icon: LayoutTemplate, need: "manager", permissionAny: MENU_PERMISSIONS.macros },
       { to: "/settings/snippets", label: "Snippets", icon: LayoutTemplate },
-      { to: "/settings/onboarding-templates", label: "Modelos de onboarding", icon: LayoutTemplate, need: "manager" },
-      { to: "/settings/kb", label: "Base de conhecimento", icon: BookOpen, need: "manager" },
+      { to: "/settings/onboarding-templates", label: "Modelos de onboarding", icon: LayoutTemplate, need: "manager", permissionAny: MENU_PERMISSIONS.onboardingTemplates },
+      { to: "/settings/kb", label: "Base de conhecimento", icon: BookOpen, need: "manager", permissionAny: MENU_PERMISSIONS.kb },
     ],
   },
   {
@@ -460,6 +460,6 @@ export function visibleSidebarPlatformUrls(perms: Perms): string[] {
 
 export function visibleSettingsItems(perms: Perms): string[] {
   return SETTINGS_GROUPS.flatMap((g) =>
-    g.items.filter((i) => canSee(i.need, perms)).map((i) => i.to),
+    g.items.filter((i) => canSee(i.need, perms, i.permissionAny)).map((i) => i.to),
   );
 }
