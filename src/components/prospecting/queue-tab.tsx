@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
-import { Plus, Trash2, Filter, Users, User, Play } from "lucide-react";
+import { Plus, Trash2, Filter, Users, User, Play, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -217,7 +217,11 @@ function QueueWorkspace({
               <Play className="w-4 h-4 mr-1" /> Iniciar fila
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={onEdit}>
+            <Pencil className="w-4 h-4 mr-1" /> Editar fila
+          </Button>
           <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
+
             <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
           </Button>
         </div>
