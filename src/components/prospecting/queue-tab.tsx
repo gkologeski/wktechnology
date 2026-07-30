@@ -2,7 +2,7 @@
  * Aba "Fila" da Suíte de Prospecção — gerenciamento de filas configuráveis
  * e workspace de qualificação (split view com lista + painel).
  */
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -25,8 +25,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { AutocompleteChips } from "@/components/ui/autocomplete-chips";
+import { listLeadSources } from "@/lib/lead-sources";
 import { AtsSectionHeader, EmptyState } from "@/components/ats/ui";
 import {
   listQueues,
