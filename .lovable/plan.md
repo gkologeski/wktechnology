@@ -17,6 +17,7 @@ Tabelas que recebem `assigned_to` (as que já têm responsável real permanecem 
 
 - **CRM / Vendas**: activities, meetings, proposals, quotes, services, contracts, contract_approvals, deal_loss_reasons, notes, surveys, forms, form_submissions.
 - **Prospecção**: prospecting_searches, prospecting_queues, prospecting_items, cadences/sequences, enrichment_jobs, playbooks, scoring_rules.
+  - **Fila de Prospecção** (`/prospecting?tab=fila` e o player `prospecting/queues/$queueId/play`) entra explicitamente: responsável na própria fila (quem responde por ela) e responsável em cada item da fila, com filtro de Responsável na lista de filas e na lista de itens, além de exibição do responsável no cabeçalho do player.
 - **ATS**: ats_jobs, ats_candidates, ats_applications, ats_interviews, ats_offers, ats_referrals, ats_talent_pools, ats_sourcing_sequences.
 - **Pessoas**: people, people_allocations, people_documents, people_goals, people_incidents, people_reviews, people_one_on_ones, people_onboarding_plans.
 - **Projetos**: projects, project_lists, project_milestones (project_tasks já tem responsável).
