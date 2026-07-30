@@ -26,6 +26,8 @@ import {
 import { listContracts } from "@/lib/contracts.functions";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
 import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/contracts/")({
