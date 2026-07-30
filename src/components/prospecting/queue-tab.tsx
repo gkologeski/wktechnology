@@ -331,26 +331,74 @@ function QueueSidebarItem({
 }
 
 
+type QueueRow = {
+  id: string;
+  name: string;
+  description?: string | null;
+  entity: string;
+  filters?: Record<string, unknown> | null;
+  nurture_cadence_id?: string | null;
+};
+
+function toArray(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(String);
+  if (typeof v === "string" && v.trim()) return v.split(",").map((s) => s.trim()).filter(Boolean);
+  return [];
+}
+
 function QueueDialog({
   open,
   onOpenChange,
   onSaved,
+  queue,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSaved: () => void;
+  queue?: QueueRow | null;
 }) {
   const upsert = useServerFn(upsertQueue);
   const listCadFn = useServerFn(listCadences);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [entity, setEntity] = useState<QueueEntity>("lead");
-  const [statusCsv, setStatusCsv] = useState("");
-  const [sourceCsv, setSourceCsv] = useState("");
-  const [scoreMin, setScoreMin] = useState<string>("");
-  const [scoreMax, setScoreMax] = useState<string>("");
-  const [search, setSearch] = useState("");
-  const [nurtureCadenceId, setNurtureCadenceId] = useState<string>("none");
+  const isEdit = !!queue?.id;
+
+  const initial = useMemo(() => {
+    const f = (queue?.filters ?? {}) as Record<string, unknown>;
+    return {
+      name: queue?.name ?? "",
+      description: queue?.description ?? "",
+      entity: ((queue?.entity as QueueEntity) ?? "lead") as QueueEntity,
+      status: toArray(f.status),
+      source: toArray(f.source),
+      scoreMin: f.score_min != null ? String(f.score_min) : "",
+      scoreMax: f.score_max != null ? String(f.score_max) : "",
+      search: typeof f.search === "string" ? f.search : "",
+      cadence: queue?.nurture_cadence_id ?? "none",
+    };
+  }, [queue]);
+
+  const [name, setName] = useState(initial.name);
+  const [description, setDescription] = useState(initial.description ?? "");
+  const [entity, setEntity] = useState<QueueEntity>(initial.entity);
+  const [status, setStatus] = useState<string[]>(initial.status);
+  const [source, setSource] = useState<string[]>(initial.source);
+  const [scoreMin, setScoreMin] = useState<string>(initial.scoreMin);
+  const [scoreMax, setScoreMax] = useState<string>(initial.scoreMax);
+  const [search, setSearch] = useState(initial.search);
+  const [nurtureCadenceId, setNurtureCadenceId] = useState<string>(initial.cadence);
+
+  // Reidrata o formulário sempre que o modal abre (novo ou edição).
+  useEffect(() => {
+    if (!open) return;
+    setName(initial.name);
+    setDescription(initial.description ?? "");
+    setEntity(initial.entity);
+    setStatus(initial.status);
+    setSource(initial.source);
+    setScoreMin(initial.scoreMin);
+    setScoreMax(initial.scoreMax);
+    setSearch(initial.search);
+    setNurtureCadenceId(initial.cadence);
+  }, [open, initial]);
 
   const { data: cadences } = useQuery({
     queryKey: ["prospecting", "cadences"],
@@ -361,20 +409,33 @@ function QueueDialog({
     (c) => (c as { enabled?: boolean }).enabled !== false,
   );
 
+  const { data: sources } = useQuery({
+    queryKey: ["lead-sources", "active"],
+    queryFn: () => listLeadSources(true),
+    enabled: open,
+  });
+
+  const statusOptions = useMemo(() => {
+    const map = entity === "lead" ? LEAD_STATUS_LABELS : CONTACT_LIFECYCLE_LABELS;
+    return Object.entries(map).map(([value, label]) => ({ value, label }));
+  }, [entity]);
+
+  const sourceOptions = useMemo(
+    () => (sources ?? []).map((s) => ({ value: s.name, label: s.name })),
+    [sources],
+  );
+
   const save = useMutation({
     mutationFn: () =>
       upsert({
         data: {
+          ...(queue?.id ? { id: queue.id } : {}),
           name,
           description: description || null,
           entity,
           filters: {
-            ...(statusCsv
-              ? { status: statusCsv.split(",").map((s) => s.trim()).filter(Boolean) }
-              : {}),
-            ...(sourceCsv
-              ? { source: sourceCsv.split(",").map((s) => s.trim()).filter(Boolean) }
-              : {}),
+            ...(status.length ? { status } : {}),
+            ...(source.length ? { source } : {}),
             ...(scoreMin ? { score_min: Number(scoreMin) } : {}),
             ...(scoreMax ? { score_max: Number(scoreMax) } : {}),
             ...(search ? { search } : {}),
@@ -385,36 +446,38 @@ function QueueDialog({
         },
       }),
     onSuccess: () => {
-      toast.success("Fila criada.");
-      setName("");
-      setDescription("");
-      setStatusCsv("");
-      setSourceCsv("");
-      setScoreMin("");
-      setScoreMax("");
-      setSearch("");
-      setNurtureCadenceId("none");
+      toast.success(isEdit ? "Fila atualizada." : "Fila criada.");
       onSaved();
     },
     onError: (e) => toast.error((e as Error).message),
   });
 
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Nova fila de prospecção</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar fila de prospecção" : "Nova fila de prospecção"}</DialogTitle>
+          <DialogDescription>
+            A fila seleciona automaticamente os registros que atendem a todos os filtros abaixo.
+            Deixe um filtro em branco para não restringir por ele.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2 space-y-1">
-              <Label>Nome</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
+              <Label htmlFor="queue-name">Nome</Label>
+              <Input id="queue-name" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div className="space-y-1">
               <Label>Entidade</Label>
-              <Select value={entity} onValueChange={(v) => setEntity(v as QueueEntity)}>
+              <Select
+                value={entity}
+                onValueChange={(v) => {
+                  setEntity(v as QueueEntity);
+                  setStatus([]);
+                }}
+                disabled={isEdit}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -426,52 +489,79 @@ function QueueDialog({
             </div>
           </div>
           <div className="space-y-1">
-            <Label>Descrição</Label>
+            <Label htmlFor="queue-desc">Descrição</Label>
             <Input
+              id="queue-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Opcional"
             />
           </div>
           <div className="space-y-1">
-            <Label>Status (separados por vírgula)</Label>
-            <Input
-              value={statusCsv}
-              onChange={(e) => setStatusCsv(e.target.value)}
-              placeholder="new, working"
+            <Label>{entity === "lead" ? "Status do lead" : "Estágio do ciclo de vida"}</Label>
+            <AutocompleteChips
+              value={status}
+              onChange={setStatus}
+              options={statusOptions}
+              allowCustom={false}
+              placeholder="Selecione um ou mais…"
+              emptyLabel="Nenhum status disponível"
             />
+            <p className="text-xs text-muted-foreground">
+              A fila inclui registros que estejam em qualquer um dos status escolhidos.
+            </p>
           </div>
           <div className="space-y-1">
-            <Label>Fontes (separadas por vírgula)</Label>
-            <Input
-              value={sourceCsv}
-              onChange={(e) => setSourceCsv(e.target.value)}
-              placeholder="site, linkedin"
+            <Label>Fontes</Label>
+            <AutocompleteChips
+              value={source}
+              onChange={setSource}
+              options={sourceOptions}
+              placeholder="Selecione ou digite uma nova fonte…"
+              emptyLabel="Nenhuma fonte cadastrada"
             />
+            <p className="text-xs text-muted-foreground">
+              Sugestões vêm das fontes já cadastradas no workspace. Você pode digitar uma nova e
+              pressionar Enter.
+            </p>
           </div>
           {entity === "lead" ? (
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Label>Score mín.</Label>
+                <Label htmlFor="queue-score-min">Score mín.</Label>
                 <Input
+                  id="queue-score-min"
                   type="number"
                   value={scoreMin}
                   onChange={(e) => setScoreMin(e.target.value)}
                 />
               </div>
               <div className="space-y-1">
-                <Label>Score máx.</Label>
+                <Label htmlFor="queue-score-max">Score máx.</Label>
                 <Input
+                  id="queue-score-max"
                   type="number"
                   value={scoreMax}
                   onChange={(e) => setScoreMax(e.target.value)}
                 />
               </div>
+              <p className="col-span-2 text-xs text-muted-foreground">
+                Filtra pelo score calculado pelas regras da aba Scoring.
+              </p>
             </div>
           ) : null}
           <div className="space-y-1">
-            <Label>Busca livre (nome/email)</Label>
-            <Input value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Label htmlFor="queue-search">Busca livre</Label>
+            <Input
+              id="queue-search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Ex.: acme"
+            />
+            <p className="text-xs text-muted-foreground">
+              Procura por nome, sobrenome, e-mail e empresa, sem diferenciar maiúsculas de
+              minúsculas.
+            </p>
           </div>
           {entity === "lead" ? (
             <div className="space-y-1">
@@ -494,14 +584,13 @@ function QueueDialog({
               </p>
             </div>
           ) : null}
-
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
           <Button disabled={!name || save.isPending} onClick={() => save.mutate()}>
-            Criar fila
+            {isEdit ? "Salvar alterações" : "Criar fila"}
           </Button>
         </DialogFooter>
       </DialogContent>
