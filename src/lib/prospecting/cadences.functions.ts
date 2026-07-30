@@ -158,6 +158,15 @@ export const upsertCadenceStep = createServerFn({ method: "POST" })
       poll_interval_hours: isWaitAccept ? (data.poll_interval_hours ?? 12) : null,
       on_timeout: isWaitAccept ? (data.on_timeout ?? "end_sequence") : null,
     } as never;
+    // Passo existente: atualiza pelo id (a ordem pode mudar em reordenações).
+    if (data.id) {
+      const { error: updErr } = await context.supabase
+        .from("prospecting_cadence_steps")
+        .update(row)
+        .eq("id", data.id);
+      if (updErr) throw new Error(updErr.message);
+      return { id: data.id };
+    }
     const { data: saved, error } = await context.supabase
       .from("prospecting_cadence_steps")
       .upsert(row, { onConflict: "cadence_id,step_order,variant_label" })
