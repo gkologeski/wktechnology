@@ -16,6 +16,8 @@ import { cn, normalizeSearch } from "@/lib/utils";
 
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { ModuleSwitcher } from "@/components/module-switcher";
 import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
