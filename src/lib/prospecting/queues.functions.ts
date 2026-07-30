@@ -291,8 +291,8 @@ export const listQueueItems = createServerFn({ method: "POST" })
       .from(table)
       .select(
         queue.entity === "lead"
-          ? "id, first_name, last_name, email, phone, company_name, status, source, score, updated_at, owner_id"
-          : "id, first_name, last_name, email, phone, company_id, lifecycle_stage, updated_at, owner_id",
+          ? "id, first_name, last_name, email, phone, company_name, status, source, score, updated_at, owner_id, assigned_to"
+          : "id, first_name, last_name, email, phone, company_id, lifecycle_stage, updated_at, owner_id, assigned_to",
         { count: "exact" },
       );
 
