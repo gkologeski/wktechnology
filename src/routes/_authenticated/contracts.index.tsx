@@ -26,6 +26,8 @@ import {
 import { listContracts } from "@/lib/contracts.functions";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
 import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/contracts/")({
@@ -68,6 +70,7 @@ const ROLE_LABEL: Record<string, string> = {
 function ContractsPage() {
   const qc = useQueryClient();
   const list = useServerFn(listContracts);
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
@@ -97,7 +100,7 @@ function ContractsPage() {
       }),
   });
 
-  const filtered = useMemo(() => rows, [rows]);
+  const filtered = useMemo(() => filterRows(rows), [rows, filterRows]);
 
   return (
     <div className="p-6 space-y-5">
@@ -151,6 +154,7 @@ function ContractsPage() {
             ))}
           </SelectContent>
         </Select>
+        <AssigneeFilter value={assignee} onChange={setAssignee} />
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -177,6 +181,7 @@ function ContractsPage() {
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead>Vigência</TableHead>
+                <TableHead>Responsável</TableHead>
                 <TableHead>Criado em</TableHead>
               </TableRow>
             </TableHeader>
@@ -216,6 +221,9 @@ function ContractsPage() {
                   <TableCell className="text-xs text-muted-foreground">
                     {c.starts_at ? formatDateTime(c.starts_at).split(" ")[0] : "—"}
                     {c.ends_at ? ` → ${formatDateTime(c.ends_at).split(" ")[0]}` : ""}
+                  </TableCell>
+                  <TableCell>
+                    <AssigneeCell assignedTo={(c as { assigned_to?: string | null }).assigned_to} />
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {formatDateTime(c.created_at)}

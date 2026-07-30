@@ -23,6 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { listServices } from "@/lib/services.functions";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/services/")({
@@ -63,8 +65,9 @@ function ServicesPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [type, setType] = useState<string>("all");
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: allRows = [], isLoading } = useQuery({
     queryKey: ["services", { status, type, search }],
     queryFn: () =>
       list({
@@ -75,6 +78,8 @@ function ServicesPage() {
         },
       }),
   });
+
+  const rows = filterRows(allRows as any[]);
 
   return (
     <div className="p-6 space-y-5">
@@ -114,6 +119,7 @@ function ServicesPage() {
             ))}
           </SelectContent>
         </Select>
+        <AssigneeFilter value={assignee} onChange={setAssignee} />
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -137,6 +143,7 @@ function ServicesPage() {
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead>Próxima cobrança</TableHead>
+                <TableHead>Responsável</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -171,6 +178,9 @@ function ServicesPage() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {s.next_billing_at ? formatDateTime(s.next_billing_at as string).split(" ")[0] : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <AssigneeCell assignedTo={s.assigned_to} />
                     </TableCell>
                   </TableRow>
                 );

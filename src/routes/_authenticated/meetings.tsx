@@ -18,6 +18,8 @@ import {
 import { listMeetings } from "@/lib/meetings.functions";
 import { MeetingDetailDrawer } from "@/components/meetings/meeting-detail-drawer";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 
 export const Route = createFileRoute("/_authenticated/meetings")({
   component: MeetingsLibrary,
@@ -26,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/meetings")({
 function MeetingsLibrary() {
   const list = useServerFn(listMeetings);
   const qc = useQueryClient();
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   useRealtimeInvalidate([
     { table: "calendar_events", queryKeys: [["meetings"]] },
     { table: "meetings", queryKeys: [["meetings"]] },
@@ -81,6 +84,7 @@ function MeetingsLibrary() {
                 <SelectItem value="cancelled">Canceladas</SelectItem>
               </SelectContent>
             </Select>
+            <AssigneeFilter value={assignee} onChange={setAssignee} className="w-[200px]" />
           </div>
         </CardHeader>
         <CardContent>
@@ -94,10 +98,10 @@ function MeetingsLibrary() {
             </p>
           ) : (
             <ul className="divide-y">
-              {data.meetings.map((m: any) => (
+              {filterRows(data.meetings as any[]).map((m: any) => (
                 <li key={m.id}>
                   <button
-                    className="flex w-full items-center justify-between py-3 text-left hover:bg-muted/40 px-2 rounded"
+                    className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-muted/40 px-2 rounded"
                     onClick={() => setOpenId(m.id)}
                   >
                     <div>
@@ -116,6 +120,7 @@ function MeetingsLibrary() {
                         {formatDateTime(m.created_at)}
                       </div>
                     </div>
+                    <AssigneeCell assignedTo={m.assigned_to} className="shrink-0 text-xs" />
                   </button>
                 </li>
               ))}

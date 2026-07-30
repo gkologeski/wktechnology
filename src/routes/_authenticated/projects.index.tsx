@@ -26,6 +26,8 @@ import {
 import { listProjects } from "@/lib/projects.functions";
 import { formatDateTime } from "@/lib/crm";
 import { QuickCreateProjectDialog } from "@/components/projects/quick-create-project-dialog";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
   head: () => ({
@@ -59,8 +61,9 @@ function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [openCreate, setOpenCreate] = useState(false);
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: allRows = [], isLoading } = useQuery({
     queryKey: ["projects", { status, search }],
     queryFn: () =>
       list({
@@ -70,6 +73,8 @@ function ProjectsPage() {
         },
       }),
   });
+
+  const rows = filterRows(allRows as any[]);
 
   return (
     <div className="p-6 space-y-5">
@@ -108,6 +113,7 @@ function ProjectsPage() {
             ))}
           </SelectContent>
         </Select>
+        <AssigneeFilter value={assignee} onChange={setAssignee} />
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -133,6 +139,7 @@ function ProjectsPage() {
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Progresso</TableHead>
                 <TableHead>Prazo</TableHead>
+                <TableHead>Responsável</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -160,6 +167,9 @@ function ProjectsPage() {
                   <TableCell className="text-right tabular-nums">{p.progress ?? 0}%</TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <AssigneeCell assignedTo={p.assigned_to} />
                   </TableCell>
                 </TableRow>
               ))}

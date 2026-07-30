@@ -94,7 +94,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     let q = supabase
       .from("ats_jobs")
       .select(
-        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at, created_at, owner_id, hiring_manager_id, recruiter_id, metadata",
+        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at, created_at, owner_id, assigned_to, hiring_manager_id, recruiter_id, metadata",
       )
       // Sem filtro por owner_id: as políticas RLS já expõem vagas do próprio
       // usuário, das quais é hiring manager/recruiter, e das compartilhadas no
@@ -418,7 +418,7 @@ export const listAtsCandidates = createServerFn({ method: "POST" })
     let q = supabase
       .from("ats_candidates")
       .select(
-        "id, full_name, email, phone, location, current_position, current_company, skills, tags, source, score, updated_at",
+        "id, full_name, email, phone, location, current_position, current_company, skills, tags, source, score, assigned_to, updated_at",
       )
       .eq("owner_id", userId)
       .order("updated_at", { ascending: false })

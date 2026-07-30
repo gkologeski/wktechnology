@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { Link } from "@tanstack/react-router";
 import { Plus, Trash2, Filter, Users, User, Play, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -195,7 +197,9 @@ function QueueWorkspace({
     queryFn: () => listItems({ data: { queue_id: queueId, limit: 50, offset: 0 } }),
   });
 
-  const hasItems = (data?.items?.length ?? 0) > 0;
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
+  const items = filterRows((data?.items ?? []) as unknown as Array<Record<string, unknown>>);
+  const hasItems = items.length > 0;
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
@@ -206,6 +210,7 @@ function QueueWorkspace({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <AssigneeFilter value={assignee} onChange={setAssignee} className="h-8 w-44 text-xs" />
           {hasItems ? (
             <Button asChild size="sm">
               <Link to="/prospecting/queues/$queueId/play" params={{ queueId }}>
@@ -229,15 +234,15 @@ function QueueWorkspace({
       <CardContent>
         {isLoading ? (
           <div className="text-sm text-muted-foreground">Carregando fila...</div>
-        ) : !data?.items || data.items.length === 0 ? (
+        ) : items.length === 0 ? (
           <EmptyState
             title="Nenhum item na fila"
             description="Ajuste os filtros da fila ou aguarde a chegada de novos leads/contatos."
           />
         ) : (
           <div className="divide-y">
-            {data.items.map((it) => (
-              <QueueItemRow key={(it as unknown as { id: string }).id} entity={data.entity} item={it as unknown as Record<string, unknown>} />
+            {items.map((it) => (
+              <QueueItemRow key={String(it.id)} entity={data?.entity ?? "lead"} item={it} />
             ))}
           </div>
         )}
@@ -291,6 +296,7 @@ function QueueItemRow({
               {statusLabel(entity, statusRaw)}
             </Badge>
           ) : null}
+          <AssigneeCell assignedTo={(item.assigned_to as string | null) ?? null} />
           {score != null ? (
             <Badge variant="secondary" className="text-[10px]">
               score {score}

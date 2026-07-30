@@ -20,6 +20,8 @@ import {
 import { Plus, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImportContractWizard } from "@/components/import-contract-wizard";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 
 export const Route = createFileRoute("/_authenticated/proposals/")({
   component: ProposalsPage,
@@ -52,6 +54,7 @@ function ProposalsPage() {
   const create = useServerFn(createProposal);
   const del = useServerFn(deleteProposal);
   const { data } = useQuery({ queryKey: ["proposals"], queryFn: () => list() });
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -127,14 +130,15 @@ function ProposalsPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle>Suas propostas</CardTitle>
+          <AssigneeFilter value={assignee} onChange={setAssignee} />
         </CardHeader>
         <CardContent className="space-y-2">
           {(data ?? []).length === 0 && (
             <p className="text-sm text-muted-foreground">Nenhuma proposta ainda.</p>
           )}
-          {(data ?? []).map((p) => (
+          {filterRows((data ?? []) as any[]).map((p: any) => (
             <div key={p.id} className="flex items-center justify-between rounded-md border p-3">
               <div className="flex items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
@@ -158,6 +162,7 @@ function ProposalsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <AssigneeCell assignedTo={p.assigned_to} className="text-xs" />
                 <Badge variant={STATUS_VARIANT[p.status] ?? "outline"}>
                   {STATUS_LABEL[p.status] ?? p.status}
                 </Badge>

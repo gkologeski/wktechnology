@@ -15,6 +15,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -262,11 +264,13 @@ function AtsJobsPage() {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const [rows, setRows] = useState<JobRow[]>([]);
+  const [allRows, setRows] = useState<JobRow[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
+  const rows = filterRows(allRows);
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<ViewKind>(() =>
     typeof window !== "undefined"
@@ -618,6 +622,7 @@ function AtsJobsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <AssigneeFilter value={assignee} onChange={setAssignee} className="h-8 w-44 text-xs" />
             <Tabs value={view} onValueChange={(v) => setView(v as ViewKind)}>
               <TabsList className="h-8">
                 <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
@@ -698,6 +703,7 @@ function AtsJobsPage() {
                 <TableHead>Modalidade</TableHead>
                 <TableHead>Local</TableHead>
                 <TableHead>Depto</TableHead>
+                <TableHead>Responsável</TableHead>
                 <TableHead className="text-right">Ativos</TableHead>
               </TableRow>
             </TableHeader>
@@ -734,6 +740,9 @@ function AtsJobsPage() {
                   </TableCell>
                   <TableCell className="text-text-secondary text-sm">
                     {(j as { department?: string | null }).department ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <AssigneeCell assignedTo={(j as { assigned_to?: string | null }).assigned_to} />
                   </TableCell>
                   <TableCell className="text-right tabular-nums font-medium">
                     {j.active_applications}
