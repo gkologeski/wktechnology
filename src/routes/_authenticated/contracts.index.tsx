@@ -100,7 +100,7 @@ function ContractsPage() {
       }),
   });
 
-  const filtered = useMemo(() => rows, [rows]);
+  const filtered = useMemo(() => filterRows(rows), [rows, filterRows]);
 
   return (
     <div className="p-6 space-y-5">
