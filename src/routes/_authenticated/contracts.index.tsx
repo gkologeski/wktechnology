@@ -181,6 +181,7 @@ function ContractsPage() {
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead>Vigência</TableHead>
+                <TableHead>Responsável</TableHead>
                 <TableHead>Criado em</TableHead>
               </TableRow>
             </TableHeader>
