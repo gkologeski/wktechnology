@@ -15,6 +15,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -620,6 +622,7 @@ function AtsJobsPage() {
                 ))}
               </SelectContent>
             </Select>
+            <AssigneeFilter value={assignee} onChange={setAssignee} className="h-8 w-44 text-xs" />
             <Tabs value={view} onValueChange={(v) => setView(v as ViewKind)}>
               <TabsList className="h-8">
                 <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
@@ -737,6 +740,9 @@ function AtsJobsPage() {
                   </TableCell>
                   <TableCell className="text-text-secondary text-sm">
                     {(j as { department?: string | null }).department ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <AssigneeCell assignedTo={(j as { assigned_to?: string | null }).assigned_to} />
                   </TableCell>
                   <TableCell className="text-right tabular-nums font-medium">
                     {j.active_applications}
