@@ -379,6 +379,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/settings/teams", label: "Membros", icon: UsersRound, need: "admin" },
       { to: "/settings/user-groups", label: "Times", icon: UsersRound, need: "manager", permissionAny: MENU_PERMISSIONS.userGroups },
       { to: "/settings/permissions", label: "Permissões", icon: Shield, need: "admin" },
+      { to: "/settings/rbac-diagnostics", label: "Diagnóstico de acesso", icon: Shield, need: "admin" },
     ],
   },
   {

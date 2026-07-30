@@ -41,6 +41,7 @@ export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
           { title: "Membros", url: "/settings/teams", icon: Users },
           { title: "Times", url: "/settings/user-groups", icon: UsersRound },
           { title: "Permissões", url: "/settings/permissions", icon: Shield },
+          { title: "Diagnóstico de acesso", url: "/settings/rbac-diagnostics", icon: Shield },
         ],
       },
       { title: "Configurações", url: "/settings", icon: SettingsIcon },
