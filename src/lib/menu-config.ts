@@ -89,6 +89,22 @@ export type SettingsGroup = { label: string; items: SettingsItem[] };
 
 // --- SIDEBAR -----------------------------------------------------------------
 
+/**
+ * Permissões que dão acesso a alguma aba de /prospecting.
+ * Deve espelhar as abas definidas em `routes/_authenticated/prospecting.index.tsx`.
+ */
+export const PROSPECTING_VIEW_PERMISSIONS = [
+  "techsales.prospecting.search.view",
+  "techsales.prospecting.queue.view",
+  "techsales.prospecting.cadences.view",
+  "techsales.prospecting.questionnaires.view",
+  "techsales.prospecting.scoring.view",
+  "techsales.prospecting.scripts.view",
+  "techsales.prospecting.playbooks.view",
+  "techsales.prospecting.enrichment.view",
+  "techsales.prospecting.voice.view",
+];
+
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Captar",
@@ -98,7 +114,9 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/prospecting",
         icon: PlayCircle,
         need: "manager",
+        permissionAny: PROSPECTING_VIEW_PERMISSIONS,
       },
+
       {
         title: "Leads",
         url: "/leads",
