@@ -41,10 +41,13 @@ export function AddToProspectingDialog({
   open,
   onOpenChange,
   ids,
+  alreadyCount = 0,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   ids: string[];
+  /** Quantos dos leads informados já existiam antes desta operação. */
+  alreadyCount?: number;
 }) {
   const qc = useQueryClient();
   const list = useServerFn(listQueues);
@@ -62,6 +65,7 @@ export function AddToProspectingDialog({
     queryKey: ["prospecting", "queues"],
     queryFn: () => list(),
     enabled: open,
+    refetchOnMount: "always",
   });
   const cadencesQ = useQuery({
     queryKey: ["prospecting", "cadences"],
@@ -69,15 +73,20 @@ export function AddToProspectingDialog({
     enabled: open,
   });
 
-  const manualQueues = useMemo(
+  const leadQueues = useMemo(
     () =>
-      (queuesQ.data ?? []).filter(
-        (q) =>
-          (q as { kind?: string }).kind === "manual" &&
-          (q as { entity: string }).entity === entity,
-      ),
-    [queuesQ.data, entity],
+      (queuesQ.data ?? []).filter((q) => (q as { entity: string }).entity === entity),
+    [queuesQ.data],
   );
+  const manualQueues = useMemo(
+    () => leadQueues.filter((q) => (q as { kind?: string }).kind === "manual"),
+    [leadQueues],
+  );
+  const dynamicQueues = useMemo(
+    () => leadQueues.filter((q) => (q as { kind?: string }).kind !== "manual"),
+    [leadQueues],
+  );
+
 
   const addMut = useMutation({
     mutationFn: async () => {
