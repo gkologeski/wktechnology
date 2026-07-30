@@ -58,6 +58,8 @@ export type Perms = {
   isAdmin: boolean;
   isManager: boolean;
   isPlatformAdmin: boolean;
+  /** Permission keys efetivas do usuário (conjunto de permissões do workspace). */
+  permissions?: Set<string>;
 };
 
 export type SidebarItem = {
@@ -65,10 +67,16 @@ export type SidebarItem = {
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
+  /**
+   * Permissões granulares que também liberam o item, mesmo sem o papel exigido
+   * em `need`. Basta ter QUALQUER uma das chaves.
+   */
+  permissionAny?: string[];
   children?: SidebarItem[];
   /** Quando true, abre em nova aba (link externo / página pública). */
   external?: boolean;
 };
+
 export type SidebarGroup = { label: string; items: SidebarItem[] };
 
 export type SettingsItem = {
