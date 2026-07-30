@@ -262,11 +262,13 @@ function AtsJobsPage() {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const navigate = useNavigate();
-  const [rows, setRows] = useState<JobRow[]>([]);
+  const [allRows, setRows] = useState<JobRow[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
+  const rows = filterRows(allRows);
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<ViewKind>(() =>
     typeof window !== "undefined"
@@ -698,6 +700,7 @@ function AtsJobsPage() {
                 <TableHead>Modalidade</TableHead>
                 <TableHead>Local</TableHead>
                 <TableHead>Depto</TableHead>
+                <TableHead>Responsável</TableHead>
                 <TableHead className="text-right">Ativos</TableHead>
               </TableRow>
             </TableHeader>
