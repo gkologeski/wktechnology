@@ -810,6 +810,7 @@ export type Database = {
           ai_match_score: number | null
           ai_match_summary: string | null
           applied_at: string
+          assigned_to: string | null
           candidate_id: string
           created_at: string
           id: string
@@ -829,6 +830,7 @@ export type Database = {
           ai_match_score?: number | null
           ai_match_summary?: string | null
           applied_at?: string
+          assigned_to?: string | null
           candidate_id: string
           created_at?: string
           id?: string
@@ -848,6 +850,7 @@ export type Database = {
           ai_match_score?: number | null
           ai_match_summary?: string | null
           applied_at?: string
+          assigned_to?: string | null
           candidate_id?: string
           created_at?: string
           id?: string
@@ -1084,6 +1087,7 @@ export type Database = {
         Row: {
           about: string | null
           archived: boolean
+          assigned_to: string | null
           available_actions: Json | null
           capture_version: string | null
           captured_at: string | null
@@ -1136,6 +1140,7 @@ export type Database = {
         Insert: {
           about?: string | null
           archived?: boolean
+          assigned_to?: string | null
           available_actions?: Json | null
           capture_version?: string | null
           captured_at?: string | null
@@ -1188,6 +1193,7 @@ export type Database = {
         Update: {
           about?: string | null
           archived?: boolean
+          assigned_to?: string | null
           available_actions?: Json | null
           capture_version?: string | null
           captured_at?: string | null
@@ -1585,6 +1591,7 @@ export type Database = {
           ai_strengths: Json | null
           ai_summary: string | null
           application_id: string
+          assigned_to: string | null
           async_questions_snapshot: Json | null
           auto_rescheduled_from: string | null
           candidate_id: string
@@ -1625,6 +1632,7 @@ export type Database = {
           ai_strengths?: Json | null
           ai_summary?: string | null
           application_id: string
+          assigned_to?: string | null
           async_questions_snapshot?: Json | null
           auto_rescheduled_from?: string | null
           candidate_id: string
@@ -1665,6 +1673,7 @@ export type Database = {
           ai_strengths?: Json | null
           ai_summary?: string | null
           application_id?: string
+          assigned_to?: string | null
           async_questions_snapshot?: Json | null
           auto_rescheduled_from?: string | null
           candidate_id?: string
@@ -1805,6 +1814,7 @@ export type Database = {
       }
       ats_jobs: {
         Row: {
+          assigned_to: string | null
           company_id: string | null
           created_at: string
           deal_id: string | null
@@ -1840,6 +1850,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           company_id?: string | null
           created_at?: string
           deal_id?: string | null
@@ -1875,6 +1886,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           company_id?: string | null
           created_at?: string
           deal_id?: string | null
@@ -1986,6 +1998,7 @@ export type Database = {
       ats_offers: {
         Row: {
           application_id: string | null
+          assigned_to: string | null
           body: string
           candidate_id: string
           created_at: string
@@ -2009,6 +2022,7 @@ export type Database = {
         }
         Insert: {
           application_id?: string | null
+          assigned_to?: string | null
           body?: string
           candidate_id: string
           created_at?: string
@@ -2032,6 +2046,7 @@ export type Database = {
         }
         Update: {
           application_id?: string | null
+          assigned_to?: string | null
           body?: string
           candidate_id?: string
           created_at?: string
@@ -2170,6 +2185,7 @@ export type Database = {
       }
       ats_referrals: {
         Row: {
+          assigned_to: string | null
           bonus_cents: number
           bonus_paid_at: string | null
           bonus_status: string
@@ -2197,6 +2213,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           bonus_cents?: number
           bonus_paid_at?: string | null
           bonus_status?: string
@@ -2224,6 +2241,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           bonus_cents?: number
           bonus_paid_at?: string | null
           bonus_status?: string
@@ -2518,6 +2536,7 @@ export type Database = {
       }
       ats_sourcing_sequences: {
         Row: {
+          assigned_to: string | null
           created_at: string
           created_by: string | null
           daily_send_limit: number | null
@@ -2534,6 +2553,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           daily_send_limit?: number | null
@@ -2550,6 +2570,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           daily_send_limit?: number | null
@@ -2753,6 +2774,7 @@ export type Database = {
       }
       ats_talent_pools: {
         Row: {
+          assigned_to: string | null
           color: string | null
           created_at: string
           created_by: string | null
@@ -2766,6 +2788,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
@@ -2779,6 +2802,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
@@ -3001,6 +3025,7 @@ export type Database = {
       bank_charges: {
         Row: {
           amount: number
+          assigned_to: string | null
           boleto_barcode: string | null
           boleto_digitable_line: string | null
           boleto_url: string | null
@@ -3026,6 +3051,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          assigned_to?: string | null
           boleto_barcode?: string | null
           boleto_digitable_line?: string | null
           boleto_url?: string | null
@@ -3051,6 +3077,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          assigned_to?: string | null
           boleto_barcode?: string | null
           boleto_digitable_line?: string | null
           boleto_url?: string | null
@@ -3247,6 +3274,7 @@ export type Database = {
           amount: number
           approved_at: string | null
           approved_by: string | null
+          assigned_to: string | null
           boleto_barcode: string | null
           boleto_digitable_line: string | null
           connection_id: string
@@ -3273,6 +3301,7 @@ export type Database = {
           amount: number
           approved_at?: string | null
           approved_by?: string | null
+          assigned_to?: string | null
           boleto_barcode?: string | null
           boleto_digitable_line?: string | null
           connection_id: string
@@ -3299,6 +3328,7 @@ export type Database = {
           amount?: number
           approved_at?: string | null
           approved_by?: string | null
+          assigned_to?: string | null
           boleto_barcode?: string | null
           boleto_digitable_line?: string | null
           connection_id?: string
@@ -3500,6 +3530,7 @@ export type Database = {
       bookings: {
         Row: {
           activity_id: string | null
+          assigned_to: string | null
           cancel_reason: string | null
           canceled_at: string | null
           contact_id: string | null
@@ -3522,6 +3553,7 @@ export type Database = {
         }
         Insert: {
           activity_id?: string | null
+          assigned_to?: string | null
           cancel_reason?: string | null
           canceled_at?: string | null
           contact_id?: string | null
@@ -3544,6 +3576,7 @@ export type Database = {
         }
         Update: {
           activity_id?: string | null
+          assigned_to?: string | null
           cancel_reason?: string | null
           canceled_at?: string | null
           contact_id?: string | null
@@ -4477,6 +4510,7 @@ export type Database = {
       contract_approvals: {
         Row: {
           approver_id: string | null
+          assigned_to: string | null
           comment: string | null
           contract_id: string
           created_at: string
@@ -4492,6 +4526,7 @@ export type Database = {
         }
         Insert: {
           approver_id?: string | null
+          assigned_to?: string | null
           comment?: string | null
           contract_id: string
           created_at?: string
@@ -4507,6 +4542,7 @@ export type Database = {
         }
         Update: {
           approver_id?: string | null
+          assigned_to?: string | null
           comment?: string | null
           contract_id?: string
           created_at?: string
@@ -4570,6 +4606,7 @@ export type Database = {
       }
       contracts: {
         Row: {
+          assigned_to: string | null
           auto_renew: boolean
           body_html: string | null
           confidentiality_term_months: number | null
@@ -4622,6 +4659,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           auto_renew?: boolean
           body_html?: string | null
           confidentiality_term_months?: number | null
@@ -4674,6 +4712,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          assigned_to?: string | null
           auto_renew?: boolean
           body_html?: string | null
           confidentiality_term_months?: number | null
@@ -4972,6 +5011,7 @@ export type Database = {
       }
       custom_object_records: {
         Row: {
+          assigned_to: string | null
           created_at: string
           data: Json
           id: string
@@ -4981,6 +5021,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           data?: Json
           id?: string
@@ -4990,6 +5031,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           data?: Json
           id?: string
@@ -5123,6 +5165,7 @@ export type Database = {
       }
       custom_reports: {
         Row: {
+          assigned_to: string | null
           config: Json
           created_at: string
           description: string | null
@@ -5135,6 +5178,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           config?: Json
           created_at?: string
           description?: string | null
@@ -5147,6 +5191,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           config?: Json
           created_at?: string
           description?: string | null
@@ -5171,6 +5216,7 @@ export type Database = {
       customer_invoices: {
         Row: {
           amount: number
+          assigned_to: string | null
           barcode: string | null
           cancelled_at: string | null
           company_id: string | null
@@ -5201,6 +5247,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          assigned_to?: string | null
           barcode?: string | null
           cancelled_at?: string | null
           company_id?: string | null
@@ -5231,6 +5278,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          assigned_to?: string | null
           barcode?: string | null
           cancelled_at?: string | null
           company_id?: string | null
@@ -5307,6 +5355,7 @@ export type Database = {
       customer_payments: {
         Row: {
           amount: number
+          assigned_to: string | null
           created_at: string
           currency: string
           external_payment_id: string | null
@@ -5322,6 +5371,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          assigned_to?: string | null
           created_at?: string
           currency?: string
           external_payment_id?: string | null
@@ -5337,6 +5387,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          assigned_to?: string | null
           created_at?: string
           currency?: string
           external_payment_id?: string | null
@@ -5439,6 +5490,7 @@ export type Database = {
       }
       dashboards: {
         Row: {
+          assigned_to: string | null
           created_at: string
           description: string | null
           id: string
@@ -5451,6 +5503,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -5463,6 +5516,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -5595,6 +5649,7 @@ export type Database = {
       }
       deal_loss_reasons: {
         Row: {
+          assigned_to: string | null
           created_at: string
           description: string | null
           hubspot_synced_at: string | null
@@ -5609,6 +5664,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           hubspot_synced_at?: string | null
@@ -5623,6 +5679,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           hubspot_synced_at?: string | null
@@ -6066,6 +6123,7 @@ export type Database = {
       }
       email_broadcasts: {
         Row: {
+          assigned_to: string | null
           body_html: string | null
           body_text: string | null
           created_at: string
@@ -6090,6 +6148,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           body_html?: string | null
           body_text?: string | null
           created_at?: string
@@ -6114,6 +6173,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           body_html?: string | null
           body_text?: string | null
           created_at?: string
@@ -6681,6 +6741,7 @@ export type Database = {
       }
       enrichment_jobs: {
         Row: {
+          assigned_to: string | null
           created_at: string
           credits_used: number
           entity: Database["public"]["Enums"]["job_entity"] | null
@@ -6703,6 +6764,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           credits_used?: number
           entity?: Database["public"]["Enums"]["job_entity"] | null
@@ -6725,6 +6787,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           credits_used?: number
           entity?: Database["public"]["Enums"]["job_entity"] | null
@@ -7317,6 +7380,7 @@ export type Database = {
       financial_entries: {
         Row: {
           amount: number
+          assigned_to: string | null
           attachments: Json
           category_id: string | null
           competence_date: string
@@ -7349,6 +7413,7 @@ export type Database = {
         }
         Insert: {
           amount: number
+          assigned_to?: string | null
           attachments?: Json
           category_id?: string | null
           competence_date: string
@@ -7381,6 +7446,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          assigned_to?: string | null
           attachments?: Json
           category_id?: string | null
           competence_date?: string
@@ -7586,6 +7652,7 @@ export type Database = {
       financial_recurrences: {
         Row: {
           active: boolean
+          assigned_to: string | null
           cadence: string
           created_at: string
           day_of_month: number | null
@@ -7605,6 +7672,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          assigned_to?: string | null
           cadence: string
           created_at?: string
           day_of_month?: number | null
@@ -7624,6 +7692,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          assigned_to?: string | null
           cadence?: string
           created_at?: string
           day_of_month?: number | null
@@ -7653,6 +7722,7 @@ export type Database = {
       }
       form_submissions: {
         Row: {
+          assigned_to: string | null
           contact_id: string | null
           created_at: string
           data: Json
@@ -7666,6 +7736,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           contact_id?: string | null
           created_at?: string
           data?: Json
@@ -7679,6 +7750,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           contact_id?: string | null
           created_at?: string
           data?: Json
@@ -7711,6 +7783,7 @@ export type Database = {
       forms: {
         Row: {
           active: boolean
+          assigned_to: string | null
           created_at: string
           display_mode: string
           fields: Json
@@ -7728,6 +7801,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
+          assigned_to?: string | null
           created_at?: string
           display_mode?: string
           fields?: Json
@@ -7745,6 +7819,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
+          assigned_to?: string | null
           created_at?: string
           display_mode?: string
           fields?: Json
@@ -8175,6 +8250,7 @@ export type Database = {
       }
       kb_articles: {
         Row: {
+          assigned_to: string | null
           body: string
           category_id: string | null
           created_at: string
@@ -8189,6 +8265,7 @@ export type Database = {
           views: number
         }
         Insert: {
+          assigned_to?: string | null
           body?: string
           category_id?: string | null
           created_at?: string
@@ -8203,6 +8280,7 @@ export type Database = {
           views?: number
         }
         Update: {
+          assigned_to?: string | null
           body?: string
           category_id?: string | null
           created_at?: string
@@ -8302,6 +8380,7 @@ export type Database = {
       }
       landing_pages: {
         Row: {
+          assigned_to: string | null
           blocks: Json
           conversions_count: number
           created_at: string
@@ -8318,6 +8397,7 @@ export type Database = {
           views_count: number
         }
         Insert: {
+          assigned_to?: string | null
           blocks?: Json
           conversions_count?: number
           created_at?: string
@@ -8334,6 +8414,7 @@ export type Database = {
           views_count?: number
         }
         Update: {
+          assigned_to?: string | null
           blocks?: Json
           conversions_count?: number
           created_at?: string
@@ -8502,6 +8583,7 @@ export type Database = {
         Row: {
           active: boolean
           address_json: Json
+          assigned_to: string | null
           cnpj: string | null
           code: string | null
           created_at: string
@@ -8522,6 +8604,7 @@ export type Database = {
         Insert: {
           active?: boolean
           address_json?: Json
+          assigned_to?: string | null
           cnpj?: string | null
           code?: string | null
           created_at?: string
@@ -8542,6 +8625,7 @@ export type Database = {
         Update: {
           active?: boolean
           address_json?: Json
+          assigned_to?: string | null
           cnpj?: string | null
           code?: string | null
           created_at?: string
@@ -8758,6 +8842,7 @@ export type Database = {
       }
       macros: {
         Row: {
+          assigned_to: string | null
           body: string
           category: string | null
           created_at: string
@@ -8770,6 +8855,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           body: string
           category?: string | null
           created_at?: string
@@ -8782,6 +8868,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           body?: string
           category?: string | null
           created_at?: string
@@ -8918,6 +9005,7 @@ export type Database = {
       }
       media_assets: {
         Row: {
+          assigned_to: string | null
           bucket: string
           created_at: string
           filename: string
@@ -8934,6 +9022,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           bucket?: string
           created_at?: string
           filename: string
@@ -8950,6 +9039,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          assigned_to?: string | null
           bucket?: string
           created_at?: string
           filename?: string
@@ -9159,6 +9249,7 @@ export type Database = {
       }
       meetings: {
         Row: {
+          assigned_to: string | null
           created_at: string
           ended_at: string | null
           expires_at: string
@@ -9184,6 +9275,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           ended_at?: string | null
           expires_at?: string
@@ -9209,6 +9301,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           ended_at?: string | null
           expires_at?: string
@@ -9530,6 +9623,7 @@ export type Database = {
       nfse_invoices: {
         Row: {
           amount: number | null
+          assigned_to: string | null
           created_at: string
           error_message: string | null
           external_id: string | null
@@ -9549,6 +9643,7 @@ export type Database = {
         }
         Insert: {
           amount?: number | null
+          assigned_to?: string | null
           created_at?: string
           error_message?: string | null
           external_id?: string | null
@@ -9568,6 +9663,7 @@ export type Database = {
         }
         Update: {
           amount?: number | null
+          assigned_to?: string | null
           created_at?: string
           error_message?: string | null
           external_id?: string | null
@@ -9859,6 +9955,7 @@ export type Database = {
         Row: {
           address: string | null
           archived: boolean
+          assigned_to: string | null
           bank: string | null
           bank_account: string | null
           bank_agency: string | null
@@ -9904,6 +10001,7 @@ export type Database = {
         Insert: {
           address?: string | null
           archived?: boolean
+          assigned_to?: string | null
           bank?: string | null
           bank_account?: string | null
           bank_agency?: string | null
@@ -9949,6 +10047,7 @@ export type Database = {
         Update: {
           address?: string | null
           archived?: boolean
+          assigned_to?: string | null
           bank?: string | null
           bank_account?: string | null
           bank_agency?: string | null
@@ -10011,6 +10110,7 @@ export type Database = {
       people_allocations: {
         Row: {
           allocation_pct: number
+          assigned_to: string | null
           billable_rate: number | null
           contract_id: string | null
           cost_rate: number | null
@@ -10031,6 +10131,7 @@ export type Database = {
         }
         Insert: {
           allocation_pct?: number
+          assigned_to?: string | null
           billable_rate?: number | null
           contract_id?: string | null
           cost_rate?: number | null
@@ -10051,6 +10152,7 @@ export type Database = {
         }
         Update: {
           allocation_pct?: number
+          assigned_to?: string | null
           billable_rate?: number | null
           contract_id?: string | null
           cost_rate?: number | null
@@ -10188,6 +10290,7 @@ export type Database = {
       }
       people_documents: {
         Row: {
+          assigned_to: string | null
           created_at: string
           created_by: string | null
           doc_number: string | null
@@ -10205,6 +10308,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           doc_number?: string | null
@@ -10222,6 +10326,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           doc_number?: string | null
@@ -10311,6 +10416,7 @@ export type Database = {
       }
       people_goals: {
         Row: {
+          assigned_to: string | null
           created_at: string
           created_by: string | null
           current_value: number
@@ -10330,6 +10436,7 @@ export type Database = {
           weight: number
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           current_value?: number
@@ -10349,6 +10456,7 @@ export type Database = {
           weight?: number
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           current_value?: number
@@ -10386,6 +10494,7 @@ export type Database = {
       }
       people_incidents: {
         Row: {
+          assigned_to: string | null
           category: string
           created_at: string
           created_by: string | null
@@ -10405,6 +10514,7 @@ export type Database = {
           witnesses: string | null
         }
         Insert: {
+          assigned_to?: string | null
           category: string
           created_at?: string
           created_by?: string | null
@@ -10424,6 +10534,7 @@ export type Database = {
           witnesses?: string | null
         }
         Update: {
+          assigned_to?: string | null
           category?: string
           created_at?: string
           created_by?: string | null
@@ -10461,6 +10572,7 @@ export type Database = {
       }
       people_onboarding_plans: {
         Row: {
+          assigned_to: string | null
           completed_at: string | null
           created_at: string
           id: string
@@ -10476,6 +10588,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
@@ -10491,6 +10604,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          assigned_to?: string | null
           completed_at?: string | null
           created_at?: string
           id?: string
@@ -10643,6 +10757,7 @@ export type Database = {
         Row: {
           action_items: Json
           agenda: string | null
+          assigned_to: string | null
           created_at: string
           created_by: string | null
           duration_min: number | null
@@ -10661,6 +10776,7 @@ export type Database = {
         Insert: {
           action_items?: Json
           agenda?: string | null
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           duration_min?: number | null
@@ -10679,6 +10795,7 @@ export type Database = {
         Update: {
           action_items?: Json
           agenda?: string | null
+          assigned_to?: string | null
           created_at?: string
           created_by?: string | null
           duration_min?: number | null
@@ -10788,6 +10905,7 @@ export type Database = {
       }
       people_reviews: {
         Row: {
+          assigned_to: string | null
           cadence: string
           comments: string | null
           created_at: string
@@ -10809,6 +10927,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           cadence?: string
           comments?: string | null
           created_at?: string
@@ -10830,6 +10949,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           cadence?: string
           comments?: string | null
           created_at?: string
@@ -11284,6 +11404,7 @@ export type Database = {
       }
       playbooks: {
         Row: {
+          assigned_to: string | null
           content: Json
           created_at: string
           enabled: boolean
@@ -11295,6 +11416,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           content?: Json
           created_at?: string
           enabled?: boolean
@@ -11306,6 +11428,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           content?: Json
           created_at?: string
           enabled?: boolean
@@ -11575,6 +11698,7 @@ export type Database = {
       project_lists: {
         Row: {
           archived_at: string | null
+          assigned_to: string | null
           color: string | null
           created_at: string
           created_by: string | null
@@ -11590,6 +11714,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          assigned_to?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
@@ -11605,6 +11730,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          assigned_to?: string | null
           color?: string | null
           created_at?: string
           created_by?: string | null
@@ -11702,6 +11828,7 @@ export type Database = {
       }
       project_milestones: {
         Row: {
+          assigned_to: string | null
           bill_amount: number | null
           billable: boolean
           completed_at: string | null
@@ -11718,6 +11845,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           bill_amount?: number | null
           billable?: boolean
           completed_at?: string | null
@@ -11734,6 +11862,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          assigned_to?: string | null
           bill_amount?: number | null
           billable?: boolean
           completed_at?: string | null
@@ -12205,6 +12334,7 @@ export type Database = {
       }
       projects: {
         Row: {
+          assigned_to: string | null
           contract_id: string | null
           created_at: string
           description: string | null
@@ -12224,6 +12354,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           contract_id?: string | null
           created_at?: string
           description?: string | null
@@ -12243,6 +12374,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          assigned_to?: string | null
           contract_id?: string | null
           created_at?: string
           description?: string | null
@@ -12432,6 +12564,7 @@ export type Database = {
       }
       proposals: {
         Row: {
+          assigned_to: string | null
           body: string
           company_id: string | null
           contact_id: string | null
@@ -12454,6 +12587,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           body?: string
           company_id?: string | null
           contact_id?: string | null
@@ -12476,6 +12610,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          assigned_to?: string | null
           body?: string
           company_id?: string | null
           contact_id?: string | null
@@ -12602,6 +12737,7 @@ export type Database = {
       }
       prospecting_cadences: {
         Row: {
+          assigned_to: string | null
           created_at: string
           daily_send_limit: number | null
           description: string | null
@@ -12618,6 +12754,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           daily_send_limit?: number | null
           description?: string | null
@@ -12634,6 +12771,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           daily_send_limit?: number | null
           description?: string | null
@@ -12836,6 +12974,7 @@ export type Database = {
       }
       prospecting_campaigns: {
         Row: {
+          assigned_to: string | null
           assignment_mode: Database["public"]["Enums"]["prospecting_assignment_mode"]
           audience_mode: string
           audience_rules: Json
@@ -12854,6 +12993,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
           audience_mode?: string
           audience_rules?: Json
@@ -12872,6 +13012,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          assigned_to?: string | null
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
           audience_mode?: string
           audience_rules?: Json
@@ -12901,6 +13042,7 @@ export type Database = {
       }
       prospecting_enrollments: {
         Row: {
+          assigned_to: string | null
           cadence_id: string
           created_at: string
           current_step: number
@@ -12917,6 +13059,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           cadence_id: string
           created_at?: string
           current_step?: number
@@ -12933,6 +13076,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           cadence_id?: string
           created_at?: string
           current_step?: number
@@ -13016,6 +13160,7 @@ export type Database = {
       }
       prospecting_questionnaires: {
         Row: {
+          assigned_to: string | null
           created_at: string
           description: string | null
           enabled: boolean
@@ -13030,6 +13175,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           enabled?: boolean
@@ -13044,6 +13190,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           enabled?: boolean
@@ -13114,6 +13261,7 @@ export type Database = {
       }
       prospecting_queues: {
         Row: {
+          assigned_to: string | null
           created_at: string
           description: string | null
           entity: string
@@ -13129,6 +13277,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           entity: string
@@ -13144,6 +13293,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           description?: string | null
           entity?: string
@@ -13306,6 +13456,7 @@ export type Database = {
       }
       prospecting_scripts: {
         Row: {
+          assigned_to: string | null
           created_at: string
           first_message: string
           id: string
@@ -13320,6 +13471,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           first_message?: string
           id?: string
@@ -13334,6 +13486,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           first_message?: string
           id?: string
@@ -13360,6 +13513,7 @@ export type Database = {
       prospecting_searches: {
         Row: {
           apollo_query: Json | null
+          assigned_to: string | null
           company_size: string | null
           created_at: string
           error: string | null
@@ -13382,6 +13536,7 @@ export type Database = {
         }
         Insert: {
           apollo_query?: Json | null
+          assigned_to?: string | null
           company_size?: string | null
           created_at?: string
           error?: string | null
@@ -13404,6 +13559,7 @@ export type Database = {
         }
         Update: {
           apollo_query?: Json | null
+          assigned_to?: string | null
           company_size?: string | null
           created_at?: string
           error?: string | null
@@ -13606,6 +13762,7 @@ export type Database = {
       quotes: {
         Row: {
           accepted_at: string | null
+          assigned_to: string | null
           company_id: string | null
           contact_id: string | null
           created_at: string
@@ -13637,6 +13794,7 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          assigned_to?: string | null
           company_id?: string | null
           contact_id?: string | null
           created_at?: string
@@ -13668,6 +13826,7 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          assigned_to?: string | null
           company_id?: string | null
           contact_id?: string | null
           created_at?: string
@@ -14160,6 +14319,7 @@ export type Database = {
       }
       scoring_rules: {
         Row: {
+          assigned_to: string | null
           condition: Json
           created_at: string
           enabled: boolean
@@ -14172,6 +14332,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           condition?: Json
           created_at?: string
           enabled?: boolean
@@ -14184,6 +14345,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           condition?: Json
           created_at?: string
           enabled?: boolean
@@ -14593,6 +14755,7 @@ export type Database = {
       }
       sequences: {
         Row: {
+          assigned_to: string | null
           created_at: string
           enabled: boolean
           entity: string
@@ -14604,6 +14767,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           created_at?: string
           enabled?: boolean
           entity: string
@@ -14615,6 +14779,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           created_at?: string
           enabled?: boolean
           entity?: string
@@ -14706,6 +14871,7 @@ export type Database = {
       }
       services: {
         Row: {
+          assigned_to: string | null
           cadence: Database["public"]["Enums"]["service_cadence"] | null
           contract_id: string
           created_at: string
@@ -14729,6 +14895,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           cadence?: Database["public"]["Enums"]["service_cadence"] | null
           contract_id: string
           created_at?: string
@@ -14752,6 +14919,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          assigned_to?: string | null
           cadence?: Database["public"]["Enums"]["service_cadence"] | null
           contract_id?: string
           created_at?: string
@@ -15268,6 +15436,7 @@ export type Database = {
       }
       survey_responses: {
         Row: {
+          assigned_to: string | null
           comment: string | null
           contact_id: string | null
           created_at: string
@@ -15282,6 +15451,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           comment?: string | null
           contact_id?: string | null
           created_at?: string
@@ -15296,6 +15466,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           comment?: string | null
           contact_id?: string | null
           created_at?: string
