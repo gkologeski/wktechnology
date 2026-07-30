@@ -134,7 +134,7 @@ function ProposalsPage() {
           {(data ?? []).length === 0 && (
             <p className="text-sm text-muted-foreground">Nenhuma proposta ainda.</p>
           )}
-          {(data ?? []).map((p) => (
+          {filterRows((data ?? []) as any[]).map((p: any) => (
             <div key={p.id} className="flex items-center justify-between rounded-md border p-3">
               <div className="flex items-center gap-3">
                 <FileText className="h-4 w-4 text-muted-foreground" />
@@ -158,6 +158,7 @@ function ProposalsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                <AssigneeCell assignedTo={p.assigned_to} className="text-xs" />
                 <Badge variant={STATUS_VARIANT[p.status] ?? "outline"}>
                   {STATUS_LABEL[p.status] ?? p.status}
                 </Badge>
