@@ -28,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/meetings")({
 function MeetingsLibrary() {
   const list = useServerFn(listMeetings);
   const qc = useQueryClient();
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   useRealtimeInvalidate([
     { table: "calendar_events", queryKeys: [["meetings"]] },
     { table: "meetings", queryKeys: [["meetings"]] },
