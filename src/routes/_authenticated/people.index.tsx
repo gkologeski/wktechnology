@@ -6,6 +6,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Plus, Search, UserCog, ClipboardList, BarChart3 } from "lucide-react";
 
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,8 +93,9 @@ function PeoplePage() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: allRows = [], isLoading } = useQuery({
     queryKey: ["people", { search, status }],
     queryFn: () =>
       list({
@@ -103,6 +106,8 @@ function PeoplePage() {
       }),
     staleTime: 20_000,
   });
+
+  const rows = filterRows(allRows as any[]);
 
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-6">
@@ -151,6 +156,7 @@ function PeoplePage() {
             ))}
           </SelectContent>
         </Select>
+        <AssigneeFilter value={assignee} onChange={setAssignee} className="w-full sm:w-56" />
       </div>
 
       <div className="rounded-md border bg-card">
@@ -162,6 +168,7 @@ function PeoplePage() {
               <TableHead>Vínculo</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Contratação</TableHead>
+              <TableHead>Responsável</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -228,6 +235,9 @@ function PeoplePage() {
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {p.hire_date ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    <AssigneeCell assignedTo={(p as { assigned_to?: string | null }).assigned_to} />
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="ghost" size="sm">

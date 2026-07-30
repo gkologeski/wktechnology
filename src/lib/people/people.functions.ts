@@ -154,7 +154,7 @@ export const listPeople = createServerFn({ method: "POST" })
       .from("people")
       .select(
         // Campos sensíveis omitidos aqui — carregados no getPerson quando permitido.
-        "id, owner_id, profile_id, candidate_id, manager_id, full_name, preferred_name, email, phone, photo_url, employment_type, status, role_title, seniority, location, timezone, hire_date, termination_date, legal_entity_name, cnpj, trade_name, simples_optante, currency, tags, education, shirt_size, emergency_phone, emergency_relationship, marital_status, spouse_name, archived, created_at, updated_at",
+        "id, owner_id, profile_id, candidate_id, manager_id, full_name, preferred_name, email, phone, photo_url, employment_type, status, role_title, seniority, location, timezone, hire_date, termination_date, legal_entity_name, cnpj, trade_name, simples_optante, currency, tags, education, shirt_size, emergency_phone, emergency_relationship, marital_status, spouse_name, assigned_to, archived, created_at, updated_at",
       )
       .order("full_name", { ascending: true })
       .limit(500);
@@ -184,7 +184,7 @@ export const getPerson = createServerFn({ method: "POST" })
     const { data: base, error } = await supabase
       .from("people")
       .select(
-        "id, owner_id, profile_id, candidate_id, manager_id, full_name, preferred_name, email, phone, photo_url, employment_type, status, role_title, seniority, location, timezone, hire_date, termination_date, legal_entity_name, cnpj, trade_name, simples_optante, currency, tags, notes, education, shirt_size, emergency_phone, emergency_relationship, marital_status, spouse_name, archived, created_at, updated_at",
+        "id, owner_id, profile_id, candidate_id, manager_id, full_name, preferred_name, email, phone, photo_url, employment_type, status, role_title, seniority, location, timezone, hire_date, termination_date, legal_entity_name, cnpj, trade_name, simples_optante, currency, tags, notes, education, shirt_size, emergency_phone, emergency_relationship, marital_status, spouse_name, assigned_to, archived, created_at, updated_at",
       )
       .eq("id", data.id)
       .maybeSingle();
