@@ -222,6 +222,9 @@ function ContractsPage() {
                     {c.starts_at ? formatDateTime(c.starts_at).split(" ")[0] : "—"}
                     {c.ends_at ? ` → ${formatDateTime(c.ends_at).split(" ")[0]}` : ""}
                   </TableCell>
+                  <TableCell>
+                    <AssigneeCell assignedTo={(c as { assigned_to?: string | null }).assigned_to} />
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {formatDateTime(c.created_at)}
                   </TableCell>
