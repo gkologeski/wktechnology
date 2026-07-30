@@ -79,7 +79,9 @@ export function ProspectingPage() {
   const [results, setResults] = useState<Result[]>([]);
   const [running, setRunning] = useState<string | null>(null);
   const [queueIds, setQueueIds] = useState<string[]>([]);
+  const [queueAlready, setQueueAlready] = useState(0);
   const [queueOpen, setQueueOpen] = useState(false);
+
   const [bulkBusy, setBulkBusy] = useState<null | "import" | "queue">(null);
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(
     null,
