@@ -198,7 +198,7 @@ function QueueWorkspace({
   });
 
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
-  const items = filterRows((data?.items ?? []) as Array<Record<string, unknown>>);
+  const items = filterRows((data?.items ?? []) as unknown as Array<Record<string, unknown>>);
   const hasItems = items.length > 0;
   return (
     <Card>
