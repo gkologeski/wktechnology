@@ -18,6 +18,8 @@ import {
 import { listMeetings } from "@/lib/meetings.functions";
 import { MeetingDetailDrawer } from "@/components/meetings/meeting-detail-drawer";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 
 export const Route = createFileRoute("/_authenticated/meetings")({
   component: MeetingsLibrary,
