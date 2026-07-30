@@ -71,7 +71,7 @@ export type SidebarItem = {
    * Permissões granulares que também liberam o item, mesmo sem o papel exigido
    * em `need`. Basta ter QUALQUER uma das chaves.
    */
-  permissionAny?: string[];
+  permissionAny?: readonly string[];
   children?: SidebarItem[];
   /** Quando true, abre em nova aba (link externo / página pública). */
   external?: boolean;
@@ -85,7 +85,7 @@ export type SettingsItem = {
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
   /** Permissões granulares que também liberam o item (basta QUALQUER uma). */
-  permissionAny?: string[];
+  permissionAny?: readonly string[];
 };
 export type SettingsGroup = { label: string; items: SettingsItem[] };
 
@@ -420,7 +420,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
 
 // --- Helpers -----------------------------------------------------------------
 
-export function canSee(need: Need, perms: Perms, permissionAny?: string[]): boolean {
+export function canSee(need: Need, perms: Perms, permissionAny?: readonly string[]): boolean {
   if (permissionAny?.length && perms.permissions?.size) {
     if (permissionAny.some((k) => perms.permissions!.has(k))) return true;
   }
