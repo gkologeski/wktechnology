@@ -84,6 +84,8 @@ export type SettingsItem = {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
+  /** Permissões granulares que também liberam o item (basta QUALQUER uma). */
+  permissionAny?: string[];
 };
 export type SettingsGroup = { label: string; items: SettingsItem[] };
 
