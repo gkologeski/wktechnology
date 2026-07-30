@@ -79,7 +79,9 @@ export function ProspectingPage() {
   const [results, setResults] = useState<Result[]>([]);
   const [running, setRunning] = useState<string | null>(null);
   const [queueIds, setQueueIds] = useState<string[]>([]);
+  const [queueAlready, setQueueAlready] = useState(0);
   const [queueOpen, setQueueOpen] = useState(false);
+
   const [bulkBusy, setBulkBusy] = useState<null | "import" | "queue">(null);
   const [progress, setProgress] = useState<{ done: number; total: number; label: string } | null>(
     null,
@@ -115,7 +117,9 @@ export function ProspectingPage() {
       setProgress({ done: i + 1, total: list.length, label: "" });
     }
     setProgress(null);
-    return { ids, created, existing, failed, firstError };
+    // Dois prospects podem apontar para o mesmo lead (dedupe por e-mail).
+    return { ids: Array.from(new Set(ids)), created, existing, failed, firstError };
+
   };
 
   const importAll = async () => {
@@ -146,7 +150,7 @@ export function ProspectingPage() {
     if (list.length === 0) return;
     setBulkBusy(kind);
     try {
-      const { ids, failed, firstError } = await importMany(list);
+      const { ids, existing, failed, firstError } = await importMany(list);
       if (ids.length === 0) {
         toast.error("Nenhum prospect foi importado, então a fila não foi aberta.", {
           description: firstError || undefined,
@@ -155,9 +159,11 @@ export function ProspectingPage() {
       }
       if (failed) toast.warning(`${failed} prospect(s) não puderam ser importados.`);
       if (openSearch) await openResults(openSearch);
+      setQueueAlready(existing);
       setQueueIds(ids);
       setQueueOpen(true);
     } finally {
+
       setBulkBusy(null);
     }
   };
@@ -506,10 +512,15 @@ export function ProspectingPage() {
         open={queueOpen}
         onOpenChange={(v) => {
           setQueueOpen(v);
-          if (!v) setQueueIds([]);
+          if (!v) {
+            setQueueIds([]);
+            setQueueAlready(0);
+          }
         }}
         ids={queueIds}
+        alreadyCount={queueAlready}
       />
+
     </div>
   );
 }

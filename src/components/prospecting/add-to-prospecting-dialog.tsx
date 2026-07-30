@@ -16,6 +16,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -41,10 +43,13 @@ export function AddToProspectingDialog({
   open,
   onOpenChange,
   ids,
+  alreadyCount = 0,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   ids: string[];
+  /** Quantos dos leads informados já existiam antes desta operação. */
+  alreadyCount?: number;
 }) {
   const qc = useQueryClient();
   const list = useServerFn(listQueues);
@@ -62,6 +67,7 @@ export function AddToProspectingDialog({
     queryKey: ["prospecting", "queues"],
     queryFn: () => list(),
     enabled: open,
+    refetchOnMount: "always",
   });
   const cadencesQ = useQuery({
     queryKey: ["prospecting", "cadences"],
@@ -69,15 +75,20 @@ export function AddToProspectingDialog({
     enabled: open,
   });
 
-  const manualQueues = useMemo(
+  const leadQueues = useMemo(
     () =>
-      (queuesQ.data ?? []).filter(
-        (q) =>
-          (q as { kind?: string }).kind === "manual" &&
-          (q as { entity: string }).entity === entity,
-      ),
-    [queuesQ.data, entity],
+      (queuesQ.data ?? []).filter((q) => (q as { entity: string }).entity === entity),
+    [queuesQ.data],
   );
+  const manualQueues = useMemo(
+    () => leadQueues.filter((q) => (q as { kind?: string }).kind === "manual"),
+    [leadQueues],
+  );
+  const dynamicQueues = useMemo(
+    () => leadQueues.filter((q) => (q as { kind?: string }).kind !== "manual"),
+    [leadQueues],
+  );
+
 
   const addMut = useMutation({
     mutationFn: async () => {
@@ -102,11 +113,15 @@ export function AddToProspectingDialog({
       return { ...r, created: false, id: targetId };
     },
     onSuccess: (r) => {
+      const queueName =
+        newQueueName.trim() ||
+        (manualQueues.find((q) => q.id === r.id)?.name ?? "fila");
       toast.success(
         r.created
-          ? `Fila criada com ${ids.length} item(ns).`
-          : `${r.added} adicionado(s) — total ${r.total}.`,
+          ? `Fila "${queueName}" criada com ${ids.length} item(ns).`
+          : `${r.added} adicionado(s) em "${queueName}" — total ${r.total}.`,
       );
+
       qc.invalidateQueries({ queryKey: ["prospecting", "queues"] });
       qc.invalidateQueries({ queryKey: ["prospecting", "queue-items"] });
       onOpenChange(false);
@@ -137,6 +152,11 @@ export function AddToProspectingDialog({
           <DialogTitle>
             Adicionar {ids.length} {entity === "lead" ? "lead(s)" : "contato(s)"} à prospecção
           </DialogTitle>
+          {alreadyCount > 0 && (
+            <DialogDescription>
+              {alreadyCount} deste(s) lead(s) já haviam sido importados anteriormente.
+            </DialogDescription>
+          )}
         </DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList>
@@ -149,7 +169,11 @@ export function AddToProspectingDialog({
               <Select value={queueId} onValueChange={(v) => { setQueueId(v); setNewQueueName(""); }}>
                 <SelectTrigger>
                   <SelectValue placeholder={
-                    manualQueues.length ? "Selecione uma fila manual" : "Nenhuma fila manual"
+                    queuesQ.isLoading
+                      ? "Carregando filas..."
+                      : manualQueues.length
+                        ? "Selecione uma fila manual"
+                        : "Nenhuma fila manual"
                   } />
                 </SelectTrigger>
                 <SelectContent>
@@ -158,8 +182,20 @@ export function AddToProspectingDialog({
                       {q.name}
                     </SelectItem>
                   ))}
+                  {dynamicQueues.map((q) => (
+                    <SelectItem key={q.id} value={q.id} disabled>
+                      {q.name} — fila dinâmica, não aceita itens manuais
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {!queuesQ.isLoading && manualQueues.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {dynamicQueues.length
+                    ? "As filas existentes são dinâmicas (baseadas em filtros). Crie uma fila manual abaixo para adicionar estes leads."
+                    : "Nenhuma fila manual encontrada. Crie uma abaixo."}
+                </p>
+              )}
             </div>
             <div className="text-xs text-muted-foreground text-center">ou</div>
             <div className="space-y-1">
@@ -169,6 +205,7 @@ export function AddToProspectingDialog({
                 value={newQueueName}
                 onChange={(e) => { setNewQueueName(e.target.value); setQueueId(""); }}
               />
+
             </div>
           </TabsContent>
           <TabsContent value="cadence" className="space-y-3 pt-3">
