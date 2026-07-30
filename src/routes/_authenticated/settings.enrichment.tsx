@@ -15,8 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { listEnrichmentJobs, listJobItems } from "@/lib/integrations/enrichment.functions";
+import { listProspectSearches } from "@/lib/prospecting.functions";
 import { formatDateTime } from "@/lib/crm";
 import { Eye } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { AtsSectionHeader } from "@/components/ats/ui";
 
 type Job = Awaited<ReturnType<typeof listEnrichmentJobs>>["jobs"][number];
 
