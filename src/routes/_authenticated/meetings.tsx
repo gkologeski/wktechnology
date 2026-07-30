@@ -84,6 +84,7 @@ function MeetingsLibrary() {
                 <SelectItem value="cancelled">Canceladas</SelectItem>
               </SelectContent>
             </Select>
+            <AssigneeFilter value={assignee} onChange={setAssignee} className="w-[200px]" />
           </div>
         </CardHeader>
         <CardContent>
