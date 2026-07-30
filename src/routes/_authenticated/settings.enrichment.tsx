@@ -49,7 +49,8 @@ export function EnrichmentHistoryPage() {
   const [viewing, setViewing] = useState<Job | null>(null);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
+      <div className="space-y-4">
       <PageHeader
         title="Enriquecimento — histórico"
         description="Execuções recentes de enriquecimento (Apollo, Lusha) e seus resultados."
