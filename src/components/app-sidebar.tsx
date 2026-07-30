@@ -16,6 +16,8 @@ import { cn, normalizeSearch } from "@/lib/utils";
 
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { ModuleSwitcher } from "@/components/module-switcher";
 import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
@@ -34,14 +36,16 @@ import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager } = useMyRole();
+  const { permissions: grantedPermissions } = usePermissions();
   const { isPlatformAdmin } = useIsPlatformAdmin();
+
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [query, setQuery] = useState("");
   const activeModule = useActiveModuleDefinition();
   const activeModuleId = useActiveModule();
 
-  const perms: Perms = { isAdmin, isManager, isPlatformAdmin };
+  const perms: Perms = { isAdmin, isManager, isPlatformAdmin, permissions: grantedPermissions };
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
 
   // Neutro no Workspace/ERP Home: exibe shell "ERP" independente do módulo.
@@ -94,14 +98,17 @@ export function AppSidebar() {
     return groupsSource.map((g) => ({
       ...g,
       items: g.items
-        .filter((i) => canSee(i.need, perms))
+        .filter((i) => canSee(i.need, perms, i.permissionAny))
         .map((i) => ({
           ...i,
-          children: (i.children ?? []).filter((c) => canSee(c.need, perms) && matches(c.title)),
+          children: (i.children ?? []).filter(
+            (c) => canSee(c.need, perms, c.permissionAny) && matches(c.title),
+          ),
         }))
         .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
     })).filter((g) => g.items.length > 0);
-  }, [query, isAdmin, isManager, isPlatformAdmin, groupsSource]);
+  }, [query, isAdmin, isManager, isPlatformAdmin, grantedPermissions, groupsSource]);
+
 
   const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
 

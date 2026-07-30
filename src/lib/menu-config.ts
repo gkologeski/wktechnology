@@ -58,6 +58,8 @@ export type Perms = {
   isAdmin: boolean;
   isManager: boolean;
   isPlatformAdmin: boolean;
+  /** Permission keys efetivas do usuário (conjunto de permissões do workspace). */
+  permissions?: Set<string>;
 };
 
 export type SidebarItem = {
@@ -65,10 +67,16 @@ export type SidebarItem = {
   url: string;
   icon: React.ComponentType<{ className?: string }>;
   need?: Need;
+  /**
+   * Permissões granulares que também liberam o item, mesmo sem o papel exigido
+   * em `need`. Basta ter QUALQUER uma das chaves.
+   */
+  permissionAny?: string[];
   children?: SidebarItem[];
   /** Quando true, abre em nova aba (link externo / página pública). */
   external?: boolean;
 };
+
 export type SidebarGroup = { label: string; items: SidebarItem[] };
 
 export type SettingsItem = {
@@ -81,6 +89,22 @@ export type SettingsGroup = { label: string; items: SettingsItem[] };
 
 // --- SIDEBAR -----------------------------------------------------------------
 
+/**
+ * Permissões que dão acesso a alguma aba de /prospecting.
+ * Deve espelhar as abas definidas em `routes/_authenticated/prospecting.index.tsx`.
+ */
+export const PROSPECTING_VIEW_PERMISSIONS = [
+  "techsales.prospecting.search.view",
+  "techsales.prospecting.queue.view",
+  "techsales.prospecting.cadences.view",
+  "techsales.prospecting.questionnaires.view",
+  "techsales.prospecting.scoring.view",
+  "techsales.prospecting.scripts.view",
+  "techsales.prospecting.playbooks.view",
+  "techsales.prospecting.enrichment.view",
+  "techsales.prospecting.voice.view",
+];
+
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Captar",
@@ -90,7 +114,9 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/prospecting",
         icon: PlayCircle,
         need: "manager",
+        permissionAny: PROSPECTING_VIEW_PERMISSIONS,
       },
+
       {
         title: "Leads",
         url: "/leads",
@@ -271,12 +297,16 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
 
 // --- Helpers -----------------------------------------------------------------
 
-export function canSee(need: Need, perms: Perms): boolean {
+export function canSee(need: Need, perms: Perms, permissionAny?: string[]): boolean {
+  if (permissionAny?.length && perms.permissions?.size) {
+    if (permissionAny.some((k) => perms.permissions!.has(k))) return true;
+  }
   if (need === "platform") return perms.isPlatformAdmin;
   if (need === "admin") return perms.isAdmin;
   if (need === "manager") return perms.isManager;
   return true;
 }
+
 
 export function permsForRole(role: "admin" | "manager" | "member", isPlatformAdmin = false): Perms {
   return {
@@ -290,11 +320,12 @@ export function visibleSidebarUrls(perms: Perms): string[] {
   const out: string[] = [];
   for (const g of SIDEBAR_GROUPS) {
     for (const i of g.items) {
-      if (!canSee(i.need, perms)) continue;
+      if (!canSee(i.need, perms, i.permissionAny)) continue;
       out.push(i.url);
       for (const c of i.children ?? []) {
-        if (canSee(c.need, perms)) out.push(c.url);
+        if (canSee(c.need, perms, c.permissionAny)) out.push(c.url);
       }
+
     }
   }
   return out;
