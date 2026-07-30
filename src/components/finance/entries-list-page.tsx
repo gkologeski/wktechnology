@@ -33,6 +33,8 @@ import {
   useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
 import { downloadCsv, toCsv } from "@/lib/csv-export";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 
 const STATUS_LABEL: Record<string, string> = {
   open: "Em aberto",
@@ -68,9 +70,10 @@ export function EntriesListPage({
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
   const [openNew, setOpenNew] = useState(false);
   const [payFor, setPayFor] = useState<Entry | null>(null);
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
 
   const filterInput = useLegalEntityFilterInput(legalEntityId);
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: allRows = [], isLoading } = useQuery({
     queryKey: ["finance-entries", direction, status, search, legalEntityId, JSON.stringify(filterInput)],
     queryFn: () =>
       list({
@@ -85,6 +88,8 @@ export function EntriesListPage({
         },
       }),
   });
+
+  const rows = useMemo(() => filterRows(allRows as Entry[]), [allRows, filterRows]);
 
   const total = useMemo(
     () =>
@@ -163,6 +168,7 @@ export function EntriesListPage({
           </SelectContent>
         </Select>
         <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+        <AssigneeFilter value={assignee} onChange={setAssignee} />
         <div className="ml-auto text-sm text-muted-foreground">
           Total em aberto:{" "}
           <span className="font-semibold tabular-nums text-foreground">
@@ -196,6 +202,7 @@ export function EntriesListPage({
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="text-right">Em aberto</TableHead>
                 <TableHead>Vencimento</TableHead>
+                <TableHead>Responsável</TableHead>
                 <TableHead className="w-32" />
               </TableRow>
             </TableHeader>
@@ -239,6 +246,9 @@ export function EntriesListPage({
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {formatDateTime(e.due_date).split(" ")[0]}
+                    </TableCell>
+                    <TableCell>
+                      <AssigneeCell assignedTo={(e as { assigned_to?: string | null }).assigned_to} />
                     </TableCell>
                     <TableCell className="text-right">
                       {!paid && (
