@@ -512,10 +512,15 @@ export function ProspectingPage() {
         open={queueOpen}
         onOpenChange={(v) => {
           setQueueOpen(v);
-          if (!v) setQueueIds([]);
+          if (!v) {
+            setQueueIds([]);
+            setQueueAlready(0);
+          }
         }}
         ids={queueIds}
+        alreadyCount={queueAlready}
       />
+
     </div>
   );
 }
