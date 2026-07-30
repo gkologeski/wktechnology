@@ -15,7 +15,7 @@ export const listProposals = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("proposals")
       .select(
-        "id,title,status,version,locked,total_amount,currency,deal_id,contact_id,company_id,expires_at,sent_at,created_at,updated_at",
+        "id,title,status,version,locked,total_amount,currency,deal_id,contact_id,company_id,expires_at,sent_at,created_at,updated_at,assigned_to",
       )
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
