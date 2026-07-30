@@ -97,10 +97,10 @@ function MeetingsLibrary() {
             </p>
           ) : (
             <ul className="divide-y">
-              {data.meetings.map((m: any) => (
+              {filterRows(data.meetings as any[]).map((m: any) => (
                 <li key={m.id}>
                   <button
-                    className="flex w-full items-center justify-between py-3 text-left hover:bg-muted/40 px-2 rounded"
+                    className="flex w-full items-center justify-between gap-3 py-3 text-left hover:bg-muted/40 px-2 rounded"
                     onClick={() => setOpenId(m.id)}
                   >
                     <div>
@@ -119,6 +119,7 @@ function MeetingsLibrary() {
                         {formatDateTime(m.created_at)}
                       </div>
                     </div>
+                    <AssigneeCell assignedTo={m.assigned_to} className="shrink-0 text-xs" />
                   </button>
                 </li>
               ))}
