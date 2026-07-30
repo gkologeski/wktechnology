@@ -34,7 +34,9 @@ import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager } = useMyRole();
+  const { permissions: grantedPermissions } = usePermissions();
   const { isPlatformAdmin } = useIsPlatformAdmin();
+
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const [query, setQuery] = useState("");
