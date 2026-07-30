@@ -107,6 +107,127 @@ export const PROSPECTING_VIEW_PERMISSIONS = [
   "techsales.prospecting.voice.view",
 ];
 
+/**
+ * Permissões granulares por área de menu.
+ * Cada lista libera o item correspondente mesmo sem o papel de gestor.
+ * As chaves existem em `public.permissions` (catálogo do workspace).
+ */
+export const MENU_PERMISSIONS = {
+  landingPages: [
+    "techsales.marketing.landing_pages.view.workspace",
+    "techsales.marketing.landing_pages.manage.workspace",
+  ],
+  forms: [
+    "techsales.marketing.forms.view.workspace",
+    "techsales.marketing.forms.manage.workspace",
+  ],
+  campaigns: [
+    "techsales.marketing.campaigns.view.workspace",
+    "techsales.marketing.campaigns.manage.workspace",
+  ],
+  sdrAgent: [
+    "techsales.marketing.sdr_agent.view.workspace",
+    "techsales.marketing.sdr_agent.manage.workspace",
+  ],
+  catalog: [
+    "techsales.catalog.products.view.workspace",
+    "techsales.catalog.products.manage.workspace",
+  ],
+  dashboards: [
+    "system.analytics.dashboards.view.workspace",
+    "system.analytics.dashboards.manage.workspace",
+  ],
+  reports: [
+    "system.analytics.reports.view.workspace",
+    "system.analytics.reports.manage.workspace",
+  ],
+  analytics: ["system.analytics.insights.view.workspace"],
+  workflows: ["system.workflows.manage.workspace"],
+  sequences: [
+    "system.automation.sequences.view.workspace",
+    "system.automation.sequences.manage.workspace",
+  ],
+  rotation: [
+    "system.automation.rotation.view.workspace",
+    "system.automation.rotation.manage.workspace",
+  ],
+  sla: ["system.automation.sla.view.workspace", "system.automation.sla.manage.workspace"],
+  macros: [
+    "system.automation.macros.view.workspace",
+    "system.automation.macros.manage.workspace",
+  ],
+  emailTemplates: [
+    "system.automation.email_templates.view.workspace",
+    "system.automation.email_templates.manage.workspace",
+  ],
+  kb: ["system.kb.articles.view.workspace", "system.kb.articles.manage.workspace"],
+  calendars: ["system.calendars.view.workspace", "system.calendars.manage.workspace"],
+  booking: ["system.booking.view.workspace", "system.booking.manage.workspace"],
+  onboardingTemplates: [
+    "system.onboarding_templates.view.workspace",
+    "system.onboarding_templates.manage.workspace",
+  ],
+  userGroups: ["system.user_groups.view.workspace", "system.user_groups.manage.workspace"],
+  // Financeiro
+  financeOverview: [
+    "techfinance.entries.view.own",
+    "techfinance.entries.view.workspace",
+    "techfinance.entries.manage.workspace",
+  ],
+  financeReceivable: [
+    "techfinance.invoices.view.workspace",
+    "techfinance.entries.view.workspace",
+    "techfinance.entries.view.own",
+  ],
+  financePayable: [
+    "techfinance.payments.view.workspace",
+    "techfinance.entries.view.workspace",
+    "techfinance.entries.view.own",
+  ],
+  financeRecurrences: [
+    "techfinance.recurrences.view.workspace",
+    "techfinance.recurrences.update.workspace",
+  ],
+  financeCostCenters: [
+    "techfinance.cost_centers.view.workspace",
+    "techfinance.cost_centers.update.workspace",
+  ],
+  financeBanking: ["techfinance.banking.view.workspace", "techfinance.banking.manage.workspace"],
+  financeNfse: ["techfinance.nfse.view.workspace", "techfinance.nfse.manage.workspace"],
+  financeDunning: ["techfinance.dunning.view.workspace", "techfinance.dunning.manage.workspace"],
+  // Pessoas
+  peopleOnboarding: [
+    "techpeople.onboarding.view.workspace",
+    "techpeople.onboarding.manage.workspace",
+  ],
+  peopleDocuments: [
+    "techpeople.documents.view.workspace",
+    "techpeople.documents.update.workspace",
+  ],
+  peopleWellbeingAssessments: [
+    "techpeople.wellbeing.assessments.view.own",
+    "techpeople.wellbeing.assessments.view.workspace",
+  ],
+  peopleWellbeingIncidents: [
+    "techpeople.wellbeing.incidents.view.own",
+    "techpeople.wellbeing.incidents.view.workspace",
+    "techpeople.incidents.view.workspace",
+  ],
+  peopleBenefits: ["techpeople.benefits.view.workspace", "techpeople.benefits.update.workspace"],
+  peopleTimesheet: [
+    "techpeople.timesheet.view.own",
+    "techpeople.timesheet.view.workspace",
+    "techpeople.timesheet.approve.workspace",
+  ],
+  peopleAllocations: [
+    "techpeople.allocations.view.workspace",
+    "techpeople.allocations.update.workspace",
+  ],
+  peopleImport: ["techpeople.people.create.own", "techpeople.people.update.workspace"],
+} as const;
+
+
+
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Captar",
