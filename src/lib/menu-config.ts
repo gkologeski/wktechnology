@@ -297,12 +297,16 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
 
 // --- Helpers -----------------------------------------------------------------
 
-export function canSee(need: Need, perms: Perms): boolean {
+export function canSee(need: Need, perms: Perms, permissionAny?: string[]): boolean {
+  if (permissionAny?.length && perms.permissions?.size) {
+    if (permissionAny.some((k) => perms.permissions!.has(k))) return true;
+  }
   if (need === "platform") return perms.isPlatformAdmin;
   if (need === "admin") return perms.isAdmin;
   if (need === "manager") return perms.isManager;
   return true;
 }
+
 
 export function permsForRole(role: "admin" | "manager" | "member", isPlatformAdmin = false): Perms {
   return {
