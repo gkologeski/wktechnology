@@ -13171,9 +13171,20 @@ export type Database = {
       prospecting_results: {
         Row: {
           apollo_score: number | null
+          company_city: string | null
+          company_country: string | null
+          company_description: string | null
           company_domain: string | null
+          company_employee_range: string | null
+          company_employees: number | null
+          company_linkedin_url: string | null
           company_name: string | null
+          company_phone: string | null
+          company_revenue: number | null
           company_size: string | null
+          company_state: string | null
+          company_technologies: string[] | null
+          company_website: string | null
           contact_name: string | null
           created_at: string
           domain_hint: string | null
@@ -13197,9 +13208,20 @@ export type Database = {
         }
         Insert: {
           apollo_score?: number | null
+          company_city?: string | null
+          company_country?: string | null
+          company_description?: string | null
           company_domain?: string | null
+          company_employee_range?: string | null
+          company_employees?: number | null
+          company_linkedin_url?: string | null
           company_name?: string | null
+          company_phone?: string | null
+          company_revenue?: number | null
           company_size?: string | null
+          company_state?: string | null
+          company_technologies?: string[] | null
+          company_website?: string | null
           contact_name?: string | null
           created_at?: string
           domain_hint?: string | null
@@ -13223,9 +13245,20 @@ export type Database = {
         }
         Update: {
           apollo_score?: number | null
+          company_city?: string | null
+          company_country?: string | null
+          company_description?: string | null
           company_domain?: string | null
+          company_employee_range?: string | null
+          company_employees?: number | null
+          company_linkedin_url?: string | null
           company_name?: string | null
+          company_phone?: string | null
+          company_revenue?: number | null
           company_size?: string | null
+          company_state?: string | null
+          company_technologies?: string[] | null
+          company_website?: string | null
           contact_name?: string | null
           created_at?: string
           domain_hint?: string | null
