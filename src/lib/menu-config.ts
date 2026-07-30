@@ -320,11 +320,12 @@ export function visibleSidebarUrls(perms: Perms): string[] {
   const out: string[] = [];
   for (const g of SIDEBAR_GROUPS) {
     for (const i of g.items) {
-      if (!canSee(i.need, perms)) continue;
+      if (!canSee(i.need, perms, i.permissionAny)) continue;
       out.push(i.url);
       for (const c of i.children ?? []) {
-        if (canSee(c.need, perms)) out.push(c.url);
+        if (canSee(c.need, perms, c.permissionAny)) out.push(c.url);
       }
+
     }
   }
   return out;
