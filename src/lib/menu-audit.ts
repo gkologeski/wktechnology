@@ -37,7 +37,7 @@ export type MenuAuditRow = {
   /** Regra que decidiu o resultado. */
   rule: MenuAuditRule;
   /** Permissões que liberariam o item (quando declaradas). */
-  permissionAny: string[];
+  permissionAny: readonly string[];
   /** Permissões declaradas que o usuário NÃO possui. */
   missingKeys: string[];
   /** Permissões declaradas que o usuário possui. */
@@ -70,7 +70,7 @@ function evaluate(
   title: string,
   url: string,
   need: Need,
-  permissionAny: string[] | undefined,
+  permissionAny: readonly string[] | undefined,
   perms: Perms,
 ): MenuAuditRow {
   const declared = permissionAny ?? [];
