@@ -130,8 +130,9 @@ function ProposalsPage() {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <CardTitle>Suas propostas</CardTitle>
+          <AssigneeFilter value={assignee} onChange={setAssignee} />
         </CardHeader>
         <CardContent className="space-y-2">
           {(data ?? []).length === 0 && (
