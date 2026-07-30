@@ -148,7 +148,7 @@ export function ProspectingPage() {
     if (list.length === 0) return;
     setBulkBusy(kind);
     try {
-      const { ids, failed, firstError } = await importMany(list);
+      const { ids, existing, failed, firstError } = await importMany(list);
       if (ids.length === 0) {
         toast.error("Nenhum prospect foi importado, então a fila não foi aberta.", {
           description: firstError || undefined,
@@ -157,9 +157,11 @@ export function ProspectingPage() {
       }
       if (failed) toast.warning(`${failed} prospect(s) não puderam ser importados.`);
       if (openSearch) await openResults(openSearch);
+      setQueueAlready(existing);
       setQueueIds(ids);
       setQueueOpen(true);
     } finally {
+
       setBulkBusy(null);
     }
   };
