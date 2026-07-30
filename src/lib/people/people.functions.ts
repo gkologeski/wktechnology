@@ -73,6 +73,7 @@ export type PersonRow = {
   emergency_relationship: string | null;
   marital_status: string | null;
   spouse_name: string | null;
+  assigned_to: string | null;
   bank: string | null;
   bank_agency: string | null;
   bank_account: string | null;
@@ -168,7 +169,7 @@ export const listPeople = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     // userId used to allow future extensions (e.g., "my team only" flag).
     void userId;
-    return (rows ?? []) as PersonRow[];
+    return (rows ?? []) as unknown as PersonRow[];
   });
 
 /**

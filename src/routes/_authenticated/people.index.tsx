@@ -107,7 +107,7 @@ function PeoplePage() {
     staleTime: 20_000,
   });
 
-  const rows = filterRows(allRows as any[]);
+  const rows = filterRows(allRows);
 
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-6">
@@ -237,7 +237,7 @@ function PeoplePage() {
                     {p.hire_date ?? "—"}
                   </TableCell>
                   <TableCell>
-                    <AssigneeCell assignedTo={(p as { assigned_to?: string | null }).assigned_to} />
+                    <AssigneeCell assignedTo={p.assigned_to} />
                   </TableCell>
                   <TableCell className="text-right">
                     <Button asChild variant="ghost" size="sm">

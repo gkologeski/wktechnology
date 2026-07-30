@@ -38,8 +38,10 @@ export function useAssigneeFilter(initial: AssigneeFilterValue = ASSIGNEE_ALL) {
   );
 
   const filterRows = useCallback(
-    <T extends { assigned_to?: string | null }>(rows: T[]) =>
-      assignee === ASSIGNEE_ALL ? rows : rows.filter((r) => matches(r)),
+    <T,>(rows: T[]): T[] =>
+      assignee === ASSIGNEE_ALL
+        ? rows
+        : rows.filter((r) => matches(r as { assigned_to?: string | null })),
     [assignee, matches],
   );
 
