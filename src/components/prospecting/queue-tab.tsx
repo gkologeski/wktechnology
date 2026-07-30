@@ -142,6 +142,7 @@ export function QueueTab() {
               <QueueWorkspace
                 queueId={activeQueue.id}
                 queueName={activeQueue.name}
+                onEdit={() => setEditing(activeQueue as unknown as QueueRow)}
                 onDelete={() => {
                   if (confirm(`Excluir a fila "${activeQueue.name}"?`))
                     delMut.mutate(activeQueue.id);
@@ -160,6 +161,18 @@ export function QueueTab() {
           qc.invalidateQueries({ queryKey: ["prospecting", "queues"] });
         }}
       />
+      <QueueDialog
+        open={!!editing}
+        queue={editing}
+        onOpenChange={(v) => {
+          if (!v) setEditing(null);
+        }}
+        onSaved={() => {
+          setEditing(null);
+          qc.invalidateQueries({ queryKey: ["prospecting", "queues"] });
+        }}
+      />
+
     </div>
   );
 }
