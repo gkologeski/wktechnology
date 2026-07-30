@@ -85,6 +85,7 @@ export function QueueTab() {
   });
 
   const [openNew, setOpenNew] = useState(false);
+  const [editing, setEditing] = useState<QueueRow | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const queues = data ?? [];
@@ -180,10 +181,12 @@ export function QueueTab() {
 function QueueWorkspace({
   queueId,
   queueName,
+  onEdit,
   onDelete,
 }: {
   queueId: string;
   queueName: string;
+  onEdit: () => void;
   onDelete: () => void;
 }) {
   const listItems = useServerFn(listQueueItems);
