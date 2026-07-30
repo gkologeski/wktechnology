@@ -120,6 +120,7 @@ import { Route as AuthenticatedSettingsRotationRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsRolesRouteImport } from './routes/_authenticated/settings.roles'
 import { Route as AuthenticatedSettingsRecurringRouteImport } from './routes/_authenticated/settings.recurring'
 import { Route as AuthenticatedSettingsRecordLayoutsRouteImport } from './routes/_authenticated/settings.record-layouts'
+import { Route as AuthenticatedSettingsRbacDiagnosticsRouteImport } from './routes/_authenticated/settings.rbac-diagnostics'
 import { Route as AuthenticatedSettingsQuotesRouteImport } from './routes/_authenticated/settings.quotes'
 import { Route as AuthenticatedSettingsQuoteTemplatesRouteImport } from './routes/_authenticated/settings.quote-templates'
 import { Route as AuthenticatedSettingsProspectingScriptsRouteImport } from './routes/_authenticated/settings.prospecting-scripts'
@@ -958,6 +959,12 @@ const AuthenticatedSettingsRecordLayoutsRoute =
   AuthenticatedSettingsRecordLayoutsRouteImport.update({
     id: '/record-layouts',
     path: '/record-layouts',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsRbacDiagnosticsRoute =
+  AuthenticatedSettingsRbacDiagnosticsRouteImport.update({
+    id: '/rbac-diagnostics',
+    path: '/rbac-diagnostics',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsQuotesRoute =
@@ -2517,6 +2524,7 @@ export interface FileRoutesByFullPath {
   '/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
   '/settings/quote-templates': typeof AuthenticatedSettingsQuoteTemplatesRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
+  '/settings/rbac-diagnostics': typeof AuthenticatedSettingsRbacDiagnosticsRoute
   '/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
@@ -2859,6 +2867,7 @@ export interface FileRoutesByTo {
   '/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
   '/settings/quote-templates': typeof AuthenticatedSettingsQuoteTemplatesRoute
   '/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
+  '/settings/rbac-diagnostics': typeof AuthenticatedSettingsRbacDiagnosticsRoute
   '/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/settings/rotation': typeof AuthenticatedSettingsRotationRoute
@@ -3207,6 +3216,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
   '/_authenticated/settings/quote-templates': typeof AuthenticatedSettingsQuoteTemplatesRoute
   '/_authenticated/settings/quotes': typeof AuthenticatedSettingsQuotesRoute
+  '/_authenticated/settings/rbac-diagnostics': typeof AuthenticatedSettingsRbacDiagnosticsRoute
   '/_authenticated/settings/record-layouts': typeof AuthenticatedSettingsRecordLayoutsRoute
   '/_authenticated/settings/recurring': typeof AuthenticatedSettingsRecurringRoute
   '/_authenticated/settings/roles': typeof AuthenticatedSettingsRolesRouteWithChildren
@@ -3556,6 +3566,7 @@ export interface FileRouteTypes {
     | '/settings/prospecting-scripts'
     | '/settings/quote-templates'
     | '/settings/quotes'
+    | '/settings/rbac-diagnostics'
     | '/settings/record-layouts'
     | '/settings/recurring'
     | '/settings/roles'
@@ -3898,6 +3909,7 @@ export interface FileRouteTypes {
     | '/settings/prospecting-scripts'
     | '/settings/quote-templates'
     | '/settings/quotes'
+    | '/settings/rbac-diagnostics'
     | '/settings/record-layouts'
     | '/settings/recurring'
     | '/settings/rotation'
@@ -4245,6 +4257,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/prospecting-scripts'
     | '/_authenticated/settings/quote-templates'
     | '/_authenticated/settings/quotes'
+    | '/_authenticated/settings/rbac-diagnostics'
     | '/_authenticated/settings/record-layouts'
     | '/_authenticated/settings/recurring'
     | '/_authenticated/settings/roles'
@@ -5295,6 +5308,13 @@ declare module '@tanstack/react-router' {
       path: '/record-layouts'
       fullPath: '/settings/record-layouts'
       preLoaderRoute: typeof AuthenticatedSettingsRecordLayoutsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/rbac-diagnostics': {
+      id: '/_authenticated/settings/rbac-diagnostics'
+      path: '/rbac-diagnostics'
+      fullPath: '/settings/rbac-diagnostics'
+      preLoaderRoute: typeof AuthenticatedSettingsRbacDiagnosticsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/quotes': {
@@ -7152,6 +7172,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsProspectingScriptsRoute: typeof AuthenticatedSettingsProspectingScriptsRoute
   AuthenticatedSettingsQuoteTemplatesRoute: typeof AuthenticatedSettingsQuoteTemplatesRoute
   AuthenticatedSettingsQuotesRoute: typeof AuthenticatedSettingsQuotesRoute
+  AuthenticatedSettingsRbacDiagnosticsRoute: typeof AuthenticatedSettingsRbacDiagnosticsRoute
   AuthenticatedSettingsRecordLayoutsRoute: typeof AuthenticatedSettingsRecordLayoutsRoute
   AuthenticatedSettingsRecurringRoute: typeof AuthenticatedSettingsRecurringRoute
   AuthenticatedSettingsRolesRoute: typeof AuthenticatedSettingsRolesRouteWithChildren
@@ -7249,6 +7270,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsQuoteTemplatesRoute:
     AuthenticatedSettingsQuoteTemplatesRoute,
   AuthenticatedSettingsQuotesRoute: AuthenticatedSettingsQuotesRoute,
+  AuthenticatedSettingsRbacDiagnosticsRoute:
+    AuthenticatedSettingsRbacDiagnosticsRoute,
   AuthenticatedSettingsRecordLayoutsRoute:
     AuthenticatedSettingsRecordLayoutsRoute,
   AuthenticatedSettingsRecurringRoute: AuthenticatedSettingsRecurringRoute,
@@ -7843,13 +7866,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

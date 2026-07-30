@@ -42,6 +42,7 @@ const ADMIN_ONLY = [
   "/settings/mobile",
   "/settings/language",
   "/settings/permissions",
+  "/settings/rbac-diagnostics",
 ];
 const MANAGER_PLUS = [
   "/settings/workflows",
