@@ -41,7 +41,7 @@ export function AppSidebar() {
   const activeModule = useActiveModuleDefinition();
   const activeModuleId = useActiveModule();
 
-  const perms: Perms = { isAdmin, isManager, isPlatformAdmin };
+  const perms: Perms = { isAdmin, isManager, isPlatformAdmin, permissions: grantedPermissions };
   const isActive = (url: string) => path === url || path.startsWith(url + "/");
 
   // Neutro no Workspace/ERP Home: exibe shell "ERP" independente do módulo.
