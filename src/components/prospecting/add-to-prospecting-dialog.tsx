@@ -111,11 +111,15 @@ export function AddToProspectingDialog({
       return { ...r, created: false, id: targetId };
     },
     onSuccess: (r) => {
+      const queueName =
+        newQueueName.trim() ||
+        (manualQueues.find((q) => q.id === r.id)?.name ?? "fila");
       toast.success(
         r.created
-          ? `Fila criada com ${ids.length} item(ns).`
-          : `${r.added} adicionado(s) — total ${r.total}.`,
+          ? `Fila "${queueName}" criada com ${ids.length} item(ns).`
+          : `${r.added} adicionado(s) em "${queueName}" — total ${r.total}.`,
       );
+
       qc.invalidateQueries({ queryKey: ["prospecting", "queues"] });
       qc.invalidateQueries({ queryKey: ["prospecting", "queue-items"] });
       onOpenChange(false);
