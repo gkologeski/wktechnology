@@ -150,6 +150,11 @@ export function AddToProspectingDialog({
           <DialogTitle>
             Adicionar {ids.length} {entity === "lead" ? "lead(s)" : "contato(s)"} à prospecção
           </DialogTitle>
+          {alreadyCount > 0 && (
+            <DialogDescription>
+              {alreadyCount} deste(s) lead(s) já haviam sido importados anteriormente.
+            </DialogDescription>
+          )}
         </DialogHeader>
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList>
@@ -162,7 +167,11 @@ export function AddToProspectingDialog({
               <Select value={queueId} onValueChange={(v) => { setQueueId(v); setNewQueueName(""); }}>
                 <SelectTrigger>
                   <SelectValue placeholder={
-                    manualQueues.length ? "Selecione uma fila manual" : "Nenhuma fila manual"
+                    queuesQ.isLoading
+                      ? "Carregando filas..."
+                      : manualQueues.length
+                        ? "Selecione uma fila manual"
+                        : "Nenhuma fila manual"
                   } />
                 </SelectTrigger>
                 <SelectContent>
@@ -171,8 +180,20 @@ export function AddToProspectingDialog({
                       {q.name}
                     </SelectItem>
                   ))}
+                  {dynamicQueues.map((q) => (
+                    <SelectItem key={q.id} value={q.id} disabled>
+                      {q.name} — fila dinâmica, não aceita itens manuais
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {!queuesQ.isLoading && manualQueues.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {dynamicQueues.length
+                    ? "As filas existentes são dinâmicas (baseadas em filtros). Crie uma fila manual abaixo para adicionar estes leads."
+                    : "Nenhuma fila manual encontrada. Crie uma abaixo."}
+                </p>
+              )}
             </div>
             <div className="text-xs text-muted-foreground text-center">ou</div>
             <div className="space-y-1">
@@ -182,6 +203,7 @@ export function AddToProspectingDialog({
                 value={newQueueName}
                 onChange={(e) => { setNewQueueName(e.target.value); setQueueId(""); }}
               />
+
             </div>
           </TabsContent>
           <TabsContent value="cadence" className="space-y-3 pt-3">
