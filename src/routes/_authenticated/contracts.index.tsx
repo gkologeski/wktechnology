@@ -154,6 +154,7 @@ function ContractsPage() {
             ))}
           </SelectContent>
         </Select>
+        <AssigneeFilter value={assignee} onChange={setAssignee} />
       </div>
 
       <div className="rounded-lg border bg-card">
