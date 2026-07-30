@@ -70,6 +70,7 @@ const ROLE_LABEL: Record<string, string> = {
 function ContractsPage() {
   const qc = useQueryClient();
   const list = useServerFn(listContracts);
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
