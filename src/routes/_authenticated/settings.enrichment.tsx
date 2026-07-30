@@ -33,10 +33,12 @@ export const Route = createFileRoute("/_authenticated/settings/enrichment")({
 
 const STATUS_VARIANT: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   done: "default",
+  completed: "default",
   partial: "secondary",
   failed: "destructive",
   running: "outline",
   queued: "outline",
+  pending: "outline",
 };
 
 export function EnrichmentHistoryPage() {
