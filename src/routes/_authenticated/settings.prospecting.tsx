@@ -115,7 +115,9 @@ export function ProspectingPage() {
       setProgress({ done: i + 1, total: list.length, label: "" });
     }
     setProgress(null);
-    return { ids, created, existing, failed, firstError };
+    // Dois prospects podem apontar para o mesmo lead (dedupe por e-mail).
+    return { ids: Array.from(new Set(ids)), created, existing, failed, firstError };
+
   };
 
   const importAll = async () => {
