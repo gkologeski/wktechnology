@@ -20,6 +20,8 @@ import {
 import { Plus, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ImportContractWizard } from "@/components/import-contract-wizard";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 
 export const Route = createFileRoute("/_authenticated/proposals/")({
   component: ProposalsPage,
