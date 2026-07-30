@@ -121,7 +121,7 @@ export const listMeetings = createServerFn({ method: "POST" })
     let q = supabaseAdmin
       .from("meetings")
       .select(
-        "id, title, status, room_name, public_token, recording_storage_path, recording_duration_seconds, scheduled_at, started_at, ended_at, created_at, related_contact_id, related_lead_id, related_deal_id, related_ticket_id, host_user_id",
+        "id, title, status, room_name, public_token, recording_storage_path, recording_duration_seconds, scheduled_at, started_at, ended_at, created_at, related_contact_id, related_lead_id, related_deal_id, related_ticket_id, host_user_id, assigned_to",
       )
       .eq("owner_id", workspaceId)
       .order("created_at", { ascending: false })
