@@ -54,6 +54,7 @@ function ProposalsPage() {
   const create = useServerFn(createProposal);
   const del = useServerFn(deleteProposal);
   const { data } = useQuery({ queryKey: ["proposals"], queryFn: () => list() });
+  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
