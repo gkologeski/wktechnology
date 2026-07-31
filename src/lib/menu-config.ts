@@ -387,10 +387,10 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     label: "Pessoas & Acesso",
     items: [
-      { to: "/settings/teams", label: "Membros", icon: UsersRound, need: "admin" },
+      { to: "/settings/teams", label: "Membros", icon: UsersRound, need: "admin", permissionAny: adminAny("system.members") },
       { to: "/settings/user-groups", label: "Times", icon: UsersRound, need: "manager", permissionAny: MENU_PERMISSIONS.userGroups },
-      { to: "/settings/permissions", label: "Permissões", icon: Shield, need: "admin" },
-      { to: "/settings/rbac-diagnostics", label: "Diagnóstico de acesso", icon: Shield, need: "admin" },
+      { to: "/settings/permissions", label: "Permissões", icon: Shield, need: "admin", permissionAny: adminAny("system.roles") },
+      { to: "/settings/rbac-diagnostics", label: "Diagnóstico de acesso", icon: Shield, need: "admin", permissionAny: adminAny("system.rbac_diagnostics") },
     ],
   },
   {
