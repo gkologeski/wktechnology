@@ -434,7 +434,14 @@ function RbacDiagnosticsPage() {
                                 aria-label={
                                   isOpen ? `Ocultar ações de ${r.title}` : `Ver ações de ${r.title}`
                                 }
-                                onClick={() => setExpanded(isOpen ? null : rowKey)}
+                                onClick={() =>
+                                  setCollapsed((prev) => {
+                                    const next = new Set(prev);
+                                    if (isOpen) next.add(rowKey);
+                                    else next.delete(rowKey);
+                                    return next;
+                                  })
+                                }
                               >
                                 {isOpen ? (
                                   <ChevronDown className="h-4 w-4" />
