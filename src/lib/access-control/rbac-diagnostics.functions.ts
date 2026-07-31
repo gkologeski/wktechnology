@@ -87,6 +87,16 @@ export const listWorkspaceMembersForDiagnostics = createServerFn({ method: "GET"
       .sort((a, b) => (a.full_name ?? "").localeCompare(b.full_name ?? ""));
   });
 
+/** Catálogo global de permissões (sem dados sensíveis) para montar a matriz de ações. */
+export const listPermissionCatalog = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PermissionCatalogRow[]> => {
+    const { data } = await context.supabase
+      .from("permissions")
+      .select("key, module, resource, action, scope, label_pt");
+    return (data ?? []) as PermissionCatalogRow[];
+  });
+
 export const getRbacDiagnostics = createServerFn({ method: "GET" })
   .inputValidator((input: { userId?: string } | undefined) => input ?? {})
   .middleware([requireSupabaseAuth])
