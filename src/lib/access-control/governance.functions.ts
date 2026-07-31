@@ -144,16 +144,16 @@ export const simulateUser = createServerFn({ method: "POST" })
     const { data: rules } = await supabase
       .from("field_permission_rules")
       .select("resource, field, mode, role_id, set_id");
-    const applicable = ((rules ?? []) as Array<{
-      resource: string;
-      field: string;
-      mode: "hidden" | "masked" | "readonly";
-      role_id: string | null;
-      set_id: string | null;
-    }>).filter(
-      (r) =>
-        (r.role_id && roleIds.includes(r.role_id)) ||
-        (r.set_id && setIds.includes(r.set_id)),
+    const applicable = (
+      (rules ?? []) as Array<{
+        resource: string;
+        field: string;
+        mode: "hidden" | "masked" | "readonly";
+        role_id: string | null;
+        set_id: string | null;
+      }>
+    ).filter(
+      (r) => (r.role_id && roleIds.includes(r.role_id)) || (r.set_id && setIds.includes(r.set_id)),
     );
 
     return {
@@ -192,10 +192,7 @@ export const getGovernanceReport = createServerFn({ method: "GET" })
       supabase.from("job_roles").select("id, name, is_system, data_scope"),
       supabase.from("permission_sets").select("id, is_system"),
       supabase.from("field_permission_rules").select("id"),
-      supabase
-        .from("user_job_roles")
-        .select("user_id, role_id")
-        .eq("owner_id", workspaceId),
+      supabase.from("user_job_roles").select("user_id, role_id").eq("owner_id", workspaceId),
     ]);
 
     const members = (membersRes.data ?? []) as Array<{ user_id: string }>;
@@ -215,7 +212,12 @@ export const getGovernanceReport = createServerFn({ method: "GET" })
     const roleNameById = new Map(roles.map((r) => [r.id, r.name]));
     const scopeById = new Map(roles.map((r) => [r.id, r.data_scope]));
     const membersByRole = new Map<string, number>();
-    const scopeBreakdown = { own: 0, team: 0, workspace: 0, custom: 0 } as GovernanceReport["scope_breakdown"];
+    const scopeBreakdown = {
+      own: 0,
+      team: 0,
+      workspace: 0,
+      custom: 0,
+    } as GovernanceReport["scope_breakdown"];
     for (const r of ujr) {
       membersByRole.set(r.role_id, (membersByRole.get(r.role_id) ?? 0) + 1);
       const sc = scopeById.get(r.role_id);

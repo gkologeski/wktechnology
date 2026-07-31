@@ -7,7 +7,6 @@
 import { ACTION_LABELS_PT, ACTION_ORDER } from "./action-matrix";
 import { RESOURCE_LABELS_PT } from "./resource-labels";
 
-
 export type ScopeValue = "own" | "team" | "workspace";
 export const NONE_VALUE = "__none__";
 
@@ -78,7 +77,6 @@ export function prettyResource(resource: string): string {
   const words = last.replace(/[_-]+/g, " ").trim();
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
-
 
 function actionRank(action: string): number {
   const i = ACTION_ORDER.indexOf(action as (typeof ACTION_ORDER)[number]);

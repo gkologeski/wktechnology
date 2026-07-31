@@ -67,7 +67,6 @@ async function resolveActiveWorkspace(supabase: SB, userId: string): Promise<str
   return (w.data?.id as string) ?? null;
 }
 
-
 async function assertNotSystemRow(
   supabase: SB,
   table: "job_roles" | "permission_sets" | "field_permission_rules",
@@ -136,11 +135,19 @@ export const upsertJobRole = createServerFn({ method: "POST" })
         .insert(data.set_ids.map((sid) => ({ role_id: roleId!, set_id: sid })));
       if (insErr) throw new Error(insErr.message);
     }
-    await logAudit(supabase, userId, data.id ? "role.update" : "role.create", "job_role", roleId, null, {
-      name: data.name,
-      data_scope: data.data_scope,
-      set_ids: data.set_ids,
-    });
+    await logAudit(
+      supabase,
+      userId,
+      data.id ? "role.update" : "role.create",
+      "job_role",
+      roleId,
+      null,
+      {
+        name: data.name,
+        data_scope: data.data_scope,
+        set_ids: data.set_ids,
+      },
+    );
     return { id: roleId };
   });
 
@@ -211,11 +218,19 @@ export const upsertPermissionSet = createServerFn({ method: "POST" })
         .insert(data.permission_keys.map((k) => ({ set_id: setId!, permission_key: k })));
       if (insErr) throw new Error(insErr.message);
     }
-    await logAudit(supabase, userId, data.id ? "set.update" : "set.create", "permission_set", setId, null, {
-      name: data.name,
-      module: data.module,
-      permission_keys: data.permission_keys,
-    });
+    await logAudit(
+      supabase,
+      userId,
+      data.id ? "set.update" : "set.create",
+      "permission_set",
+      setId,
+      null,
+      {
+        name: data.name,
+        module: data.module,
+        permission_keys: data.permission_keys,
+      },
+    );
     return { id: setId };
   });
 
@@ -396,20 +411,10 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
     }
 
-
-
-    await logAudit(
-      supabase,
-      userId,
-      "member.assign",
-      "workspace_member",
-      null,
-      data.user_id,
-      {
-        primary_role_id: data.primary_role_id,
-        extra_role_ids: data.extra_role_ids,
-        extra_set_ids: data.extra_set_ids,
-      },
-    );
+    await logAudit(supabase, userId, "member.assign", "workspace_member", null, data.user_id, {
+      primary_role_id: data.primary_role_id,
+      extra_role_ids: data.extra_role_ids,
+      extra_set_ids: data.extra_set_ids,
+    });
     return { ok: true };
   });
