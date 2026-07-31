@@ -92,13 +92,15 @@ export const listProspectSearches = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<ProspectSearch[]> => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from("prospecting_searches")
-      .select("*")
-      .eq("workspace_id", workspaceId)
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    const { data, error } = await withTransientRetry<ProspectSearch[]>(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("prospecting_searches")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .order("created_at", { ascending: false }),
+    );
+    if (error) throw toFriendlyDbError(error, "Erro ao listar buscas de prospecção");
     return (data ?? []) as ProspectSearch[];
   });
 
