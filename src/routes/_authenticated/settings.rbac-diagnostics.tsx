@@ -521,7 +521,6 @@ function RbacDiagnosticsPage() {
                       </Fragment>
                       );
                     })}
-                    ))}
                   </TableBody>
                 </Table>
               </div>
