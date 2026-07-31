@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchAllPages } from "./fetch-all";
 
 const BUNDLE_MODULE = "__bundle__";
 
