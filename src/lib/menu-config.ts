@@ -305,7 +305,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Cotações", url: "/settings/quotes", icon: FileText },
       { title: "Produtos", url: "/settings/products", icon: Package, need: "manager", permissionAny: MENU_PERMISSIONS.catalog },
       { title: "Faturas", url: "/invoices", icon: FileText },
-      { title: "Portal do cliente", url: "/settings/portal", icon: Briefcase, need: "admin" },
+      { title: "Portal do cliente", url: "/settings/portal", icon: Briefcase, need: "admin", permissionAny: adminAny("system.portal") },
 
     ],
   },
