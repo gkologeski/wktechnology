@@ -141,33 +141,35 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
     };
     if (!ws.workspaceId) return empty;
 
-    const [profRes, memberRes, adminRes, platformRes, permsRes, ujrRes, upsRes] = await Promise.all([
-      supabase.from("profiles").select("full_name").eq("id", targetId).maybeSingle(),
-      supabase
-        .from("workspace_members")
-        .select("role")
-        .eq("workspace_id", ws.workspaceId)
-        .eq("user_id", targetId)
-        .maybeSingle(),
-      supabase.rpc("is_workspace_admin_v2", { _workspace: ws.workspaceId, _user: targetId }),
-      supabase.rpc("is_platform_admin", { _user: targetId }),
-      supabase.rpc("user_effective_permissions", {
-        _user_id: targetId,
-        _workspace_id: ws.workspaceId,
-      }),
-      supabase
-        .from("user_job_roles")
-        .select("role_id, is_primary, job_roles(id, name)")
-        .eq("user_id", targetId),
-      supabase
-        .from("user_permission_sets")
-        .select("set_id, permission_sets(id, name, module)")
-        .eq("user_id", targetId),
-    ]);
+    const [profRes, memberRes, adminRes, platformRes, permsRes, ujrRes, upsRes] = await Promise.all(
+      [
+        supabase.from("profiles").select("full_name").eq("id", targetId).maybeSingle(),
+        supabase
+          .from("workspace_members")
+          .select("role")
+          .eq("workspace_id", ws.workspaceId)
+          .eq("user_id", targetId)
+          .maybeSingle(),
+        supabase.rpc("is_workspace_admin_v2", { _workspace: ws.workspaceId, _user: targetId }),
+        supabase.rpc("is_platform_admin", { _user: targetId }),
+        supabase.rpc("user_effective_permissions", {
+          _user_id: targetId,
+          _workspace_id: ws.workspaceId,
+        }),
+        supabase
+          .from("user_job_roles")
+          .select("role_id, is_primary, job_roles(id, name)")
+          .eq("user_id", targetId),
+        supabase
+          .from("user_permission_sets")
+          .select("set_id, permission_sets(id, name, module)")
+          .eq("user_id", targetId),
+      ],
+    );
 
-    const permissions = (
-      (permsRes.data ?? []) as Array<string | Record<string, string>>
-    ).map((r) => (typeof r === "string" ? r : (Object.values(r)[0] as string)));
+    const permissions = ((permsRes.data ?? []) as Array<string | Record<string, string>>).map(
+      (r) => (typeof r === "string" ? r : (Object.values(r)[0] as string)),
+    );
 
     const labels: Record<string, string> = {};
     if (permissions.length > 0) {

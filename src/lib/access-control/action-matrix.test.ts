@@ -7,11 +7,46 @@ import {
 } from "./action-matrix";
 
 const catalog: PermissionCatalogRow[] = [
-  { key: "techsales.deals.view.own", module: "techsales", resource: "deals", action: "view", scope: "own", label_pt: "Ver próprios negócios" },
-  { key: "techsales.deals.view.team", module: "techsales", resource: "deals", action: "view", scope: "team", label_pt: "Ver negócios da equipe" },
-  { key: "techsales.deals.view.workspace", module: "techsales", resource: "deals", action: "view", scope: "workspace", label_pt: "Ver todos os negócios" },
-  { key: "techsales.deals.create.own", module: "techsales", resource: "deals", action: "create", scope: "own", label_pt: "Criar negócios" },
-  { key: "techsales.deals.approve.team", module: "techsales", resource: "deals", action: "approve", scope: "team", label_pt: "Aprovar descontos" },
+  {
+    key: "techsales.deals.view.own",
+    module: "techsales",
+    resource: "deals",
+    action: "view",
+    scope: "own",
+    label_pt: "Ver próprios negócios",
+  },
+  {
+    key: "techsales.deals.view.team",
+    module: "techsales",
+    resource: "deals",
+    action: "view",
+    scope: "team",
+    label_pt: "Ver negócios da equipe",
+  },
+  {
+    key: "techsales.deals.view.workspace",
+    module: "techsales",
+    resource: "deals",
+    action: "view",
+    scope: "workspace",
+    label_pt: "Ver todos os negócios",
+  },
+  {
+    key: "techsales.deals.create.own",
+    module: "techsales",
+    resource: "deals",
+    action: "create",
+    scope: "own",
+    label_pt: "Criar negócios",
+  },
+  {
+    key: "techsales.deals.approve.team",
+    module: "techsales",
+    resource: "deals",
+    action: "approve",
+    scope: "team",
+    label_pt: "Aprovar descontos",
+  },
 ];
 
 describe("resolveResources", () => {

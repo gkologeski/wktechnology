@@ -138,9 +138,7 @@ export function buildActionMatrix(
     }
     // Escopos fora do trio padrão (ex.: chaves legadas) contam como acesso total.
     if (!effectiveScope) {
-      const other = rows.find(
-        (r) => !SCOPE_LABELS_PT[r.scope] && grantedKeys.has(r.key),
-      );
+      const other = rows.find((r) => !SCOPE_LABELS_PT[r.scope] && grantedKeys.has(r.key));
       if (other) {
         effectiveScope = "workspace";
         grantedKey = other.key;

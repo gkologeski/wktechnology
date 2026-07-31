@@ -120,8 +120,8 @@ function ActionMatrix({
   if (matrix.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Este item não tem permissões granulares cadastradas. O acesso é definido apenas
-        pelo papel do usuário no workspace.
+        Este item não tem permissões granulares cadastradas. O acesso é definido apenas pelo papel
+        do usuário no workspace.
       </p>
     );
   }
@@ -130,9 +130,8 @@ function ActionMatrix({
     <div className="space-y-3">
       {row.rule === "role-granted" && (
         <p className="text-xs text-muted-foreground">
-          Acesso ao menu herdado do papel de{" "}
-          {row.need === "admin" ? "administrador" : "gestor"} — as ações abaixo refletem
-          apenas as permissões granulares concedidas.
+          Acesso ao menu herdado do papel de {row.need === "admin" ? "administrador" : "gestor"} —
+          as ações abaixo refletem apenas as permissões granulares concedidas.
         </p>
       )}
       <div className="max-w-xl rounded-lg border border-border">
@@ -190,7 +189,6 @@ function RbacDiagnosticsPage() {
     staleTime: 10 * 60_000,
   });
 
-
   const membersQuery = useQuery({
     queryKey: ["rbac-diagnostics-members"],
     queryFn: () => fetchMembers(),
@@ -199,8 +197,7 @@ function RbacDiagnosticsPage() {
 
   const diagQuery = useQuery({
     queryKey: ["rbac-diagnostics", targetUserId],
-    queryFn: () =>
-      fetchDiag({ data: targetUserId === "me" ? {} : { userId: targetUserId } }),
+    queryFn: () => fetchDiag({ data: targetUserId === "me" ? {} : { userId: targetUserId } }),
     staleTime: 60_000,
   });
 
@@ -212,9 +209,7 @@ function RbacDiagnosticsPage() {
     () => ({
       isAdmin: !!diag?.is_workspace_admin || !!diag?.is_workspace_owner,
       isManager:
-        !!diag?.is_workspace_admin ||
-        !!diag?.is_workspace_owner ||
-        diag?.member_role === "manager",
+        !!diag?.is_workspace_admin || !!diag?.is_workspace_owner || diag?.member_role === "manager",
       isPlatformAdmin: !!diag?.is_platform_admin,
       permissions: new Set(diag?.permissions ?? []),
     }),
@@ -315,8 +310,7 @@ function RbacDiagnosticsPage() {
               Não foi possível carregar o diagnóstico
             </CardTitle>
             <CardDescription>
-              {(diagQuery.error as Error)?.message ??
-                "Erro inesperado ao consultar as permissões."}{" "}
+              {(diagQuery.error as Error)?.message ?? "Erro inesperado ao consultar as permissões."}{" "}
               Verifique se você é administrador do workspace e tente recalcular.
             </CardDescription>
           </CardHeader>
@@ -329,10 +323,7 @@ function RbacDiagnosticsPage() {
             <MetricCard label="Permissões efetivas" value={diag.permissions.length} />
             <MetricCard label="Cargos atribuídos" value={diag.job_roles.length} />
             <MetricCard label="Conjuntos extras" value={diag.permission_sets.length} />
-            <MetricCard
-              label="Itens de menu visíveis"
-              value={`${visibleCount} / ${rows.length}`}
-            />
+            <MetricCard label="Itens de menu visíveis" value={`${visibleCount} / ${rows.length}`} />
           </div>
 
           <Card>
@@ -341,9 +332,7 @@ function RbacDiagnosticsPage() {
                 <ShieldCheck className="h-4 w-4" />
                 {diag.full_name || diag.user_id}
               </CardTitle>
-              <CardDescription>
-                Workspace: {diag.workspace_name ?? "—"}
-              </CardDescription>
+              <CardDescription>Workspace: {diag.workspace_name ?? "—"}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               <Badge variant="secondary">Papel: {diag.member_role ?? "membro"}</Badge>
@@ -421,106 +410,104 @@ function RbacDiagnosticsPage() {
                       const rowKey = `${r.area}-${r.group}-${r.url}-${r.title}`;
                       const isOpen = expanded === rowKey;
                       return (
-                      <Fragment key={rowKey}>
-                      <TableRow>
-                        <TableCell className="align-top">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            aria-expanded={isOpen}
-                            aria-label={
-                              isOpen
-                                ? `Ocultar ações de ${r.title}`
-                                : `Ver ações de ${r.title}`
-                            }
-                            onClick={() => setExpanded(isOpen ? null : rowKey)}
-                          >
-                            {isOpen ? (
-                              <ChevronDown className="h-4 w-4" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </TableCell>
-                        <TableCell className="align-top">
-                          <div className="font-medium">{r.title}</div>
-                          <code className="text-xs text-muted-foreground">{r.url}</code>
-                        </TableCell>
-                        <TableCell className="align-top text-sm text-muted-foreground">
-                          <div>{r.area}</div>
-                          <div className="text-xs">{r.group}</div>
-                        </TableCell>
-                        <TableCell className="align-top">
-                          <Badge variant={r.visible ? "default" : "secondary"}>
-                            {r.visible ? "Visível" : "Oculto"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="align-top text-sm max-w-md">
-                          {friendlyReason(r)}
-                        </TableCell>
-                        <TableCell className="align-top">
-                          {r.permissionAny.length === 0 ? (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          ) : (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button type="button" variant="outline" size="sm">
-                                  <KeyRound className="h-3.5 w-3.5 mr-1.5" />
-                                  Ver chaves técnicas
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent align="end" className="w-96">
-                                <ul className="space-y-1.5">
-                                  {r.permissionAny.map((k) => (
-                                    <li key={k} className="flex items-center gap-1.5">
-                                      <Badge
-                                        variant={
-                                          r.grantedKeys.includes(k) ? "default" : "secondary"
-                                        }
-                                      >
-                                        {r.grantedKeys.includes(k) ? "Concedida" : "Faltando"}
-                                      </Badge>
-                                      <code className="text-xs break-all">{k}</code>
-                                      <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-6 w-6 shrink-0"
-                                        aria-label={`Copiar chave ${k}`}
-                                        onClick={() => copyKey(k)}
-                                      >
-                                        {copied === k ? (
-                                          <Check className="h-3.5 w-3.5" />
-                                        ) : (
-                                          <Copy className="h-3.5 w-3.5" />
-                                        )}
-                                      </Button>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </PopoverContent>
-                            </Popover>
+                        <Fragment key={rowKey}>
+                          <TableRow>
+                            <TableCell className="align-top">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                aria-expanded={isOpen}
+                                aria-label={
+                                  isOpen ? `Ocultar ações de ${r.title}` : `Ver ações de ${r.title}`
+                                }
+                                onClick={() => setExpanded(isOpen ? null : rowKey)}
+                              >
+                                {isOpen ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <div className="font-medium">{r.title}</div>
+                              <code className="text-xs text-muted-foreground">{r.url}</code>
+                            </TableCell>
+                            <TableCell className="align-top text-sm text-muted-foreground">
+                              <div>{r.area}</div>
+                              <div className="text-xs">{r.group}</div>
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <Badge variant={r.visible ? "default" : "secondary"}>
+                                {r.visible ? "Visível" : "Oculto"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="align-top text-sm max-w-md">
+                              {friendlyReason(r)}
+                            </TableCell>
+                            <TableCell className="align-top">
+                              {r.permissionAny.length === 0 ? (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              ) : (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button type="button" variant="outline" size="sm">
+                                      <KeyRound className="h-3.5 w-3.5 mr-1.5" />
+                                      Ver chaves técnicas
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent align="end" className="w-96">
+                                    <ul className="space-y-1.5">
+                                      {r.permissionAny.map((k) => (
+                                        <li key={k} className="flex items-center gap-1.5">
+                                          <Badge
+                                            variant={
+                                              r.grantedKeys.includes(k) ? "default" : "secondary"
+                                            }
+                                          >
+                                            {r.grantedKeys.includes(k) ? "Concedida" : "Faltando"}
+                                          </Badge>
+                                          <code className="text-xs break-all">{k}</code>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 shrink-0"
+                                            aria-label={`Copiar chave ${k}`}
+                                            onClick={() => copyKey(k)}
+                                          >
+                                            {copied === k ? (
+                                              <Check className="h-3.5 w-3.5" />
+                                            ) : (
+                                              <Copy className="h-3.5 w-3.5" />
+                                            )}
+                                          </Button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          {isOpen && (
+                            <TableRow>
+                              <TableCell colSpan={6} className="bg-muted/40">
+                                {catalogQuery.isLoading ? (
+                                  <Skeleton className="h-32 w-full max-w-xl" />
+                                ) : (
+                                  <ActionMatrix
+                                    row={r}
+                                    catalog={catalogQuery.data ?? []}
+                                    granted={grantedSet}
+                                  />
+                                )}
+                              </TableCell>
+                            </TableRow>
                           )}
-                        </TableCell>
-                      </TableRow>
-                      {isOpen && (
-                        <TableRow>
-                          <TableCell colSpan={6} className="bg-muted/40">
-                            {catalogQuery.isLoading ? (
-                              <Skeleton className="h-32 w-full max-w-xl" />
-                            ) : (
-                              <ActionMatrix
-                                row={r}
-                                catalog={catalogQuery.data ?? []}
-                                granted={grantedSet}
-                              />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )}
-                      </Fragment>
+                        </Fragment>
                       );
                     })}
                   </TableBody>
@@ -550,12 +537,8 @@ function RbacDiagnosticsPage() {
                     <CardContent className="space-y-1">
                       {keys.map((k) => (
                         <div key={k} className="text-sm">
-                          <span className="font-medium">
-                            {diag.permission_labels[k] ?? k}
-                          </span>
-                          <code className="ml-2 text-xs text-muted-foreground break-all">
-                            {k}
-                          </code>
+                          <span className="font-medium">{diag.permission_labels[k] ?? k}</span>
+                          <code className="ml-2 text-xs text-muted-foreground break-all">{k}</code>
                         </div>
                       ))}
                     </CardContent>
