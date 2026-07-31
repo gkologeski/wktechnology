@@ -88,6 +88,11 @@ export function QueueTab() {
   const list = useServerFn(listQueues);
   const del = useServerFn(deleteQueue);
   const qc = useQueryClient();
+  const { canAny, isLoading: loadingPerms } = usePermissions();
+  const canCreate = canAny(asKeys(QUEUE_CREATE));
+  const canUpdate = canAny(asKeys(QUEUE_UPDATE));
+  const canDelete = canAny(asKeys(QUEUE_DELETE));
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["prospecting", "queues"],
