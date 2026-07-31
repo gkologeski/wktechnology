@@ -170,6 +170,35 @@ export function PermissionsMatrix() {
     onError: (err: Error) => toast.error(err.message ?? "Falha ao atualizar em massa"),
   });
 
+  // Troca de escopo de uma célula: concede a chave do escopo escolhido e
+  // remove as demais chaves da mesma ação/recurso (escopo é exclusivo).
+  const scopeMut = useMutation({
+    mutationFn: async (v: { role_id: string; grant: string[]; revoke: string[] }) => {
+      if (v.revoke.length) await bulkFn({ data: { role_id: v.role_id, keys: v.revoke, granted: false } });
+      if (v.grant.length) await bulkFn({ data: { role_id: v.role_id, keys: v.grant, granted: true } });
+    },
+    onMutate: async (v) => {
+      await qc.cancelQueries({ queryKey: ["access", "matrix"] });
+      const prev = qc.getQueryData<Record<string, string[]>>(["access", "matrix"]);
+      qc.setQueryData<Record<string, string[]>>(["access", "matrix"], (old) => {
+        const next = { ...(old ?? {}) };
+        const cur = new Set(next[v.role_id] ?? []);
+        for (const k of v.revoke) cur.delete(k);
+        for (const k of v.grant) cur.add(k);
+        next[v.role_id] = Array.from(cur);
+        return next;
+      });
+      return { prev };
+    },
+    onError: (err: Error, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["access", "matrix"], ctx.prev);
+      toast.error(err.message ?? "Falha ao atualizar permissão");
+    },
+    onSuccess: invalidateAll,
+  });
+
+
+
   const createMut = useMutation({
     mutationFn: (v: { name: string; description?: string | null }) => createRoleFn({ data: v }),
     onSuccess: () => {
