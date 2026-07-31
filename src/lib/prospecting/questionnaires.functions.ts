@@ -86,9 +86,11 @@ export const upsertQuestionnaire = createServerFn({ method: "POST" })
       pass_threshold: data.pass_threshold,
     } as never;
     if (data.id) {
+      // Não sobrescreve owner_id ao editar registro de outro usuário.
+      const { owner_id: _owner, ...updatable } = payload as Record<string, unknown>;
       const { error } = await context.supabase
         .from("prospecting_questionnaires")
-        .update(payload)
+        .update(updatable as never)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
