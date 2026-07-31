@@ -122,23 +122,31 @@ export function QueueTab() {
         title="Filas de prospecção"
         description="Filas configuráveis por status, fonte e score para o SDR/BDR trabalhar."
         action={
-          <Button size="sm" onClick={() => setOpenNew(true)}>
-            <Plus className="w-4 h-4 mr-1" /> Nova fila
-          </Button>
+          canCreate ? (
+            <Button size="sm" onClick={() => setOpenNew(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Nova fila
+            </Button>
+          ) : null
         }
       />
 
-      {isLoading ? (
+      {isLoading || loadingPerms ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
       ) : queues.length === 0 ? (
         <EmptyState
           icon={Filter}
           title="Nenhuma fila configurada"
-          description="Crie uma fila para começar a trabalhar prospecções por status, fonte ou score."
+          description={
+            canCreate
+              ? "Crie uma fila para começar a trabalhar prospecções por status, fonte ou score."
+              : "Nenhuma fila compartilhada com você. Solicite acesso ao administrador do workspace."
+          }
           action={
-            <Button size="sm" onClick={() => setOpenNew(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Nova fila
-            </Button>
+            canCreate ? (
+              <Button size="sm" onClick={() => setOpenNew(true)}>
+                <Plus className="w-4 h-4 mr-1" /> Nova fila
+              </Button>
+            ) : null
           }
         />
       ) : (
@@ -158,6 +166,8 @@ export function QueueTab() {
               <QueueWorkspace
                 queueId={activeQueue.id}
                 queueName={activeQueue.name}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
                 onEdit={() => setEditing(activeQueue as unknown as QueueRow)}
                 onDelete={() => {
                   if (confirm(`Excluir a fila "${activeQueue.name}"?`))
@@ -168,6 +178,7 @@ export function QueueTab() {
           </section>
         </div>
       )}
+
 
       <QueueDialog
         open={openNew}
