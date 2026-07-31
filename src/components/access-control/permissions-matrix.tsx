@@ -137,28 +137,8 @@ export function PermissionsMatrix() {
     qc.invalidateQueries({ queryKey: ["access"] });
   };
 
-  const toggleMut = useMutation({
-    mutationFn: (v: { role_id: string; permission_key: string; granted: boolean }) =>
-      setPermFn({ data: v }),
-    onMutate: async (v) => {
-      await qc.cancelQueries({ queryKey: ["access", "matrix"] });
-      const prev = qc.getQueryData<Record<string, string[]>>(["access", "matrix"]);
-      qc.setQueryData<Record<string, string[]>>(["access", "matrix"], (old) => {
-        const next = { ...(old ?? {}) };
-        const cur = new Set(next[v.role_id] ?? []);
-        if (v.granted) cur.add(v.permission_key);
-        else cur.delete(v.permission_key);
-        next[v.role_id] = Array.from(cur);
-        return next;
-      });
-      return { prev };
-    },
-    onError: (err: Error, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["access", "matrix"], ctx.prev);
-      toast.error(err.message ?? "Falha ao atualizar permissão");
-    },
-    onSuccess: invalidateAll,
-  });
+  // Gravação granular por chave permanece disponível via bulkSetRolePermissions.
+
 
   const bulkMut = useMutation({
     mutationFn: (v: { role_id: string; keys: string[]; granted: boolean }) =>
