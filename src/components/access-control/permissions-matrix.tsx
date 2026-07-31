@@ -6,7 +6,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
 import {
-  setRolePermission,
+
   bulkSetRolePermissions,
   getMatrixState,
   createJobRole,
@@ -102,7 +102,6 @@ type Role = AccessBundle["job_roles"][number];
 export function PermissionsMatrix() {
   const getBundleFn = useServerFn(getAccessBundle);
   const getMatrixFn = useServerFn(getMatrixState);
-  const setPermFn = useServerFn(setRolePermission);
   const bulkFn = useServerFn(bulkSetRolePermissions);
   const createRoleFn = useServerFn(createJobRole);
   const duplicateRoleFn = useServerFn(duplicateJobRole);
