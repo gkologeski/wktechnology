@@ -396,7 +396,9 @@ function RbacDiagnosticsPage() {
                     <SelectItem value="hidden">Somente ocultos</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
               <div className="flex items-center gap-2">
+
                 <Button
                   type="button"
                   variant="outline"
