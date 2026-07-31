@@ -89,20 +89,61 @@ export const getAccessBundle = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
 
-    const [perms, sets, items, roles, roleSets, rules, members] = await Promise.all([
-      supabase.from("permissions").select("*").order("module").order("key"),
-      supabase.from("permission_sets").select("*").order("module").order("name"),
-      supabase.from("permission_set_items").select("set_id, permission_key"),
-      supabase.from("job_roles").select("*").order("is_system", { ascending: false }).order("name"),
-      supabase.from("job_role_sets").select("role_id, set_id"),
-      supabase.from("field_permission_rules").select("*"),
-      workspaceId
-        ? supabase
-            .from("workspace_members")
-            .select("user_id, role")
-            .eq("workspace_id", workspaceId)
-        : Promise.resolve({ data: [] as Array<{ user_id: string; role: string }> }),
-    ]);
+    // Todas as leituras de catálogo são paginadas: `permissions` e
+    // `permission_set_items` já passam de 1.000 linhas e eram truncadas pelo
+    // Data API, fazendo módulos inteiros (TechSales, TechService, TechProjects)
+    // desaparecerem da matriz.
+    const [permRows, setRows, itemRows, roleRows, roleSetRows, ruleRows, memberRows] =
+      await Promise.all([
+        fetchAllPages<PermissionRow>((from, to) =>
+          supabase.from("permissions").select("*").order("module").order("key").range(from, to),
+        ),
+        fetchAllPages<Omit<PermissionSetRow, "permission_keys">>((from, to) =>
+          supabase
+            .from("permission_sets")
+            .select("*")
+            .order("module")
+            .order("name")
+            .range(from, to),
+        ),
+        fetchAllPages<{ set_id: string; permission_key: string }>((from, to) =>
+          supabase
+            .from("permission_set_items")
+            .select("set_id, permission_key")
+            .order("set_id")
+            .order("permission_key")
+            .range(from, to),
+        ),
+        fetchAllPages<Omit<JobRoleRow, "set_ids">>((from, to) =>
+          supabase
+            .from("job_roles")
+            .select("*")
+            .order("is_system", { ascending: false })
+            .order("name")
+            .range(from, to),
+        ),
+        fetchAllPages<{ role_id: string; set_id: string }>((from, to) =>
+          supabase
+            .from("job_role_sets")
+            .select("role_id, set_id")
+            .order("role_id")
+            .range(from, to),
+        ),
+        fetchAllPages<FieldRuleRow>((from, to) =>
+          supabase.from("field_permission_rules").select("*").order("id").range(from, to),
+        ),
+        workspaceId
+          ? fetchAllPages<{ user_id: string; role: string }>((from, to) =>
+              supabase
+                .from("workspace_members")
+                .select("user_id, role")
+                .eq("workspace_id", workspaceId)
+                .order("user_id")
+                .range(from, to),
+            )
+          : Promise.resolve([] as Array<{ user_id: string; role: string }>),
+      ]);
+
 
     // Group items and role_sets
     const itemsBySet = new Map<string, string[]>();
