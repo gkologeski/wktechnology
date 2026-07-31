@@ -66,7 +66,6 @@ export const getMyPermissions = createServerFn({ method: "GET" })
     return { workspace_id: workspaceId, permissions: perms };
   });
 
-
 export type MyPermissionDetail = {
   key: string;
   label_pt: string | null;
@@ -129,10 +128,8 @@ export const getMyPermissionsDetailed = createServerFn({ method: "GET" })
         existing.scope = r.scope ?? null;
       }
     }
-    const items = Array.from(byKey.values()).sort((a, b) =>
-      (a.module ?? "").localeCompare(b.module ?? "") ||
-      a.key.localeCompare(b.key),
+    const items = Array.from(byKey.values()).sort(
+      (a, b) => (a.module ?? "").localeCompare(b.module ?? "") || a.key.localeCompare(b.key),
     );
     return { workspace_id: workspaceId, items };
   });
-

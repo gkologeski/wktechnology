@@ -124,11 +124,7 @@ export const getAccessBundle = createServerFn({ method: "GET" })
             .range(from, to),
         ),
         fetchAllPages<{ role_id: string; set_id: string }>((from, to) =>
-          supabase
-            .from("job_role_sets")
-            .select("role_id, set_id")
-            .order("role_id")
-            .range(from, to),
+          supabase.from("job_role_sets").select("role_id, set_id").order("role_id").range(from, to),
         ),
         fetchAllPages<FieldRuleRow>((from, to) =>
           supabase.from("field_permission_rules").select("*").order("id").range(from, to),
@@ -144,7 +140,6 @@ export const getAccessBundle = createServerFn({ method: "GET" })
             )
           : Promise.resolve([] as Array<{ user_id: string; role: string }>),
       ]);
-
 
     // Group items and role_sets
     const itemsBySet = new Map<string, string[]>();
@@ -175,10 +170,7 @@ export const getAccessBundle = createServerFn({ method: "GET" })
           .from("user_job_roles")
           .select("user_id, role_id, is_primary")
           .eq("owner_id", userId),
-        supabase
-          .from("user_permission_sets")
-          .select("user_id, set_id")
-          .eq("owner_id", userId),
+        supabase.from("user_permission_sets").select("user_id, set_id").eq("owner_id", userId),
         supabase.from("profiles").select("id, full_name").in("id", memberUserIds),
       ]);
 

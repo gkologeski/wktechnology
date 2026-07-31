@@ -37,9 +37,7 @@ describe("services.functions.ts — gate de permissão por handler", () => {
 
   it("todo handler usa requireSupabaseAuth (rejeita não-autenticado)", () => {
     for (const [name, body] of handlers) {
-      expect(body, `${name} sem requireSupabaseAuth`).toMatch(
-        /requireSupabaseAuth/,
-      );
+      expect(body, `${name} sem requireSupabaseAuth`).toMatch(/requireSupabaseAuth/);
     }
   });
 
@@ -58,9 +56,7 @@ describe("services.functions.ts — gate de permissão por handler", () => {
   });
 
   it("createService exige techservice.services.create.own", () => {
-    expectAsserts(handlers.get("createService"), [
-      "techservice.services.create.own",
-    ]);
+    expectAsserts(handlers.get("createService"), ["techservice.services.create.own"]);
   });
 
   it("updateService exige techservice.services.update.*", () => {
@@ -78,15 +74,11 @@ describe("services.functions.ts — gate de permissão por handler", () => {
   });
 
   it("activateService exige techservice.services.update.*", () => {
-    expectAsserts(handlers.get("activateService"), [
-      "techservice.services.update.workspace",
-    ]);
+    expectAsserts(handlers.get("activateService"), ["techservice.services.update.workspace"]);
   });
 
   it("runServicesBillingNow exige techservice.services.update.workspace", () => {
-    expectAsserts(handlers.get("runServicesBillingNow"), [
-      "techservice.services.update.workspace",
-    ]);
+    expectAsserts(handlers.get("runServicesBillingNow"), ["techservice.services.update.workspace"]);
   });
 });
 

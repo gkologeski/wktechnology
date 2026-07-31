@@ -82,10 +82,7 @@ export const getMyFieldRules = createServerFn({ method: "GET" })
 
     // Conjuntos herdados por cargos.
     if (roleIds.length) {
-      const jrs = await supabase
-        .from("job_role_sets")
-        .select("set_id")
-        .in("role_id", roleIds);
+      const jrs = await supabase.from("job_role_sets").select("set_id").in("role_id", roleIds);
       const inherited = ((jrs.data ?? []) as Array<{ set_id: string }>).map((r) => r.set_id);
       setIds = Array.from(new Set([...setIds, ...inherited]));
     }

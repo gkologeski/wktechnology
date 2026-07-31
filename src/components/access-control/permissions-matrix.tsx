@@ -1,12 +1,11 @@
 // Unified matrix editor: Role × (Resource × Action × Scope).
-// Reads catalog + roles via getAccessBundle; toggles bundles via setRolePermission.
+// Reads catalog + roles via getAccessBundle; grava via bulkSetRolePermissions.
 // System roles are read-only. Custom roles can be created / duplicated / renamed / deleted.
 import { useEffect, useMemo, useState, Fragment } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
 import {
-  setRolePermission,
   bulkSetRolePermissions,
   getMatrixState,
   createJobRole,
@@ -16,7 +15,6 @@ import {
   restoreRoleDefaults,
 } from "@/lib/access-control/role-bundle.functions";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,17 +34,43 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  buildScopeMatrixRows,
+  keysForSelection,
+  selectValue,
+  NONE_VALUE,
+  NONE_LABEL,
+  SCOPE_SELECT_LABELS,
+  type ScopeMatrixRow,
+  type ScopeValue,
+} from "@/lib/access-control/scope-matrix";
 import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 export const MODULE_META: Record<string, { label: string; tone: string }> = {
   techsales: { label: "TechSales", tone: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
   techhire: { label: "TechHire", tone: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
-  techpeople: { label: "TechPeople", tone: "bg-violet-500/10 text-violet-600 border-violet-500/20" },
-  techcontracts: { label: "TechContracts", tone: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  techpeople: {
+    label: "TechPeople",
+    tone: "bg-violet-500/10 text-violet-600 border-violet-500/20",
+  },
+  techcontracts: {
+    label: "TechContracts",
+    tone: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  },
   techservice: { label: "TechService", tone: "bg-rose-500/10 text-rose-600 border-rose-500/20" },
   techfinance: { label: "TechFinance", tone: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" },
-  techprojects: { label: "TechProjects", tone: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20" },
+  techprojects: {
+    label: "TechProjects",
+    tone: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
+  },
   system: { label: "Sistema", tone: "bg-slate-500/10 text-slate-600 border-slate-500/20" },
 };
 
@@ -84,7 +108,6 @@ type Role = AccessBundle["job_roles"][number];
 export function PermissionsMatrix() {
   const getBundleFn = useServerFn(getAccessBundle);
   const getMatrixFn = useServerFn(getMatrixState);
-  const setPermFn = useServerFn(setRolePermission);
   const bulkFn = useServerFn(bulkSetRolePermissions);
   const createRoleFn = useServerFn(createJobRole);
   const duplicateRoleFn = useServerFn(duplicateJobRole);
@@ -119,17 +142,34 @@ export function PermissionsMatrix() {
     qc.invalidateQueries({ queryKey: ["access"] });
   };
 
-  const toggleMut = useMutation({
-    mutationFn: (v: { role_id: string; permission_key: string; granted: boolean }) =>
-      setPermFn({ data: v }),
+  // Gravação granular por chave permanece disponível via bulkSetRolePermissions.
+
+  const bulkMut = useMutation({
+    mutationFn: (v: { role_id: string; keys: string[]; granted: boolean }) => bulkFn({ data: v }),
+    onSuccess: () => {
+      invalidateAll();
+      toast.success("Permissões atualizadas.");
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Falha ao atualizar em massa"),
+  });
+
+  // Troca de escopo de uma célula: concede a chave do escopo escolhido e
+  // remove as demais chaves da mesma ação/recurso (escopo é exclusivo).
+  const scopeMut = useMutation({
+    mutationFn: async (v: { role_id: string; grant: string[]; revoke: string[] }) => {
+      if (v.revoke.length)
+        await bulkFn({ data: { role_id: v.role_id, keys: v.revoke, granted: false } });
+      if (v.grant.length)
+        await bulkFn({ data: { role_id: v.role_id, keys: v.grant, granted: true } });
+    },
     onMutate: async (v) => {
       await qc.cancelQueries({ queryKey: ["access", "matrix"] });
       const prev = qc.getQueryData<Record<string, string[]>>(["access", "matrix"]);
       qc.setQueryData<Record<string, string[]>>(["access", "matrix"], (old) => {
         const next = { ...(old ?? {}) };
         const cur = new Set(next[v.role_id] ?? []);
-        if (v.granted) cur.add(v.permission_key);
-        else cur.delete(v.permission_key);
+        for (const k of v.revoke) cur.delete(k);
+        for (const k of v.grant) cur.add(k);
         next[v.role_id] = Array.from(cur);
         return next;
       });
@@ -140,16 +180,6 @@ export function PermissionsMatrix() {
       toast.error(err.message ?? "Falha ao atualizar permissão");
     },
     onSuccess: invalidateAll,
-  });
-
-  const bulkMut = useMutation({
-    mutationFn: (v: { role_id: string; keys: string[]; granted: boolean }) =>
-      bulkFn({ data: v }),
-    onSuccess: () => {
-      invalidateAll();
-      toast.success("Permissões atualizadas.");
-    },
-    onError: (err: Error) => toast.error(err.message ?? "Falha ao atualizar em massa"),
   });
 
   const createMut = useMutation({
@@ -221,11 +251,11 @@ export function PermissionsMatrix() {
     );
   }, [bundleQ.data, activeModule, search]);
 
-  const grouped = useMemo(() => {
-    const g: Record<string, typeof filteredPerms> = {};
-    for (const p of filteredPerms) (g[p.resource] ??= []).push(p);
-    return g;
-  }, [filteredPerms]);
+  // Uma linha por (módulo, recurso, funcionalidade); o escopo virou combo.
+  const scopeRows = useMemo<ScopeMatrixRow[]>(
+    () => buildScopeMatrixRows(filteredPerms),
+    [filteredPerms],
+  );
 
   const roles = useMemo(() => bundleQ.data?.job_roles ?? [], [bundleQ.data]);
 
@@ -266,9 +296,17 @@ export function PermissionsMatrix() {
     );
   }
 
-
   const matrix = matrixQ.data ?? {};
-  const isGranted = (roleId: string, key: string) => (matrix[roleId] ?? []).includes(key);
+  const grantedByRole = (roleId: string) => new Set(matrix[roleId] ?? []);
+  const applyScope = (roleId: string, row: ScopeMatrixRow, next: string) => {
+    const scope = next === NONE_VALUE ? null : (next as ScopeValue);
+    const { grant, revoke } = keysForSelection(row, scope);
+    const current = grantedByRole(roleId);
+    const toRevoke = revoke.filter((k) => current.has(k));
+    const toGrant = grant.filter((k) => !current.has(k));
+    if (!toRevoke.length && !toGrant.length) return;
+    scopeMut.mutate({ role_id: roleId, grant: toGrant, revoke: toRevoke });
+  };
 
   return (
     <div className="space-y-4">
@@ -303,14 +341,19 @@ export function PermissionsMatrix() {
         <table className="w-full text-sm border-separate border-spacing-0">
           <thead className="bg-muted/40">
             <tr>
-              <th className="sticky left-0 top-0 z-40 bg-muted text-left p-2 min-w-[360px] font-medium border-r border-b">
-                Recurso / Ação
+              <th className="sticky left-0 top-0 z-40 bg-muted text-left p-2 min-w-[110px] font-medium border-r border-b">
+                Módulo
+              </th>
+              <th className="sticky top-0 z-30 bg-muted text-left p-2 min-w-[160px] font-medium border-r border-b">
+                Recurso
+              </th>
+              <th className="sticky top-0 z-30 bg-muted text-left p-2 min-w-[150px] font-medium border-r border-b">
+                Funcionalidade
               </th>
               {roles.map((r) => (
                 <th
                   key={r.id}
-                  className="sticky top-0 z-30 bg-muted p-2 text-center font-medium whitespace-nowrap border-b"
-
+                  className="sticky top-0 z-30 bg-muted p-2 text-center font-medium whitespace-nowrap border-b min-w-[190px]"
                 >
                   <div className="flex items-center justify-center gap-1">
                     <span>{r.name}</span>
@@ -376,97 +419,68 @@ export function PermissionsMatrix() {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(grouped).map(([resource, perms]) => (
-              <Fragment key={`grp-${resource}`}>
-                <tr className="bg-muted">
-                  <td
-                    className="sticky left-0 z-20 bg-muted p-2 font-medium text-xs uppercase tracking-wide text-muted-foreground border-b border-r"
-
+            {scopeRows.map((row) => (
+              <tr key={row.id} className="hover:bg-muted/20">
+                <td className="sticky left-0 z-10 bg-background p-3 border-b border-r align-middle">
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] font-normal ${MODULE_META[row.module]?.tone ?? ""}`}
                   >
-                    {resource}
-                  </td>
-                  {roles.map((r) => {
-                    const grantedCount = perms.reduce(
-                      (n, p) => n + (isGranted(r.id, p.key) ? 1 : 0),
-                      0,
-                    );
-                    const state: boolean | "indeterminate" =
-                      grantedCount === 0
-                        ? false
-                        : grantedCount === perms.length
-                          ? true
-                          : "indeterminate";
-                    return (
-                      <td key={r.id} className="p-2 text-center border-b bg-muted align-middle">
-                        <Checkbox
-                          checked={state}
-                          disabled={toggleMut.isPending}
-                          onCheckedChange={() => {
-                            const shouldGrant = state !== true;
-                            for (const p of perms) {
-                              if (isGranted(r.id, p.key) !== shouldGrant) {
-                                toggleMut.mutate({
-                                  role_id: r.id,
-                                  permission_key: p.key,
-                                  granted: shouldGrant,
-                                });
-                              }
-                            }
-                          }}
-                          aria-label={`Marcar todas as permissões de ${resource} para ${r.name}`}
-                        />
-                      </td>
-                    );
-                  })}
-                </tr>
-
-                {perms.map((p) => (
-                  <tr key={p.key} className="hover:bg-muted/20">
-                    <td className="sticky left-0 z-10 bg-background p-3 border-b border-r align-middle">
-                      <div className="grid grid-cols-[80px_104px_minmax(0,1fr)] items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] w-full justify-center font-normal"
+                    {MODULE_META[row.module]?.label ?? row.module}
+                  </Badge>
+                </td>
+                <td className="p-3 border-b border-r align-middle">
+                  <span
+                    className="whitespace-normal break-words leading-snug"
+                    title={`${row.module}.${row.resource}`}
+                  >
+                    {row.resourceLabel}
+                  </span>
+                </td>
+                <td className="p-3 border-b border-r align-middle">
+                  <span
+                    className="whitespace-normal break-words leading-snug"
+                    title={row.description}
+                  >
+                    {row.actionLabel}
+                  </span>
+                </td>
+                {roles.map((r) => {
+                  const granted = grantedByRole(r.id);
+                  const value = selectValue(row, granted);
+                  const locked = row.lockedScope !== null;
+                  const disabled = r.is_system || scopeMut.isPending;
+                  return (
+                    <td key={r.id} className="p-2 border-b align-middle text-center">
+                      <Select
+                        value={value}
+                        disabled={disabled}
+                        onValueChange={(next) => applyScope(r.id, row, next)}
+                      >
+                        <SelectTrigger
+                          className="h-8 w-full text-xs"
+                          aria-label={`${r.name} — ${row.actionLabel} ${row.resourceLabel}`}
                         >
-                          {ACTION_LABEL[p.action] ?? p.action}
-                        </Badge>
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] w-full justify-center font-normal"
-                        >
-                          {SCOPE_LABEL[p.scope] ?? p.scope}
-                        </Badge>
-                        <span className="text-foreground whitespace-normal break-words leading-snug">
-                          {p.label_pt}
-                        </span>
-                      </div>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NONE_VALUE}>{NONE_LABEL}</SelectItem>
+                          {row.options.map((s) => (
+                            <SelectItem key={s} value={s}>
+                              {SCOPE_SELECT_LABELS[s]}
+                              {locked ? " (fixo)" : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
-                    {roles.map((r) => {
-                      const granted = isGranted(r.id, p.key);
-                      return (
-                        <td key={r.id} className="p-2 text-center border-b align-middle">
-                          <Checkbox
-                            checked={granted}
-                            disabled={toggleMut.isPending}
-                            onCheckedChange={(v) =>
-                              toggleMut.mutate({
-                                role_id: r.id,
-                                permission_key: p.key,
-                                granted: Boolean(v),
-                              })
-                            }
-                            aria-label={`${r.name} — ${p.label_pt}`}
-                          />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </Fragment>
+                  );
+                })}
+              </tr>
             ))}
-            {filteredPerms.length === 0 && (
+            {scopeRows.length === 0 && (
               <tr>
-                <td colSpan={roles.length + 1} className="p-6 text-center text-muted-foreground">
+                <td colSpan={roles.length + 3} className="p-6 text-center text-muted-foreground">
                   Nenhuma permissão encontrada.
                 </td>
               </tr>
@@ -475,46 +489,48 @@ export function PermissionsMatrix() {
         </table>
       </div>
 
-      {roles.length > 0 && filteredPerms.length > 0 && (
+      {roles.length > 0 && scopeRows.length > 0 && (
         <div className="flex flex-wrap gap-2 pt-2 border-t">
           <span className="text-xs text-muted-foreground self-center mr-2">
             Aplicar em massa (módulo atual):
           </span>
           {roles.map((r) => (
-              <div key={r.id} className="flex items-center gap-1">
-                <span className="text-xs">{r.name}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 px-2 text-xs"
-                  disabled={bulkMut.isPending}
-                  onClick={() =>
-                    bulkMut.mutate({
-                      role_id: r.id,
-                      keys: filteredPerms.map((p) => p.key),
-                      granted: true,
-                    })
-                  }
-                >
-                  Conceder todas
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 px-2 text-xs"
-                  disabled={bulkMut.isPending}
-                  onClick={() =>
-                    bulkMut.mutate({
-                      role_id: r.id,
-                      keys: filteredPerms.map((p) => p.key),
-                      granted: false,
-                    })
-                  }
-                >
-                  Remover todas
-                </Button>
-              </div>
-            ))}
+            <div key={r.id} className="flex items-center gap-1">
+              <span className="text-xs">{r.name}</span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                disabled={r.is_system || bulkMut.isPending}
+                onClick={() =>
+                  bulkMut.mutate({
+                    role_id: r.id,
+                    keys: scopeRows.flatMap((row) =>
+                      row.options[0] ? [row.keysByScope[row.options[0]]] : [],
+                    ),
+                    granted: true,
+                  })
+                }
+              >
+                Conceder todas
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-xs"
+                disabled={r.is_system || bulkMut.isPending}
+                onClick={() =>
+                  bulkMut.mutate({
+                    role_id: r.id,
+                    keys: scopeRows.flatMap((row) => row.allKeys),
+                    granted: false,
+                  })
+                }
+              >
+                Remover todas
+              </Button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -659,8 +675,8 @@ export function PermissionsMatrix() {
           <DialogHeader>
             <DialogTitle>Excluir cargo</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir <strong>{deleteTarget?.name}</strong>? Esta ação
-              remove todas as permissões atribuídas a este cargo.
+              Tem certeza que deseja excluir <strong>{deleteTarget?.name}</strong>? Esta ação remove
+              todas as permissões atribuídas a este cargo.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

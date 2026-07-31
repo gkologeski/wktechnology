@@ -356,7 +356,6 @@ export const getMatrixState = createServerFn({ method: "GET" })
       permission_key: string;
       effect: string;
     }>((from, to) =>
-
       supabase
         .from("job_role_permission_overrides")
         .select("role_id, permission_key, effect")
@@ -373,7 +372,6 @@ export const getMatrixState = createServerFn({ method: "GET" })
     }
     return out;
   });
-
 
 // -------- Role management (custom, non-system) --------
 
