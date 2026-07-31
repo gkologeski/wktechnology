@@ -226,6 +226,17 @@ export const MENU_PERMISSIONS = {
   peopleImport: ["techpeople.people.create.own", "techpeople.people.update.workspace"],
 } as const;
 
+/**
+ * Chaves granulares equivalentes a "administrar este recurso".
+ * Usadas em itens que antes só tinham gate por papel de administrador —
+ * o papel continua valendo, a permissão é um caminho adicional.
+ */
+export function adminAny(resource: string): readonly string[] {
+  return [`${resource}.view.workspace`, `${resource}.update.workspace`];
+}
+
+
+
 
 
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
