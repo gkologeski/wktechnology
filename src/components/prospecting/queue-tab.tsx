@@ -379,10 +379,16 @@ function QueueSidebarItem({
           <User className="w-4 h-4 text-muted-foreground" />
         )}
         <span className="text-sm font-medium truncate flex-1">{String(queue.name)}</span>
+        {queue.is_shared ? (
+          <Badge variant="secondary" className="text-[10px] shrink-0">
+            Compartilhada
+          </Badge>
+        ) : null}
         <Badge variant={kind === "manual" ? "secondary" : "outline"} className="text-[10px] shrink-0">
           {kind === "manual" ? `Manual · ${total}` : total}
         </Badge>
       </div>
+
       {queue.description ? (
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
           {String(queue.description)}
