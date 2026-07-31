@@ -16,7 +16,14 @@ function perm(
   scope: string,
   label_pt = `${action} ${resource}`,
 ): ScopePermissionRow {
-  return { key: `${module}.${resource}.${action}.${scope}`, module, resource, action, scope, label_pt };
+  return {
+    key: `${module}.${resource}.${action}.${scope}`,
+    module,
+    resource,
+    action,
+    scope,
+    label_pt,
+  };
 }
 
 const catalog: ScopePermissionRow[] = [
@@ -40,11 +47,7 @@ describe("buildScopeMatrixRows", () => {
   });
 
   it("expõe os três escopos em ações escopáveis", () => {
-    expect(byId.get("techsales.activities.view")!.options).toEqual([
-      "workspace",
-      "team",
-      "own",
-    ]);
+    expect(byId.get("techsales.activities.view")!.options).toEqual(["workspace", "team", "own"]);
     expect(byId.get("techsales.activities.view")!.lockedScope).toBeNull();
   });
 

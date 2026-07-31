@@ -6,7 +6,6 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
 import {
-
   bulkSetRolePermissions,
   getMatrixState,
   createJobRole,
@@ -55,15 +54,23 @@ import {
 import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
-
 export const MODULE_META: Record<string, { label: string; tone: string }> = {
   techsales: { label: "TechSales", tone: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
   techhire: { label: "TechHire", tone: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
-  techpeople: { label: "TechPeople", tone: "bg-violet-500/10 text-violet-600 border-violet-500/20" },
-  techcontracts: { label: "TechContracts", tone: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+  techpeople: {
+    label: "TechPeople",
+    tone: "bg-violet-500/10 text-violet-600 border-violet-500/20",
+  },
+  techcontracts: {
+    label: "TechContracts",
+    tone: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  },
   techservice: { label: "TechService", tone: "bg-rose-500/10 text-rose-600 border-rose-500/20" },
   techfinance: { label: "TechFinance", tone: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" },
-  techprojects: { label: "TechProjects", tone: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20" },
+  techprojects: {
+    label: "TechProjects",
+    tone: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20",
+  },
   system: { label: "Sistema", tone: "bg-slate-500/10 text-slate-600 border-slate-500/20" },
 };
 
@@ -137,10 +144,8 @@ export function PermissionsMatrix() {
 
   // Gravação granular por chave permanece disponível via bulkSetRolePermissions.
 
-
   const bulkMut = useMutation({
-    mutationFn: (v: { role_id: string; keys: string[]; granted: boolean }) =>
-      bulkFn({ data: v }),
+    mutationFn: (v: { role_id: string; keys: string[]; granted: boolean }) => bulkFn({ data: v }),
     onSuccess: () => {
       invalidateAll();
       toast.success("Permissões atualizadas.");
@@ -152,8 +157,10 @@ export function PermissionsMatrix() {
   // remove as demais chaves da mesma ação/recurso (escopo é exclusivo).
   const scopeMut = useMutation({
     mutationFn: async (v: { role_id: string; grant: string[]; revoke: string[] }) => {
-      if (v.revoke.length) await bulkFn({ data: { role_id: v.role_id, keys: v.revoke, granted: false } });
-      if (v.grant.length) await bulkFn({ data: { role_id: v.role_id, keys: v.grant, granted: true } });
+      if (v.revoke.length)
+        await bulkFn({ data: { role_id: v.role_id, keys: v.revoke, granted: false } });
+      if (v.grant.length)
+        await bulkFn({ data: { role_id: v.role_id, keys: v.grant, granted: true } });
     },
     onMutate: async (v) => {
       await qc.cancelQueries({ queryKey: ["access", "matrix"] });
@@ -174,8 +181,6 @@ export function PermissionsMatrix() {
     },
     onSuccess: invalidateAll,
   });
-
-
 
   const createMut = useMutation({
     mutationFn: (v: { name: string; description?: string | null }) => createRoleFn({ data: v }),
@@ -252,7 +257,6 @@ export function PermissionsMatrix() {
     [filteredPerms],
   );
 
-
   const roles = useMemo(() => bundleQ.data?.job_roles ?? [], [bundleQ.data]);
 
   // Se o módulo selecionado não existir no catálogo carregado, cai no primeiro
@@ -292,7 +296,6 @@ export function PermissionsMatrix() {
     );
   }
 
-
   const matrix = matrixQ.data ?? {};
   const grantedByRole = (roleId: string) => new Set(matrix[roleId] ?? []);
   const applyScope = (roleId: string, row: ScopeMatrixRow, next: string) => {
@@ -304,7 +307,6 @@ export function PermissionsMatrix() {
     if (!toRevoke.length && !toGrant.length) return;
     scopeMut.mutate({ role_id: roleId, grant: toGrant, revoke: toRevoke });
   };
-
 
   return (
     <div className="space-y-4">
@@ -532,7 +534,6 @@ export function PermissionsMatrix() {
         </div>
       )}
 
-
       {/* Create dialog */}
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
@@ -674,8 +675,8 @@ export function PermissionsMatrix() {
           <DialogHeader>
             <DialogTitle>Excluir cargo</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja excluir <strong>{deleteTarget?.name}</strong>? Esta ação
-              remove todas as permissões atribuídas a este cargo.
+              Tem certeza que deseja excluir <strong>{deleteTarget?.name}</strong>? Esta ação remove
+              todas as permissões atribuídas a este cargo.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

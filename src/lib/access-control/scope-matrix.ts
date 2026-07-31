@@ -181,7 +181,5 @@ export function keysForSelection(
 }
 
 export function scopeSelectLabel(value: string): string {
-  return value === NONE_VALUE
-    ? NONE_LABEL
-    : (SCOPE_SELECT_LABELS[value as ScopeValue] ?? value);
+  return value === NONE_VALUE ? NONE_LABEL : (SCOPE_SELECT_LABELS[value as ScopeValue] ?? value);
 }
