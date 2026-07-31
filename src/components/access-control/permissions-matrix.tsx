@@ -397,7 +397,7 @@ export function PermissionsMatrix() {
                           ? true
                           : "indeterminate";
                     return (
-                      <td key={r.id} className="p-2 text-center border-b bg-muted">
+                      <td key={r.id} className="p-2 text-center border-b bg-muted align-middle">
                         <Checkbox
                           checked={state}
                           disabled={toggleMut.isPending}
@@ -422,7 +422,7 @@ export function PermissionsMatrix() {
 
                 {perms.map((p) => (
                   <tr key={p.key} className="hover:bg-muted/20">
-                    <td className="sticky left-0 z-10 bg-background p-2 border-b border-r">
+                    <td className="sticky left-0 z-10 bg-background p-3 border-b border-r align-middle">
                       <div className="grid grid-cols-[80px_104px_minmax(0,1fr)] items-center gap-2">
                         <Badge
                           variant="outline"
@@ -436,13 +436,15 @@ export function PermissionsMatrix() {
                         >
                           {SCOPE_LABEL[p.scope] ?? p.scope}
                         </Badge>
-                        <span className="text-foreground truncate">{p.label_pt}</span>
+                        <span className="text-foreground whitespace-normal break-words leading-snug">
+                          {p.label_pt}
+                        </span>
                       </div>
                     </td>
                     {roles.map((r) => {
                       const granted = isGranted(r.id, p.key);
                       return (
-                        <td key={r.id} className="p-2 text-center border-b">
+                        <td key={r.id} className="p-2 text-center border-b align-middle">
                           <Checkbox
                             checked={granted}
                             disabled={toggleMut.isPending}
