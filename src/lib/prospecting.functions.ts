@@ -3,6 +3,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import {
+  isTransientDatabaseError,
+  toFriendlyDbError,
+  withTransientRetry,
+} from "@/lib/db/transient-retry";
 
 const APOLLO_GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
 
