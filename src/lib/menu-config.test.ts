@@ -18,7 +18,8 @@ const MEMBER = permsForRole("member");
 const PLATFORM_ADMIN = permsForRole("admin", true);
 
 // URLs do Sidebar agrupadas por need esperado
-const SIDEBAR_ADMIN_ONLY = ["/leads/import-hubspot"];
+// (hoje não há item admin-only no Sidebar — a importação do HubSpot virou Configurações)
+const SIDEBAR_ADMIN_ONLY: string[] = [];
 const SIDEBAR_MANAGER_PLUS = [
   "/dashboards",
   "/reports",
@@ -26,7 +27,7 @@ const SIDEBAR_MANAGER_PLUS = [
   "/campaigns/whatsapp",
   "/campaigns/email",
   "/landing-pages",
-  "/prospecting/campaigns",
+  "/prospecting",
   "/agents/sdr",
 ];
 
@@ -51,11 +52,12 @@ const SETTINGS_ADMIN_ONLY = [
   "/settings/custom-properties",
   "/settings/custom-objects",
   "/settings/teams",
-  "/home/access",
+  "/settings/permissions",
   "/marketplace",
   "/integrations",
   "/settings/whatsapp",
   "/settings/hubspot-sync",
+  "/leads/import-hubspot",
 ];
 const SETTINGS_PLATFORM_ONLY = [
   "/admin/status",

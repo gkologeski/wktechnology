@@ -192,7 +192,8 @@ function RbacDiagnosticsPage() {
   const [q, setQ] = useState("");
   const [visibility, setVisibility] = useState<VisibilityFilter>("all");
   const [copied, setCopied] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  // Todos os itens iniciam expandidos; guardamos apenas os recolhidos.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
   const catalogQuery = useQuery({
     queryKey: ["rbac-permission-catalog"],
@@ -396,6 +397,28 @@ function RbacDiagnosticsPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCollapsed(new Set())}
+                >
+                  Expandir tudo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCollapsed(
+                      new Set(filteredRows.map((r) => `${r.area}-${r.group}-${r.url}-${r.title}`)),
+                    )
+                  }
+                >
+                  Recolher tudo
+                </Button>
+              </div>
             </div>
 
             {filteredRows.length === 0 ? (
@@ -419,7 +442,7 @@ function RbacDiagnosticsPage() {
                   <TableBody>
                     {filteredRows.map((r) => {
                       const rowKey = `${r.area}-${r.group}-${r.url}-${r.title}`;
-                      const isOpen = expanded === rowKey;
+                      const isOpen = !collapsed.has(rowKey);
                       return (
                         <Fragment key={rowKey}>
                           <TableRow>
@@ -433,7 +456,14 @@ function RbacDiagnosticsPage() {
                                 aria-label={
                                   isOpen ? `Ocultar ações de ${r.title}` : `Ver ações de ${r.title}`
                                 }
-                                onClick={() => setExpanded(isOpen ? null : rowKey)}
+                                onClick={() =>
+                                  setCollapsed((prev) => {
+                                    const next = new Set(prev);
+                                    if (isOpen) next.add(rowKey);
+                                    else next.delete(rowKey);
+                                    return next;
+                                  })
+                                }
                               >
                                 {isOpen ? (
                                   <ChevronDown className="h-4 w-4" />
