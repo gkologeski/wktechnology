@@ -408,13 +408,13 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     label: "Integrações",
     items: [
-      { to: "/marketplace", label: "Marketplace", icon: ShoppingBag, need: "admin" },
-      { to: "/integrations", label: "Integrações", icon: Plug, need: "admin" },
-      { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin" },
-      { to: "/settings/integrations/linkedin", label: "LinkedIn (Unipile)", icon: Linkedin, need: "admin" },
-      { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
-      { to: "/settings/widget", label: "Widget do site", icon: Megaphone, need: "admin" },
-      { to: "/leads/import-hubspot", label: "Importar HubSpot", icon: Download, need: "admin" },
+      { to: "/marketplace", label: "Marketplace", icon: ShoppingBag, need: "admin", permissionAny: adminAny("system.marketplace") },
+      { to: "/integrations", label: "Integrações", icon: Plug, need: "admin", permissionAny: adminAny("system.integrations") },
+      { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin", permissionAny: adminAny("system.whatsapp") },
+      { to: "/settings/integrations/linkedin", label: "LinkedIn (Unipile)", icon: Linkedin, need: "admin", permissionAny: adminAny("system.linkedin") },
+      { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin", permissionAny: adminAny("system.hubspot_sync") },
+      { to: "/settings/widget", label: "Widget do site", icon: Megaphone, need: "admin", permissionAny: adminAny("system.widget") },
+      { to: "/leads/import-hubspot", label: "Importar HubSpot", icon: Download, need: "admin", permissionAny: adminAny("system.import") },
     ],
   },
 
