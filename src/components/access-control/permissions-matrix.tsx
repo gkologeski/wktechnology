@@ -1,7 +1,7 @@
 // Unified matrix editor: Role × (Resource × Action × Scope).
 // Reads catalog + roles via getAccessBundle; toggles bundles via setRolePermission.
 // System roles are read-only. Custom roles can be created / duplicated / renamed / deleted.
-import { useMemo, useState, Fragment } from "react";
+import { useEffect, useMemo, useState, Fragment } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
