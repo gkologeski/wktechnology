@@ -51,7 +51,7 @@ const SETTINGS_ADMIN_ONLY = [
   "/settings/custom-properties",
   "/settings/custom-objects",
   "/settings/teams",
-  "/home/access",
+  "/settings/permissions",
   "/marketplace",
   "/integrations",
   "/settings/whatsapp",
