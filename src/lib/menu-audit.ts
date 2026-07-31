@@ -42,6 +42,12 @@ export type MenuAuditRow = {
   missingKeys: string[];
   /** Permissões declaradas que o usuário possui. */
   grantedKeys: string[];
+  /** Recursos (`modulo.recurso`) que descrevem a funcionalidade deste item. */
+  resources: readonly string[];
+  /** Item exclusivo de plataforma (sem catálogo granular). */
+  platformOnly: boolean;
+  /** Item da conta pessoal do usuário (sem permissão de workspace). */
+  personal: boolean;
   /** Explicação em PT-BR. */
   reason: string;
 };
