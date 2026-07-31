@@ -1,7 +1,7 @@
 // Menu lateral do módulo TechFinance.
 // Renderizado pelo AppSidebar quando `activeModule === 'finance'`.
 import { DollarSign, FileText, BarChart3, TrendingUp, Receipt, Landmark, Repeat, Building2, FolderTree, ShieldCheck, Bell, Mail, Package } from "lucide-react";
-import { MENU_PERMISSIONS, type SidebarGroup } from "@/lib/menu-config";
+import { MENU_PERMISSIONS, adminAny, type SidebarGroup } from "@/lib/menu-config";
 
 export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
