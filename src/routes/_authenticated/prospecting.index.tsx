@@ -16,6 +16,7 @@ import { AtsPageHeader } from "@/components/ats/ui";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ShieldOff } from "lucide-react";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { QueueTab } from "@/components/prospecting/queue-tab";
@@ -96,7 +97,7 @@ export const Route = createFileRoute("/_authenticated/prospecting/")({
 function ProspectingSuite() {
   const search = useSearch({ from: "/_authenticated/prospecting/" });
   const navigate = useNavigate({ from: "/prospecting" });
-  const { can, isLoading } = usePermissions();
+  const { can, isLoading, isError, error, refetch } = usePermissions();
 
   const visibleTabs = useMemo(
     () => (isLoading ? [] : TABS.filter((t) => can(t.permission))),
@@ -138,6 +139,22 @@ function ProspectingSuite() {
           </div>
           <Skeleton className="h-64 w-full" />
         </div>
+      ) : isError ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+            <ShieldOff className="h-8 w-8 text-muted-foreground" />
+            <div className="space-y-1">
+              <p className="font-medium">Não foi possível carregar suas permissões</p>
+              <p className="text-sm text-muted-foreground max-w-md">
+                {error?.message ?? "Falha ao consultar o controle de acesso."} Isso não significa
+                que você perdeu acesso — tente novamente.
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={refetch}>
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
       ) : visibleTabs.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">

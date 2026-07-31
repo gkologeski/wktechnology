@@ -5,6 +5,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string | null> {
+  // 1) workspace ativo escolhido pelo usuário (mesma fonte usada pelo seletor de workspace)
+  const p = await supabase
+    .from("profiles")
+    .select("active_workspace_id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (p.data?.active_workspace_id) return p.data.active_workspace_id as string;
   const m = await supabase
     .from("workspace_members")
     .select("workspace_id")
@@ -21,6 +28,26 @@ async function resolveActiveWorkspace(supabase: any, userId: string): Promise<st
   return (w.data?.id as string) ?? null;
 }
 
+/**
+ * Lê as permissões efetivas em um único payload agregado (jsonb).
+ * Evita truncamento da API quando o catálogo tem milhares de chaves.
+ * Mantém fallback para o RPC antigo (linha por permissão).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function fetchEffectivePermissions(supabase: any, workspaceId: string): Promise<string[]> {
+  const agg = await supabase.rpc("current_user_permissions_json", {
+    _workspace_id: workspaceId,
+  });
+  if (!agg.error && Array.isArray(agg.data)) return agg.data as string[];
+  const { data, error } = await supabase.rpc("current_user_permissions", {
+    _workspace_id: workspaceId,
+  });
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as Array<string | { current_user_permissions: string }>).map((r) =>
+    typeof r === "string" ? r : r.current_user_permissions,
+  );
+}
+
 export type MyPermissionsResult = {
   workspace_id: string | null;
   permissions: string[];
@@ -35,15 +62,10 @@ export const getMyPermissions = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     if (!workspaceId) return { workspace_id: null, permissions: [] };
-    const { data, error } = await supabase.rpc("current_user_permissions", {
-      _workspace_id: workspaceId,
-    });
-    if (error) throw new Error(error.message);
-    const perms = ((data ?? []) as Array<string | { current_user_permissions: string }>).map(
-      (r) => (typeof r === "string" ? r : r.current_user_permissions),
-    );
+    const perms = await fetchEffectivePermissions(supabase, workspaceId);
     return { workspace_id: workspaceId, permissions: perms };
   });
+
 
 export type MyPermissionDetail = {
   key: string;
@@ -70,20 +92,19 @@ export const getMyPermissionsDetailed = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     if (!workspaceId) return { workspace_id: null, items: [] };
-    const { data: keysData, error: keysErr } = await supabase.rpc(
-      "current_user_permissions",
-      { _workspace_id: workspaceId },
-    );
-    if (keysErr) throw new Error(keysErr.message);
-    const keys = ((keysData ?? []) as Array<string | { current_user_permissions: string }>).map(
-      (r) => (typeof r === "string" ? r : r.current_user_permissions),
-    );
+    const keys = await fetchEffectivePermissions(supabase, workspaceId);
     if (keys.length === 0) return { workspace_id: workspaceId, items: [] };
-    const { data: meta, error: metaErr } = await supabase
-      .from("permissions")
-      .select("key, label_pt, description, module, resource, action, scope")
-      .in("key", keys);
-    if (metaErr) throw new Error(metaErr.message);
+    // Busca metadados em lotes: evita URL longa demais e o limite de linhas da API.
+    const meta: Array<Record<string, string | null>> = [];
+    for (let i = 0; i < keys.length; i += 200) {
+      const chunk = keys.slice(i, i + 200);
+      const { data, error: metaErr } = await supabase
+        .from("permissions")
+        .select("key, label_pt, description, module, resource, action, scope")
+        .in("key", chunk);
+      if (metaErr) throw new Error(metaErr.message);
+      meta.push(...((data ?? []) as Array<Record<string, string | null>>));
+    }
     const byKey = new Map<string, MyPermissionDetail>();
     for (const k of keys) {
       byKey.set(k, {

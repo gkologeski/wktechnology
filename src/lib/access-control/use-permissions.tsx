@@ -7,6 +7,10 @@ import { getMyPermissions } from "@/lib/access-control/permissions.functions";
 
 export type UsePermissionsResult = {
   isLoading: boolean;
+  /** true quando a consulta de permissões falhou (≠ "não tem permissão"). */
+  isError: boolean;
+  error: Error | null;
+  refetch: () => void;
   workspaceId: string | null;
   permissions: Set<string>;
   /** true se o usuário tem a permissão. */
@@ -23,6 +27,7 @@ export function usePermissions(): UsePermissionsResult {
     queryKey: ["my-permissions"],
     queryFn: () => fetchPerms(),
     staleTime: 5 * 60_000,
+    retry: 2,
   });
 
   const set = useMemo(
@@ -34,8 +39,15 @@ export function usePermissions(): UsePermissionsResult {
   const canAny = useCallback((keys: string[]) => keys.some((k) => set.has(k)), [set]);
   const canAll = useCallback((keys: string[]) => keys.every((k) => set.has(k)), [set]);
 
+  const refetch = useCallback(() => {
+    void query.refetch();
+  }, [query]);
+
   return {
     isLoading: query.isLoading,
+    isError: query.isError,
+    error: (query.error as Error) ?? null,
+    refetch,
     workspaceId: query.data?.workspace_id ?? null,
     permissions: set,
     can,

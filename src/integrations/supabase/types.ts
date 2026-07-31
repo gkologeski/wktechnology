@@ -18208,6 +18208,10 @@ export type Database = {
         Args: { _workspace_id: string }
         Returns: string[]
       }
+      current_user_permissions_json: {
+        Args: { _workspace_id: string }
+        Returns: Json
+      }
       current_user_workspaces: { Args: never; Returns: string[] }
       dashboard_metrics: { Args: never; Returns: Json }
       default_workspace_for_user: { Args: { _user: string }; Returns: string }
