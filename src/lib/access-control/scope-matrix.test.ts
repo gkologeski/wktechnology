@@ -109,8 +109,9 @@ describe("escopo efetivo e diff de chaves", () => {
 });
 
 describe("prettyResource", () => {
-  it("formata slugs", () => {
-    expect(prettyResource("task_queues")).toBe("Task queues");
+  it("usa rótulo PT-BR quando existe e formata o slug caso contrário", () => {
+    expect(prettyResource("task_queues")).toBe("Filas de tarefas");
     expect(prettyResource("marketing.landing_pages")).toBe("Landing pages");
+    expect(prettyResource("foo.bar_baz")).toBe("Bar baz");
   });
 });
