@@ -2,6 +2,7 @@
 // Read-only in Phase 1 (Fase 1). CRUD arrives in Phase 2.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchAllPages } from "./fetch-all";
 
 export type PermissionRow = {
   key: string;
@@ -89,40 +90,80 @@ export const getAccessBundle = createServerFn({ method: "GET" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
 
-    const [perms, sets, items, roles, roleSets, rules, members] = await Promise.all([
-      supabase.from("permissions").select("*").order("module").order("key"),
-      supabase.from("permission_sets").select("*").order("module").order("name"),
-      supabase.from("permission_set_items").select("set_id, permission_key"),
-      supabase.from("job_roles").select("*").order("is_system", { ascending: false }).order("name"),
-      supabase.from("job_role_sets").select("role_id, set_id"),
-      supabase.from("field_permission_rules").select("*"),
-      workspaceId
-        ? supabase
-            .from("workspace_members")
-            .select("user_id, role")
-            .eq("workspace_id", workspaceId)
-        : Promise.resolve({ data: [] as Array<{ user_id: string; role: string }> }),
-    ]);
+    // Todas as leituras de catálogo são paginadas: `permissions` e
+    // `permission_set_items` já passam de 1.000 linhas e eram truncadas pelo
+    // Data API, fazendo módulos inteiros (TechSales, TechService, TechProjects)
+    // desaparecerem da matriz.
+    const [permRows, setRows, itemRows, roleRows, roleSetRows, ruleRows, memberRows] =
+      await Promise.all([
+        fetchAllPages<PermissionRow>((from, to) =>
+          supabase.from("permissions").select("*").order("module").order("key").range(from, to),
+        ),
+        fetchAllPages<Omit<PermissionSetRow, "permission_keys">>((from, to) =>
+          supabase
+            .from("permission_sets")
+            .select("*")
+            .order("module")
+            .order("name")
+            .range(from, to),
+        ),
+        fetchAllPages<{ set_id: string; permission_key: string }>((from, to) =>
+          supabase
+            .from("permission_set_items")
+            .select("set_id, permission_key")
+            .order("set_id")
+            .order("permission_key")
+            .range(from, to),
+        ),
+        fetchAllPages<Omit<JobRoleRow, "set_ids">>((from, to) =>
+          supabase
+            .from("job_roles")
+            .select("*")
+            .order("is_system", { ascending: false })
+            .order("name")
+            .range(from, to),
+        ),
+        fetchAllPages<{ role_id: string; set_id: string }>((from, to) =>
+          supabase
+            .from("job_role_sets")
+            .select("role_id, set_id")
+            .order("role_id")
+            .range(from, to),
+        ),
+        fetchAllPages<FieldRuleRow>((from, to) =>
+          supabase.from("field_permission_rules").select("*").order("id").range(from, to),
+        ),
+        workspaceId
+          ? fetchAllPages<{ user_id: string; role: string }>((from, to) =>
+              supabase
+                .from("workspace_members")
+                .select("user_id, role")
+                .eq("workspace_id", workspaceId)
+                .order("user_id")
+                .range(from, to),
+            )
+          : Promise.resolve([] as Array<{ user_id: string; role: string }>),
+      ]);
+
 
     // Group items and role_sets
     const itemsBySet = new Map<string, string[]>();
-    for (const it of (items.data ?? []) as Array<{ set_id: string; permission_key: string }>) {
+    for (const it of itemRows) {
       const arr = itemsBySet.get(it.set_id) ?? [];
       arr.push(it.permission_key);
       itemsBySet.set(it.set_id, arr);
     }
 
     const setsByRole = new Map<string, string[]>();
-    for (const rs of (roleSets.data ?? []) as Array<{ role_id: string; set_id: string }>) {
+    for (const rs of roleSetRows) {
       const arr = setsByRole.get(rs.role_id) ?? [];
       arr.push(rs.set_id);
       setsByRole.set(rs.role_id, arr);
     }
 
     // Load member assignments (only for workspace users)
-    const memberUserIds = ((members.data ?? []) as Array<{ user_id: string }>).map(
-      (m) => m.user_id,
-    );
+    const memberUserIds = memberRows.map((m) => m.user_id);
+
     let userJobRoles: Array<{ user_id: string; role_id: string; is_primary: boolean }> = [];
     let userPermissionSets: Array<{ user_id: string; set_id: string }> = [];
     let profiles: Array<{ id: string; full_name: string | null }> = [];
@@ -178,15 +219,17 @@ export const getAccessBundle = createServerFn({ method: "GET" })
     }
 
     return {
-      permissions: (perms.data ?? []) as PermissionRow[],
-      permission_sets: ((sets.data ?? []) as Array<Omit<PermissionSetRow, "permission_keys">>).map(
-        (s) => ({ ...s, permission_keys: itemsBySet.get(s.id) ?? [] }),
-      ),
-      job_roles: ((roles.data ?? []) as Array<Omit<JobRoleRow, "set_ids">>).map((r) => ({
+      permissions: permRows,
+      permission_sets: setRows.map((s) => ({
+        ...s,
+        permission_keys: itemsBySet.get(s.id) ?? [],
+      })),
+      job_roles: roleRows.map((r) => ({
         ...r,
         set_ids: setsByRole.get(r.id) ?? [],
       })),
-      field_rules: (rules.data ?? []) as FieldRuleRow[],
+      field_rules: ruleRows,
+
       members: memberUserIds.map((uid) => {
         const rby = rolesByUser.get(uid);
         return {

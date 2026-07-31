@@ -1,7 +1,7 @@
 // Unified matrix editor: Role × (Resource × Action × Scope).
 // Reads catalog + roles via getAccessBundle; toggles bundles via setRolePermission.
 // System roles are read-only. Custom roles can be created / duplicated / renamed / deleted.
-import { useMemo, useState, Fragment } from "react";
+import { useEffect, useMemo, useState, Fragment } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getAccessBundle, type AccessBundle } from "@/lib/access-control/access.functions";
@@ -228,7 +228,13 @@ export function PermissionsMatrix() {
   }, [filteredPerms]);
 
   const roles = useMemo(() => bundleQ.data?.job_roles ?? [], [bundleQ.data]);
-  
+
+  // Se o módulo selecionado não existir no catálogo carregado, cai no primeiro
+  // módulo disponível — evita a matriz aparecer vazia sem motivo.
+  useEffect(() => {
+    if (modulesWithData.length === 0) return;
+    if (!modulesWithData.includes(activeModule)) setActiveModule(modulesWithData[0]);
+  }, [modulesWithData, activeModule]);
 
   if (bundleQ.isLoading || matrixQ.isLoading) {
     return (
@@ -238,13 +244,28 @@ export function PermissionsMatrix() {
       </div>
     );
   }
-  if (bundleQ.error) {
+  const loadError = (bundleQ.error ?? matrixQ.error) as Error | null;
+  if (loadError) {
     return (
-      <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-        Falha ao carregar catálogo: {(bundleQ.error as Error).message}
+      <div
+        role="alert"
+        className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive space-y-3"
+      >
+        <p>Falha ao carregar permissões: {loadError.message}</p>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            void bundleQ.refetch();
+            void matrixQ.refetch();
+          }}
+        >
+          Tentar novamente
+        </Button>
       </div>
     );
   }
+
 
   const matrix = matrixQ.data ?? {};
   const isGranted = (roleId: string, key: string) => (matrix[roleId] ?? []).includes(key);
