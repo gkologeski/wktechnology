@@ -251,13 +251,17 @@ function QueueWorkspace({
               <Play className="w-4 h-4 mr-1" /> Iniciar fila
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            <Pencil className="w-4 h-4 mr-1" /> Editar fila
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
+          {canUpdate ? (
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <Pencil className="w-4 h-4 mr-1" /> Editar fila
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
+              <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
+            </Button>
+          ) : null}
 
-            <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
