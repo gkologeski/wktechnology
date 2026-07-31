@@ -406,16 +406,42 @@ function RbacDiagnosticsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-10" />
                       <TableHead>Item</TableHead>
                       <TableHead>Área</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Motivo</TableHead>
-                      <TableHead>Permissões que faltam</TableHead>
+                      <TableHead>Chaves técnicas</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRows.map((r) => (
-                      <TableRow key={`${r.area}-${r.group}-${r.url}-${r.title}`}>
+                    {filteredRows.map((r) => {
+                      const rowKey = `${r.area}-${r.group}-${r.url}-${r.title}`;
+                      const isOpen = expanded === rowKey;
+                      return (
+                      <Fragment key={rowKey}>
+                      <TableRow>
+                        <TableCell className="align-top">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            aria-expanded={isOpen}
+                            aria-label={
+                              isOpen
+                                ? `Ocultar ações de ${r.title}`
+                                : `Ver ações de ${r.title}`
+                            }
+                            onClick={() => setExpanded(isOpen ? null : rowKey)}
+                          >
+                            {isOpen ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </TableCell>
                         <TableCell className="align-top">
                           <div className="font-medium">{r.title}</div>
                           <code className="text-xs text-muted-foreground">{r.url}</code>
@@ -429,35 +455,72 @@ function RbacDiagnosticsPage() {
                             {r.visible ? "Visível" : "Oculto"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="align-top text-sm max-w-md">{r.reason}</TableCell>
+                        <TableCell className="align-top text-sm max-w-md">
+                          {friendlyReason(r)}
+                        </TableCell>
                         <TableCell className="align-top">
-                          {r.visible || r.missingKeys.length === 0 ? (
+                          {r.permissionAny.length === 0 ? (
                             <span className="text-xs text-muted-foreground">—</span>
                           ) : (
-                            <ul className="space-y-1">
-                              {r.missingKeys.map((k) => (
-                                <li key={k} className="flex items-center gap-1.5">
-                                  <code className="text-xs break-all">{k}</code>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
-                                    aria-label={`Copiar chave ${k}`}
-                                    onClick={() => copyKey(k)}
-                                  >
-                                    {copied === k ? (
-                                      <Check className="h-3.5 w-3.5" />
-                                    ) : (
-                                      <Copy className="h-3.5 w-3.5" />
-                                    )}
-                                  </Button>
-                                </li>
-                              ))}
-                            </ul>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button type="button" variant="outline" size="sm">
+                                  <KeyRound className="h-3.5 w-3.5 mr-1.5" />
+                                  Ver chaves técnicas
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent align="end" className="w-96">
+                                <ul className="space-y-1.5">
+                                  {r.permissionAny.map((k) => (
+                                    <li key={k} className="flex items-center gap-1.5">
+                                      <Badge
+                                        variant={
+                                          r.grantedKeys.includes(k) ? "default" : "secondary"
+                                        }
+                                      >
+                                        {r.grantedKeys.includes(k) ? "Concedida" : "Faltando"}
+                                      </Badge>
+                                      <code className="text-xs break-all">{k}</code>
+                                      <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-6 w-6 shrink-0"
+                                        aria-label={`Copiar chave ${k}`}
+                                        onClick={() => copyKey(k)}
+                                      >
+                                        {copied === k ? (
+                                          <Check className="h-3.5 w-3.5" />
+                                        ) : (
+                                          <Copy className="h-3.5 w-3.5" />
+                                        )}
+                                      </Button>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </PopoverContent>
+                            </Popover>
                           )}
                         </TableCell>
                       </TableRow>
+                      {isOpen && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="bg-muted/40">
+                            {catalogQuery.isLoading ? (
+                              <Skeleton className="h-32 w-full max-w-xl" />
+                            ) : (
+                              <ActionMatrix
+                                row={r}
+                                catalog={catalogQuery.data ?? []}
+                                granted={grantedSet}
+                              />
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      </Fragment>
+                      );
+                    })}
                     ))}
                   </TableBody>
                 </Table>
