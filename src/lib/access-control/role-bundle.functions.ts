@@ -316,32 +316,54 @@ export const getMatrixState = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
-    const links = await supabase
-      .from("job_role_sets")
-      .select("role_id, set_id, permission_sets!inner(permission_set_items(permission_key))");
-    if (links.error) throw new Error(links.error.message);
+
+    // Lido em lotes e cruzado no servidor: `permission_set_items` passa de
+    // 8.000 linhas e embeds/consultas sem paginação eram truncados em 1.000,
+    // deixando os toggles da matriz desmarcados.
+    const [links, items] = await Promise.all([
+      fetchAllPages<{ role_id: string; set_id: string }>((from, to) =>
+        supabase.from("job_role_sets").select("role_id, set_id").order("role_id").range(from, to),
+      ),
+      fetchAllPages<{ set_id: string; permission_key: string }>((from, to) =>
+        supabase
+          .from("permission_set_items")
+          .select("set_id, permission_key")
+          .order("set_id")
+          .order("permission_key")
+          .range(from, to),
+      ),
+    ]);
+
+    const keysBySet = new Map<string, string[]>();
+    for (const it of items) {
+      const arr = keysBySet.get(it.set_id) ?? [];
+      arr.push(it.permission_key);
+      keysBySet.set(it.set_id, arr);
+    }
+
     const map: Record<string, string[]> = {};
-    for (const row of (links.data ?? []) as Array<{
-      role_id: string;
-      permission_sets: { permission_set_items: Array<{ permission_key: string }> };
-    }>) {
-      const keys = (row.permission_sets?.permission_set_items ?? []).map((i) => i.permission_key);
+    for (const row of links) {
       if (!map[row.role_id]) map[row.role_id] = [];
-      map[row.role_id].push(...keys);
+      map[row.role_id].push(...(keysBySet.get(row.set_id) ?? []));
     }
     // Deduplicate.
     const out: Record<string, string[]> = {};
     for (const [rid, arr] of Object.entries(map)) out[rid] = Array.from(new Set(arr));
-    const overrides = await supabase
-      .from("job_role_permission_overrides")
-      .select("role_id, permission_key, effect")
-      .eq("workspace_id", workspaceId);
-    if (overrides.error) throw new Error(overrides.error.message);
-    for (const row of (overrides.data ?? []) as Array<{
+
+    const overrideRows = await fetchAllPages<{
       role_id: string;
       permission_key: string;
       effect: "grant" | "deny";
-    }>) {
+    }>((from, to) =>
+      supabase
+        .from("job_role_permission_overrides")
+        .select("role_id, permission_key, effect")
+        .eq("workspace_id", workspaceId)
+        .order("role_id")
+        .order("permission_key")
+        .range(from, to),
+    );
+    for (const row of overrideRows) {
       const cur = new Set(out[row.role_id] ?? []);
       if (row.effect === "grant") cur.add(row.permission_key);
       else cur.delete(row.permission_key);
@@ -349,6 +371,7 @@ export const getMatrixState = createServerFn({ method: "GET" })
     }
     return out;
   });
+
 
 // -------- Role management (custom, non-system) --------
 
