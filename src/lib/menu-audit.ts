@@ -154,14 +154,30 @@ export function auditMenus(perms: Perms): MenuAuditRow[] {
   for (const g of SETTINGS_GROUPS) {
     for (const item of g.items) {
       rows.push(
-        evaluate("Configurações", g.label, item.label, item.to, item.need, item.permissionAny, perms),
+        evaluate(
+          "Configurações",
+          g.label,
+          item.label,
+          item.to,
+          item.need,
+          item.permissionAny,
+          perms,
+        ),
       );
     }
   }
 
   for (const item of SIDEBAR_PLATFORM_ITEMS) {
     rows.push(
-      evaluate("Plataforma", "Plataforma", item.title, item.url, item.need, item.permissionAny, perms),
+      evaluate(
+        "Plataforma",
+        "Plataforma",
+        item.title,
+        item.url,
+        item.need,
+        item.permissionAny,
+        perms,
+      ),
     );
   }
 

@@ -52,7 +52,6 @@ import {
   Linkedin,
 } from "lucide-react";
 
-
 export type Need = "admin" | "manager" | "platform" | undefined;
 export type Perms = {
   isAdmin: boolean;
@@ -117,10 +116,7 @@ export const MENU_PERMISSIONS = {
     "techsales.marketing.landing_pages.view.workspace",
     "techsales.marketing.landing_pages.manage.workspace",
   ],
-  forms: [
-    "techsales.marketing.forms.view.workspace",
-    "techsales.marketing.forms.manage.workspace",
-  ],
+  forms: ["techsales.marketing.forms.view.workspace", "techsales.marketing.forms.manage.workspace"],
   campaigns: [
     "techsales.marketing.campaigns.view.workspace",
     "techsales.marketing.campaigns.manage.workspace",
@@ -137,10 +133,7 @@ export const MENU_PERMISSIONS = {
     "system.analytics.dashboards.view.workspace",
     "system.analytics.dashboards.manage.workspace",
   ],
-  reports: [
-    "system.analytics.reports.view.workspace",
-    "system.analytics.reports.manage.workspace",
-  ],
+  reports: ["system.analytics.reports.view.workspace", "system.analytics.reports.manage.workspace"],
   analytics: ["system.analytics.insights.view.workspace"],
   workflows: ["system.workflows.manage.workspace"],
   sequences: [
@@ -152,10 +145,7 @@ export const MENU_PERMISSIONS = {
     "system.automation.rotation.manage.workspace",
   ],
   sla: ["system.automation.sla.view.workspace", "system.automation.sla.manage.workspace"],
-  macros: [
-    "system.automation.macros.view.workspace",
-    "system.automation.macros.manage.workspace",
-  ],
+  macros: ["system.automation.macros.view.workspace", "system.automation.macros.manage.workspace"],
   emailTemplates: [
     "system.automation.email_templates.view.workspace",
     "system.automation.email_templates.manage.workspace",
@@ -200,10 +190,7 @@ export const MENU_PERMISSIONS = {
     "techpeople.onboarding.view.workspace",
     "techpeople.onboarding.manage.workspace",
   ],
-  peopleDocuments: [
-    "techpeople.documents.view.workspace",
-    "techpeople.documents.update.workspace",
-  ],
+  peopleDocuments: ["techpeople.documents.view.workspace", "techpeople.documents.update.workspace"],
   peopleWellbeingAssessments: [
     "techpeople.wellbeing.assessments.view.own",
     "techpeople.wellbeing.assessments.view.workspace",
@@ -235,10 +222,6 @@ export function adminAny(resource: string): readonly string[] {
   return [`${resource}.view.workspace`, `${resource}.update.workspace`];
 }
 
-
-
-
-
 export const SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Captar",
@@ -257,16 +240,45 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         icon: UserPlus,
       },
 
-      { title: "Landing Pages", url: "/landing-pages", icon: FileText, need: "manager", permissionAny: MENU_PERMISSIONS.landingPages },
-      { title: "Formulários", url: "/forms", icon: FileText, need: "manager", permissionAny: MENU_PERMISSIONS.forms },
+      {
+        title: "Landing Pages",
+        url: "/landing-pages",
+        icon: FileText,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.landingPages,
+      },
+      {
+        title: "Formulários",
+        url: "/forms",
+        icon: FileText,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.forms,
+      },
       { title: "Pesquisas", url: "/surveys", icon: Star },
 
-      { title: "Campanhas Email", url: "/campaigns/email", icon: Mail, need: "manager", permissionAny: MENU_PERMISSIONS.campaigns },
-      { title: "Campanhas WhatsApp", url: "/campaigns/whatsapp", icon: Megaphone, need: "manager", permissionAny: MENU_PERMISSIONS.campaigns },
+      {
+        title: "Campanhas Email",
+        url: "/campaigns/email",
+        icon: Mail,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.campaigns,
+      },
+      {
+        title: "Campanhas WhatsApp",
+        url: "/campaigns/whatsapp",
+        icon: Megaphone,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.campaigns,
+      },
 
-      { title: "Agente SDR", url: "/agents/sdr", icon: Sparkles, need: "manager", permissionAny: MENU_PERMISSIONS.sdrAgent },
+      {
+        title: "Agente SDR",
+        url: "/agents/sdr",
+        icon: Sparkles,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.sdrAgent,
+      },
     ],
-
   },
   {
     label: "Relacionar",
@@ -290,8 +302,20 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/meetings",
         icon: Video,
         children: [
-          { title: "Calendários", url: "/settings/calendars", icon: Calendar, need: "manager", permissionAny: MENU_PERMISSIONS.calendars },
-          { title: "Agendamentos", url: "/settings/booking", icon: Calendar, need: "manager", permissionAny: MENU_PERMISSIONS.booking },
+          {
+            title: "Calendários",
+            url: "/settings/calendars",
+            icon: Calendar,
+            need: "manager",
+            permissionAny: MENU_PERMISSIONS.calendars,
+          },
+          {
+            title: "Agendamentos",
+            url: "/settings/booking",
+            icon: Calendar,
+            need: "manager",
+            permissionAny: MENU_PERMISSIONS.booking,
+          },
         ],
       },
       { title: "Conexão de Email", url: "/settings/email", icon: Mail },
@@ -303,10 +327,21 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Cotações", url: "/settings/quotes", icon: FileText },
-      { title: "Produtos", url: "/settings/products", icon: Package, need: "manager", permissionAny: MENU_PERMISSIONS.catalog },
+      {
+        title: "Produtos",
+        url: "/settings/products",
+        icon: Package,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.catalog,
+      },
       { title: "Faturas", url: "/invoices", icon: FileText },
-      { title: "Portal do cliente", url: "/settings/portal", icon: Briefcase, need: "admin", permissionAny: adminAny("system.portal") },
-
+      {
+        title: "Portal do cliente",
+        url: "/settings/portal",
+        icon: Briefcase,
+        need: "admin",
+        permissionAny: adminAny("system.portal"),
+      },
     ],
   },
   {
@@ -320,22 +355,76 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         children: [{ title: "Filas", url: "/tasks/queues", icon: ListChecks }],
       },
 
-      { title: "Base de conhecimento", url: "/settings/kb", icon: BookOpen, need: "manager", permissionAny: MENU_PERMISSIONS.kb },
+      {
+        title: "Base de conhecimento",
+        url: "/settings/kb",
+        icon: BookOpen,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.kb,
+      },
     ],
   },
   {
     label: "Otimizar",
     items: [
       { title: "Painel", url: "/dashboard", icon: LayoutDashboard },
-      { title: "Dashboards", url: "/dashboards", icon: LayoutDashboard, need: "manager", permissionAny: MENU_PERMISSIONS.dashboards },
-      { title: "Relatórios", url: "/reports", icon: BarChart3, need: "manager", permissionAny: MENU_PERMISSIONS.reports },
-      { title: "Analytics", url: "/analytics", icon: TrendingUp, need: "manager", permissionAny: MENU_PERMISSIONS.analytics },
-      { title: "Workflows", url: "/settings/workflows", icon: Workflow, need: "manager", permissionAny: MENU_PERMISSIONS.workflows },
-      { title: "Sequências", url: "/settings/sequences", icon: RouteIcon, need: "manager", permissionAny: MENU_PERMISSIONS.sequences },
-      { title: "Distribuição", url: "/settings/rotation", icon: RouteIcon, need: "manager", permissionAny: MENU_PERMISSIONS.rotation },
-      { title: "SLA por etapa", url: "/settings/sla", icon: Activity, need: "manager", permissionAny: MENU_PERMISSIONS.sla },
+      {
+        title: "Dashboards",
+        url: "/dashboards",
+        icon: LayoutDashboard,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.dashboards,
+      },
+      {
+        title: "Relatórios",
+        url: "/reports",
+        icon: BarChart3,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.reports,
+      },
+      {
+        title: "Analytics",
+        url: "/analytics",
+        icon: TrendingUp,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.analytics,
+      },
+      {
+        title: "Workflows",
+        url: "/settings/workflows",
+        icon: Workflow,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.workflows,
+      },
+      {
+        title: "Sequências",
+        url: "/settings/sequences",
+        icon: RouteIcon,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.sequences,
+      },
+      {
+        title: "Distribuição",
+        url: "/settings/rotation",
+        icon: RouteIcon,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.rotation,
+      },
+      {
+        title: "SLA por etapa",
+        url: "/settings/sla",
+        icon: Activity,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.sla,
+      },
 
-      { title: "Macros", url: "/settings/macros", icon: LayoutTemplate, need: "manager", permissionAny: MENU_PERMISSIONS.macros },
+      {
+        title: "Macros",
+        url: "/settings/macros",
+        icon: LayoutTemplate,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.macros,
+      },
     ],
   },
 ];
@@ -366,55 +455,216 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     label: "Workspace",
     items: [
-      { to: "/settings/branding", label: "White-label", icon: Sparkles, need: "admin", permissionAny: adminAny("system.branding") },
-      { to: "/settings/legal-entities", label: "Empresas (CNPJs)", icon: Building2, need: "admin", permissionAny: adminAny("system.legal_entities") },
-      { to: "/settings/legal-entity-groups", label: "Grupos empresariais", icon: Building2, need: "admin", permissionAny: adminAny("system.legal_entity_groups") },
-      { to: "/settings/language", label: "Idioma", icon: Languages, need: "admin", permissionAny: adminAny("system.language") },
-      { to: "/settings/calendars", label: "Calendários", icon: Calendar, need: "manager", permissionAny: MENU_PERMISSIONS.calendars },
-      { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard, need: "admin", permissionAny: adminAny("system.billing") },
+      {
+        to: "/settings/branding",
+        label: "White-label",
+        icon: Sparkles,
+        need: "admin",
+        permissionAny: adminAny("system.branding"),
+      },
+      {
+        to: "/settings/legal-entities",
+        label: "Empresas (CNPJs)",
+        icon: Building2,
+        need: "admin",
+        permissionAny: adminAny("system.legal_entities"),
+      },
+      {
+        to: "/settings/legal-entity-groups",
+        label: "Grupos empresariais",
+        icon: Building2,
+        need: "admin",
+        permissionAny: adminAny("system.legal_entity_groups"),
+      },
+      {
+        to: "/settings/language",
+        label: "Idioma",
+        icon: Languages,
+        need: "admin",
+        permissionAny: adminAny("system.language"),
+      },
+      {
+        to: "/settings/calendars",
+        label: "Calendários",
+        icon: Calendar,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.calendars,
+      },
+      {
+        to: "/settings/billing",
+        label: "Planos e cobrança",
+        icon: CreditCard,
+        need: "admin",
+        permissionAny: adminAny("system.billing"),
+      },
     ],
-
   },
   {
     label: "Estrutura CRM",
     items: [
-      { to: "/settings/pipelines", label: "Pipelines", icon: GitBranch, need: "admin", permissionAny: adminAny("system.pipelines") },
-      { to: "/settings/custom-properties", label: "Propriedades", icon: Tag, need: "admin", permissionAny: adminAny("system.custom_properties") },
-      { to: "/settings/products", label: "Produtos", icon: Package, need: "manager", permissionAny: MENU_PERMISSIONS.catalog },
-      { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin", permissionAny: adminAny("system.custom_objects") },
+      {
+        to: "/settings/pipelines",
+        label: "Pipelines",
+        icon: GitBranch,
+        need: "admin",
+        permissionAny: adminAny("system.pipelines"),
+      },
+      {
+        to: "/settings/custom-properties",
+        label: "Propriedades",
+        icon: Tag,
+        need: "admin",
+        permissionAny: adminAny("system.custom_properties"),
+      },
+      {
+        to: "/settings/products",
+        label: "Produtos",
+        icon: Package,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.catalog,
+      },
+      {
+        to: "/settings/custom-objects",
+        label: "Objetos custom",
+        icon: Boxes,
+        need: "admin",
+        permissionAny: adminAny("system.custom_objects"),
+      },
     ],
   },
   {
     label: "Pessoas & Acesso",
     items: [
-      { to: "/settings/teams", label: "Membros", icon: UsersRound, need: "admin", permissionAny: adminAny("system.members") },
-      { to: "/settings/user-groups", label: "Times", icon: UsersRound, need: "manager", permissionAny: MENU_PERMISSIONS.userGroups },
-      { to: "/settings/permissions", label: "Permissões", icon: Shield, need: "admin", permissionAny: adminAny("system.roles") },
-      { to: "/settings/rbac-diagnostics", label: "Diagnóstico de acesso", icon: Shield, need: "admin", permissionAny: adminAny("system.rbac_diagnostics") },
+      {
+        to: "/settings/teams",
+        label: "Membros",
+        icon: UsersRound,
+        need: "admin",
+        permissionAny: adminAny("system.members"),
+      },
+      {
+        to: "/settings/user-groups",
+        label: "Times",
+        icon: UsersRound,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.userGroups,
+      },
+      {
+        to: "/settings/permissions",
+        label: "Permissões",
+        icon: Shield,
+        need: "admin",
+        permissionAny: adminAny("system.roles"),
+      },
+      {
+        to: "/settings/rbac-diagnostics",
+        label: "Diagnóstico de acesso",
+        icon: Shield,
+        need: "admin",
+        permissionAny: adminAny("system.rbac_diagnostics"),
+      },
     ],
   },
   {
     label: "Automação & Engajamento",
     items: [
-      { to: "/settings/workflows", label: "Workflows", icon: Workflow, need: "manager", permissionAny: MENU_PERMISSIONS.workflows },
-      { to: "/settings/sequences", label: "Sequências", icon: RouteIcon, need: "manager", permissionAny: MENU_PERMISSIONS.sequences },
-      { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager", permissionAny: MENU_PERMISSIONS.emailTemplates },
-      { to: "/settings/macros", label: "Macros", icon: LayoutTemplate, need: "manager", permissionAny: MENU_PERMISSIONS.macros },
+      {
+        to: "/settings/workflows",
+        label: "Workflows",
+        icon: Workflow,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.workflows,
+      },
+      {
+        to: "/settings/sequences",
+        label: "Sequências",
+        icon: RouteIcon,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.sequences,
+      },
+      {
+        to: "/settings/email-templates",
+        label: "Templates de email",
+        icon: Mail,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.emailTemplates,
+      },
+      {
+        to: "/settings/macros",
+        label: "Macros",
+        icon: LayoutTemplate,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.macros,
+      },
       { to: "/settings/snippets", label: "Snippets", icon: LayoutTemplate },
-      { to: "/settings/onboarding-templates", label: "Modelos de onboarding", icon: LayoutTemplate, need: "manager", permissionAny: MENU_PERMISSIONS.onboardingTemplates },
-      { to: "/settings/kb", label: "Base de conhecimento", icon: BookOpen, need: "manager", permissionAny: MENU_PERMISSIONS.kb },
+      {
+        to: "/settings/onboarding-templates",
+        label: "Modelos de onboarding",
+        icon: LayoutTemplate,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.onboardingTemplates,
+      },
+      {
+        to: "/settings/kb",
+        label: "Base de conhecimento",
+        icon: BookOpen,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.kb,
+      },
     ],
   },
   {
     label: "Integrações",
     items: [
-      { to: "/marketplace", label: "Marketplace", icon: ShoppingBag, need: "admin", permissionAny: adminAny("system.marketplace") },
-      { to: "/integrations", label: "Integrações", icon: Plug, need: "admin", permissionAny: adminAny("system.integrations") },
-      { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin", permissionAny: adminAny("system.whatsapp") },
-      { to: "/settings/integrations/linkedin", label: "LinkedIn (Unipile)", icon: Linkedin, need: "admin", permissionAny: adminAny("system.linkedin") },
-      { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin", permissionAny: adminAny("system.hubspot_sync") },
-      { to: "/settings/widget", label: "Widget do site", icon: Megaphone, need: "admin", permissionAny: adminAny("system.widget") },
-      { to: "/leads/import-hubspot", label: "Importar HubSpot", icon: Download, need: "admin", permissionAny: adminAny("system.import") },
+      {
+        to: "/marketplace",
+        label: "Marketplace",
+        icon: ShoppingBag,
+        need: "admin",
+        permissionAny: adminAny("system.marketplace"),
+      },
+      {
+        to: "/integrations",
+        label: "Integrações",
+        icon: Plug,
+        need: "admin",
+        permissionAny: adminAny("system.integrations"),
+      },
+      {
+        to: "/settings/whatsapp",
+        label: "WhatsApp",
+        icon: MessageSquare,
+        need: "admin",
+        permissionAny: adminAny("system.whatsapp"),
+      },
+      {
+        to: "/settings/integrations/linkedin",
+        label: "LinkedIn (Unipile)",
+        icon: Linkedin,
+        need: "admin",
+        permissionAny: adminAny("system.linkedin"),
+      },
+      {
+        to: "/settings/hubspot-sync",
+        label: "Sync HubSpot",
+        icon: RefreshCw,
+        need: "admin",
+        permissionAny: adminAny("system.hubspot_sync"),
+      },
+      {
+        to: "/settings/widget",
+        label: "Widget do site",
+        icon: Megaphone,
+        need: "admin",
+        permissionAny: adminAny("system.widget"),
+      },
+      {
+        to: "/leads/import-hubspot",
+        label: "Importar HubSpot",
+        icon: Download,
+        need: "admin",
+        permissionAny: adminAny("system.import"),
+      },
     ],
   },
 
@@ -442,7 +692,6 @@ export function canSee(need: Need, perms: Perms, permissionAny?: readonly string
   return true;
 }
 
-
 export function permsForRole(role: "admin" | "manager" | "member", isPlatformAdmin = false): Perms {
   return {
     isAdmin: role === "admin",
@@ -460,7 +709,6 @@ export function visibleSidebarUrls(perms: Perms): string[] {
       for (const c of i.children ?? []) {
         if (canSee(c.need, perms, c.permissionAny)) out.push(c.url);
       }
-
     }
   }
   return out;
