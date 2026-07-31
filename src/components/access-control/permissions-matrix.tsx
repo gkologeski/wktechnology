@@ -469,7 +469,7 @@ export function PermissionsMatrix() {
                   const granted = grantedByRole(r.id);
                   const value = selectValue(row, granted);
                   const locked = row.lockedScope !== null;
-                  const disabled = r.is_system || bulkMut.isPending;
+                  const disabled = r.is_system || scopeMut.isPending;
                   return (
                     <td key={r.id} className="p-2 border-b align-middle text-center">
                       <Select
