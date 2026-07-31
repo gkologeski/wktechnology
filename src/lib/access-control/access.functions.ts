@@ -2,6 +2,7 @@
 // Read-only in Phase 1 (Fase 1). CRUD arrives in Phase 2.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { fetchAllPages } from "./fetch-all";
 
 export type PermissionRow = {
   key: string;
