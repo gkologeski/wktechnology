@@ -2,6 +2,7 @@
 // (ou de outro membro do workspace, quando o solicitante é admin/owner).
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { PermissionCatalogRow } from "@/lib/access-control/action-matrix";
 
 export type RbacRoleInfo = { id: string; name: string; is_primary: boolean };
 export type RbacSetInfo = { id: string; name: string; module: string };
