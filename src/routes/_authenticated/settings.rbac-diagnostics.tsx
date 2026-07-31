@@ -4,8 +4,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useMemo, useState } from "react";
-import { ShieldCheck, Search, Copy, Check, AlertTriangle } from "lucide-react";
+import { Fragment, useMemo, useState } from "react";
+import {
+  ShieldCheck,
+  Search,
+  Copy,
+  Check,
+  AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  KeyRound,
+} from "lucide-react";
 import { PageHeader, SectionHeader, MetricCard, EmptyState } from "@/components/techhire/ui";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -29,10 +38,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   getRbacDiagnostics,
   listWorkspaceMembersForDiagnostics,
+  listPermissionCatalog,
 } from "@/lib/access-control/rbac-diagnostics.functions";
+import {
+  buildActionMatrix,
+  resolveResources,
+  scopeLabel,
+  SCOPE_LABELS_PT,
+  NO_ACCESS_LABEL,
+  type PermissionCatalogRow,
+} from "@/lib/access-control/action-matrix";
 import { auditMenus, type MenuAuditRow } from "@/lib/menu-audit";
 import type { Perms } from "@/lib/menu-config";
 
@@ -57,13 +76,118 @@ export const Route = createFileRoute("/_authenticated/settings/rbac-diagnostics"
 
 type VisibilityFilter = "all" | "visible" | "hidden";
 
+/** Motivo em linguagem natural, sem chaves técnicas. */
+function friendlyReason(r: MenuAuditRow): string {
+  switch (r.rule) {
+    case "public":
+      return "Visível para todos: este item não exige permissão.";
+    case "permission-granted":
+      return `Visível: você tem permissão para acessar ${r.title}.`;
+    case "role-granted":
+      return r.need === "platform"
+        ? "Visível: acesso herdado do papel de administrador da plataforma."
+        : r.need === "admin"
+          ? "Visível: acesso herdado do papel de administrador do workspace."
+          : "Visível: acesso herdado do papel de gestor.";
+    case "permission-missing":
+      return `Oculto: você não tem permissão para visualizar ${r.title}.`;
+    default:
+      return `Oculto: ${r.title} é restrito a ${
+        r.need === "platform"
+          ? "administradores da plataforma"
+          : r.need === "admin"
+            ? "administradores do workspace"
+            : "gestores"
+      }.`;
+  }
+}
+
+/** Mini-tabela somente leitura de ações × escopo efetivo. */
+function ActionMatrix({
+  row,
+  catalog,
+  granted,
+}: {
+  row: MenuAuditRow;
+  catalog: PermissionCatalogRow[];
+  granted: Set<string>;
+}) {
+  const matrix = useMemo(
+    () => buildActionMatrix(resolveResources(row.permissionAny, catalog), catalog, granted),
+    [row.permissionAny, catalog, granted],
+  );
+
+  if (matrix.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Este item não tem permissões granulares cadastradas. O acesso é definido apenas pelo papel
+        do usuário no workspace.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {row.rule === "role-granted" && (
+        <p className="text-xs text-muted-foreground">
+          Acesso ao menu herdado do papel de {row.need === "admin" ? "administrador" : "gestor"} —
+          as ações abaixo refletem apenas as permissões granulares concedidas.
+        </p>
+      )}
+      <div className="max-w-xl rounded-lg border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-40">Ação</TableHead>
+              <TableHead>Acesso</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {matrix.map((m) => (
+              <TableRow key={m.action}>
+                <TableCell className="font-medium">{m.label}</TableCell>
+                <TableCell>
+                  <Select value={m.effectiveScope ?? "none"} disabled>
+                    <SelectTrigger
+                      className="w-60"
+                      aria-label={`${m.label}: ${scopeLabel(m.effectiveScope)}`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{NO_ACCESS_LABEL}</SelectItem>
+                      {m.scopesAvailable.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {SCOPE_LABELS_PT[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 function RbacDiagnosticsPage() {
   const fetchDiag = useServerFn(getRbacDiagnostics);
   const fetchMembers = useServerFn(listWorkspaceMembersForDiagnostics);
+  const fetchCatalog = useServerFn(listPermissionCatalog);
   const [targetUserId, setTargetUserId] = useState<string>("me");
   const [q, setQ] = useState("");
   const [visibility, setVisibility] = useState<VisibilityFilter>("all");
   const [copied, setCopied] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const catalogQuery = useQuery({
+    queryKey: ["rbac-permission-catalog"],
+    queryFn: () => fetchCatalog(),
+    staleTime: 10 * 60_000,
+  });
 
   const membersQuery = useQuery({
     queryKey: ["rbac-diagnostics-members"],
@@ -73,20 +197,19 @@ function RbacDiagnosticsPage() {
 
   const diagQuery = useQuery({
     queryKey: ["rbac-diagnostics", targetUserId],
-    queryFn: () =>
-      fetchDiag({ data: targetUserId === "me" ? {} : { userId: targetUserId } }),
+    queryFn: () => fetchDiag({ data: targetUserId === "me" ? {} : { userId: targetUserId } }),
     staleTime: 60_000,
   });
 
   const diag = diagQuery.data;
 
+  const grantedSet = useMemo(() => new Set(diag?.permissions ?? []), [diag]);
+
   const perms: Perms = useMemo(
     () => ({
       isAdmin: !!diag?.is_workspace_admin || !!diag?.is_workspace_owner,
       isManager:
-        !!diag?.is_workspace_admin ||
-        !!diag?.is_workspace_owner ||
-        diag?.member_role === "manager",
+        !!diag?.is_workspace_admin || !!diag?.is_workspace_owner || diag?.member_role === "manager",
       isPlatformAdmin: !!diag?.is_platform_admin,
       permissions: new Set(diag?.permissions ?? []),
     }),
@@ -187,8 +310,7 @@ function RbacDiagnosticsPage() {
               Não foi possível carregar o diagnóstico
             </CardTitle>
             <CardDescription>
-              {(diagQuery.error as Error)?.message ??
-                "Erro inesperado ao consultar as permissões."}{" "}
+              {(diagQuery.error as Error)?.message ?? "Erro inesperado ao consultar as permissões."}{" "}
               Verifique se você é administrador do workspace e tente recalcular.
             </CardDescription>
           </CardHeader>
@@ -201,10 +323,7 @@ function RbacDiagnosticsPage() {
             <MetricCard label="Permissões efetivas" value={diag.permissions.length} />
             <MetricCard label="Cargos atribuídos" value={diag.job_roles.length} />
             <MetricCard label="Conjuntos extras" value={diag.permission_sets.length} />
-            <MetricCard
-              label="Itens de menu visíveis"
-              value={`${visibleCount} / ${rows.length}`}
-            />
+            <MetricCard label="Itens de menu visíveis" value={`${visibleCount} / ${rows.length}`} />
           </div>
 
           <Card>
@@ -213,9 +332,7 @@ function RbacDiagnosticsPage() {
                 <ShieldCheck className="h-4 w-4" />
                 {diag.full_name || diag.user_id}
               </CardTitle>
-              <CardDescription>
-                Workspace: {diag.workspace_name ?? "—"}
-              </CardDescription>
+              <CardDescription>Workspace: {diag.workspace_name ?? "—"}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-2">
               <Badge variant="secondary">Papel: {diag.member_role ?? "membro"}</Badge>
@@ -280,59 +397,119 @@ function RbacDiagnosticsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-10" />
                       <TableHead>Item</TableHead>
                       <TableHead>Área</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Motivo</TableHead>
-                      <TableHead>Permissões que faltam</TableHead>
+                      <TableHead>Chaves técnicas</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRows.map((r) => (
-                      <TableRow key={`${r.area}-${r.group}-${r.url}-${r.title}`}>
-                        <TableCell className="align-top">
-                          <div className="font-medium">{r.title}</div>
-                          <code className="text-xs text-muted-foreground">{r.url}</code>
-                        </TableCell>
-                        <TableCell className="align-top text-sm text-muted-foreground">
-                          <div>{r.area}</div>
-                          <div className="text-xs">{r.group}</div>
-                        </TableCell>
-                        <TableCell className="align-top">
-                          <Badge variant={r.visible ? "default" : "secondary"}>
-                            {r.visible ? "Visível" : "Oculto"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="align-top text-sm max-w-md">{r.reason}</TableCell>
-                        <TableCell className="align-top">
-                          {r.visible || r.missingKeys.length === 0 ? (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          ) : (
-                            <ul className="space-y-1">
-                              {r.missingKeys.map((k) => (
-                                <li key={k} className="flex items-center gap-1.5">
-                                  <code className="text-xs break-all">{k}</code>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
-                                    aria-label={`Copiar chave ${k}`}
-                                    onClick={() => copyKey(k)}
-                                  >
-                                    {copied === k ? (
-                                      <Check className="h-3.5 w-3.5" />
-                                    ) : (
-                                      <Copy className="h-3.5 w-3.5" />
-                                    )}
-                                  </Button>
-                                </li>
-                              ))}
-                            </ul>
+                    {filteredRows.map((r) => {
+                      const rowKey = `${r.area}-${r.group}-${r.url}-${r.title}`;
+                      const isOpen = expanded === rowKey;
+                      return (
+                        <Fragment key={rowKey}>
+                          <TableRow>
+                            <TableCell className="align-top">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                aria-expanded={isOpen}
+                                aria-label={
+                                  isOpen ? `Ocultar ações de ${r.title}` : `Ver ações de ${r.title}`
+                                }
+                                onClick={() => setExpanded(isOpen ? null : rowKey)}
+                              >
+                                {isOpen ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <div className="font-medium">{r.title}</div>
+                              <code className="text-xs text-muted-foreground">{r.url}</code>
+                            </TableCell>
+                            <TableCell className="align-top text-sm text-muted-foreground">
+                              <div>{r.area}</div>
+                              <div className="text-xs">{r.group}</div>
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <Badge variant={r.visible ? "default" : "secondary"}>
+                                {r.visible ? "Visível" : "Oculto"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="align-top text-sm max-w-md">
+                              {friendlyReason(r)}
+                            </TableCell>
+                            <TableCell className="align-top">
+                              {r.permissionAny.length === 0 ? (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              ) : (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <Button type="button" variant="outline" size="sm">
+                                      <KeyRound className="h-3.5 w-3.5 mr-1.5" />
+                                      Ver chaves técnicas
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent align="end" className="w-96">
+                                    <ul className="space-y-1.5">
+                                      {r.permissionAny.map((k) => (
+                                        <li key={k} className="flex items-center gap-1.5">
+                                          <Badge
+                                            variant={
+                                              r.grantedKeys.includes(k) ? "default" : "secondary"
+                                            }
+                                          >
+                                            {r.grantedKeys.includes(k) ? "Concedida" : "Faltando"}
+                                          </Badge>
+                                          <code className="text-xs break-all">{k}</code>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 shrink-0"
+                                            aria-label={`Copiar chave ${k}`}
+                                            onClick={() => copyKey(k)}
+                                          >
+                                            {copied === k ? (
+                                              <Check className="h-3.5 w-3.5" />
+                                            ) : (
+                                              <Copy className="h-3.5 w-3.5" />
+                                            )}
+                                          </Button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                          {isOpen && (
+                            <TableRow>
+                              <TableCell colSpan={6} className="bg-muted/40">
+                                {catalogQuery.isLoading ? (
+                                  <Skeleton className="h-32 w-full max-w-xl" />
+                                ) : (
+                                  <ActionMatrix
+                                    row={r}
+                                    catalog={catalogQuery.data ?? []}
+                                    granted={grantedSet}
+                                  />
+                                )}
+                              </TableCell>
+                            </TableRow>
                           )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                        </Fragment>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -360,12 +537,8 @@ function RbacDiagnosticsPage() {
                     <CardContent className="space-y-1">
                       {keys.map((k) => (
                         <div key={k} className="text-sm">
-                          <span className="font-medium">
-                            {diag.permission_labels[k] ?? k}
-                          </span>
-                          <code className="ml-2 text-xs text-muted-foreground break-all">
-                            {k}
-                          </code>
+                          <span className="font-medium">{diag.permission_labels[k] ?? k}</span>
+                          <code className="ml-2 text-xs text-muted-foreground break-all">{k}</code>
                         </div>
                       ))}
                     </CardContent>
