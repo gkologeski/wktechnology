@@ -420,7 +420,7 @@ function RbacDiagnosticsPage() {
                   <TableBody>
                     {filteredRows.map((r) => {
                       const rowKey = `${r.area}-${r.group}-${r.url}-${r.title}`;
-                      const isOpen = expanded === rowKey;
+                      const isOpen = !collapsed.has(rowKey);
                       return (
                         <Fragment key={rowKey}>
                           <TableRow>
