@@ -5,6 +5,8 @@
 // Sem React, sem Supabase — testável isoladamente.
 
 import { ACTION_LABELS_PT, ACTION_ORDER } from "./action-matrix";
+import { RESOURCE_LABELS_PT } from "./resource-labels";
+
 
 export type ScopeValue = "own" | "team" | "workspace";
 export const NONE_VALUE = "__none__";
