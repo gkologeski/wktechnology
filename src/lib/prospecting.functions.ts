@@ -397,12 +397,15 @@ export const runProspectSearch = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = context.supabase as any;
-    const { data: s, error: sErr } = await sb
-      .from("prospecting_searches")
-      .select("*")
-      .eq("id", data.id)
-      .eq("workspace_id", workspaceId)
-      .single();
+    const { data: s, error: sErr } = await withTransientRetry<ProspectSearch>(() =>
+      sb
+        .from("prospecting_searches")
+        .select("*")
+        .eq("id", data.id)
+        .eq("workspace_id", workspaceId)
+        .single(),
+    );
+    if (sErr && isTransientDatabaseError(sErr)) throw toFriendlyDbError(sErr, "");
     if (sErr || !s) throw new Error("Busca não encontrada");
 
     const search = s as ProspectSearch;
