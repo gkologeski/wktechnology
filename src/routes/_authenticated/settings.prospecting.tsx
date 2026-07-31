@@ -179,6 +179,20 @@ export function ProspectingPage() {
     setResults((await resFn({ data: { search_id: r.id } })) as Result[]);
   };
 
+  const isTransient = (message: string) => {
+    const m = message.toLowerCase();
+    return (
+      m.includes("schema cache") || m.includes("timeout") || m.includes("temporariamente")
+    );
+  };
+
+  const friendly = (e: unknown, fallback: string) => {
+    const message = e instanceof Error ? e.message : fallback;
+    return isTransient(message)
+      ? "Banco temporariamente indisponível (atualizando cache). Tente novamente em instantes."
+      : message || fallback;
+  };
+
   const save = async (value: ProspectSearchFormValue) => {
     setSaving(true);
     try {
@@ -196,7 +210,9 @@ export function ProspectingPage() {
       setEditing(null);
       await refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar busca");
+      toast.error(friendly(e, "Erro ao salvar busca"), {
+        action: { label: "Tentar novamente", onClick: () => void save(value) },
+      });
     } finally {
       setSaving(false);
     }
@@ -217,7 +233,9 @@ export function ProspectingPage() {
       await refresh();
       if (openSearch?.id === r.id) await openResults(r);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(friendly(e, "Erro ao executar a busca"), {
+        action: { label: "Tentar novamente", onClick: () => void runIt(r) },
+      });
     } finally {
       setRunning(null);
     }
