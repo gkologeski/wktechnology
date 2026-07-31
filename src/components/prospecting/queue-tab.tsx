@@ -41,6 +41,14 @@ import {
   countQueueItems,
 } from "@/lib/prospecting/queues.functions";
 import { listCadences } from "@/lib/prospecting/cadences.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import {
+  QUEUE_CREATE,
+  QUEUE_DELETE,
+  QUEUE_UPDATE,
+  asKeys,
+} from "@/lib/prospecting/permission-keys";
+
 
 
 const LEAD_STATUS_LABELS: Record<string, string> = {
