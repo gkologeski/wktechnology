@@ -76,13 +76,120 @@ export const Route = createFileRoute("/_authenticated/settings/rbac-diagnostics"
 
 type VisibilityFilter = "all" | "visible" | "hidden";
 
+/** Motivo em linguagem natural, sem chaves técnicas. */
+function friendlyReason(r: MenuAuditRow): string {
+  switch (r.rule) {
+    case "public":
+      return "Visível para todos: este item não exige permissão.";
+    case "permission-granted":
+      return `Visível: você tem permissão para acessar ${r.title}.`;
+    case "role-granted":
+      return r.need === "platform"
+        ? "Visível: acesso herdado do papel de administrador da plataforma."
+        : r.need === "admin"
+          ? "Visível: acesso herdado do papel de administrador do workspace."
+          : "Visível: acesso herdado do papel de gestor.";
+    case "permission-missing":
+      return `Oculto: você não tem permissão para visualizar ${r.title}.`;
+    default:
+      return `Oculto: ${r.title} é restrito a ${
+        r.need === "platform"
+          ? "administradores da plataforma"
+          : r.need === "admin"
+            ? "administradores do workspace"
+            : "gestores"
+      }.`;
+  }
+}
+
+/** Mini-tabela somente leitura de ações × escopo efetivo. */
+function ActionMatrix({
+  row,
+  catalog,
+  granted,
+}: {
+  row: MenuAuditRow;
+  catalog: PermissionCatalogRow[];
+  granted: Set<string>;
+}) {
+  const matrix = useMemo(
+    () => buildActionMatrix(resolveResources(row.permissionAny, catalog), catalog, granted),
+    [row.permissionAny, catalog, granted],
+  );
+
+  if (matrix.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Este item não tem permissões granulares cadastradas. O acesso é definido apenas
+        pelo papel do usuário no workspace.
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {row.rule === "role-granted" && (
+        <p className="text-xs text-muted-foreground">
+          Acesso ao menu herdado do papel de{" "}
+          {row.need === "admin" ? "administrador" : "gestor"} — as ações abaixo refletem
+          apenas as permissões granulares concedidas.
+        </p>
+      )}
+      <div className="max-w-xl rounded-lg border border-border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-40">Ação</TableHead>
+              <TableHead>Acesso</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {matrix.map((m) => (
+              <TableRow key={m.action}>
+                <TableCell className="font-medium">{m.label}</TableCell>
+                <TableCell>
+                  <Select value={m.effectiveScope ?? "none"} disabled>
+                    <SelectTrigger
+                      className="w-60"
+                      aria-label={`${m.label}: ${scopeLabel(m.effectiveScope)}`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{NO_ACCESS_LABEL}</SelectItem>
+                      {m.scopesAvailable.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {SCOPE_LABELS_PT[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
+  );
+}
+
 function RbacDiagnosticsPage() {
   const fetchDiag = useServerFn(getRbacDiagnostics);
   const fetchMembers = useServerFn(listWorkspaceMembersForDiagnostics);
+  const fetchCatalog = useServerFn(listPermissionCatalog);
   const [targetUserId, setTargetUserId] = useState<string>("me");
   const [q, setQ] = useState("");
   const [visibility, setVisibility] = useState<VisibilityFilter>("all");
   const [copied, setCopied] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  const catalogQuery = useQuery({
+    queryKey: ["rbac-permission-catalog"],
+    queryFn: () => fetchCatalog(),
+    staleTime: 10 * 60_000,
+  });
+
 
   const membersQuery = useQuery({
     queryKey: ["rbac-diagnostics-members"],
