@@ -71,9 +71,9 @@ function isScopeValue(scope: string): scope is ScopeValue {
 
 /** "task_queues" → "Task queues"; "marketing.landing_pages" → "Landing pages". */
 export function prettyResource(resource: string): string {
-  const mapped = RESOURCE_LABELS_PT[resource];
-  if (mapped) return mapped;
   const last = resource.split(".").pop() ?? resource;
+  const mapped = RESOURCE_LABELS_PT[resource] ?? RESOURCE_LABELS_PT[last];
+  if (mapped) return mapped;
   const words = last.replace(/[_-]+/g, " ").trim();
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
