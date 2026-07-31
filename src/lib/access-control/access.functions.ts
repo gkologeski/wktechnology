@@ -147,23 +147,22 @@ export const getAccessBundle = createServerFn({ method: "GET" })
 
     // Group items and role_sets
     const itemsBySet = new Map<string, string[]>();
-    for (const it of (items.data ?? []) as Array<{ set_id: string; permission_key: string }>) {
+    for (const it of itemRows) {
       const arr = itemsBySet.get(it.set_id) ?? [];
       arr.push(it.permission_key);
       itemsBySet.set(it.set_id, arr);
     }
 
     const setsByRole = new Map<string, string[]>();
-    for (const rs of (roleSets.data ?? []) as Array<{ role_id: string; set_id: string }>) {
+    for (const rs of roleSetRows) {
       const arr = setsByRole.get(rs.role_id) ?? [];
       arr.push(rs.set_id);
       setsByRole.set(rs.role_id, arr);
     }
 
     // Load member assignments (only for workspace users)
-    const memberUserIds = ((members.data ?? []) as Array<{ user_id: string }>).map(
-      (m) => m.user_id,
-    );
+    const memberUserIds = memberRows.map((m) => m.user_id);
+
     let userJobRoles: Array<{ user_id: string; role_id: string; is_primary: boolean }> = [];
     let userPermissionSets: Array<{ user_id: string; set_id: string }> = [];
     let profiles: Array<{ id: string; full_name: string | null }> = [];
