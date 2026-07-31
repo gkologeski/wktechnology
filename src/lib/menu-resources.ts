@@ -58,6 +58,23 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/settings/products": ["techsales.catalog.products"],
   "/services/products": ["techsales.catalog.products"],
   "/leads/import-hubspot": ["system.import"],
+  "/prospecting": [
+    "techsales.prospecting_queue",
+    "techsales.prospecting_cadences",
+    "techsales.prospecting_questionnaires",
+    "techsales.prospecting_scoring",
+    "techsales.prospecting_playbooks",
+    "techsales.prospecting_enrichment",
+    "techsales.prospecting_search",
+    "techsales.prospecting_scripts",
+    "techsales.prospecting_voice",
+  ],
+  "/settings/prospecting": [
+    "techsales.prospecting_search",
+    "techsales.prospecting_enrichment",
+  ],
+
+
 
   // --- Sistema / workspace ---------------------------------------------------
   "/home": ["system.home"],

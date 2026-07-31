@@ -8,6 +8,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import {
+  QUESTIONNAIRES_CREATE,
+  QUESTIONNAIRES_DELETE,
+  QUESTIONNAIRES_UPDATE,
+  asKeys,
+} from "@/lib/prospecting/permission-keys";
 
 const FRAMEWORK = z.enum(["bant", "meddic", "champ", "gpct", "custom"]);
 const QUESTION_TYPE = z.enum(["single", "multi", "number", "text", "boolean"]);
@@ -66,6 +73,8 @@ export const upsertQuestionnaire = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(data.id ? QUESTIONNAIRES_UPDATE : QUESTIONNAIRES_CREATE));
     const payload = {
       owner_id: context.userId,
       name: data.name,
@@ -97,6 +106,8 @@ export const deleteQuestionnaire = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_DELETE));
     const { error } = await context.supabase
       .from("prospecting_questionnaires")
       .delete()
@@ -123,6 +134,8 @@ export const upsertQuestion = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
     const payload = {
       ...(data.id ? { id: data.id } : {}),
       owner_id: context.userId,
@@ -148,6 +161,8 @@ export const deleteQuestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
     const { error } = await context.supabase
       .from("prospecting_questions")
       .delete()
@@ -167,6 +182,8 @@ export const reorderQuestions = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
     const { data: qn, error: qErr } = await context.supabase
       .from("prospecting_questionnaires")
       .select("id, is_template, owner_id")
@@ -192,6 +209,8 @@ export const duplicateQuestionnaire = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_CREATE));
     const { data: src, error: srcErr } = await context.supabase
       .from("prospecting_questionnaires")
       .select("name, description, framework, pipeline_id, product_id, pass_threshold")
