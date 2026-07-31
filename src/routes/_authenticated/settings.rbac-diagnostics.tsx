@@ -38,10 +38,20 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   getRbacDiagnostics,
   listWorkspaceMembersForDiagnostics,
+  listPermissionCatalog,
 } from "@/lib/access-control/rbac-diagnostics.functions";
+import {
+  buildActionMatrix,
+  resolveResources,
+  scopeLabel,
+  SCOPE_LABELS_PT,
+  NO_ACCESS_LABEL,
+  type PermissionCatalogRow,
+} from "@/lib/access-control/action-matrix";
 import { auditMenus, type MenuAuditRow } from "@/lib/menu-audit";
 import type { Perms } from "@/lib/menu-config";
 
