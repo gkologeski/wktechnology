@@ -378,10 +378,10 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     label: "Estrutura CRM",
     items: [
-      { to: "/settings/pipelines", label: "Pipelines", icon: GitBranch, need: "admin" },
-      { to: "/settings/custom-properties", label: "Propriedades", icon: Tag, need: "admin" },
+      { to: "/settings/pipelines", label: "Pipelines", icon: GitBranch, need: "admin", permissionAny: adminAny("system.pipelines") },
+      { to: "/settings/custom-properties", label: "Propriedades", icon: Tag, need: "admin", permissionAny: adminAny("system.custom_properties") },
       { to: "/settings/products", label: "Produtos", icon: Package, need: "manager", permissionAny: MENU_PERMISSIONS.catalog },
-      { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin" },
+      { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin", permissionAny: adminAny("system.custom_objects") },
     ],
   },
   {
