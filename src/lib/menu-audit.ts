@@ -116,6 +116,9 @@ function evaluate(
     permissionAny: declared,
     missingKeys,
     grantedKeys,
+    resources: resourcesForUrl(url),
+    platformOnly: isPlatformOnlyUrl(url),
+    personal: isPersonalUrl(url),
     reason,
   };
 }
