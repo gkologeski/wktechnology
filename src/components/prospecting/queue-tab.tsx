@@ -41,6 +41,14 @@ import {
   countQueueItems,
 } from "@/lib/prospecting/queues.functions";
 import { listCadences } from "@/lib/prospecting/cadences.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import {
+  QUEUE_CREATE,
+  QUEUE_DELETE,
+  QUEUE_UPDATE,
+  asKeys,
+} from "@/lib/prospecting/permission-keys";
+
 
 
 const LEAD_STATUS_LABELS: Record<string, string> = {
@@ -80,6 +88,11 @@ export function QueueTab() {
   const list = useServerFn(listQueues);
   const del = useServerFn(deleteQueue);
   const qc = useQueryClient();
+  const { canAny, isLoading: loadingPerms } = usePermissions();
+  const canCreate = canAny(asKeys(QUEUE_CREATE));
+  const canUpdate = canAny(asKeys(QUEUE_UPDATE));
+  const canDelete = canAny(asKeys(QUEUE_DELETE));
+
 
   const { data, isLoading } = useQuery({
     queryKey: ["prospecting", "queues"],
@@ -109,23 +122,31 @@ export function QueueTab() {
         title="Filas de prospecção"
         description="Filas configuráveis por status, fonte e score para o SDR/BDR trabalhar."
         action={
-          <Button size="sm" onClick={() => setOpenNew(true)}>
-            <Plus className="w-4 h-4 mr-1" /> Nova fila
-          </Button>
+          canCreate ? (
+            <Button size="sm" onClick={() => setOpenNew(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Nova fila
+            </Button>
+          ) : null
         }
       />
 
-      {isLoading ? (
+      {isLoading || loadingPerms ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
       ) : queues.length === 0 ? (
         <EmptyState
           icon={Filter}
           title="Nenhuma fila configurada"
-          description="Crie uma fila para começar a trabalhar prospecções por status, fonte ou score."
+          description={
+            canCreate
+              ? "Crie uma fila para começar a trabalhar prospecções por status, fonte ou score."
+              : "Nenhuma fila compartilhada com você. Solicite acesso ao administrador do workspace."
+          }
           action={
-            <Button size="sm" onClick={() => setOpenNew(true)}>
-              <Plus className="w-4 h-4 mr-1" /> Nova fila
-            </Button>
+            canCreate ? (
+              <Button size="sm" onClick={() => setOpenNew(true)}>
+                <Plus className="w-4 h-4 mr-1" /> Nova fila
+              </Button>
+            ) : null
           }
         />
       ) : (
@@ -145,6 +166,8 @@ export function QueueTab() {
               <QueueWorkspace
                 queueId={activeQueue.id}
                 queueName={activeQueue.name}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
                 onEdit={() => setEditing(activeQueue as unknown as QueueRow)}
                 onDelete={() => {
                   if (confirm(`Excluir a fila "${activeQueue.name}"?`))
@@ -155,6 +178,7 @@ export function QueueTab() {
           </section>
         </div>
       )}
+
 
       <QueueDialog
         open={openNew}
@@ -183,14 +207,19 @@ export function QueueTab() {
 function QueueWorkspace({
   queueId,
   queueName,
+  canUpdate,
+  canDelete,
   onEdit,
   onDelete,
 }: {
   queueId: string;
   queueName: string;
+  canUpdate: boolean;
+  canDelete: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+
   const listItems = useServerFn(listQueueItems);
   const { data, isLoading } = useQuery({
     queryKey: ["prospecting", "queue-items", queueId],
@@ -222,13 +251,17 @@ function QueueWorkspace({
               <Play className="w-4 h-4 mr-1" /> Iniciar fila
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            <Pencil className="w-4 h-4 mr-1" /> Editar fila
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
+          {canUpdate ? (
+            <Button variant="outline" size="sm" onClick={onEdit}>
+              <Pencil className="w-4 h-4 mr-1" /> Editar fila
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button variant="ghost" size="sm" onClick={onDelete} className="text-destructive">
+              <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
+            </Button>
+          ) : null}
 
-            <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -346,10 +379,16 @@ function QueueSidebarItem({
           <User className="w-4 h-4 text-muted-foreground" />
         )}
         <span className="text-sm font-medium truncate flex-1">{String(queue.name)}</span>
+        {queue.is_shared ? (
+          <Badge variant="secondary" className="text-[10px] shrink-0">
+            Compartilhada
+          </Badge>
+        ) : null}
         <Badge variant={kind === "manual" ? "secondary" : "outline"} className="text-[10px] shrink-0">
           {kind === "manual" ? `Manual · ${total}` : total}
         </Badge>
       </div>
+
       {queue.description ? (
         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
           {String(queue.description)}

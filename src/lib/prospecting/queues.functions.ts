@@ -8,6 +8,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import {
+  QUEUE_CREATE,
+  QUEUE_DELETE,
+  QUEUE_UPDATE,
+  QUEUE_VIEW,
+  asKeys,
+} from "@/lib/prospecting/permission-keys";
+
 
 const EntityEnum = z.enum(["lead", "contact"]);
 const KindEnum = z.enum(["dynamic", "manual"]);
@@ -35,13 +44,18 @@ const SortSchema = z
 export const listQueues = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUEUE_VIEW));
     const { data, error } = await context.supabase
       .from("prospecting_queues")
-      .select("id, name, description, entity, kind, item_ids, filters, sort, is_shared, nurture_cadence_id, updated_at")
+      .select(
+        "id, owner_id, assigned_to, name, description, entity, kind, item_ids, filters, sort, is_shared, nurture_cadence_id, updated_at",
+      )
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
 
 
 export const upsertQueue = createServerFn({ method: "POST" })
@@ -63,8 +77,15 @@ export const upsertQueue = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
-    const payload = {
-      owner_id: context.userId,
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(
+      context.supabase,
+      context.userId,
+      ws,
+      asKeys(data.id ? QUEUE_UPDATE : QUEUE_CREATE),
+    );
+
+    const base = {
       name: data.name,
       description: data.description ?? null,
       entity: data.entity,
@@ -74,24 +95,26 @@ export const upsertQueue = createServerFn({ method: "POST" })
       sort: data.sort,
       is_shared: data.is_shared,
       nurture_cadence_id: data.nurture_cadence_id ?? null,
-    } as never;
+    };
 
     if (data.id) {
+      // Não sobrescreve owner_id: um editor do workspace não assume a fila.
       const { error } = await context.supabase
         .from("prospecting_queues")
-        .update(payload)
+        .update(base as never)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
     const { data: row, error } = await context.supabase
       .from("prospecting_queues")
-      .insert(payload)
+      .insert({ ...base, owner_id: context.userId } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
     return { id: row.id };
   });
+
 
 export const addToQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -104,7 +127,10 @@ export const addToQueue = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUEUE_UPDATE));
     const { data: queue, error: qErr } = await context.supabase
+
       .from("prospecting_queues")
       .select("id, kind, item_ids")
       .eq("id", data.queue_id)
@@ -135,7 +161,10 @@ export const removeFromQueue = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUEUE_UPDATE));
     const { data: queue, error: qErr } = await context.supabase
+
       .from("prospecting_queues")
       .select("id, item_ids")
       .eq("id", data.queue_id)
@@ -197,7 +226,10 @@ export const deleteQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUEUE_DELETE));
     const { error } = await context.supabase
+
       .from("prospecting_queues")
       .delete()
       .eq("id", data.id);

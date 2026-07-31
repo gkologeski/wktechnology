@@ -8,6 +8,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import {
+  CADENCES_CREATE,
+  CADENCES_DELETE,
+  CADENCES_UPDATE,
+  asKeys,
+} from "@/lib/prospecting/permission-keys";
 
 const SCOPE = z.enum(["sales", "hr"]);
 const ENTITY = z.enum(["lead", "contact", "candidate"]);
@@ -77,6 +84,8 @@ export const upsertCadence = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(data.id ? CADENCES_UPDATE : CADENCES_CREATE));
     const payload = {
       owner_id: context.userId,
       name: data.name,
@@ -91,9 +100,11 @@ export const upsertCadence = createServerFn({ method: "POST" })
       send_days: data.send_days,
     } as never;
     if (data.id) {
+      // Não sobrescreve owner_id ao editar registro de outro usuário.
+      const { owner_id: _owner, ...updatable } = payload as Record<string, unknown>;
       const { error } = await context.supabase
         .from("prospecting_cadences")
-        .update(payload)
+        .update(updatable as never)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
@@ -111,6 +122,8 @@ export const deleteCadence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(CADENCES_DELETE));
     const { error } = await context.supabase
       .from("prospecting_cadences")
       .delete()
@@ -141,6 +154,8 @@ export const upsertCadenceStep = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(CADENCES_UPDATE));
     const isWaitAccept = data.channel === "wait_invite_accept";
     const row = {
       ...(data.id ? { id: data.id } : {}),
@@ -180,6 +195,8 @@ export const deleteCadenceStep = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(CADENCES_UPDATE));
     const { error } = await context.supabase
       .from("prospecting_cadence_steps")
       .delete()
