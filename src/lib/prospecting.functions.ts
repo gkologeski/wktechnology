@@ -133,23 +133,23 @@ export const upsertProspectSearch = createServerFn({ method: "POST" })
       source: "apollo",
     };
     if (data.id) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
-        .from("prospecting_searches")
-        .update(payload)
-        .eq("id", data.id)
-        .eq("workspace_id", workspaceId);
-      if (error) throw new Error(error.message);
+      const { error } = await withTransientRetry(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
+          .from("prospecting_searches")
+          .update(payload)
+          .eq("id", data.id)
+          .eq("workspace_id", workspaceId),
+      );
+      if (error) throw toFriendlyDbError(error, "Erro ao salvar a busca");
       return { id: data.id };
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: row, error } = await (supabase as any)
-      .from("prospecting_searches")
-      .insert(payload)
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    return { id: (row as { id: string }).id };
+    const { data: row, error } = await withTransientRetry<{ id: string }>(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any).from("prospecting_searches").insert(payload).select("id").single(),
+    );
+    if (error || !row) throw toFriendlyDbError(error, "Erro ao criar a busca");
+    return { id: row.id };
   });
 
 export const deleteProspectSearch = createServerFn({ method: "POST" })
@@ -158,13 +158,15 @@ export const deleteProspectSearch = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
-      .from("prospecting_searches")
-      .delete()
-      .eq("id", data.id)
-      .eq("workspace_id", workspaceId);
-    if (error) throw new Error(error.message);
+    const { error } = await withTransientRetry(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("prospecting_searches")
+        .delete()
+        .eq("id", data.id)
+        .eq("workspace_id", workspaceId),
+    );
+    if (error) throw toFriendlyDbError(error, "Erro ao excluir a busca");
     return { ok: true };
   });
 
@@ -174,14 +176,16 @@ export const listProspectResults = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ProspectResult[]> => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: rows, error } = await (supabase as any)
-      .from("prospecting_results")
-      .select("*")
-      .eq("workspace_id", workspaceId)
-      .eq("search_id", data.search_id)
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
+    const { data: rows, error } = await withTransientRetry<ProspectResult[]>(() =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase as any)
+        .from("prospecting_results")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .eq("search_id", data.search_id)
+        .order("created_at", { ascending: false }),
+    );
+    if (error) throw toFriendlyDbError(error, "Erro ao listar resultados");
     return (rows ?? []) as ProspectResult[];
   });
 
