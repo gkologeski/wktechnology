@@ -316,7 +316,17 @@ export function PermissionsMatrix() {
 
 
   const matrix = matrixQ.data ?? {};
-  const isGranted = (roleId: string, key: string) => (matrix[roleId] ?? []).includes(key);
+  const grantedByRole = (roleId: string) => new Set(matrix[roleId] ?? []);
+  const applyScope = (roleId: string, row: ScopeMatrixRow, next: string) => {
+    const scope = next === NONE_VALUE ? null : (next as ScopeValue);
+    const { grant, revoke } = keysForSelection(row, scope);
+    const current = grantedByRole(roleId);
+    const toRevoke = revoke.filter((k) => current.has(k));
+    const toGrant = grant.filter((k) => !current.has(k));
+    if (!toRevoke.length && !toGrant.length) return;
+    scopeMut.mutate({ role_id: roleId, grant: toGrant, revoke: toRevoke });
+  };
+
 
   return (
     <div className="space-y-4">
