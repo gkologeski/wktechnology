@@ -70,10 +70,13 @@ function isScopeValue(scope: string): scope is ScopeValue {
 
 /** "task_queues" → "Task queues"; "marketing.landing_pages" → "Landing pages". */
 export function prettyResource(resource: string): string {
+  const mapped = RESOURCE_LABELS_PT[resource];
+  if (mapped) return mapped;
   const last = resource.split(".").pop() ?? resource;
   const words = last.replace(/[_-]+/g, " ").trim();
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
+
 
 function actionRank(action: string): number {
   const i = ACTION_ORDER.indexOf(action as (typeof ACTION_ORDER)[number]);
