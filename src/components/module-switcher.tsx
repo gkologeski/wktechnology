@@ -12,14 +12,18 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
-import { useActiveModule, detectModuleFromPath, setStoredActiveModule } from "@/lib/modules/active-module";
+import { useActiveModule, setStoredActiveModule } from "@/lib/modules/active-module";
+import { isWorkspacePathname } from "@/lib/menu-config-erp";
 import { cn } from "@/lib/utils";
 
-// Rotas comuns do workspace (não pertencem a um módulo específico).
-const WORKSPACE_ROUTE_PREFIXES = ["/home", "/workspace", "/settings", "/marketplace", "/invoices", "/integrations"];
+// Rotas neutras extras do workspace que não constam em WORKSPACE_ROUTE_PREFIXES.
+const EXTRA_WORKSPACE_PREFIXES = ["/integrations"];
 
 function isWorkspaceRoute(pathname: string): boolean {
-  return WORKSPACE_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
+  if (isWorkspacePathname(pathname)) return true;
+  return EXTRA_WORKSPACE_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(p + "/"),
+  );
 }
 
 export function ModuleSwitcher({ className }: { className?: string }) {
@@ -28,8 +32,11 @@ export function ModuleSwitcher({ className }: { className?: string }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  const pathModule = detectModuleFromPath(pathname);
-  const isWorkspaceContext = isWorkspaceRoute(pathname) || !pathModule;
+  // Só é "contexto workspace" quando a rota é realmente neutra (mesma regra do
+  // sidebar). Em rotas de módulo, o rótulo segue o módulo ativo — inclusive o
+  // TechSales, que não possui prefixos de path mapeados.
+  const isWorkspaceContext = isWorkspaceRoute(pathname);
+
 
   const handleSelect = (moduleId: typeof active) => {
     setOpen(false);
