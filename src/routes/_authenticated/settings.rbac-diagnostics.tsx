@@ -206,6 +206,8 @@ function RbacDiagnosticsPage() {
 
   const diag = diagQuery.data;
 
+  const grantedSet = useMemo(() => new Set(diag?.permissions ?? []), [diag]);
+
   const perms: Perms = useMemo(
     () => ({
       isAdmin: !!diag?.is_workspace_admin || !!diag?.is_workspace_owner,
