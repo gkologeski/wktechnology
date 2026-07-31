@@ -112,22 +112,33 @@ function ActionMatrix({
   catalog: PermissionCatalogRow[];
   granted: Set<string>;
 }) {
-  const matrix = useMemo(
-    () => buildActionMatrix(resolveResources(row.permissionAny, catalog), catalog, granted),
-    [row.permissionAny, catalog, granted],
-  );
+  const matrix = useMemo(() => {
+    const resources = Array.from(
+      new Set([...resolveResources(row.permissionAny, catalog), ...row.resources]),
+    );
+    return buildActionMatrix(resources, catalog, granted);
+  }, [row.permissionAny, row.resources, catalog, granted]);
 
   if (matrix.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Este item não tem permissões granulares cadastradas. O acesso é definido apenas pelo papel
-        do usuário no workspace.
+        {row.platformOnly
+          ? "Item restrito à plataforma: o acesso é definido apenas pelo papel de administrador da plataforma, sem permissões granulares."
+          : row.personal
+            ? "Item da conta pessoal do usuário: não depende de permissões do workspace."
+            : "Este item não tem permissões granulares cadastradas. O acesso é definido apenas pelo papel do usuário no workspace."}
       </p>
     );
   }
 
   return (
     <div className="space-y-3">
+      {row.rule === "public" && (
+        <p className="text-xs text-muted-foreground">
+          Item visível para todos os membros — as ações abaixo refletem apenas as permissões
+          granulares concedidas.
+        </p>
+      )}
       {row.rule === "role-granted" && (
         <p className="text-xs text-muted-foreground">
           Acesso ao menu herdado do papel de {row.need === "admin" ? "administrador" : "gestor"} —

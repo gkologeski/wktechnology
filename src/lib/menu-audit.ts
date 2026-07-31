@@ -18,6 +18,7 @@ import { FINANCE_SIDEBAR_GROUPS } from "@/lib/menu-config-finance";
 import { PEOPLE_SIDEBAR_GROUPS } from "@/lib/menu-config-people";
 import { CORE_SIDEBAR_GROUPS } from "@/lib/menu-config-core";
 import { ERP_SIDEBAR_GROUPS } from "@/lib/menu-config-erp";
+import { resourcesForUrl, isPlatformOnlyUrl, isPersonalUrl } from "@/lib/menu-resources";
 
 export type MenuAuditRule =
   | "public"
@@ -42,6 +43,12 @@ export type MenuAuditRow = {
   missingKeys: string[];
   /** Permissões declaradas que o usuário possui. */
   grantedKeys: string[];
+  /** Recursos (`modulo.recurso`) que descrevem a funcionalidade deste item. */
+  resources: readonly string[];
+  /** Item exclusivo de plataforma (sem catálogo granular). */
+  platformOnly: boolean;
+  /** Item da conta pessoal do usuário (sem permissão de workspace). */
+  personal: boolean;
   /** Explicação em PT-BR. */
   reason: string;
 };
@@ -110,6 +117,9 @@ function evaluate(
     permissionAny: declared,
     missingKeys,
     grantedKeys,
+    resources: resourcesForUrl(url),
+    platformOnly: isPlatformOnlyUrl(url),
+    personal: isPersonalUrl(url),
     reason,
   };
 }
@@ -144,14 +154,30 @@ export function auditMenus(perms: Perms): MenuAuditRow[] {
   for (const g of SETTINGS_GROUPS) {
     for (const item of g.items) {
       rows.push(
-        evaluate("Configurações", g.label, item.label, item.to, item.need, item.permissionAny, perms),
+        evaluate(
+          "Configurações",
+          g.label,
+          item.label,
+          item.to,
+          item.need,
+          item.permissionAny,
+          perms,
+        ),
       );
     }
   }
 
   for (const item of SIDEBAR_PLATFORM_ITEMS) {
     rows.push(
-      evaluate("Plataforma", "Plataforma", item.title, item.url, item.need, item.permissionAny, perms),
+      evaluate(
+        "Plataforma",
+        "Plataforma",
+        item.title,
+        item.url,
+        item.need,
+        item.permissionAny,
+        perms,
+      ),
     );
   }
 
