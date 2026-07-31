@@ -207,14 +207,19 @@ export function QueueTab() {
 function QueueWorkspace({
   queueId,
   queueName,
+  canUpdate,
+  canDelete,
   onEdit,
   onDelete,
 }: {
   queueId: string;
   queueName: string;
+  canUpdate: boolean;
+  canDelete: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+
   const listItems = useServerFn(listQueueItems);
   const { data, isLoading } = useQuery({
     queryKey: ["prospecting", "queue-items", queueId],
