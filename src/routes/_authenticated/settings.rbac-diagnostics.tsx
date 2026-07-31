@@ -396,8 +396,32 @@ function RbacDiagnosticsPage() {
                     <SelectItem value="hidden">Somente ocultos</SelectItem>
                   </SelectContent>
                 </Select>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCollapsed(new Set())}
+                >
+                  Expandir tudo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setCollapsed(
+                      new Set(
+                        filteredRows.map((r) => `${r.area}-${r.group}-${r.url}-${r.title}`),
+                      ),
+                    )
+                  }
+                >
+                  Recolher tudo
+                </Button>
               </div>
             </div>
+
 
             {filteredRows.length === 0 ? (
               <EmptyState
