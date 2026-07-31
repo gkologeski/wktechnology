@@ -354,8 +354,9 @@ export const getMatrixState = createServerFn({ method: "GET" })
     const overrideRows = await fetchAllPages<{
       role_id: string;
       permission_key: string;
-      effect: "grant" | "deny";
+      effect: string;
     }>((from, to) =>
+
       supabase
         .from("job_role_permission_overrides")
         .select("role_id, permission_key, effect")
