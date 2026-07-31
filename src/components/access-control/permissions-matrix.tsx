@@ -239,11 +239,12 @@ export function PermissionsMatrix() {
     );
   }, [bundleQ.data, activeModule, search]);
 
-  const grouped = useMemo(() => {
-    const g: Record<string, typeof filteredPerms> = {};
-    for (const p of filteredPerms) (g[p.resource] ??= []).push(p);
-    return g;
-  }, [filteredPerms]);
+  // Uma linha por (módulo, recurso, funcionalidade); o escopo virou combo.
+  const scopeRows = useMemo<ScopeMatrixRow[]>(
+    () => buildScopeMatrixRows(filteredPerms),
+    [filteredPerms],
+  );
+
 
   const roles = useMemo(() => bundleQ.data?.job_roles ?? [], [bundleQ.data]);
 
