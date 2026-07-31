@@ -398,7 +398,6 @@ function RbacDiagnosticsPage() {
                 </Select>
               </div>
               <div className="flex items-center gap-2">
-
                 <Button
                   type="button"
                   variant="outline"
@@ -413,9 +412,7 @@ function RbacDiagnosticsPage() {
                   size="sm"
                   onClick={() =>
                     setCollapsed(
-                      new Set(
-                        filteredRows.map((r) => `${r.area}-${r.group}-${r.url}-${r.title}`),
-                      ),
+                      new Set(filteredRows.map((r) => `${r.area}-${r.group}-${r.url}-${r.title}`)),
                     )
                   }
                 >
@@ -423,7 +420,6 @@ function RbacDiagnosticsPage() {
                 </Button>
               </div>
             </div>
-
 
             {filteredRows.length === 0 ? (
               <EmptyState
