@@ -16,6 +16,7 @@ import { AtsPageHeader } from "@/components/ats/ui";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ShieldOff } from "lucide-react";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { QueueTab } from "@/components/prospecting/queue-tab";
