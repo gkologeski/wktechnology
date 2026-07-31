@@ -24,7 +24,7 @@ export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Faturas", url: "/invoices", icon: FileText },
       { title: "Faturamento de Serviços", url: "/services", icon: Package, need: "manager", permissionAny: MENU_PERMISSIONS.financeReceivable },
       { title: "NFS-e", url: "/finance/nfse", icon: Receipt, need: "manager", permissionAny: MENU_PERMISSIONS.financeNfse },
-      { title: "Auditoria", url: "/finance/audit", icon: ShieldCheck, need: "admin" },
+      { title: "Auditoria", url: "/finance/audit", icon: ShieldCheck, need: "admin", permissionAny: adminAny("techfinance.audit") },
       { title: "Régua de cobrança", url: "/settings/dunning", icon: Bell, need: "manager", permissionAny: MENU_PERMISSIONS.financeDunning },
       { title: "Templates de cobrança", url: "/settings/charging-templates", icon: Mail, need: "manager", permissionAny: MENU_PERMISSIONS.financeDunning },
     ],
