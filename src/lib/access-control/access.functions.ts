@@ -218,15 +218,17 @@ export const getAccessBundle = createServerFn({ method: "GET" })
     }
 
     return {
-      permissions: (perms.data ?? []) as PermissionRow[],
-      permission_sets: ((sets.data ?? []) as Array<Omit<PermissionSetRow, "permission_keys">>).map(
-        (s) => ({ ...s, permission_keys: itemsBySet.get(s.id) ?? [] }),
-      ),
-      job_roles: ((roles.data ?? []) as Array<Omit<JobRoleRow, "set_ids">>).map((r) => ({
+      permissions: permRows,
+      permission_sets: setRows.map((s) => ({
+        ...s,
+        permission_keys: itemsBySet.get(s.id) ?? [],
+      })),
+      job_roles: roleRows.map((r) => ({
         ...r,
         set_ids: setsByRole.get(r.id) ?? [],
       })),
-      field_rules: (rules.data ?? []) as FieldRuleRow[],
+      field_rules: ruleRows,
+
       members: memberUserIds.map((uid) => {
         const rby = rolesByUser.get(uid);
         return {
