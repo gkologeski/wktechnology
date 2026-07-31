@@ -96,7 +96,7 @@ export const Route = createFileRoute("/_authenticated/prospecting/")({
 function ProspectingSuite() {
   const search = useSearch({ from: "/_authenticated/prospecting/" });
   const navigate = useNavigate({ from: "/prospecting" });
-  const { can, isLoading } = usePermissions();
+  const { can, isLoading, isError, error, refetch } = usePermissions();
 
   const visibleTabs = useMemo(
     () => (isLoading ? [] : TABS.filter((t) => can(t.permission))),
