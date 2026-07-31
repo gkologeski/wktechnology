@@ -26,7 +26,7 @@ const SIDEBAR_MANAGER_PLUS = [
   "/campaigns/whatsapp",
   "/campaigns/email",
   "/landing-pages",
-  "/prospecting/campaigns",
+  "/prospecting",
   "/agents/sdr",
 ];
 
