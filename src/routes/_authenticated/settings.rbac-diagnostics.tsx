@@ -192,7 +192,8 @@ function RbacDiagnosticsPage() {
   const [q, setQ] = useState("");
   const [visibility, setVisibility] = useState<VisibilityFilter>("all");
   const [copied, setCopied] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<string | null>(null);
+  // Todos os itens iniciam expandidos; guardamos apenas os recolhidos.
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
 
   const catalogQuery = useQuery({
     queryKey: ["rbac-permission-catalog"],
