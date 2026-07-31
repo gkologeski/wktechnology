@@ -18,6 +18,7 @@ import { FINANCE_SIDEBAR_GROUPS } from "@/lib/menu-config-finance";
 import { PEOPLE_SIDEBAR_GROUPS } from "@/lib/menu-config-people";
 import { CORE_SIDEBAR_GROUPS } from "@/lib/menu-config-core";
 import { ERP_SIDEBAR_GROUPS } from "@/lib/menu-config-erp";
+import { resourcesForUrl, isPlatformOnlyUrl, isPersonalUrl } from "@/lib/menu-resources";
 
 export type MenuAuditRule =
   | "public"
