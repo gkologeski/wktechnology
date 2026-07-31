@@ -36,8 +36,26 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  buildScopeMatrixRows,
+  keysForSelection,
+  selectValue,
+  NONE_VALUE,
+  NONE_LABEL,
+  SCOPE_SELECT_LABELS,
+  type ScopeMatrixRow,
+  type ScopeValue,
+} from "@/lib/access-control/scope-matrix";
 import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+
 
 export const MODULE_META: Record<string, { label: string; tone: string }> = {
   techsales: { label: "TechSales", tone: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
