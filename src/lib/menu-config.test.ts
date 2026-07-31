@@ -57,6 +57,7 @@ const SETTINGS_ADMIN_ONLY = [
   "/integrations",
   "/settings/whatsapp",
   "/settings/hubspot-sync",
+  "/leads/import-hubspot",
 ];
 const SETTINGS_PLATFORM_ONLY = [
   "/admin/status",
