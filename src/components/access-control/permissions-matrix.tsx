@@ -344,10 +344,10 @@ export function PermissionsMatrix() {
               <th className="sticky left-0 top-0 z-40 bg-muted text-left p-2 min-w-[110px] font-medium border-r border-b">
                 Módulo
               </th>
-              <th className="sticky top-0 z-30 bg-muted text-left p-2 min-w-[160px] font-medium border-r border-b">
+              <th className="sticky left-[110px] top-0 z-30 bg-muted text-left p-2 min-w-[160px] font-medium border-r border-b">
                 Recurso
               </th>
-              <th className="sticky top-0 z-30 bg-muted text-left p-2 min-w-[150px] font-medium border-r border-b">
+              <th className="sticky left-[270px] top-0 z-20 bg-muted text-left p-2 min-w-[150px] font-medium border-r border-b">
                 Funcionalidade
               </th>
               {roles.map((r) => (
@@ -429,7 +429,7 @@ export function PermissionsMatrix() {
                     {MODULE_META[row.module]?.label ?? row.module}
                   </Badge>
                 </td>
-                <td className="p-3 border-b border-r align-middle">
+                <td className="sticky left-[110px] z-10 bg-background p-3 border-b border-r align-middle">
                   <span
                     className="whitespace-normal break-words leading-snug"
                     title={`${row.module}.${row.resource}`}
@@ -437,7 +437,7 @@ export function PermissionsMatrix() {
                     {row.resourceLabel}
                   </span>
                 </td>
-                <td className="p-3 border-b border-r align-middle">
+                <td className="sticky left-[270px] z-10 bg-background p-3 border-b border-r align-middle">
                   <span
                     className="whitespace-normal break-words leading-snug"
                     title={row.description}
