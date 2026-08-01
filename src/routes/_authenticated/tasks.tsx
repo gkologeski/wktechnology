@@ -228,6 +228,11 @@ function TasksHubspotView() {
         .lt("due_date", new Date(startOfDay.getTime() + 7 * 86_400_000).toISOString());
     }
 
+    // Responsável (owner_id em activities), respeitando o escopo efetivo.
+    if (assignee === ASSIGNEE_ME && user?.id) q = q.eq("owner_id", user.id);
+    else if (assignee === ASSIGNEE_NONE) q = q.is("owner_id", null);
+    else if (assignee !== ASSIGNEE_ALL) q = q.eq("owner_id", assignee);
+
     const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
     if (term) {
       q = q.or([`subject.ilike.%${term}%`, `body.ilike.%${term}%`].join(","));
@@ -244,6 +249,7 @@ function TasksHubspotView() {
       sortKey,
       sortDir,
       debouncedSearch,
+      assignee,
       page,
       pageSize,
       user?.id,
