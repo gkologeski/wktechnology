@@ -139,13 +139,25 @@ function mergeExtra(
 }
 
 
-function evalFilter(f: WorkflowFilter, after: AnyRow | null, before: AnyRow | null): boolean {
+function evalFilter(
+  f: WorkflowFilter,
+  after: AnyRow | null,
+  before: AnyRow | null,
+  vars?: AnyRow,
+): boolean {
   const v = getField(after, f.field);
+  // O valor comparado pode referenciar variáveis ou a saída de passos
+  // anteriores via token ({{vars.X}} / {{steps.N.campo}}).
+  const target =
+    typeof f.value === "string" && f.value.includes("{{")
+      ? renderTokens(f.value, after, vars)
+      : f.value;
   switch (f.op) {
     case "eq":
-      return v === f.value;
+      return v === target;
     case "neq":
-      return v !== f.value;
+      return v !== target;
+
     case "in": {
       const list = Array.isArray(f.value)
         ? f.value
