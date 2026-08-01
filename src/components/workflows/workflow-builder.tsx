@@ -1843,16 +1843,20 @@ function TriggerConfigPanel({
 function FilterRow({
   filter,
   fields,
+  priorFields = [],
   onChange,
   onRemove,
 }: {
   filter: WorkflowFilter;
   fields: FieldOpt[];
+  /** Saídas de passos anteriores (`steps.N.campo`), quando disponíveis. */
+  priorFields?: FieldOpt[];
   onChange: (f: WorkflowFilter) => void;
   onRemove: () => void;
 }) {
   const needsValue = filter.op !== "is_empty" && filter.op !== "is_not_empty";
-  const selected = fields.find((f) => f.name === filter.field);
+  const isPriorStep = filter.field?.startsWith("steps.") ?? false;
+  const selected = isPriorStep ? undefined : fields.find((f) => f.name === filter.field);
   const options = selected?.options;
   const type = selected?.type;
   return (
@@ -1863,17 +1867,34 @@ function FilterRow({
             <SelectValue placeholder="Selecionar propriedade" />
           </SelectTrigger>
           <SelectContent className="max-h-72">
-            {fields.map((f) => (
-              <SelectItem key={f.name} value={f.name}>
-                {f.label}
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectLabel className="text-[11px]">Propriedades do registro</SelectLabel>
+              {fields.map((f) => (
+                <SelectItem key={f.name} value={f.name}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+            {priorFields.length > 0 && (
+              <SelectGroup>
+                <SelectLabel className="text-[11px]">Passos anteriores</SelectLabel>
+                {priorFields.map((f) => (
+                  <SelectItem key={f.name} value={f.name}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
+            {isPriorStep && !priorFields.some((f) => f.name === filter.field) && (
+              <SelectItem value={filter.field}>{filter.field}</SelectItem>
+            )}
           </SelectContent>
         </Select>
         <Button variant="ghost" size="icon" onClick={onRemove} aria-label="Remover condição">
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
+
       <Select
         value={filter.op}
         onValueChange={(v) => onChange({ ...filter, op: v as FilterOp })}
