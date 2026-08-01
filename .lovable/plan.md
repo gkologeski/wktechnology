@@ -1,10 +1,8 @@
-# Por que falta "Da minha equipe" em Atividades → Editar
+# Escopos próprio e de equipe para Atividades
 
-## Racional atual
+## Situação atual (verificada no catálogo)
 
-O combo de cada célula **não tem lista fixa de escopos**. Ele mostra apenas os escopos que existem como chave real no catálogo de permissões (`permissions`), no formato `modulo.recurso.acao.escopo`. Se a chave não existe, a opção não aparece — porque conceder um escopo inexistente não teria efeito nenhum no backend.
-
-Consulta ao catálogo para Atividades (TechSales):
+Chaves existentes hoje para Atividades (`techsales.activities`):
 
 ```text
 techsales.activities.view.workspace
@@ -14,33 +12,34 @@ techsales.activities.update.workspace
 techsales.activities.delete.workspace
 ```
 
-Ou seja: não existe `techsales.activities.update.team`. Por isso "Vendedor Interno" só vê "Nenhuma", "Meu(s)/Minha(s)" e "Todos" em Editar.
+O combo de cada célula em `/settings/permissions` só oferece escopos que existem como chave real no catálogo. Por isso "Da minha equipe" não aparece em nenhuma ação de Atividades, e "Meu(s)/Minha(s)" não aparece em Exibir nem Excluir.
 
-Isso **não foi uma decisão de produto** sobre Atividades — é uma lacuna de cadastro do catálogo. A maioria dos recursos já tem o escopo de equipe (130 de 153 recursos em Editar; 131 de 160 em Exibir), e Atividades ficou entre os que faltaram.
+## O que será feito
 
-Regras que continuam sendo decisão intencional (não mudam): Criar travado em "Meu(s)/Minha(s)", Exportar/Atribuir/Acesso total travados em "Todos".
+Migration aditiva inserindo as 5 chaves que faltam para Atividades:
 
-## Lacunas encontradas
+- `techsales.activities.view.own` — "Ver próprias atividades"
+- `techsales.activities.view.team` — "Ver atividades da equipe"
+- `techsales.activities.update.team` — "Editar atividades da equipe"
+- `techsales.activities.delete.own` — "Excluir próprias atividades"
+- `techsales.activities.delete.team` — "Excluir atividades da equipe"
 
-- Exibir sem escopo de equipe: 29 recursos (ex.: `techsales.activities`, `techsales.emails`, `techservice.tickets`, `techprojects.time_entries`, `techhire.interviews`).
-- Editar sem escopo de equipe: 23 recursos (mesma família).
-- Excluir sem escopo de equipe: praticamente todos (151) — hoje Excluir é own/workspace por padrão.
+Resultado em `/settings/permissions`: Exibir, Editar e Excluir de Atividades passam a oferecer Nenhuma / Meu(s)/Minha(s) / Da minha equipe / Todos — inclusive para o cargo "Vendedor Interno".
 
-## Proposta
-
-Fase 1 — Completar equipe em Exibir e Editar para os recursos de dados que hoje não têm (29 + 23), incluindo Atividades. Migration aditiva que insere as chaves `...view.team` / `...update.team` no catálogo, com rótulo PT-BR no mesmo padrão das chaves irmãs. Nenhuma concessão é criada: os cargos continuam exatamente com o que têm hoje; apenas a opção passa a existir no combo.
-
-Fase 2 (opcional, só se você quiser) — Adicionar `...delete.team` para recursos de dados. Deixo fora por padrão, pois exclusão em escopo de equipe é uma decisão mais sensível.
-
-Recursos de configuração/administração (módulo `system`, dashboards, integrações) ficam de fora: não são registros com responsável, então escopo de equipe não faz sentido neles.
+Nenhuma concessão é criada ou removida: os cargos continuam exatamente com o que têm hoje; apenas as opções passam a existir. Criar continua travado em "Meu(s)/Minha(s)" (regra intencional).
 
 ## Detalhes técnicos
 
-- Migration `INSERT ... ON CONFLICT (key) DO NOTHING` em `public.permissions`, derivando as linhas faltantes a partir das chaves `own`/`workspace` já existentes do mesmo `(module, resource, action)`, filtrando a lista de recursos de dados.
-- Sem alteração de RLS, de grants ou de server functions.
-- `src/lib/access-control/scope-matrix.ts` e `permissions-matrix.tsx` não precisam mudar: as opções já são derivadas do catálogo.
-- Verificação: reconsultar o catálogo de `techsales.activities` e conferir em `/settings/permissions` que "Da minha equipe" aparece em Exibir/Editar de Atividades, sem alterar nenhum escopo já concedido.
+- Migration com `INSERT ... ON CONFLICT (key) DO NOTHING` em `public.permissions`, reaproveitando `module`, `resource`, `action` e demais colunas das chaves irmãs já existentes.
+- Sem alteração de RLS, grants, server functions ou schema.
+- `src/lib/access-control/scope-matrix.ts` e `permissions-matrix.tsx` não mudam: as opções já são derivadas do catálogo.
 
-## Importante sobre a aplicação do escopo
+## Observação importante sobre efeito prático
 
-Adicionar a chave habilita a configuração. Onde a consulta do recurso ainda não filtra por equipe, a chave `team` fica reconhecida pelo RBAC mas o filtro efetivo pode se comportar como o escopo mais amplo disponível na query. Se quiser, faço um levantamento separado de quais consultas de Atividades/E-mails/Tickets já respeitam `team` antes de expandir o catálogo.
+A chave habilita a configuração no RBAC. Onde a consulta de Atividades ainda não filtra por equipe/próprio, o escopo escolhido é reconhecido mas o filtro efetivo pode se comportar como o escopo mais amplo suportado pela query. Se quiser, faço em seguida um levantamento de quais consultas de Atividades já respeitam `own`/`team` e ajusto os filtros.
+
+## Como validar
+
+1. Reconsultar o catálogo de `techsales.activities` (deve listar 10 chaves).
+2. Em `/settings/permissions`, módulo TechSales → recurso Atividades: conferir as opções em Exibir, Editar e Excluir para "Vendedor Interno".
+3. Conferir que nenhum escopo já concedido mudou.
