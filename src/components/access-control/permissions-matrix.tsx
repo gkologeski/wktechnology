@@ -154,6 +154,10 @@ export function PermissionsMatrix() {
   const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
   const [duplicateTarget, setDuplicateTarget] = useState<Role | null>(null);
   const [duplicateName, setDuplicateName] = useState("");
+  const [copyTarget, setCopyTarget] = useState<Role | null>(null);
+  const [copySource, setCopySource] = useState<Role | null>(null);
+  const [copyMode, setCopyMode] = useState<"merge" | "replace">("merge");
+  const [copyScope, setCopyScope] = useState<"module" | "all">("module");
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["access"] });
@@ -249,6 +253,23 @@ export function PermissionsMatrix() {
       toast.success(`Padrões restaurados (${(res as { count: number }).count} permissões).`);
     },
     onError: (err: Error) => toast.error(err.message ?? "Falha ao restaurar padrões"),
+  });
+
+  const copyMut = useMutation({
+    mutationFn: (v: {
+      source_role_id: string;
+      target_role_id: string;
+      mode: "merge" | "replace";
+      module?: string;
+    }) => copyPermsFn({ data: v }),
+    onSuccess: (res) => {
+      invalidateAll();
+      const r = res as { granted: number; revoked: number };
+      setCopyTarget(null);
+      setCopySource(null);
+      toast.success(`Permissões copiadas (${r.granted} concedidas, ${r.revoked} removidas).`);
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Falha ao copiar permissões"),
   });
 
   const modulesWithData = useMemo(() => {
@@ -392,6 +413,31 @@ export function PermissionsMatrix() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {!r.is_system && roles.length > 1 && (
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger aria-label={`Copiar permissões para ${r.name}`}>
+                              <ClipboardCopy className="h-4 w-4 mr-2" />
+                              Copiar de...
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              {roles
+                                .filter((src) => src.id !== r.id)
+                                .map((src) => (
+                                  <DropdownMenuItem
+                                    key={src.id}
+                                    onClick={() => {
+                                      setCopyTarget(r);
+                                      setCopySource(src);
+                                      setCopyMode("merge");
+                                      setCopyScope("module");
+                                    }}
+                                  >
+                                    {src.name}
+                                  </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                        )}
                         <DropdownMenuItem
                           onClick={() => {
                             setDuplicateTarget(r);
