@@ -30,9 +30,6 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
   const { can } = usePermissions();
 
   const canWrite = can("techprojects.project_updates.create.own");
-  const canEdit =
-    can("techprojects.project_updates.update.own") ||
-    can("techprojects.project_updates.update.workspace");
   const canDelete = can("techprojects.project_updates.delete.workspace");
 
   const query = useQuery({
@@ -134,9 +131,8 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
               </div>
               <DeliveryTimeline
                 updates={p.updates}
-                canEdit={canEdit}
+                canEdit={false}
                 canDelete={canDelete}
-                onEdit={undefined}
                 onDelete={(u) => void onDelete(u.id)}
               />
             </div>
