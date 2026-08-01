@@ -3864,6 +3864,3 @@ function ApprovalStepForm({
   );
 }
 
-// Silence unused-import in case memo helper not used elsewhere.
-void useMemo;
-
