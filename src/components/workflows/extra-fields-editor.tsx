@@ -38,7 +38,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
-import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
+import { getEntityFieldCatalog, REF_COLUMNS, type EntityFieldDef } from "@/lib/entity-fields.functions";
 import { searchCompanies, searchContacts, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
