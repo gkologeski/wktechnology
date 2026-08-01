@@ -109,8 +109,8 @@ export function LocalContractFileViewerDialog({ open, onOpenChange, file, text }
             <div className="h-full flex flex-col items-center justify-center gap-2 p-6 text-center">
               <FileText className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">
-                Arquivos .docx não são exibidos pelo navegador. Baixe o arquivo para conferir
-                o conteúdo original.
+                Arquivos .docx não são exibidos pelo navegador. Baixe o arquivo para conferir o
+                conteúdo original.
               </p>
             </div>
           )}
