@@ -308,7 +308,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     if (emailJobs.length > 0) {
       try {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const bearer = req?.headers.get("authorization") ?? "";
+        const bearer = getRequestAuthorization();
         const sendUrl = origin ? `${origin}/lovable/email/transactional/send` : "";
         for (const job of emailJobs) {
           // Resolve email
