@@ -38,6 +38,14 @@ import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs"
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
 import { useSavedViews } from "@/lib/saved-views";
+import {
+  AssigneeFilter,
+  ASSIGNEE_ALL,
+  ASSIGNEE_ME,
+  ASSIGNEE_NONE,
+  type AssigneeFilterValue,
+} from "@/components/entity/assignee-filter";
+import { useResourceScope } from "@/lib/access-control/use-resource-scope";
 import { TablePagination } from "@/components/table-pagination";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
