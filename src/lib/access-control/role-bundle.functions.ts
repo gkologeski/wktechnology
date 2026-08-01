@@ -355,6 +355,74 @@ export const bulkSetRolePermissions = createServerFn({ method: "POST" })
     return { ok: true, set_id: setId, count: data.keys.length };
   });
 
+const CopyRoleInput = z.object({
+  source_role_id: z.string().uuid(),
+  target_role_id: z.string().uuid(),
+  mode: z.enum(["replace", "merge"]),
+  module: z.string().min(1).optional(),
+});
+
+/**
+ * Copia as permissões de um cargo de origem para um cargo destino editável.
+ * - mode "merge": mantém o que o destino já tem e adiciona o da origem.
+ * - mode "replace": espelha a origem, revogando o que não existe nela.
+ * - module: quando informado, restringe a operação às chaves daquele módulo.
+ */
+export const copyRolePermissions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) => CopyRoleInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (data.source_role_id === data.target_role_id) {
+      throw new Error("Escolha um cargo de origem diferente do destino.");
+    }
+    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    await assertWorkspaceAdmin(supabase, userId, workspaceId);
+    await assertRoleEditable(supabase, data.target_role_id);
+
+    const src = await supabase
+      .from("job_roles")
+      .select("id")
+      .eq("id", data.source_role_id)
+      .maybeSingle();
+    if (src.error) throw new Error(src.error.message);
+    if (!src.data) throw new Error("Cargo de origem não encontrado.");
+
+    let allowed: Set<string> | null = null;
+    if (data.module) {
+      const perms = await fetchAllPages<{ key: string }>((from, to) =>
+        supabase
+          .from("permissions")
+          .select("key")
+          .eq("module", data.module as string)
+          .order("key")
+          .range(from, to),
+      );
+      allowed = new Set(perms.map((p) => p.key));
+      if (allowed.size === 0) throw new Error("Nenhuma permissão encontrada para este módulo.");
+    }
+
+    const [sourceKeys, targetKeys] = await Promise.all([
+      effectiveRoleKeys(supabase, workspaceId, data.source_role_id),
+      effectiveRoleKeys(supabase, workspaceId, data.target_role_id),
+    ]);
+
+    const inScope = (k: string) => (allowed ? allowed.has(k) : true);
+    const source = Array.from(sourceKeys).filter(inScope);
+    const target = Array.from(targetKeys).filter(inScope);
+
+    const grant = source.filter((k) => !targetKeys.has(k));
+    const revoke = data.mode === "replace" ? target.filter((k) => !sourceKeys.has(k)) : [];
+
+    if (revoke.length) {
+      await applyBulkKeys(supabase, userId, workspaceId, data.target_role_id, revoke, false);
+    }
+    if (grant.length) {
+      await applyBulkKeys(supabase, userId, workspaceId, data.target_role_id, grant, true);
+    }
+    return { ok: true, granted: grant.length, revoked: revoke.length };
+  });
+
 const RestoreInput = z.object({ role_id: z.string().uuid() });
 
 export const restoreRoleDefaults = createServerFn({ method: "POST" })
