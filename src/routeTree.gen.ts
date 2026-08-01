@@ -319,6 +319,7 @@ import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
 import { Route as AuthenticatedSettingsIntegrationsLinkedinRouteImport } from './routes/_authenticated/settings.integrations.linkedin'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
+import { Route as AuthenticatedProjectsIdEntregaRouteImport } from './routes/_authenticated/projects_.$id.entrega'
 import { Route as AuthenticatedProjectsListsIdRouteImport } from './routes/_authenticated/projects.lists.$id'
 import { Route as AuthenticatedFinanceEntriesIdRouteImport } from './routes/_authenticated/finance.entries.$id'
 import { Route as AuthenticatedFinanceBankingReconciliationRouteImport } from './routes/_authenticated/finance.banking.reconciliation'
@@ -2122,6 +2123,12 @@ const AuthenticatedProspectingCampaignsIdRoute =
     path: '/campaigns/$id',
     getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
+const AuthenticatedProjectsIdEntregaRoute =
+  AuthenticatedProjectsIdEntregaRouteImport.update({
+    id: '/projects_/$id/entrega',
+    path: '/projects/$id/entrega',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsListsIdRoute =
   AuthenticatedProjectsListsIdRouteImport.update({
     id: '/projects/lists/$id',
@@ -2593,6 +2600,7 @@ export interface FileRoutesByFullPath {
   '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
+  '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -2935,6 +2943,7 @@ export interface FileRoutesByTo {
   '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
+  '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -3285,6 +3294,7 @@ export interface FileRoutesById {
   '/_authenticated/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/_authenticated/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
   '/_authenticated/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
+  '/_authenticated/projects_/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
   '/_authenticated/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -3635,6 +3645,7 @@ export interface FileRouteTypes {
     | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
     | '/projects/lists/$id'
+    | '/projects/$id/entrega'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/linkedin'
     | '/settings/notifications/slack'
@@ -3977,6 +3988,7 @@ export interface FileRouteTypes {
     | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
     | '/projects/lists/$id'
+    | '/projects/$id/entrega'
     | '/prospecting/campaigns/$id'
     | '/settings/integrations/linkedin'
     | '/settings/notifications/slack'
@@ -4326,6 +4338,7 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/banking/reconciliation'
     | '/_authenticated/finance/entries/$id'
     | '/_authenticated/projects/lists/$id'
+    | '/_authenticated/projects_/$id/entrega'
     | '/_authenticated/prospecting/campaigns/$id'
     | '/_authenticated/settings/integrations/linkedin'
     | '/_authenticated/settings/notifications/slack'
@@ -6703,6 +6716,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProspectingCampaignsIdRouteImport
       parentRoute: typeof AuthenticatedProspectingRoute
     }
+    '/_authenticated/projects_/$id/entrega': {
+      id: '/_authenticated/projects_/$id/entrega'
+      path: '/projects/$id/entrega'
+      fullPath: '/projects/$id/entrega'
+      preLoaderRoute: typeof AuthenticatedProjectsIdEntregaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects/lists/$id': {
       id: '/_authenticated/projects/lists/$id'
       path: '/projects/lists/$id'
@@ -7518,6 +7538,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
   AuthenticatedFinanceEntriesIdRoute: typeof AuthenticatedFinanceEntriesIdRoute
   AuthenticatedProjectsListsIdRoute: typeof AuthenticatedProjectsListsIdRoute
+  AuthenticatedProjectsIdEntregaRoute: typeof AuthenticatedProjectsIdEntregaRoute
   AuthenticatedatsCandidatesIndexRoute: typeof AuthenticatedatsCandidatesIndexRoute
   AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
   AuthenticatedatsJobsIndexRoute: typeof AuthenticatedatsJobsIndexRoute
@@ -7659,6 +7680,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedatsSourcingSequencesRoute,
   AuthenticatedFinanceEntriesIdRoute: AuthenticatedFinanceEntriesIdRoute,
   AuthenticatedProjectsListsIdRoute: AuthenticatedProjectsListsIdRoute,
+  AuthenticatedProjectsIdEntregaRoute: AuthenticatedProjectsIdEntregaRoute,
   AuthenticatedatsCandidatesIndexRoute: AuthenticatedatsCandidatesIndexRoute,
   AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
   AuthenticatedatsJobsIndexRoute: AuthenticatedatsJobsIndexRoute,
@@ -7866,13 +7888,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

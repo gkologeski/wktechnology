@@ -151,6 +151,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
 
   // --- TechProjects ----------------------------------------------------------
   "/projects": ["techprojects.projects"],
+  "/projects/$id/entrega": ["techprojects.project_updates", "techsales.deal_delivery"],
   "/projects/my-work": ["techprojects.my_work"],
   "/projects/spaces": ["techprojects.spaces"],
   "/projects/tasks": ["techprojects.tasks"],

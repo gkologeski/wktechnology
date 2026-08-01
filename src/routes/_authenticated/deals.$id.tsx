@@ -22,6 +22,7 @@ import { StageTracker } from "@/components/stage-tracker";
 import { DealLineItems, DealLineItemsEditor, DealLineItemsCount } from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { DealContracts } from "@/components/contracts/deal-contracts";
+import { DealDeliveryPanel } from "@/components/deals/deal-delivery-panel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
 import { usePipelines } from "@/lib/pipelines";
@@ -265,6 +266,7 @@ function DealDetail() {
       center={
         <>
           <AiSummaryPanel entity="deal" entityId={deal.id} />
+          <DealDeliveryPanel dealId={deal.id} />
           <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
         </>
       }
