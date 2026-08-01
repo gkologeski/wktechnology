@@ -13,6 +13,7 @@ import {
   renameJobRole,
   deleteJobRole,
   restoreRoleDefaults,
+  copyRolePermissions,
 } from "@/lib/access-control/role-bundle.functions";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -56,7 +57,17 @@ import {
   type ScopeMatrixRow,
   type ScopeValue,
 } from "@/lib/access-control/scope-matrix";
-import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, RotateCcw } from "lucide-react";
+import {
+  Lock,
+  Search,
+  Plus,
+  MoreVertical,
+  Copy,
+  ClipboardCopy,
+  Pencil,
+  Trash2,
+  RotateCcw,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const MODULE_META: Record<string, { label: string; tone: string }> = {
@@ -119,6 +130,7 @@ export function PermissionsMatrix() {
   const renameRoleFn = useServerFn(renameJobRole);
   const deleteRoleFn = useServerFn(deleteJobRole);
   const restoreFn = useServerFn(restoreRoleDefaults);
+  const copyPermsFn = useServerFn(copyRolePermissions);
   const qc = useQueryClient();
 
   const bundleQ = useQuery<AccessBundle>({
