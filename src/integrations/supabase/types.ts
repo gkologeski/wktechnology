@@ -12332,6 +12332,71 @@ export type Database = {
           },
         ]
       }
+      project_updates: {
+        Row: {
+          assigned_to: string | null
+          author_id: string | null
+          created_at: string
+          expected_delivery_date: string | null
+          health: string | null
+          id: string
+          kind: string
+          owner_id: string | null
+          progress_pct: number | null
+          project_id: string
+          published_at: string
+          summary: string | null
+          title: string
+          updated_at: string
+          visibility: string
+          workspace_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          author_id?: string | null
+          created_at?: string
+          expected_delivery_date?: string | null
+          health?: string | null
+          id?: string
+          kind?: string
+          owner_id?: string | null
+          progress_pct?: number | null
+          project_id: string
+          published_at?: string
+          summary?: string | null
+          title: string
+          updated_at?: string
+          visibility?: string
+          workspace_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          author_id?: string | null
+          created_at?: string
+          expected_delivery_date?: string | null
+          health?: string | null
+          id?: string
+          kind?: string
+          owner_id?: string | null
+          progress_pct?: number | null
+          project_id?: string
+          published_at?: string
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          visibility?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_updates_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           assigned_to: string | null
@@ -18444,6 +18509,10 @@ export type Database = {
           _row_assignee: string
           _row_owner: string
         }
+        Returns: boolean
+      }
+      user_can_view_deal_delivery: {
+        Args: { _project_id: string; _user: string }
         Returns: boolean
       }
       user_can_view_owner: {
