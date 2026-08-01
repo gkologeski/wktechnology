@@ -344,10 +344,10 @@ export function PermissionsMatrix() {
               <th className="sticky left-0 top-0 z-40 bg-muted text-left p-2 min-w-[110px] font-medium border-r border-b">
                 Módulo
               </th>
-              <th className="sticky top-0 z-30 bg-muted text-left p-2 min-w-[160px] font-medium border-r border-b">
+              <th className="sticky left-[110px] top-0 z-30 bg-muted text-left p-2 min-w-[160px] font-medium border-r border-b">
                 Recurso
               </th>
-              <th className="sticky top-0 z-30 bg-muted text-left p-2 min-w-[150px] font-medium border-r border-b">
+              <th className="sticky left-[270px] top-0 z-20 bg-muted text-left p-2 min-w-[150px] font-medium border-r border-b">
                 Funcionalidade
               </th>
               {roles.map((r) => (
