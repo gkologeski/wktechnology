@@ -429,7 +429,7 @@ export function PermissionsMatrix() {
                     {MODULE_META[row.module]?.label ?? row.module}
                   </Badge>
                 </td>
-                <td className="p-3 border-b border-r align-middle">
+                <td className="sticky left-[110px] z-10 bg-background p-3 border-b border-r align-middle">
                   <span
                     className="whitespace-normal break-words leading-snug"
                     title={`${row.module}.${row.resource}`}
@@ -437,7 +437,7 @@ export function PermissionsMatrix() {
                     {row.resourceLabel}
                   </span>
                 </td>
-                <td className="p-3 border-b border-r align-middle">
+                <td className="sticky left-[270px] z-10 bg-background p-3 border-b border-r align-middle">
                   <span
                     className="whitespace-normal break-words leading-snug"
                     title={row.description}
