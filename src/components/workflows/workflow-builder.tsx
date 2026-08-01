@@ -76,6 +76,8 @@ type FieldOpt = {
   label: string;
   type?: "text" | "number" | "date" | "select" | "boolean";
   options?: { value: string; label: string }[];
+  /** Campo de referência: usa seletor com busca por nome (grava o ID). */
+  ref?: "user" | "company" | "contact" | "pipeline";
 };
 
 function useEntityFieldOptions(entity: WorkflowEntity): FieldOpt[] {
@@ -91,11 +93,13 @@ function useEntityFieldOptions(entity: WorkflowEntity): FieldOpt[] {
       label: f.label,
       type: f.type,
       options: f.options,
+      ref: (f as { ref?: FieldOpt["ref"] }).ref,
     }));
   }
   // Fallback: usa constantes locais enquanto o catálogo carrega.
   return (ENTITY_FIELDS[entity] ?? []).map((n) => ({ name: n, label: n }));
 }
+
 
 import {
   ENTITY_FIELDS,
@@ -1783,7 +1787,13 @@ function FilterRow({
         </SelectContent>
       </Select>
       {needsValue &&
-        (options && options.length > 0 ? (
+        (selected?.ref ? (
+          <FkPicker
+            kind={selected.ref}
+            value={String(filter.value ?? "")}
+            onChange={(v) => onChange({ ...filter, value: v })}
+          />
+        ) : options && options.length > 0 ? (
           <Select
             value={String(filter.value ?? "")}
             onValueChange={(v) => onChange({ ...filter, value: v })}
@@ -1800,6 +1810,7 @@ function FilterRow({
             </SelectContent>
           </Select>
         ) : (
+
           <Input
             className="h-8 text-xs"
             type={type === "number" ? "number" : type === "date" ? "date" : "text"}

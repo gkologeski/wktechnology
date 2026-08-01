@@ -15,6 +15,31 @@ export type EntityFieldDef = {
   options?: { value: string; label: string }[];
   /** Campo é obrigatório no schema (NOT NULL sem default). */
   required?: boolean;
+  /** Quando presente, o construtor renderiza seletor com busca por nome. */
+  ref?: RefKind;
+};
+
+/** Tipos de referência suportados pelo seletor com busca por nome. */
+export type RefKind = "user" | "company" | "contact" | "pipeline";
+
+/**
+ * Colunas de referência (FK) — o construtor mostra nome e grava o ID.
+ * Mantido aqui para o catálogo e o builder compartilharem a mesma verdade.
+ */
+export const REF_COLUMNS: Record<string, RefKind> = {
+  assigned_user_id: "user",
+  assignee_id: "user",
+  approver_user_id: "user",
+  hiring_manager_id: "user",
+  notify_user_id: "user",
+  manager_id: "user",
+  requested_by: "user",
+  company_id: "company",
+  parent_company_id: "company",
+  counterparty_company_id: "company",
+  primary_contact_id: "contact",
+  contact_id: "contact",
+  pipeline_id: "pipeline",
 };
 
 type RawRow = {
@@ -43,7 +68,24 @@ const HIDDEN = new Set<string>([
   "converted_at",
   "converted_contact_id",
   "converted_deal_id",
+  // Colunas técnicas/redundantes: já existe equivalente amigável ou são IDs
+  // de sincronização que não fazem sentido em condições de workflow.
+  "stage_id",
+  "external_id",
+  "hs_pipeline",
+  "hs_pipeline_stage",
+  "hs_deal_stage_probability_raw",
+  "hubspot_id",
+  "hubspot_owner_id_text",
+  "sync_state_id",
+  "import_batch_id",
 ]);
+
+/** Esconde qualquer coluna `hs_*`/`hubspot_*` remanescente de sincronização. */
+function isSyncColumn(col: string): boolean {
+  return /^(hs_|hubspot_)/.test(col) && col !== "hs_lead_status" && col !== "hs_priority";
+}
+
 
 // Rótulos amigáveis (pt-BR) — fallback é snake_case → Title Case.
 const LABELS: Record<string, string> = {
@@ -184,10 +226,35 @@ const LABELS: Record<string, string> = {
 
 };
 
-function toLabel(col: string): string {
+/**
+ * Rótulos que dependem da entidade — evita traduções erradas do dicionário
+ * global (ex.: `title` = "Cargo" em contatos, mas "Título" em contratos).
+ */
+const ENTITY_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
+  contracts: {
+    title: "Título do contrato",
+    role: "Papel na relação",
+    status: "Status do contrato",
+  },
+  quotes: { title: "Título da cotação" },
+  proposals: { title: "Título da proposta" },
+  ats_jobs: { title: "Título da vaga" },
+  project_tasks: { title: "Título da tarefa" },
+  project_milestones: { title: "Título do marco" },
+  tickets: { title: "Título do chamado" },
+  activities: { title: "Título da atividade" },
+};
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function toLabel(col: string, entity?: string): string {
+
+  const override = entity ? ENTITY_LABEL_OVERRIDES[entity]?.[col] : undefined;
+  if (override) return override;
   if (LABELS[col]) return LABELS[col];
   return col.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
 
 function inferType(dataType: string): EntityFieldType {
   if (dataType === "boolean") return "boolean";
@@ -249,62 +316,10 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
     });
     if (error) throw error;
 
-    // Resolução de labels para FKs com valores legíveis.
     const allRows = (rows ?? []) as RawRow[];
 
-    // Coleta UUIDs distintos para FKs conhecidas — buscaremos rótulos.
-    const pipelineIds = new Set<string>();
-    const companyIds = new Set<string>();
-    const userIds = new Set<string>();
-    for (const r of allRows) {
-      if (!r.distinct_values) continue;
-      if (r.column_name === "pipeline_id") r.distinct_values.forEach((v) => pipelineIds.add(v));
-      else if (r.column_name === "company_id" || r.column_name === "parent_company_id")
-        r.distinct_values.forEach((v) => companyIds.add(v));
-      else if (r.column_name === "assigned_user_id" || r.column_name === "owner_id")
-        r.distinct_values.forEach((v) => userIds.add(v));
-    }
-
-    const [pipelinesRes, companiesRes, usersRes] = await Promise.all([
-      pipelineIds.size
-        ? supabase
-            .from("pipelines")
-            .select("id, name")
-            .in("id", [...pipelineIds])
-        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-      companyIds.size
-        ? supabase
-            .from("companies")
-            .select("id, name")
-            .in("id", [...companyIds])
-        : Promise.resolve({ data: [] as { id: string; name: string }[] }),
-      userIds.size
-        ? supabase
-            .from("profiles")
-            .select("id, full_name")
-            .in("id", [...userIds])
-        : Promise.resolve({
-            data: [] as { id: string; full_name: string | null }[],
-          }),
-    ]);
-
-    const pipelineMap = new Map(
-      ((pipelinesRes.data ?? []) as { id: string; name: string }[]).map((p) => [p.id, p.name]),
-    );
-    const companyMap = new Map(
-      ((companiesRes.data ?? []) as { id: string; name: string }[]).map((c) => [c.id, c.name]),
-    );
-    const userMap = new Map(
-      (
-        (usersRes.data ?? []) as {
-          id: string;
-          full_name: string | null;
-        }[]
-      ).map((u) => [u.id, u.full_name ?? u.id]),
-    );
-
-    // Para deals/leads, as etapas dependem do pipeline — buscamos a definição
-    // canônica em pipelines.stages e usamos como opções do campo `stage` (e `stage_id`),
+    // Para deals/leads/tickets, as etapas dependem do pipeline — buscamos a definição
+    // canônica em pipelines.stages e usamos como opções do campo `stage`,
     // ignorando os valores distintos crus da coluna (que podem incluir lixo legado).
     let pipelineStageOptions: { value: string; label: string }[] | null = null;
     if (data.entity === "deals" || data.entity === "leads" || data.entity === "tickets") {
@@ -333,45 +348,90 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       if (opts.length) pipelineStageOptions = opts;
     }
 
+    // Campos com cadastro auxiliar: o construtor espelha o cadastro de origem.
+    // Se o cadastro tem itens, é combo com esses itens; se está vazio, é texto livre.
+    const registryOptions: Record<string, { value: string; label: string }[]> = {};
+    const hasColumn = (col: string) => allRows.some((r) => r.column_name === col);
+    if (hasColumn("closed_lost_reason")) {
+      const { data: reasons } = await supabase
+        .from("deal_loss_reasons")
+        .select("value, label, is_active")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      const opts = ((reasons ?? []) as { value: string; label: string }[]).map((r) => ({
+        value: r.label || r.value,
+        label: r.label || r.value,
+      }));
+      if (opts.length) registryOptions["closed_lost_reason"] = opts;
+    }
+    if (hasColumn("source") || hasColumn("lead_source")) {
+      const { data: sources } = await supabase.from("lead_sources").select("name").order("name");
+      const opts = ((sources ?? []) as { name: string }[])
+        .filter((s) => !!s.name)
+        .map((s) => ({ value: s.name, label: s.name }));
+      if (opts.length) {
+        registryOptions["source"] = opts;
+        registryOptions["lead_source"] = opts;
+      }
+    }
+
+    // Campos cujo cadastro de entrada é digitação livre — nunca viram combo
+    // a partir de amostragem de valores já existentes.
+    const FREE_TEXT = new Set<string>([
+      "dealtype",
+      "closed_won_reason",
+      "resolution",
+      "reference",
+      "notes",
+      "description",
+      "subcategory",
+    ]);
+
     const fields: EntityFieldDef[] = [];
     for (const r of allRows) {
-      if (HIDDEN.has(r.column_name)) continue;
+      if (HIDDEN.has(r.column_name) || isSyncColumn(r.column_name)) continue;
       const type = inferType(r.data_type);
       const def: EntityFieldDef = {
         name: r.column_name,
-        label: toLabel(r.column_name),
+        label: toLabel(r.column_name, data.entity),
         type,
         required: r.is_nullable === "NO" && !r.has_default,
       };
 
-      // Override: stage / stage_id usam catálogo do pipeline, não distinct values.
-      if (pipelineStageOptions && (r.column_name === "stage" || r.column_name === "stage_id")) {
+      const ref = REF_COLUMNS[r.column_name];
+      if (ref) {
+        // Referência: seletor com busca por nome; grava o ID e nunca lista hashes.
+        def.ref = ref;
+        def.type = "text";
+      } else if (pipelineStageOptions && r.column_name === "stage") {
         def.type = "select";
         def.options = pipelineStageOptions;
+      } else if (registryOptions[r.column_name]) {
+        def.type = "select";
+        def.options = registryOptions[r.column_name];
+      } else if (FREE_TEXT.has(r.column_name)) {
+        def.type = type === "boolean" ? "boolean" : "text";
       } else if (
         r.distinct_values &&
         r.distinct_count !== null &&
         r.distinct_count <= 20 &&
         r.distinct_count > 0 &&
         type !== "date" &&
-        type !== "number"
+        type !== "number" &&
+        // Nunca transformar UUID cru em opção de combo.
+        !r.distinct_values.some((v) => UUID_RE.test(v))
       ) {
         const valuesOnly = r.distinct_values.slice(0, 20);
         def.type = "select";
-        def.options = valuesOnly.map((v) => {
-          let label = v;
-          if (r.column_name === "pipeline_id") label = pipelineMap.get(v) ?? v;
-          else if (r.column_name === "company_id" || r.column_name === "parent_company_id")
-            label = companyMap.get(v) ?? v;
-          else if (r.column_name === "assigned_user_id" || r.column_name === "owner_id")
-            label = userMap.get(v) ?? v;
-          else if (type === "boolean") label = v === "true" ? "Sim" : v === "false" ? "Não" : v;
-          return { value: v, label };
-        });
+        def.options = valuesOnly.map((v) => ({
+          value: v,
+          label: type === "boolean" ? (v === "true" ? "Sim" : v === "false" ? "Não" : v) : v,
+        }));
       }
 
       fields.push(def);
     }
+
 
     // Ordenação amigável: campos com valores listáveis primeiro,
     // depois datas, depois o resto alfabeticamente por label.

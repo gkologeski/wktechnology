@@ -201,9 +201,13 @@ export const searchUsers = createServerFn({ method: "POST" })
     }
 
     const results = idList.map((id) => {
-      const name = nameById.get(id) || emailById.get(id) || "";
+      // Fallback em cascata: nome do perfil → e-mail → identificador curto.
+      // Nunca devolvemos o UUID cru para a interface.
+      const name =
+        nameById.get(id) || emailById.get(id) || `Usuário ${id.slice(0, 8)}`;
       return { id, name, is_member: memberIds.has(id) };
     });
+
 
     // Filtra por q se veio, e prioriza membros do workspace nas sugestões livres.
     const q = data.q?.trim().toLowerCase();
