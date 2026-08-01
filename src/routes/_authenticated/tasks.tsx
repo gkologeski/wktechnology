@@ -894,7 +894,13 @@ function TasksHubspotView() {
                       colSpan={visibleColumns.length + 3}
                       className="px-3 py-16 text-center text-sm text-muted-foreground"
                     >
-                      Nenhuma tarefa encontrada com os filtros atuais.
+                      {activityScope.hasNoAccess
+                        ? "Você não possui permissão para visualizar atividades neste workspace."
+                        : activityScope.isWorkspaceWide
+                          ? "Nenhuma tarefa encontrada com os filtros atuais."
+                          : activityScope.isTeam
+                            ? "Nenhuma tarefa da sua equipe encontrada com os filtros atuais."
+                            : "Nenhuma tarefa sua encontrada com os filtros atuais."}
                     </td>
                   </tr>
                 ) : (
