@@ -1,6 +1,5 @@
 // Server functions for in-app notifications.
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -258,9 +257,11 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
       });
     }
 
-    // Build origin for email link
-    const req = getRequest();
-    const origin = req ? new URL(req.url).origin : "";
+    // Build origin for email link (server-only helper loaded inside the handler)
+    const { getRequestOrigin, getRequestAuthorization } = await import(
+      "@/lib/request-origin.server"
+    );
+    const origin = getRequestOrigin();
     const fullLink = link.link ? `${origin}${link.link}` : origin || undefined;
 
     // Insert in-app notifications + collect email targets
@@ -307,7 +308,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     if (emailJobs.length > 0) {
       try {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const bearer = req?.headers.get("authorization") ?? "";
+        const bearer = getRequestAuthorization();
         const sendUrl = origin ? `${origin}/lovable/email/transactional/send` : "";
         for (const job of emailJobs) {
           // Resolve email
