@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import {
   parseContractPdf,
@@ -34,6 +35,12 @@ import {
 } from "@/lib/contracts/import.functions";
 import { updateContract } from "@/lib/contracts.functions";
 import { LocalContractFileViewerDialog } from "@/components/contracts/local-file-viewer-dialog";
+import {
+  IDLE_PROGRESS,
+  isExtracting,
+  progressFor,
+  type ExtractionProgress,
+} from "@/components/contracts/import-progress";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import {
   PAYMENT_METHODS,
@@ -41,6 +48,7 @@ import {
   SERVICE_TYPES,
   SIGNATURE_PROVIDERS,
 } from "@/lib/contracts/import-schemas";
+
 
 type Props = {
   open: boolean;
@@ -89,7 +97,9 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
 
   const [step, setStep] = useState<Step>("upload");
   const [file, setFile] = useState<File | null>(null);
-  const [parsing, setParsing] = useState(false);
+  const [progress, setProgress] = useState<ExtractionProgress>(IDLE_PROGRESS);
+  const parsing = isExtracting(progress);
+
   const [saving, setSaving] = useState(false);
   const [fields, setFields] = useState<ExtractedContract | null>(null);
   const [contractId, setContractId] = useState<string | null>(null);
@@ -102,7 +112,8 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   const reset = useCallback(() => {
     setStep("upload");
     setFile(null);
-    setParsing(false);
+    setProgress(IDLE_PROGRESS);
+
     setSaving(false);
     setFields(null);
     setContractId(null);
@@ -131,6 +142,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     setContractId(null);
     setSourceFilePath(null);
     setExtractedText(null);
+    setProgress(IDLE_PROGRESS);
   }, []);
 
   const uploadOriginal = useCallback(
@@ -163,23 +175,29 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       toast.error(".docx maior que 10 MB.");
       return;
     }
-    setParsing(true);
+    setProgress(progressFor("preparing"));
     try {
       let extracted: ExtractedContract;
       if (kind === "pdf") {
+        setProgress(progressFor("text"));
         const b64 = await fileToBase64(file);
+        setProgress(progressFor("ai"));
         extracted = await parsePdf({ data: { filename: file.name, base64: b64 } });
       } else {
+        setProgress(progressFor("text"));
         const text = await docxToText(file);
         if (text.trim().length < 20) {
           throw new Error("Não foi possível extrair texto do .docx.");
         }
         setExtractedText(text);
+        setProgress(progressFor("ai"));
         extracted = await parseText({ data: { filename: file.name, text } });
       }
 
       // Persistir rascunho imediatamente para não perder o trabalho se a aba fechar.
+      setProgress(progressFor("storing"));
       const path = await uploadOriginal(file);
+      setProgress(progressFor("draft"));
       const result = await createFromImport({
         data: {
           fields: extracted,
@@ -192,14 +210,15 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       setSourceFilePath(path);
       setContractId(result.id);
       setStep("review");
+      setProgress(progressFor("done"));
       toast.success("Rascunho criado. Revise e finalize.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha na extração";
+      setProgress(progressFor("error", msg));
       toast.error(msg);
-    } finally {
-      setParsing(false);
     }
   }, [file, kind, parsePdf, parseText, uploadOriginal, createFromImport]);
+
 
   const buildPatch = useCallback((f: ExtractedContract) => {
     const num = (v: unknown) =>
@@ -290,6 +309,18 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
           ) : null}
         </DialogHeader>
 
+        {parsing || progress.phase === "error" ? (
+          <div className="space-y-2 rounded-md border bg-muted/20 p-3" aria-live="polite">
+            <Progress value={progress.percent} />
+            <p className="text-xs font-medium">{progress.message}</p>
+            {progress.detail ? (
+              <p className="text-xs text-destructive">{progress.detail}</p>
+            ) : null}
+          </div>
+        ) : null}
+
+
+
         {step === "upload" && (
           <UploadStep
             file={file}
@@ -345,7 +376,13 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
           onOpenChange={setViewerOpen}
           file={file}
           text={extractedText}
+          progress={progress}
+          extracted={fields}
+          onExtract={runExtraction}
+          onSave={submit}
+          saving={saving}
         />
+
       </DialogContent>
     </Dialog>
   );
