@@ -191,7 +191,7 @@ export const updateProjectUpdate = createServerFn({ method: "POST" })
       "techprojects.project_updates.update.workspace",
     ]);
 
-    const patch: Record<string, unknown> = {};
+    const patch: Record<string, string | number | null> = {};
     if (data.title !== undefined) patch.title = data.title;
     if (data.summary !== undefined) patch.summary = data.summary ?? null;
     if (data.health !== undefined) patch.health = data.health ?? null;
@@ -202,7 +202,7 @@ export const updateProjectUpdate = createServerFn({ method: "POST" })
 
     const { data: row, error } = await supabase
       .from("project_updates")
-      .update(patch)
+      .update(patch as never)
       .eq("id", data.id)
       .select(UPDATE_SELECT)
       .single();
