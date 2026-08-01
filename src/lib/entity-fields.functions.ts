@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { REF_COLUMNS, type RefKind } from "./entity-fields-refs";
 
 export type EntityFieldType = "text" | "number" | "date" | "select" | "boolean";
 
@@ -17,29 +18,6 @@ export type EntityFieldDef = {
   required?: boolean;
   /** Quando presente, o construtor renderiza seletor com busca por nome. */
   ref?: RefKind;
-};
-
-/** Tipos de referência suportados pelo seletor com busca por nome. */
-export type RefKind = "user" | "company" | "contact" | "pipeline";
-
-/**
- * Colunas de referência (FK) — o construtor mostra nome e grava o ID.
- * Mantido aqui para o catálogo e o builder compartilharem a mesma verdade.
- */
-export const REF_COLUMNS: Record<string, RefKind> = {
-  assigned_user_id: "user",
-  assignee_id: "user",
-  approver_user_id: "user",
-  hiring_manager_id: "user",
-  notify_user_id: "user",
-  manager_id: "user",
-  requested_by: "user",
-  company_id: "company",
-  parent_company_id: "company",
-  counterparty_company_id: "company",
-  primary_contact_id: "contact",
-  contact_id: "contact",
-  pipeline_id: "pipeline",
 };
 
 type RawRow = {
