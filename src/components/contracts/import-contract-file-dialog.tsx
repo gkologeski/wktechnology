@@ -142,6 +142,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     setContractId(null);
     setSourceFilePath(null);
     setExtractedText(null);
+    setProgress(IDLE_PROGRESS);
   }, []);
 
   const uploadOriginal = useCallback(
@@ -174,23 +175,29 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       toast.error(".docx maior que 10 MB.");
       return;
     }
-    setParsing(true);
+    setProgress(progressFor("preparing"));
     try {
       let extracted: ExtractedContract;
       if (kind === "pdf") {
+        setProgress(progressFor("text"));
         const b64 = await fileToBase64(file);
+        setProgress(progressFor("ai"));
         extracted = await parsePdf({ data: { filename: file.name, base64: b64 } });
       } else {
+        setProgress(progressFor("text"));
         const text = await docxToText(file);
         if (text.trim().length < 20) {
           throw new Error("Não foi possível extrair texto do .docx.");
         }
         setExtractedText(text);
+        setProgress(progressFor("ai"));
         extracted = await parseText({ data: { filename: file.name, text } });
       }
 
       // Persistir rascunho imediatamente para não perder o trabalho se a aba fechar.
+      setProgress(progressFor("storing"));
       const path = await uploadOriginal(file);
+      setProgress(progressFor("draft"));
       const result = await createFromImport({
         data: {
           fields: extracted,
@@ -203,14 +210,15 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       setSourceFilePath(path);
       setContractId(result.id);
       setStep("review");
+      setProgress(progressFor("done"));
       toast.success("Rascunho criado. Revise e finalize.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha na extração";
+      setProgress(progressFor("error", msg));
       toast.error(msg);
-    } finally {
-      setParsing(false);
     }
   }, [file, kind, parsePdf, parseText, uploadOriginal, createFromImport]);
+
 
   const buildPatch = useCallback((f: ExtractedContract) => {
     const num = (v: unknown) =>
