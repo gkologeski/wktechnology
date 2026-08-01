@@ -141,6 +141,101 @@ async function ensureBundle(
   return setId;
 }
 
+// Aplica concessão/revogação em massa de chaves para um cargo, mantendo o
+// bundle e os overrides explícitos do workspace sincronizados.
+async function applyBulkKeys(
+  supabase: SupabaseClient,
+  userId: string,
+  workspaceId: string,
+  roleId: string,
+  keys: string[],
+  granted: boolean,
+): Promise<string | null> {
+  if (keys.length === 0) return null;
+  let setId: string | null = null;
+  if (granted) {
+    const grantedSetId = await ensureBundle(supabase, userId, roleId);
+    setId = grantedSetId;
+    const rows = keys.map((k) => ({ set_id: grantedSetId, permission_key: k }));
+    const { error } = await supabase
+      .from("permission_set_items")
+      .upsert(rows, { onConflict: "set_id,permission_key" });
+    if (error) throw new Error(error.message);
+  } else {
+    const existing = await supabase
+      .from("job_role_sets")
+      .select("set_id, permission_sets!inner(id, module, owner_id)")
+      .eq("role_id", roleId);
+    if (existing.error) throw new Error(existing.error.message);
+    for (const row of (existing.data ?? []) as unknown as Array<{
+      set_id: string;
+      permission_sets: { module: string; owner_id: string | null };
+    }>) {
+      if (row.permission_sets?.module !== BUNDLE_MODULE) continue;
+      if (row.permission_sets?.owner_id !== userId) continue;
+      const { error } = await supabase
+        .from("permission_set_items")
+        .delete()
+        .eq("set_id", row.set_id)
+        .in("permission_key", keys);
+      if (error) throw new Error(error.message);
+    }
+  }
+  const effect: "grant" | "deny" = granted ? "grant" : "deny";
+  const overrideRows = keys.map((permissionKey) => ({
+    workspace_id: workspaceId,
+    role_id: roleId,
+    permission_key: permissionKey,
+    effect,
+    created_by: userId,
+  }));
+  const { error: overrideErr } = await supabase
+    .from("job_role_permission_overrides")
+    .upsert(overrideRows, { onConflict: "workspace_id,role_id,permission_key" });
+  if (overrideErr) throw new Error(overrideErr.message);
+  return setId;
+}
+
+// Chaves efetivas de um cargo: itens dos permission_sets vinculados +
+// overrides explícitos do workspace (grant adiciona, deny remove).
+async function effectiveRoleKeys(
+  supabase: SupabaseClient,
+  workspaceId: string,
+  roleId: string,
+): Promise<Set<string>> {
+  const links = await supabase.from("job_role_sets").select("set_id").eq("role_id", roleId);
+  if (links.error) throw new Error(links.error.message);
+  const setIds = ((links.data ?? []) as Array<{ set_id: string }>).map((r) => r.set_id);
+  const keys = new Set<string>();
+  if (setIds.length > 0) {
+    const items = await fetchAllPages<{ permission_key: string }>((from, to) =>
+      supabase
+        .from("permission_set_items")
+        .select("permission_key")
+        .in("set_id", setIds)
+        .order("permission_key")
+        .range(from, to),
+    );
+    for (const it of items) keys.add(it.permission_key);
+  }
+  const overrides = await fetchAllPages<{ permission_key: string; effect: string }>((from, to) =>
+    supabase
+      .from("job_role_permission_overrides")
+      .select("permission_key, effect")
+      .eq("workspace_id", workspaceId)
+      .eq("role_id", roleId)
+      .order("permission_key")
+      .range(from, to),
+  );
+  for (const o of overrides) {
+    if (o.effect === "grant") keys.add(o.permission_key);
+    else keys.delete(o.permission_key);
+  }
+  return keys;
+}
+
+
+
 const SetPermInput = z.object({
   role_id: z.string().uuid(),
   permission_key: z.string().min(1),
