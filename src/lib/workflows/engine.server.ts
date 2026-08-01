@@ -251,7 +251,7 @@ async function runActions(
         action: "delay",
         detail: { amount: action.amount, unit: action.unit, resume_at: runAtIso },
       });
-      return { log, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
+      return { log: rawLog, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
     }
 
     // Branch: filtra e executa then/else recursivamente.
@@ -268,7 +268,7 @@ async function runActions(
       });
       const branchRes = await runActions(supabase, branchActions, ctx);
       log.push(...branchRes.log);
-      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.hadError) return { log: rawLog, hadError: true };
       if (branchRes.suspendedAt) {
         // Delays dentro de branches não são retomáveis nesta versão — reportamos e paramos.
         log.push({
@@ -277,7 +277,7 @@ async function runActions(
           action: "delay",
           error: "Delays dentro de ramificações ainda não são retomáveis",
         });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       continue;
     }
@@ -299,7 +299,7 @@ async function runActions(
       });
       const branchRes = await runActions(supabase, branchActions, ctx);
       log.push(...branchRes.log);
-      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.hadError) return { log: rawLog, hadError: true };
       if (branchRes.suspendedAt) {
         log.push({
           at: new Date().toISOString(),
@@ -307,7 +307,7 @@ async function runActions(
           action: "delay",
           error: "Delays dentro de switch_by_value ainda não são retomáveis",
         });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       continue;
     }
@@ -326,7 +326,7 @@ async function runActions(
       });
       const branchRes = await runActions(supabase, branchActions, ctx);
       log.push(...branchRes.log);
-      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.hadError) return { log: rawLog, hadError: true };
       if (branchRes.suspendedAt) {
         log.push({
           at: new Date().toISOString(),
@@ -334,7 +334,7 @@ async function runActions(
           action: "delay",
           error: "Delays dentro de branch_multi ainda não são retomáveis",
         });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       continue;
     }
@@ -350,7 +350,7 @@ async function runActions(
           action: "delay_until_date",
           error: `campo ${action.field} não é uma data válida`,
         });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       const mult =
         action.offset_unit === "minutes"
@@ -375,7 +375,7 @@ async function runActions(
         action: "delay_until_date",
         detail: { field: action.field, resume_at: runAtIso },
       });
-      return { log, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
+      return { log: rawLog, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
     }
 
     // Approval step: cria linha em workflow_approvals e suspende o run.
@@ -403,7 +403,7 @@ async function runActions(
         .single();
       if (apprErr || !appr) {
         log.push({ at: new Date().toISOString(), ok: false, action: "approval_step", error: apprErr?.message ?? "falha ao criar aprovação" });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       // Notifica o aprovador.
       await supabase.from("notifications").insert({
@@ -421,14 +421,14 @@ async function runActions(
         action: "approval_step",
         detail: { approval_id: appr.id, approver, title },
       });
-      return { log, hadError: false, waitingApproval: { approvalId: appr.id as string, resumeCursor: i + 1 } };
+      return { log: rawLog, hadError: false, waitingApproval: { approvalId: appr.id as string, resumeCursor: i + 1 } };
     }
 
     const step = await runAction(supabase, action, ctx);
     log.push(step);
-    if (!step.ok) return { log, hadError: true };
+    if (!step.ok) return { log: rawLog, hadError: true };
   }
-  return { log, hadError: false };
+  return { log: rawLog, hadError: false };
 }
 
 async function runAction(
