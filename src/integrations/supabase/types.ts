@@ -18403,6 +18403,7 @@ export type Database = {
       }
       recompute_deal_value: { Args: { _deal_id: string }; Returns: undefined }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
+      resolve_workspace_id: { Args: { _owner: string }; Returns: string }
       restore_workspace: {
         Args: { _actor: string; _workspace: string }
         Returns: undefined
