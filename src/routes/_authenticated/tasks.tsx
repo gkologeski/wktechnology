@@ -190,7 +190,7 @@ function TasksHubspotView() {
   }, [search]);
   useEffect(() => {
     setPage(0);
-  }, [activeView, filters, debouncedSearch, sortKey, sortDir, pageSize]);
+  }, [activeView, filters, debouncedSearch, assignee, sortKey, sortDir, pageSize]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyTaskFilters = (q: any) => {
