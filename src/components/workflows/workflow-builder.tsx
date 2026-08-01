@@ -1967,11 +1967,13 @@ function StepConfigPanel({
   action,
   entity,
   entityFields,
+  priorFields = [],
   onChange,
 }: {
   action: WorkflowAction;
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
+  priorFields?: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
   return (
@@ -1981,7 +1983,13 @@ function StepConfigPanel({
         <p className="text-xs text-muted-foreground mt-1">Configure os detalhes deste passo.</p>
       </div>
       <ActionTemplatesBar action={action} entity={entity} onApply={onChange} />
-      <StepConfigForm action={action} entity={entity} entityFields={entityFields} onChange={onChange} />
+      <StepConfigForm
+        action={action}
+        entity={entity}
+        entityFields={entityFields}
+        priorFields={priorFields}
+        onChange={onChange}
+      />
     </div>
   );
 }
@@ -1991,11 +1999,13 @@ function StepConfigForm({
   action,
   entity,
   entityFields,
+  priorFields = [],
   onChange,
 }: {
   action: WorkflowAction;
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
+  priorFields?: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
 
@@ -2836,7 +2846,13 @@ function StepConfigForm({
       );
     case "branch_multi":
       return (
-        <BranchMultiForm entity={entity} entityFields={entityFields} action={action} onChange={onChange} />
+        <BranchMultiForm
+          entity={entity}
+          entityFields={entityFields}
+          priorFields={priorFields}
+          action={action}
+          onChange={onChange}
+        />
       );
     case "delay_until_date":
       return (
