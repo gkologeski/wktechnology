@@ -257,7 +257,8 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
       });
     }
 
-    // Build origin for email link
+    // Build origin for email link (server-only import inside the handler)
+    const { getRequest } = await import("@tanstack/react-start/server");
     const req = getRequest();
     const origin = req ? new URL(req.url).origin : "";
     const fullLink = link.link ? `${origin}${link.link}` : origin || undefined;
