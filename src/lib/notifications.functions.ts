@@ -258,7 +258,9 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     }
 
     // Build origin for email link (server-only helper loaded inside the handler)
-    const { getRequestOrigin } = await import("@/lib/request-origin.server");
+    const { getRequestOrigin, getRequestAuthorization } = await import(
+      "@/lib/request-origin.server"
+    );
     const origin = getRequestOrigin();
     const fullLink = link.link ? `${origin}${link.link}` : origin || undefined;
 
