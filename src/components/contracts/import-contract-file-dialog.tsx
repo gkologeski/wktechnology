@@ -112,7 +112,8 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   const reset = useCallback(() => {
     setStep("upload");
     setFile(null);
-    setParsing(false);
+    setProgress(IDLE_PROGRESS);
+
     setSaving(false);
     setFields(null);
     setContractId(null);
