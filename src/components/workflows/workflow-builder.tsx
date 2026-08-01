@@ -2218,6 +2218,7 @@ function StepConfigForm({
               key={i}
               filter={f}
               fields={entityFields}
+              priorFields={priorFields}
               onChange={(nf) =>
                 onChange({
                   ...action,
@@ -3184,11 +3185,13 @@ function SwitchByValueForm({
 function BranchMultiForm({
   entity,
   entityFields,
+  priorFields = [],
   action,
   onChange,
 }: {
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
+  priorFields?: FieldOpt[];
   action: Extract<WorkflowAction, { type: "branch_multi" }>;
   onChange: (a: WorkflowAction) => void;
 }) {
@@ -3257,6 +3260,7 @@ function BranchMultiForm({
                 key={fi}
                 filter={f}
                 fields={entityFields}
+                priorFields={priorFields}
                 onChange={(nf) =>
                   setBranches(
                     action.branches.map((x, idx) =>
