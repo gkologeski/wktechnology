@@ -214,9 +214,30 @@ async function runActions(
   ctx: RunCtx,
   startIndex = 0,
 ): Promise<RunResult> {
-  const log: LogStep[] = [];
+  const rawLog: LogStep[] = [];
+  let currentStep = -1;
+  // Registra a saída de cada passo em `ctx.vars.steps.N`, permitindo que
+  // condições posteriores referenciem `{{steps.N.campo}}`.
+  const log = new Proxy(rawLog, {
+    get(target, prop, receiver) {
+      if (prop === "push") {
+        return (...items: LogStep[]) => {
+          for (const item of items) {
+            if (currentStep < 0 || !item?.ok) continue;
+            const vars = (ctx.vars = ctx.vars ?? {});
+            const steps = (vars.steps = (vars.steps as AnyRow) ?? {}) as AnyRow;
+            steps[String(currentStep)] = (item.detail as AnyRow) ?? {};
+          }
+          return Array.prototype.push.apply(target, items);
+        };
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  }) as LogStep[];
   for (let i = startIndex; i < actions.length; i++) {
     const action = actions[i];
+    currentStep = i;
+
 
     // Delay: agenda retomada e para aqui.
     if (action.type === "delay") {
