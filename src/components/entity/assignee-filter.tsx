@@ -54,11 +54,17 @@ export function AssigneeFilter({
   onChange,
   className,
   label = "Responsável",
+  allowedUserIds = null,
+  allowAll = true,
 }: {
   value: AssigneeFilterValue;
   onChange: (next: AssigneeFilterValue) => void;
   className?: string;
   label?: string;
+  /** Restringe as opções aos responsáveis visíveis pelo escopo. `null` = sem restrição. */
+  allowedUserIds?: string[] | null;
+  /** Quando falso, oculta "Todos os responsáveis" (escopo limitado). */
+  allowAll?: boolean;
 }) {
   const { data: members = [], isLoading } = useWorkspaceMembers();
   const meId = useCurrentUserId();
@@ -67,8 +73,9 @@ export function AssigneeFilter({
     () =>
       [...members]
         .filter((m) => m.user_id !== meId)
+        .filter((m) => !allowedUserIds || allowedUserIds.includes(m.user_id))
         .sort((a, b) => (a.full_name ?? "").localeCompare(b.full_name ?? "")),
-    [members, meId],
+    [members, meId, allowedUserIds],
   );
 
   return (
@@ -78,9 +85,9 @@ export function AssigneeFilter({
         <SelectValue placeholder={label} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value={ASSIGNEE_ALL}>Todos os responsáveis</SelectItem>
+        {allowAll && <SelectItem value={ASSIGNEE_ALL}>Todos os responsáveis</SelectItem>}
         {meId && <SelectItem value={ASSIGNEE_ME}>Meus registros</SelectItem>}
-        <SelectItem value={ASSIGNEE_NONE}>Sem responsável</SelectItem>
+        {allowAll && <SelectItem value={ASSIGNEE_NONE}>Sem responsável</SelectItem>}
         {isLoading ? (
           <SelectItem value="__loading__" disabled>
             Carregando…

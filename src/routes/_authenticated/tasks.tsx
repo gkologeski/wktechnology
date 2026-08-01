@@ -38,6 +38,14 @@ import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs"
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
 import { useSavedViews } from "@/lib/saved-views";
+import {
+  AssigneeFilter,
+  ASSIGNEE_ALL,
+  ASSIGNEE_ME,
+  ASSIGNEE_NONE,
+  type AssigneeFilterValue,
+} from "@/components/entity/assignee-filter";
+import { useResourceScope } from "@/lib/access-control/use-resource-scope";
 import { TablePagination } from "@/components/table-pagination";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
@@ -93,6 +101,12 @@ function TasksHubspotView() {
 
   const [activeView, setActiveView] = useState<ViewId>("all");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const activityScope = useResourceScope("techsales.activities", "view");
+  const [assignee, setAssignee] = useState<AssigneeFilterValue>(ASSIGNEE_ALL);
+  // Escopo limitado (own/team): "Todos os responsáveis" não se aplica.
+  useEffect(() => {
+    if (!activityScope.isWorkspaceWide && assignee === ASSIGNEE_ALL) setAssignee(ASSIGNEE_ME);
+  }, [activityScope.isWorkspaceWide, assignee]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
@@ -176,7 +190,7 @@ function TasksHubspotView() {
   }, [search]);
   useEffect(() => {
     setPage(0);
-  }, [activeView, filters, debouncedSearch, sortKey, sortDir, pageSize]);
+  }, [activeView, filters, debouncedSearch, assignee, sortKey, sortDir, pageSize]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyTaskFilters = (q: any) => {
@@ -214,6 +228,11 @@ function TasksHubspotView() {
         .lt("due_date", new Date(startOfDay.getTime() + 7 * 86_400_000).toISOString());
     }
 
+    // Responsável (owner_id em activities), respeitando o escopo efetivo.
+    if (assignee === ASSIGNEE_ME && user?.id) q = q.eq("owner_id", user.id);
+    else if (assignee === ASSIGNEE_NONE) q = q.is("owner_id", null);
+    else if (assignee !== ASSIGNEE_ALL) q = q.eq("owner_id", assignee);
+
     const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
     if (term) {
       q = q.or([`subject.ilike.%${term}%`, `body.ilike.%${term}%`].join(","));
@@ -230,6 +249,7 @@ function TasksHubspotView() {
       sortKey,
       sortDir,
       debouncedSearch,
+      assignee,
       page,
       pageSize,
       user?.id,
@@ -775,6 +795,16 @@ function TasksHubspotView() {
               />
             </div>
 
+            <AssigneeFilter
+              value={assignee}
+              onChange={setAssignee}
+              className="h-9 w-52"
+              allowedUserIds={activityScope.ownerIds}
+              allowAll={activityScope.isWorkspaceWide}
+            />
+
+
+
             {selectedIds.size > 0 ? (
               <div className="flex items-center gap-2 rounded-md border bg-primary/5 px-2 py-1">
                 <span className="text-xs font-medium text-primary">
@@ -864,7 +894,13 @@ function TasksHubspotView() {
                       colSpan={visibleColumns.length + 3}
                       className="px-3 py-16 text-center text-sm text-muted-foreground"
                     >
-                      Nenhuma tarefa encontrada com os filtros atuais.
+                      {activityScope.hasNoAccess
+                        ? "Você não possui permissão para visualizar atividades neste workspace."
+                        : activityScope.isWorkspaceWide
+                          ? "Nenhuma tarefa encontrada com os filtros atuais."
+                          : activityScope.isTeam
+                            ? "Nenhuma tarefa da sua equipe encontrada com os filtros atuais."
+                            : "Nenhuma tarefa sua encontrada com os filtros atuais."}
                     </td>
                   </tr>
                 ) : (
