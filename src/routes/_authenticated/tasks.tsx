@@ -101,6 +101,12 @@ function TasksHubspotView() {
 
   const [activeView, setActiveView] = useState<ViewId>("all");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const activityScope = useResourceScope("techsales.activities", "view");
+  const [assignee, setAssignee] = useState<AssigneeFilterValue>(ASSIGNEE_ALL);
+  // Escopo limitado (own/team): "Todos os responsáveis" não se aplica.
+  useEffect(() => {
+    if (!activityScope.isWorkspaceWide && assignee === ASSIGNEE_ALL) setAssignee(ASSIGNEE_ME);
+  }, [activityScope.isWorkspaceWide, assignee]);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
