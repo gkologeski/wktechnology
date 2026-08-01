@@ -6,6 +6,7 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { createRequire } from "node:module";
+import { lucideSlim } from "./vite/plugins/lucide-slim";
 
 const require = createRequire(import.meta.url);
 const eventsPolyfillPath = require.resolve("events/events.js");
@@ -30,6 +31,7 @@ export default defineConfig({
   },
   vite: {
     plugins: [
+      lucideSlim(),
       {
         // @twilio/voice-sdk imports `node:events` / `events`. Vite's default
         // browser externalization replaces these with a stub that has no
