@@ -105,26 +105,34 @@ function ProjectDetailPage() {
         title={p.name}
         description={p.description ?? undefined}
         actions={
-          <Select
-            value={p.status}
-            onValueChange={async (v) => {
-              await update({ data: { id, patch: { status: v as any } } });
-              qc.invalidateQueries({ queryKey: ["project", id] });
-              qc.invalidateQueries({ queryKey: ["projects"] });
-            }}
-          >
-            <SelectTrigger className="w-44">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                <SelectItem key={k} value={k}>
-                  {v}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/projects/$id/entrega" params={{ id }}>
+                Acompanhamento de entrega
+              </Link>
+            </Button>
+            <Select
+              value={p.status}
+              onValueChange={async (v) => {
+                await update({ data: { id, patch: { status: v as any } } });
+                qc.invalidateQueries({ queryKey: ["project", id] });
+                qc.invalidateQueries({ queryKey: ["projects"] });
+              }}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>
+                    {v}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         }
+
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
