@@ -547,6 +547,16 @@ export function WorkflowBuilder({
     }
   }, [open, draft]);
 
+  // Saídas de passos que vêm antes do passo selecionado (mesmo nível do fluxo).
+  // Precisa ficar antes do early return para manter a ordem dos hooks estável.
+  const priorStepFields = useMemo(
+    () =>
+      selection && selection !== "trigger"
+        ? priorStepFieldOptions(state.actions, selection)
+        : [],
+    [state.actions, selection],
+  );
+
   if (!open) return null;
 
   const setActions = (fn: (prev: WorkflowAction[]) => WorkflowAction[]) =>
@@ -567,14 +577,6 @@ export function WorkflowBuilder({
   const selectedAction =
     selection && selection !== "trigger" ? getStep(state.actions, selection) : null;
 
-  // Saídas de passos que vêm antes do passo selecionado (mesmo nível do fluxo).
-  const priorStepFields = useMemo(
-    () =>
-      selection && selection !== "trigger"
-        ? priorStepFieldOptions(state.actions, selection)
-        : [],
-    [state.actions, selection],
-  );
 
   const addAction = (
     type: WorkflowActionType,
