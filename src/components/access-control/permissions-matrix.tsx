@@ -13,6 +13,7 @@ import {
   renameJobRole,
   deleteJobRole,
   restoreRoleDefaults,
+  copyRolePermissions,
 } from "@/lib/access-control/role-bundle.functions";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -32,8 +33,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+
 import {
   Select,
   SelectContent,
@@ -51,7 +57,17 @@ import {
   type ScopeMatrixRow,
   type ScopeValue,
 } from "@/lib/access-control/scope-matrix";
-import { Lock, Search, Plus, MoreVertical, Copy, Pencil, Trash2, RotateCcw } from "lucide-react";
+import {
+  Lock,
+  Search,
+  Plus,
+  MoreVertical,
+  Copy,
+  ClipboardCopy,
+  Pencil,
+  Trash2,
+  RotateCcw,
+} from "lucide-react";
 import { toast } from "sonner";
 
 export const MODULE_META: Record<string, { label: string; tone: string }> = {
@@ -114,6 +130,7 @@ export function PermissionsMatrix() {
   const renameRoleFn = useServerFn(renameJobRole);
   const deleteRoleFn = useServerFn(deleteJobRole);
   const restoreFn = useServerFn(restoreRoleDefaults);
+  const copyPermsFn = useServerFn(copyRolePermissions);
   const qc = useQueryClient();
 
   const bundleQ = useQuery<AccessBundle>({
@@ -137,6 +154,10 @@ export function PermissionsMatrix() {
   const [deleteTarget, setDeleteTarget] = useState<Role | null>(null);
   const [duplicateTarget, setDuplicateTarget] = useState<Role | null>(null);
   const [duplicateName, setDuplicateName] = useState("");
+  const [copyTarget, setCopyTarget] = useState<Role | null>(null);
+  const [copySource, setCopySource] = useState<Role | null>(null);
+  const [copyMode, setCopyMode] = useState<"merge" | "replace">("merge");
+  const [copyScope, setCopyScope] = useState<"module" | "all">("module");
 
   const invalidateAll = () => {
     qc.invalidateQueries({ queryKey: ["access"] });
@@ -233,6 +254,42 @@ export function PermissionsMatrix() {
     },
     onError: (err: Error) => toast.error(err.message ?? "Falha ao restaurar padrões"),
   });
+
+  const copyMut = useMutation({
+    mutationFn: (v: {
+      source_role_id: string;
+      target_role_id: string;
+      mode: "merge" | "replace";
+      module?: string;
+    }) => copyPermsFn({ data: v }),
+    onSuccess: (res) => {
+      invalidateAll();
+      const r = res as { granted: number; revoked: number };
+      setCopyTarget(null);
+      setCopySource(null);
+      toast.success(`Permissões copiadas (${r.granted} concedidas, ${r.revoked} removidas).`);
+    },
+    onError: (err: Error) => toast.error(err.message ?? "Falha ao copiar permissões"),
+  });
+
+  // Prévia da cópia (client-side) usando o catálogo e a matriz já carregados.
+  const copyPreview = useMemo(() => {
+    if (!copyTarget || !copySource) return null;
+    const matrix = matrixQ.data ?? {};
+    const catalog = bundleQ.data?.permissions ?? [];
+    const allowed =
+      copyScope === "module"
+        ? new Set(catalog.filter((p) => p.module === activeModule).map((p) => p.key))
+        : null;
+    const inScope = (k: string) => (allowed ? allowed.has(k) : true);
+    const source = new Set((matrix[copySource.id] ?? []).filter(inScope));
+    const target = new Set((matrix[copyTarget.id] ?? []).filter(inScope));
+    let granted = 0;
+    for (const k of source) if (!target.has(k)) granted += 1;
+    let revoked = 0;
+    for (const k of target) if (!source.has(k)) revoked += 1;
+    return { granted, revoked };
+  }, [copyTarget, copySource, copyScope, activeModule, matrixQ.data, bundleQ.data]);
 
   const modulesWithData = useMemo(() => {
     const present = new Set((bundleQ.data?.permissions ?? []).map((p) => p.module));
@@ -375,6 +432,31 @@ export function PermissionsMatrix() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        {!r.is_system && roles.length > 1 && (
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger aria-label={`Copiar permissões para ${r.name}`}>
+                              <ClipboardCopy className="h-4 w-4 mr-2" />
+                              Copiar de...
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              {roles
+                                .filter((src) => src.id !== r.id)
+                                .map((src) => (
+                                  <DropdownMenuItem
+                                    key={src.id}
+                                    onClick={() => {
+                                      setCopyTarget(r);
+                                      setCopySource(src);
+                                      setCopyMode("merge");
+                                      setCopyScope("module");
+                                    }}
+                                  >
+                                    {src.name}
+                                  </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                        )}
                         <DropdownMenuItem
                           onClick={() => {
                             setDuplicateTarget(r);
@@ -689,6 +771,119 @@ export function PermissionsMatrix() {
               onClick={() => deleteTarget && deleteMut.mutate({ role_id: deleteTarget.id })}
             >
               Excluir
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Copy permissions dialog */}
+      <Dialog
+        open={!!copyTarget && !!copySource}
+        onOpenChange={(o) => {
+          if (!o) {
+            setCopyTarget(null);
+            setCopySource(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Copiar permissões</DialogTitle>
+            <DialogDescription>
+              Copiar as permissões de <strong>{copySource?.name}</strong> para{" "}
+              <strong>{copyTarget?.name}</strong>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Modo</Label>
+              <RadioGroup
+                value={copyMode}
+                onValueChange={(v) => setCopyMode(v as "merge" | "replace")}
+                className="gap-2"
+              >
+                <div className="flex items-start gap-2">
+                  <RadioGroupItem value="merge" id="copy-mode-merge" className="mt-1" />
+                  <Label htmlFor="copy-mode-merge" className="font-normal leading-snug">
+                    Somar
+                    <span className="block text-xs text-muted-foreground">
+                      Mantém as permissões atuais e adiciona as da origem.
+                    </span>
+                  </Label>
+                </div>
+                <div className="flex items-start gap-2">
+                  <RadioGroupItem value="replace" id="copy-mode-replace" className="mt-1" />
+                  <Label htmlFor="copy-mode-replace" className="font-normal leading-snug">
+                    Substituir tudo
+                    <span className="block text-xs text-muted-foreground">
+                      Espelha a origem, removendo o que ela não tem.
+                    </span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Abrangência</Label>
+              <RadioGroup
+                value={copyScope}
+                onValueChange={(v) => setCopyScope(v as "module" | "all")}
+                className="gap-2"
+              >
+                <div className="flex items-start gap-2">
+                  <RadioGroupItem value="module" id="copy-scope-module" className="mt-1" />
+                  <Label htmlFor="copy-scope-module" className="font-normal leading-snug">
+                    Apenas o módulo atual
+                    <span className="block text-xs text-muted-foreground">
+                      {MODULE_META[activeModule]?.label ?? activeModule}
+                    </span>
+                  </Label>
+                </div>
+                <div className="flex items-start gap-2">
+                  <RadioGroupItem value="all" id="copy-scope-all" className="mt-1" />
+                  <Label htmlFor="copy-scope-all" className="font-normal leading-snug">
+                    Todos os módulos
+                    <span className="block text-xs text-muted-foreground">
+                      Copia a matriz completa da origem.
+                    </span>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            {copyPreview && (
+              <p className="text-xs text-muted-foreground" aria-live="polite">
+                Prévia: {copyPreview.granted} permissão(ões) serão concedidas
+                {copyMode === "replace" ? ` e ${copyPreview.revoked} removida(s)` : ""}.
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCopyTarget(null);
+                setCopySource(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              disabled={copyMut.isPending}
+              onClick={() =>
+                copyTarget &&
+                copySource &&
+                copyMut.mutate({
+                  source_role_id: copySource.id,
+                  target_role_id: copyTarget.id,
+                  mode: copyMode,
+                  ...(copyScope === "module" ? { module: activeModule } : {}),
+                })
+              }
+            >
+              {copyMut.isPending ? "Copiando..." : "Copiar"}
             </Button>
           </DialogFooter>
         </DialogContent>
