@@ -364,7 +364,13 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
           onOpenChange={setViewerOpen}
           file={file}
           text={extractedText}
+          progress={progress}
+          extracted={fields}
+          onExtract={runExtraction}
+          onSave={submit}
+          saving={saving}
         />
+
       </DialogContent>
     </Dialog>
   );
