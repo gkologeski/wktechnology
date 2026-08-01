@@ -66,9 +66,12 @@ function renderTokens(input: unknown, after: AnyRow | null, vars?: AnyRow): unkn
   return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key) => {
     const path = String(key);
     if (path.startsWith("vars.")) return toStr(getField(vars ?? null, path.slice(5)));
+    // Atalho: `steps.N.campo` lê a saída registrada de um passo anterior.
+    if (path.startsWith("steps.")) return toStr(getField(vars ?? null, path));
     return toStr(getField(after, path));
   });
 }
+
 
 /**
  * Resolve tokens em valores de `extra_fields` de ações create_*.
@@ -136,31 +139,44 @@ function mergeExtra(
 }
 
 
-function evalFilter(f: WorkflowFilter, after: AnyRow | null, before: AnyRow | null): boolean {
+function evalFilter(
+  f: WorkflowFilter,
+  after: AnyRow | null,
+  before: AnyRow | null,
+  vars?: AnyRow,
+): boolean {
   const v = getField(after, f.field);
+  // O valor comparado pode referenciar variáveis ou a saída de passos
+  // anteriores via token ({{vars.X}} / {{steps.N.campo}}).
+  const target =
+    typeof f.value === "string" && f.value.includes("{{")
+      ? renderTokens(f.value, after, vars)
+      : f.value;
   switch (f.op) {
     case "eq":
-      return v === f.value;
+      return v === target;
     case "neq":
-      return v !== f.value;
+      return v !== target;
+
     case "in": {
-      const list = Array.isArray(f.value)
-        ? f.value
-        : String(f.value ?? "")
+      const list = Array.isArray(target)
+        ? target
+        : String(target ?? "")
             .split(",")
             .map((s) => s.trim());
       return list.includes(v as never);
     }
     case "contains":
-      return typeof v === "string" && v.toLowerCase().includes(String(f.value ?? "").toLowerCase());
+      return typeof v === "string" && v.toLowerCase().includes(String(target ?? "").toLowerCase());
     case "gt":
-      return typeof v === "number" && typeof f.value === "number" && v > f.value;
+      return typeof v === "number" && typeof target === "number" && v > target;
     case "lt":
-      return typeof v === "number" && typeof f.value === "number" && v < f.value;
+      return typeof v === "number" && typeof target === "number" && v < target;
     case "changed_to": {
       const prev = getField(before, f.field);
-      return v === f.value && prev !== f.value;
+      return v === target && prev !== target;
     }
+
     case "is_empty":
       return v == null || v === "";
     case "is_not_empty":
@@ -198,9 +214,30 @@ async function runActions(
   ctx: RunCtx,
   startIndex = 0,
 ): Promise<RunResult> {
-  const log: LogStep[] = [];
+  const rawLog: LogStep[] = [];
+  let currentStep = -1;
+  // Registra a saída de cada passo em `ctx.vars.steps.N`, permitindo que
+  // condições posteriores referenciem `{{steps.N.campo}}`.
+  const log = new Proxy(rawLog, {
+    get(target, prop, receiver) {
+      if (prop === "push") {
+        return (...items: LogStep[]) => {
+          for (const item of items) {
+            if (currentStep < 0 || !item?.ok) continue;
+            const vars = (ctx.vars = ctx.vars ?? {});
+            const steps = (vars.steps = (vars.steps as AnyRow) ?? {}) as AnyRow;
+            steps[String(currentStep)] = (item.detail as AnyRow) ?? {};
+          }
+          return Array.prototype.push.apply(target, items);
+        };
+      }
+      return Reflect.get(target, prop, receiver);
+    },
+  }) as LogStep[];
   for (let i = startIndex; i < actions.length; i++) {
     const action = actions[i];
+    currentStep = i;
+
 
     // Delay: agenda retomada e para aqui.
     if (action.type === "delay") {
@@ -214,13 +251,13 @@ async function runActions(
         action: "delay",
         detail: { amount: action.amount, unit: action.unit, resume_at: runAtIso },
       });
-      return { log, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
+      return { log: rawLog, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
     }
 
     // Branch: filtra e executa then/else recursivamente.
     if (action.type === "branch_if") {
       const filters = action.filters ?? [];
-      const passes = filters.length === 0 || filters.every((f) => evalFilter(f, ctx.after, ctx.before));
+      const passes = filters.length === 0 || filters.every((f) => evalFilter(f, ctx.after, ctx.before, ctx.vars));
       const branchName = passes ? "then" : "else";
       const branchActions = passes ? action.then ?? [] : action.else ?? [];
       log.push({
@@ -231,7 +268,7 @@ async function runActions(
       });
       const branchRes = await runActions(supabase, branchActions, ctx);
       log.push(...branchRes.log);
-      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.hadError) return { log: rawLog, hadError: true };
       if (branchRes.suspendedAt) {
         // Delays dentro de branches não são retomáveis nesta versão — reportamos e paramos.
         log.push({
@@ -240,7 +277,7 @@ async function runActions(
           action: "delay",
           error: "Delays dentro de ramificações ainda não são retomáveis",
         });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       continue;
     }
@@ -262,7 +299,7 @@ async function runActions(
       });
       const branchRes = await runActions(supabase, branchActions, ctx);
       log.push(...branchRes.log);
-      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.hadError) return { log: rawLog, hadError: true };
       if (branchRes.suspendedAt) {
         log.push({
           at: new Date().toISOString(),
@@ -270,7 +307,7 @@ async function runActions(
           action: "delay",
           error: "Delays dentro de switch_by_value ainda não são retomáveis",
         });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       continue;
     }
@@ -278,7 +315,7 @@ async function runActions(
     // Ramificação múltipla: executa 1ª branch cujos filtros passam, ou else.
     if (action.type === "branch_multi") {
       const matched = action.branches.find((b) =>
-        (b.filters ?? []).every((f) => evalFilter(f, ctx.after, ctx.before)),
+        (b.filters ?? []).every((f) => evalFilter(f, ctx.after, ctx.before, ctx.vars)),
       );
       const branchActions = matched ? matched.actions : action.else ?? [];
       log.push({
@@ -289,7 +326,7 @@ async function runActions(
       });
       const branchRes = await runActions(supabase, branchActions, ctx);
       log.push(...branchRes.log);
-      if (branchRes.hadError) return { log, hadError: true };
+      if (branchRes.hadError) return { log: rawLog, hadError: true };
       if (branchRes.suspendedAt) {
         log.push({
           at: new Date().toISOString(),
@@ -297,7 +334,7 @@ async function runActions(
           action: "delay",
           error: "Delays dentro de branch_multi ainda não são retomáveis",
         });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       continue;
     }
@@ -313,7 +350,7 @@ async function runActions(
           action: "delay_until_date",
           error: `campo ${action.field} não é uma data válida`,
         });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       const mult =
         action.offset_unit === "minutes"
@@ -338,7 +375,7 @@ async function runActions(
         action: "delay_until_date",
         detail: { field: action.field, resume_at: runAtIso },
       });
-      return { log, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
+      return { log: rawLog, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
     }
 
     // Approval step: cria linha em workflow_approvals e suspende o run.
@@ -366,7 +403,7 @@ async function runActions(
         .single();
       if (apprErr || !appr) {
         log.push({ at: new Date().toISOString(), ok: false, action: "approval_step", error: apprErr?.message ?? "falha ao criar aprovação" });
-        return { log, hadError: true };
+        return { log: rawLog, hadError: true };
       }
       // Notifica o aprovador.
       await supabase.from("notifications").insert({
@@ -384,14 +421,14 @@ async function runActions(
         action: "approval_step",
         detail: { approval_id: appr.id, approver, title },
       });
-      return { log, hadError: false, waitingApproval: { approvalId: appr.id as string, resumeCursor: i + 1 } };
+      return { log: rawLog, hadError: false, waitingApproval: { approvalId: appr.id as string, resumeCursor: i + 1 } };
     }
 
     const step = await runAction(supabase, action, ctx);
     log.push(step);
-    if (!step.ok) return { log, hadError: true };
+    if (!step.ok) return { log: rawLog, hadError: true };
   }
-  return { log, hadError: false };
+  return { log: rawLog, hadError: false };
 }
 
 async function runAction(

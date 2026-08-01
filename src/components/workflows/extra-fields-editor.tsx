@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
+import { REF_COLUMNS } from "@/lib/entity-fields-refs";
 import { searchCompanies, searchContacts, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
@@ -237,28 +238,13 @@ function FieldInput({
   }
 
   // FKs conhecidas → combobox com nomes resolvidos.
-  const FK_KIND: Record<string, "user" | "company" | "pipeline" | "contact"> = {
-    owner_id: "user",
-    assigned_user_id: "user",
-    assignee_id: "user",
-    approver_user_id: "user",
-    hiring_manager_id: "user",
-    notify_user_id: "user",
-    company_id: "company",
-    parent_company_id: "company",
-    primary_contact_id: "contact",
-    contact_id: "contact",
-    pipeline_id: "pipeline",
-  };
-  if (FK_KIND[field.name]) {
-    return (
-      <FkPicker
-        kind={FK_KIND[field.name]}
-        value={strVal}
-        onChange={(v) => onChange(v)}
-      />
-    );
+  // Fonte única: o catálogo de campos (REF_COLUMNS) + `owner_id`, que é oculto
+  // no catálogo mas editável aqui.
+  const fkKind = field.ref ?? (field.name === "owner_id" ? "user" : REF_COLUMNS[field.name]);
+  if (fkKind) {
+    return <FkPicker kind={fkKind} value={strVal} onChange={(v) => onChange(v)} />;
   }
+
 
   if (LONG_TEXT_FIELDS.has(field.name)) {
     return (
