@@ -309,6 +309,18 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
           ) : null}
         </DialogHeader>
 
+        {parsing || progress.phase === "error" ? (
+          <div className="space-y-2 rounded-md border bg-muted/20 p-3" aria-live="polite">
+            <Progress value={progress.percent} />
+            <p className="text-xs font-medium">{progress.message}</p>
+            {progress.detail ? (
+              <p className="text-xs text-destructive">{progress.detail}</p>
+            ) : null}
+          </div>
+        ) : null}
+
+
+
         {step === "upload" && (
           <UploadStep
             file={file}
