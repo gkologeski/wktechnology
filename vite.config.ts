@@ -45,6 +45,16 @@ export default defineConfig({
         },
       },
     ],
+    build: {
+      // O relatório de tamanho comprimido roda gzip em CADA chunk emitido
+      // (~580 no cliente + servidor + worker). Com o volume deste projeto isso
+      // custa dezenas de segundos por publicação e não muda o resultado final.
+      reportCompressedSize: false,
+      // Menos lowering de sintaxe no esbuild/rollup. Os navegadores-alvo já
+      // suportam ESNext e o Worker do Cloudflare também.
+      target: "esnext",
+    },
+
     // Garante uma única cópia de React/JSX-runtime no bundle do cliente.
     // Sem dedupe explícito, dependências aninhadas (radix, tiptap, etc.)
     // podem puxar instâncias paralelas e o Vite gera dois prebundles com
