@@ -23,7 +23,9 @@ type: feature
 - `esign_audit` e `esign_signers`: INSERT exige `owner_id = auth.uid()`, admin do workspace, ou ownership/admin no `esign_documents` pai. Não recriar INSERT amplo `workspace_id IN current_user_workspaces()`.
 - `customer_invoices`: INSERT exige `workspace_id IN current_user_workspaces()` **e** `owner_id = auth.uid()`. Não voltar para policy só de membership.
 - `customer_payments` e `nfse_invoices`: INSERT restrito a `is_workspace_admin_v2(workspace_id, auth.uid())`. Webhooks/emissão de NFS-e por serviços usam service_role (bypass RLS). Não recriar policy ampla de membership.
-- `whatsapp-media` (storage): `media_url` em `whatsapp_messages` guarda APENAS o path do objeto; a policy `whatsapp_media_workspace_read` junta `wm.media_url = objects.name` + `is_workspace_member`. Não trocar para URL completa.
+- `whatsapp-media` (storage): `media_url` em `whatsapp_messages` guarda APENAS o path do objeto; as policies `whatsapp_media_workspace_read/update/delete` exigem `EXISTS (whatsapp_messages wm WHERE wm.media_url = objects.name AND wm.workspace_id IN current_user_workspaces())`. Não voltar para join `workspace_members` ↔ uploader nem usar URL completa.
+- `profiles.phone`: `SELECT` na coluna revogado para `anon`/`authenticated`. Leitura própria via `get_my_phone()`; listas de equipe/admin via service_role em server functions. Não conceder `SELECT (phone)` de volta.
+- `meetings`: `ws_insert_meetings` exige `owner_id = auth.uid()` em todos os ramos (inclusive `workspace_id IS NULL`). Não reintroduzir ramo de admin criando para outro owner.
 
 ## Webhooks & cron
 - `/api/public/hooks/*-tick` exigem `Authorization: Bearer ${CRON_SECRET}` via `requireCronAuth`.
