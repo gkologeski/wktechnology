@@ -307,13 +307,13 @@ const STEP_OUTPUT_KEYS: Partial<Record<WorkflowActionType, { key: string; label:
     { key: "to", label: "Novo valor" },
   ],
   clear_field: [{ key: "field", label: "Campo" }],
-  assign_owner: [{ key: "user_id", label: "Usuário atribuído" }],
-  assign_by_rule: [{ key: "assigned_to", label: "Usuário atribuído" }],
+  assign_to: [{ key: "user_id", label: "Usuário atribuído" }],
+  rotate_assign: [{ key: "assigned_to", label: "Usuário atribuído" }],
   format_data: [
     { key: "value", label: "Resultado" },
     { key: "target_var", label: "Variável de destino" },
   ],
-  request_approval: [
+  approval_step: [
     { key: "approval_id", label: "ID da aprovação" },
     { key: "approver", label: "Aprovador" },
   ],
