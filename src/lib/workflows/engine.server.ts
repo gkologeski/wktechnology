@@ -159,23 +159,24 @@ function evalFilter(
       return v !== target;
 
     case "in": {
-      const list = Array.isArray(f.value)
-        ? f.value
-        : String(f.value ?? "")
+      const list = Array.isArray(target)
+        ? target
+        : String(target ?? "")
             .split(",")
             .map((s) => s.trim());
       return list.includes(v as never);
     }
     case "contains":
-      return typeof v === "string" && v.toLowerCase().includes(String(f.value ?? "").toLowerCase());
+      return typeof v === "string" && v.toLowerCase().includes(String(target ?? "").toLowerCase());
     case "gt":
-      return typeof v === "number" && typeof f.value === "number" && v > f.value;
+      return typeof v === "number" && typeof target === "number" && v > target;
     case "lt":
-      return typeof v === "number" && typeof f.value === "number" && v < f.value;
+      return typeof v === "number" && typeof target === "number" && v < target;
     case "changed_to": {
       const prev = getField(before, f.field);
-      return v === f.value && prev !== f.value;
+      return v === target && prev !== target;
     }
+
     case "is_empty":
       return v == null || v === "";
     case "is_not_empty":
