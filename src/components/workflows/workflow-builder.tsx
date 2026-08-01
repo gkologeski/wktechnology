@@ -8,10 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -263,6 +266,109 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
 // ============================================================================
 type StepPath = Array<number | "then" | "else">;
 
+// ---------------------------------------------------------------------------
+// Saídas registradas por passo (espelha `detail` de cada ação em engine.server).
+// Usadas para oferecer, nas condições, valores de passos anteriores.
+// ---------------------------------------------------------------------------
+const STEP_OUTPUT_KEYS: Partial<Record<WorkflowActionType, { key: string; label: string }[]>> = {
+  create_lead: [
+    { key: "id", label: "ID do lead criado" },
+    { key: "first_name", label: "Nome" },
+  ],
+  create_contact: [
+    { key: "id", label: "ID do contato criado" },
+    { key: "first_name", label: "Nome" },
+  ],
+  create_company: [
+    { key: "id", label: "ID da empresa criada" },
+    { key: "name", label: "Nome" },
+  ],
+  create_deal: [
+    { key: "id", label: "ID do negócio criado" },
+    { key: "name", label: "Nome" },
+  ],
+  create_ticket: [
+    { key: "id", label: "ID do ticket criado" },
+    { key: "subject", label: "Assunto" },
+  ],
+  create_record: [
+    { key: "id", label: "ID do registro criado" },
+    { key: "table", label: "Tabela" },
+  ],
+  update_record: [
+    { key: "id", label: "ID do registro atualizado" },
+    { key: "table", label: "Tabela" },
+  ],
+  create_activity: [{ key: "subject", label: "Assunto" }],
+  create_task: [{ key: "subject", label: "Assunto" }],
+  set_field: [
+    { key: "field", label: "Campo" },
+    { key: "value", label: "Valor aplicado" },
+  ],
+  increment_field: [
+    { key: "from", label: "Valor anterior" },
+    { key: "to", label: "Novo valor" },
+  ],
+  clear_field: [{ key: "field", label: "Campo" }],
+  assign_to: [{ key: "user_id", label: "Usuário atribuído" }],
+  rotate_assign: [{ key: "assigned_to", label: "Usuário atribuído" }],
+  format_data: [
+    { key: "value", label: "Resultado" },
+    { key: "target_var", label: "Variável de destino" },
+  ],
+  approval_step: [
+    { key: "approval_id", label: "ID da aprovação" },
+    { key: "approver", label: "Aprovador" },
+  ],
+  webhook: [{ key: "status", label: "Status HTTP" }],
+  send_email: [
+    { key: "to", label: "Destinatário" },
+    { key: "subject", label: "Assunto" },
+  ],
+  send_notification: [
+    { key: "title", label: "Título" },
+    { key: "user_id", label: "Usuário notificado" },
+  ],
+  branch_if: [{ key: "branch", label: "Ramo executado" }],
+};
+
+/** Lista de passos irmãos anteriores ao passo em `path`, no mesmo nível. */
+function siblingsOfPath(
+  actions: WorkflowAction[],
+  path: StepPath,
+): { list: WorkflowAction[]; index: number } {
+  if (path.length === 0) return { list: [], index: -1 };
+  const head = path[0];
+  if (typeof head !== "number") return { list: [], index: -1 };
+  if (path.length === 1) return { list: actions, index: head };
+  const parent = actions[head];
+  if (!parent || parent.type !== "branch_if") return { list: [], index: -1 };
+  const branch = path[1];
+  if (branch !== "then" && branch !== "else") return { list: [], index: -1 };
+  return siblingsOfPath(parent[branch] ?? [], path.slice(2) as StepPath);
+}
+
+/** Opções de campo referenciando saídas de passos anteriores (`steps.N.campo`). */
+function priorStepFieldOptions(actions: WorkflowAction[], path: StepPath | null): FieldOpt[] {
+  if (!path) return [];
+  const { list, index } = siblingsOfPath(actions, path);
+  if (index <= 0) return [];
+  const out: FieldOpt[] = [];
+  for (let i = 0; i < index; i++) {
+    const a = list[i];
+    if (!a) continue;
+    const keys = STEP_OUTPUT_KEYS[a.type] ?? [{ key: "id", label: "ID" }];
+    for (const k of keys) {
+      out.push({
+        name: `steps.${i}.${k.key}`,
+        label: `Passo ${i + 1} · ${ACTION_LABELS[a.type]} · ${k.label}`,
+      });
+    }
+  }
+  return out;
+}
+
+
 function getStep(actions: WorkflowAction[], path: StepPath): WorkflowAction | null {
   if (path.length === 0) return null;
   const [head, ...rest] = path;
@@ -460,6 +566,15 @@ export function WorkflowBuilder({
 
   const selectedAction =
     selection && selection !== "trigger" ? getStep(state.actions, selection) : null;
+
+  // Saídas de passos que vêm antes do passo selecionado (mesmo nível do fluxo).
+  const priorStepFields = useMemo(
+    () =>
+      selection && selection !== "trigger"
+        ? priorStepFieldOptions(state.actions, selection)
+        : [],
+    [state.actions, selection],
+  );
 
   const addAction = (
     type: WorkflowActionType,
@@ -681,6 +796,7 @@ export function WorkflowBuilder({
                     action={selectedAction}
                     entity={state.entity}
                     entityFields={fieldOptions}
+                    priorFields={priorStepFields}
                     onChange={(na) =>
                       setActions((prev) => updateStep(prev, selection, () => na))
                     }
@@ -1740,16 +1856,20 @@ function TriggerConfigPanel({
 function FilterRow({
   filter,
   fields,
+  priorFields = [],
   onChange,
   onRemove,
 }: {
   filter: WorkflowFilter;
   fields: FieldOpt[];
+  /** Saídas de passos anteriores (`steps.N.campo`), quando disponíveis. */
+  priorFields?: FieldOpt[];
   onChange: (f: WorkflowFilter) => void;
   onRemove: () => void;
 }) {
   const needsValue = filter.op !== "is_empty" && filter.op !== "is_not_empty";
-  const selected = fields.find((f) => f.name === filter.field);
+  const isPriorStep = filter.field?.startsWith("steps.") ?? false;
+  const selected = isPriorStep ? undefined : fields.find((f) => f.name === filter.field);
   const options = selected?.options;
   const type = selected?.type;
   return (
@@ -1760,17 +1880,34 @@ function FilterRow({
             <SelectValue placeholder="Selecionar propriedade" />
           </SelectTrigger>
           <SelectContent className="max-h-72">
-            {fields.map((f) => (
-              <SelectItem key={f.name} value={f.name}>
-                {f.label}
-              </SelectItem>
-            ))}
+            <SelectGroup>
+              <SelectLabel className="text-[11px]">Propriedades do registro</SelectLabel>
+              {fields.map((f) => (
+                <SelectItem key={f.name} value={f.name}>
+                  {f.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+            {priorFields.length > 0 && (
+              <SelectGroup>
+                <SelectLabel className="text-[11px]">Passos anteriores</SelectLabel>
+                {priorFields.map((f) => (
+                  <SelectItem key={f.name} value={f.name}>
+                    {f.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            )}
+            {isPriorStep && !priorFields.some((f) => f.name === filter.field) && (
+              <SelectItem value={filter.field}>{filter.field}</SelectItem>
+            )}
           </SelectContent>
         </Select>
         <Button variant="ghost" size="icon" onClick={onRemove} aria-label="Remover condição">
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </div>
+
       <Select
         value={filter.op}
         onValueChange={(v) => onChange({ ...filter, op: v as FilterOp })}
@@ -1840,11 +1977,13 @@ function StepConfigPanel({
   action,
   entity,
   entityFields,
+  priorFields = [],
   onChange,
 }: {
   action: WorkflowAction;
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
+  priorFields?: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
   return (
@@ -1854,7 +1993,13 @@ function StepConfigPanel({
         <p className="text-xs text-muted-foreground mt-1">Configure os detalhes deste passo.</p>
       </div>
       <ActionTemplatesBar action={action} entity={entity} onApply={onChange} />
-      <StepConfigForm action={action} entity={entity} entityFields={entityFields} onChange={onChange} />
+      <StepConfigForm
+        action={action}
+        entity={entity}
+        entityFields={entityFields}
+        priorFields={priorFields}
+        onChange={onChange}
+      />
     </div>
   );
 }
@@ -1864,11 +2009,13 @@ function StepConfigForm({
   action,
   entity,
   entityFields,
+  priorFields = [],
   onChange,
 }: {
   action: WorkflowAction;
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
+  priorFields?: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
 
@@ -2081,6 +2228,7 @@ function StepConfigForm({
               key={i}
               filter={f}
               fields={entityFields}
+              priorFields={priorFields}
               onChange={(nf) =>
                 onChange({
                   ...action,
@@ -2709,7 +2857,13 @@ function StepConfigForm({
       );
     case "branch_multi":
       return (
-        <BranchMultiForm entity={entity} entityFields={entityFields} action={action} onChange={onChange} />
+        <BranchMultiForm
+          entity={entity}
+          entityFields={entityFields}
+          priorFields={priorFields}
+          action={action}
+          onChange={onChange}
+        />
       );
     case "delay_until_date":
       return (
@@ -3041,11 +3195,13 @@ function SwitchByValueForm({
 function BranchMultiForm({
   entity,
   entityFields,
+  priorFields = [],
   action,
   onChange,
 }: {
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
+  priorFields?: FieldOpt[];
   action: Extract<WorkflowAction, { type: "branch_multi" }>;
   onChange: (a: WorkflowAction) => void;
 }) {
@@ -3114,6 +3270,7 @@ function BranchMultiForm({
                 key={fi}
                 filter={f}
                 fields={entityFields}
+                priorFields={priorFields}
                 onChange={(nf) =>
                   setBranches(
                     action.branches.map((x, idx) =>

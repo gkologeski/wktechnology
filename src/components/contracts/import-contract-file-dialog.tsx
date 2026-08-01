@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Upload, FileText, X, AlertTriangle, Sparkles } from "lucide-react";
+import { Loader2, Upload, FileText, X, AlertTriangle, Sparkles, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -33,6 +33,7 @@ import {
   createContractFromImport,
 } from "@/lib/contracts/import.functions";
 import { updateContract } from "@/lib/contracts.functions";
+import { LocalContractFileViewerDialog } from "@/components/contracts/local-file-viewer-dialog";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import {
   PAYMENT_METHODS,
@@ -94,6 +95,8 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   const [contractId, setContractId] = useState<string | null>(null);
   const [sourceFilePath, setSourceFilePath] = useState<string | null>(null);
   const [keepFile, setKeepFile] = useState(true);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [extractedText, setExtractedText] = useState<string | null>(null);
   const kind = file ? fileExt(file.name) : null;
 
   const reset = useCallback(() => {
@@ -105,6 +108,8 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     setContractId(null);
     setSourceFilePath(null);
     setKeepFile(true);
+    setViewerOpen(false);
+    setExtractedText(null);
   }, []);
 
   const handleClose = useCallback(
@@ -125,6 +130,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     setFields(null);
     setContractId(null);
     setSourceFilePath(null);
+    setExtractedText(null);
   }, []);
 
   const uploadOriginal = useCallback(
@@ -168,6 +174,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
         if (text.trim().length < 20) {
           throw new Error("Não foi possível extrair texto do .docx.");
         }
+        setExtractedText(text);
         extracted = await parseText({ data: { filename: file.name, text } });
       }
 
@@ -269,6 +276,18 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
           <DialogDescription>
             Faça upload de um .pdf ou .docx. A IA extrai os campos e cria um rascunho que você revisa em seguida.
           </DialogDescription>
+          {file ? (
+            <div className="pt-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setViewerOpen(true)}
+              >
+                <Eye className="h-4 w-4 mr-1" /> Visualizar contrato
+              </Button>
+            </div>
+          ) : null}
         </DialogHeader>
 
         {step === "upload" && (
@@ -320,6 +339,13 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             </Button>
           )}
         </DialogFooter>
+
+        <LocalContractFileViewerDialog
+          open={viewerOpen}
+          onOpenChange={setViewerOpen}
+          file={file}
+          text={extractedText}
+        />
       </DialogContent>
     </Dialog>
   );
