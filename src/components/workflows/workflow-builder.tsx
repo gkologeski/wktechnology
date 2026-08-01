@@ -263,6 +263,109 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
 // ============================================================================
 type StepPath = Array<number | "then" | "else">;
 
+// ---------------------------------------------------------------------------
+// Saídas registradas por passo (espelha `detail` de cada ação em engine.server).
+// Usadas para oferecer, nas condições, valores de passos anteriores.
+// ---------------------------------------------------------------------------
+const STEP_OUTPUT_KEYS: Partial<Record<WorkflowActionType, { key: string; label: string }[]>> = {
+  create_lead: [
+    { key: "id", label: "ID do lead criado" },
+    { key: "first_name", label: "Nome" },
+  ],
+  create_contact: [
+    { key: "id", label: "ID do contato criado" },
+    { key: "first_name", label: "Nome" },
+  ],
+  create_company: [
+    { key: "id", label: "ID da empresa criada" },
+    { key: "name", label: "Nome" },
+  ],
+  create_deal: [
+    { key: "id", label: "ID do negócio criado" },
+    { key: "name", label: "Nome" },
+  ],
+  create_ticket: [
+    { key: "id", label: "ID do ticket criado" },
+    { key: "subject", label: "Assunto" },
+  ],
+  create_record: [
+    { key: "id", label: "ID do registro criado" },
+    { key: "table", label: "Tabela" },
+  ],
+  update_record: [
+    { key: "id", label: "ID do registro atualizado" },
+    { key: "table", label: "Tabela" },
+  ],
+  create_activity: [{ key: "subject", label: "Assunto" }],
+  create_task: [{ key: "subject", label: "Assunto" }],
+  set_field: [
+    { key: "field", label: "Campo" },
+    { key: "value", label: "Valor aplicado" },
+  ],
+  increment_field: [
+    { key: "from", label: "Valor anterior" },
+    { key: "to", label: "Novo valor" },
+  ],
+  clear_field: [{ key: "field", label: "Campo" }],
+  assign_owner: [{ key: "user_id", label: "Usuário atribuído" }],
+  assign_by_rule: [{ key: "assigned_to", label: "Usuário atribuído" }],
+  format_data: [
+    { key: "value", label: "Resultado" },
+    { key: "target_var", label: "Variável de destino" },
+  ],
+  request_approval: [
+    { key: "approval_id", label: "ID da aprovação" },
+    { key: "approver", label: "Aprovador" },
+  ],
+  webhook: [{ key: "status", label: "Status HTTP" }],
+  send_email: [
+    { key: "to", label: "Destinatário" },
+    { key: "subject", label: "Assunto" },
+  ],
+  send_notification: [
+    { key: "title", label: "Título" },
+    { key: "user_id", label: "Usuário notificado" },
+  ],
+  branch_if: [{ key: "branch", label: "Ramo executado" }],
+};
+
+/** Lista de passos irmãos anteriores ao passo em `path`, no mesmo nível. */
+function siblingsOfPath(
+  actions: WorkflowAction[],
+  path: StepPath,
+): { list: WorkflowAction[]; index: number } {
+  if (path.length === 0) return { list: [], index: -1 };
+  const head = path[0];
+  if (typeof head !== "number") return { list: [], index: -1 };
+  if (path.length === 1) return { list: actions, index: head };
+  const parent = actions[head];
+  if (!parent || parent.type !== "branch_if") return { list: [], index: -1 };
+  const branch = path[1];
+  if (branch !== "then" && branch !== "else") return { list: [], index: -1 };
+  return siblingsOfPath(parent[branch] ?? [], path.slice(2) as StepPath);
+}
+
+/** Opções de campo referenciando saídas de passos anteriores (`steps.N.campo`). */
+function priorStepFieldOptions(actions: WorkflowAction[], path: StepPath | null): FieldOpt[] {
+  if (!path) return [];
+  const { list, index } = siblingsOfPath(actions, path);
+  if (index <= 0) return [];
+  const out: FieldOpt[] = [];
+  for (let i = 0; i < index; i++) {
+    const a = list[i];
+    if (!a) continue;
+    const keys = STEP_OUTPUT_KEYS[a.type] ?? [{ key: "id", label: "ID" }];
+    for (const k of keys) {
+      out.push({
+        name: `steps.${i}.${k.key}`,
+        label: `Passo ${i + 1} · ${ACTION_LABELS[a.type]} · ${k.label}`,
+      });
+    }
+  }
+  return out;
+}
+
+
 function getStep(actions: WorkflowAction[], path: StepPath): WorkflowAction | null {
   if (path.length === 0) return null;
   const [head, ...rest] = path;
