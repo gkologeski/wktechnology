@@ -66,9 +66,12 @@ function renderTokens(input: unknown, after: AnyRow | null, vars?: AnyRow): unkn
   return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key) => {
     const path = String(key);
     if (path.startsWith("vars.")) return toStr(getField(vars ?? null, path.slice(5)));
+    // Atalho: `steps.N.campo` lê a saída registrada de um passo anterior.
+    if (path.startsWith("steps.")) return toStr(getField(vars ?? null, path));
     return toStr(getField(after, path));
   });
 }
+
 
 /**
  * Resolve tokens em valores de `extra_fields` de ações create_*.
