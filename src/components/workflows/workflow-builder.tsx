@@ -567,6 +567,15 @@ export function WorkflowBuilder({
   const selectedAction =
     selection && selection !== "trigger" ? getStep(state.actions, selection) : null;
 
+  // Saídas de passos que vêm antes do passo selecionado (mesmo nível do fluxo).
+  const priorStepFields = useMemo(
+    () =>
+      selection && selection !== "trigger"
+        ? priorStepFieldOptions(state.actions, selection)
+        : [],
+    [state.actions, selection],
+  );
+
   const addAction = (
     type: WorkflowActionType,
     parentPath: StepPath,
@@ -787,6 +796,7 @@ export function WorkflowBuilder({
                     action={selectedAction}
                     entity={state.entity}
                     entityFields={fieldOptions}
+                    priorFields={priorStepFields}
                     onChange={(na) =>
                       setActions((prev) => updateStep(prev, selection, () => na))
                     }
