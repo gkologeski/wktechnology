@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import {
   parseContractPdf,
@@ -34,6 +35,12 @@ import {
 } from "@/lib/contracts/import.functions";
 import { updateContract } from "@/lib/contracts.functions";
 import { LocalContractFileViewerDialog } from "@/components/contracts/local-file-viewer-dialog";
+import {
+  IDLE_PROGRESS,
+  isExtracting,
+  progressFor,
+  type ExtractionProgress,
+} from "@/components/contracts/import-progress";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import {
   PAYMENT_METHODS,
@@ -41,6 +48,7 @@ import {
   SERVICE_TYPES,
   SIGNATURE_PROVIDERS,
 } from "@/lib/contracts/import-schemas";
+
 
 type Props = {
   open: boolean;
