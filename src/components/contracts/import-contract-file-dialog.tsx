@@ -97,7 +97,9 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
 
   const [step, setStep] = useState<Step>("upload");
   const [file, setFile] = useState<File | null>(null);
-  const [parsing, setParsing] = useState(false);
+  const [progress, setProgress] = useState<ExtractionProgress>(IDLE_PROGRESS);
+  const parsing = isExtracting(progress);
+
   const [saving, setSaving] = useState(false);
   const [fields, setFields] = useState<ExtractedContract | null>(null);
   const [contractId, setContractId] = useState<string | null>(null);
