@@ -257,7 +257,7 @@ async function runActions(
     // Branch: filtra e executa then/else recursivamente.
     if (action.type === "branch_if") {
       const filters = action.filters ?? [];
-      const passes = filters.length === 0 || filters.every((f) => evalFilter(f, ctx.after, ctx.before));
+      const passes = filters.length === 0 || filters.every((f) => evalFilter(f, ctx.after, ctx.before, ctx.vars));
       const branchName = passes ? "then" : "else";
       const branchActions = passes ? action.then ?? [] : action.else ?? [];
       log.push({
@@ -315,7 +315,7 @@ async function runActions(
     // Ramificação múltipla: executa 1ª branch cujos filtros passam, ou else.
     if (action.type === "branch_multi") {
       const matched = action.branches.find((b) =>
-        (b.filters ?? []).every((f) => evalFilter(f, ctx.after, ctx.before)),
+        (b.filters ?? []).every((f) => evalFilter(f, ctx.after, ctx.before, ctx.vars)),
       );
       const branchActions = matched ? matched.actions : action.else ?? [];
       log.push({
