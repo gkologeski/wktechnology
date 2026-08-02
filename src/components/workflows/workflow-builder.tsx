@@ -801,7 +801,7 @@ export function WorkflowBuilder({
 
           {/* Canvas central */}
           <main className="flex-1 overflow-y-auto bg-muted/10">
-            <div className="max-w-xl mx-auto py-8 px-4">
+            <div className="max-w-3xl mx-auto py-8 px-4">
               {/* Trigger card */}
               <TriggerCard
                 trigger={state.trigger}
