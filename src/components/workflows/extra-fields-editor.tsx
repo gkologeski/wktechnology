@@ -560,8 +560,12 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     [visibleFields, groupedNames],
   );
 
-  const filled = ungrouped.filter((f) => hasValue(f.name));
-  const empty = ungrouped.filter((f) => !hasValue(f.name));
+  // Campos preenchidos pelo sistema/integração ficam num bloco colapsado
+  // próprio (continuam editáveis, apenas fora do fluxo principal).
+  const systemFields = ungrouped.filter((f) => f.system);
+  const mainFields = ungrouped.filter((f) => !f.system);
+  const filled = mainFields.filter((f) => hasValue(f.name));
+  const empty = mainFields.filter((f) => !hasValue(f.name));
   const orphanKeys = Object.keys(values).filter(
     (k) => !hidden.has(k) && !visibleFields.some((f) => f.name === k),
   );
