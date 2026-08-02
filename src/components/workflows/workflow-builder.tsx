@@ -1079,10 +1079,34 @@ function StepsList({
                 onDropAt={onDropAt}
                 onMove={onMove}
               />
+            ) : action.type === "switch_by_value" ? (
+              <SwitchCard
+                action={action}
+                stepPath={stepPath}
+                index={i + 1}
+                selected={isSelected}
+                selection={selection}
+                library={library}
+                onSelect={() => onSelect(stepPath)}
+                onRemove={() => onRemove(stepPath)}
+                onSelectPath={onSelect}
+                onRemovePath={onRemove}
+                onAddAt={onAddAt}
+                onChangeAction={onChangeAction}
+                canMoveUp={i > 0}
+                canMoveDown={i < actions.length - 1}
+                isDraggingSelf={isDraggingSelf}
+                dragging={dragging}
+                onDragStartStep={onDragStartStep}
+                onDragEndStep={onDragEndStep}
+                onDropAt={onDropAt}
+                onMove={onMove}
+              />
             ) : (
               <StepCard
                 action={action}
                 index={i + 1}
+
                 stepPath={stepPath}
                 selected={isSelected}
                 canMoveUp={i > 0}
