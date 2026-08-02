@@ -100,19 +100,19 @@ export interface TimeTriggerConfig {
   amount: number;
   unit: "minutes" | "hours" | "days";
   /** Filtros aplicados na varredura para restringir os registros elegíveis. */
-  filters?: WorkflowFilter[];
+  filters?: WorkflowCondition[];
 }
 
 export interface WorkflowTrigger {
   event: WorkflowEventType;
-  filters?: WorkflowFilter[];
+  filters?: WorkflowCondition[];
   reenroll?: {
     enabled: boolean;
     events?: WorkflowEventType[];
   };
   /** Fase 3 — critérios de meta. Se todos passarem no processamento do evento,
    *  o registro sai do workflow sem executar novas ações. */
-  goal_filters?: WorkflowFilter[];
+  goal_filters?: WorkflowCondition[];
   /** Fase 5c — quando presente, o workflow é disparado pelo cron temporal
    *  (não por eventos CRUD). Gera evento sintético do tipo `event`. */
   time_based?: TimeTriggerConfig;
@@ -126,7 +126,7 @@ export interface SwitchCase {
 
 export interface MultiBranch {
   label?: string;
-  filters: WorkflowFilter[];
+  filters: WorkflowCondition[];
   actions: WorkflowAction[];
 }
 
@@ -147,7 +147,7 @@ export type WorkflowAction =
   | { type: "delay"; amount: number; unit: "minutes" | "hours" | "days" }
   | {
       type: "branch_if";
-      filters: WorkflowFilter[];
+      filters: WorkflowCondition[];
       then: WorkflowAction[];
       else: WorkflowAction[];
     }
