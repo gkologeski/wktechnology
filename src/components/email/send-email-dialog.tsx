@@ -102,7 +102,7 @@ export function SendEmailDialog({
     try {
       const uploaded: Attachment[] = [];
       for (const f of newFiles) {
-        const safeName = f.name.replace(/[^\w.\-]+/g, "_");
+        const safeName = f.name.replace(/[^\w.-]+/g, "_");
         const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
         const { error } = await supabase.storage
           .from("email-attachments")

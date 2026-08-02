@@ -64,7 +64,9 @@ describe("renderTokens por superfície", () => {
     expect(out).toBe("Ana, sobre Fatura — Bruno");
   });
 
-  it("WhatsApp texto livre não afeta variáveis posicionais desconhecidas", () => {
-    expect(renderTokens("Olá {{first_name}} {{1}}", { first_name: "Ana" })).toBe("Olá Ana {{1}}");
+  it("WhatsApp texto livre: token sem valor no contexto resolve para vazio", () => {
+    // Variáveis posicionais ({{1}}) pertencem a templates oficiais, não ao
+    // texto livre — se aparecerem aqui, saem vazias em vez de literais.
+    expect(renderTokens("Olá {{first_name}} {{1}}", { first_name: "Ana" })).toBe("Olá Ana ");
   });
 });
