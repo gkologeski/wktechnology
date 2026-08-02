@@ -457,6 +457,7 @@ export function FkPicker({
 export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, title, defaultOpen }: Props) {
   const [open, setOpen] = useState(Boolean(defaultOpen));
   const [showEmpty, setShowEmpty] = useState(false);
+  const [showSystem, setShowSystem] = useState(false);
   const [customizeMode, setCustomizeMode] = useState(false);
   const [layout, setLayout] = useState<FieldLayout>(() => loadFieldLayout(entity));
 
