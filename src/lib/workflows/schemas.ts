@@ -60,6 +60,46 @@ export const FilterSchema = z.object({
   value: z.unknown().optional(),
 });
 
+/** Profundidade máxima de agrupamento de condições (grupo dentro de grupo). */
+export const MAX_CONDITION_DEPTH = 3;
+
+type ConditionNode =
+  | z.infer<typeof FilterSchema>
+  | { logic: "and" | "or"; conditions: ConditionNode[] };
+
+export const ConditionSchema: z.ZodType<ConditionNode> = z.lazy(() =>
+  z.union([
+    z.object({
+      logic: z.enum(["and", "or"]),
+      conditions: z.array(ConditionSchema).max(20),
+    }),
+    FilterSchema,
+  ]),
+);
+
+function assertConditionDepth(nodes: unknown, depth = 1): void {
+  if (depth > MAX_CONDITION_DEPTH) throw new Error("profundidade máxima de grupos de condições excedida");
+  if (!Array.isArray(nodes)) return;
+  for (const n of nodes) {
+    if (n && typeof n === "object" && Array.isArray((n as { conditions?: unknown }).conditions)) {
+      assertConditionDepth((n as { conditions: unknown[] }).conditions, depth + 1);
+    }
+  }
+}
+
+/** Lista de condições (aceita condições simples e grupos aninhados). */
+export const ConditionListSchema = z
+  .array(ConditionSchema)
+  .max(20)
+  .superRefine((val, ctx) => {
+    try {
+      assertConditionDepth(val);
+    } catch (e) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: (e as Error).message });
+    }
+  });
+
+
 export const EventEnum = z.enum(["created", "updated", "stage_changed"]);
 
 export const TimeTriggerConfigSchema = z.object({
