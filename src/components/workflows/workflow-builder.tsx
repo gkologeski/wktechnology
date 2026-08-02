@@ -686,16 +686,38 @@ export function WorkflowBuilder({
               {state.enabled ? "Ativo" : "Pausado"}
             </Label>
           </div>
+          <Badge variant={isUpToDate ? "secondary" : "outline"} className="hidden md:inline-flex">
+            {isUpToDate
+              ? `Publicado v${publishedVersion}`
+              : publishedVersion > 0
+                ? `Rascunho pendente (v${publishedVersion} no ar)`
+                : "Rascunho"}
+          </Badge>
           <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={saving || !state.name || state.actions.length === 0}
-          >
-            {saving ? "Salvando…" : "Salvar"}
+          <Button variant="outline" onClick={handleSave} disabled={!canSubmit}>
+            {saving ? "Salvando…" : "Salvar rascunho"}
           </Button>
+          {onSaveAndPublish && (
+            <Button onClick={handleSaveAndPublish} disabled={!canSubmit}>
+              <Upload className="h-4 w-4 mr-1.5" />
+              {publishing ? "Publicando…" : "Salvar e publicar"}
+            </Button>
+          )}
         </header>
+
+        {!isUpToDate && (
+          <div className="flex items-start gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground shrink-0">
+            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden="true" />
+            <p>
+              Este workflow está em rascunho. As alterações só passam a valer para novos registros
+              depois de <span className="font-medium text-foreground">publicar</span>.
+            </p>
+          </div>
+        )}
+
+
 
         {/* 3-panel body */}
         <div className="flex-1 flex overflow-hidden">
