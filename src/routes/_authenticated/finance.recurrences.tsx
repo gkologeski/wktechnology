@@ -11,12 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -39,11 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatCurrency } from "@/lib/crm";
 import {
   deleteRecurrence,
@@ -144,9 +135,7 @@ function RecurrencesPage() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Carregando…</p>
           ) : rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhuma recorrência cadastrada.
-            </p>
+            <p className="text-sm text-muted-foreground">Nenhuma recorrência cadastrada.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -164,9 +153,7 @@ function RecurrencesPage() {
               <TableBody>
                 {rows.map((r: any) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-medium">
-                      {r.template?.description ?? "—"}
-                    </TableCell>
+                    <TableCell className="font-medium">{r.template?.description ?? "—"}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">
                         {r.direction === "receivable" ? "A receber" : "A pagar"}
@@ -205,17 +192,18 @@ function RecurrencesPage() {
                           }}
                           title={r.active ? "Pausar" : "Ativar"}
                         >
-                          {r.active ? (
-                            <Pause className="h-4 w-4" />
-                          ) : (
-                            <Play className="h-4 w-4" />
-                          )}
+                          {r.active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={async () => {
-                            if (!(await confirmDialog("Excluir esta recorrência? Lançamentos já gerados serão mantidos."))) return;
+                            if (
+                              !(await confirmDialog(
+                                "Excluir esta recorrência? Lançamentos já gerados serão mantidos.",
+                              ))
+                            )
+                              return;
                             await del({ data: { id: r.id } });
                             toast.success("Recorrência excluída.");
                             invalidate();
@@ -264,7 +252,9 @@ function NewRecurrenceDialog({
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [cadence, setCadence] = useState<"weekly" | "monthly" | "yearly" | "custom_days">("monthly");
+  const [cadence, setCadence] = useState<"weekly" | "monthly" | "yearly" | "custom_days">(
+    "monthly",
+  );
   const [intervalDays, setIntervalDays] = useState<number>(30);
   const [dayOfMonth, setDayOfMonth] = useState<number | null>(null);
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
@@ -327,7 +317,9 @@ function NewRecurrenceDialog({
             <div className="space-y-1">
               <Label>Direção</Label>
               <Select value={direction} onValueChange={(v) => setDirection(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="receivable">A receber</SelectItem>
                   <SelectItem value="payable">A pagar</SelectItem>
@@ -340,11 +332,15 @@ function NewRecurrenceDialog({
                 value={categoryId ?? "__none"}
                 onValueChange={(v) => setCategoryId(v === "__none" ? null : v)}
               >
-                <SelectTrigger><SelectValue placeholder="Sem categoria" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sem categoria" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none">Sem categoria</SelectItem>
                   {filteredCats.map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -369,7 +365,9 @@ function NewRecurrenceDialog({
             <div className="space-y-1">
               <Label>Cadência</Label>
               <Select value={cadence} onValueChange={(v) => setCadence(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="monthly">Mensal</SelectItem>
                   <SelectItem value="weekly">Semanal</SelectItem>
@@ -409,19 +407,11 @@ function NewRecurrenceDialog({
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1">
               <Label>Início</Label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div className="space-y-1">
               <Label>Fim (opcional)</Label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
             <div className="space-y-1">
               <Label>Máx. ocorrências</Label>
@@ -441,8 +431,12 @@ function NewRecurrenceDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={saving}>{saving ? "Salvando…" : "Criar"}</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? "Salvando…" : "Criar"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

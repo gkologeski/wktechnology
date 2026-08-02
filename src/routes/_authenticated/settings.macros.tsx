@@ -23,7 +23,6 @@ import { TokenPills } from "@/components/ui/token-pills";
 import { MACRO_TOKENS } from "@/lib/message-tokens-catalog";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
-
 export const Route = createFileRoute("/_authenticated/settings/macros")({
   component: MacrosPage,
 });

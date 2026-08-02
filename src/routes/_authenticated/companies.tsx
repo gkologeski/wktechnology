@@ -22,16 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  ChevronDown,
-  Download,
-  MapPin,
-  MoreHorizontal,
-  Play,
-  Plus,
-  Search,
-  X,
-} from "lucide-react";
+import { ChevronDown, Download, MapPin, MoreHorizontal, Play, Plus, Search, X } from "lucide-react";
 import { startFocusQueue } from "@/lib/focus-queue";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
@@ -487,9 +478,7 @@ function CompaniesHubspotView() {
         const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
         if (term) {
           q = q.or(
-            [`name.ilike.%${term}%`, `domain.ilike.%${term}%`, `website.ilike.%${term}%`].join(
-              ",",
-            ),
+            [`name.ilike.%${term}%`, `domain.ilike.%${term}%`, `website.ilike.%${term}%`].join(","),
           );
         }
         q = q.order(sortKey, { ascending: sortDir === "asc" }).limit(5000);

@@ -342,8 +342,18 @@ function DunningPage() {
           ) : (
             <div className="divide-y">
               {runsData.runs.slice(0, 30).map((r) => {
-                const inv = (r as unknown as { customer_invoices?: { invoice_number?: string; amount?: number; due_date?: string } }).customer_invoices;
-                const history = Array.isArray(r.history) ? (r.history as Array<{ channel?: string; at?: string }>) : [];
+                const inv = (
+                  r as unknown as {
+                    customer_invoices?: {
+                      invoice_number?: string;
+                      amount?: number;
+                      due_date?: string;
+                    };
+                  }
+                ).customer_invoices;
+                const history = Array.isArray(r.history)
+                  ? (r.history as Array<{ channel?: string; at?: string }>)
+                  : [];
                 return (
                   <div key={r.id} className="py-2 flex items-center justify-between text-sm">
                     <div>

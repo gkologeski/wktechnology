@@ -184,7 +184,7 @@ export function FormsPage() {
                       variant="ghost"
                       size="sm"
                       onClick={async () => {
-                        if ((await confirmDialog("Excluir formulário?"))) del.mutate(row.id);
+                        if (await confirmDialog("Excluir formulário?")) del.mutate(row.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />

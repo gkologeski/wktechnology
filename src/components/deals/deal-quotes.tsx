@@ -242,9 +242,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {(status === "draft" || status === "published") && (
-                        <DropdownMenuItem onSelect={() => openEdit(q)}>
-                          Editar
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => openEdit(q)}>Editar</DropdownMenuItem>
                       )}
                       {(status === "draft" || status === "published") && contactHasEmail && (
                         <DropdownMenuItem onSelect={() => setSendingQuote(q)}>
@@ -360,4 +358,3 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     </div>
   );
 }
-

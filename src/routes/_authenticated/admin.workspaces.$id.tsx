@@ -259,7 +259,8 @@ function WorkspaceDetailPage() {
                       size="icon"
                       variant="ghost"
                       onClick={async () => {
-                        if ((await confirmDialog(`Remover ${m.full_name || m.email}?`))) rmMut.mutate(m.user_id);
+                        if (await confirmDialog(`Remover ${m.full_name || m.email}?`))
+                          rmMut.mutate(m.user_id);
                       }}
                       disabled={rmMut.isPending}
                     >
@@ -313,11 +314,7 @@ function WorkspaceDetailPage() {
             open={deleteOpen}
             onOpenChange={setDeleteOpen}
           />
-          <RestoreWorkspaceDialog
-            workspace={ws}
-            open={restoreOpen}
-            onOpenChange={setRestoreOpen}
-          />
+          <RestoreWorkspaceDialog workspace={ws} open={restoreOpen} onOpenChange={setRestoreOpen} />
           <PurgeWorkspaceDialog workspace={ws} open={purgeOpen} onOpenChange={setPurgeOpen} />
         </>
       )}

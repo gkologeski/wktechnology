@@ -31,7 +31,6 @@ export const Route = createFileRoute("/_authenticated/settings/prospecting-scrip
   component: ScriptsPage,
 });
 
-
 export function ScriptsPage() {
   const listFn = useServerFn(listScripts);
   const saveFn = useServerFn(upsertScript);
@@ -131,7 +130,7 @@ export function ScriptsPage() {
                   variant="ghost"
                   size="icon"
                   onClick={async () => {
-                    if ((await confirmDialog("Remover?"))) {
+                    if (await confirmDialog("Remover?")) {
                       await delFn({ data: { id: r.id } });
                       refresh();
                     }

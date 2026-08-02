@@ -208,7 +208,9 @@ function ServiceDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
-          <CardHeader><CardTitle className="text-base">Detalhes</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Detalhes</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label>Nome</Label>
@@ -216,16 +218,24 @@ function ServiceDetail() {
             </div>
             <div className="space-y-2">
               <Label>Descrição</Label>
-              <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
+              <Textarea
+                rows={3}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select value={status} onValueChange={setStatus}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                      <SelectItem key={k} value={k}>
+                        {v}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -234,7 +244,9 @@ function ServiceDetail() {
                 <div className="space-y-2">
                   <Label>Cadência</Label>
                   <Select value={cadence} onValueChange={setCadence}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="monthly">Mensal</SelectItem>
                       <SelectItem value="quarterly">Trimestral</SelectItem>
@@ -242,16 +254,28 @@ function ServiceDetail() {
                     </SelectContent>
                   </Select>
                 </div>
-              ) : <div />}
+              ) : (
+                <div />
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Quantidade</Label>
-                <Input type="number" min={0} step="0.01" value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} />
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
+                />
               </div>
               <div className="space-y-2">
                 <Label>Preço unitário</Label>
-                <CurrencyInput value={unitPrice} onValueChange={(v) => setUnitPrice(typeof v === "number" ? v : 0)} currency={row.currency} />
+                <CurrencyInput
+                  value={unitPrice}
+                  onValueChange={(v) => setUnitPrice(typeof v === "number" ? v : 0)}
+                  currency={row.currency}
+                />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -269,15 +293,34 @@ function ServiceDetail() {
 
         <div className="space-y-4">
           <Card>
-            <CardHeader><CardTitle className="text-base">Resumo</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Resumo</CardTitle>
+            </CardHeader>
             <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Valor por ciclo</span><span className="tabular-nums font-medium">{formatCurrency(amount, row.currency)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Próxima cobrança</span><span className="tabular-nums">{row.next_billing_at ? formatDateTime(row.next_billing_at as string).split(" ")[0] : "—"}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Direção</span><span>{row.role === "provider" ? "A receber" : "A pagar"}</span></div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Valor por ciclo</span>
+                <span className="tabular-nums font-medium">
+                  {formatCurrency(amount, row.currency)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Próxima cobrança</span>
+                <span className="tabular-nums">
+                  {row.next_billing_at
+                    ? formatDateTime(row.next_billing_at as string).split(" ")[0]
+                    : "—"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Direção</span>
+                <span>{row.role === "provider" ? "A receber" : "A pagar"}</span>
+              </div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader><CardTitle className="text-base">Lançamentos gerados</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Lançamentos gerados</CardTitle>
+            </CardHeader>
             <CardContent>
               {entries.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Nenhum lançamento ainda.</p>
@@ -287,9 +330,13 @@ function ServiceDetail() {
                     <div key={e.id} className="flex items-center justify-between text-xs">
                       <div className="min-w-0">
                         <div className="truncate">{e.description}</div>
-                        <div className="text-muted-foreground">{formatDateTime(e.due_date).split(" ")[0]} · {e.status}</div>
+                        <div className="text-muted-foreground">
+                          {formatDateTime(e.due_date).split(" ")[0]} · {e.status}
+                        </div>
                       </div>
-                      <div className="tabular-nums font-medium">{formatCurrency(Number(e.amount), e.currency)}</div>
+                      <div className="tabular-nums font-medium">
+                        {formatCurrency(Number(e.amount), e.currency)}
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -95,7 +95,9 @@ function WorkflowsPage() {
   const [loading, setLoading] = useState(true);
   const [testTarget, setTestTarget] = useState<WorkflowRow | null>(null);
   const [testEntityId, setTestEntityId] = useState("");
-  const [testResult, setTestResult] = useState<Awaited<ReturnType<typeof testWorkflow>> | null>(null);
+  const [testResult, setTestResult] = useState<Awaited<ReturnType<typeof testWorkflow>> | null>(
+    null,
+  );
   const [testing, setTesting] = useState(false);
 
   const refresh = async () => {
@@ -174,7 +176,10 @@ function WorkflowsPage() {
   };
 
   const handleDiscard = async (row: WorkflowRow) => {
-    if (!(await confirmDialog("Descartar alterações do rascunho e voltar para a versão publicada?"))) return;
+    if (
+      !(await confirmDialog("Descartar alterações do rascunho e voltar para a versão publicada?"))
+    )
+      return;
     try {
       await discardFn({ data: { id: row.id } });
       toast.success("Rascunho descartado");
@@ -186,7 +191,9 @@ function WorkflowsPage() {
 
   const handleBulk = async (row: WorkflowRow) => {
     if (
-      !(await confirmDialog(`Aplicar "${row.name}" aos registros existentes de ${ENTITY_LABELS[row.entity]} que batem no gatilho? (limite 200)`))
+      !(await confirmDialog(
+        `Aplicar "${row.name}" aos registros existentes de ${ENTITY_LABELS[row.entity]} que batem no gatilho? (limite 200)`,
+      ))
     )
       return;
     try {
@@ -260,7 +267,8 @@ function WorkflowsPage() {
           )}
           {rows.map((row) => {
             const isPublished = row.status === "published" && !row.has_draft_changes;
-            const draftTrigger = row.draft_trigger ?? row.trigger ?? { event: "created", filters: [] };
+            const draftTrigger = row.draft_trigger ??
+              row.trigger ?? { event: "created", filters: [] };
             const draftActions = row.draft_actions ?? row.actions ?? [];
             return (
               <Card key={row.id}>
@@ -271,7 +279,9 @@ function WorkflowsPage() {
                       {isPublished ? (
                         <Badge variant="secondary">Publicado v{row.published_version}</Badge>
                       ) : row.published_version > 0 ? (
-                        <Badge variant="outline">Rascunho pendente (publicado v{row.published_version})</Badge>
+                        <Badge variant="outline">
+                          Rascunho pendente (publicado v{row.published_version})
+                        </Badge>
                       ) : (
                         <Badge variant="outline">Rascunho</Badge>
                       )}
@@ -280,8 +290,8 @@ function WorkflowsPage() {
                       )}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[draftTrigger.event ?? "created"]} ·{" "}
-                      {draftActions.length} ação(ões) · {row.runs_24h} exec / 24h
+                      {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[draftTrigger.event ?? "created"]}{" "}
+                      · {draftActions.length} ação(ões) · {row.runs_24h} exec / 24h
                     </p>
                   </div>
                   <div className="flex items-center gap-1 flex-wrap justify-end">
@@ -376,7 +386,8 @@ function WorkflowsPage() {
           <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
               Executa a versão <strong>rascunho</strong> contra um registro de{" "}
-              <strong>{testTarget ? ENTITY_LABELS[testTarget.entity] : ""}</strong>. Nenhuma ação real é executada — apenas simulada e registrada no histórico como teste.
+              <strong>{testTarget ? ENTITY_LABELS[testTarget.entity] : ""}</strong>. Nenhuma ação
+              real é executada — apenas simulada e registrada no histórico como teste.
             </p>
             {testTarget && (
               <RecordPicker
@@ -392,7 +403,9 @@ function WorkflowsPage() {
                 </p>
                 {testResult.log.map((l, i) => (
                   <div key={i} className="text-xs font-mono whitespace-pre">
-                    {l.ok ? "· " : "✗ "}{l.step}{l.note ? ` — ${l.note}` : ""}
+                    {l.ok ? "· " : "✗ "}
+                    {l.step}
+                    {l.note ? ` — ${l.note}` : ""}
                   </div>
                 ))}
               </div>
@@ -473,9 +486,7 @@ function PendingApprovalsList({
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2 flex-wrap">
               {r.title}
-              <Badge variant="outline">
-                {namesById[r.workflow_id] ?? "Workflow"}
-              </Badge>
+              <Badge variant="outline">{namesById[r.workflow_id] ?? "Workflow"}</Badge>
               <Badge variant="secondary">{r.entity}</Badge>
             </CardTitle>
             {r.note && <p className="text-xs text-muted-foreground mt-1">{r.note}</p>}
@@ -640,15 +651,9 @@ function RecordPicker({
         </PopoverTrigger>
         <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]" align="start">
           <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="Buscar…"
-              value={query}
-              onValueChange={setQuery}
-            />
+            <CommandInput placeholder="Buscar…" value={query} onValueChange={setQuery} />
             <CommandList>
-              {loading && (
-                <div className="px-3 py-2 text-xs text-muted-foreground">Buscando…</div>
-              )}
+              {loading && <div className="px-3 py-2 text-xs text-muted-foreground">Buscando…</div>}
               {!loading && items.length === 0 && (
                 <CommandEmpty>Nenhum registro encontrado.</CommandEmpty>
               )}
@@ -663,9 +668,7 @@ function RecordPicker({
                     }}
                   >
                     <Check
-                      className={
-                        "mr-2 h-4 w-4 " + (value === it.id ? "opacity-100" : "opacity-0")
-                      }
+                      className={"mr-2 h-4 w-4 " + (value === it.id ? "opacity-100" : "opacity-0")}
                     />
                     <span className="truncate">{it.label}</span>
                   </CommandItem>
@@ -678,5 +681,3 @@ function RecordPicker({
     </div>
   );
 }
-
-

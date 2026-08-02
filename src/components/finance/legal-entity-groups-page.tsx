@@ -181,9 +181,7 @@ export function LegalEntityGroupsPage() {
                     )}
                     <span className="font-medium">{g.name}</span>
                     {g.code && (
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {g.code}
-                      </span>
+                      <span className="font-mono text-xs text-muted-foreground">{g.code}</span>
                     )}
                     {g.is_system && (
                       <Badge variant="outline" className="text-xs">
@@ -297,10 +295,7 @@ export function LegalEntityGroupsPage() {
                         key={e.id}
                         className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50 cursor-pointer"
                       >
-                        <Checkbox
-                          checked={checked}
-                          onCheckedChange={() => toggleMember(e.id)}
-                        />
+                        <Checkbox checked={checked} onCheckedChange={() => toggleMember(e.id)} />
                         <span className="text-sm">
                           {e.code && (
                             <span className="font-mono text-xs text-muted-foreground mr-1">

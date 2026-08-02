@@ -104,7 +104,9 @@ function CustomPropsPage() {
 
   const handleDelete = async (r: Row) => {
     if (
-      !(await confirmDialog(`Remover a propriedade "${r.label}"? Os valores já gravados nos registros não serão excluídos.`))
+      !(await confirmDialog(
+        `Remover a propriedade "${r.label}"? Os valores já gravados nos registros não serão excluídos.`,
+      ))
     )
       return;
     try {

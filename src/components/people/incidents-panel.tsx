@@ -58,13 +58,7 @@ function severityClass(s: IncidentSeverity) {
   }
 }
 
-export function IncidentsPanel({
-  personId,
-  canWrite,
-}: {
-  personId: string;
-  canWrite: boolean;
-}) {
+export function IncidentsPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listIncidents);
   const upsertFn = useServerFn(upsertIncident);
@@ -161,7 +155,7 @@ export function IncidentsPanel({
                         size="icon"
                         variant="ghost"
                         onClick={async () => {
-                          if ((await confirmDialog("Remover incidente?"))) del.mutate(r.id);
+                          if (await confirmDialog("Remover incidente?")) del.mutate(r.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />

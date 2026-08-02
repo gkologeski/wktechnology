@@ -96,13 +96,7 @@ function RiskSlider({
   );
 }
 
-export function PsychosocialPanel({
-  personId,
-  canWrite,
-}: {
-  personId: string;
-  canWrite: boolean;
-}) {
+export function PsychosocialPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listPsychAssessments);
   const upsertFn = useServerFn(upsertPsychAssessment);
@@ -212,7 +206,7 @@ export function PsychosocialPanel({
                         size="icon"
                         variant="ghost"
                         onClick={async () => {
-                          if ((await confirmDialog("Remover avaliação?"))) del.mutate(r.id);
+                          if (await confirmDialog("Remover avaliação?")) del.mutate(r.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -312,7 +306,11 @@ function PsychDialog({
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label>Data</Label>
-              <Input type="date" value={assessedAt} onChange={(e) => setAssessedAt(e.target.value)} />
+              <Input
+                type="date"
+                value={assessedAt}
+                onChange={(e) => setAssessedAt(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Método</Label>

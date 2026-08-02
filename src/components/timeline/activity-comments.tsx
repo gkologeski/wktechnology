@@ -81,7 +81,12 @@ export function ActivityComments({ activityId, workspaceId, team, disabled }: Pr
       .channel(`activity_comments:${activityId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "activity_comments", filter: `activity_id=eq.${activityId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "activity_comments",
+          filter: `activity_id=eq.${activityId}`,
+        },
         (payload) => {
           setItems((prev) => {
             if (payload.eventType === "INSERT") {
@@ -132,9 +137,7 @@ export function ActivityComments({ activityId, workspaceId, team, disabled }: Pr
         .single();
       if (error) throw error;
       setItems((prev) =>
-        prev.some((r) => r.id === (data as CommentRow).id)
-          ? prev
-          : [...prev, data as CommentRow],
+        prev.some((r) => r.id === (data as CommentRow).id) ? prev : [...prev, data as CommentRow],
       );
       setDraft("");
       setComposing(false);
@@ -291,10 +294,7 @@ export function ActivityComments({ activityId, workspaceId, team, disabled }: Pr
                       </div>
                     ) : (
                       <>
-                        <HtmlContent
-                          html={c.body}
-                          className="text-sm text-foreground/90 mt-0.5"
-                        />
+                        <HtmlContent html={c.body} className="text-sm text-foreground/90 mt-0.5" />
                         {isMine && (
                           <div className="mt-1 flex gap-1 opacity-70 hover:opacity-100 transition-opacity">
                             <Button

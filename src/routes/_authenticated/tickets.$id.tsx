@@ -45,11 +45,7 @@ function TicketDetail() {
   const { data: ticket } = useQuery({
     queryKey: qk.ticket(id),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tickets")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
+      const { data, error } = await supabase.from("tickets").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return (data as TicketRow | null) ?? null;
     },
@@ -230,7 +226,6 @@ function TicketDetail() {
             { key: "source", label: "Origem", primary: true },
             { key: "due_at", label: "Vencimento", type: "datetime", primary: true },
             { key: "description", label: "Descrição" },
-
           ]}
           onSaved={load}
         />

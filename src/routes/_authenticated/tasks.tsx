@@ -804,8 +804,6 @@ function TasksHubspotView() {
               allowAll={activityScope.isWorkspaceWide}
             />
 
-
-
             {selectedIds.size > 0 ? (
               <div className="flex items-center gap-2 rounded-md border bg-primary/5 px-2 py-1">
                 <span className="text-xs font-medium text-primary">

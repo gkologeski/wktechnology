@@ -28,12 +28,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AtsSectionHeader, EmptyState } from "@/components/ats/ui";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
@@ -113,7 +108,10 @@ export function QuestionnairesTab() {
       {isLoading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
       ) : templates.length === 0 ? (
-        <EmptyState title="Nenhum modelo disponível" description="Peça ao administrador para carregar os modelos padrão." />
+        <EmptyState
+          title="Nenhum modelo disponível"
+          description="Peça ao administrador para carregar os modelos padrão."
+        />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {templates.map((q) => (
@@ -231,7 +229,7 @@ export function QuestionnairesTab() {
                     size="icon"
                     variant="ghost"
                     onClick={async () => {
-                      if ((await confirmDialog(`Excluir "${q.name}"?`))) delMut.mutate(q.id);
+                      if (await confirmDialog(`Excluir "${q.name}"?`)) delMut.mutate(q.id);
                     }}
                     aria-label="Excluir"
                     title="Excluir"
@@ -258,9 +256,7 @@ export function QuestionnairesTab() {
         <QuestionnaireEditorSheet
           id={editingId}
           onClose={() => setEditingId(null)}
-          onChanged={() =>
-            qc.invalidateQueries({ queryKey: ["prospecting", "questionnaires"] })
-          }
+          onChanged={() => qc.invalidateQueries({ queryKey: ["prospecting", "questionnaires"] })}
         />
       ) : null}
 
@@ -475,7 +471,9 @@ function QuestionnaireEditorSheet({
           <SheetTitle className="flex items-center gap-2">
             {data?.questionnaire.name ?? "Carregando..."}
             {readOnly ? (
-              <Badge variant="secondary" className="text-[10px]">Modelo</Badge>
+              <Badge variant="secondary" className="text-[10px]">
+                Modelo
+              </Badge>
             ) : null}
           </SheetTitle>
         </SheetHeader>
@@ -512,7 +510,10 @@ function QuestionnaireEditorSheet({
             )}
 
             <div>
-              <AtsSectionHeader title="Perguntas" description="Cada resposta pontuada soma no score final." />
+              <AtsSectionHeader
+                title="Perguntas"
+                description="Cada resposta pontuada soma no score final."
+              />
               <QuestionsList
                 questionnaireId={id}
                 questions={data.questions}
@@ -520,7 +521,6 @@ function QuestionnaireEditorSheet({
                 onChanged={invalidate}
               />
             </div>
-
 
             {readOnly ? null : (
               <div className="rounded-md border p-3 space-y-3">
@@ -536,7 +536,10 @@ function QuestionnaireEditorSheet({
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Tipo</Label>
-                    <Select value={addingType} onValueChange={(v) => setAddingType(v as QuestionType)}>
+                    <Select
+                      value={addingType}
+                      onValueChange={(v) => setAddingType(v as QuestionType)}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -626,9 +629,7 @@ function QuestionsList({
   };
 
   if (order.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground mt-3">Nenhuma pergunta ainda.</p>
-    );
+    return <p className="text-sm text-muted-foreground mt-3">Nenhuma pergunta ainda.</p>;
   }
 
   return (
@@ -668,12 +669,7 @@ function QuestionsList({
             (readOnly ? "" : "cursor-grab active:cursor-grabbing")
           }
         >
-          <QuestionRow
-            question={q}
-            onDeleted={onChanged}
-            onSaved={onChanged}
-            readOnly={readOnly}
-          />
+          <QuestionRow question={q} onDeleted={onChanged} onSaved={onChanged} readOnly={readOnly} />
         </div>
       ))}
     </div>
@@ -777,7 +773,7 @@ function QuestionRow({
               size="icon"
               variant="ghost"
               onClick={async () => {
-                if ((await confirmDialog("Excluir esta pergunta?"))) del.mutate();
+                if (await confirmDialog("Excluir esta pergunta?")) del.mutate();
               }}
               aria-label="Excluir"
             >

@@ -119,7 +119,7 @@ export function GoalsPanel({ personId, canWrite }: { personId: string; canWrite:
                       variant="ghost"
                       size="icon"
                       onClick={async () => {
-                        if ((await confirmDialog("Remover meta?"))) del.mutate(g.id);
+                        if (await confirmDialog("Remover meta?")) del.mutate(g.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -264,11 +264,20 @@ function GoalDialog({
           </div>
           <div className="space-y-1">
             <Label>Unidade</Label>
-            <Input value={unit ?? ""} onChange={(e) => setUnit(e.target.value)} placeholder="%, R$, itens" />
+            <Input
+              value={unit ?? ""}
+              onChange={(e) => setUnit(e.target.value)}
+              placeholder="%, R$, itens"
+            />
           </div>
           <div className="space-y-1">
             <Label>Peso</Label>
-            <Input type="number" step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)} />
+            <Input
+              type="number"
+              step="0.1"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+            />
           </div>
           <div className="space-y-1">
             <Label>Valor atual</Label>
@@ -280,15 +289,29 @@ function GoalDialog({
           </div>
           <div className="space-y-1">
             <Label>Progresso (%)</Label>
-            <Input type="number" min="0" max="100" value={progress} onChange={(e) => setProgress(e.target.value)} />
+            <Input
+              type="number"
+              min="0"
+              max="100"
+              value={progress}
+              onChange={(e) => setProgress(e.target.value)}
+            />
           </div>
           <div className="space-y-1">
             <Label>Início</Label>
-            <Input type="date" value={periodStart ?? ""} onChange={(e) => setPeriodStart(e.target.value)} />
+            <Input
+              type="date"
+              value={periodStart ?? ""}
+              onChange={(e) => setPeriodStart(e.target.value)}
+            />
           </div>
           <div className="space-y-1">
             <Label>Fim</Label>
-            <Input type="date" value={periodEnd ?? ""} onChange={(e) => setPeriodEnd(e.target.value)} />
+            <Input
+              type="date"
+              value={periodEnd ?? ""}
+              onChange={(e) => setPeriodEnd(e.target.value)}
+            />
           </div>
         </div>
         <DialogFooter>

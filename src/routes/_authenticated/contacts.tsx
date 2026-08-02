@@ -172,7 +172,9 @@ function ContactsHubspotView() {
         );
 
       if (activeView === "mine" && user?.id) {
-        q = q.or(`assigned_user_id.eq.${user.id},and(assigned_user_id.is.null,owner_id.eq.${user.id})`);
+        q = q.or(
+          `assigned_user_id.eq.${user.id},and(assigned_user_id.is.null,owner_id.eq.${user.id})`,
+        );
       }
       if (activeView === "unassigned") q = q.is("assigned_user_id", null).is("owner_id", null);
       if (activeView === "new_week") {
@@ -638,7 +640,11 @@ function ContactsHubspotView() {
                   onClick={() => {
                     const ids = Array.from(selectedIds);
                     if (!ids.length) return;
-                    startFocusQueue("contacts", ids, `Contatos · ${ids.length.toLocaleString("pt-BR")}`);
+                    startFocusQueue(
+                      "contacts",
+                      ids,
+                      `Contatos · ${ids.length.toLocaleString("pt-BR")}`,
+                    );
                     toast.success(`Fila iniciada com ${ids.length} contato(s)`);
                     navigate({ to: "/contacts/$id", params: { id: ids[0] } });
                   }}
@@ -835,7 +841,6 @@ function ContactsHubspotView() {
         entity="contact"
         onDone={() => qc.invalidateQueries({ queryKey: ["contacts"] })}
       />
-
 
       <CreateContactDialog
         open={createOpen}

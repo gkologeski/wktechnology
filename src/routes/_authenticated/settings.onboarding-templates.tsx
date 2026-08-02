@@ -177,10 +177,18 @@ function OnbTemplatesPage() {
             <Button size="sm" variant="outline" onClick={() => setEditing(newEditorState("lead"))}>
               <Plus className="mr-1 h-4 w-4" /> Novo · Lead
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setEditing(newEditorState("company"))}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setEditing(newEditorState("company"))}
+            >
               <Plus className="mr-1 h-4 w-4" /> Novo · Empresa
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setEditing(newEditorState("contact"))}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setEditing(newEditorState("contact"))}
+            >
               <Plus className="mr-1 h-4 w-4" /> Novo · Contato
             </Button>
           </div>
@@ -262,7 +270,7 @@ function OnbTemplatesPage() {
                           size="icon"
                           variant="ghost"
                           onClick={async () => {
-                            if ((await confirmDialog(`Remover "${r.name}"?`))) delMut.mutate(r.id);
+                            if (await confirmDialog(`Remover "${r.name}"?`)) delMut.mutate(r.id);
                           }}
                           aria-label="Remover"
                         >
@@ -281,11 +289,10 @@ function OnbTemplatesPage() {
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editing?.id ? "Editar modelo" : "Novo modelo"} de onboarding
-            </DialogTitle>
+            <DialogTitle>{editing?.id ? "Editar modelo" : "Novo modelo"} de onboarding</DialogTitle>
             <DialogDescription>
-              Configure etapas, campos, tarefas e disparo de workflow para o wizard de criação guiada.
+              Configure etapas, campos, tarefas e disparo de workflow para o wizard de criação
+              guiada.
             </DialogDescription>
           </DialogHeader>
 
@@ -368,7 +375,9 @@ function OnbTemplatesPage() {
                     checked={editing.is_default}
                     onCheckedChange={(v) => setEditing({ ...editing, is_default: v })}
                   />
-                  <Label htmlFor="def" className="cursor-pointer">Padrão da entidade</Label>
+                  <Label htmlFor="def" className="cursor-pointer">
+                    Padrão da entidade
+                  </Label>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch
@@ -376,7 +385,9 @@ function OnbTemplatesPage() {
                     checked={editing.is_active}
                     onCheckedChange={(v) => setEditing({ ...editing, is_active: v })}
                   />
-                  <Label htmlFor="act" className="cursor-pointer">Ativo</Label>
+                  <Label htmlFor="act" className="cursor-pointer">
+                    Ativo
+                  </Label>
                 </div>
               </div>
 
@@ -400,8 +411,11 @@ function OnbTemplatesPage() {
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Ex.: <code>[{"{"} id, title, fields: [{"{"} name, label, type {"}"}] {"}"}]</code>.
-                  target_column define a coluna real na entidade.
+                  Ex.:{" "}
+                  <code>
+                    [{"{"} id, title, fields: [{"{"} name, label, type {"}"}] {"}"}]
+                  </code>
+                  . target_column define a coluna real na entidade.
                 </p>
               </div>
 
@@ -423,7 +437,10 @@ function OnbTemplatesPage() {
                   }}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Ex.: <code>[{"{"} title, type: 'call'|'task'|'email'|'meeting'|'note', offset_days {"}"}]</code>
+                  Ex.:{" "}
+                  <code>
+                    [{"{"} title, type: 'call'|'task'|'email'|'meeting'|'note', offset_days {"}"}]
+                  </code>
                 </p>
               </div>
 

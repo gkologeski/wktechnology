@@ -160,7 +160,6 @@ function TicketsIndex() {
     dealId: draft.deal_id ?? null,
   });
 
-
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
     queryFn: async () => {
@@ -187,12 +186,8 @@ function TicketsIndex() {
     queryKey: ["tickets", "contact-lookups", contactIds.join(",")],
     enabled: contactIds.length > 0,
     queryFn: async () =>
-      (
-        await supabase
-          .from("contacts")
-          .select("id,first_name,last_name")
-          .in("id", contactIds)
-      ).data ?? [],
+      (await supabase.from("contacts").select("id,first_name,last_name").in("id", contactIds))
+        .data ?? [],
   });
   const { data: companies = [] } = useQuery({
     queryKey: ["tickets", "company-lookups", companyIds.join(",")],
@@ -283,9 +278,14 @@ function TicketsIndex() {
     };
     let error;
     if (editing) {
-      ({ error } = await supabase.from("tickets").update(payload as never).eq("id", editing.id));
+      ({ error } = await supabase
+        .from("tickets")
+        .update(payload as never)
+        .eq("id", editing.id));
     } else {
-      ({ error } = await supabase.from("tickets").insert({ ...payload, owner_id: user.id } as never));
+      ({ error } = await supabase
+        .from("tickets")
+        .insert({ ...payload, owner_id: user.id } as never));
     }
     if (error) {
       toast.error(error.message);
@@ -490,7 +490,6 @@ function TicketsIndex() {
             </Button>
           )}
         </div>
-
 
         <TabsContent value="table" className="mt-4">
           {selected.size > 0 && (
@@ -733,7 +732,6 @@ function TicketsIndex() {
             focusMode={focusMode}
             onOpen={openEdit}
           />
-
         </TabsContent>
 
         <TabsContent value="split" className="mt-4">

@@ -67,21 +67,13 @@ import {
   type DerivedCandidateStatus,
 } from "@/lib/ats/candidate-status.functions";
 import { CvPdfUploadButton } from "@/components/ats/cv-pdf-upload-button";
-import {
-  AtsPageHeader,
-  FilterBar,
-  EmptyState,
-  Skeletons,
-  SourceBadge,
-} from "@/components/ats/ui";
+import { AtsPageHeader, FilterBar, EmptyState, Skeletons, SourceBadge } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
 import { computeCandidateSignals } from "@/lib/kanban/candidates-signals";
 import { KanbanSignalIcons, kanbanBorderStyle } from "@/components/kanban/kanban-signal-indicator";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-
-
 
 export const Route = createFileRoute("/_authenticated/(ats)/candidates/")({
   component: CandidatesPage,
@@ -130,7 +122,6 @@ function CandidatesGridSkeleton() {
   );
 }
 
-
 function CandidatesPage() {
   const list = useServerFn(listAtsCandidates);
   const save = useServerFn(saveAtsCandidate);
@@ -151,10 +142,10 @@ function CandidatesPage() {
     candidateName?: string;
   }>({ open: false });
 
-  const [view, setView] = useState<"cards" | "table" | "kanban">(
-    () => (typeof window !== "undefined"
+  const [view, setView] = useState<"cards" | "table" | "kanban">(() =>
+    typeof window !== "undefined"
       ? ((localStorage.getItem("candidates:view") as "cards" | "table" | "kanban") ?? "cards")
-      : "cards"),
+      : "cards",
   );
 
   const [statusFilter, setStatusFilter] = useState<DerivedCandidateStatus | "all">("all");
@@ -165,9 +156,7 @@ function CandidatesPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [open, setOpen] = useState(false);
-  const [createMode, setCreateMode] = useState<"chooser" | "manual" | "linkedin" | "cv">(
-    "chooser",
-  );
+  const [createMode, setCreateMode] = useState<"chooser" | "manual" | "linkedin" | "cv">("chooser");
   const [linkedinUrlInput, setLinkedinUrlInput] = useState("");
   const [linkedinLoading, setLinkedinLoading] = useState(false);
   const [linkedinError, setLinkedinError] = useState<string | null>(null);
@@ -182,7 +171,13 @@ function CandidatesPage() {
     current_company: "",
     skills: "",
     notes: "",
-    experiences: [] as Array<{ title: string; company: string; start: string; end: string; description: string }>,
+    experiences: [] as Array<{
+      title: string;
+      company: string;
+      start: string;
+      end: string;
+      description: string;
+    }>,
     education: [] as Array<{ school: string; degree: string; start: string; end: string }>,
   });
 
@@ -321,7 +316,12 @@ function CandidatesPage() {
 
   const statusCounts = useMemo(() => {
     const c: Record<DerivedCandidateStatus, number> = {
-      new: 0, in_process: 0, interview: 0, offer: 0, hired: 0, archived: 0,
+      new: 0,
+      in_process: 0,
+      interview: 0,
+      offer: 0,
+      hired: 0,
+      archived: 0,
     };
     for (const r of rows) c[statuses[r.id as string] ?? "new"]++;
     return c;
@@ -330,11 +330,19 @@ function CandidatesPage() {
   const CAND_FOCUS_KEY = "candidates:focusMode";
   const [focusMode, setFocusMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    try { return window.localStorage.getItem(CAND_FOCUS_KEY) === "1"; } catch { return false; }
+    try {
+      return window.localStorage.getItem(CAND_FOCUS_KEY) === "1";
+    } catch {
+      return false;
+    }
   });
   useEffect(() => {
     if (typeof window === "undefined") return;
-    try { window.localStorage.setItem(CAND_FOCUS_KEY, focusMode ? "1" : "0"); } catch { /* noop */ }
+    try {
+      window.localStorage.setItem(CAND_FOCUS_KEY, focusMode ? "1" : "0");
+    } catch {
+      /* noop */
+    }
   }, [focusMode]);
 
   const candSignals = useMemo(
@@ -349,8 +357,6 @@ function CandidatesPage() {
       ),
     [rows, statuses],
   );
-
-
 
   const handleCreate = async () => {
     if (!form.full_name.trim()) {
@@ -368,7 +374,11 @@ function CandidatesPage() {
           current_position: form.current_position || null,
           current_company: form.current_company || null,
           skills: form.skills
-            ? form.skills.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 100)
+            ? form.skills
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+                .slice(0, 100)
             : [],
           experiences: form.experiences
             .map((e) => ({
@@ -428,7 +438,9 @@ function CandidatesPage() {
         const { supabase } = await import("@/integrations/supabase/client");
         await supabase.from("ats_candidates").update({ cv_url: cvUrl }).eq("id", newId);
       }
-      toast.success(`Candidato criado a partir do CV${res.parsed.full_name ? `: ${res.parsed.full_name}` : ""}`);
+      toast.success(
+        `Candidato criado a partir do CV${res.parsed.full_name ? `: ${res.parsed.full_name}` : ""}`,
+      );
       setOpen(false);
       resetCreateDialog();
       refresh();
@@ -635,7 +647,8 @@ function CandidatesPage() {
                     </p>
                   )}
                   <p className="text-xs text-text-tertiary">
-                    A IA extrai nome, contatos, skills, experiência e formação, e cria um novo candidato.
+                    A IA extrai nome, contatos, skills, experiência e formação, e cria um novo
+                    candidato.
                   </p>
                   <DialogFooter>
                     <Button
@@ -762,11 +775,16 @@ function CandidatesPage() {
                         </Button>
                       </div>
                       {form.experiences.length === 0 ? (
-                        <p className="text-xs text-text-secondary">Nenhuma experiência adicionada.</p>
+                        <p className="text-xs text-text-secondary">
+                          Nenhuma experiência adicionada.
+                        </p>
                       ) : (
                         <div className="space-y-3">
                           {form.experiences.map((exp, idx) => (
-                            <div key={idx} className="rounded-md border border-border-subtle bg-surface-sunken p-3 space-y-2">
+                            <div
+                              key={idx}
+                              className="rounded-md border border-border-subtle bg-surface-sunken p-3 space-y-2"
+                            >
                               <div className="grid grid-cols-2 gap-2">
                                 <Input
                                   placeholder="Cargo"
@@ -863,7 +881,10 @@ function CandidatesPage() {
                       ) : (
                         <div className="space-y-3">
                           {form.education.map((edu, idx) => (
-                            <div key={idx} className="rounded-md border border-border-subtle bg-surface-sunken p-3 space-y-2">
+                            <div
+                              key={idx}
+                              className="rounded-md border border-border-subtle bg-surface-sunken p-3 space-y-2"
+                            >
                               <div className="grid grid-cols-2 gap-2">
                                 <Input
                                   placeholder="Instituição"
@@ -934,10 +955,7 @@ function CandidatesPage() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => setCreateMode("chooser")}
-                    >
+                    <Button variant="outline" onClick={() => setCreateMode("chooser")}>
                       <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
                       Voltar
                     </Button>
@@ -990,20 +1008,20 @@ function CandidatesPage() {
         }
         actions={
           <div className="flex items-center gap-2">
-          <AssigneeFilter value={assignee} onChange={setAssignee} className="h-8 w-44 text-xs" />
-          <Tabs value={view} onValueChange={(v) => setView(v as "cards" | "table" | "kanban")}>
-            <TabsList className="h-8">
-              <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
-                <LayoutGrid className="h-3.5 w-3.5" aria-hidden /> Cards
-              </TabsTrigger>
-              <TabsTrigger value="table" className="h-7 px-2 text-xs gap-1">
-                <Rows3 className="h-3.5 w-3.5" aria-hidden /> Tabela
-              </TabsTrigger>
-              <TabsTrigger value="kanban" className="h-7 px-2 text-xs gap-1">
-                <Columns3 className="h-3.5 w-3.5" aria-hidden /> Kanban
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+            <AssigneeFilter value={assignee} onChange={setAssignee} className="h-8 w-44 text-xs" />
+            <Tabs value={view} onValueChange={(v) => setView(v as "cards" | "table" | "kanban")}>
+              <TabsList className="h-8">
+                <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">
+                  <LayoutGrid className="h-3.5 w-3.5" aria-hidden /> Cards
+                </TabsTrigger>
+                <TabsTrigger value="table" className="h-7 px-2 text-xs gap-1">
+                  <Rows3 className="h-3.5 w-3.5" aria-hidden /> Tabela
+                </TabsTrigger>
+                <TabsTrigger value="kanban" className="h-7 px-2 text-xs gap-1">
+                  <Columns3 className="h-3.5 w-3.5" aria-hidden /> Kanban
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         }
       />
@@ -1075,7 +1093,10 @@ function CandidatesPage() {
                     </Link>
                     {c.current_position ? (
                       <p className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-text-secondary">
-                        <Briefcase className="h-3 w-3 shrink-0 text-text-tertiary" aria-hidden="true" />
+                        <Briefcase
+                          className="h-3 w-3 shrink-0 text-text-tertiary"
+                          aria-hidden="true"
+                        />
                         <span className="truncate">
                           {c.current_position}
                           {c.current_company ? ` @ ${c.current_company}` : ""}
@@ -1114,9 +1135,7 @@ function CandidatesPage() {
                     {skills.slice(0, 6).map((s) => (
                       <MetaPill key={s}>{s}</MetaPill>
                     ))}
-                    {skills.length > 6 ? (
-                      <MetaPill>+{skills.length - 6}</MetaPill>
-                    ) : null}
+                    {skills.length > 6 ? <MetaPill>+{skills.length - 6}</MetaPill> : null}
                   </div>
                 ) : null}
 
@@ -1129,7 +1148,6 @@ function CandidatesPage() {
           })}
         </div>
       ) : view === "table" ? (
-
         <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
           <Table>
             <TableHeader>
@@ -1155,7 +1173,10 @@ function CandidatesPage() {
                         className="text-text-primary hover:underline inline-flex items-center gap-1"
                       >
                         {c.full_name as string}
-                        <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-60" aria-hidden />
+                        <ExternalLink
+                          className="h-3 w-3 opacity-0 group-hover:opacity-60"
+                          aria-hidden
+                        />
                       </Link>
                       {c.email ? (
                         <div className="text-xs text-text-tertiary truncate max-w-[240px]">
@@ -1176,13 +1197,19 @@ function CandidatesPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-text-secondary">
-                      {c.location ? (c.location as string) : <span className="text-text-tertiary">—</span>}
+                      {c.location ? (
+                        (c.location as string)
+                      ) : (
+                        <span className="text-text-tertiary">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <CandidateStatusPill status={status} />
                     </TableCell>
                     <TableCell>
-                      <AssigneeCell assignedTo={(c as { assigned_to?: string | null }).assigned_to} />
+                      <AssigneeCell
+                        assignedTo={(c as { assigned_to?: string | null }).assigned_to}
+                      />
                     </TableCell>
                     <TableCell>
                       {c.source ? (
@@ -1223,204 +1250,202 @@ function CandidatesPage() {
               Modo de foco
             </Button>
           </div>
-        <KanbanScrollContainer ariaLabel="Quadro de candidatos">
-          <div className="flex gap-2 pb-4">
-            {STATUS_ORDER.map((s) => {
-              const rawCol = rows.filter(
-                (r) => (statuses[r.id as string] ?? "new") === s,
-              );
-              const colRows = focusMode
-                ? [...rawCol].sort(
-                    (a, b) =>
-                      (candSignals.get(b.id as string)?.score ?? 0) -
-                      (candSignals.get(a.id as string)?.score ?? 0),
-                  )
-                : rawCol;
-              const hotCount = colRows.reduce(
-                (n, r) => n + (candSignals.get(r.id as string)?.isHot ? 1 : 0),
-                0,
-              );
-              const isOver = dragOverCol === s;
-
-              const handleDrop = async (jobId: string) => {
-                const candidateId = jobId; // dataTransfer carrega o id do candidato
-                const candidate = rows.find((r) => r.id === candidateId);
-                if (!candidate) return;
-                const from = (statuses[candidateId] ?? "new") as DerivedCandidateStatus;
-                if (from === s) return;
-
-                // *  →  archived  → mutação segura
-                if (s === "archived") {
-                  try {
-                    await archiveCandidate({ data: { id: candidateId, archived: true } });
-                    toast.success(`${candidate.full_name as string} arquivado`);
-                    void queryClient.invalidateQueries({ queryKey: ["ats-candidate-statuses"] });
-                    void queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
-                  } catch (err) {
-                    toast.error(err instanceof Error ? err.message : "Falha ao arquivar");
-                  }
-                  return;
-                }
-                // archived → new  → desarquivar
-                if (from === "archived" && s === "new") {
-                  try {
-                    await archiveCandidate({ data: { id: candidateId, archived: false } });
-                    toast.success(`${candidate.full_name as string} desarquivado`);
-                    void queryClient.invalidateQueries({ queryKey: ["ats-candidate-statuses"] });
-                    void queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
-                  } catch (err) {
-                    toast.error(err instanceof Error ? err.message : "Falha ao desarquivar");
-                  }
-                  return;
-                }
-                // new → in_process  → exige associação a uma vaga (abre diálogo)
-                if (from === "new" && s === "in_process") {
-                  setAssociateState({
-                    open: true,
-                    candidateId,
-                    candidateName: candidate.full_name as string,
-                  });
-                  toast.message("Associe o candidato a uma vaga para movê-lo para 'Em processo'");
-                  return;
-                }
-                // demais transições — não há mutação direta segura
-                toast.warning(
-                  `Transição "${DERIVED_STATUS_LABELS[from]}" → "${DERIVED_STATUS_LABELS[s]}" precisa ser feita pelo fluxo da vaga (entrevista, oferta, etc.).`,
+          <KanbanScrollContainer ariaLabel="Quadro de candidatos">
+            <div className="flex gap-2 pb-4">
+              {STATUS_ORDER.map((s) => {
+                const rawCol = rows.filter((r) => (statuses[r.id as string] ?? "new") === s);
+                const colRows = focusMode
+                  ? [...rawCol].sort(
+                      (a, b) =>
+                        (candSignals.get(b.id as string)?.score ?? 0) -
+                        (candSignals.get(a.id as string)?.score ?? 0),
+                    )
+                  : rawCol;
+                const hotCount = colRows.reduce(
+                  (n, r) => n + (candSignals.get(r.id as string)?.isHot ? 1 : 0),
+                  0,
                 );
-              };
-              return (
-                <div
-                  key={s}
-                  data-kanban-column-root={s}
-                  onDragOver={(e) => {
-                    if (!draggingId) return;
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    if (dragOverCol !== s) setDragOverCol(s);
-                  }}
-                  onDragLeave={(e) => {
-                    if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node))
-                      setDragOverCol((c) => (c === s ? null : c));
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const id = e.dataTransfer.getData("text/plain") || draggingId;
-                    setDragOverCol(null);
-                    setDraggingId(null);
-                    if (id) void handleDrop(id);
-                  }}
-                  className={cn(
-                    "flex w-[280px] shrink-0 flex-col rounded-md border bg-surface-sunken transition-colors",
-                    isOver
-                      ? "border-primary/60 ring-1 ring-primary/30"
-                      : "border-border-subtle",
-                  )}
-                >
-                  <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <CandidateStatusPill status={s} />
-                      <span className="flex items-center gap-1 text-[11px] tabular-nums text-text-tertiary">
-                        {hotCount > 0 && (
-                          <span
-                            className="inline-flex items-center gap-0.5"
-                            title={`${hotCount} parado(s)`}
-                            style={{ color: "var(--hs-orange)" }}
+                const isOver = dragOverCol === s;
+
+                const handleDrop = async (jobId: string) => {
+                  const candidateId = jobId; // dataTransfer carrega o id do candidato
+                  const candidate = rows.find((r) => r.id === candidateId);
+                  if (!candidate) return;
+                  const from = (statuses[candidateId] ?? "new") as DerivedCandidateStatus;
+                  if (from === s) return;
+
+                  // *  →  archived  → mutação segura
+                  if (s === "archived") {
+                    try {
+                      await archiveCandidate({ data: { id: candidateId, archived: true } });
+                      toast.success(`${candidate.full_name as string} arquivado`);
+                      void queryClient.invalidateQueries({ queryKey: ["ats-candidate-statuses"] });
+                      void queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Falha ao arquivar");
+                    }
+                    return;
+                  }
+                  // archived → new  → desarquivar
+                  if (from === "archived" && s === "new") {
+                    try {
+                      await archiveCandidate({ data: { id: candidateId, archived: false } });
+                      toast.success(`${candidate.full_name as string} desarquivado`);
+                      void queryClient.invalidateQueries({ queryKey: ["ats-candidate-statuses"] });
+                      void queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
+                    } catch (err) {
+                      toast.error(err instanceof Error ? err.message : "Falha ao desarquivar");
+                    }
+                    return;
+                  }
+                  // new → in_process  → exige associação a uma vaga (abre diálogo)
+                  if (from === "new" && s === "in_process") {
+                    setAssociateState({
+                      open: true,
+                      candidateId,
+                      candidateName: candidate.full_name as string,
+                    });
+                    toast.message("Associe o candidato a uma vaga para movê-lo para 'Em processo'");
+                    return;
+                  }
+                  // demais transições — não há mutação direta segura
+                  toast.warning(
+                    `Transição "${DERIVED_STATUS_LABELS[from]}" → "${DERIVED_STATUS_LABELS[s]}" precisa ser feita pelo fluxo da vaga (entrevista, oferta, etc.).`,
+                  );
+                };
+                return (
+                  <div
+                    key={s}
+                    data-kanban-column-root={s}
+                    onDragOver={(e) => {
+                      if (!draggingId) return;
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragOverCol !== s) setDragOverCol(s);
+                    }}
+                    onDragLeave={(e) => {
+                      if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node))
+                        setDragOverCol((c) => (c === s ? null : c));
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const id = e.dataTransfer.getData("text/plain") || draggingId;
+                      setDragOverCol(null);
+                      setDraggingId(null);
+                      if (id) void handleDrop(id);
+                    }}
+                    className={cn(
+                      "flex w-[280px] shrink-0 flex-col rounded-md border bg-surface-sunken transition-colors",
+                      isOver ? "border-primary/60 ring-1 ring-primary/30" : "border-border-subtle",
+                    )}
+                  >
+                    <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <CandidateStatusPill status={s} />
+                        <span className="flex items-center gap-1 text-[11px] tabular-nums text-text-tertiary">
+                          {hotCount > 0 && (
+                            <span
+                              className="inline-flex items-center gap-0.5"
+                              title={`${hotCount} parado(s)`}
+                              style={{ color: "var(--hs-orange)" }}
+                            >
+                              <Flame className="h-3 w-3" aria-hidden />
+                              {hotCount}
+                            </span>
+                          )}
+                          <span>{colRows.length}</span>
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex-1 space-y-1.5 p-2 min-h-[200px]">
+                      {colRows.map((c) => {
+                        const skills = Array.isArray(c.skills) ? (c.skills as string[]) : [];
+                        const cid = c.id as string;
+                        const sig = candSignals.get(cid);
+                        const dim = focusMode && sig?.klass === "cold";
+                        return (
+                          <Link
+                            key={cid}
+                            to="/candidates/$id"
+                            params={{ id: cid }}
+                            data-kanban-card
+                            data-kanban-column={s}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.effectAllowed = "move";
+                              e.dataTransfer.setData("text/plain", cid);
+                              setDraggingId(cid);
+                            }}
+                            onDragEnd={() => {
+                              setDraggingId(null);
+                              setDragOverCol(null);
+                            }}
+                            style={kanbanBorderStyle(sig)}
+                            className={cn(
+                              "block rounded-md border border-border-subtle bg-surface-1 p-2.5",
+                              "transition-all hover:border-border-strong hover:shadow-sm",
+                              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                              "cursor-grab active:cursor-grabbing",
+                              draggingId === cid && "opacity-50",
+                              dim && "opacity-60",
+                            )}
                           >
-                            <Flame className="h-3 w-3" aria-hidden />
-                            {hotCount}
-                          </span>
-                        )}
-                        <span>{colRows.length}</span>
-                      </span>
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="truncate text-sm font-medium text-text-primary">
+                                {c.full_name as string}
+                              </div>
+                              <KanbanSignalIcons signals={sig} />
+                            </div>
+
+                            {c.current_position ? (
+                              <div className="mt-0.5 flex items-center gap-1 text-xs text-text-secondary">
+                                <Briefcase
+                                  className="h-3 w-3 shrink-0 text-text-tertiary"
+                                  aria-hidden
+                                />
+                                <span className="truncate">
+                                  {c.current_position}
+                                  {c.current_company ? ` @ ${c.current_company}` : ""}
+                                </span>
+                              </div>
+                            ) : null}
+                            {c.location ? (
+                              <div className="mt-0.5 flex items-center gap-1 text-xs text-text-tertiary">
+                                <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                                <span className="truncate">{c.location as string}</span>
+                              </div>
+                            ) : null}
+                            {skills.length > 0 ? (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {skills.slice(0, 3).map((sk) => (
+                                  <MetaPill key={sk}>{sk}</MetaPill>
+                                ))}
+                                {skills.length > 3 ? (
+                                  <MetaPill>+{skills.length - 3}</MetaPill>
+                                ) : null}
+                              </div>
+                            ) : null}
+                            {c.source ? (
+                              <div className="mt-2 border-t border-border-subtle pt-2">
+                                <SourceBadge source={c.source as string} />
+                              </div>
+                            ) : null}
+                          </Link>
+                        );
+                      })}
+                      {colRows.length === 0 ? (
+                        <p className="px-2 py-6 text-center text-xs text-text-tertiary">
+                          {isOver ? "Solte aqui" : "Vazio"}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
-                  <div className="flex-1 space-y-1.5 p-2 min-h-[200px]">
-                    {colRows.map((c) => {
-                      const skills = Array.isArray(c.skills) ? (c.skills as string[]) : [];
-                      const cid = c.id as string;
-                      const sig = candSignals.get(cid);
-                      const dim = focusMode && sig?.klass === "cold";
-                      return (
-                        <Link
-                          key={cid}
-                          to="/candidates/$id"
-                          params={{ id: cid }}
-                          data-kanban-card
-                          data-kanban-column={s}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.effectAllowed = "move";
-                            e.dataTransfer.setData("text/plain", cid);
-                            setDraggingId(cid);
-                          }}
-                          onDragEnd={() => {
-                            setDraggingId(null);
-                            setDragOverCol(null);
-                          }}
-                          style={kanbanBorderStyle(sig)}
-                          className={cn(
-                            "block rounded-md border border-border-subtle bg-surface-1 p-2.5",
-                            "transition-all hover:border-border-strong hover:shadow-sm",
-                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                            "cursor-grab active:cursor-grabbing",
-                            draggingId === cid && "opacity-50",
-                            dim && "opacity-60",
-                          )}
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="truncate text-sm font-medium text-text-primary">
-                              {c.full_name as string}
-                            </div>
-                            <KanbanSignalIcons signals={sig} />
-                          </div>
-
-                          {c.current_position ? (
-                            <div className="mt-0.5 flex items-center gap-1 text-xs text-text-secondary">
-                              <Briefcase className="h-3 w-3 shrink-0 text-text-tertiary" aria-hidden />
-                              <span className="truncate">
-                                {c.current_position}
-                                {c.current_company ? ` @ ${c.current_company}` : ""}
-                              </span>
-                            </div>
-                          ) : null}
-                          {c.location ? (
-                            <div className="mt-0.5 flex items-center gap-1 text-xs text-text-tertiary">
-                              <MapPin className="h-3 w-3 shrink-0" aria-hidden />
-                              <span className="truncate">{c.location as string}</span>
-                            </div>
-                          ) : null}
-                          {skills.length > 0 ? (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {skills.slice(0, 3).map((sk) => (
-                                <MetaPill key={sk}>{sk}</MetaPill>
-                              ))}
-                              {skills.length > 3 ? (
-                                <MetaPill>+{skills.length - 3}</MetaPill>
-                              ) : null}
-                            </div>
-                          ) : null}
-                          {c.source ? (
-                            <div className="mt-2 border-t border-border-subtle pt-2">
-                              <SourceBadge source={c.source as string} />
-                            </div>
-                          ) : null}
-                        </Link>
-                      );
-                    })}
-                    {colRows.length === 0 ? (
-                      <p className="px-2 py-6 text-center text-xs text-text-tertiary">
-                        {isOver ? "Solte aqui" : "Vazio"}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </KanbanScrollContainer>
+                );
+              })}
+            </div>
+          </KanbanScrollContainer>
         </>
       )}
-
 
       <AssociateCandidateJobDialog
         open={associateState.open}
@@ -1432,8 +1457,6 @@ function CandidatesPage() {
           void queryClient.invalidateQueries({ queryKey: ["ats-candidates"] });
         }}
       />
-
     </div>
-
   );
 }

@@ -158,7 +158,9 @@ function IntegrationDetail() {
 
   const runEnrichAllAddresses = async () => {
     if (
-      !(await confirmDialog("Buscar endereço (ViaCEP) de todas as empresas com CEP preenchido e cidade vazia?"))
+      !(await confirmDialog(
+        "Buscar endereço (ViaCEP) de todas as empresas com CEP preenchido e cidade vazia?",
+      ))
     )
       return;
     const r = await enrichCeps({ data: { all_missing: true } });
@@ -258,9 +260,9 @@ function IntegrationDetail() {
                 <section className="rounded-lg border bg-card p-5">
                   <h2 className="font-semibold mb-1">Motivos de negócio perdido</h2>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Importa as opções da propriedade <code>closed_lost_reason</code> do HubSpot
-                    para a base local e preenche o motivo dos negócios marcados como perdidos que
-                    ainda não o tenham registrado.
+                    Importa as opções da propriedade <code>closed_lost_reason</code> do HubSpot para
+                    a base local e preenche o motivo dos negócios marcados como perdidos que ainda
+                    não o tenham registrado.
                   </p>
                   <HubspotLossReasonsSync />
                 </section>
@@ -270,7 +272,6 @@ function IntegrationDetail() {
               </TabsContent>
             </Tabs>
           )}
-
 
           {isConnected && provider.authMode === "api_key" && (
             <section className="rounded-lg border bg-card p-5">

@@ -4,15 +4,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import {
-  Plus,
-  Trash2,
-  Save,
-  Video,
-  Type as TypeIcon,
-  Star,
-  MessagesSquare,
-} from "lucide-react";
+import { Plus, Trash2, Save, Video, Type as TypeIcon, Star, MessagesSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,10 +81,7 @@ function InterviewKitsPage() {
   const handleSave = async () => {
     if (!editing) return;
     if (!editing.name.trim()) return toast.error("Dê um nome ao kit");
-    if (
-      editing.questions.length === 0 ||
-      editing.questions.some((q) => !q.text.trim())
-    )
+    if (editing.questions.length === 0 || editing.questions.some((q) => !q.text.trim()))
       return toast.error("Preencha o texto de todas as perguntas");
     setSaving(true);
     try {
@@ -182,11 +171,7 @@ function InterviewKitsPage() {
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditing(k)}
-                    >
+                    <Button size="sm" variant="outline" onClick={() => setEditing(k)}>
                       Editar
                     </Button>
                     <Button

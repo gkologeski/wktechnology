@@ -19,10 +19,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  listLinkableContracts,
-  linkContractParent,
-} from "@/lib/contracts.functions";
+import { listLinkableContracts, linkContractParent } from "@/lib/contracts.functions";
 import { formatCurrency } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -133,7 +130,8 @@ function ProviderView({
             Outsourcing — contratos de compra vinculados
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Vincule contratos de compra (fornecedores/desenvolvedores) que executam este contrato de prestação.
+            Vincule contratos de compra (fornecedores/desenvolvedores) que executam este contrato de
+            prestação.
           </p>
         </div>
         <Button size="sm" onClick={() => setOpen(true)}>
@@ -242,13 +240,7 @@ function ChildRowItem({ row, onUnlink: _onUnlink }: { row: ChildRow; onUnlink: (
 
 // ---------- CLIENT (compra): mostra pai e permite alterar ----------
 
-function ClientView({
-  contractId,
-  parent,
-}: {
-  contractId: string;
-  parent: ParentRow | null;
-}) {
+function ClientView({ contractId, parent }: { contractId: string; parent: ParentRow | null }) {
   const [open, setOpen] = useState(false);
   const { setParent } = useLinkMutations(contractId);
 
@@ -271,7 +263,8 @@ function ClientView({
             Outsourcing — contrato de venda vinculado
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Este contrato de compra executa parte de um contrato de prestação (venda) para o cliente final.
+            Este contrato de compra executa parte de um contrato de prestação (venda) para o cliente
+            final.
           </p>
         </div>
         <Button size="sm" variant={parent ? "outline" : "default"} onClick={() => setOpen(true)}>
@@ -395,9 +388,7 @@ function LinkPickerDialog({
           )}
         </div>
         <div className="max-h-80 overflow-auto border rounded-lg divide-y">
-          {isFetching && (
-            <div className="p-3 text-sm text-muted-foreground">Buscando…</div>
-          )}
+          {isFetching && <div className="p-3 text-sm text-muted-foreground">Buscando…</div>}
           {!isFetching && results.length === 0 && (
             <div className="p-3 text-sm text-muted-foreground">Nenhum contrato encontrado.</div>
           )}

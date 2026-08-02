@@ -171,7 +171,7 @@ function ProposalsPage() {
                   size="icon"
                   variant="ghost"
                   onClick={async () => {
-                    if ((await confirmDialog("Remover proposta?"))) delM.mutate(p.id);
+                    if (await confirmDialog("Remover proposta?")) delM.mutate(p.id);
                   }}
                 >
                   <Trash2 className="h-4 w-4" />

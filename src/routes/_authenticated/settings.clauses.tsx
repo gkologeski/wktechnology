@@ -143,7 +143,7 @@ function ClausesPage() {
             clause={c}
             onSave={(body) => updM.mutate({ id: c.id, body })}
             onDelete={async () => {
-              if ((await confirmDialog("Excluir cláusula?"))) delM.mutate(c.id);
+              if (await confirmDialog("Excluir cláusula?")) delM.mutate(c.id);
             }}
           />
         ))}

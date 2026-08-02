@@ -149,7 +149,7 @@ function CategoriesTab() {
                     size="icon"
                     variant="ghost"
                     onClick={async () => {
-                      if ((await confirmDialog("Remover?"))) remove.mutate(c.id);
+                      if (await confirmDialog("Remover?")) remove.mutate(c.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -338,7 +338,7 @@ function ArticlesTab() {
                     size="icon"
                     variant="ghost"
                     onClick={async () => {
-                      if ((await confirmDialog("Remover?"))) remove.mutate(a.id);
+                      if (await confirmDialog("Remover?")) remove.mutate(a.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />

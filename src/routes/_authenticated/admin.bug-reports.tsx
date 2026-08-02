@@ -381,7 +381,8 @@ function BugReportsAdminPage() {
                         variant="ghost"
                         size="icon"
                         onClick={async () => {
-                          if ((await confirmDialog("Excluir este chamado?"))) remove.mutate(r.id as string);
+                          if (await confirmDialog("Excluir este chamado?"))
+                            remove.mutate(r.id as string);
                         }}
                         title="Excluir"
                       >

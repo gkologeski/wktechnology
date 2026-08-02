@@ -191,7 +191,9 @@ export function HubspotImportWizard() {
     try {
       const toClear = (Object.keys(clearScope) as Obj[]).filter((k) => clearScope[k]);
       if (toClear.length > 0) {
-        const ok = (await confirmDialog(`Tem certeza que deseja apagar TODOS os registros locais das tabelas: ${toClear.join(", ")}? Esta ação é irreversível.`));
+        const ok = await confirmDialog(
+          `Tem certeza que deseja apagar TODOS os registros locais das tabelas: ${toClear.join(", ")}? Esta ação é irreversível.`,
+        );
         if (!ok) return;
       }
       setStage("running");

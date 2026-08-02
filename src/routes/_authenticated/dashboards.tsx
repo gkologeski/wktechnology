@@ -52,7 +52,9 @@ import {
 } from "recharts";
 
 const compactNumber = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(Number(v) || 0);
+  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(
+    Number(v) || 0,
+  );
 
 export const Route = createFileRoute("/_authenticated/dashboards")({
   component: DashboardsPage,
@@ -139,7 +141,11 @@ function DashboardsPage() {
   async function handleCreateDash() {
     if (!newName.trim()) return toast.error("Informe um nome");
     await createDash({
-      data: { name: newName.trim(), description: htmlToPlain(newDesc).trim() ? newDesc : null, is_default: newDefault },
+      data: {
+        name: newName.trim(),
+        description: htmlToPlain(newDesc).trim() ? newDesc : null,
+        is_default: newDefault,
+      },
     });
     setNewDashOpen(false);
     setNewName("");
@@ -152,7 +158,11 @@ function DashboardsPage() {
   async function handleEditDash() {
     if (!active || !editName.trim()) return;
     await updateDash({
-      data: { id: active.id, name: editName.trim(), description: htmlToPlain(editDesc).trim() ? editDesc : null },
+      data: {
+        id: active.id,
+        name: editName.trim(),
+        description: htmlToPlain(editDesc).trim() ? editDesc : null,
+      },
     });
     setEditDashOpen(false);
     qc.invalidateQueries({ queryKey: ["dashboards"] });
@@ -295,7 +305,10 @@ function DashboardsPage() {
                       )}
                     </div>
                     {active.description && htmlToPlain(active.description) && (
-                      <HtmlContent html={active.description} className="text-xs text-muted-foreground" />
+                      <HtmlContent
+                        html={active.description}
+                        className="text-xs text-muted-foreground"
+                      />
                     )}
                   </div>
                   {!active.is_default && (

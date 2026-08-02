@@ -145,7 +145,7 @@ function CampaignsListPage() {
                   size="icon"
                   variant="ghost"
                   onClick={async () => {
-                    if ((await confirmDialog("Remover?"))) {
+                    if (await confirmDialog("Remover?")) {
                       await delFn({ data: { id: c.id } });
                       refresh();
                     }

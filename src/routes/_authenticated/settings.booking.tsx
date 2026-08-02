@@ -165,7 +165,7 @@ function BookingSettings() {
                   size="sm"
                   variant="ghost"
                   onClick={async () => {
-                    if ((await confirmDialog("Excluir página?"))) delMut.mutate(p.id);
+                    if (await confirmDialog("Excluir página?")) delMut.mutate(p.id);
                   }}
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />

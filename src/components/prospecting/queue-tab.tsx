@@ -50,8 +50,6 @@ import {
   asKeys,
 } from "@/lib/prospecting/permission-keys";
 
-
-
 const LEAD_STATUS_LABELS: Record<string, string> = {
   new: "Novo",
   working: "Em trabalho",
@@ -93,7 +91,6 @@ export function QueueTab() {
   const canCreate = canAny(asKeys(QUEUE_CREATE));
   const canUpdate = canAny(asKeys(QUEUE_UPDATE));
   const canDelete = canAny(asKeys(QUEUE_DELETE));
-
 
   const { data, isLoading } = useQuery({
     queryKey: ["prospecting", "queues"],
@@ -171,7 +168,7 @@ export function QueueTab() {
                 canDelete={canDelete}
                 onEdit={() => setEditing(activeQueue as unknown as QueueRow)}
                 onDelete={async () => {
-                  if ((await confirmDialog(`Excluir a fila "${activeQueue.name}"?`)))
+                  if (await confirmDialog(`Excluir a fila "${activeQueue.name}"?`))
                     delMut.mutate(activeQueue.id);
                 }}
               />
@@ -179,7 +176,6 @@ export function QueueTab() {
           </section>
         </div>
       )}
-
 
       <QueueDialog
         open={openNew}
@@ -200,7 +196,6 @@ export function QueueTab() {
           qc.invalidateQueries({ queryKey: ["prospecting", "queues"] });
         }}
       />
-
     </div>
   );
 }
@@ -220,7 +215,6 @@ function QueueWorkspace({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-
   const listItems = useServerFn(listQueueItems);
   const { data, isLoading } = useQuery({
     queryKey: ["prospecting", "queue-items", queueId],
@@ -262,7 +256,6 @@ function QueueWorkspace({
               <Trash2 className="w-4 h-4 mr-1" /> Excluir fila
             </Button>
           ) : null}
-
         </div>
       </CardHeader>
       <CardContent>
@@ -285,13 +278,7 @@ function QueueWorkspace({
   );
 }
 
-function QueueItemRow({
-  entity,
-  item,
-}: {
-  entity: string;
-  item: Record<string, unknown>;
-}) {
+function QueueItemRow({ entity, item }: { entity: string; item: Record<string, unknown> }) {
   const id = String(item.id);
   const leadName = `${item.first_name ?? ""} ${item.last_name ?? ""}`.trim();
   const contactName = `${item.first_name ?? ""} ${item.last_name ?? ""}`.trim();
@@ -312,7 +299,6 @@ function QueueItemRow({
         ? String(item.lifecycle_stage)
         : null;
   const score = typeof item.score === "number" ? item.score : null;
-  
 
   return (
     <div className="flex items-center justify-between py-3 gap-3">
@@ -337,9 +323,7 @@ function QueueItemRow({
             </Badge>
           ) : null}
         </div>
-        {email ? (
-          <p className="text-xs text-muted-foreground truncate">{email}</p>
-        ) : null}
+        {email ? <p className="text-xs text-muted-foreground truncate">{email}</p> : null}
       </div>
     </div>
   );
@@ -385,7 +369,10 @@ function QueueSidebarItem({
             Compartilhada
           </Badge>
         ) : null}
-        <Badge variant={kind === "manual" ? "secondary" : "outline"} className="text-[10px] shrink-0">
+        <Badge
+          variant={kind === "manual" ? "secondary" : "outline"}
+          className="text-[10px] shrink-0"
+        >
           {kind === "manual" ? `Manual · ${total}` : total}
         </Badge>
       </div>
@@ -399,7 +386,6 @@ function QueueSidebarItem({
   );
 }
 
-
 type QueueRow = {
   id: string;
   name: string;
@@ -411,7 +397,11 @@ type QueueRow = {
 
 function toArray(v: unknown): string[] {
   if (Array.isArray(v)) return v.map(String);
-  if (typeof v === "string" && v.trim()) return v.split(",").map((s) => s.trim()).filter(Boolean);
+  if (typeof v === "string" && v.trim())
+    return v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   return [];
 }
 
@@ -525,7 +515,9 @@ function QueueDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar fila de prospecção" : "Nova fila de prospecção"}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? "Editar fila de prospecção" : "Nova fila de prospecção"}
+          </DialogTitle>
           <DialogDescription>
             A fila seleciona automaticamente os registros que atendem a todos os filtros abaixo.
             Deixe um filtro em branco para não restringir por ele.

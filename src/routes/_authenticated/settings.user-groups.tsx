@@ -104,7 +104,11 @@ function UserGroupsPage() {
         await membersFn({ data: { group_id: editing.id, user_ids: memberDraft } });
       } else {
         const res = await createFn({
-          data: { name: draft.name, color: draft.color, description: htmlToPlain(draft.description).trim() ? draft.description : null },
+          data: {
+            name: draft.name,
+            color: draft.color,
+            description: htmlToPlain(draft.description).trim() ? draft.description : null,
+          },
         });
         if (memberDraft.length)
           await membersFn({ data: { group_id: res.id, user_ids: memberDraft } });
@@ -213,7 +217,8 @@ function UserGroupsPage() {
                       size="icon"
                       variant="ghost"
                       onClick={async () => {
-                        if ((await confirmDialog(`Remover equipe "${g.name}"?`))) removeMutation.mutate(g.id);
+                        if (await confirmDialog(`Remover equipe "${g.name}"?`))
+                          removeMutation.mutate(g.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />

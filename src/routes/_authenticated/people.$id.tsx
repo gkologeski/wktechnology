@@ -64,7 +64,6 @@ import { OffboardingCompliancePanel } from "@/components/people/offboarding-comp
 import { BenefitsPanel } from "@/components/people/benefits-panel";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
-
 export const Route = createFileRoute("/_authenticated/people/$id")({
   head: () => ({
     meta: [
@@ -192,7 +191,6 @@ function PersonForm({
   const [simplesOptante, setSimplesOptante] = useState<"" | "yes" | "no">(
     p.simples_optante === true ? "yes" : p.simples_optante === false ? "no" : "",
   );
-
 
   const mut = useMutation({
     mutationFn: () =>
@@ -502,9 +500,7 @@ function PersonForm({
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Financeiro (restrito)</CardTitle>
-                <CardDescription>
-                  Visível apenas para gestores e administradores.
-                </CardDescription>
+                <CardDescription>Visível apenas para gestores e administradores.</CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
@@ -562,7 +558,6 @@ function PersonForm({
             </Card>
           ) : null}
 
-
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Notas internas</CardTitle>
@@ -590,7 +585,6 @@ function PersonForm({
           <TimesheetPanel personId={p.id} />
         </TabsContent>
 
-
         <TabsContent value="goals" className="pt-4">
           <GoalsPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
@@ -610,7 +604,6 @@ function PersonForm({
           <OnboardingPanel personId={p.id} canWrite={canWrite} />
         </TabsContent>
 
-
         {canViewSensitive ? (
           <TabsContent value="psychosocial" className="pt-4">
             <PsychosocialPanel personId={p.id} canWrite={canWrite} />
@@ -628,9 +621,6 @@ function PersonForm({
             <BenefitsPanel personId={p.id} canWrite={canWrite} />
           </TabsContent>
         ) : null}
-
-
-
 
         <TabsContent value="documents" className="space-y-4 pt-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -656,9 +646,7 @@ function PersonForm({
                     <div>
                       <div className="text-sm font-medium">{ev.title}</div>
                       {ev.description ? (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {ev.description}
-                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">{ev.description}</div>
                       ) : null}
                     </div>
                     <div className="text-xs text-muted-foreground whitespace-nowrap">
@@ -826,7 +814,8 @@ function DocumentsPanel({
                     variant="ghost"
                     size="icon"
                     onClick={async () => {
-                      if ((await confirmDialog(`Remover documento "${d.doc_type}"?`))) del.mutate(d.id);
+                      if (await confirmDialog(`Remover documento "${d.doc_type}"?`))
+                        del.mutate(d.id);
                     }}
                     title="Remover"
                     aria-label="Remover"

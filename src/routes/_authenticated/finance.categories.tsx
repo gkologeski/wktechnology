@@ -25,11 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  createCategory,
-  deleteCategory,
-  listCategories,
-} from "@/lib/finance.functions";
+import { createCategory, deleteCategory, listCategories } from "@/lib/finance.functions";
 import {
   ALL_LEGAL_ENTITIES,
   GROUP_PREFIX,
@@ -109,10 +105,7 @@ function CategoriesPage() {
   });
 
   const tree = useMemo(() => buildTree(rows), [rows]);
-  const parentOptions = useMemo(
-    () => rows.filter((r) => r.kind === kind),
-    [rows, kind],
-  );
+  const parentOptions = useMemo(() => rows.filter((r) => r.kind === kind), [rows, kind]);
 
   function openCreate(preset?: { kind?: "revenue" | "expense"; parent?: string | null }) {
     setName("");
@@ -212,12 +205,14 @@ function CategoriesPage() {
       <div className="rounded-lg border bg-card">
         <div className="flex items-center justify-between border-b px-4 py-2">
           <div className="flex items-center gap-2">
-            <Badge variant="outline">
-              {variant === "revenue" ? "Receitas" : "Despesas"}
-            </Badge>
+            <Badge variant="outline">{variant === "revenue" ? "Receitas" : "Despesas"}</Badge>
             <h3 className="text-sm font-medium">{title}</h3>
           </div>
-          <Button size="sm" variant="outline" onClick={() => openCreate({ kind: variant, parent: null })}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => openCreate({ kind: variant, parent: null })}
+          >
             <Plus className="h-3.5 w-3.5 mr-1" /> Conta raiz
           </Button>
         </div>

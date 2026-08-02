@@ -35,8 +35,7 @@ type LE = {
   totals: { receivable: number; payable: number; count: number };
 };
 
-const fmt = (n: number) =>
-  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function LegalEntitiesPage() {
   const qc = useQueryClient();
@@ -119,7 +118,9 @@ export function LegalEntitiesPage() {
 
   async function remove(row: LE) {
     if (row.totals.count > 0) {
-      toast.error(`Existem ${row.totals.count} lançamentos vinculados. Desative em vez de excluir.`);
+      toast.error(
+        `Existem ${row.totals.count} lançamentos vinculados. Desative em vez de excluir.`,
+      );
       return;
     }
     if (!(await confirmDialog(`Excluir ${row.name}?`))) return;

@@ -19,7 +19,11 @@ import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 
 import { StageTracker } from "@/components/stage-tracker";
-import { DealLineItems, DealLineItemsEditor, DealLineItemsCount } from "@/components/deals/deal-line-items";
+import {
+  DealLineItems,
+  DealLineItemsEditor,
+  DealLineItemsCount,
+} from "@/components/deals/deal-line-items";
 import { DealQuotes } from "@/components/deals/deal-quotes";
 import { DealContracts } from "@/components/contracts/deal-contracts";
 import { DealDeliveryPanel } from "@/components/deals/deal-delivery-panel";
@@ -46,7 +50,6 @@ function DealDetail() {
   const { pipelines } = usePipelines("deal");
   const { can } = usePermissions();
   const { user } = useAuth();
-
 
   const { data: deal } = useQuery({
     queryKey: qk.deal(id),
@@ -130,7 +133,6 @@ function DealDetail() {
   };
 
   const canDelete =
-
     can("techsales.deals.delete.workspace") ||
     can("techsales.deals.delete.team") ||
     (can("techsales.deals.delete.own") &&
@@ -161,7 +163,6 @@ function DealDetail() {
     await qc.invalidateQueries({ queryKey: ["deals"] });
     navigate({ to: "/deals" });
   };
-
 
   const header = (
     <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 space-y-5">
@@ -196,9 +197,7 @@ function DealDetail() {
         <div className="flex items-center gap-2">
           {pipelines.length > 0 && (
             <Select
-              value={
-                (deal as unknown as { pipeline_id?: string | null }).pipeline_id ?? ""
-              }
+              value={(deal as unknown as { pipeline_id?: string | null }).pipeline_id ?? ""}
               onValueChange={setPipeline}
             >
               <SelectTrigger className="h-9 w-[200px]">
@@ -242,80 +241,84 @@ function DealDetail() {
 
   return (
     <>
-      
       <RecordLayout
         header={header}
         left={
-        <PropertiesPanel
-          entity="deals"
-          table="deals"
-          row={deal as unknown as Record<string, unknown> & { id: string }}
-          props={[
-            { key: "name", label: "Nome", primary: true },
-            { key: "value", label: "Valor", type: "currency", primary: true },
-            { key: "currency", label: "Moeda", primary: true },
-            { key: "stage", label: "Etapa", primary: true },
-            { key: "expected_close_date", label: "Fechamento previsto", type: "date", primary: true },
-            { key: "dealtype", label: "Tipo" },
-            { key: "hs_priority", label: "Prioridade" },
-            { key: "description", label: "Descrição" },
-            { key: "notes", label: "Notas" },
-          ]}
-          onSaved={load}
-        />
-      }
-      center={
-        <>
-          <AiSummaryPanel entity="deal" entityId={deal.id} />
-          <DealDeliveryPanel dealId={deal.id} />
-          <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
-        </>
-      }
-      right={
-        <>
-          <AssociationsPanel entity="deal" entityId={deal.id} companyId={deal.company_id} />
-          <Card>
-            <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">
-                Itens de linha (<DealLineItemsCount dealId={deal.id} />)
-              </CardTitle>
-              <DealLineItemsEditor
-                dealId={deal.id}
-                ownerId={deal.owner_id}
-                currency={deal.currency ?? "BRL"}
-                trigger={
-                  <Button variant="link" size="sm" className="h-auto p-0">
-                    Editar
-                  </Button>
-                }
-              />
-            </CardHeader>
-            <CardContent>
-              <DealLineItems
-                dealId={deal.id}
-                ownerId={deal.owner_id}
-                currency={deal.currency ?? "BRL"}
-              />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Cotações</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DealQuotes dealId={deal.id} />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Contratos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DealContracts dealId={deal.id} companyId={deal.company_id ?? null} />
-            </CardContent>
-          </Card>
-        </>
-      }
+          <PropertiesPanel
+            entity="deals"
+            table="deals"
+            row={deal as unknown as Record<string, unknown> & { id: string }}
+            props={[
+              { key: "name", label: "Nome", primary: true },
+              { key: "value", label: "Valor", type: "currency", primary: true },
+              { key: "currency", label: "Moeda", primary: true },
+              { key: "stage", label: "Etapa", primary: true },
+              {
+                key: "expected_close_date",
+                label: "Fechamento previsto",
+                type: "date",
+                primary: true,
+              },
+              { key: "dealtype", label: "Tipo" },
+              { key: "hs_priority", label: "Prioridade" },
+              { key: "description", label: "Descrição" },
+              { key: "notes", label: "Notas" },
+            ]}
+            onSaved={load}
+          />
+        }
+        center={
+          <>
+            <AiSummaryPanel entity="deal" entityId={deal.id} />
+            <DealDeliveryPanel dealId={deal.id} />
+            <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
+          </>
+        }
+        right={
+          <>
+            <AssociationsPanel entity="deal" entityId={deal.id} companyId={deal.company_id} />
+            <Card>
+              <CardHeader className="pb-3 flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base">
+                  Itens de linha (<DealLineItemsCount dealId={deal.id} />)
+                </CardTitle>
+                <DealLineItemsEditor
+                  dealId={deal.id}
+                  ownerId={deal.owner_id}
+                  currency={deal.currency ?? "BRL"}
+                  trigger={
+                    <Button variant="link" size="sm" className="h-auto p-0">
+                      Editar
+                    </Button>
+                  }
+                />
+              </CardHeader>
+              <CardContent>
+                <DealLineItems
+                  dealId={deal.id}
+                  ownerId={deal.owner_id}
+                  currency={deal.currency ?? "BRL"}
+                />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Cotações</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DealQuotes dealId={deal.id} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Contratos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DealContracts dealId={deal.id} companyId={deal.company_id ?? null} />
+              </CardContent>
+            </Card>
+          </>
+        }
       />
     </>
   );

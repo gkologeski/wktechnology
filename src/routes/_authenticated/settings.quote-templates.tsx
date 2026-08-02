@@ -307,7 +307,7 @@ function QuoteTemplatesPage() {
                           size="sm"
                           variant="outline"
                           onClick={async () => {
-                            if ((await confirmDialog(`Excluir o modelo "${current.name}"?`)))
+                            if (await confirmDialog(`Excluir o modelo "${current.name}"?`))
                               deleteMut.mutate(current.id);
                           }}
                           disabled={deleteMut.isPending}

@@ -89,7 +89,9 @@ function PropertyGroupsPage() {
   const handleDelete = async (g: PropertyGroupSummary) => {
     if (g.name === "Sem grupo") return;
     if (
-      !(await confirmDialog(`Remover o grupo "${g.name}"? As ${g.count} propriedades continuarão existindo, sem grupo.`))
+      !(await confirmDialog(
+        `Remover o grupo "${g.name}"? As ${g.count} propriedades continuarão existindo, sem grupo.`,
+      ))
     )
       return;
     try {

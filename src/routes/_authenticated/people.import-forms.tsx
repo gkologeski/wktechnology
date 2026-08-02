@@ -129,7 +129,12 @@ function ImportFormsPage() {
   }
 
   async function reimportBroken() {
-    if (!(await confirmDialog("Reimportar todos os anexos quebrados (.bin)? Pode levar alguns minutos."))) return;
+    if (
+      !(await confirmDialog(
+        "Reimportar todos os anexos quebrados (.bin)? Pode levar alguns minutos.",
+      ))
+    )
+      return;
     setRunning("reimport");
     setReimport(null);
     try {
@@ -178,8 +183,8 @@ function ImportFormsPage() {
         <CardHeader>
           <CardTitle>Fonte dos dados</CardTitle>
           <CardDescription>
-            Cole a URL do Google Sheets vinculado às respostas. A planilha e a pasta de anexos
-            devem estar como "Qualquer pessoa com o link — Leitor".
+            Cole a URL do Google Sheets vinculado às respostas. A planilha e a pasta de anexos devem
+            estar como "Qualquer pessoa com o link — Leitor".
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -204,20 +209,12 @@ function ImportFormsPage() {
           </Alert>
 
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={simulate}
-              disabled={running !== null || !sheetUrl}
-            >
-              {running === "dry" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+            <Button variant="outline" onClick={simulate} disabled={running !== null || !sheetUrl}>
+              {running === "dry" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Simular
             </Button>
             <Button onClick={execute} disabled={running !== null || !sheetUrl}>
-              {running === "exec" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+              {running === "exec" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Executar importação
             </Button>
           </div>
@@ -235,10 +232,7 @@ function ImportFormsPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               <Stat label="Pessoas únicas" value={dryResult.total_unique} />
-              <Stat
-                label="Anexos totais na planilha"
-                value={dryResult.batch.attachments_failed}
-              />
+              <Stat label="Anexos totais na planilha" value={dryResult.batch.attachments_failed} />
             </div>
 
             {dryResult.people && dryResult.people.length > 0 && (
@@ -292,7 +286,6 @@ function ImportFormsPage() {
         </Card>
       )}
 
-
       {(running === "exec" || processed > 0) && (
         <Card>
           <CardHeader>
@@ -335,7 +328,9 @@ function ImportFormsPage() {
                         <TableRow key={i}>
                           <TableCell className="font-mono text-xs">{f.cpf}</TableCell>
                           <TableCell>{f.name}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{f.reason}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {f.reason}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -396,7 +391,9 @@ function ImportFormsPage() {
                       {reimport.failures.slice(0, 50).map((f) => (
                         <TableRow key={f.id}>
                           <TableCell className="font-mono text-xs">{f.id.slice(0, 8)}…</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{f.reason}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">
+                            {f.reason}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

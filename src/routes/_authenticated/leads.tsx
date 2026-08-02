@@ -303,19 +303,12 @@ function LeadsHubspotView() {
       q = q.gte("created_at", since);
     }
     if (filters.status.length > 0)
-      q = q.in(
-        "status",
-        filters.status as ("new" | "contacted" | "qualified" | "disqualified")[],
-      );
+      q = q.in("status", filters.status as ("new" | "contacted" | "qualified" | "disqualified")[]);
     if (filters.source.length > 0) q = q.in("source", filters.source);
     if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
     if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
     if (filters.createdPreset !== "any") {
-      const { start, end } = getDateRange(
-        filters.createdPreset,
-        new Date(),
-        filters.createdCustom,
-      );
+      const { start, end } = getDateRange(filters.createdPreset, new Date(), filters.createdCustom);
       if (start) q = q.gte("created_at", start.toISOString());
       if (end) q = q.lt("created_at", end.toISOString());
     }
@@ -384,7 +377,6 @@ function LeadsHubspotView() {
       return { rows: (data ?? []) as Lead[], count: count ?? 0 };
     },
   });
-
 
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
@@ -1178,7 +1170,12 @@ function LeadsHubspotView() {
                                   <ArrowRightLeft className="mr-2 h-3.5 w-3.5" /> Converter
                                 </DropdownMenuItem>
                               )}
-                              <Can any={["techsales.leads.delete.own", "techsales.leads.delete.workspace"]}>
+                              <Can
+                                any={[
+                                  "techsales.leads.delete.own",
+                                  "techsales.leads.delete.workspace",
+                                ]}
+                              >
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"

@@ -171,10 +171,7 @@ function MediaLibraryPage() {
           {rows.map((r) => {
             const isImg = r.mime?.startsWith("image/");
             return (
-              <div
-                key={r.id}
-                className="border rounded-lg overflow-hidden bg-card group"
-              >
+              <div key={r.id} className="border rounded-lg overflow-hidden bg-card group">
                 <div className="aspect-square bg-muted/40 flex items-center justify-center">
                   {isImg ? (
                     // eslint-disable-next-line @next/next/no-img-element

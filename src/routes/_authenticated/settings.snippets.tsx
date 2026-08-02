@@ -52,8 +52,7 @@ function SnippetsSettings() {
       toast.success("Snippet removido");
       qc.invalidateQueries({ queryKey: ["snippets"] });
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao remover"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao remover"),
   });
 
   const openNew = () => {
@@ -115,7 +114,10 @@ function SnippetsSettings() {
           <div className="p-6 text-sm text-muted-foreground">Carregando…</div>
         ) : query.isError ? (
           <div className="p-6 text-sm text-destructive">
-            Não foi possível carregar. <Button variant="link" onClick={() => query.refetch()}>Tentar de novo</Button>
+            Não foi possível carregar.{" "}
+            <Button variant="link" onClick={() => query.refetch()}>
+              Tentar de novo
+            </Button>
           </div>
         ) : items.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
@@ -171,7 +173,7 @@ function SnippetsSettings() {
                         variant="ghost"
                         size="icon"
                         onClick={async () => {
-                          if ((await confirmDialog(`Remover /${s.shortcut}?`))) delMut.mutate(s.id);
+                          if (await confirmDialog(`Remover /${s.shortcut}?`)) delMut.mutate(s.id);
                         }}
                         aria-label="Remover"
                       >

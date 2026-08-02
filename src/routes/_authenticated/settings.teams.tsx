@@ -183,9 +183,10 @@ function UsersPage() {
   // remove dialog (with reassign)
   const [toRemove, setToRemove] = useState<Row | null>(null);
   const [reassignTo, setReassignTo] = useState<string>("__none__");
-  const [assignedInfo, setAssignedInfo] = useState<
-    { counts: Record<string, number>; total: number } | null
-  >(null);
+  const [assignedInfo, setAssignedInfo] = useState<{
+    counts: Record<string, number>;
+    total: number;
+  } | null>(null);
   const [assignedLoading, setAssignedLoading] = useState(false);
   const [removing, setRemoving] = useState(false);
 
@@ -321,8 +322,7 @@ function UsersPage() {
   const usersUsed = rows.length;
   const atLimit = usersLimit !== null && usersUsed >= usersLimit;
 
-  const canInvite =
-    !atLimit && email.trim().length > 0 && invitePermissionSetId.length > 0;
+  const canInvite = !atLimit && email.trim().length > 0 && invitePermissionSetId.length > 0;
 
   const handleInvite = async () => {
     if (!canInvite) return;
@@ -351,7 +351,6 @@ function UsersPage() {
     }
   };
 
-
   const closeInviteDialog = () => {
     setInviteOpen(false);
     setInviteUrl(null);
@@ -372,8 +371,7 @@ function UsersPage() {
       await resendFn({
         data: {
           invite_id: inviteId,
-          redirect_origin:
-            getPublicAppUrl(),
+          redirect_origin: getPublicAppUrl(),
         },
       });
       toast.success("Convite reenviado");
@@ -635,7 +633,9 @@ function UsersPage() {
                 size="sm"
                 onClick={async () => {
                   if (
-                    !(await confirmDialog("Revogar todos os convites pendentes sem conjunto de permissões?"))
+                    !(await confirmDialog(
+                      "Revogar todos os convites pendentes sem conjunto de permissões?",
+                    ))
                   )
                     return;
                   try {
@@ -675,9 +675,7 @@ function UsersPage() {
                       </TableCell>
                       <TableCell>
                         {hasSet ? (
-                          <Badge variant="secondary">
-                            {i.permission_set_name ?? "Conjunto"}
-                          </Badge>
+                          <Badge variant="secondary">{i.permission_set_name ?? "Conjunto"}</Badge>
                         ) : (
                           <Badge variant="destructive">Sem permissão — recrie</Badge>
                         )}
@@ -721,7 +719,6 @@ function UsersPage() {
               </TableBody>
             </Table>
           </CardContent>
-
         </Card>
       )}
 
@@ -851,7 +848,8 @@ function UsersPage() {
                       className="text-left text-sm text-primary hover:underline underline-offset-2"
                     >
                       {r.primary_role_id
-                        ? (jobRoles.find((j) => j.id === r.primary_role_id)?.name ?? "Cargo atribuído")
+                        ? (jobRoles.find((j) => j.id === r.primary_role_id)?.name ??
+                          "Cargo atribuído")
                         : r.role_ids.length > 0
                           ? `${r.role_ids.length} cargo(s)`
                           : "Nenhum cargo"}
@@ -964,9 +962,7 @@ function UsersPage() {
                   </strong>{" "}
                   perderá o acesso imediatamente.
                 </p>
-                {assignedLoading && (
-                  <p className="text-muted-foreground">Analisando impacto…</p>
-                )}
+                {assignedLoading && <p className="text-muted-foreground">Analisando impacto…</p>}
                 {!assignedLoading && assignedInfo && assignedInfo.total > 0 && (
                   <div className="rounded-md border bg-amber-50 dark:bg-amber-950/20 p-3 space-y-2">
                     <p className="text-amber-900 dark:text-amber-100 font-medium">
@@ -991,9 +987,7 @@ function UsersPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__none__">
-                          Deixar sem proprietário
-                        </SelectItem>
+                        <SelectItem value="__none__">Deixar sem proprietário</SelectItem>
                         {reassignCandidates.map((c) => (
                           <SelectItem key={c.user_id} value={c.user_id}>
                             {c.full_name || c.email || c.user_id.slice(0, 8)}
@@ -1153,7 +1147,9 @@ function UsersPage() {
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">{j.name}</p>
                           {j.description && (
-                            <p className="text-xs text-muted-foreground truncate">{j.description}</p>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {j.description}
+                            </p>
                           )}
                         </div>
                       </div>

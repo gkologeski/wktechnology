@@ -67,7 +67,6 @@ export const Route = createFileRoute("/_authenticated/settings/scoring")({
   component: ScoringPage,
 });
 
-
 type RuleEntity = "lead" | "contact" | "company";
 type Op =
   | "eq"
@@ -376,7 +375,6 @@ export function ScoringPage() {
 
               <ConditionSection draft={draft} setDraft={setDraft} />
 
-
               <p className="text-xs text-muted-foreground">
                 Cada combinação regra + registro só pontua uma vez (idempotente).
               </p>
@@ -394,13 +392,7 @@ export function ScoringPage() {
   );
 }
 
-function ConditionSection({
-  draft,
-  setDraft,
-}: {
-  draft: Draft;
-  setDraft: (d: Draft) => void;
-}) {
+function ConditionSection({ draft, setDraft }: { draft: Draft; setDraft: (d: Draft) => void }) {
   const fields = useEntityFieldOptions(draft.entity);
   const selected = fields.find((f) => f.name === draft.condition.field);
   const options = selected?.options;
@@ -428,9 +420,7 @@ function ConditionSection({
             </SelectTrigger>
             <SelectContent className="max-h-72">
               {fields.length === 0 ? (
-                <div className="px-2 py-1.5 text-xs text-muted-foreground">
-                  Carregando campos…
-                </div>
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">Carregando campos…</div>
               ) : (
                 fields.map((f) => (
                   <SelectItem key={f.name} value={f.name}>
@@ -490,9 +480,7 @@ function ConditionSection({
               onChange={(e) => {
                 const raw = e.target.value;
                 const coerced: string | number =
-                  type === "number" && raw !== "" && !Number.isNaN(Number(raw))
-                    ? Number(raw)
-                    : raw;
+                  type === "number" && raw !== "" && !Number.isNaN(Number(raw)) ? Number(raw) : raw;
                 setDraft({
                   ...draft,
                   condition: { ...draft.condition, value: coerced },
