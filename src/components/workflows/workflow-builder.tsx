@@ -1554,7 +1554,7 @@ function TriggerConfigPanel({
   onEntityClick: () => void;
   onChange: (fn: (t: WorkflowTrigger) => WorkflowTrigger) => void;
 }) {
-  const setFilters = (fn: (f: WorkflowFilter[]) => WorkflowFilter[]) =>
+  const setFilters = (fn: (f: WorkflowCondition[]) => WorkflowCondition[]) =>
     onChange((t) => ({ ...t, filters: fn(t.filters ?? []) }));
   const defaultField = fields[0]?.name ?? "";
 
@@ -1597,7 +1597,7 @@ function TriggerConfigPanel({
           </SelectContent>
         </Select>
         {trigger.event === "updated" &&
-          (trigger.filters ?? []).some((f) => f.field === "stage_id" || f.field === "stage") && (
+          conditionsIncludeField(trigger.filters, ["stage_id", "stage"]) && (
             <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
               Para reagir a mudanças de etapa do pipeline, use o evento{" "}
               <strong>Mudou de etapa</strong>. O evento <em>Atualizado</em> não dispara em
@@ -1729,29 +1729,18 @@ function TriggerConfigPanel({
               opcional
             </Badge>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={!defaultField}
-            onClick={() => setFilters((p) => [...p, { field: defaultField, op: "eq", value: "" }])}
-          >
-            <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
-          </Button>
         </div>
         {(trigger.filters ?? []).length === 0 && (
           <p className="text-xs text-muted-foreground">
             Sem condições, todos os registros que dispararem o evento entram no workflow.
           </p>
         )}
-        {(trigger.filters ?? []).map((f, i) => (
-          <FilterRow
-            key={i}
-            filter={f}
-            fields={fields}
-            onChange={(nf) => setFilters((p) => p.map((x, idx) => (idx === i ? nf : x)))}
-            onRemove={() => setFilters((p) => p.filter((_, idx) => idx !== i))}
-          />
-        ))}
+        <ConditionListEditor
+          value={trigger.filters}
+          fields={fields}
+          defaultField={defaultField}
+          onChange={(next) => setFilters(() => next)}
+        />
       </div>
 
       {/* Reinscrição */}
@@ -1809,47 +1798,194 @@ function TriggerConfigPanel({
             <Target className="h-4 w-4 text-muted-foreground" />
             <Label className="text-sm">Critérios de meta</Label>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled={!defaultField}
-            onClick={() =>
-              onChange((t) => ({
-                ...t,
-                goal_filters: [
-                  ...(t.goal_filters ?? []),
-                  { field: defaultField, op: "eq", value: "" },
-                ],
-              }))
-            }
-          >
-            <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
-          </Button>
         </div>
         <p className="text-xs text-muted-foreground">
           Se todos os critérios passarem no processamento do evento, o registro é considerado no
           objetivo e não recebe novas execuções.
         </p>
-        {(trigger.goal_filters ?? []).map((f, i) => (
+        <ConditionListEditor
+          value={trigger.goal_filters}
+          fields={fields}
+          defaultField={defaultField}
+          onChange={(next) => onChange((t) => ({ ...t, goal_filters: next }))}
+        />
+      </div>
+    </div>
+  );
+}
+
+/** Cria uma condição simples com o campo padrão. */
+function newLeafCondition(field: string): WorkflowFilter {
+  return { field, op: "eq", value: "" };
+}
+
+/** Verifica (recursivamente) se algum campo informado é usado nas condições. */
+function conditionsIncludeField(
+  nodes: WorkflowCondition[] | null | undefined,
+  fieldNames: string[],
+): boolean {
+  return (nodes ?? []).some((n) =>
+    isFilterGroup(n)
+      ? conditionsIncludeField(n.conditions, fieldNames)
+      : fieldNames.includes(n.field),
+  );
+}
+
+function normalizeTopGroup(list: WorkflowCondition[]): WorkflowFilterGroup {
+  if (list.length === 1 && isFilterGroup(list[0])) return list[0];
+  return { logic: "and", conditions: list };
+}
+
+function denormalizeTopGroup(group: WorkflowFilterGroup): WorkflowCondition[] {
+  return group.logic === "and" ? group.conditions : [group];
+}
+
+const MAX_CONDITION_DEPTH_UI = 3;
+
+/** Editor de uma lista de condições com suporte a E/OU e grupos aninhados. */
+function ConditionListEditor({
+  value,
+  onChange,
+  fields,
+  priorFields = [],
+  defaultField,
+}: {
+  value: WorkflowCondition[] | undefined;
+  onChange: (next: WorkflowCondition[]) => void;
+  fields: FieldOpt[];
+  priorFields?: FieldOpt[];
+  defaultField: string;
+}) {
+  const group = normalizeTopGroup(value ?? []);
+  return (
+    <ConditionGroupEditor
+      group={group}
+      depth={1}
+      fields={fields}
+      priorFields={priorFields}
+      defaultField={defaultField}
+      onChange={(g) => onChange(denormalizeTopGroup(g))}
+    />
+  );
+}
+
+function ConditionGroupEditor({
+  group,
+  onChange,
+  onRemove,
+  fields,
+  priorFields = [],
+  defaultField,
+  depth,
+}: {
+  group: WorkflowFilterGroup;
+  onChange: (g: WorkflowFilterGroup) => void;
+  onRemove?: () => void;
+  fields: FieldOpt[];
+  priorFields?: FieldOpt[];
+  defaultField: string;
+  depth: number;
+}) {
+  const children = group.conditions ?? [];
+  const setChildren = (fn: (list: WorkflowCondition[]) => WorkflowCondition[]) =>
+    onChange({ ...group, conditions: fn(children) });
+  const canNest = depth < MAX_CONDITION_DEPTH_UI;
+
+  return (
+    <div
+      className={
+        depth > 1
+          ? "rounded-md border border-l-2 border-l-primary/60 bg-muted/30 p-2 space-y-2"
+          : "space-y-2"
+      }
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Select
+            value={group.logic}
+            onValueChange={(v) => onChange({ ...group, logic: v as "and" | "or" })}
+          >
+            <SelectTrigger
+              className="h-7 w-[104px] text-xs"
+              aria-label="Operador entre as condições do grupo"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="and">E (todas)</SelectItem>
+              <SelectItem value="or">OU (qualquer)</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-[11px] text-muted-foreground">{conditionsSummary(children)}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={!defaultField}
+            onClick={() => setChildren((p) => [...p, newLeafCondition(defaultField)])}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" /> Condição
+          </Button>
+          {canNest && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={!defaultField}
+              onClick={() =>
+                setChildren((p) => [
+                  ...p,
+                  { logic: "or", conditions: [newLeafCondition(defaultField)] },
+                ])
+              }
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" /> Grupo
+            </Button>
+          )}
+          {onRemove && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onRemove}
+              aria-label="Remover grupo de condições"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {children.length === 0 && (
+        <p className="text-xs text-muted-foreground">Nenhuma condição neste grupo.</p>
+      )}
+
+      {children.map((node, i) =>
+        isFilterGroup(node) ? (
+          <ConditionGroupEditor
+            key={i}
+            group={node}
+            depth={depth + 1}
+            fields={fields}
+            priorFields={priorFields}
+            defaultField={defaultField}
+            onChange={(g) => setChildren((p) => p.map((x, idx) => (idx === i ? g : x)))}
+            onRemove={() => setChildren((p) => p.filter((_, idx) => idx !== i))}
+          />
+        ) : (
           <FilterRow
             key={i}
-            filter={f}
+            filter={node}
             fields={fields}
-            onChange={(nf) =>
-              onChange((t) => ({
-                ...t,
-                goal_filters: (t.goal_filters ?? []).map((x, idx) => (idx === i ? nf : x)),
-              }))
-            }
-            onRemove={() =>
-              onChange((t) => ({
-                ...t,
-                goal_filters: (t.goal_filters ?? []).filter((_, idx) => idx !== i),
-              }))
-            }
+            priorFields={priorFields}
+            onChange={(nf) => setChildren((p) => p.map((x, idx) => (idx === i ? nf : x)))}
+            onRemove={() => setChildren((p) => p.filter((_, idx) => idx !== i))}
           />
-        ))}
-      </div>
+        ),
+      )}
     </div>
   );
 }
@@ -2196,53 +2332,25 @@ function StepConfigForm({
       return (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            O ramo <strong>Sim</strong> é executado quando todas as condições abaixo passam; caso
+            O ramo <strong>Sim</strong> é executado quando as condições abaixo passam; caso
             contrário, executa o ramo <strong>Não</strong>. Adicione passos filhos diretamente no
             canvas.
           </p>
           <div className="flex items-center justify-between">
             <Label className="text-xs">Condições</Label>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() =>
-                onChange({
-                  ...action,
-                  filters: [
-                    ...action.filters,
-                    { field: entityFields[0]?.name ?? "", op: "eq", value: "" },
-                  ],
-                })
-              }
-            >
-              <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
-            </Button>
           </div>
           {action.filters.length === 0 && (
             <p className="text-xs text-muted-foreground">
               Sem condições — sempre executa o ramo Sim.
             </p>
           )}
-          {action.filters.map((f, i) => (
-            <FilterRow
-              key={i}
-              filter={f}
-              fields={entityFields}
-              priorFields={priorFields}
-              onChange={(nf) =>
-                onChange({
-                  ...action,
-                  filters: action.filters.map((x, idx) => (idx === i ? nf : x)),
-                })
-              }
-              onRemove={() =>
-                onChange({
-                  ...action,
-                  filters: action.filters.filter((_, idx) => idx !== i),
-                })
-              }
-            />
-          ))}
+          <ConditionListEditor
+            value={action.filters}
+            fields={entityFields}
+            priorFields={priorFields}
+            defaultField={entityFields[0]?.name ?? ""}
+            onChange={(next) => onChange({ ...action, filters: next })}
+          />
         </div>
       );
     case "create_ats_job":
@@ -3277,53 +3385,19 @@ function BranchMultiForm({
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <Label className="text-[11px]">Filtros</Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() =>
-                  setBranches(
-                    action.branches.map((x, idx) =>
-                      idx === i
-                        ? {
-                            ...x,
-                            filters: [
-                              ...x.filters,
-                              { field: entityFields[0]?.name ?? "", op: "eq", value: "" },
-                            ],
-                          }
-                        : x,
-                    ),
-                  )
-                }
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
+              <Label className="text-[11px]">Condições</Label>
             </div>
-            {b.filters.map((f, fi) => (
-              <FilterRow
-                key={fi}
-                filter={f}
-                fields={entityFields}
-                priorFields={priorFields}
-                onChange={(nf) =>
-                  setBranches(
-                    action.branches.map((x, idx) =>
-                      idx === i
-                        ? { ...x, filters: x.filters.map((y, yi) => (yi === fi ? nf : y)) }
-                        : x,
-                    ),
-                  )
-                }
-                onRemove={() =>
-                  setBranches(
-                    action.branches.map((x, idx) =>
-                      idx === i ? { ...x, filters: x.filters.filter((_, yi) => yi !== fi) } : x,
-                    ),
-                  )
-                }
-              />
-            ))}
+            <ConditionListEditor
+              value={b.filters}
+              fields={entityFields}
+              priorFields={priorFields}
+              defaultField={entityFields[0]?.name ?? ""}
+              onChange={(next) =>
+                setBranches(
+                  action.branches.map((x, idx) => (idx === i ? { ...x, filters: next } : x)),
+                )
+              }
+            />
           </div>
           <div>
             <Label className="text-[11px]">Ações (JSON)</Label>
@@ -3628,7 +3702,7 @@ function describeAction(a: WorkflowAction, labels?: DescribeLabels): string {
     case "delay":
       return `${a.amount} ${a.unit}`;
     case "branch_if":
-      return `${a.filters.length} condição(ões)`;
+      return conditionsSummary(a.filters);
     case "create_ats_job":
       return `${a.headcount ?? 1}× ${a.title}`;
     case "advance_ats_application_stage":
