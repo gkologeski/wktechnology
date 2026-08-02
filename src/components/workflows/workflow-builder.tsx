@@ -22,6 +22,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   Trash2,
+  Braces,
+  List,
   Zap,
   Filter,
   Clock,
@@ -1989,6 +1991,105 @@ function ConditionGroupEditor({
   );
 }
 
+// ============================================================================
+// Editor de valor de campo — reutilizado por filtros e formulários de passo.
+// Regra única: referência → busca por nome; valores conhecidos → combo;
+// senão → texto com pills de {{tokens}}.
+// ============================================================================
+function FieldValueEditor({
+  field,
+  value,
+  onChange,
+  placeholder = "valor",
+  compact = false,
+}: {
+  field?: FieldOpt;
+  value: unknown;
+  onChange: (v: string | number) => void;
+  placeholder?: string;
+  compact?: boolean;
+}) {
+  const str =
+    value === null || value === undefined || typeof value === "object" ? "" : String(value);
+  const isToken = /\{\{.+\}\}/.test(str);
+  const [tokenMode, setTokenMode] = useState(isToken);
+  const options = field?.options ?? [];
+
+  if (field?.ref) {
+    return <FkPicker kind={field.ref} value={str} onChange={(v) => onChange(v)} />;
+  }
+
+  if (options.length > 0 && !tokenMode) {
+    // Mantém valores salvos que não estão mais na lista canônica.
+    const extra = str && !options.some((o) => o.value === str) ? [{ value: str, label: str }] : [];
+    return (
+      <div className="flex items-center gap-1">
+        <Select value={str || undefined} onValueChange={(v) => onChange(v)}>
+          <SelectTrigger className={compact ? "h-8 text-xs" : undefined}>
+            <SelectValue placeholder="Selecionar valor" />
+          </SelectTrigger>
+          <SelectContent className="max-h-72">
+            {[...options, ...extra].map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          aria-label="Usar variável no lugar de um valor da lista"
+          title="Usar variável ({{token}})"
+          onClick={() => setTokenMode(true)}
+        >
+          <Braces className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    );
+  }
+
+  if (options.length > 0 && tokenMode) {
+    return (
+      <div className="flex items-center gap-1">
+        <TokenInput value={str} onValueChange={(v) => onChange(v)} placeholder="{{campo}}" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0"
+          aria-label="Voltar para a lista de valores"
+          title="Escolher da lista"
+          onClick={() => setTokenMode(false)}
+        >
+          <List className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    );
+  }
+
+  if (field?.type === "number" || field?.type === "date") {
+    return (
+      <Input
+        className={compact ? "h-8 text-xs" : undefined}
+        type={field.type === "number" ? "number" : "date"}
+        value={str}
+        onChange={(e) => {
+          const raw = e.target.value;
+          const coerced: string | number =
+            field.type === "number" && raw !== "" && !Number.isNaN(Number(raw)) ? Number(raw) : raw;
+          onChange(coerced);
+        }}
+        placeholder={placeholder}
+      />
+    );
+  }
+
+  return <TokenInput value={str} onValueChange={(v) => onChange(v)} placeholder={placeholder} />;
+}
+
 function FilterRow({
   filter,
   fields,
@@ -2056,46 +2157,14 @@ function FilterRow({
           ))}
         </SelectContent>
       </Select>
-      {needsValue &&
-        (selected?.ref ? (
-          <FkPicker
-            kind={selected.ref}
-            value={String(filter.value ?? "")}
-            onChange={(v) => onChange({ ...filter, value: v })}
-          />
-        ) : options && options.length > 0 ? (
-          <Select
-            value={String(filter.value ?? "")}
-            onValueChange={(v) => onChange({ ...filter, value: v })}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="Selecionar valor" />
-            </SelectTrigger>
-            <SelectContent className="max-h-72">
-              {options.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <Input
-            className="h-8 text-xs"
-            type={type === "number" ? "number" : type === "date" ? "date" : "text"}
-            value={String(filter.value ?? "")}
-            onChange={(e) => {
-              const raw = e.target.value;
-              // Coerção de tipo: números só quando o campo é numérico.
-              // Filtros contra colunas text (ex.: stage_id) devem ser string
-              // — o engine usa comparação estrita (===).
-              const coerced: string | number =
-                type === "number" && raw !== "" && !Number.isNaN(Number(raw)) ? Number(raw) : raw;
-              onChange({ ...filter, value: coerced });
-            }}
-            placeholder="valor"
-          />
-        ))}
+      {needsValue && (
+        <FieldValueEditor
+          field={selected ?? (type ? { name: filter.field, label: filter.field, type } : undefined)}
+          value={filter.value}
+          onChange={(v) => onChange({ ...filter, value: v })}
+          compact
+        />
+      )}
     </div>
   );
 }
@@ -2163,9 +2232,10 @@ function StepConfigForm({
               ))}
             </SelectContent>
           </Select>
-          <TokenInput
-            value={String(action.value ?? "")}
-            onValueChange={(v) => onChange({ ...action, value: v })}
+          <FieldValueEditor
+            field={entityFields.find((f) => f.name === action.field)}
+            value={action.value}
+            onChange={(v) => onChange({ ...action, value: v })}
             placeholder="novo valor"
           />
         </div>
@@ -2404,10 +2474,14 @@ function StepConfigForm({
     case "advance_ats_application_stage":
       return (
         <div className="space-y-2">
-          <Label className="text-xs">Novo stage_value</Label>
-          <TokenInput
+          <Label className="text-xs">Nova etapa da candidatura</Label>
+          <FieldValueEditor
+            field={
+              entityFields.find((f) => f.name === "stage_value") ??
+              entityFields.find((f) => f.name === "stage")
+            }
             value={action.stage_value}
-            onValueChange={(v) => onChange({ ...action, stage_value: v })}
+            onChange={(v) => onChange({ ...action, stage_value: String(v) })}
             placeholder="ex: entrevista, contratado, rejeitado"
           />
         </div>
@@ -2960,7 +3034,14 @@ function StepConfigForm({
         </div>
       );
     case "switch_by_value":
-      return <SwitchByValueForm entity={entity} action={action} onChange={onChange} />;
+      return (
+        <SwitchByValueForm
+          entity={entity}
+          entityFields={entityFields}
+          action={action}
+          onChange={onChange}
+        />
+      );
     case "branch_multi":
       return (
         <BranchMultiForm
@@ -3216,14 +3297,17 @@ function EmailTemplatePicker({
 // ============================================================================
 function SwitchByValueForm({
   entity,
+  entityFields,
   action,
   onChange,
 }: {
   entity: WorkflowEntity;
+  entityFields: FieldOpt[];
   action: Extract<WorkflowAction, { type: "switch_by_value" }>;
   onChange: (a: WorkflowAction) => void;
 }) {
   const setCases = (next: typeof action.cases) => onChange({ ...action, cases: next });
+  const selectedField = entityFields.find((f) => f.name === action.field);
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
@@ -3258,14 +3342,11 @@ function SwitchByValueForm({
             <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
               <div>
                 <Label className="text-[11px]">Valor</Label>
-                <Input
-                  value={String(c.value ?? "")}
-                  onChange={(e) =>
-                    setCases(
-                      action.cases.map((x, idx) =>
-                        idx === i ? { ...x, value: e.target.value } : x,
-                      ),
-                    )
+                <FieldValueEditor
+                  field={selectedField}
+                  value={c.value}
+                  onChange={(v) =>
+                    setCases(action.cases.map((x, idx) => (idx === i ? { ...x, value: v } : x)))
                   }
                 />
               </div>
