@@ -196,29 +196,49 @@ export async function tickAtsStageEmails(limit = 20): Promise<{
   let sent = 0;
   let failed = 0;
   for (const r of rows) {
-    // Aceita {{...}} placeholders básicos: candidate_name não está aqui, então
-    // só renderiza vars internas conhecidas.
+    // Resolve as variáveis oferecidas na interface (ATS_CANDIDATE_TOKENS):
+    // candidate.*, job.*, company.name e stage — mantendo as chaves legadas
+    // `candidate_name`/`job_title` para templates já salvos.
     let candidateName: string | null = null;
+    let candidateEmail: string | null = null;
     let jobTitle: string | null = null;
+    let jobDepartment: string | null = null;
     if (r.candidate_id) {
       const { data: c } = await admin
         .from("ats_candidates")
-        .select("full_name")
+        .select("full_name, email")
         .eq("id", r.candidate_id)
         .maybeSingle();
       candidateName = (c?.full_name as string) || null;
+      candidateEmail = (c?.email as string) || null;
     }
     if (r.job_id) {
       const { data: j } = await admin
         .from("ats_jobs")
-        .select("title")
+        .select("title, department")
         .eq("id", r.job_id)
         .maybeSingle();
       jobTitle = (j?.title as string) || null;
+      jobDepartment = (j?.department as string) || null;
     }
-    const vars = { candidate_name: candidateName, job_title: jobTitle, stage: r.stage_value };
+    const branding = await getBrandingFor(r.owner_id);
+    const firstName = (candidateName ?? "").split(" ")[0] || null;
+    const vars = {
+      // chaves legadas
+      candidate_name: candidateName,
+      job_title: jobTitle,
+      stage: r.stage_value,
+      // chaves exibidas na interface
+      "candidate.full_name": candidateName,
+      "candidate.first_name": firstName,
+      "candidate.email": candidateEmail ?? r.to_email,
+      "job.title": jobTitle,
+      "job.department": jobDepartment,
+      "company.name": branding.productName,
+    };
     const subject = renderTemplate(r.subject, vars);
     const bodyHtml = renderTemplate(r.body, vars);
+
 
     const res = await sendOne({
       to: r.to_email,
