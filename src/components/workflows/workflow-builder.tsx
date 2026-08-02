@@ -2448,6 +2448,7 @@ function StepConfigForm({
               "owner_id",
               "status",
             ]}
+            triggerEntity={entity}
             onChange={(v) => onChange({ ...action, extra_fields: v })}
           />
         </div>
