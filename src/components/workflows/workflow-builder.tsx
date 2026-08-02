@@ -612,7 +612,18 @@ export function WorkflowBuilder({
     [state.actions, selection],
   );
 
+  // Variáveis oferecidas nas pills: derivadas da entidade do gatilho e dos
+  // passos anteriores (o motor resolve `{{coluna}}` / `{{steps.N.campo}}`).
+  const tokenSets = useMemo(
+    () => ({
+      text: buildTextTokens(fieldOptions, priorStepFields),
+      id: buildIdTokens(fieldOptions, priorStepFields),
+    }),
+    [fieldOptions, priorStepFields],
+  );
+
   if (!open) return null;
+
 
   const setActions = (fn: (prev: WorkflowAction[]) => WorkflowAction[]) =>
     setState((s) => ({ ...s, actions: fn(s.actions) }));
