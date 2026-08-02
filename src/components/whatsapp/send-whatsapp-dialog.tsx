@@ -35,7 +35,7 @@ import { SmartComposeMenu } from "@/components/ai/smart-compose-menu";
 import { TokenPills } from "@/components/ui/token-pills";
 import { WHATSAPP_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
-import { renderTokens, type TokenContext } from "@/lib/email-tokens";
+import { renderTokens, type TokenContext } from "@/lib/message-tokens";
 import { useAuth } from "@/lib/auth";
 
 type Props = {

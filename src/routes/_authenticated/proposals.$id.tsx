@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { sanitizeHtml } from "@/components/rich-html-editor";
 import { WordEditor, type WordEditorHandle } from "@/components/word-editor-lazy";
 import { useRef } from "react";
-import { renderTokens } from "@/lib/email-tokens";
+import { renderTokens } from "@/lib/message-tokens";
 import { ArrowLeft, Save, Send, ShieldCheck, Lock, FileText } from "lucide-react";
 import { toast } from "sonner";
 

@@ -7,7 +7,7 @@ import { Link } from "@tanstack/react-router";
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { listEmailAccounts } from "@/lib/email-accounts.functions";
 import { listEmailTemplates, listEmailSnippets } from "@/lib/email-templates.functions";
-import { renderTokens, expandSnippets, type TokenContext } from "@/lib/email-tokens";
+import { renderTokens, expandSnippets, type TokenContext } from "@/lib/message-tokens";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { isEmail } from "@/lib/validators";

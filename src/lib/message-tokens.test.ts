@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { renderTokens } from "./email-tokens";
+import { renderTokens } from "./message-tokens";
 
 describe("renderTokens", () => {
   it("resolve chaves simples", () => {
