@@ -2554,6 +2554,7 @@ function StepConfigForm({
             entity="companies"
             extraFields={action.extra_fields}
             hiddenKeys={["name", "domain", "industry", "owner_id"]}
+            triggerEntity={entity}
             onChange={(v) => onChange({ ...action, extra_fields: v })}
           />
         </div>
