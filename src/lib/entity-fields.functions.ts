@@ -5,6 +5,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { REF_COLUMNS, type RefKind } from "./entity-fields-refs";
+import {
+  CONTRACT_FIELD_LABELS,
+  CONTRACT_FIELD_OPTIONS,
+  CONTRACT_FREE_TEXT_FIELDS,
+  CONTRACT_SYSTEM_FIELDS,
+} from "./contracts/workflow-field-meta";
 
 export type EntityFieldType = "text" | "number" | "date" | "select" | "boolean";
 
@@ -18,6 +24,10 @@ export type EntityFieldDef = {
   required?: boolean;
   /** Quando presente, o construtor renderiza seletor com busca por nome. */
   ref?: RefKind;
+  /** Campo normalmente preenchido pelo sistema/integração — vai em bloco colapsado. */
+  system?: boolean;
+  /** Campo de texto rico (HTML) — renderiza editor WYSIWYG. */
+  richText?: boolean;
 };
 
 type RawRow = {
