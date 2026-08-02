@@ -466,7 +466,9 @@ export function FkPicker({
                 ))}
               </CommandGroup>
             </CommandList>
-          </Command>
+            </Command>
+          )}
+
         </PopoverContent>
       </Popover>
       <button
