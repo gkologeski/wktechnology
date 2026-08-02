@@ -453,6 +453,7 @@ export function ExtraFieldsEditor({
   extraFields,
   hiddenKeys,
   onChange,
+  triggerEntity,
   title,
   defaultOpen,
 }: Props) {
