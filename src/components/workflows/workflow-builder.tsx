@@ -524,14 +524,21 @@ export function WorkflowBuilder({
   draft,
   onClose,
   onSave,
+  onSaveAndPublish,
+  publishedVersion = 0,
+  hasDraftChanges = false,
 }: {
   open: boolean;
   draft: WorkflowDraft | null;
   onClose: () => void;
   onSave: (d: WorkflowDraft) => Promise<void>;
+  onSaveAndPublish?: (d: WorkflowDraft) => Promise<void>;
+  publishedVersion?: number;
+  hasDraftChanges?: boolean;
 }) {
   const [state, setState] = useState<WorkflowDraft>(draft ?? EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [selection, setSelection] = useState<StepPath | "trigger" | null>("trigger");
   const [library, setLibrary] = useState<{ parentPath: StepPath } | null>(null);
   const [entityPickerOpen, setEntityPickerOpen] = useState(false);
