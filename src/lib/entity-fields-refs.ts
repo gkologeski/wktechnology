@@ -4,7 +4,14 @@
 // divididos no build e perderiam constantes de runtime no bundle do cliente.
 
 /** Tipos de referência suportados pelo seletor com busca por nome. */
-export type RefKind = "user" | "company" | "contact" | "pipeline" | "legal_entity" | "contract" | "deal";
+export type RefKind =
+  | "user"
+  | "company"
+  | "contact"
+  | "pipeline"
+  | "legal_entity"
+  | "contract"
+  | "deal";
 
 /** Colunas cujo valor é um ID: a interface mostra o nome e grava o ID. */
 export const REF_COLUMNS: Record<string, RefKind> = {

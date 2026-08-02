@@ -365,7 +365,6 @@ export function FkPicker({
             : await fetchContracts({ data: { ids: [value] } });
       return rows[0]?.name ?? "";
     },
-
   });
 
   const currentLabel = !value
@@ -438,7 +437,6 @@ export function FkPicker({
                 setOpen(false);
               }}
             />
-
           ) : (
             <Command shouldFilter={false}>
               <CommandInput placeholder="Buscar por nome..." value={rawQ} onValueChange={setRawQ} />
