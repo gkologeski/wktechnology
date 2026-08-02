@@ -219,11 +219,7 @@ const LABELS: Record<string, string> = {
  * global (ex.: `title` = "Cargo" em contatos, mas "Título" em contratos).
  */
 const ENTITY_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
-  contracts: {
-    title: "Título do contrato",
-    role: "Papel na relação",
-    status: "Status do contrato",
-  },
+  contracts: CONTRACT_FIELD_LABELS,
   quotes: { title: "Título da cotação" },
   proposals: { title: "Título da proposta" },
   ats_jobs: { title: "Título da vaga" },
