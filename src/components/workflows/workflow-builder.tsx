@@ -1719,10 +1719,8 @@ function SwitchCard({
       <div className="p-3 pt-0 overflow-x-auto">
         <div className="flex gap-3 min-w-max items-start">
           {cases.map((c, ci) => {
-            const valueText =
-              c.value === "" || c.value === null || c.value === undefined
-                ? "(vazio)"
-                : String(c.value);
+            const valueText = valueLabel(c.value);
+
             return (
               <div key={ci} className="w-64 shrink-0">
                 <BranchColumn
