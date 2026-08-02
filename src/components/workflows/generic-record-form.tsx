@@ -20,6 +20,7 @@ import {
   WORKFLOW_WRITABLE_TABLES,
   ENTITY_LABELS,
   type WorkflowAction,
+  type WorkflowEntity,
   type WorkflowWritableTable,
 } from "@/lib/workflows/types";
 
@@ -31,6 +32,8 @@ type GenericAction = Extract<
 interface Props {
   action: GenericAction;
   onChange: (next: GenericAction) => void;
+  /** Entidade que dispara o workflow. */
+  triggerEntity?: WorkflowEntity;
 }
 
 function tableLabel(t: WorkflowWritableTable): string {
