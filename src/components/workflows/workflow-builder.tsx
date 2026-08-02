@@ -1606,9 +1606,20 @@ function SwitchCard({
   canMoveUp: boolean;
   canMoveDown: boolean;
   isDraggingSelf: boolean;
+  entityFields: FieldOpt[];
 } & DragProps) {
   const labels = useReferenceLabels();
   const cases = action.cases ?? [];
+  const switchField = entityFields.find((f) => f.name === action.field);
+  /** Converte o valor bruto do case no rótulo amigável (lista canônica ou referência). */
+  const valueLabel = (raw: unknown) => {
+    if (raw === "" || raw === null || raw === undefined) return "(vazio)";
+    const str = String(raw);
+    const opt = switchField?.options?.find((o) => o.value === str);
+    if (opt) return opt.label;
+    return labels[str] ?? str;
+  };
+
   const handleDragStart = (e: React.DragEvent) => {
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", JSON.stringify(stepPath));
