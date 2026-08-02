@@ -39,6 +39,8 @@ type: feature
 - `/api/public/forms/*`, `/api/public/widget/*`, `/api/public/booking/*` aceitam input não-autenticado mas validam com Zod e rate-limit no handler.
 - `live_chat_sessions`: sem policy INSERT por autenticados — sessões são criadas exclusivamente via `/api/public/widget/session` com service_role. Aceitável e intencional; não adicionar policy INSERT cliente.
 - `landing_page_events`: sem policy `INSERT` para `anon`/`authenticated`. Toda ingestão passa pelo server function `trackLpEvent` (supabaseAdmin + Zod com limites de keys/tamanho em `utm` e `metadata`). Não recriar `lpe_anon_insert`.
+- `landing_pages`: sem leitura `anon` (policy `lp_public_read` removida e `SELECT` revogado de `anon`). `/lp/$slug` renderiza via server function `getPublishedBySlug` (service_role) com projeção mínima `id,title,description,blocks,theme,seo,slug` — sem `owner_id`, `assigned_to` ou contadores de views/conversões. Não recriar policy anon nem ampliar a projeção.
+- `booking_pages`: ausência de policy `anon` é intencional e correta. `/book/$slug` lê via `/api/public/booking/$slug` → `getBookingPageBySlug` (service_role) devolvendo apenas campos de apresentação. Não reportar falta de leitura anon nessa tabela como vulnerabilidade.
 
 ## Varreduras automáticas (Release pós-6)
 - Cron `security-scan-tick` (diário 03:00 UTC) chama `/api/public/hooks/security-scan-tick`.
