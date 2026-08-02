@@ -1074,7 +1074,40 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
                 )}
               </div>
             )}
+
+            {systemFields.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowSystem((v) => !v)}
+                  className="flex w-full items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+                  aria-expanded={showSystem}
+                >
+                  {showSystem ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                  Campos do sistema e integrações
+                  <span className="text-[10px] text-muted-foreground">
+                    ({systemFields.length})
+                  </span>
+                </button>
+                {showSystem && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-muted-foreground">
+                      Normalmente preenchidos automaticamente. Informe apenas se precisar
+                      sobrescrever.
+                    </p>
+                    {systemFields.map((f) =>
+                      renderRow(f, f.name, values[f.name], { draggable: true }),
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
 
           {autofillableCount > 0 && !customizeMode && (
             <div className="flex justify-end">
