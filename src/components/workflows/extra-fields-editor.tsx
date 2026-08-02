@@ -33,6 +33,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { IntegerInput } from "@/components/ui/integer-input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -222,8 +223,7 @@ function FieldInput({
       /(_days|_months|_count|_number|_seconds|_min|_ms|quantity|sort_order|view_count|installment_total|payment_day|version)$/.test(
         field.name,
       );
-    const handleChange = (raw: string) =>
-      onChange(raw === "" ? null : coerceValue(field, raw));
+    const handleChange = (raw: string) => onChange(raw === "" ? null : coerceValue(field, raw));
 
     if (isInteger) {
       return (
@@ -245,7 +245,6 @@ function FieldInput({
       />
     );
   }
-
 
   if (field.type === "date") {
     return (
