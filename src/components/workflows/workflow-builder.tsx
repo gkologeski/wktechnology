@@ -270,7 +270,52 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
 // Path: um passo é endereçado por um array de índices (branches criam níveis).
 // Ex: [0] = 1º passo topo. [1,"then",0] = 1º passo do ramo "sim" do 2º passo.
 // ============================================================================
-type StepPath = Array<number | "then" | "else">;
+type BranchKey = "then" | "else" | "default" | `case:${number}`;
+type StepPath = Array<number | BranchKey>;
+
+function isBranchKey(seg: unknown): seg is BranchKey {
+  return (
+    seg === "then" ||
+    seg === "else" ||
+    seg === "default" ||
+    (typeof seg === "string" && /^case:\d+$/.test(seg))
+  );
+}
+
+/** Lista de ações filhas de um ramo (then/else de branch_if, case/default de switch). */
+function getBranchList(a: WorkflowAction, key: BranchKey): WorkflowAction[] | null {
+  if (a.type === "branch_if") {
+    if (key === "then" || key === "else") return a[key] ?? [];
+    return null;
+  }
+  if (a.type === "switch_by_value") {
+    if (key === "default") return a.default ?? [];
+    if (typeof key === "string" && key.startsWith("case:")) {
+      const i = Number(key.slice(5));
+      const c = a.cases?.[i];
+      return c ? (c.actions ?? []) : null;
+    }
+  }
+  return null;
+}
+
+/** Substitui a lista de ações filhas de um ramo, preservando o restante da ação. */
+function setBranchList(a: WorkflowAction, key: BranchKey, list: WorkflowAction[]): WorkflowAction {
+  if (a.type === "branch_if" && (key === "then" || key === "else")) {
+    return { ...a, [key]: list };
+  }
+  if (a.type === "switch_by_value") {
+    if (key === "default") return { ...a, default: list };
+    if (typeof key === "string" && key.startsWith("case:")) {
+      const i = Number(key.slice(5));
+      return {
+        ...a,
+        cases: (a.cases ?? []).map((c, ci) => (ci === i ? { ...c, actions: list } : c)),
+      };
+    }
+  }
+  return a;
+}
 
 // ---------------------------------------------------------------------------
 // Saídas registradas por passo (espelha `detail` de cada ação em engine.server).
@@ -348,10 +393,11 @@ function siblingsOfPath(
   if (typeof head !== "number") return { list: [], index: -1 };
   if (path.length === 1) return { list: actions, index: head };
   const parent = actions[head];
-  if (!parent || parent.type !== "branch_if") return { list: [], index: -1 };
   const branch = path[1];
-  if (branch !== "then" && branch !== "else") return { list: [], index: -1 };
-  return siblingsOfPath(parent[branch] ?? [], path.slice(2) as StepPath);
+  if (!parent || !isBranchKey(branch)) return { list: [], index: -1 };
+  const children = getBranchList(parent, branch);
+  if (!children) return { list: [], index: -1 };
+  return siblingsOfPath(children, path.slice(2) as StepPath);
 }
 
 /** Opções de campo referenciando saídas de passos anteriores (`steps.N.campo`). */
@@ -381,10 +427,11 @@ function getStep(actions: WorkflowAction[], path: StepPath): WorkflowAction | nu
   const a = actions[head];
   if (!a) return null;
   if (rest.length === 0) return a;
-  if (a.type !== "branch_if") return null;
   const branch = rest[0];
-  if (branch !== "then" && branch !== "else") return null;
-  return getStep(a[branch] ?? [], rest.slice(1) as StepPath);
+  if (!isBranchKey(branch)) return null;
+  const children = getBranchList(a, branch);
+  if (!children) return null;
+  return getStep(children, rest.slice(1) as StepPath);
 }
 
 function updateStep(
@@ -398,13 +445,11 @@ function updateStep(
   return actions.map((a, i) => {
     if (i !== head) return a;
     if (rest.length === 0) return updater(a);
-    if (a.type !== "branch_if") return a;
     const branch = rest[0];
-    if (branch !== "then" && branch !== "else") return a;
-    return {
-      ...a,
-      [branch]: updateStep(a[branch] ?? [], rest.slice(1) as StepPath, updater),
-    };
+    if (!isBranchKey(branch)) return a;
+    const children = getBranchList(a, branch);
+    if (!children) return a;
+    return setBranchList(a, branch, updateStep(children, rest.slice(1) as StepPath, updater));
   });
 }
 
@@ -414,13 +459,12 @@ function removeStep(actions: WorkflowAction[], path: StepPath): WorkflowAction[]
   if (typeof head !== "number") return actions;
   if (rest.length === 0) return actions.filter((_, i) => i !== head);
   return actions.map((a, i) => {
-    if (i !== head || a.type !== "branch_if") return a;
+    if (i !== head) return a;
     const branch = rest[0];
-    if (branch !== "then" && branch !== "else") return a;
-    return {
-      ...a,
-      [branch]: removeStep(a[branch] ?? [], rest.slice(1) as StepPath),
-    };
+    if (!isBranchKey(branch)) return a;
+    const children = getBranchList(a, branch);
+    if (!children) return a;
+    return setBranchList(a, branch, removeStep(children, rest.slice(1) as StepPath));
   });
 }
 
@@ -434,23 +478,19 @@ function insertStep(
   if (parentPath.length === 0) return [...actions, newAction];
   const [head, ...rest] = parentPath;
   if (typeof head !== "number") {
-    // parentPath começa por "then"/"else" — só existe no contexto recursivo.
+    // parentPath começa por chave de ramo — só existe no contexto recursivo.
     return actions;
   }
   return actions.map((a, i) => {
     if (i !== head) return a;
     if (rest.length === 0) return a;
-    if (a.type !== "branch_if") return a;
     const branch = rest[0];
-    if (branch !== "then" && branch !== "else") return a;
+    if (!isBranchKey(branch)) return a;
+    const children = getBranchList(a, branch);
+    if (!children) return a;
     const remaining = rest.slice(1) as StepPath;
-    if (remaining.length === 0) {
-      return { ...a, [branch]: [...(a[branch] ?? []), newAction] };
-    }
-    return {
-      ...a,
-      [branch]: insertStep(a[branch] ?? [], remaining, newAction),
-    };
+    if (remaining.length === 0) return setBranchList(a, branch, [...children, newAction]);
+    return setBranchList(a, branch, insertStep(children, remaining, newAction));
   });
 }
 
@@ -471,18 +511,18 @@ function insertStepAt(
   if (typeof head !== "number") return actions;
   return actions.map((a, i) => {
     if (i !== head) return a;
-    if (a.type !== "branch_if") return a;
     const branch = rest[0];
-    if (branch !== "then" && branch !== "else") return a;
+    if (!isBranchKey(branch)) return a;
+    const list = getBranchList(a, branch);
+    if (!list) return a;
     const remaining = rest.slice(1) as StepPath;
-    const list = a[branch] ?? [];
     if (remaining.length === 0) {
       const copy = [...list];
       const clamped = Math.max(0, Math.min(index, copy.length));
       copy.splice(clamped, 0, newAction);
-      return { ...a, [branch]: copy };
+      return setBranchList(a, branch, copy);
     }
-    return { ...a, [branch]: insertStepAt(list, remaining, index, newAction) };
+    return setBranchList(a, branch, insertStepAt(list, remaining, index, newAction));
   });
 }
 
@@ -717,8 +757,6 @@ export function WorkflowBuilder({
           </div>
         )}
 
-
-
         {/* 3-panel body */}
         <div className="flex-1 flex overflow-hidden">
           {/* Sidebar esquerda */}
@@ -763,7 +801,7 @@ export function WorkflowBuilder({
 
           {/* Canvas central */}
           <main className="flex-1 overflow-y-auto bg-muted/10">
-            <div className="max-w-xl mx-auto py-8 px-4">
+            <div className="max-w-3xl mx-auto py-8 px-4">
               {/* Trigger card */}
               <TriggerCard
                 trigger={state.trigger}
@@ -781,6 +819,7 @@ export function WorkflowBuilder({
 
               {/* Steps */}
               <StepsList
+                entityFields={fieldOptions}
                 actions={state.actions}
                 path={[]}
                 selection={selection}
@@ -796,6 +835,7 @@ export function WorkflowBuilder({
                   }
                 }}
                 onAddAt={(parentPath) => setLibrary({ parentPath })}
+                onChangeAction={(p, na) => setActions((prev) => updateStep(prev, p, () => na))}
                 dragging={dragging}
                 onDragStartStep={(p) => setDragging(p)}
                 onDragEndStep={() => setDragging(null)}
@@ -981,6 +1021,9 @@ function StepsList({
   onSelect,
   onRemove,
   onAddAt,
+  onChangeAction,
+  entityFields,
+
   dragging,
   onDragStartStep,
   onDragEndStep,
@@ -994,6 +1037,8 @@ function StepsList({
   onSelect: (p: StepPath) => void;
   onRemove: (p: StepPath) => void;
   onAddAt: (parentPath: StepPath) => void;
+  onChangeAction: (p: StepPath, a: WorkflowAction) => void;
+  entityFields: FieldOpt[];
 } & DragProps) {
   return (
     <>
@@ -1025,6 +1070,30 @@ function StepsList({
                 onSelectPath={onSelect}
                 onRemovePath={onRemove}
                 onAddAt={onAddAt}
+                canMoveUp={i > 0}
+                canMoveDown={i < actions.length - 1}
+                isDraggingSelf={isDraggingSelf}
+                dragging={dragging}
+                onDragStartStep={onDragStartStep}
+                onDragEndStep={onDragEndStep}
+                onDropAt={onDropAt}
+                onMove={onMove}
+              />
+            ) : action.type === "switch_by_value" ? (
+              <SwitchCard
+                entityFields={entityFields}
+                action={action}
+                stepPath={stepPath}
+                index={i + 1}
+                selected={isSelected}
+                selection={selection}
+                library={library}
+                onSelect={() => onSelect(stepPath)}
+                onRemove={() => onRemove(stepPath)}
+                onSelectPath={onSelect}
+                onRemovePath={onRemove}
+                onAddAt={onAddAt}
+                onChangeAction={onChangeAction}
                 canMoveUp={i > 0}
                 canMoveDown={i < actions.length - 1}
                 isDraggingSelf={isDraggingSelf}
@@ -1313,123 +1382,393 @@ function BranchCard({
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 p-3 pt-0">
-        {(["then", "else"] as const).map((branch) => {
-          const parentPath: StepPath = [...stepPath, branch];
-          const children = action[branch] ?? [];
+        {(["then", "else"] as const).map((branch) => (
+          <BranchColumn
+            key={branch}
+            title={branch === "then" ? "Sim" : "Não"}
+            parentPath={[...stepPath, branch]}
+            actions={action[branch] ?? []}
+            selection={selection}
+            library={library}
+            onSelectPath={onSelectPath}
+            onRemovePath={onRemovePath}
+            onAddAt={onAddAt}
+            dragging={dragging}
+            onDragStartStep={onDragStartStep}
+            onDragEndStep={onDragEndStep}
+            onDropAt={onDropAt}
+            onMove={onMove}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Coluna de ramo no canvas: lista de passos filhos com drag & drop, mover,
+ * remover e adicionar. Compartilhada por branch_if (Sim/Não) e switch (cases).
+ */
+function BranchColumn({
+  title,
+  subtitle,
+  parentPath,
+  actions,
+  selection,
+  library,
+  onSelectPath,
+  onRemovePath,
+  onAddAt,
+  dragging,
+  onDragStartStep,
+  onDragEndStep,
+  onDropAt,
+  onMove,
+  headerExtra,
+}: {
+  title: string;
+  subtitle?: string;
+  parentPath: StepPath;
+  actions: WorkflowAction[];
+  selection: StepPath | "trigger" | null;
+  library: { parentPath: StepPath } | null;
+  onSelectPath: (p: StepPath) => void;
+  onRemovePath: (p: StepPath) => void;
+  onAddAt: (parentPath: StepPath) => void;
+  headerExtra?: React.ReactNode;
+} & DragProps) {
+  return (
+    <div className="rounded-md border bg-muted/20 p-2">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-wide font-semibold truncate" title={title}>
+            {title}
+          </p>
+          {subtitle && (
+            <p className="text-[11px] text-muted-foreground truncate" title={subtitle}>
+              {subtitle}
+            </p>
+          )}
+        </div>
+        {headerExtra}
+      </div>
+      <div className="space-y-1">
+        <DropSlot
+          parentPath={parentPath}
+          index={0}
+          dragging={dragging}
+          onDropAt={onDropAt}
+          variant={actions.length === 0 && !!dragging ? "empty" : "between"}
+        />
+        {actions.length === 0 && !dragging && (
+          <p className="text-[11px] text-muted-foreground py-1">Nenhum passo neste ramo.</p>
+        )}
+        {actions.map((child, ci) => {
+          const childPath: StepPath = [...parentPath, ci];
+          const isSel =
+            Array.isArray(selection) && JSON.stringify(selection) === JSON.stringify(childPath);
+          const isDraggingChild =
+            dragging !== null && JSON.stringify(dragging) === JSON.stringify(childPath);
+          const Icon = ACTION_ICONS[child.type] ?? Sparkles;
           return (
-            <div key={branch} className="rounded-md border bg-muted/20 p-2">
-              <p className="text-[11px] uppercase tracking-wide font-semibold mb-2">
-                {branch === "then" ? "Sim" : "Não"}
-              </p>
-              <div className="space-y-1">
-                <DropSlot
-                  parentPath={parentPath}
-                  index={0}
-                  dragging={dragging}
-                  onDropAt={onDropAt}
-                  variant={children.length === 0 && !!dragging ? "empty" : "between"}
-                />
-                {children.map((child, ci) => {
-                  const childPath: StepPath = [...parentPath, ci];
-                  const isSel =
-                    Array.isArray(selection) &&
-                    JSON.stringify(selection) === JSON.stringify(childPath);
-                  const isDraggingChild =
-                    dragging !== null && JSON.stringify(dragging) === JSON.stringify(childPath);
-                  const Icon = ACTION_ICONS[child.type] ?? Sparkles;
-                  return (
-                    <div key={ci}>
-                      <div
-                        className={cn(
-                          "group/step relative rounded border bg-card p-2",
-                          isSel && "border-primary ring-1 ring-primary/20",
-                          isDraggingChild && "opacity-40",
-                        )}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            draggable
-                            onDragStart={(e) => {
-                              e.dataTransfer.effectAllowed = "move";
-                              e.dataTransfer.setData("text/plain", JSON.stringify(childPath));
-                              onDragStartStep(childPath);
-                            }}
-                            onDragEnd={onDragEndStep}
-                            role="button"
-                            aria-label="Arrastar passo"
-                            tabIndex={-1}
-                            className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover/step:opacity-100 focus-visible:opacity-100 shrink-0"
-                          >
-                            <GripVertical className="h-3 w-3" />
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => onSelectPath(childPath)}
-                            aria-pressed={isSel}
-                            className="flex-1 min-w-0 text-left"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Icon className="h-3.5 w-3.5 shrink-0" />
-                              <span className="text-xs font-medium truncate">
-                                {ACTION_LABELS[child.type]}
-                              </span>
-                            </div>
-                          </button>
-                        </div>
-                        <div className="absolute top-0.5 right-0.5 flex items-center opacity-0 group-hover/step:opacity-100 focus-within:opacity-100">
-                          <button
-                            type="button"
-                            onClick={() => onMove(childPath, -1)}
-                            disabled={ci === 0}
-                            className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
-                            aria-label="Mover para cima"
-                          >
-                            <ArrowUp className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onMove(childPath, 1)}
-                            disabled={ci === children.length - 1}
-                            className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
-                            aria-label="Mover para baixo"
-                          >
-                            <ArrowDown className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onRemovePath(childPath)}
-                            className="p-0.5 text-muted-foreground hover:text-destructive"
-                            aria-label="Remover"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                      <DropSlot
-                        parentPath={parentPath}
-                        index={ci + 1}
-                        dragging={dragging}
-                        onDropAt={onDropAt}
-                      />
+            <div key={ci}>
+              <div
+                className={cn(
+                  "group/step relative rounded border bg-card p-2",
+                  isSel && "border-primary ring-1 ring-primary/20",
+                  isDraggingChild && "opacity-40",
+                )}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", JSON.stringify(childPath));
+                      onDragStartStep(childPath);
+                    }}
+                    onDragEnd={onDragEndStep}
+                    role="button"
+                    aria-label="Arrastar passo"
+                    tabIndex={-1}
+                    className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover/step:opacity-100 focus-visible:opacity-100 shrink-0"
+                  >
+                    <GripVertical className="h-3 w-3" />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onSelectPath(childPath)}
+                    aria-pressed={isSel}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="text-xs font-medium truncate">
+                        {ACTION_LABELS[child.type]}
+                      </span>
                     </div>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => onAddAt(parentPath)}
-                  className={cn(
-                    "w-full rounded border border-dashed text-xs py-1.5 text-muted-foreground hover:text-primary hover:border-primary",
-                    library && JSON.stringify(library.parentPath) === JSON.stringify(parentPath)
-                      ? "border-primary text-primary"
-                      : "",
-                  )}
-                >
-                  + Adicionar
-                </button>
+                  </button>
+                </div>
+                <div className="absolute top-0.5 right-0.5 flex items-center opacity-0 group-hover/step:opacity-100 focus-within:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => onMove(childPath, -1)}
+                    disabled={ci === 0}
+                    className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+                    aria-label="Mover para cima"
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onMove(childPath, 1)}
+                    disabled={ci === actions.length - 1}
+                    className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+                    aria-label="Mover para baixo"
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemovePath(childPath)}
+                    className="p-0.5 text-muted-foreground hover:text-destructive"
+                    aria-label="Remover"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
+              <DropSlot
+                parentPath={parentPath}
+                index={ci + 1}
+                dragging={dragging}
+                onDropAt={onDropAt}
+              />
             </div>
           );
         })}
+        <button
+          type="button"
+          onClick={() => onAddAt(parentPath)}
+          className={cn(
+            "w-full rounded border border-dashed text-xs py-1.5 text-muted-foreground hover:text-primary hover:border-primary",
+            library && JSON.stringify(library.parentPath) === JSON.stringify(parentPath)
+              ? "border-primary text-primary"
+              : "",
+          )}
+        >
+          + Adicionar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Cartão de switch no canvas: uma coluna por case + coluna "Padrão",
+ * no mesmo padrão visual do Se/Então/Senão.
+ */
+function SwitchCard({
+  action,
+  stepPath,
+  index,
+  selected,
+  selection,
+  library,
+  onSelect,
+  onRemove,
+  onSelectPath,
+  onRemovePath,
+  onAddAt,
+  onChangeAction,
+  canMoveUp,
+  canMoveDown,
+  isDraggingSelf,
+  entityFields,
+  dragging,
+  onDragStartStep,
+  onDragEndStep,
+  onDropAt,
+  onMove,
+}: {
+  action: Extract<WorkflowAction, { type: "switch_by_value" }>;
+  stepPath: StepPath;
+  index: number;
+  selected: boolean;
+  selection: StepPath | "trigger" | null;
+  library: { parentPath: StepPath } | null;
+  onSelect: () => void;
+  onRemove: () => void;
+  onSelectPath: (p: StepPath) => void;
+  onRemovePath: (p: StepPath) => void;
+  onAddAt: (parentPath: StepPath) => void;
+  onChangeAction: (p: StepPath, a: WorkflowAction) => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  isDraggingSelf: boolean;
+  entityFields: FieldOpt[];
+} & DragProps) {
+  const labels = useReferenceLabels();
+  const cases = action.cases ?? [];
+  const switchField = entityFields.find((f) => f.name === action.field);
+  /** Converte o valor bruto do case no rótulo amigável (lista canônica ou referência). */
+  const valueLabel = (raw: unknown) => {
+    if (raw === "" || raw === null || raw === undefined) return "(vazio)";
+    const str = String(raw);
+    const opt = switchField?.options?.find((o) => o.value === str);
+    if (opt) return opt.label;
+    return str;
+  };
+
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", JSON.stringify(stepPath));
+    onDragStartStep(stepPath);
+  };
+  const addCase = () =>
+    onChangeAction(stepPath, { ...action, cases: [...cases, { value: "", actions: [] }] });
+  const removeCase = (i: number) =>
+    onChangeAction(stepPath, { ...action, cases: cases.filter((_, idx) => idx !== i) });
+  return (
+    <div
+      className={cn(
+        "group relative rounded-lg border bg-card shadow-sm",
+        selected && "border-primary ring-2 ring-primary/20",
+        isDraggingSelf && "opacity-40",
+      )}
+    >
+      <div className="flex items-center gap-2 p-3">
+        <DragHandle
+          onDragStart={handleDragStart}
+          onDragEnd={onDragEndStep}
+          label="Arrastar ramificação por valor"
+        />
+        <button
+          type="button"
+          onClick={onSelect}
+          aria-pressed={selected}
+          className="flex-1 min-w-0 text-left flex items-center gap-3"
+        >
+          <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <SplitSquareHorizontal className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
+              Passo {index}
+            </p>
+            <p className="text-sm font-medium">Ramificar por valor</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {describeAction(action, labels)}
+            </p>
+          </div>
+        </button>
+        <div className="flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              addCase();
+            }}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" /> Case
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(stepPath, -1);
+            }}
+            disabled={!canMoveUp}
+            aria-label="Mover ramificação para cima"
+          >
+            <ArrowUp className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(stepPath, 1);
+            }}
+            disabled={!canMoveDown}
+            aria-label="Mover ramificação para baixo"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            aria-label="Remover ramificação"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="p-3 pt-0 overflow-x-auto">
+        <div className="flex gap-3 min-w-max items-start">
+          {cases.map((c, ci) => {
+            const valueText = valueLabel(c.value);
+
+            return (
+              <div key={ci} className="w-64 shrink-0">
+                <BranchColumn
+                  title={c.label?.trim() ? c.label : valueText}
+                  subtitle={c.label?.trim() ? valueText : undefined}
+                  parentPath={[...stepPath, `case:${ci}`]}
+                  actions={c.actions ?? []}
+                  selection={selection}
+                  library={library}
+                  onSelectPath={onSelectPath}
+                  onRemovePath={onRemovePath}
+                  onAddAt={onAddAt}
+                  dragging={dragging}
+                  onDragStartStep={onDragStartStep}
+                  onDragEndStep={onDragEndStep}
+                  onDropAt={onDropAt}
+                  onMove={onMove}
+                  headerExtra={
+                    <button
+                      type="button"
+                      onClick={() => removeCase(ci)}
+                      aria-label="Remover case"
+                      className="p-0.5 text-muted-foreground hover:text-destructive shrink-0"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  }
+                />
+              </div>
+            );
+          })}
+          <div className="w-64 shrink-0">
+            <BranchColumn
+              title="Padrão"
+              subtitle="Quando nenhum valor bate"
+              parentPath={[...stepPath, "default"]}
+              actions={action.default ?? []}
+              selection={selection}
+              library={library}
+              onSelectPath={onSelectPath}
+              onRemovePath={onRemovePath}
+              onAddAt={onAddAt}
+              dragging={dragging}
+              onDragStartStep={onDragStartStep}
+              onDragEndStep={onDragEndStep}
+              onDropAt={onDropAt}
+              onMove={onMove}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -3352,13 +3691,21 @@ function SwitchByValueForm({
   onChange: (a: WorkflowAction) => void;
 }) {
   const setCases = (next: typeof action.cases) => onChange({ ...action, cases: next });
+  const cases = action.cases ?? [];
   const selectedField = entityFields.find((f) => f.name === action.field);
+  const moveCase = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= cases.length) return;
+    const copy = [...cases];
+    const [item] = copy.splice(i, 1);
+    copy.splice(j, 0, item);
+    setCases(copy);
+  };
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Executa o primeiro <em>case</em> cujo valor bate com o campo. Se nenhum bater, executa o
-        padrão. As ações filhas de cada case são configuradas via JSON até o editor visual completo
-        estar pronto.
+        Executa o primeiro <em>case</em> cujo valor bate com o campo. Se nenhum bater, executa a
+        coluna <strong>Padrão</strong>. As ações de cada case são montadas nas colunas do canvas.
       </p>
       <div>
         <Label className="text-xs">Campo</Label>
@@ -3374,15 +3721,15 @@ function SwitchByValueForm({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setCases([...action.cases, { value: "", actions: [] }])}
+            onClick={() => setCases([...cases, { value: "", actions: [] }])}
           >
             <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar case
           </Button>
         </div>
-        {action.cases.length === 0 && (
+        {cases.length === 0 && (
           <p className="text-xs text-muted-foreground">Nenhum case; executa apenas o padrão.</p>
         )}
-        {action.cases.map((c, i) => (
+        {cases.map((c, i) => (
           <div key={i} className="rounded-md border p-2 space-y-2 bg-muted/10">
             <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
               <div>
@@ -3391,58 +3738,61 @@ function SwitchByValueForm({
                   field={selectedField}
                   value={c.value}
                   onChange={(v) =>
-                    setCases(action.cases.map((x, idx) => (idx === i ? { ...x, value: v } : x)))
+                    setCases(cases.map((x, idx) => (idx === i ? { ...x, value: v } : x)))
                   }
                 />
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Remover case"
-                onClick={() => setCases(action.cases.filter((_, idx) => idx !== i))}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Mover case para a esquerda"
+                  disabled={i === 0}
+                  onClick={() => moveCase(i, -1)}
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Mover case para a direita"
+                  disabled={i === cases.length - 1}
+                  onClick={() => moveCase(i, 1)}
+                >
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Remover case"
+                  onClick={() => setCases(cases.filter((_, idx) => idx !== i))}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div>
-              <Label className="text-[11px]">Ações (JSON)</Label>
-              <Textarea
-                rows={3}
-                className="font-mono text-xs"
-                value={JSON.stringify(c.actions ?? [], null, 2)}
-                onChange={(e) => {
-                  try {
-                    const parsed = JSON.parse(e.target.value);
-                    if (Array.isArray(parsed)) {
-                      setCases(
-                        action.cases.map((x, idx) => (idx === i ? { ...x, actions: parsed } : x)),
-                      );
-                    }
-                  } catch {
-                    /* ignore invalid json */
-                  }
-                }}
+              <Label className="text-[11px]">Rótulo da coluna (opcional)</Label>
+              <Input
+                value={c.label ?? ""}
+                placeholder="Ex.: Contrato assinado"
+                onChange={(e) =>
+                  setCases(cases.map((x, idx) => (idx === i ? { ...x, label: e.target.value } : x)))
+                }
               />
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              {(c.actions ?? []).length} passo(s) nesta coluna.
+            </p>
           </div>
         ))}
       </div>
-      <div>
-        <Label className="text-xs">Padrão (JSON de ações)</Label>
-        <Textarea
-          rows={3}
-          className="font-mono text-xs"
-          value={JSON.stringify(action.default ?? [], null, 2)}
-          onChange={(e) => {
-            try {
-              const parsed = JSON.parse(e.target.value);
-              if (Array.isArray(parsed)) onChange({ ...action, default: parsed });
-            } catch {
-              /* ignore */
-            }
-          }}
-        />
-      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Coluna padrão: {(action.default ?? []).length} passo(s).
+      </p>
     </div>
   );
 }
