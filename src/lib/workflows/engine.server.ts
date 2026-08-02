@@ -2,7 +2,8 @@
 // Roda no servidor (chamado pelo endpoint /api/public/hooks/workflows-tick).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { applyRotation } from "@/lib/rotation/engine.server";
-import type { WorkflowAction, WorkflowEntity, WorkflowFilter, WorkflowTrigger } from "./types";
+import type { WorkflowAction, WorkflowCondition, WorkflowEntity, WorkflowFilter, WorkflowTrigger } from "./types";
+import { isFilterGroup } from "./types";
 
 type AnyRow = Record<string, unknown>;
 type LogStep = { at: string; ok: boolean; action: string; detail?: unknown; error?: string };
@@ -1275,7 +1276,7 @@ interface WorkflowRow {
   entity: WorkflowEntity;
   trigger: WorkflowTrigger;
   actions: WorkflowAction[];
-  goal_filters?: WorkflowFilter[] | null;
+  goal_filters?: WorkflowCondition[] | null;
 }
 
 async function alreadyEnrolled(
