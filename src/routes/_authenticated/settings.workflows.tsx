@@ -115,16 +115,43 @@ function WorkflowsPage() {
     refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
+  const editingRow = draft?.id ? (rows.find((r) => r.id === draft.id) ?? null) : null;
+
   const handleSave = async (d: WorkflowDraft) => {
     try {
-      await saveFn({ data: d });
-      toast.success("Rascunho salvo");
+      const res = await saveFn({ data: d });
+      const id = (res as { id?: string } | undefined)?.id ?? d.id;
+      toast.success("Rascunho salvo — publique para ativar", {
+        action: id
+          ? {
+              label: "Publicar",
+              onClick: () => {
+                void handlePublishById(id);
+              },
+            }
+          : undefined,
+      });
       setDraft(null);
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar");
     }
   };
+
+  const handleSaveAndPublish = async (d: WorkflowDraft) => {
+    try {
+      const res = await saveFn({ data: d });
+      const id = (res as { id?: string } | undefined)?.id ?? d.id;
+      if (!id) throw new Error("Não foi possível identificar o workflow salvo");
+      const r = await publishFn({ data: { id } });
+      toast.success(`Publicado — v${r.version}`);
+      setDraft(null);
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao publicar");
+    }
+  };
+
 
   const handleDelete = async (id: string) => {
     if (!(await confirmDialog("Excluir este workflow?"))) return;
