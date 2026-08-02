@@ -218,17 +218,34 @@ function FieldInput({
   }
 
   if (field.type === "number") {
+    const isInteger =
+      /(_days|_months|_count|_number|_seconds|_min|_ms|quantity|sort_order|view_count|installment_total|payment_day|version)$/.test(
+        field.name,
+      );
+    const handleChange = (raw: string) =>
+      onChange(raw === "" ? null : coerceValue(field, raw));
+
+    if (isInteger) {
+      return (
+        <IntegerInput
+          value={strVal}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="0"
+        />
+      );
+    }
+
     return (
       <Input
-        type="number"
+        type="text"
+        inputMode="decimal"
         value={strVal}
-        onChange={(e) =>
-          onChange(e.target.value === "" ? null : coerceValue(field, e.target.value))
-        }
+        onChange={(e) => handleChange(e.target.value)}
         placeholder="0"
       />
     );
   }
+
 
   if (field.type === "date") {
     return (
