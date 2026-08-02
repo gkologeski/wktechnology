@@ -22,6 +22,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Plus,
   Trash2,
+  Braces,
+  List,
   Zap,
   Filter,
   Clock,
