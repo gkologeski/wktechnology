@@ -175,6 +175,7 @@ function TicketDetail() {
           <TicketMacrosButton
             ticket={{
               id: ticket.id,
+              subject: ticket.subject,
               contact_id: ticket.contact_id,
               company_id: ticket.company_id,
               deal_id: ticket.deal_id,

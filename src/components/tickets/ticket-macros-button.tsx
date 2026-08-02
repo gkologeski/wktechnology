@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { renderTokens } from "@/lib/email-tokens";
 
 type Macro = {
   id: string;
