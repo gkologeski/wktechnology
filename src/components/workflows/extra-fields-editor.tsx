@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
+import { WordEditor } from "@/components/word-editor-lazy";
 import { REF_COLUMNS, type RefKind } from "@/lib/entity-fields-refs";
 import {
   searchCompanies,
