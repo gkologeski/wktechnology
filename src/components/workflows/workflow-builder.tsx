@@ -940,6 +940,7 @@ export function WorkflowBuilder({
         />
       </DialogContent>
     </Dialog>
+    </WorkflowTokensProvider>
   );
 }
 
