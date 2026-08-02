@@ -34,3 +34,12 @@ Ao apagar o conteúdo, a chave é removida do objeto de valores e o campo deixa 
 - Rótulos: `src/lib/contracts/workflow-field-meta.ts` (`CONTRACT_FIELD_LABELS`, lista de campos de sistema) e, se necessário, os overrides em `src/lib/entity-fields.functions.ts`.
 - Persistência de campos limpos: estado local em `src/components/workflows/extra-fields-editor.tsx` (conjunto de nomes "em edição"), sem tocar em `setKey`/payload.
 - Validações: typecheck, lint e testes existentes após cada lote de migração.
+
+## 4. Campos numéricos sem setas de incremento
+
+Hoje 152 campos usam `type="number"`, que exibe as setinhas do navegador e aceita colar texto/decimais indevidos.
+
+- Criar um componente `IntegerInput` no design system: `inputMode="numeric"`, sem setas, aceita apenas dígitos (e sinal negativo quando aplicável), bloqueia letras, colagem inválida e scroll do mouse alterando o valor.
+- Substituir os `type="number"` de valores inteiros (dias, quantidades, prazos, percentuais inteiros, limites, ordem/posição) por esse componente, começando pelos formulários de workflows, contratos, prospecção e ATS.
+- Campos monetários e decimais continuam usando os componentes existentes (`CurrencyInput` / decimal), sem regressão de formatação.
+- Sem mudança de payload: o valor enviado continua numérico.
