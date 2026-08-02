@@ -36,11 +36,13 @@ export const CAMPAIGN_TOKENS: MessageToken[] = [
   { token: "{{company_name}}", label: "Empresa", group: "Destinatário" },
 ];
 
-export const WHATSAPP_TOKENS: MessageToken[] = [
-  { token: "{{first_name}}", label: "Nome", group: "Contato" },
-  { token: "{{full_name}}", label: "Nome completo", group: "Contato" },
-  { token: "{{company}}", label: "Empresa", group: "Contato" },
-];
+/**
+ * Mensagem livre de WhatsApp: resolvidas no envio (contato + remetente).
+ * Templates oficiais (HSM) NÃO usam estas chaves — usam variáveis posicionais
+ * `{{1}}`, `{{2}}`… preenchidas com valores literais.
+ */
+export const WHATSAPP_TOKENS: MessageToken[] = [...CONTACT, ...AGENT];
+
 
 export const LINKEDIN_TOKENS: MessageToken[] = [
   { token: "{{first_name}}", label: "Nome", group: "Contato" },
