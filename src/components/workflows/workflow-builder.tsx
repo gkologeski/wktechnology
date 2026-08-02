@@ -3684,13 +3684,21 @@ function SwitchByValueForm({
   onChange: (a: WorkflowAction) => void;
 }) {
   const setCases = (next: typeof action.cases) => onChange({ ...action, cases: next });
+  const cases = action.cases ?? [];
   const selectedField = entityFields.find((f) => f.name === action.field);
+  const moveCase = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= cases.length) return;
+    const copy = [...cases];
+    const [item] = copy.splice(i, 1);
+    copy.splice(j, 0, item);
+    setCases(copy);
+  };
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Executa o primeiro <em>case</em> cujo valor bate com o campo. Se nenhum bater, executa o
-        padrão. As ações filhas de cada case são configuradas via JSON até o editor visual completo
-        estar pronto.
+        Executa o primeiro <em>case</em> cujo valor bate com o campo. Se nenhum bater, executa a
+        coluna <strong>Padrão</strong>. As ações de cada case são montadas nas colunas do canvas.
       </p>
       <div>
         <Label className="text-xs">Campo</Label>
@@ -3706,15 +3714,15 @@ function SwitchByValueForm({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setCases([...action.cases, { value: "", actions: [] }])}
+            onClick={() => setCases([...cases, { value: "", actions: [] }])}
           >
             <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar case
           </Button>
         </div>
-        {action.cases.length === 0 && (
+        {cases.length === 0 && (
           <p className="text-xs text-muted-foreground">Nenhum case; executa apenas o padrão.</p>
         )}
-        {action.cases.map((c, i) => (
+        {cases.map((c, i) => (
           <div key={i} className="rounded-md border p-2 space-y-2 bg-muted/10">
             <div className="grid grid-cols-[1fr_auto] gap-2 items-end">
               <div>
@@ -3723,61 +3731,65 @@ function SwitchByValueForm({
                   field={selectedField}
                   value={c.value}
                   onChange={(v) =>
-                    setCases(action.cases.map((x, idx) => (idx === i ? { ...x, value: v } : x)))
+                    setCases(cases.map((x, idx) => (idx === i ? { ...x, value: v } : x)))
                   }
                 />
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Remover case"
-                onClick={() => setCases(action.cases.filter((_, idx) => idx !== i))}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Mover case para a esquerda"
+                  disabled={i === 0}
+                  onClick={() => moveCase(i, -1)}
+                >
+                  <ArrowUp className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Mover case para a direita"
+                  disabled={i === cases.length - 1}
+                  onClick={() => moveCase(i, 1)}
+                >
+                  <ArrowDown className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  aria-label="Remover case"
+                  onClick={() => setCases(cases.filter((_, idx) => idx !== i))}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div>
-              <Label className="text-[11px]">Ações (JSON)</Label>
-              <Textarea
-                rows={3}
-                className="font-mono text-xs"
-                value={JSON.stringify(c.actions ?? [], null, 2)}
-                onChange={(e) => {
-                  try {
-                    const parsed = JSON.parse(e.target.value);
-                    if (Array.isArray(parsed)) {
-                      setCases(
-                        action.cases.map((x, idx) => (idx === i ? { ...x, actions: parsed } : x)),
-                      );
-                    }
-                  } catch {
-                    /* ignore invalid json */
-                  }
-                }}
+              <Label className="text-[11px]">Rótulo da coluna (opcional)</Label>
+              <Input
+                value={c.label ?? ""}
+                placeholder="Ex.: Contrato assinado"
+                onChange={(e) =>
+                  setCases(cases.map((x, idx) => (idx === i ? { ...x, label: e.target.value } : x)))
+                }
               />
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              {(c.actions ?? []).length} passo(s) nesta coluna.
+            </p>
           </div>
         ))}
       </div>
-      <div>
-        <Label className="text-xs">Padrão (JSON de ações)</Label>
-        <Textarea
-          rows={3}
-          className="font-mono text-xs"
-          value={JSON.stringify(action.default ?? [], null, 2)}
-          onChange={(e) => {
-            try {
-              const parsed = JSON.parse(e.target.value);
-              if (Array.isArray(parsed)) onChange({ ...action, default: parsed });
-            } catch {
-              /* ignore */
-            }
-          }}
-        />
-      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Coluna padrão: {(action.default ?? []).length} passo(s).
+      </p>
     </div>
   );
 }
+
 
 function BranchMultiForm({
   entity,
