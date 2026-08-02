@@ -551,4 +551,3 @@ export const searchContracts = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return ((rows ?? []) as ContractRow[]).map(toItem);
   });
-
