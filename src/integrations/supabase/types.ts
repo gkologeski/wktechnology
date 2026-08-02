@@ -18251,6 +18251,7 @@ export type Database = {
         Returns: undefined
       }
       can_access_ats_job: { Args: { _job_id: string }; Returns: boolean }
+      can_manage_access_scope: { Args: { _owner: string }; Returns: boolean }
       can_manage_person: { Args: { _person_id: string }; Returns: boolean }
       can_view_person: { Args: { _person_id: string }; Returns: boolean }
       can_view_person_sensitive: {
