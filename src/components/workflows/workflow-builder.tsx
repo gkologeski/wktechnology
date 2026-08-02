@@ -838,6 +838,8 @@ export function WorkflowBuilder({
                   }
                 }}
                 onAddAt={(parentPath) => setLibrary({ parentPath })}
+                onChangeAction={(p, na) => setActions((prev) => updateStep(prev, p, () => na))}
+
                 dragging={dragging}
                 onDragStartStep={(p) => setDragging(p)}
                 onDragEndStep={() => setDragging(null)}
