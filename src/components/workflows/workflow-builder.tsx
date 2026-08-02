@@ -2882,7 +2882,7 @@ function StepConfigForm({
     case "create_record":
     case "update_record":
     case "delete_record":
-      return <GenericRecordForm action={action} onChange={onChange} />;
+      return <GenericRecordForm action={action} onChange={onChange} triggerEntity={entity} />;
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
