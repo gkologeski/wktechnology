@@ -404,7 +404,11 @@ function WorkflowsPage() {
       <WorkflowBuilder
         open={!!draft}
         draft={draft}
-        onClose={() => setDraft(null)}
+        onClose={() => {
+          setDraft(null);
+          // Revalida a lista ao sair da edição, para não exibir dados defasados.
+          void refresh();
+        }}
         onSave={handleSave}
         onSaveAndPublish={handleSaveAndPublish}
         publishedVersion={editingRow?.published_version ?? 0}
