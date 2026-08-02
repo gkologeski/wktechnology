@@ -115,10 +115,15 @@ import {
   type WorkflowEventType,
   type WorkflowTrigger,
   type WorkflowFilter,
+  type WorkflowCondition,
+  type WorkflowFilterGroup,
   type WorkflowAction,
   type WorkflowActionType,
   type FilterOp,
+  isFilterGroup,
 } from "@/lib/workflows/types";
+import { conditionsSummary } from "@/lib/workflows/conditions";
+
 
 export type WorkflowDraft = {
   id?: string;
