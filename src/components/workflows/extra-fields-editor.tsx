@@ -64,6 +64,7 @@ import {
   searchPipelines,
   searchUsers,
 } from "@/lib/workflow-refs.functions";
+import { ContractParentPicker } from "./contract-parent-picker";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
@@ -412,46 +413,63 @@ export function FkPicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-[min(360px,90vw)] min-w-[--radix-popover-trigger-width] p-0"
+          className={cn(
+            "p-0",
+            kind === "contract"
+              ? "w-[min(640px,92vw)]"
+              : "w-[min(360px,90vw)] min-w-[--radix-popover-trigger-width]",
+          )}
           align="start"
           sideOffset={6}
         >
-          <Command shouldFilter={false}>
-            <CommandInput placeholder="Buscar por nome..." value={rawQ} onValueChange={setRawQ} />
-            <CommandList>
-              {isLoading && items.length === 0 && (
-                <div className="px-3 py-6 text-center text-xs text-muted-foreground">Buscando…</div>
-              )}
-              {!isLoading && searchQuery.isError && (
-                <div className="px-3 py-6 text-center text-xs text-destructive">
-                  Erro ao buscar.
-                </div>
-              )}
-              {!isLoading && !searchQuery.isError && items.length === 0 && (
-                <CommandEmpty>Nenhum resultado.</CommandEmpty>
-              )}
-              <CommandGroup>
-                {items.map((it) => (
-                  <CommandItem
-                    key={it.id}
-                    value={`${it.name} ${it.id}`}
-                    onSelect={() => {
-                      onChange(it.id);
-                      setOpen(false);
-                    }}
-                  >
-                    <Check
-                      className={cn(
-                        "mr-2 h-3.5 w-3.5",
-                        value === it.id ? "opacity-100" : "opacity-0",
-                      )}
-                    />
-                    <span className="truncate">{it.name}</span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
+          {kind === "contract" ? (
+            <ContractParentPicker
+              value={value}
+              onSelect={(id) => {
+                onChange(id);
+                setOpen(false);
+              }}
+            />
+          ) : (
+            <Command shouldFilter={false}>
+              <CommandInput placeholder="Buscar por nome..." value={rawQ} onValueChange={setRawQ} />
+              <CommandList>
+                {isLoading && items.length === 0 && (
+                  <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                    Buscando…
+                  </div>
+                )}
+                {!isLoading && searchQuery.isError && (
+                  <div className="px-3 py-6 text-center text-xs text-destructive">
+                    Erro ao buscar.
+                  </div>
+                )}
+                {!isLoading && !searchQuery.isError && items.length === 0 && (
+                  <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                )}
+                <CommandGroup>
+                  {items.map((it) => (
+                    <CommandItem
+                      key={it.id}
+                      value={`${it.name} ${it.id}`}
+                      onSelect={() => {
+                        onChange(it.id);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-3.5 w-3.5",
+                          value === it.id ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      <span className="truncate">{it.name}</span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          )}
         </PopoverContent>
       </Popover>
       <button
