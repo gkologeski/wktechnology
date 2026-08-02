@@ -1,18 +1,23 @@
-// Seletor de "Contrato principal" em dois estágios:
-// 1) busca de empresa por nome; 2) lista lateral de contratos da empresa.
-// Ao manter o mouse (ou foco) 2s sobre um contrato, exibe um card translúcido
-// com a vigência e o valor do contrato.
+// Seletor em dois estágios usado em "Contrato principal" (`parent_contract_id`)
+// e "Negócio" (`deal_id`):
+// 1) busca de empresa por nome; 2) lista lateral de registros daquela empresa.
+// Ao manter o mouse (ou foco) 2s sobre um item, exibe abaixo do nome um card
+// translúcido com os detalhes (vigência/valor no contrato; etapa/valor/previsão
+// no negócio).
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Building2, FileText } from "lucide-react";
+import { Check, Building2, FileText, Handshake } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { searchCompanies, searchContracts } from "@/lib/workflow-refs.functions";
+import { searchCompanies, searchContracts, searchDeals } from "@/lib/workflow-refs.functions";
 import { CONTRACT_FIELD_OPTIONS } from "@/lib/contracts/workflow-field-meta";
+import { DEAL_STAGES } from "@/lib/crm";
 
-export interface ContractItem {
+export type CompanyScopedKind = "contract" | "deal";
+
+export interface CompanyScopedItem {
   id: string;
   name: string;
   status?: string | null;
@@ -20,14 +25,21 @@ export interface ContractItem {
   ends_at?: string | null;
   monthly_value?: number | null;
   total_value?: number | null;
+  value?: number | null;
+  expected_close_date?: string | null;
   currency?: string | null;
 }
 
 const HOVER_DELAY_MS = 2000;
 
-function statusLabel(status?: string | null): string {
+function contractStatusLabel(status?: string | null): string {
   if (!status) return "Sem status";
   return CONTRACT_FIELD_OPTIONS.status?.find((o) => o.value === status)?.label ?? status;
+}
+
+function dealStageLabel(stage?: string | null): string {
+  if (!stage) return "Sem etapa";
+  return DEAL_STAGES.find((s) => s.value === stage)?.label ?? stage;
 }
 
 function fmtDate(iso?: string | null): string {
@@ -49,21 +61,43 @@ function fmtMoney(value?: number | null, currency?: string | null): string | nul
   }
 }
 
-export function ContractParentPicker({
+const COPY: Record<
+  CompanyScopedKind,
+  { listLabel: string; withCompany: (name: string) => string; empty: string; error: string }
+> = {
+  contract: {
+    listLabel: "Contratos",
+    withCompany: (name) => `Contratos de ${name}`,
+    empty: "Esta empresa não possui contratos.",
+    error: "Erro ao buscar contratos.",
+  },
+  deal: {
+    listLabel: "Negócios",
+    withCompany: (name) => `Negócios de ${name}`,
+    empty: "Esta empresa não possui negócios.",
+    error: "Erro ao buscar negócios.",
+  },
+};
+
+export function CompanyScopedPicker({
+  kind,
   value,
   onSelect,
 }: {
+  kind: CompanyScopedKind;
   value: string;
   onSelect: (id: string) => void;
 }) {
   const fetchCompanies = useServerFn(searchCompanies);
   const fetchContracts = useServerFn(searchContracts);
+  const fetchDeals = useServerFn(searchDeals);
 
   const [rawQ, setRawQ] = useState("");
   const [q, setQ] = useState("");
   const [company, setCompany] = useState<{ id: string; name: string } | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copy = COPY[kind];
 
   useEffect(() => {
     const t = setTimeout(() => setQ(rawQ.trim()), 200);
@@ -77,22 +111,25 @@ export function ContractParentPicker({
   }, []);
 
   const companies = useQuery({
-    queryKey: ["wf-contract-picker-companies", q],
+    queryKey: ["wf-scoped-picker-companies", q],
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => await fetchCompanies({ data: { q: q || undefined } }),
   });
 
-  const contracts = useQuery({
-    queryKey: ["wf-contract-picker-contracts", company?.id],
+  const records = useQuery({
+    queryKey: ["wf-scoped-picker-records", kind, company?.id],
     enabled: !!company?.id,
     staleTime: 30_000,
-    queryFn: async () =>
-      (await fetchContracts({ data: { company_id: company!.id } })) as ContractItem[],
+    queryFn: async () => {
+      const input = { data: { company_id: company!.id } };
+      const rows = kind === "deal" ? await fetchDeals(input) : await fetchContracts(input);
+      return rows as CompanyScopedItem[];
+    },
   });
 
   const companyItems = (companies.data ?? []) as Array<{ id: string; name: string }>;
-  const contractItems = useMemo(() => contracts.data ?? [], [contracts.data]);
+  const recordItems = useMemo(() => records.data ?? [], [records.data]);
 
   const startHover = (id: string) => {
     if (timer.current) clearTimeout(timer.current);
@@ -104,10 +141,13 @@ export function ContractParentPicker({
     setHoverId(null);
   };
 
+  const subtitleFor = (it: CompanyScopedItem) =>
+    kind === "deal" ? dealStageLabel(it.status) : contractStatusLabel(it.status);
+
   return (
-    <div className="flex flex-col sm:flex-row sm:divide-x divide-border/60">
+    <div className="flex flex-col divide-border/60 sm:flex-row sm:divide-x">
       {/* Coluna 1 — busca de empresa */}
-      <div className="sm:w-1/2 min-w-0">
+      <div className="min-w-0 sm:w-1/2">
         <div className="border-b border-border/60 p-2">
           <Input
             value={rawQ}
@@ -151,31 +191,27 @@ export function ContractParentPicker({
         </ul>
       </div>
 
-      {/* Coluna 2 — contratos da empresa */}
-      <div className="sm:w-1/2 min-w-0 border-t border-border/60 sm:border-t-0">
+      {/* Coluna 2 — registros da empresa */}
+      <div className="min-w-0 border-t border-border/60 sm:w-1/2 sm:border-t-0">
         <div className="border-b border-border/60 px-3 py-2 text-[11px] font-medium text-muted-foreground">
-          {company ? `Contratos de ${company.name}` : "Contratos"}
+          {company ? copy.withCompany(company.name) : copy.listLabel}
         </div>
-        <ul className="max-h-64 overflow-y-auto py-1" aria-label="Contratos da empresa">
+        <ul className="max-h-64 overflow-y-auto py-1" aria-label={copy.listLabel}>
           {!company && (
             <li className="px-3 py-6 text-center text-xs text-muted-foreground">
-              Selecione uma empresa para ver os contratos.
+              Selecione uma empresa para ver os registros.
             </li>
           )}
-          {company && contracts.isFetching && (
+          {company && records.isFetching && (
             <li className="px-3 py-6 text-center text-xs text-muted-foreground">Buscando…</li>
           )}
-          {company && contracts.isError && (
-            <li className="px-3 py-6 text-center text-xs text-destructive">
-              Erro ao buscar contratos.
-            </li>
+          {company && records.isError && (
+            <li className="px-3 py-6 text-center text-xs text-destructive">{copy.error}</li>
           )}
-          {company && !contracts.isFetching && !contracts.isError && contractItems.length === 0 && (
-            <li className="px-3 py-6 text-center text-xs text-muted-foreground">
-              Esta empresa não possui contratos.
-            </li>
+          {company && !records.isFetching && !records.isError && recordItems.length === 0 && (
+            <li className="px-3 py-6 text-center text-xs text-muted-foreground">{copy.empty}</li>
           )}
-          {contractItems.map((it) => (
+          {recordItems.map((it) => (
             <li key={it.id}>
               <button
                 type="button"
@@ -195,7 +231,7 @@ export function ContractParentPicker({
                 <span className="min-w-0">
                   <span className="block truncate">{it.name}</span>
                   <span className="block truncate text-[11px] text-muted-foreground">
-                    {statusLabel(it.status)}
+                    {subtitleFor(it)}
                   </span>
                 </span>
               </button>
@@ -204,17 +240,37 @@ export function ContractParentPicker({
                   role="tooltip"
                   className="pointer-events-none mx-3 mb-1 mt-1 rounded-md border border-border bg-popover/80 p-2.5 text-[11px] text-popover-foreground shadow-sm backdrop-blur-sm"
                 >
-                  <FileText className="mb-1 h-3.5 w-3.5 opacity-60" />
-                  <p>
-                    <span className="text-muted-foreground">Vigência: </span>
-                    {fmtDate(it.starts_at)} – {fmtDate(it.ends_at)}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Valor: </span>
-                    {fmtMoney(it.monthly_value, it.currency)
-                      ? `${fmtMoney(it.monthly_value, it.currency)} / mês`
-                      : (fmtMoney(it.total_value, it.currency) ?? "não informado")}
-                  </p>
+                  {kind === "deal" ? (
+                    <>
+                      <Handshake className="mb-1 h-3.5 w-3.5 opacity-60" />
+                      <p>
+                        <span className="text-muted-foreground">Etapa: </span>
+                        {dealStageLabel(it.status)}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Valor: </span>
+                        {fmtMoney(it.value, it.currency) ?? "não informado"}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Previsão: </span>
+                        {fmtDate(it.expected_close_date)}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="mb-1 h-3.5 w-3.5 opacity-60" />
+                      <p>
+                        <span className="text-muted-foreground">Vigência: </span>
+                        {fmtDate(it.starts_at)} – {fmtDate(it.ends_at)}
+                      </p>
+                      <p>
+                        <span className="text-muted-foreground">Valor: </span>
+                        {fmtMoney(it.monthly_value, it.currency)
+                          ? `${fmtMoney(it.monthly_value, it.currency)} / mês`
+                          : (fmtMoney(it.total_value, it.currency) ?? "não informado")}
+                      </p>
+                    </>
+                  )}
                 </div>
               )}
             </li>

@@ -60,11 +60,12 @@ import {
   searchCompanies,
   searchContacts,
   searchContracts,
+  searchDeals,
   searchLegalEntities,
   searchPipelines,
   searchUsers,
 } from "@/lib/workflow-refs.functions";
-import { ContractParentPicker } from "./contract-parent-picker";
+import { CompanyScopedPicker } from "./company-scoped-picker";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
@@ -322,6 +323,7 @@ export function FkPicker({
   const fetchUsers = useServerFn(searchUsers);
   const fetchLegalEntities = useServerFn(searchLegalEntities);
   const fetchContracts = useServerFn(searchContracts);
+  const fetchDeals = useServerFn(searchDeals);
 
   // debounce 200ms sobre o input
   useEffect(() => {
@@ -340,6 +342,7 @@ export function FkPicker({
       if (kind === "pipeline") return await fetchPipelines({ data: { q: q || undefined } });
       if (kind === "legal_entity") return await fetchLegalEntities({ data: { q: q || undefined } });
       if (kind === "contract") return await fetchContracts({ data: { q: q || undefined } });
+      if (kind === "deal") return await fetchDeals({ data: { q: q || undefined } });
       const rows = await fetchUsers({ data: { q: q || undefined } });
       return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
     },
@@ -347,7 +350,8 @@ export function FkPicker({
 
   // Tipos sem cache global de rótulos: hidrata o nome pelo ID selecionado
   // para nunca exibir hash na interface.
-  const needsHydrate = !!value && !isToken && (kind === "legal_entity" || kind === "contract");
+  const needsHydrate =
+    !!value && !isToken && (kind === "legal_entity" || kind === "contract" || kind === "deal");
   const hydrated = useQuery({
     queryKey: ["wf-ref-label", kind, value],
     enabled: needsHydrate,
@@ -356,7 +360,9 @@ export function FkPicker({
       const rows =
         kind === "legal_entity"
           ? await fetchLegalEntities({ data: { ids: [value] } })
-          : await fetchContracts({ data: { ids: [value] } });
+          : kind === "deal"
+            ? await fetchDeals({ data: { ids: [value] } })
+            : await fetchContracts({ data: { ids: [value] } });
       return rows[0]?.name ?? "";
     },
   });
@@ -415,17 +421,18 @@ export function FkPicker({
         <PopoverContent
           className={cn(
             "p-0",
-            kind === "contract"
+            kind === "contract" || kind === "deal"
               ? "w-[min(640px,92vw)]"
               : "w-[min(360px,90vw)] min-w-[--radix-popover-trigger-width]",
           )}
           align="start"
           sideOffset={6}
         >
-          {kind === "contract" ? (
-            <ContractParentPicker
+          {kind === "contract" || kind === "deal" ? (
+            <CompanyScopedPicker
+              kind={kind}
               value={value}
-              onSelect={(id) => {
+              onSelect={(id: string) => {
                 onChange(id);
                 setOpen(false);
               }}
