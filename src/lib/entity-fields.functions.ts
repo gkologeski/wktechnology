@@ -467,7 +467,6 @@ const LABELS: Record<string, string> = {
   ai_generated_at: "Gerado por IA em",
 };
 
-
 /**
  * Rótulos que dependem da entidade — evita traduções erradas do dicionário
  * global (ex.: `title` = "Cargo" em contatos, mas "Título" em contratos).

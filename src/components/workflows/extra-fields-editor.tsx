@@ -607,7 +607,6 @@ export function ExtraFieldsEditor({
     onChange(Object.keys(next).length ? next : undefined);
   }
 
-
   const TOKEN_ALIAS: Record<string, string> = {
     counterparty_company_id: "{{company_id}}",
     primary_contact_id: "{{contact_id}}",
