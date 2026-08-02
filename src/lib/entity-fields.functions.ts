@@ -371,6 +371,14 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       "subcategory",
     ]);
 
+    const isContracts = data.entity === "contracts";
+    // Listas canônicas por entidade (substituem amostragem de valores distintos).
+    const canonicalOptions: Record<string, { value: string; label: string }[]> = isContracts
+      ? CONTRACT_FIELD_OPTIONS
+      : {};
+    const freeTextByEntity = isContracts ? CONTRACT_FREE_TEXT_FIELDS : new Set<string>();
+    const systemFields = isContracts ? CONTRACT_SYSTEM_FIELDS : new Set<string>();
+
     const fields: EntityFieldDef[] = [];
     for (const r of allRows) {
       if (HIDDEN.has(r.column_name) || isSyncColumn(r.column_name)) continue;
@@ -381,19 +389,24 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         type,
         required: r.is_nullable === "NO" && !r.has_default,
       };
+      if (systemFields.has(r.column_name)) def.system = true;
+      if (isContracts && r.column_name === "body_html") def.richText = true;
 
       const ref = REF_COLUMNS[r.column_name];
       if (ref) {
         // Referência: seletor com busca por nome; grava o ID e nunca lista hashes.
         def.ref = ref;
         def.type = "text";
+      } else if (canonicalOptions[r.column_name]) {
+        def.type = "select";
+        def.options = canonicalOptions[r.column_name];
       } else if (pipelineStageOptions && r.column_name === "stage") {
         def.type = "select";
         def.options = pipelineStageOptions;
       } else if (registryOptions[r.column_name]) {
         def.type = "select";
         def.options = registryOptions[r.column_name];
-      } else if (FREE_TEXT.has(r.column_name)) {
+      } else if (FREE_TEXT.has(r.column_name) || freeTextByEntity.has(r.column_name)) {
         def.type = type === "boolean" ? "boolean" : "text";
       } else if (
         r.distinct_values &&
