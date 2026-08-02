@@ -2680,6 +2680,7 @@ function StepConfigForm({
               "pipeline_id",
               "assignee_id",
             ]}
+            triggerEntity={entity}
             onChange={(v) => onChange({ ...action, extra_fields: v })}
           />
         </div>
