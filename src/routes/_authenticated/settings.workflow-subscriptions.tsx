@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -37,9 +38,7 @@ import {
   type WorkflowSubscriptionAction,
 } from "@/lib/workflow-subscriptions.functions";
 
-export const Route = createFileRoute(
-  "/_authenticated/settings/workflow-subscriptions",
-)({
+export const Route = createFileRoute("/_authenticated/settings/workflow-subscriptions")({
   head: () => ({
     meta: [
       { title: "Assinaturas de workflow" },
@@ -170,9 +169,9 @@ function WorkflowSubscriptionsPage() {
             <Zap className="h-5 w-5" /> Assinaturas de workflow
           </h1>
           <p className="text-sm text-muted-foreground mt-1 max-w-2xl">
-            Reaja automaticamente a eventos do sistema — por exemplo, criar um
-            ticket de provisionamento quando o onboarding começa. Suporta
-            wildcard <code>*</code> em padrões (ex.: <code>people.*</code>).
+            Reaja automaticamente a eventos do sistema — por exemplo, criar um ticket de
+            provisionamento quando o onboarding começa. Suporta wildcard <code>*</code> em padrões
+            (ex.: <code>people.*</code>).
           </p>
         </div>
         <Button onClick={() => openEdit()}>
@@ -195,9 +194,7 @@ function WorkflowSubscriptionsPage() {
             <Card key={pattern}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <code className="text-xs bg-muted px-2 py-0.5 rounded">
-                    {pattern}
-                  </code>
+                  <code className="text-xs bg-muted px-2 py-0.5 rounded">{pattern}</code>
                   <Badge variant="secondary">{rows.length}</Badge>
                 </CardTitle>
               </CardHeader>
@@ -224,9 +221,7 @@ function WorkflowSubscriptionsPage() {
                     <div className="flex items-center gap-2 shrink-0">
                       <Switch
                         checked={row.enabled}
-                        onCheckedChange={(v) =>
-                          toggleMut.mutate({ id: row.id, enabled: v })
-                        }
+                        onCheckedChange={(v) => toggleMut.mutate({ id: row.id, enabled: v })}
                       />
                       <Button
                         size="icon"
@@ -239,8 +234,8 @@ function WorkflowSubscriptionsPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => {
-                          if (confirm(`Remover "${row.name}"?`)) {
+                        onClick={async () => {
+                          if (await confirmDialog(`Remover "${row.name}"?`)) {
                             deleteMut.mutate(row.id);
                           }
                         }}
@@ -260,9 +255,7 @@ function WorkflowSubscriptionsPage() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>
-              {form.id ? "Editar assinatura" : "Nova assinatura"}
-            </DialogTitle>
+            <DialogTitle>{form.id ? "Editar assinatura" : "Nova assinatura"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
@@ -285,9 +278,7 @@ function WorkflowSubscriptionsPage() {
               <Label>Padrão de evento</Label>
               <Input
                 value={form.event_pattern}
-                onChange={(e) =>
-                  setForm({ ...form, event_pattern: e.target.value.trim() })
-                }
+                onChange={(e) => setForm({ ...form, event_pattern: e.target.value.trim() })}
                 list="event-suggestions"
                 placeholder="people.onboarding_started"
               />

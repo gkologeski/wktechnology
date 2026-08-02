@@ -33,6 +33,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { IntegerInput } from "@/components/ui/integer-input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -68,6 +69,7 @@ import { useReferenceLabels } from "./use-reference-labels";
 
 import type { WorkflowEntity, WorkflowWritableTable } from "@/lib/workflows/types";
 import { sortFieldsByCanonicalOrder } from "@/lib/workflows/entity-field-order";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type EntityName = WorkflowWritableTable;
 
@@ -217,13 +219,28 @@ function FieldInput({
   }
 
   if (field.type === "number") {
+    const isInteger =
+      /(_days|_months|_count|_number|_seconds|_min|_ms|quantity|sort_order|view_count|installment_total|payment_day|version)$/.test(
+        field.name,
+      );
+    const handleChange = (raw: string) => onChange(raw === "" ? null : coerceValue(field, raw));
+
+    if (isInteger) {
+      return (
+        <IntegerInput
+          value={strVal}
+          onChange={(e) => handleChange(e.target.value)}
+          placeholder="0"
+        />
+      );
+    }
+
     return (
       <Input
-        type="number"
+        type="text"
+        inputMode="decimal"
         value={strVal}
-        onChange={(e) =>
-          onChange(e.target.value === "" ? null : coerceValue(field, e.target.value))
-        }
+        onChange={(e) => handleChange(e.target.value)}
         placeholder="0"
       />
     );
@@ -498,7 +515,10 @@ export function ExtraFieldsEditor({
     return m;
   }, [visibleFields]);
 
+  const [pinned, setPinned] = useState<Set<string>>(() => new Set());
+
   const values = (extraFields ?? {}) as Record<string, unknown>;
+
   const hasValue = (k: string) => {
     if (!(k in values)) return false;
     const v = values[k];
@@ -567,8 +587,10 @@ export function ExtraFieldsEditor({
   // próprio (continuam editáveis, apenas fora do fluxo principal).
   const systemFields = ungrouped.filter((f) => f.system);
   const mainFields = ungrouped.filter((f) => !f.system);
-  const filled = mainFields.filter((f) => hasValue(f.name));
-  const empty = mainFields.filter((f) => !hasValue(f.name));
+  // Campos que o usuário editou e depois limpou continuam visíveis no mesmo
+  // lugar (bucket dos preenchidos) para não "sumirem" da tela.
+  const filled = mainFields.filter((f) => hasValue(f.name) || pinned.has(f.name));
+  const empty = mainFields.filter((f) => !hasValue(f.name) && !pinned.has(f.name));
   const orphanKeys = Object.keys(values).filter(
     (k) => !hidden.has(k) && !visibleFields.some((f) => f.name === k),
   );
@@ -582,6 +604,7 @@ export function ExtraFieldsEditor({
     const next: Record<string, unknown> = { ...values };
     if (value === null || value === undefined || value === "") {
       delete next[key];
+      setPinned((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
     } else {
       next[key] = value;
     }
@@ -591,6 +614,12 @@ export function ExtraFieldsEditor({
   function removeKey(key: string) {
     const next: Record<string, unknown> = { ...values };
     delete next[key];
+    setPinned((prev) => {
+      if (!prev.has(key)) return prev;
+      const s = new Set(prev);
+      s.delete(key);
+      return s;
+    });
     onChange(Object.keys(next).length ? next : undefined);
   }
 
@@ -655,8 +684,8 @@ export function ExtraFieldsEditor({
     });
   }
 
-  function deleteGroup(gid: string) {
-    if (!window.confirm("Remover este grupo? Os campos voltam para 'Sem grupo'.")) return;
+  async function deleteGroup(gid: string) {
+    if (!(await confirmDialog("Remover este grupo? Os campos voltam para 'Sem grupo'."))) return;
     persistLayout({
       ...layout,
       groups: layout.groups.filter((g) => g.id !== gid),
@@ -670,8 +699,8 @@ export function ExtraFieldsEditor({
     });
   }
 
-  function resetLayout() {
-    if (!window.confirm("Restaurar layout padrão? Todos os grupos serão removidos.")) return;
+  async function resetLayout() {
+    if (!(await confirmDialog("Restaurar layout padrão? Todos os grupos serão removidos."))) return;
     clearFieldLayout(entity);
     setLayout({ version: 1, groups: [] });
   }

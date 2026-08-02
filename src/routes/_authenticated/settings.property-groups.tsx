@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   CUSTOM_ENTITIES,
   CUSTOM_ENTITY_LABELS,
@@ -88,9 +89,9 @@ function PropertyGroupsPage() {
   const handleDelete = async (g: PropertyGroupSummary) => {
     if (g.name === "Sem grupo") return;
     if (
-      !confirm(
+      !(await confirmDialog(
         `Remover o grupo "${g.name}"? As ${g.count} propriedades continuarão existindo, sem grupo.`,
-      )
+      ))
     )
       return;
     try {

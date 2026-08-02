@@ -46,6 +46,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, Plus, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/kb")({
   component: KbAdminPage,
@@ -147,8 +148,8 @@ function CategoriesTab() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => {
-                      if (confirm("Remover?")) remove.mutate(c.id);
+                    onClick={async () => {
+                      if (await confirmDialog("Remover?")) remove.mutate(c.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -336,8 +337,8 @@ function ArticlesTab() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => {
-                      if (confirm("Remover?")) remove.mutate(a.id);
+                    onClick={async () => {
+                      if (await confirmDialog("Remover?")) remove.mutate(a.id);
                     }}
                   >
                     <Trash2 className="h-4 w-4" />

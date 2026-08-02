@@ -19,15 +19,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  GitBranch,
-  Plus,
-  Trash2,
-  GripVertical,
-  Star,
-  Save,
-  Copy,
-} from "lucide-react";
+import { GitBranch, Plus, Trash2, GripVertical, Star, Save, Copy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -46,14 +38,10 @@ import {
   setDefaultPipeline,
 } from "@/lib/ats/pipelines.functions";
 import { DEFAULT_ATS_STAGES, type AtsStage } from "@/lib/ats/stages";
-import {
-  AtsPageHeader,
-  AtsSectionHeader,
-  EmptyState,
-  Skeletons,
-} from "@/components/ats/ui";
+import { AtsPageHeader, AtsSectionHeader, EmptyState, Skeletons } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/(ats)/pipelines")({
   component: PipelinesPage,
@@ -98,7 +86,12 @@ function PipelinesPage() {
   const setDef = useServerFn(setDefaultPipeline);
   const qc = useQueryClient();
 
-  const { data: pipelines = [], isLoading, error, refetch } = useQuery({
+  const {
+    data: pipelines = [],
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["ats-pipelines"],
     queryFn: () => list() as unknown as Promise<Pipeline[]>,
   });
@@ -137,7 +130,10 @@ function PipelinesPage() {
 
   const addStage = () => {
     const base = `nova_etapa_${stages.length + 1}`;
-    setStages([...stages, { value: base, label: "Nova etapa", color: "var(--hs-stage-2)", type: "open" }]);
+    setStages([
+      ...stages,
+      { value: base, label: "Nova etapa", color: "var(--hs-stage-2)", type: "open" },
+    ]);
   };
 
   const updateStage = (idx: number, patch: Partial<AtsStage>) => {
@@ -318,7 +314,10 @@ function PipelinesPage() {
                 </div>
                 <div className="flex items-center justify-between rounded-md border border-border-subtle bg-surface-sunken px-3 py-2">
                   <div className="min-w-0">
-                    <Label htmlFor="pipeline-default" className="text-sm font-medium text-text-primary">
+                    <Label
+                      htmlFor="pipeline-default"
+                      className="text-sm font-medium text-text-primary"
+                    >
                       Pipeline padrão
                     </Label>
                     <div className="text-xs text-text-tertiary">
@@ -350,8 +349,15 @@ function PipelinesPage() {
                 </Button>
               </div>
 
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-                <SortableContext items={stages.map((s) => s.value)} strategy={verticalListSortingStrategy}>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onDragEnd}
+              >
+                <SortableContext
+                  items={stages.map((s) => s.value)}
+                  strategy={verticalListSortingStrategy}
+                >
                   <div className="flex flex-col gap-2">
                     {stages.map((s, idx) => (
                       <SortableStageRow
@@ -385,8 +391,8 @@ function PipelinesPage() {
                     <Button
                       variant="ghost"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => {
-                        if (confirm("Excluir este pipeline?")) deleteMut.mutate();
+                      onClick={async () => {
+                        if (await confirmDialog("Excluir este pipeline?")) deleteMut.mutate();
                       }}
                     >
                       <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />

@@ -81,6 +81,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import { SlaBadge } from "@/components/sla/sla-badge";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -159,7 +160,6 @@ function TicketsIndex() {
     dealId: draft.deal_id ?? null,
   });
 
-
   const { data: tickets = [], isLoading } = useQuery({
     queryKey: ["tickets"],
     queryFn: async () => {
@@ -186,12 +186,8 @@ function TicketsIndex() {
     queryKey: ["tickets", "contact-lookups", contactIds.join(",")],
     enabled: contactIds.length > 0,
     queryFn: async () =>
-      (
-        await supabase
-          .from("contacts")
-          .select("id,first_name,last_name")
-          .in("id", contactIds)
-      ).data ?? [],
+      (await supabase.from("contacts").select("id,first_name,last_name").in("id", contactIds))
+        .data ?? [],
   });
   const { data: companies = [] } = useQuery({
     queryKey: ["tickets", "company-lookups", companyIds.join(",")],
@@ -282,9 +278,14 @@ function TicketsIndex() {
     };
     let error;
     if (editing) {
-      ({ error } = await supabase.from("tickets").update(payload as never).eq("id", editing.id));
+      ({ error } = await supabase
+        .from("tickets")
+        .update(payload as never)
+        .eq("id", editing.id));
     } else {
-      ({ error } = await supabase.from("tickets").insert({ ...payload, owner_id: user.id } as never));
+      ({ error } = await supabase
+        .from("tickets")
+        .insert({ ...payload, owner_id: user.id } as never));
     }
     if (error) {
       toast.error(error.message);
@@ -299,7 +300,7 @@ function TicketsIndex() {
   }
 
   async function removeOne(id: string) {
-    if (!confirm("Excluir este ticket?")) return;
+    if (!(await confirmDialog("Excluir este ticket?"))) return;
     const { error } = await supabase.from("tickets").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -347,7 +348,7 @@ function TicketsIndex() {
 
   async function bulkDelete() {
     if (selected.size === 0) return;
-    if (!confirm(`Excluir ${selected.size} ticket(s)?`)) return;
+    if (!(await confirmDialog(`Excluir ${selected.size} ticket(s)?`))) return;
     const ids = Array.from(selected);
     const { error } = await supabase.from("tickets").delete().in("id", ids);
     if (error) {
@@ -489,7 +490,6 @@ function TicketsIndex() {
             </Button>
           )}
         </div>
-
 
         <TabsContent value="table" className="mt-4">
           {selected.size > 0 && (
@@ -732,7 +732,6 @@ function TicketsIndex() {
             focusMode={focusMode}
             onOpen={openEdit}
           />
-
         </TabsContent>
 
         <TabsContent value="split" className="mt-4">

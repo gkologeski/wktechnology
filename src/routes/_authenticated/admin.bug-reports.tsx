@@ -40,6 +40,7 @@ import { BugReportResolutionDialog } from "@/components/bug-report/resolution-di
 import { BugReportImages } from "@/components/bug-report/bug-report-images";
 import { notifyBugReportStatusChange } from "@/lib/bug-reports-notify.functions";
 import { HtmlContent } from "@/components/rich-html-editor";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ShieldAlert,
   Bug,
@@ -379,8 +380,9 @@ function BugReportsAdminPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          if (confirm("Excluir este chamado?")) remove.mutate(r.id as string);
+                        onClick={async () => {
+                          if (await confirmDialog("Excluir este chamado?"))
+                            remove.mutate(r.id as string);
                         }}
                         title="Excluir"
                       >

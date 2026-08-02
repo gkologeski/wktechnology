@@ -66,6 +66,7 @@ import Papa from "papaparse";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { EmailInput } from "@/components/ui/email-input";
 import { isEmail } from "@/lib/validators";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type Field = {
   name: string;
@@ -309,7 +310,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Excluir este registro?")) return;
+    if (!(await confirmDialog("Excluir este registro?"))) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from(table).delete().eq("id", id);
     if (error) return toast.error(error.message);
@@ -422,7 +423,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   };
   const deleteCurrentView = async () => {
     if (!view.viewId || view.viewId.startsWith("preset:")) return;
-    if (!confirm("Excluir esta view?")) return;
+    if (!(await confirmDialog("Excluir esta view?"))) return;
     await savedViews.remove.mutateAsync(view.viewId);
     setView({
       viewId: null,
@@ -543,7 +544,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         onApplyView={applyView}
         onAdd={saveAsView}
         onDeleteView={async (id) => {
-          if (!confirm("Excluir esta visualização?")) return;
+          if (!(await confirmDialog("Excluir esta visualização?"))) return;
           await savedViews.remove.mutateAsync(id);
           if (view.viewId === id) {
             setView({

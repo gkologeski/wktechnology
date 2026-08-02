@@ -17,6 +17,7 @@ import { qk } from "@/lib/entity-queries";
 
 import type { Company } from "@/lib/db-types";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/companies/$id")({
   component: CompanyDetail,
@@ -51,7 +52,7 @@ function CompanyDetail() {
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const remove = async () => {
-    if (!confirm("Excluir empresa?")) return;
+    if (!(await confirmDialog("Excluir empresa?"))) return;
     const { error } = await supabase.from("companies").delete().eq("id", company.id);
     if (error) {
       toast.error(error.message);
@@ -147,48 +148,48 @@ function CompanyDetail() {
 
   return (
     <>
-      
       <RecordLayout
         header={header}
         left={
-        <PropertiesPanel
-          entity="companies"
-          table="companies"
-          row={company as unknown as Record<string, unknown> & { id: string }}
-          props={[
-            { key: "name", label: "Nome", primary: true },
-            { key: "domain", label: "Domínio", primary: true },
-            { key: "website", label: "Website", type: "url", primary: true },
-            { key: "industry", label: "Indústria", primary: true },
-            { key: "size", label: "Tamanho", primary: true },
-            { key: "phone", label: "Telefone", type: "tel", primary: true },
-            { key: "cnpj", label: "CNPJ", type: "cnpj", primary: true },
-            { key: "cep", label: "CEP", type: "cep", primary: true },
-            { key: "address", label: "Endereço" },
-            { key: "city", label: "Cidade" },
-            { key: "state", label: "UF" },
-            { key: "notes", label: "Notas" },
-          ]}
-          onSaved={load}
-        />
-      }
-      center={
-        <>
-          <ActivityTimeline relatedKey="related_company_id" relatedId={company.id} />
-        </>
-      }
-      right={
-        <div className="space-y-4">
-          <CompanyHierarchy
-            companyId={company.id}
-            parentId={
-              (company as unknown as { parent_company_id: string | null }).parent_company_id ?? null
-            }
-            ownerId={company.owner_id}
+          <PropertiesPanel
+            entity="companies"
+            table="companies"
+            row={company as unknown as Record<string, unknown> & { id: string }}
+            props={[
+              { key: "name", label: "Nome", primary: true },
+              { key: "domain", label: "Domínio", primary: true },
+              { key: "website", label: "Website", type: "url", primary: true },
+              { key: "industry", label: "Indústria", primary: true },
+              { key: "size", label: "Tamanho", primary: true },
+              { key: "phone", label: "Telefone", type: "tel", primary: true },
+              { key: "cnpj", label: "CNPJ", type: "cnpj", primary: true },
+              { key: "cep", label: "CEP", type: "cep", primary: true },
+              { key: "address", label: "Endereço" },
+              { key: "city", label: "Cidade" },
+              { key: "state", label: "UF" },
+              { key: "notes", label: "Notas" },
+            ]}
+            onSaved={load}
           />
-          <AssociationsPanel entity="company" entityId={company.id} />
-        </div>
-      }
+        }
+        center={
+          <>
+            <ActivityTimeline relatedKey="related_company_id" relatedId={company.id} />
+          </>
+        }
+        right={
+          <div className="space-y-4">
+            <CompanyHierarchy
+              companyId={company.id}
+              parentId={
+                (company as unknown as { parent_company_id: string | null }).parent_company_id ??
+                null
+              }
+              ownerId={company.owner_id}
+            />
+            <AssociationsPanel entity="company" entityId={company.id} />
+          </div>
+        }
       />
     </>
   );

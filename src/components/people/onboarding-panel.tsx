@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 import {
   Select,
@@ -93,13 +94,7 @@ function TaskStatusIcon({ status }: { status: OnbTaskStatus }) {
   }
 }
 
-export function OnboardingPanel({
-  personId,
-  canWrite,
-}: {
-  personId: string;
-  canWrite: boolean;
-}) {
+export function OnboardingPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listOnbPlans);
   const delPlanFn = useServerFn(deleteOnbPlan);
@@ -183,8 +178,8 @@ export function OnboardingPanel({
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-muted-foreground"
-                            onClick={() => {
-                              if (confirm("Excluir plano e todas suas tarefas?")) {
+                            onClick={async () => {
+                              if (await confirmDialog("Excluir plano e todas suas tarefas?")) {
                                 delMut.mutate(plan.id);
                               }
                             }}
@@ -252,8 +247,7 @@ function PlanTasks({
   };
 
   const setStatusMut = useMutation({
-    mutationFn: (v: { id: string; status: OnbTaskStatus }) =>
-      setStatusFn({ data: v }),
+    mutationFn: (v: { id: string; status: OnbTaskStatus }) => setStatusFn({ data: v }),
     onSuccess: invalidate,
     onError: (e: Error) => toast.error(e.message),
   });
@@ -268,8 +262,7 @@ function PlanTasks({
   });
 
   const planStatusMut = useMutation({
-    mutationFn: (status: OnbPlanStatus) =>
-      updatePlanFn({ data: { id: planId, status } }),
+    mutationFn: (status: OnbPlanStatus) => updatePlanFn({ data: { id: planId, status } }),
     onSuccess: () => {
       invalidate();
       toast.success("Status do plano atualizado");
@@ -343,7 +336,9 @@ function PlanTasks({
                 <TaskStatusIcon status={t.status} />
               </button>
               <div className="flex-1 min-w-0">
-                <div className={`text-sm ${t.status === "done" ? "line-through text-muted-foreground" : ""}`}>
+                <div
+                  className={`text-sm ${t.status === "done" ? "line-through text-muted-foreground" : ""}`}
+                >
                   {t.title}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
@@ -355,9 +350,7 @@ function PlanTasks({
               <Select
                 value={t.status}
                 disabled={!canWrite}
-                onValueChange={(v) =>
-                  setStatusMut.mutate({ id: t.id, status: v as OnbTaskStatus })
-                }
+                onValueChange={(v) => setStatusMut.mutate({ id: t.id, status: v as OnbTaskStatus })}
               >
                 <SelectTrigger className="h-7 w-[130px] text-xs">
                   <SelectValue />
@@ -384,8 +377,8 @@ function PlanTasks({
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-muted-foreground"
-                    onClick={() => {
-                      if (confirm("Excluir tarefa?")) delMut.mutate(t.id);
+                    onClick={async () => {
+                      if (await confirmDialog("Excluir tarefa?")) delMut.mutate(t.id);
                     }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -428,9 +421,7 @@ function NewPlanDialog({
 
   const [kind, setKind] = useState<OnbKind>("onboarding");
   const [templateId, setTemplateId] = useState<string>("__none__");
-  const [startedAt, setStartedAt] = useState<string>(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [startedAt, setStartedAt] = useState<string>(new Date().toISOString().slice(0, 10));
   const [target, setTarget] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
@@ -440,10 +431,7 @@ function NewPlanDialog({
     staleTime: 30_000,
   });
 
-  const filteredTemplates = useMemo(
-    () => templates.filter((t) => t.is_active),
-    [templates],
-  );
+  const filteredTemplates = useMemo(() => templates.filter((t) => t.is_active), [templates]);
 
   const createMut = useMutation({
     mutationFn: () =>
@@ -470,9 +458,7 @@ function NewPlanDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Novo plano</DialogTitle>
-          <DialogDescription>
-            Aplique um checklist de admissão ou desligamento.
-          </DialogDescription>
+          <DialogDescription>Aplique um checklist de admissão ou desligamento.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
           <div className="space-y-2">
@@ -510,19 +496,11 @@ function NewPlanDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Início</Label>
-              <Input
-                type="date"
-                value={startedAt}
-                onChange={(e) => setStartedAt(e.target.value)}
-              />
+              <Input type="date" value={startedAt} onChange={(e) => setStartedAt(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Prazo</Label>
-              <Input
-                type="date"
-                value={target}
-                onChange={(e) => setTarget(e.target.value)}
-              />
+              <Input type="date" value={target} onChange={(e) => setTarget(e.target.value)} />
             </div>
           </div>
           <div className="space-y-2">
@@ -588,7 +566,6 @@ function TaskDialog({
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
@@ -670,10 +647,7 @@ function TaskDialog({
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button
-            disabled={mut.isPending || !title.trim()}
-            onClick={() => mut.mutate()}
-          >
+          <Button disabled={mut.isPending || !title.trim()} onClick={() => mut.mutate()}>
             Salvar
           </Button>
         </DialogFooter>

@@ -52,6 +52,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDate } from "@/lib/crm";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/recurring")({
   component: RecurringPage,
@@ -176,7 +177,7 @@ function PlansTab() {
     }
   }
   async function remove(id: string) {
-    if (!confirm("Excluir plano?")) return;
+    if (!(await confirmDialog("Excluir plano?"))) return;
     try {
       await del({ data: { id } });
       qc.invalidateQueries({ queryKey: ["recurring-plans"] });
@@ -458,7 +459,7 @@ function SubscriptionsTab() {
     }
   }
   async function remove(id: string) {
-    if (!confirm("Excluir assinatura e faturas?")) return;
+    if (!(await confirmDialog("Excluir assinatura e faturas?"))) return;
     try {
       await del({ data: { id } });
       qc.invalidateQueries({ queryKey: ["subscriptions"] });

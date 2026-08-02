@@ -29,6 +29,7 @@ import { KbSuggestions } from "@/components/tickets/kb-suggestions";
 import { HtmlContent } from "@/components/rich-html-editor";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
@@ -44,11 +45,7 @@ function TicketDetail() {
   const { data: ticket } = useQuery({
     queryKey: qk.ticket(id),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("tickets")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
+      const { data, error } = await supabase.from("tickets").select("*").eq("id", id).maybeSingle();
       if (error) throw error;
       return (data as TicketRow | null) ?? null;
     },
@@ -112,7 +109,7 @@ function TicketDetail() {
   };
 
   const remove = async () => {
-    if (!confirm("Excluir este ticket?")) return;
+    if (!(await confirmDialog("Excluir este ticket?"))) return;
     const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
     if (error) {
       toast.error(error.message);
@@ -229,7 +226,6 @@ function TicketDetail() {
             { key: "source", label: "Origem", primary: true },
             { key: "due_at", label: "Vencimento", type: "datetime", primary: true },
             { key: "description", label: "Descrição" },
-
           ]}
           onSaved={load}
         />

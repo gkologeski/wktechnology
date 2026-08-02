@@ -10,6 +10,7 @@ import { listMeetings, deleteMeeting } from "@/lib/meetings.functions";
 import { MeetingDetailDrawer } from "./meeting-detail-drawer";
 import { StartVideoButton } from "./start-video-button";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Props {
   entity: "contact" | "lead" | "deal" | "ticket";
@@ -28,7 +29,7 @@ export function MeetingsPanel({ entity, entityId }: Props) {
   });
 
   async function remove(id: string) {
-    if (!confirm("Excluir esta reunião e sua gravação?")) return;
+    if (!(await confirmDialog("Excluir esta reunião e sua gravação?"))) return;
     try {
       await del({ data: { id } });
       toast.success("Reunião excluída");

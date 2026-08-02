@@ -52,11 +52,10 @@ import {
 } from "@/components/ats/candidate/rich-profile-blocks";
 import { formatDateTime } from "@/lib/crm";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 function CandidateLoading() {
-  return (
-    <div className="p-8 text-sm text-text-tertiary">Carregando candidato...</div>
-  );
+  return <div className="p-8 text-sm text-text-tertiary">Carregando candidato...</div>;
 }
 
 function CandidateError({ error, reset }: { error: Error; reset: () => void }) {
@@ -140,9 +139,7 @@ function CandidateDetailPage() {
   }, [load]);
 
   if (loading) {
-    return (
-      <div className="p-8 text-sm text-text-tertiary">Carregando candidato...</div>
-    );
+    return <div className="p-8 text-sm text-text-tertiary">Carregando candidato...</div>;
   }
   if (!data) {
     return (
@@ -159,7 +156,7 @@ function CandidateDetailPage() {
   const status = STATUS_LABELS[data.derived_status];
 
   const handleDelete = async () => {
-    if (!confirm(`Excluir candidato "${c.full_name}"?`)) return;
+    if (!(await confirmDialog(`Excluir candidato "${c.full_name}"?`))) return;
     try {
       await deleteFn({ data: { id: c.id } });
       toast.success("Candidato excluído");
@@ -179,9 +176,7 @@ function CandidateDetailPage() {
         </Button>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold text-text-primary truncate">
-              {c.full_name}
-            </h1>
+            <h1 className="text-2xl font-semibold text-text-primary truncate">{c.full_name}</h1>
             <span
               className={cn(
                 "inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md border",
@@ -273,77 +268,76 @@ function CandidateDetailPage() {
       />
       <RecordLayout
         header={header}
-      left={
-        <div className="space-y-4">
-          <IdentityBlock candidate={c} />
-          <PropertiesPanel
-            candidate={c}
-            onSave={async (patch) => {
-              await saveFn({
-                data: {
-                  id: c.id,
-                  full_name: patch.full_name ?? c.full_name,
-                  email: patch.email ?? c.email ?? "",
-                  phone: patch.phone ?? c.phone ?? null,
-                  linkedin_url: patch.linkedin_url ?? c.linkedin_url ?? "",
-                  location: patch.location ?? c.location ?? null,
-                  current_position: patch.current_position ?? c.current_position ?? null,
-                  current_company: patch.current_company ?? c.current_company ?? null,
-                  skills: patch.skills ?? c.skills,
-                  tags: patch.tags ?? c.tags,
-                  source: (c.source as never) ?? "manual",
-                  notes: patch.notes ?? c.notes ?? null,
-                },
-              });
-              await load();
-            }}
-          />
-          <ExternalLinksBlock candidate={c} />
-        </div>
-      }
-      center={
-        <div className="space-y-6">
-          <AboutBlock candidate={c} />
-          <ApplicationsCard detail={data} onChanged={load} />
-          <ExperienceBlock candidate={c} />
-          <EducationBlock candidate={c} />
-          <ProjectsPublicationsBlock candidate={c} />
-          <VolunteeringBlock candidate={c} />
-          <RecommendationsBlock candidate={c} />
-          <RecentActivityBlock candidate={c} />
-          <InterviewsCard detail={data} />
-          <OffersCard detail={data} />
-          <EventsCard detail={data} />
-        </div>
-      }
-      right={
-        <div className="space-y-4">
-          <CandidateCopilotPanel candidateId={data.candidate.id} />
-          <SignalsBlock candidate={c} />
-          <CurrentCompanyBlock candidate={c} />
-          <PoolsCard
-            detail={data}
-            onRemove={async (mid) => {
-              await removePoolFn({ data: { membership_id: mid } });
-              await load();
-            }}
-          />
-          <FlagsCard detail={data} />
-          {hasDetailedSkills(c) ? (
-            <SkillsDetailedBlock candidate={c} />
-          ) : (
-            <SkillsCard detail={data} />
-          )}
-          <CertificationsLanguagesBlock candidate={c} />
-          <TagsCard detail={data} />
-          <CaptureMetaBlock candidate={c} />
-        </div>
-      }
+        left={
+          <div className="space-y-4">
+            <IdentityBlock candidate={c} />
+            <PropertiesPanel
+              candidate={c}
+              onSave={async (patch) => {
+                await saveFn({
+                  data: {
+                    id: c.id,
+                    full_name: patch.full_name ?? c.full_name,
+                    email: patch.email ?? c.email ?? "",
+                    phone: patch.phone ?? c.phone ?? null,
+                    linkedin_url: patch.linkedin_url ?? c.linkedin_url ?? "",
+                    location: patch.location ?? c.location ?? null,
+                    current_position: patch.current_position ?? c.current_position ?? null,
+                    current_company: patch.current_company ?? c.current_company ?? null,
+                    skills: patch.skills ?? c.skills,
+                    tags: patch.tags ?? c.tags,
+                    source: (c.source as never) ?? "manual",
+                    notes: patch.notes ?? c.notes ?? null,
+                  },
+                });
+                await load();
+              }}
+            />
+            <ExternalLinksBlock candidate={c} />
+          </div>
+        }
+        center={
+          <div className="space-y-6">
+            <AboutBlock candidate={c} />
+            <ApplicationsCard detail={data} onChanged={load} />
+            <ExperienceBlock candidate={c} />
+            <EducationBlock candidate={c} />
+            <ProjectsPublicationsBlock candidate={c} />
+            <VolunteeringBlock candidate={c} />
+            <RecommendationsBlock candidate={c} />
+            <RecentActivityBlock candidate={c} />
+            <InterviewsCard detail={data} />
+            <OffersCard detail={data} />
+            <EventsCard detail={data} />
+          </div>
+        }
+        right={
+          <div className="space-y-4">
+            <CandidateCopilotPanel candidateId={data.candidate.id} />
+            <SignalsBlock candidate={c} />
+            <CurrentCompanyBlock candidate={c} />
+            <PoolsCard
+              detail={data}
+              onRemove={async (mid) => {
+                await removePoolFn({ data: { membership_id: mid } });
+                await load();
+              }}
+            />
+            <FlagsCard detail={data} />
+            {hasDetailedSkills(c) ? (
+              <SkillsDetailedBlock candidate={c} />
+            ) : (
+              <SkillsCard detail={data} />
+            )}
+            <CertificationsLanguagesBlock candidate={c} />
+            <TagsCard detail={data} />
+            <CaptureMetaBlock candidate={c} />
+          </div>
+        }
       />
     </>
   );
 }
-
 
 /* ---------- Left: Properties ---------- */
 type EditablePatch = Partial<CandidateDetail["candidate"]>;
@@ -621,9 +615,7 @@ function OffersCard({ detail }: { detail: CandidateDetail }) {
         detail.offers.map((o) => (
           <div key={o.id} className="px-4 py-3 flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-sm text-text-primary truncate">
-                {o.job_title ?? "Vaga"}
-              </div>
+              <div className="text-sm text-text-primary truncate">{o.job_title ?? "Vaga"}</div>
               <div className="text-xs text-text-tertiary mt-0.5">
                 {o.status}
                 {o.salary_amount != null &&

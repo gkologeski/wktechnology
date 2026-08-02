@@ -17,6 +17,7 @@ import {
 } from "@/lib/contract-approvals.functions";
 import { formatDateTime } from "@/lib/crm";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 const STAGE_LABEL: Record<string, string> = {
   legal: "Jurídico",
@@ -80,7 +81,12 @@ export function ContractApprovalsPanel({ contractId }: { contractId: string }) {
   };
 
   const handleReset = async () => {
-    if (!confirm("Reiniciar o fluxo de aprovação removerá as decisões atuais. Continuar?")) return;
+    if (
+      !(await confirmDialog(
+        "Reiniciar o fluxo de aprovação removerá as decisões atuais. Continuar?",
+      ))
+    )
+      return;
     try {
       await reset({ data: { contractId } });
       toast.success("Fluxo reiniciado");
@@ -112,12 +118,19 @@ export function ContractApprovalsPanel({ contractId }: { contractId: string }) {
             <div className="text-sm text-muted-foreground">Carregando…</div>
           ) : approvals.length === 0 ? (
             <div className="text-sm text-muted-foreground py-4 text-center">
-              Nenhum fluxo de aprovação iniciado. As etapas serão criadas automaticamente conforme o tipo do contrato.
+              Nenhum fluxo de aprovação iniciado. As etapas serão criadas automaticamente conforme o
+              tipo do contrato.
             </div>
           ) : (
             <div className="space-y-2">
               {(approvals as any[]).map((a, idx) => (
-                <ApprovalRow key={a.id} approval={a} index={idx} onDecide={invalidate} nameFor={nameFor} />
+                <ApprovalRow
+                  key={a.id}
+                  approval={a}
+                  index={idx}
+                  onDecide={invalidate}
+                  nameFor={nameFor}
+                />
               ))}
             </div>
           )}
@@ -130,16 +143,22 @@ export function ContractApprovalsPanel({ contractId }: { contractId: string }) {
         </CardHeader>
         <CardContent>
           {eventList.length === 0 ? (
-            <div className="text-sm text-muted-foreground py-4 text-center">Nenhum evento registrado ainda.</div>
+            <div className="text-sm text-muted-foreground py-4 text-center">
+              Nenhum evento registrado ainda.
+            </div>
           ) : (
             <ol className="relative border-l border-border pl-5 space-y-3">
               {(eventList as any[]).map((e) => (
                 <li key={e.id} className="relative">
                   <span className="absolute -left-[27px] top-1 w-3 h-3 rounded-full bg-primary/70" />
-                  <div className="text-sm font-medium">{EVENT_LABEL[e.event_type] ?? e.event_type}</div>
+                  <div className="text-sm font-medium">
+                    {EVENT_LABEL[e.event_type] ?? e.event_type}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {formatDateTime(e.created_at)} · {nameFor(e.actor_id)}
-                    {e.payload?.stage ? ` · ${STAGE_LABEL[e.payload.stage] ?? e.payload.stage}` : ""}
+                    {e.payload?.stage
+                      ? ` · ${STAGE_LABEL[e.payload.stage] ?? e.payload.stage}`
+                      : ""}
                   </div>
                   {e.payload?.comment && (
                     <div className="text-xs mt-1 rounded-md bg-muted/50 p-2 flex gap-2">
@@ -201,7 +220,9 @@ function ApprovalRow({
             {index + 1}
           </div>
           <div className="min-w-0">
-            <div className="font-medium text-sm">{STAGE_LABEL[approval.stage] ?? approval.stage}</div>
+            <div className="font-medium text-sm">
+              {STAGE_LABEL[approval.stage] ?? approval.stage}
+            </div>
             <div className="text-xs text-muted-foreground">
               {approval.decided_at ? (
                 <>
@@ -238,7 +259,12 @@ function ApprovalRow({
             className="text-sm"
           />
           <div className="flex justify-end gap-2">
-            <Button size="sm" variant="outline" onClick={() => submit("rejected")} disabled={saving}>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => submit("rejected")}
+              disabled={saving}
+            >
               <XCircle className="h-4 w-4 mr-2" /> Rejeitar
             </Button>
             <Button size="sm" onClick={() => submit("approved")} disabled={saving}>

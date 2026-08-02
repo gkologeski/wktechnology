@@ -15,18 +15,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import {
-  PageHeader,
-  EmptyState,
-  Skeletons,
-  MetaPill,
-} from "@/components/techhire/ui";
-import {
-  listOffers,
-  sendOffer,
-  cancelOffer,
-  deleteOffer,
-} from "@/lib/ats/offers.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { PageHeader, EmptyState, Skeletons, MetaPill } from "@/components/techhire/ui";
+import { listOffers, sendOffer, cancelOffer, deleteOffer } from "@/lib/ats/offers.functions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/offers")({
   component: OffersPage,
@@ -125,7 +116,7 @@ function OffersPage() {
     }
   };
   const handleCancel = async (id: string) => {
-    if (!confirm("Cancelar esta oferta?")) return;
+    if (!(await confirmDialog("Cancelar esta oferta?"))) return;
     try {
       await cancel({ data: { id } });
       toast.success("Oferta cancelada");
@@ -135,7 +126,7 @@ function OffersPage() {
     }
   };
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir definitivamente?")) return;
+    if (!(await confirmDialog("Excluir definitivamente?"))) return;
     try {
       await del({ data: { id } });
       toast.success("Excluída");
@@ -156,12 +147,7 @@ function OffersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow="ATS"
-        title="Ofertas"
-        description={description}
-        descriptionLive
-      />
+      <PageHeader eyebrow="ATS" title="Ofertas" description={description} descriptionLive />
 
       {loading ? (
         <div className="rounded-lg border border-border-subtle bg-surface-1 p-2 shadow-xs">
@@ -196,9 +182,7 @@ function OffersPage() {
                       {r.ats_candidates?.full_name ?? "—"}
                     </div>
                     {r.ats_candidates?.email && (
-                      <div className="text-xs text-text-tertiary">
-                        {r.ats_candidates.email}
-                      </div>
+                      <div className="text-xs text-text-tertiary">{r.ats_candidates.email}</div>
                     )}
                   </TableCell>
                   <TableCell className="text-sm text-text-secondary">
@@ -216,22 +200,13 @@ function OffersPage() {
                   <TableCell className="text-right">
                     <div className="inline-flex items-center gap-1">
                       {r.status === "draft" && (
-                        <Button
-                          size="sm"
-                          variant="default"
-                          onClick={() => handleSend(r.id)}
-                        >
+                        <Button size="sm" variant="default" onClick={() => handleSend(r.id)}>
                           <Send className="h-3.5 w-3.5 mr-1" />
                           Enviar
                         </Button>
                       )}
                       {r.status === "sent" && r.esign_document_id && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          asChild
-                        >
+                        <Button size="icon" variant="ghost" className="h-8 w-8" asChild>
                           <a
                             href={`/sign-status/${r.esign_document_id}`}
                             target="_blank"

@@ -32,6 +32,7 @@ import {
 import { Plus, Trash2, Pencil, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/catalog/services")({
   component: ServiceCatalogPage,
@@ -97,11 +98,15 @@ function ServiceCatalogPage() {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["service_catalog"],
     queryFn: async () => {
-      const { data, error } = await (supabase as unknown as {
-        from: (t: string) => {
-          select: (s: string) => { order: (c: string) => Promise<{ data: unknown; error: unknown }> };
-        };
-      })
+      const { data, error } = await (
+        supabase as unknown as {
+          from: (t: string) => {
+            select: (s: string) => {
+              order: (c: string) => Promise<{ data: unknown; error: unknown }>;
+            };
+          };
+        }
+      )
         .from("service_catalog")
         .select("*")
         .order("name");
@@ -188,7 +193,7 @@ function ServiceCatalogPage() {
     qc.invalidateQueries({ queryKey: ["catalog_items"] });
   }
   async function remove(id: string) {
-    if (!confirm("Excluir este serviço do catálogo?")) return;
+    if (!(await confirmDialog("Excluir este serviço do catálogo?"))) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("service_catalog").delete().eq("id", id);
     if (error) {
@@ -299,9 +304,7 @@ function ServiceCatalogPage() {
                         <span>Custo {formatCurrency(s.cost, s.currency)}</span>
                       )}
                       {Number(s.tax_rate) > 0 && <span>Imposto {s.tax_rate}%</span>}
-                      {s.default_sla_hours != null && (
-                        <span>SLA {s.default_sla_hours}h</span>
-                      )}
+                      {s.default_sla_hours != null && <span>SLA {s.default_sla_hours}h</span>}
                     </div>
                     {s.description && (
                       <p className="text-xs text-muted-foreground mt-1 line-clamp-2 whitespace-pre-wrap">
@@ -398,9 +401,7 @@ function ServiceCatalogPage() {
                 <Label>Moeda</Label>
                 <Input
                   value={draft.currency ?? "BRL"}
-                  onChange={(e) =>
-                    setDraft({ ...draft, currency: e.target.value.toUpperCase() })
-                  }
+                  onChange={(e) => setDraft({ ...draft, currency: e.target.value.toUpperCase() })}
                 />
               </div>
               <div className="space-y-1.5">
@@ -437,9 +438,7 @@ function ServiceCatalogPage() {
                   type="number"
                   step="0.01"
                   value={String(draft.tax_rate ?? 0)}
-                  onChange={(e) =>
-                    setDraft({ ...draft, tax_rate: Number(e.target.value) })
-                  }
+                  onChange={(e) => setDraft({ ...draft, tax_rate: Number(e.target.value) })}
                 />
               </div>
               <div className="space-y-1.5">

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -34,8 +35,7 @@ type LE = {
   totals: { receivable: number; payable: number; count: number };
 };
 
-const fmt = (n: number) =>
-  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function LegalEntitiesPage() {
   const qc = useQueryClient();
@@ -118,10 +118,12 @@ export function LegalEntitiesPage() {
 
   async function remove(row: LE) {
     if (row.totals.count > 0) {
-      toast.error(`Existem ${row.totals.count} lançamentos vinculados. Desative em vez de excluir.`);
+      toast.error(
+        `Existem ${row.totals.count} lançamentos vinculados. Desative em vez de excluir.`,
+      );
       return;
     }
-    if (!confirm(`Excluir ${row.name}?`)) return;
+    if (!(await confirmDialog(`Excluir ${row.name}?`))) return;
     try {
       await del({ data: { id: row.id } });
       toast.success("Excluída");

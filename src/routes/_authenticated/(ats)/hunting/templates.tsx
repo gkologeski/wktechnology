@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { TokenPills } from "@/components/ui/token-pills";
 import { HUNTING_TOKENS } from "@/lib/message-tokens-catalog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 import {
   Select,
@@ -135,7 +136,9 @@ function HuntingTemplatesPage() {
 
       {q.isLoading ? (
         <div className="space-y-2">
-          {Array.from({ length: 3 }).map((_, i) => <RowSkeleton key={i} />)}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <RowSkeleton key={i} />
+          ))}
         </div>
       ) : templates.length === 0 ? (
         <EmptyState
@@ -169,9 +172,7 @@ function HuntingTemplatesPage() {
                         Assunto: {t.subject}
                       </p>
                     ) : null}
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                      {t.body}
-                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{t.body}</p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <Button size="sm" variant="ghost" onClick={() => openEdit(t)}>
@@ -180,8 +181,8 @@ function HuntingTemplatesPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm(`Remover "${t.name}"?`)) del.mutate(t.id);
+                      onClick={async () => {
+                        if (await confirmDialog(`Remover "${t.name}"?`)) del.mutate(t.id);
                       }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -215,9 +216,7 @@ function HuntingTemplatesPage() {
                   <Label>Canal</Label>
                   <Select
                     value={form.channel}
-                    onValueChange={(v) =>
-                      setForm({ ...form, channel: v as typeof form.channel })
-                    }
+                    onValueChange={(v) => setForm({ ...form, channel: v as typeof form.channel })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -242,9 +241,7 @@ function HuntingTemplatesPage() {
                   <TokenPills
                     className="mt-1.5"
                     tokens={HUNTING_TOKENS}
-                    onInsert={(t) =>
-                      setForm((f) => ({ ...f, subject: (f.subject ?? "") + t }))
-                    }
+                    onInsert={(t) => setForm((f) => ({ ...f, subject: (f.subject ?? "") + t }))}
                   />
                 </div>
               )}

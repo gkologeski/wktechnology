@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { ImportContractWizard } from "@/components/import-contract-wizard";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/proposals/")({
   component: ProposalsPage,
@@ -169,8 +170,8 @@ function ProposalsPage() {
                 <Button
                   size="icon"
                   variant="ghost"
-                  onClick={() => {
-                    if (confirm("Remover proposta?")) delM.mutate(p.id);
+                  onClick={async () => {
+                    if (await confirmDialog("Remover proposta?")) delM.mutate(p.id);
                   }}
                 >
                   <Trash2 className="h-4 w-4" />

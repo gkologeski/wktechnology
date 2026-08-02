@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Save, Trash2, Star, StarOff, Play, Download } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   REPORT_ENTITIES,
   listReports,
@@ -49,7 +50,9 @@ import {
 } from "recharts";
 
 const compactNumber = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(Number(v) || 0);
+  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(
+    Number(v) || 0,
+  );
 
 export const Route = createFileRoute("/_authenticated/reports")({
   component: ReportsPage,
@@ -150,7 +153,7 @@ function ReportsPage() {
     }
   }
   async function remove(id: string) {
-    if (!confirm("Excluir relatório?")) return;
+    if (!(await confirmDialog("Excluir relatório?"))) return;
     try {
       await del({ data: { id } });
       if (selectedId === id) newReport();

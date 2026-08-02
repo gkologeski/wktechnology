@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -57,13 +58,7 @@ function severityClass(s: IncidentSeverity) {
   }
 }
 
-export function IncidentsPanel({
-  personId,
-  canWrite,
-}: {
-  personId: string;
-  canWrite: boolean;
-}) {
+export function IncidentsPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listIncidents);
   const upsertFn = useServerFn(upsertIncident);
@@ -159,8 +154,8 @@ export function IncidentsPanel({
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => {
-                          if (confirm("Remover incidente?")) del.mutate(r.id);
+                        onClick={async () => {
+                          if (await confirmDialog("Remover incidente?")) del.mutate(r.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />

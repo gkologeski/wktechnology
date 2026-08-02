@@ -26,6 +26,7 @@ import {
   clearHubspotLocalTables,
 } from "@/lib/integrations/hubspot.functions";
 import { ImportTimeline } from "./import-timeline";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type Obj = "companies" | "contacts" | "deals" | "leads" | "tickets" | "activities";
 
@@ -190,7 +191,7 @@ export function HubspotImportWizard() {
     try {
       const toClear = (Object.keys(clearScope) as Obj[]).filter((k) => clearScope[k]);
       if (toClear.length > 0) {
-        const ok = window.confirm(
+        const ok = await confirmDialog(
           `Tem certeza que deseja apagar TODOS os registros locais das tabelas: ${toClear.join(", ")}? Esta ação é irreversível.`,
         );
         if (!ok) return;

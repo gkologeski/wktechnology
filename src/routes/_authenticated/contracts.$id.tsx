@@ -19,17 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  getContract,
-  updateContract,
-  deleteContract,
-} from "@/lib/contracts.functions";
+import { getContract, updateContract, deleteContract } from "@/lib/contracts.functions";
 import { ContractServices } from "@/components/services/contract-services";
 import { ContractApprovalsPanel } from "@/components/contracts/contract-approvals-panel";
 import { ContractParentLink } from "@/components/contracts/contract-parent-link";
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
-
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({ meta: [{ title: "Contrato" }] }),
@@ -128,7 +124,7 @@ function ContractDetail() {
   }
 
   async function remove() {
-    if (!confirm("Excluir este contrato?")) return;
+    if (!(await confirmDialog("Excluir este contrato?"))) return;
     try {
       await del({ data: { id } });
       toast.success("Contrato excluído.");
@@ -173,7 +169,8 @@ function ContractDetail() {
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mt-0.5 font-mono">
-                {contract.number} · {formatCurrency(Number(contract.total_value), contract.currency)}
+                {contract.number} ·{" "}
+                {formatCurrency(Number(contract.total_value), contract.currency)}
                 {contract.starts_at && (
                   <span> · Início {formatDateTime(contract.starts_at).split(" ")[0]}</span>
                 )}
@@ -305,16 +302,19 @@ function ContractDetail() {
         role={role}
         currency={contract.currency ?? "BRL"}
         totalValue={Number(contract.total_value ?? 0)}
-        parent={(contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] }).parent ?? null}
-        children={(contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] }).children ?? []}
+        parent={
+          (contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] }).parent ??
+          null
+        }
+        children={
+          (contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] })
+            .children ?? []
+        }
       />
 
       <ContractApprovalsPanel contractId={contract.id} />
 
       <ImportedFieldsCard contract={contract} />
-
-
-
 
       <Card>
         <CardHeader className="pb-3">
@@ -329,7 +329,6 @@ function ContractDetail() {
           />
         </CardContent>
       </Card>
-
 
       {contract.deal_id && (
         <Card>
@@ -412,11 +411,22 @@ function ImportedFieldsCard({ contract }: { contract: ImportedFields }) {
     ],
     [
       "Reembolso de despesas (dias)",
-      contract.expense_reimbursement_days != null ? String(contract.expense_reimbursement_days) : null,
+      contract.expense_reimbursement_days != null
+        ? String(contract.expense_reimbursement_days)
+        : null,
     ],
-    ["Multa compensatória", contract.penalty_percent != null ? `${contract.penalty_percent}%` : null],
-    ["Prazo para sanar (dias)", contract.cure_period_days != null ? String(contract.cure_period_days) : null],
-    ["Carência sem multa (dias)", contract.trial_period_days != null ? String(contract.trial_period_days) : null],
+    [
+      "Multa compensatória",
+      contract.penalty_percent != null ? `${contract.penalty_percent}%` : null,
+    ],
+    [
+      "Prazo para sanar (dias)",
+      contract.cure_period_days != null ? String(contract.cure_period_days) : null,
+    ],
+    [
+      "Carência sem multa (dias)",
+      contract.trial_period_days != null ? String(contract.trial_period_days) : null,
+    ],
     [
       "Aviso resilição unilateral (dias)",
       contract.unilateral_termination_notice_days != null

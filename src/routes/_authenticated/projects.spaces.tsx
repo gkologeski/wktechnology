@@ -4,7 +4,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ChevronDown, ChevronRight, Folder, LayoutGrid, List as ListIcon, Plus, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  LayoutGrid,
+  List as ListIcon,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -35,12 +43,16 @@ import {
   deleteList,
 } from "@/lib/project-hierarchy.functions";
 import { CreateListFromTemplateButton } from "@/components/projects/list-templates-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/spaces")({
   head: () => ({
     meta: [
       { title: "Espaços — TechProjects" },
-      { name: "description", content: "Organize projetos em Espaços, Pastas e Listas no estilo ClickUp." },
+      {
+        name: "description",
+        content: "Organize projetos em Espaços, Pastas e Listas no estilo ClickUp.",
+      },
     ],
   }),
   component: SpacesHub,
@@ -137,16 +149,29 @@ function NewSpaceButton({ onCreated }: { onCreated: () => void }) {
         <div className="space-y-3">
           <div>
             <label className="text-sm font-medium">Nome</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Engenharia" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex.: Engenharia"
+            />
           </div>
           <div>
             <label className="text-sm font-medium">Cor</label>
-            <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-24" />
+            <Input
+              type="color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              className="h-10 w-24"
+            />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => m.mutate()} disabled={!name.trim() || m.isPending}>Criar</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={() => m.mutate()} disabled={!name.trim() || m.isPending}>
+            Criar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -187,10 +212,7 @@ function SpaceCard({
         >
           {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         </button>
-        <span
-          className="h-3 w-3 rounded-full"
-          style={{ background: space.color ?? "#94a3b8" }}
-        />
+        <span className="h-3 w-3 rounded-full" style={{ background: space.color ?? "#94a3b8" }} />
         <div className="flex-1 min-w-0">
           <div className="font-medium truncate">{space.name}</div>
           {space.description ? (
@@ -212,8 +234,8 @@ function SpaceCard({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               className="text-destructive"
-              onClick={() => {
-                if (confirm("Remover espaço e tudo dentro dele?")) delSpaceM.mutate();
+              onClick={async () => {
+                if (await confirmDialog("Remover espaço e tudo dentro dele?")) delSpaceM.mutate();
               }}
             >
               <Trash2 className="h-4 w-4 mr-2" /> Remover
@@ -275,13 +297,18 @@ function FolderRowUI({
         <Folder className="h-4 w-4 text-muted-foreground" />
         <div className="flex-1 text-sm font-medium">{folder.name}</div>
         <NewListButton spaceId={folder.space_id} folderId={folder.id} onCreated={onChanged} />
-        <CreateListFromTemplateButton spaceId={folder.space_id} folderId={folder.id} onCreated={onChanged} />
+        <CreateListFromTemplateButton
+          spaceId={folder.space_id}
+          folderId={folder.id}
+          onCreated={onChanged}
+        />
         <Button
           variant="ghost"
           size="icon"
           className="h-7 w-7"
-          onClick={() => {
-            if (confirm("Remover pasta? As listas ficarão soltas no espaço.")) delM.mutate();
+          onClick={async () => {
+            if (await confirmDialog("Remover pasta? As listas ficarão soltas no espaço."))
+              delM.mutate();
           }}
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -312,7 +339,10 @@ function ListRowUI({ list, onChanged }: { list: ListRow; onChanged: () => void }
   });
   return (
     <div className="flex items-center gap-2 rounded border bg-background/50 px-2 py-1.5">
-      <ListIcon className="h-4 w-4" style={{ color: list.color ?? "hsl(var(--muted-foreground))" }} />
+      <ListIcon
+        className="h-4 w-4"
+        style={{ color: list.color ?? "hsl(var(--muted-foreground))" }}
+      />
       <Link
         to="/projects/lists/$id"
         params={{ id: list.id }}
@@ -333,8 +363,8 @@ function ListRowUI({ list, onChanged }: { list: ListRow; onChanged: () => void }
         variant="ghost"
         size="icon"
         className="h-7 w-7"
-        onClick={() => {
-          if (confirm("Remover lista?")) delM.mutate();
+        onClick={async () => {
+          if (await confirmDialog("Remover lista?")) delM.mutate();
         }}
       >
         <Trash2 className="h-3.5 w-3.5" />
@@ -370,8 +400,12 @@ function NewFolderButton({ spaceId, onCreated }: { spaceId: string; onCreated: (
         </DialogHeader>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome da pasta" />
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => m.mutate()} disabled={!name.trim() || m.isPending}>Criar</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={() => m.mutate()} disabled={!name.trim() || m.isPending}>
+            Criar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -397,7 +431,9 @@ function NewListButton({
     queryKey: ["projects", "picker"],
     queryFn: async () => {
       const { listProjects } = await import("@/lib/projects.functions");
-      return await (listProjects as unknown as (a: { data: unknown }) => Promise<{ id: string; name: string }[]>)({ data: {} });
+      return await (
+        listProjects as unknown as (a: { data: unknown }) => Promise<{ id: string; name: string }[]>
+      )({ data: {} });
     },
     staleTime: 60_000,
     enabled: open,
@@ -437,7 +473,11 @@ function NewListButton({
         <div className="space-y-3">
           <div>
             <label className="text-sm font-medium">Nome</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Backlog Q1" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex.: Backlog Q1"
+            />
           </div>
           <div>
             <label className="text-sm font-medium">Projeto vinculado (opcional)</label>
@@ -448,7 +488,9 @@ function NewListButton({
             >
               <option value="">— Sem projeto —</option>
               {projects.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
               ))}
             </select>
             <p className="text-xs text-muted-foreground mt-1">
@@ -457,8 +499,12 @@ function NewListButton({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => m.mutate()} disabled={!name.trim() || m.isPending}>Criar</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={() => m.mutate()} disabled={!name.trim() || m.isPending}>
+            Criar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

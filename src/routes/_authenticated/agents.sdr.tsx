@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Save } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listPlaybooks,
   upsertPlaybook,
@@ -97,7 +98,7 @@ function SdrAgentPage() {
 
   async function remove(id?: string) {
     if (!id) return;
-    if (!confirm("Excluir playbook?")) return;
+    if (!(await confirmDialog("Excluir playbook?"))) return;
     await delFn({ data: { id } });
     toast.success("Excluído");
     setActive(empty);

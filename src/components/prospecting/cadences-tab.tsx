@@ -30,13 +30,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { AtsSectionHeader, EmptyState } from "@/components/ats/ui";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listCadences,
   getCadence,
@@ -149,8 +145,8 @@ export function CadencesTab() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => {
-                      if (confirm(`Excluir "${c.name}"?`)) delMut.mutate(c.id);
+                    onClick={async () => {
+                      if (await confirmDialog(`Excluir "${c.name}"?`)) delMut.mutate(c.id);
                     }}
                     aria-label="Excluir"
                   >
@@ -232,7 +228,11 @@ function CadenceDialog({
           </div>
           <div className="space-y-1">
             <Label>Descrição</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+            />
           </div>
           <div className="space-y-1">
             <Label>Escopo</Label>
@@ -400,9 +400,7 @@ function StepForm({
               min={6}
               max={48}
               value={draft.poll_interval_hours}
-              onChange={(e) =>
-                set("poll_interval_hours", Math.max(6, Number(e.target.value) || 6))
-              }
+              onChange={(e) => set("poll_interval_hours", Math.max(6, Number(e.target.value) || 6))}
             />
           </div>
           <div className="space-y-1">
@@ -667,9 +665,7 @@ function CadenceEditorSheet({
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={() =>
-                                setEditing({ order: s.step_order, draft: toDraft(s) })
-                              }
+                              onClick={() => setEditing({ order: s.step_order, draft: toDraft(s) })}
                               aria-label="Editar passo"
                             >
                               <Pencil className="w-4 h-4" />
@@ -677,8 +673,9 @@ function CadenceEditorSheet({
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={() => {
-                                if (confirm("Excluir este passo?")) removeStep.mutate(s.id);
+                              onClick={async () => {
+                                if (await confirmDialog("Excluir este passo?"))
+                                  removeStep.mutate(s.id);
                               }}
                               aria-label="Excluir"
                             >

@@ -4,22 +4,12 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import {
-  Bookmark,
-  BookmarkPlus,
-  ChevronDown,
-  Trash2,
-  Loader2,
-} from "lucide-react";
+import { Bookmark, BookmarkPlus, ChevronDown, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +34,7 @@ import {
   type WorkflowActionTemplateRow,
 } from "@/lib/workflow-action-templates.functions";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowEntity } from "@/lib/workflows/types";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Props {
   action: WorkflowAction;
@@ -149,8 +140,13 @@ export function ActionTemplatesBar({ action, entity, onApply }: Props) {
             {!isLoading && items.length === 0 && (
               <div className="px-3 py-4 text-xs text-muted-foreground">
                 Nenhum modelo salvo para <b>{ACTION_LABELS[actionType] ?? actionType}</b>
-                {tableName ? <> em <b>{tableName}</b></> : null}. Configure a
-                ação e clique em "Salvar como modelo".
+                {tableName ? (
+                  <>
+                    {" "}
+                    em <b>{tableName}</b>
+                  </>
+                ) : null}
+                . Configure a ação e clique em "Salvar como modelo".
               </div>
             )}
             {items.map((t) => (
@@ -158,11 +154,7 @@ export function ActionTemplatesBar({ action, entity, onApply }: Props) {
                 key={t.id}
                 className="group flex items-start gap-2 border-b border-border/40 px-3 py-2 last:border-b-0 hover:bg-muted/50"
               >
-                <button
-                  type="button"
-                  onClick={() => apply(t)}
-                  className="flex-1 text-left"
-                >
+                <button type="button" onClick={() => apply(t)} className="flex-1 text-left">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-medium">{t.name}</span>
                     {t.visibility === "shared" && (
@@ -176,15 +168,13 @@ export function ActionTemplatesBar({ action, entity, onApply }: Props) {
                       {t.description}
                     </p>
                   )}
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    Usado {t.usage_count}×
-                  </p>
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">Usado {t.usage_count}×</p>
                 </button>
                 <button
                   type="button"
                   aria-label={`Excluir modelo ${t.name}`}
-                  onClick={() => {
-                    if (confirm(`Excluir o modelo "${t.name}"?`)) {
+                  onClick={async () => {
+                    if (await confirmDialog(`Excluir o modelo "${t.name}"?`)) {
                       removeMut.mutate(t.id);
                     }
                   }}
@@ -265,8 +255,8 @@ function SaveTemplateDialog({
         <DialogHeader>
           <DialogTitle>Salvar como modelo</DialogTitle>
           <DialogDescription>
-            O modelo guarda todos os valores, variáveis e mapeamentos desta ação
-            para reutilizar em outros workflows.
+            O modelo guarda todos os valores, variáveis e mapeamentos desta ação para reutilizar em
+            outros workflows.
           </DialogDescription>
         </DialogHeader>
 
@@ -292,7 +282,10 @@ function SaveTemplateDialog({
           </div>
           <div>
             <Label className="text-xs">Visibilidade</Label>
-            <Select value={visibility} onValueChange={(v) => setVisibility(v as "personal" | "shared")}>
+            <Select
+              value={visibility}
+              onValueChange={(v) => setVisibility(v as "personal" | "shared")}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -313,11 +306,10 @@ function SaveTemplateDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button
-            onClick={() => saveMut.mutate()}
-            disabled={!name.trim() || saveMut.isPending}
-          >
-            {saveMut.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />}
+          <Button onClick={() => saveMut.mutate()} disabled={!name.trim() || saveMut.isPending}>
+            {saveMut.isPending && (
+              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden />
+            )}
             Salvar modelo
           </Button>
         </DialogFooter>

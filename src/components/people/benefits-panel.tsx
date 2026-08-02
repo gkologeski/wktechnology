@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Select,
   SelectContent,
@@ -45,13 +46,7 @@ const brl = (n: number | null | undefined) =>
     maximumFractionDigits: 2,
   });
 
-export function BenefitsPanel({
-  personId,
-  canWrite,
-}: {
-  personId: string;
-  canWrite: boolean;
-}) {
+export function BenefitsPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listPeopleBenefits);
   const costFn = useServerFn(getPersonTotalCost);
@@ -81,10 +76,7 @@ export function BenefitsPanel({
 
   const activeRows = rows.filter((r) => r.active);
   const benefitsTotal = activeRows.reduce((sum, r) => sum + Number(r.monthly_value), 0);
-  const employeeShareTotal = activeRows.reduce(
-    (sum, r) => sum + Number(r.employee_share),
-    0,
-  );
+  const employeeShareTotal = activeRows.reduce((sum, r) => sum + Number(r.employee_share), 0);
 
   return (
     <div className="space-y-4">
@@ -157,19 +149,12 @@ export function BenefitsPanel({
           ) : (
             <div className="divide-y">
               {rows.map((r) => (
-                <div
-                  key={r.id}
-                  className="flex items-start justify-between py-3 gap-3"
-                >
+                <div key={r.id} className="flex items-start justify-between py-3 gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium">
-                        {BENEFIT_TYPE_LABELS[r.benefit_type]}
-                      </span>
+                      <span className="font-medium">{BENEFIT_TYPE_LABELS[r.benefit_type]}</span>
                       {r.provider ? (
-                        <span className="text-sm text-muted-foreground">
-                          · {r.provider}
-                        </span>
+                        <span className="text-sm text-muted-foreground">· {r.provider}</span>
                       ) : null}
                       {r.plan_name ? (
                         <Badge variant="outline" className="text-xs">
@@ -209,8 +194,8 @@ export function BenefitsPanel({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          if (confirm("Remover este benefício?")) del.mutate(r.id);
+                        onClick={async () => {
+                          if (await confirmDialog("Remover este benefício?")) del.mutate(r.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -224,12 +209,7 @@ export function BenefitsPanel({
         </CardContent>
       </Card>
 
-      <BenefitDialog
-        personId={personId}
-        open={open}
-        onClose={() => setOpen(false)}
-        row={editing}
-      />
+      <BenefitDialog personId={personId} open={open} onClose={() => setOpen(false)} row={editing} />
     </div>
   );
 }
@@ -253,9 +233,7 @@ function BenefitDialog({
   );
   const [provider, setProvider] = useState(row?.provider ?? "");
   const [planName, setPlanName] = useState(row?.plan_name ?? "");
-  const [monthlyValue, setMonthlyValue] = useState<string>(
-    row ? String(row.monthly_value) : "0",
-  );
+  const [monthlyValue, setMonthlyValue] = useState<string>(row ? String(row.monthly_value) : "0");
   const [employeeShare, setEmployeeShare] = useState<string>(
     row ? String(row.employee_share) : "0",
   );
@@ -303,10 +281,7 @@ function BenefitDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Tipo</Label>
-              <Select
-                value={benefitType}
-                onValueChange={(v) => setBenefitType(v as BenefitType)}
-              >
+              <Select value={benefitType} onValueChange={(v) => setBenefitType(v as BenefitType)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -361,19 +336,11 @@ function BenefitDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Início</Label>
-              <Input
-                type="date"
-                value={startsOn}
-                onChange={(e) => setStartsOn(e.target.value)}
-              />
+              <Input type="date" value={startsOn} onChange={(e) => setStartsOn(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Fim</Label>
-              <Input
-                type="date"
-                value={endsOn}
-                onChange={(e) => setEndsOn(e.target.value)}
-              />
+              <Input type="date" value={endsOn} onChange={(e) => setEndsOn(e.target.value)} />
             </div>
           </div>
           <div className="flex items-center justify-between rounded-md border p-3">

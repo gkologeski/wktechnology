@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ShieldCheck, ShieldAlert, LogOut, Trash2, RefreshCcw } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/security")({
   component: SecurityPage,
@@ -121,7 +122,7 @@ function SecurityPage() {
   };
 
   const removeFactor = async (factorId: string) => {
-    if (!confirm("Remover este fator de autenticação?")) return;
+    if (!(await confirmDialog("Remover este fator de autenticação?"))) return;
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
     if (error) {
       toast.error(error.message);
@@ -132,7 +133,7 @@ function SecurityPage() {
   };
 
   const signOutAll = async () => {
-    if (!confirm("Encerrar a sessão em todos os dispositivos?")) return;
+    if (!(await confirmDialog("Encerrar a sessão em todos os dispositivos?"))) return;
     const { error } = await supabase.auth.signOut({ scope: "global" });
     if (error) {
       toast.error(error.message);

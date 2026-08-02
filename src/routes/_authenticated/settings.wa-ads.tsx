@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listAdSlugs,
   upsertAdSlug,
@@ -253,7 +254,7 @@ function WaAdsPage() {
                     variant="ghost"
                     size="icon"
                     onClick={async () => {
-                      if (!confirm("Apagar este slug?")) return;
+                      if (!(await confirmDialog("Apagar este slug?"))) return;
                       await remove({ data: { id: s.id } });
                       refresh();
                     }}

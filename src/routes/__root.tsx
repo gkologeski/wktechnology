@@ -11,7 +11,9 @@ import { useEffect } from "react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
+import { ConfirmDialogHost } from "@/components/ui/confirm-dialog";
 import { Toaster } from "@/components/ui/sonner";
+
 import { supabase } from "@/integrations/supabase/client";
 import { I18nProvider } from "@/lib/i18n";
 import { BrandingProvider } from "@/lib/branding";
@@ -181,7 +183,9 @@ function RootComponent() {
               <Outlet />
             </main>
             <AgentTrigger />
+            <ConfirmDialogHost />
             <Toaster richColors position="top-right" />
+
           </BrandingProvider>
         </I18nProvider>
       </AuthProvider>

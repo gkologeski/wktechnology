@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Linkedin, Link2, Power, RefreshCw, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   getLinkedinAccount,
   startLinkedinConnect,
@@ -51,7 +52,10 @@ const STATUS_LABEL: Record<AccountRow["status"], string> = {
   disconnected: "Desconectado",
   error: "Erro",
 };
-const STATUS_VARIANT: Record<AccountRow["status"], "default" | "secondary" | "destructive" | "outline"> = {
+const STATUS_VARIANT: Record<
+  AccountRow["status"],
+  "default" | "secondary" | "destructive" | "outline"
+> = {
   connected: "default",
   pending: "secondary",
   disconnected: "outline",
@@ -124,7 +128,7 @@ function LinkedinIntegrationPage() {
   };
 
   const onDisconnect = async () => {
-    if (!confirm("Desconectar conta LinkedIn?")) return;
+    if (!(await confirmDialog("Desconectar conta LinkedIn?"))) return;
     await disconnect({});
     toast.success("Desconectada.");
     refresh();
@@ -200,7 +204,9 @@ function LinkedinIntegrationPage() {
             </div>
           ) : account.status === "error" ? (
             <div className="space-y-2">
-              <p className="text-sm text-destructive">{account.last_error ?? "Erro ao conectar."}</p>
+              <p className="text-sm text-destructive">
+                {account.last_error ?? "Erro ao conectar."}
+              </p>
               <Button onClick={onConnect} disabled={connecting}>
                 <Link2 className="h-4 w-4 mr-2" />
                 Reconectar
@@ -232,14 +238,19 @@ function LinkedinIntegrationPage() {
             Janela horária (uso human-like)
           </CardTitle>
           <CardDescription>
-            Requisições só são executadas dentro desta janela no fuso indicado, simulando uso humano.
+            Requisições só são executadas dentro desta janela no fuso indicado, simulando uso
+            humano.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <Label>Fuso horário</Label>
-              <Input value={tz} onChange={(e) => setTz(e.target.value)} placeholder="America/Sao_Paulo" />
+              <Input
+                value={tz}
+                onChange={(e) => setTz(e.target.value)}
+                placeholder="America/Sao_Paulo"
+              />
             </div>
             <div>
               <Label>Início (h)</Label>
@@ -288,10 +299,7 @@ function LinkedinIntegrationPage() {
                   </span>
                 </div>
                 <div className="h-1.5 w-full bg-muted rounded">
-                  <div
-                    className="h-full bg-primary rounded"
-                    style={{ width: `${pct}%` }}
-                  />
+                  <div className="h-full bg-primary rounded" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );

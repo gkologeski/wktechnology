@@ -52,7 +52,7 @@ import {
   deleteInvoice,
 } from "@/lib/invoices.functions";
 import { issueNfse } from "@/lib/nfse.functions";
-
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/invoices")({
   component: InvoicesPage,
@@ -115,7 +115,7 @@ function InvoicesPage() {
   }
 
   async function onDelete(id: string) {
-    if (!confirm("Excluir fatura?")) return;
+    if (!(await confirmDialog("Excluir fatura?"))) return;
     try {
       await del({ data: { id } });
       toast.success("Excluída");
@@ -135,7 +135,6 @@ function InvoicesPage() {
 
   return (
     <div className="space-y-4 p-6">
-
       <PageHeader
         title="Faturas"
         description="Cobrança de clientes via Pix, boleto e cartão (Asaas/Pagar.me/Mercado Pago)."

@@ -4,7 +4,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, CalendarDays, GanttChart, LayoutGrid, List as ListIcon, Plus, Settings2, Trash2, Users2 } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  GanttChart,
+  LayoutGrid,
+  List as ListIcon,
+  Plus,
+  Settings2,
+  Trash2,
+  Users2,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -39,18 +49,29 @@ import { TaskDetailsSheet } from "@/components/projects/task-details-sheet";
 import { CalendarView, TimelineView, WorkloadView } from "@/components/projects/list-views";
 import { CustomFieldsManagerButton } from "@/components/projects/custom-fields-manager";
 import { SaveAsTemplateButton } from "@/components/projects/list-templates-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/lists/$id")({
   head: () => ({
     meta: [
       { title: "Lista — TechProjects" },
-      { name: "description", content: "Tarefas da lista com views de List e Board e status customizados." },
+      {
+        name: "description",
+        content: "Tarefas da lista com views de List e Board e status customizados.",
+      },
     ],
   }),
   component: ListDetailPage,
 });
 
-type Status = { id: string; name: string; color: string | null; category: "todo" | "doing" | "done"; sort_order: number; is_default: boolean };
+type Status = {
+  id: string;
+  name: string;
+  color: string | null;
+  category: "todo" | "doing" | "done";
+  sort_order: number;
+  is_default: boolean;
+};
 type Task = {
   id: string;
   title: string;
@@ -110,7 +131,9 @@ function ListDetailPage() {
     return (
       <div className="p-6 space-y-3">
         <p className="text-sm text-muted-foreground">Lista não encontrada.</p>
-        <Button asChild variant="outline"><Link to="/projects/spaces">Voltar para espaços</Link></Button>
+        <Button asChild variant="outline">
+          <Link to="/projects/spaces">Voltar para espaços</Link>
+        </Button>
       </div>
     );
   }
@@ -145,32 +168,61 @@ function ListDetailPage() {
             <CustomFieldsManagerButton listId={id} />
             <SaveAsTemplateButton listId={id} listName={list.name} />
             <ManageStatusesButton listId={id} statuses={statuses} onChanged={invalidate} />
-            <NewTaskButton listId={id} statuses={statuses} disabled={!hasProject} onCreated={invalidate} />
+            <NewTaskButton
+              listId={id}
+              statuses={statuses}
+              disabled={!hasProject}
+              onCreated={invalidate}
+            />
           </div>
         }
       />
 
       {!hasProject && (
         <div className="rounded-md border border-amber-300 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
-          Vincule esta lista a um projeto (em <Link to="/projects/spaces" className="underline">Espaços</Link>) para começar a criar tarefas.
+          Vincule esta lista a um projeto (em{" "}
+          <Link to="/projects/spaces" className="underline">
+            Espaços
+          </Link>
+          ) para começar a criar tarefas.
         </div>
       )}
 
       <Tabs defaultValue="board">
         <TabsList>
-          <TabsTrigger value="board"><LayoutGrid className="h-4 w-4 mr-2" /> Board</TabsTrigger>
-          <TabsTrigger value="list"><ListIcon className="h-4 w-4 mr-2" /> Lista</TabsTrigger>
-          <TabsTrigger value="calendar"><CalendarDays className="h-4 w-4 mr-2" /> Calendário</TabsTrigger>
-          <TabsTrigger value="timeline"><GanttChart className="h-4 w-4 mr-2" /> Timeline</TabsTrigger>
-          <TabsTrigger value="workload"><Users2 className="h-4 w-4 mr-2" /> Workload</TabsTrigger>
+          <TabsTrigger value="board">
+            <LayoutGrid className="h-4 w-4 mr-2" /> Board
+          </TabsTrigger>
+          <TabsTrigger value="list">
+            <ListIcon className="h-4 w-4 mr-2" /> Lista
+          </TabsTrigger>
+          <TabsTrigger value="calendar">
+            <CalendarDays className="h-4 w-4 mr-2" /> Calendário
+          </TabsTrigger>
+          <TabsTrigger value="timeline">
+            <GanttChart className="h-4 w-4 mr-2" /> Timeline
+          </TabsTrigger>
+          <TabsTrigger value="workload">
+            <Users2 className="h-4 w-4 mr-2" /> Workload
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="board" className="mt-4">
-          <BoardView statuses={statuses} tasks={tasks} onChanged={invalidate} onOpen={setSelectedTask} />
+          <BoardView
+            statuses={statuses}
+            tasks={tasks}
+            onChanged={invalidate}
+            onOpen={setSelectedTask}
+          />
         </TabsContent>
 
         <TabsContent value="list" className="mt-4">
-          <ListView statuses={statuses} tasks={tasks} onChanged={invalidate} onOpen={setSelectedTask} />
+          <ListView
+            statuses={statuses}
+            tasks={tasks}
+            onChanged={invalidate}
+            onOpen={setSelectedTask}
+          />
         </TabsContent>
 
         <TabsContent value="calendar" className="mt-4">
@@ -189,7 +241,9 @@ function ListDetailPage() {
       <TaskDetailsSheet
         task={selectedTask}
         open={Boolean(selectedTask)}
-        onOpenChange={(v) => { if (!v) setSelectedTask(null); }}
+        onOpenChange={(v) => {
+          if (!v) setSelectedTask(null);
+        }}
       />
     </div>
   );
@@ -242,9 +296,14 @@ function BoardView({
           }}
         >
           <div className="flex items-center gap-2 px-3 py-2 border-b">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: s.color ?? "#94a3b8" }} />
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{ background: s.color ?? "#94a3b8" }}
+            />
             <div className="text-sm font-medium flex-1">{s.name}</div>
-            <Badge variant="outline" className="text-xs">{byStatus.get(s.id)?.length ?? 0}</Badge>
+            <Badge variant="outline" className="text-xs">
+              {byStatus.get(s.id)?.length ?? 0}
+            </Badge>
           </div>
           <div className="p-2 space-y-2 min-h-24">
             {(byStatus.get(s.id) ?? []).map((t) => (
@@ -308,7 +367,9 @@ function TaskCard({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-6 w-6">…</Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6">
+              …
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuItem className="text-destructive" onClick={() => delM.mutate()}>
@@ -357,7 +418,15 @@ function ListView({
           )}
           {tasks.map((t) => {
             const st = t.custom_status_id ? statusById.get(t.custom_status_id) : undefined;
-            return <ListRow key={t.id} task={t} status={st} onChanged={onChanged} onOpen={() => onOpen(t)} />;
+            return (
+              <ListRow
+                key={t.id}
+                task={t}
+                status={st}
+                onChanged={onChanged}
+                onOpen={() => onOpen(t)}
+              />
+            );
           })}
         </tbody>
       </table>
@@ -365,7 +434,17 @@ function ListView({
   );
 }
 
-function ListRow({ task, status, onChanged, onOpen }: { task: Task; status?: Status; onChanged: () => void; onOpen: () => void }) {
+function ListRow({
+  task,
+  status,
+  onChanged,
+  onOpen,
+}: {
+  task: Task;
+  status?: Status;
+  onChanged: () => void;
+  onOpen: () => void;
+}) {
   const del = useServerFn(deleteListTask);
   const delM = useMutation({
     mutationFn: () => del({ data: { id: task.id } }),
@@ -380,7 +459,10 @@ function ListRow({ task, status, onChanged, onOpen }: { task: Task; status?: Sta
       <td className="px-3 py-2">
         {status ? (
           <span className="inline-flex items-center gap-1.5 text-xs">
-            <span className="h-2 w-2 rounded-full" style={{ background: status.color ?? "#94a3b8" }} />
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ background: status.color ?? "#94a3b8" }}
+            />
             {status.name}
           </span>
         ) : (
@@ -397,7 +479,15 @@ function ListRow({ task, status, onChanged, onOpen }: { task: Task; status?: Sta
         {task.due_at ? formatDateTime(task.due_at).split(" ")[0] : "—"}
       </td>
       <td className="px-2">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); delM.mutate(); }}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={(e) => {
+            e.stopPropagation();
+            delM.mutate();
+          }}
+        >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>
       </td>
@@ -442,7 +532,13 @@ function NewTaskButton({
     onError: (e: Error) => toast.error(e.message),
   });
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v && defaultStatus) setStatusId(defaultStatus.id); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v && defaultStatus) setStatusId(defaultStatus.id);
+      }}
+    >
       <DialogTrigger asChild>
         <Button size="sm" disabled={disabled}>
           <Plus className="h-4 w-4 mr-2" /> Nova tarefa
@@ -466,7 +562,9 @@ function NewTaskButton({
                 className="w-full h-10 rounded-md border bg-background px-3 text-sm"
               >
                 {statuses.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
                 ))}
               </select>
             </div>
@@ -478,15 +576,21 @@ function NewTaskButton({
                 className="w-full h-10 rounded-md border bg-background px-3 text-sm"
               >
                 {(Object.keys(PRIORITY_LABEL) as Task["priority"][]).map((p) => (
-                  <option key={p} value={p}>{PRIORITY_LABEL[p]}</option>
+                  <option key={p} value={p}>
+                    {PRIORITY_LABEL[p]}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => m.mutate()} disabled={!title.trim() || m.isPending}>Criar</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={() => m.mutate()} disabled={!title.trim() || m.isPending}>
+            Criar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -542,18 +646,26 @@ function ManageStatusesButton({
           <div className="space-y-2">
             {statuses.map((s) => (
               <div key={s.id} className="flex items-center gap-2 rounded border p-2">
-                <span className="h-3 w-3 rounded-full" style={{ background: s.color ?? "#94a3b8" }} />
+                <span
+                  className="h-3 w-3 rounded-full"
+                  style={{ background: s.color ?? "#94a3b8" }}
+                />
                 <div className="flex-1">
                   <div className="text-sm font-medium">{s.name}</div>
                   <div className="text-xs text-muted-foreground">Categoria: {s.category}</div>
                 </div>
-                {s.is_default && <Badge variant="outline" className="text-xs">Padrão</Badge>}
+                {s.is_default && (
+                  <Badge variant="outline" className="text-xs">
+                    Padrão
+                  </Badge>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"
-                  onClick={() => {
-                    if (confirm("Remover status? As tarefas nele ficarão sem status.")) deleteM.mutate(s.id);
+                  onClick={async () => {
+                    if (await confirmDialog("Remover status? As tarefas nele ficarão sem status."))
+                      deleteM.mutate(s.id);
                   }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
@@ -564,8 +676,18 @@ function ManageStatusesButton({
           <div className="border-t pt-3 space-y-2">
             <div className="text-sm font-medium">Adicionar status</div>
             <div className="grid grid-cols-3 gap-2">
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nome" className="col-span-2" />
-              <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 p-1" />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nome"
+                className="col-span-2"
+              />
+              <Input
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="h-10 p-1"
+              />
             </div>
             <div className="flex items-center gap-2">
               <select
@@ -577,14 +699,20 @@ function ManageStatusesButton({
                 <option value="doing">Em andamento</option>
                 <option value="done">Concluído</option>
               </select>
-              <Button size="sm" onClick={() => createM.mutate()} disabled={!name.trim() || createM.isPending}>
+              <Button
+                size="sm"
+                onClick={() => createM.mutate()}
+                disabled={!name.trim() || createM.isPending}
+              >
                 Adicionar
               </Button>
             </div>
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Fechar</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Fechar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

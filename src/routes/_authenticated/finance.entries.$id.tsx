@@ -26,6 +26,7 @@ import {
   deleteInstallmentGroup,
 } from "@/lib/finance.functions";
 import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/finance/entries/$id")({
   component: EntryDetailsPage,
@@ -51,13 +52,19 @@ function EntryDetailsPage() {
 
   const [payOpen, setPayOpen] = useState(false);
 
-  const { data: entry, isLoading, refetch } = useQuery({
+  const {
+    data: entry,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ["finance-entry", id],
     queryFn: () => get({ data: { id } }),
   });
 
-  const isInstallment =
-    !!(entry && (entry.parent_entry_id || (entry.installment_total && entry.installment_total > 1)));
+  const isInstallment = !!(
+    entry &&
+    (entry.parent_entry_id || (entry.installment_total && entry.installment_total > 1))
+  );
   const parentId = entry?.parent_entry_id ?? entry?.id ?? null;
 
   const { data: siblings } = useQuery({
@@ -95,18 +102,14 @@ function EntryDetailsPage() {
   return (
     <div className="p-6 space-y-5">
       <Button variant="ghost" size="sm" asChild>
-        <Link
-          to={entry.direction === "receivable" ? "/finance/receivable" : "/finance/payable"}
-        >
+        <Link to={entry.direction === "receivable" ? "/finance/receivable" : "/finance/payable"}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
         </Link>
       </Button>
 
       <PageHeader
         title={entry.description}
-        description={
-          entry.direction === "receivable" ? "Conta a receber" : "Conta a pagar"
-        }
+        description={entry.direction === "receivable" ? "Conta a receber" : "Conta a pagar"}
         actions={
           <div className="flex gap-2">
             {canPay && (
@@ -201,12 +204,16 @@ function EntryDetailsPage() {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  if (!confirm("Excluir todas as parcelas em aberto deste grupo?")) return;
-                  const r = await delGroup({ data: { parent_entry_id: parentId, only_open: true } });
+                  if (!(await confirmDialog("Excluir todas as parcelas em aberto deste grupo?")))
+                    return;
+                  const r = await delGroup({
+                    data: { parent_entry_id: parentId, only_open: true },
+                  });
                   toast.success(`${r.deleted} parcela(s) excluída(s); ${r.kept} mantida(s).`);
                   invalidate();
                   navigate({
-                    to: entry.direction === "receivable" ? "/finance/receivable" : "/finance/payable",
+                    to:
+                      entry.direction === "receivable" ? "/finance/receivable" : "/finance/payable",
                   });
                 }}
               >
@@ -230,7 +237,8 @@ function EntryDetailsPage() {
                     key={s.id}
                     className={s.id === entry.id ? "bg-muted/50" : "cursor-pointer"}
                     onClick={() => {
-                      if (s.id !== entry.id) navigate({ to: "/finance/entries/$id", params: { id: s.id } });
+                      if (s.id !== entry.id)
+                        navigate({ to: "/finance/entries/$id", params: { id: s.id } });
                     }}
                   >
                     <TableCell className="text-sm tabular-nums">
@@ -254,7 +262,6 @@ function EntryDetailsPage() {
           </CardContent>
         </Card>
       )}
-
 
       <Card>
         <CardHeader>

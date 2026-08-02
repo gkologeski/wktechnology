@@ -35,6 +35,7 @@ import {
   cancelBooking,
 } from "@/lib/booking.functions";
 import { listCalendarAccounts } from "@/lib/calendar.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/booking")({
   component: BookingSettings,
@@ -163,8 +164,8 @@ function BookingSettings() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => {
-                    if (confirm("Excluir página?")) delMut.mutate(p.id);
+                  onClick={async () => {
+                    if (await confirmDialog("Excluir página?")) delMut.mutate(p.id);
                   }}
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />

@@ -13,6 +13,7 @@ import {
 } from "@/lib/integrations/hubspot.functions";
 import { StatusIcon } from "./import-wizard";
 import { LiveCountersGrid, type CounterStep, type LiveCounterProps } from "./live-counter";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type StepLog = {
   ts: string;
@@ -338,7 +339,7 @@ export function ImportTimeline({ jobId, onReset }: { jobId: string; onReset: () 
   }
 
   async function handleCancel() {
-    if (!window.confirm("Cancelar a importação em andamento? Você poderá retomá-la depois."))
+    if (!(await confirmDialog("Cancelar a importação em andamento? Você poderá retomá-la depois.")))
       return;
     setCancelling(true);
     try {

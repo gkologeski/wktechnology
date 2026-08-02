@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -95,13 +96,7 @@ function RiskSlider({
   );
 }
 
-export function PsychosocialPanel({
-  personId,
-  canWrite,
-}: {
-  personId: string;
-  canWrite: boolean;
-}) {
+export function PsychosocialPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listPsychAssessments);
   const upsertFn = useServerFn(upsertPsychAssessment);
@@ -210,8 +205,8 @@ export function PsychosocialPanel({
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => {
-                          if (confirm("Remover avaliação?")) del.mutate(r.id);
+                        onClick={async () => {
+                          if (await confirmDialog("Remover avaliação?")) del.mutate(r.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -311,7 +306,11 @@ function PsychDialog({
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label>Data</Label>
-              <Input type="date" value={assessedAt} onChange={(e) => setAssessedAt(e.target.value)} />
+              <Input
+                type="date"
+                value={assessedAt}
+                onChange={(e) => setAssessedAt(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Método</Label>

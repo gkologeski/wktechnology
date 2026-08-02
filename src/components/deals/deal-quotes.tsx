@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { QuoteWizard } from "@/components/deals/quote-wizard";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type QuoteStatus = "draft" | "published" | "sent" | "accepted" | "declined" | "expired";
 
@@ -141,7 +142,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
   }
   async function remove(id: string) {
-    if (!confirm("Excluir esta cotação?")) return;
+    if (!(await confirmDialog("Excluir esta cotação?"))) return;
     await del({ data: { id } });
     qc.invalidateQueries({ queryKey: ["deal-quotes", dealId] });
   }
@@ -241,9 +242,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {(status === "draft" || status === "published") && (
-                        <DropdownMenuItem onSelect={() => openEdit(q)}>
-                          Editar
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => openEdit(q)}>Editar</DropdownMenuItem>
                       )}
                       {(status === "draft" || status === "published") && contactHasEmail && (
                         <DropdownMenuItem onSelect={() => setSendingQuote(q)}>
@@ -359,4 +358,3 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     </div>
   );
 }
-

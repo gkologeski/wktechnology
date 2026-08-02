@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   createMediaUploadUrl,
   registerMediaAsset,
@@ -109,7 +110,7 @@ function MediaLibraryPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Excluir este arquivo?")) return;
+    if (!(await confirmDialog("Excluir este arquivo?"))) return;
     try {
       await delFn({ data: { id } });
       setRows((r) => r.filter((x) => x.id !== id));
@@ -170,10 +171,7 @@ function MediaLibraryPage() {
           {rows.map((r) => {
             const isImg = r.mime?.startsWith("image/");
             return (
-              <div
-                key={r.id}
-                className="border rounded-lg overflow-hidden bg-card group"
-              >
+              <div key={r.id} className="border rounded-lg overflow-hidden bg-card group">
                 <div className="aspect-square bg-muted/40 flex items-center justify-center">
                   {isImg ? (
                     // eslint-disable-next-line @next/next/no-img-element

@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   getSlackIntegration,
   saveSlackIntegration,
@@ -82,7 +83,7 @@ function SlackSettingsPage() {
     }
   }
   async function doDelete() {
-    if (!confirm("Remover integração com Slack?")) return;
+    if (!(await confirmDialog("Remover integração com Slack?"))) return;
     setBusy(true);
     try {
       await delFn();

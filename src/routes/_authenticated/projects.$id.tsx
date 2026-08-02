@@ -57,6 +57,7 @@ import {
 } from "@/lib/projects.functions";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   component: ProjectDetailPage,
@@ -95,7 +96,8 @@ function ProjectDetailPage() {
   });
 
   if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
-  if (!project) return <div className="p-6 text-sm text-muted-foreground">Projeto não encontrado.</div>;
+  if (!project)
+    return <div className="p-6 text-sm text-muted-foreground">Projeto não encontrado.</div>;
 
   const p: any = project;
 
@@ -132,11 +134,13 @@ function ProjectDetailPage() {
             </Select>
           </div>
         }
-
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        <MetricTile label="Horas apontadas" value={`${(financials?.loggedHours ?? 0).toFixed(1)}h`} />
+        <MetricTile
+          label="Horas apontadas"
+          value={`${(financials?.loggedHours ?? 0).toFixed(1)}h`}
+        />
         <MetricTile
           label="Custo realizado"
           value={financials?.hasRates ? formatCurrency(financials.realizedCost) : "n/d"}
@@ -149,7 +153,9 @@ function ProjectDetailPage() {
         <MetricTile
           label="Margem"
           value={financials?.hasRates ? formatCurrency(financials.margin) : "n/d"}
-          tone={financials?.hasRates ? (financials.margin >= 0 ? "positive" : "negative") : undefined}
+          tone={
+            financials?.hasRates ? (financials.margin >= 0 ? "positive" : "negative") : undefined
+          }
         />
       </div>
 
@@ -163,7 +169,11 @@ function ProjectDetailPage() {
           {p.contracts && (
             <span>
               Contrato:{" "}
-              <Link to="/contracts/$id" params={{ id: p.contracts.id }} className="text-foreground hover:underline">
+              <Link
+                to="/contracts/$id"
+                params={{ id: p.contracts.id }}
+                className="text-foreground hover:underline"
+              >
                 {p.contracts.number ?? p.contracts.title}
               </Link>
             </span>
@@ -171,7 +181,11 @@ function ProjectDetailPage() {
           {p.services && (
             <span>
               Serviço:{" "}
-              <Link to="/services/$id" params={{ id: p.services.id }} className="text-foreground hover:underline">
+              <Link
+                to="/services/$id"
+                params={{ id: p.services.id }}
+                className="text-foreground hover:underline"
+              >
                 {p.services.name}
               </Link>
             </span>
@@ -292,7 +306,7 @@ function TasksKanban({ projectId }: { projectId: string }) {
                     <button
                       className="text-muted-foreground hover:text-destructive"
                       onClick={async () => {
-                        if (!confirm("Remover tarefa?")) return;
+                        if (!(await confirmDialog("Remover tarefa?"))) return;
                         await del({ data: { id: t.id } });
                         qc.invalidateQueries({ queryKey: ["project-tasks", projectId] });
                       }}
@@ -424,7 +438,9 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
       </div>
       <div className="rounded-lg border bg-card">
         {milestones.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Nenhum marco cadastrado.</div>
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Nenhum marco cadastrado.
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -477,7 +493,7 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
                       size="sm"
                       variant="ghost"
                       onClick={async () => {
-                        if (!confirm("Remover marco?")) return;
+                        if (!(await confirmDialog("Remover marco?"))) return;
                         await del({ data: { id: m.id } });
                         qc.invalidateQueries({ queryKey: ["project-milestones", projectId] });
                       }}
@@ -507,7 +523,11 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
               <Input type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
             </div>
             <div className="flex items-center gap-2">
-              <Checkbox id="billable" checked={billable} onCheckedChange={(v) => setBillable(!!v)} />
+              <Checkbox
+                id="billable"
+                checked={billable}
+                onCheckedChange={(v) => setBillable(!!v)}
+              />
               <Label htmlFor="billable" className="cursor-pointer">
                 Gera cobrança ao concluir
               </Label>
@@ -619,7 +639,9 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
 
       <div className="rounded-lg border bg-card">
         {entries.length === 0 ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Nenhum apontamento ainda.</div>
+          <div className="p-8 text-center text-sm text-muted-foreground">
+            Nenhum apontamento ainda.
+          </div>
         ) : (
           <Table>
             <TableHeader>
@@ -634,15 +656,19 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
             <TableBody>
               {(entries as any[]).map((e) => (
                 <TableRow key={e.id}>
-                  <TableCell className="text-xs">{formatDateTime(e.entry_date).split(" ")[0]}</TableCell>
+                  <TableCell className="text-xs">
+                    {formatDateTime(e.entry_date).split(" ")[0]}
+                  </TableCell>
                   <TableCell className="text-sm">{e.description ?? "—"}</TableCell>
                   <TableCell>{e.billable ? "Sim" : "Não"}</TableCell>
-                  <TableCell className="text-right tabular-nums">{Number(e.hours).toFixed(2)}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {Number(e.hours).toFixed(2)}
+                  </TableCell>
                   <TableCell className="text-right">
                     <button
                       className="text-muted-foreground hover:text-destructive"
                       onClick={async () => {
-                        if (!confirm("Remover apontamento?")) return;
+                        if (!(await confirmDialog("Remover apontamento?"))) return;
                         await del({ data: { id: e.id } });
                         qc.invalidateQueries({ queryKey: ["project-time-entries", projectId] });
                         qc.invalidateQueries({ queryKey: ["project-financials", projectId] });
@@ -675,7 +701,9 @@ function MembersPanel({ projectId }: { projectId: string }) {
   const { data: wsMembers = [] } = useWorkspaceMembers();
 
   const [userId, setUserId] = useState("");
-  const [roleInProject, setRoleInProject] = useState<"manager" | "contributor" | "viewer">("contributor");
+  const [roleInProject, setRoleInProject] = useState<"manager" | "contributor" | "viewer">(
+    "contributor",
+  );
   const [cost, setCost] = useState("");
   const [bill, setBill] = useState("");
 
@@ -742,11 +770,23 @@ function MembersPanel({ projectId }: { projectId: string }) {
           </div>
           <div className="space-y-1.5">
             <Label>Custo/h</Label>
-            <Input type="number" min="0" step="0.01" value={cost} onChange={(e) => setCost(e.target.value)} />
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={cost}
+              onChange={(e) => setCost(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Bill/h</Label>
-            <Input type="number" min="0" step="0.01" value={bill} onChange={(e) => setBill(e.target.value)} />
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={bill}
+              onChange={(e) => setBill(e.target.value)}
+            />
           </div>
         </div>
         <div className="mt-3 flex justify-end">
@@ -789,7 +829,7 @@ function MembersPanel({ projectId }: { projectId: string }) {
                     <button
                       className="text-muted-foreground hover:text-destructive"
                       onClick={async () => {
-                        if (!confirm("Remover membro?")) return;
+                        if (!(await confirmDialog("Remover membro?"))) return;
                         await rm({ data: { id: m.id } });
                         qc.invalidateQueries({ queryKey: ["project-members", projectId] });
                       }}

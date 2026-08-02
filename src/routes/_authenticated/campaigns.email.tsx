@@ -51,7 +51,7 @@ import { formatDateTime } from "@/lib/crm";
 import { TokenPills } from "@/components/ui/token-pills";
 import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
-
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/campaigns/email")({
   component: EmailBroadcastsPage,
@@ -138,7 +138,6 @@ function EmailBroadcastsPage() {
     }
     setBodyHtml((prev) => (prev ?? "") + token);
   };
-
 
   function resetForm() {
     setName("");
@@ -312,11 +311,7 @@ function EmailBroadcastsPage() {
                   minHeight={220}
                   placeholder="Conteúdo do email…"
                 />
-                <TokenPills
-                  className="mt-2"
-                  tokens={EMAIL_TOKENS}
-                  onInsert={insertBodyHtmlToken}
-                />
+                <TokenPills className="mt-2" tokens={EMAIL_TOKENS} onInsert={insertBodyHtmlToken} />
               </div>
               <div>
                 <Label>Corpo texto (fallback)</Label>
@@ -460,8 +455,8 @@ function EmailBroadcastsPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm("Excluir esta campanha?"))
+                      onClick={async () => {
+                        if (await confirmDialog("Excluir esta campanha?"))
                           delFn({ data: { id: b.id } }).then(() =>
                             qc.invalidateQueries({ queryKey: ["email-broadcasts"] }),
                           );

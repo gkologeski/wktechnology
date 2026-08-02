@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -81,13 +82,7 @@ function StarRating({
   );
 }
 
-export function ReviewsPanel({
-  personId,
-  canWrite,
-}: {
-  personId: string;
-  canWrite: boolean;
-}) {
+export function ReviewsPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listReviews);
   const delFn = useServerFn(deleteReview);
@@ -171,8 +166,8 @@ export function ReviewsPanel({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
-                        if (confirm("Remover avaliação?")) del.mutate(r.id);
+                      onClick={async () => {
+                        if (await confirmDialog("Remover avaliação?")) del.mutate(r.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -213,12 +208,7 @@ export function ReviewsPanel({
         ))
       )}
 
-      <ReviewDialog
-        open={open}
-        onOpenChange={setOpen}
-        personId={personId}
-        review={editing}
-      />
+      <ReviewDialog open={open} onOpenChange={setOpen} personId={personId} review={editing} />
     </div>
   );
 }
@@ -354,11 +344,7 @@ function ReviewDialog({
           </div>
           <div className="space-y-1">
             <Label>Fim do período</Label>
-            <Input
-              type="date"
-              value={periodEnd}
-              onChange={(e) => setPeriodEnd(e.target.value)}
-            />
+            <Input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
           </div>
 
           <div className="md:col-span-2 space-y-2 pt-2 border-t">

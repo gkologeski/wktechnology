@@ -22,6 +22,7 @@ import {
   type ProspectingScript,
 } from "@/lib/prospecting-scripts.functions";
 import { previewVoice, CURATED_VOICES } from "@/lib/voice-agent.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/prospecting-scripts")({
   beforeLoad: () => {
@@ -29,7 +30,6 @@ export const Route = createFileRoute("/_authenticated/settings/prospecting-scrip
   },
   component: ScriptsPage,
 });
-
 
 export function ScriptsPage() {
   const listFn = useServerFn(listScripts);
@@ -130,7 +130,7 @@ export function ScriptsPage() {
                   variant="ghost"
                   size="icon"
                   onClick={async () => {
-                    if (confirm("Remover?")) {
+                    if (await confirmDialog("Remover?")) {
                       await delFn({ data: { id: r.id } });
                       refresh();
                     }

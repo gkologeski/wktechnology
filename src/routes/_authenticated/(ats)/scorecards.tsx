@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -16,12 +17,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  PageHeader,
-  EmptyState,
-  MetaPill,
-  Skeletons,
-} from "@/components/techhire/ui";
+import { PageHeader, EmptyState, MetaPill, Skeletons } from "@/components/techhire/ui";
 import {
   listScorecards,
   saveScorecard,
@@ -113,7 +109,7 @@ function ScorecardsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir scorecard?")) return;
+    if (!(await confirmDialog("Excluir scorecard?"))) return;
     await del({ data: { id } });
     refresh();
   };
@@ -266,10 +262,7 @@ function ScorecardsPage() {
               </div>
               <div className="space-y-2">
                 {form.criteria.map((c, i) => (
-                  <div
-                    key={i}
-                    className="grid grid-cols-[1fr_2fr_90px_36px] gap-2 items-center"
-                  >
+                  <div key={i} className="grid grid-cols-[1fr_2fr_90px_36px] gap-2 items-center">
                     <Input
                       placeholder="chave"
                       aria-label={`Chave do critério ${i + 1}`}
@@ -289,9 +282,7 @@ function ScorecardsPage() {
                       step={0.1}
                       aria-label={`Peso do critério ${i + 1}`}
                       value={c.weight}
-                      onChange={(e) =>
-                        setCriterion(i, { weight: Number(e.target.value) || 1 })
-                      }
+                      onChange={(e) => setCriterion(i, { weight: Number(e.target.value) || 1 })}
                     />
                     <Button
                       size="icon"

@@ -21,6 +21,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { listForms, upsertForm, deleteForm, listFormSubmissions } from "@/lib/forms.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/forms")({
   component: FormsPage,
@@ -182,8 +183,8 @@ export function FormsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        if (confirm("Excluir formulário?")) del.mutate(row.id);
+                      onClick={async () => {
+                        if (await confirmDialog("Excluir formulário?")) del.mutate(row.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />

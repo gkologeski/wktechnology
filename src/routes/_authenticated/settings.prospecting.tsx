@@ -37,6 +37,7 @@ import {
 } from "@/components/prospecting/prospect-search-form-dialog";
 import { AddToProspectingDialog } from "@/components/prospecting/add-to-prospecting-dialog";
 import { countActiveFilters, ProspectFilters } from "@/lib/prospecting-options";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/prospecting")({
   beforeLoad: () => {
@@ -119,7 +120,6 @@ export function ProspectingPage() {
     setProgress(null);
     // Dois prospects podem apontar para o mesmo lead (dedupe por e-mail).
     return { ids: Array.from(new Set(ids)), created, existing, failed, firstError };
-
   };
 
   const importAll = async () => {
@@ -163,11 +163,9 @@ export function ProspectingPage() {
       setQueueIds(ids);
       setQueueOpen(true);
     } finally {
-
       setBulkBusy(null);
     }
   };
-
 
   const refresh = async () => setRows((await listFn()) as Row[]);
   useEffect(() => {
@@ -181,9 +179,7 @@ export function ProspectingPage() {
 
   const isTransient = (message: string) => {
     const m = message.toLowerCase();
-    return (
-      m.includes("schema cache") || m.includes("timeout") || m.includes("temporariamente")
-    );
+    return m.includes("schema cache") || m.includes("timeout") || m.includes("temporariamente");
   };
 
   const friendly = (e: unknown, fallback: string) => {
@@ -274,10 +270,7 @@ export function ProspectingPage() {
               );
               return (
                 <div key={r.id} className="py-3 flex items-center justify-between gap-3">
-                  <button
-                    className="text-left flex-1 min-w-0"
-                    onClick={() => openResults(r)}
-                  >
+                  <button className="text-left flex-1 min-w-0" onClick={() => openResults(r)}>
                     <div className="font-medium truncate flex items-center gap-2">
                       <Database className="h-3.5 w-3.5 text-primary" />
                       {String(r.name)}
@@ -296,7 +289,6 @@ export function ProspectingPage() {
                         {String(r.error)}
                       </p>
                     )}
-
                   </button>
                   <Badge
                     variant={
@@ -340,7 +332,7 @@ export function ProspectingPage() {
                     variant="ghost"
                     size="icon"
                     onClick={async () => {
-                      if (confirm("Remover?")) {
+                      if (await confirmDialog("Remover?")) {
                         await delFn({ data: { id: r.id } });
                         refresh();
                       }
@@ -373,12 +365,7 @@ export function ProspectingPage() {
           </SheetHeader>
           {results.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={bulkBusy !== null}
-                onClick={importAll}
-              >
+              <Button size="sm" variant="outline" disabled={bulkBusy !== null} onClick={importAll}>
                 {bulkBusy === "import" ? (
                   <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" />
                 ) : (
@@ -538,7 +525,6 @@ export function ProspectingPage() {
         ids={queueIds}
         alreadyCount={queueAlready}
       />
-
     </div>
   );
 }

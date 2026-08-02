@@ -35,6 +35,7 @@ import {
   deleteWidget,
 } from "@/lib/dashboards.functions";
 import { listReports, runReport } from "@/lib/reports.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ResponsiveContainer,
   BarChart,
@@ -51,7 +52,9 @@ import {
 } from "recharts";
 
 const compactNumber = (v: number) =>
-  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(Number(v) || 0);
+  new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(
+    Number(v) || 0,
+  );
 
 export const Route = createFileRoute("/_authenticated/dashboards")({
   component: DashboardsPage,
@@ -138,7 +141,11 @@ function DashboardsPage() {
   async function handleCreateDash() {
     if (!newName.trim()) return toast.error("Informe um nome");
     await createDash({
-      data: { name: newName.trim(), description: htmlToPlain(newDesc).trim() ? newDesc : null, is_default: newDefault },
+      data: {
+        name: newName.trim(),
+        description: htmlToPlain(newDesc).trim() ? newDesc : null,
+        is_default: newDefault,
+      },
     });
     setNewDashOpen(false);
     setNewName("");
@@ -151,7 +158,11 @@ function DashboardsPage() {
   async function handleEditDash() {
     if (!active || !editName.trim()) return;
     await updateDash({
-      data: { id: active.id, name: editName.trim(), description: htmlToPlain(editDesc).trim() ? editDesc : null },
+      data: {
+        id: active.id,
+        name: editName.trim(),
+        description: htmlToPlain(editDesc).trim() ? editDesc : null,
+      },
     });
     setEditDashOpen(false);
     qc.invalidateQueries({ queryKey: ["dashboards"] });
@@ -160,7 +171,7 @@ function DashboardsPage() {
 
   async function handleDeleteDash() {
     if (!active) return;
-    if (!confirm(`Excluir o painel "${active.name}"?`)) return;
+    if (!(await confirmDialog(`Excluir o painel "${active.name}"?`))) return;
     await deleteDash({ data: { id: active.id } });
     setActiveId(null);
     qc.invalidateQueries({ queryKey: ["dashboards"] });
@@ -216,7 +227,7 @@ function DashboardsPage() {
   }
 
   async function removeWidget(id: string) {
-    if (!confirm("Remover este widget?")) return;
+    if (!(await confirmDialog("Remover este widget?"))) return;
     await deleteW({ data: { id } });
     qc.invalidateQueries({ queryKey: ["dashboard-widgets", activeId] });
   }
@@ -294,7 +305,10 @@ function DashboardsPage() {
                       )}
                     </div>
                     {active.description && htmlToPlain(active.description) && (
-                      <HtmlContent html={active.description} className="text-xs text-muted-foreground" />
+                      <HtmlContent
+                        html={active.description}
+                        className="text-xs text-muted-foreground"
+                      />
                     )}
                   </div>
                   {!active.is_default && (

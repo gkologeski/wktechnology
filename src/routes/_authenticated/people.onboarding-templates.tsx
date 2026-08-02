@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Select,
   SelectContent,
@@ -133,9 +134,7 @@ function OnbTemplatesPage() {
                   <CardTitle className="text-base flex items-center gap-2">
                     {tpl.name}
                     <Badge variant="outline">{ONB_KIND_LABELS[tpl.kind]}</Badge>
-                    {!tpl.is_active ? (
-                      <Badge variant="secondary">Inativo</Badge>
-                    ) : null}
+                    {!tpl.is_active ? <Badge variant="secondary">Inativo</Badge> : null}
                   </CardTitle>
                   <CardDescription className="mt-1">
                     {tpl.items.length} tarefas
@@ -152,8 +151,8 @@ function OnbTemplatesPage() {
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground"
-                    onClick={() => {
-                      if (confirm(`Excluir modelo "${tpl.name}"?`)) {
+                    onClick={async () => {
+                      if (await confirmDialog(`Excluir modelo "${tpl.name}"?`)) {
                         delMut.mutate(tpl.id);
                       }
                     }}
@@ -236,8 +235,7 @@ function TemplateDialog({
   const updateItem = (idx: number, patch: Partial<OnbTemplateItem>) =>
     setItems((prev) => prev.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
 
-  const removeItem = (idx: number) =>
-    setItems((prev) => prev.filter((_, i) => i !== idx));
+  const removeItem = (idx: number) => setItems((prev) => prev.filter((_, i) => i !== idx));
 
   const moveItem = (idx: number, delta: number) => {
     const next = idx + delta;

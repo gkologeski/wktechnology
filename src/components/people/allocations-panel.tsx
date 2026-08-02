@@ -39,6 +39,7 @@ import {
 import { listContracts } from "@/lib/contracts.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listPeople } from "@/lib/people/people.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -143,9 +144,7 @@ export function AllocationsPanel({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <div className="font-medium text-sm">
-                          {r.role_title ?? "Alocação"}
-                        </div>
+                        <div className="font-medium text-sm">{r.role_title ?? "Alocação"}</div>
                         <Badge className={statusTone[r.status]} variant="secondary">
                           {ALLOCATION_STATUS_LABELS[r.status]}
                         </Badge>
@@ -170,19 +169,13 @@ export function AllocationsPanel({
                         <div className="text-xs mt-2 flex gap-3 flex-wrap">
                           <span>Rec: {brl(m.revenue)}</span>
                           <span>Custo: {brl(m.cost)}</span>
-                          <span
-                            className={
-                              m.margin >= 0 ? "text-emerald-700" : "text-rose-700"
-                            }
-                          >
+                          <span className={m.margin >= 0 ? "text-emerald-700" : "text-rose-700"}>
                             Margem: {brl(m.margin)} ({m.marginPct.toFixed(1)}%)
                           </span>
                         </div>
                       ) : null}
                       {r.notes ? (
-                        <div className="text-xs text-muted-foreground mt-2">
-                          {r.notes}
-                        </div>
+                        <div className="text-xs text-muted-foreground mt-2">{r.notes}</div>
                       ) : null}
                     </div>
                     {canWrite ? (
@@ -200,9 +193,8 @@ export function AllocationsPanel({
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => {
-                            if (confirm("Remover esta alocação?"))
-                              delMut.mutate(r.id);
+                          onClick={async () => {
+                            if (await confirmDialog("Remover esta alocação?")) delMut.mutate(r.id);
                           }}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -371,11 +363,7 @@ function AllocationDialog({
           </div>
           <div className="space-y-2">
             <Label>Início</Label>
-            <Input
-              type="date"
-              value={startsAt}
-              onChange={(e) => setStartsAt(e.target.value)}
-            />
+            <Input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label>Fim (opcional)</Label>
@@ -438,10 +426,7 @@ function ContractSelect({
     staleTime: 60_000,
   });
   return (
-    <Select
-      value={value ?? "__none"}
-      onValueChange={(v) => onChange(v === "__none" ? null : v)}
-    >
+    <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
       <SelectTrigger>
         <SelectValue placeholder="Selecionar contrato…" />
       </SelectTrigger>
@@ -449,7 +434,8 @@ function ContractSelect({
         <SelectItem value="__none">Sem contrato</SelectItem>
         {(rows as Array<{ id: string; number: string | null; title: string }>).map((c) => (
           <SelectItem key={c.id} value={c.id}>
-            {c.number ? `${c.number} · ` : ""}{c.title}
+            {c.number ? `${c.number} · ` : ""}
+            {c.title}
           </SelectItem>
         ))}
       </SelectContent>
@@ -471,10 +457,7 @@ function ProjectSelect({
     staleTime: 60_000,
   });
   return (
-    <Select
-      value={value ?? "__none"}
-      onValueChange={(v) => onChange(v === "__none" ? null : v)}
-    >
+    <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
       <SelectTrigger>
         <SelectValue placeholder="Selecionar projeto…" />
       </SelectTrigger>
@@ -509,10 +492,7 @@ function ManagerSelect({
     (p) => p.id !== excludePersonId,
   );
   return (
-    <Select
-      value={value ?? "__none"}
-      onValueChange={(v) => onChange(v === "__none" ? null : v)}
-    >
+    <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
       <SelectTrigger>
         <SelectValue placeholder="Selecionar gestor…" />
       </SelectTrigger>

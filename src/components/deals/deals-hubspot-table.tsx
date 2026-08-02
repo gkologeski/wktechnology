@@ -32,6 +32,7 @@ import {
 import type { DealLookups } from "@/components/deals/deals-board";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type SortKey = "name" | "value" | "expected_close_date" | "created_at";
 
@@ -153,7 +154,7 @@ export function DealsHubspotTable({
     qc.invalidateQueries({ queryKey: ["deals"] });
   };
   const removeOne = async (id: string) => {
-    if (!confirm("Excluir este negócio?")) return;
+    if (!(await confirmDialog("Excluir este negócio?"))) return;
     const { error } = await supabase.from("deals").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Removido");
@@ -162,7 +163,7 @@ export function DealsHubspotTable({
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    if (!confirm(`Excluir ${ids.length} negócio(s)?`)) return;
+    if (!(await confirmDialog(`Excluir ${ids.length} negócio(s)?`))) return;
     const { error } = await supabase.from("deals").delete().in("id", ids);
     if (error) return toast.error(error.message);
     toast.success(`${ids.length} excluído(s)`);

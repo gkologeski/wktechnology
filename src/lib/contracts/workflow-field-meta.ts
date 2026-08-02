@@ -59,6 +59,7 @@ export const CONTRACT_FIELD_LABELS: Record<string, string> = {
   public_token: "Token do link público",
   source_file_path: "Arquivo de origem (importação)",
   imported_from: "Importado de",
+  import_confidence: "Confiança da importação (IA)",
   metadata: "Metadados técnicos",
   witnesses: "Testemunhas",
   created_at: "Criado em",
@@ -175,6 +176,7 @@ export const CONTRACT_SYSTEM_FIELDS = new Set<string>([
   "signed_pdf_path",
   "source_file_path",
   "imported_from",
+  "import_confidence",
   "metadata",
   "payment_terms",
 ]);

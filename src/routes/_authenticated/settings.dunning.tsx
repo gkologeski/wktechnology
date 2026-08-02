@@ -26,6 +26,7 @@ import {
 import { listChargingTemplates } from "@/lib/charging-templates.functions";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/dunning")({
   component: DunningPage,
@@ -134,7 +135,7 @@ function DunningPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Excluir régua?")) return;
+    if (!(await confirmDialog("Excluir régua?"))) return;
     try {
       await del({ data: { id } });
       qc.invalidateQueries({ queryKey: ["dunning-policies"] });
@@ -341,8 +342,18 @@ function DunningPage() {
           ) : (
             <div className="divide-y">
               {runsData.runs.slice(0, 30).map((r) => {
-                const inv = (r as unknown as { customer_invoices?: { invoice_number?: string; amount?: number; due_date?: string } }).customer_invoices;
-                const history = Array.isArray(r.history) ? (r.history as Array<{ channel?: string; at?: string }>) : [];
+                const inv = (
+                  r as unknown as {
+                    customer_invoices?: {
+                      invoice_number?: string;
+                      amount?: number;
+                      due_date?: string;
+                    };
+                  }
+                ).customer_invoices;
+                const history = Array.isArray(r.history)
+                  ? (r.history as Array<{ channel?: string; at?: string }>)
+                  : [];
                 return (
                   <div key={r.id} className="py-2 flex items-center justify-between text-sm">
                     <div>

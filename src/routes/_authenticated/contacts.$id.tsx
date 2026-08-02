@@ -13,6 +13,7 @@ import { qk } from "@/lib/entity-queries";
 
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
   component: ContactDetail,
@@ -59,7 +60,8 @@ function ContactDetail() {
     { table: "activities", queryKeys: [qk.activities("related_contact_id", id)] },
   ]);
 
-  if (loading && !contact) return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
+  if (loading && !contact)
+    return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
   if (loadError)
     return (
       <div className="p-6 space-y-3">
@@ -86,7 +88,7 @@ function ContactDetail() {
     );
 
   const remove = async () => {
-    if (!confirm("Excluir contato?")) return;
+    if (!(await confirmDialog("Excluir contato?"))) return;
     const { error } = await supabase.from("contacts").delete().eq("id", contact.id);
     if (error) {
       toast.error(error.message);
@@ -99,7 +101,6 @@ function ContactDetail() {
   };
 
   const fullName = `${contact.first_name} ${contact.last_name ?? ""}`.trim() || "Sem nome";
-  
 
   const header = (
     <div className="bg-card rounded-2xl shadow-sm border border-border/60 p-6 flex items-center justify-between gap-4 flex-wrap">
@@ -149,35 +150,38 @@ function ContactDetail() {
 
   return (
     <>
-      
       <RecordLayout
         header={header}
         left={
-        <PropertiesPanel
-          entity="contacts"
-          table="contacts"
-          row={contact as unknown as Record<string, unknown> & { id: string }}
-          props={[
-            { key: "first_name", label: "Nome", primary: true },
-            { key: "last_name", label: "Sobrenome", primary: true },
-            { key: "email", label: "Email", type: "email", primary: true },
-            { key: "phone", label: "Telefone", type: "tel", primary: true },
-            { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
-            { key: "job_title", label: "Cargo", primary: true },
-            { key: "notes", label: "Notas" },
-          ]}
-          onSaved={load}
-        />
-      }
-      center={
-        <>
-          <AiSummaryPanel entity="contact" entityId={contact.id} />
-          <ActivityTimeline relatedKey="related_contact_id" relatedId={contact.id} />
-        </>
-      }
-      right={
-        <AssociationsPanel entity="contact" entityId={contact.id} companyId={contact.company_id} />
-      }
+          <PropertiesPanel
+            entity="contacts"
+            table="contacts"
+            row={contact as unknown as Record<string, unknown> & { id: string }}
+            props={[
+              { key: "first_name", label: "Nome", primary: true },
+              { key: "last_name", label: "Sobrenome", primary: true },
+              { key: "email", label: "Email", type: "email", primary: true },
+              { key: "phone", label: "Telefone", type: "tel", primary: true },
+              { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
+              { key: "job_title", label: "Cargo", primary: true },
+              { key: "notes", label: "Notas" },
+            ]}
+            onSaved={load}
+          />
+        }
+        center={
+          <>
+            <AiSummaryPanel entity="contact" entityId={contact.id} />
+            <ActivityTimeline relatedKey="related_contact_id" relatedId={contact.id} />
+          </>
+        }
+        right={
+          <AssociationsPanel
+            entity="contact"
+            entityId={contact.id}
+            companyId={contact.company_id}
+          />
+        }
       />
     </>
   );

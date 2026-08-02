@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -40,13 +41,7 @@ import {
 
 const MOODS = ["😞", "😕", "😐", "🙂", "😄"];
 
-export function OneOnOnesPanel({
-  personId,
-  canWrite,
-}: {
-  personId: string;
-  canWrite: boolean;
-}) {
+export function OneOnOnesPanel({ personId, canWrite }: { personId: string; canWrite: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listOneOnOnes);
   const delFn = useServerFn(deleteOneOnOne);
@@ -126,8 +121,8 @@ export function OneOnOnesPanel({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
-                        if (confirm("Remover 1:1?")) del.mutate(it.id);
+                      onClick={async () => {
+                        if (await confirmDialog("Remover 1:1?")) del.mutate(it.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -164,12 +159,7 @@ export function OneOnOnesPanel({
         ))
       )}
 
-      <OneOnOneDialog
-        open={open}
-        onOpenChange={setOpen}
-        personId={personId}
-        item={editing}
-      />
+      <OneOnOneDialog open={open} onOpenChange={setOpen} personId={personId} item={editing} />
     </div>
   );
 }
@@ -255,11 +245,7 @@ function OneOnOneDialog({
           </div>
           <div className="space-y-1">
             <Label>Duração (min)</Label>
-            <Input
-              type="number"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-            />
+            <Input type="number" value={duration} onChange={(e) => setDuration(e.target.value)} />
           </div>
           <div className="space-y-1">
             <Label>Status</Label>
