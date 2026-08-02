@@ -1053,6 +1053,17 @@ async function runAction(
         for (const [k, v] of Object.entries(action.values ?? {})) {
           rendered[k] = typeof v === "string" ? renderTokens(v, ctx.after, ctx.vars) : v;
         }
+        // Fallbacks contextuais: quando o workflow dispara de uma entidade e
+        // cria um registro filho, preenche automaticamente a FK de origem caso
+        // o usuário não a tenha informado explicitamente.
+        if (action.table === "contracts") {
+          if (ctx.entity === "deals" && !rendered.deal_id) {
+            rendered.deal_id = ctx.entityId;
+          }
+          if (ctx.entity === "contracts" && !rendered.parent_contract_id) {
+            rendered.parent_contract_id = ctx.entityId;
+          }
+        }
         const ownerId = action.owner_id?.trim() || ctx.ownerId;
         const withOwner = { ...rendered, owner_id: ownerId };
         // Tenta com owner_id; se a tabela não tiver essa coluna, refaz sem.
