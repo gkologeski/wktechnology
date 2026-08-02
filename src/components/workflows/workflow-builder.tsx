@@ -2004,12 +2004,13 @@ function FieldValueEditor({
   compact = false,
 }: {
   field?: FieldOpt;
-  value: string | number | boolean | null | undefined;
+  value: unknown;
   onChange: (v: string | number) => void;
   placeholder?: string;
   compact?: boolean;
 }) {
-  const str = value === null || value === undefined ? "" : String(value);
+  const str =
+    value === null || value === undefined || typeof value === "object" ? "" : String(value);
   const isToken = /\{\{.+\}\}/.test(str);
   const [tokenMode, setTokenMode] = useState(isToken);
   const options = field?.options ?? [];
