@@ -387,7 +387,12 @@ export function FkPicker({
   if (tokenMode || isToken) {
     return (
       <div className="space-y-1.5">
-        <TokenInput value={value} onValueChange={(v) => onChange(v)} placeholder="{{token}}" />
+        <TokenInput
+          value={value}
+          onValueChange={(v) => onChange(v)}
+          tokenKind="id"
+          placeholder="{{token}}"
+        />
         <button
           type="button"
           className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"

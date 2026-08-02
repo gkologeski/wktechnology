@@ -1,6 +1,10 @@
 // Wrappers de <Input> e <Textarea> que renderizam TokenPills sempre visíveis
 // abaixo do campo. Clicar em um pill insere o token na posição do cursor.
-import { forwardRef, useImperativeHandle, useRef } from "react";
+//
+// As pills padrão vêm do contexto do construtor de workflows
+// (`WorkflowTokensProvider`), que deriva as variáveis da entidade do gatilho.
+// `WORKFLOW_TOKENS` é apenas o fallback quando não há contexto/catálogo.
+import { createContext, forwardRef, useContext, useImperativeHandle, useRef } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,6 +13,28 @@ import { WORKFLOW_TOKENS, type MessageToken } from "@/lib/message-tokens-catalog
 import { insertAtCursor } from "@/lib/token-insert";
 import { cn } from "@/lib/utils";
 
+type TokenSets = { text: MessageToken[]; id: MessageToken[] };
+
+const WorkflowTokensContext = createContext<TokenSets | null>(null);
+
+export function WorkflowTokensProvider({
+  value,
+  children,
+}: {
+  value: TokenSets;
+  children: React.ReactNode;
+}) {
+  return <WorkflowTokensContext.Provider value={value}>{children}</WorkflowTokensContext.Provider>;
+}
+
+/** Tokens disponíveis no contexto atual; `kind: "id"` para campos de referência. */
+export function useWorkflowTokens(kind: "text" | "id" = "text"): MessageToken[] {
+  const ctx = useContext(WorkflowTokensContext);
+  if (!ctx) return WORKFLOW_TOKENS;
+  const list = kind === "id" ? ctx.id : ctx.text;
+  return list.length > 0 ? list : WORKFLOW_TOKENS;
+}
+
 type BaseInputProps = React.InputHTMLAttributes<HTMLInputElement>;
 type BaseTextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
@@ -16,6 +42,8 @@ interface TokenFieldExtras {
   value: string;
   onValueChange: (v: string) => void;
   tokens?: MessageToken[];
+  /** Usa o conjunto de tokens de ID (campos de referência). */
+  tokenKind?: "text" | "id";
   pickerLabel?: string;
   hidePills?: boolean;
 }
@@ -24,11 +52,22 @@ export const TokenInput = forwardRef<
   HTMLInputElement,
   Omit<BaseInputProps, "value" | "onChange"> & TokenFieldExtras
 >(function TokenInput(
-  { value, onValueChange, tokens = WORKFLOW_TOKENS, pickerLabel = "Variáveis", hidePills, className, ...rest },
+  {
+    value,
+    onValueChange,
+    tokens,
+    tokenKind = "text",
+    pickerLabel = "Variáveis",
+    hidePills,
+    className,
+    ...rest
+  },
   ref,
 ) {
   const inner = useRef<HTMLInputElement | null>(null);
   useImperativeHandle(ref, () => inner.current as HTMLInputElement);
+  const ctxTokens = useWorkflowTokens(tokenKind);
+  const list = tokens ?? ctxTokens;
 
   return (
     <div className="space-y-1.5">
@@ -41,7 +80,7 @@ export const TokenInput = forwardRef<
       />
       {!hidePills && (
         <TokenPills
-          tokens={tokens}
+          tokens={list}
           label={pickerLabel}
           onInsert={(t) => insertAtCursor(inner.current, value ?? "", t, onValueChange)}
         />
@@ -54,11 +93,22 @@ export const TokenTextarea = forwardRef<
   HTMLTextAreaElement,
   Omit<BaseTextareaProps, "value" | "onChange"> & TokenFieldExtras
 >(function TokenTextarea(
-  { value, onValueChange, tokens = WORKFLOW_TOKENS, pickerLabel = "Variáveis", hidePills, className, ...rest },
+  {
+    value,
+    onValueChange,
+    tokens,
+    tokenKind = "text",
+    pickerLabel = "Variáveis",
+    hidePills,
+    className,
+    ...rest
+  },
   ref,
 ) {
   const inner = useRef<HTMLTextAreaElement | null>(null);
   useImperativeHandle(ref, () => inner.current as HTMLTextAreaElement);
+  const ctxTokens = useWorkflowTokens(tokenKind);
+  const list = tokens ?? ctxTokens;
 
   return (
     <div className="space-y-1.5">
@@ -71,7 +121,7 @@ export const TokenTextarea = forwardRef<
       />
       {!hidePills && (
         <TokenPills
-          tokens={tokens}
+          tokens={list}
           label={pickerLabel}
           onInsert={(t) => insertAtCursor(inner.current, value ?? "", t, onValueChange)}
         />
