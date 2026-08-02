@@ -731,6 +731,7 @@ export function WorkflowBuilder({
   };
 
   return (
+    <WorkflowTokensProvider value={tokenSets}>
     <Dialog open={open} onOpenChange={(o) => { if (!o) void requestClose(); }}>
       <DialogContent className="max-w-none w-screen h-screen max-h-screen p-0 gap-0 rounded-none border-0 flex flex-col sm:rounded-none [&>button.absolute]:hidden">
         <DialogTitle className="sr-only">
