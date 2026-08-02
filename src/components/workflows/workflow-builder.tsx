@@ -1035,6 +1035,8 @@ function StepsList({
   onRemove: (p: StepPath) => void;
   onAddAt: (parentPath: StepPath) => void;
   onChangeAction: (p: StepPath, a: WorkflowAction) => void;
+  entityFields: FieldOpt[];
+
 } & DragProps) {
   return (
     <>
