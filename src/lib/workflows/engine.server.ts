@@ -10,6 +10,8 @@ import type {
   WorkflowTrigger,
 } from "./types";
 import { isFilterGroup } from "./types";
+import { getPath } from "@/lib/message-tokens";
+import { renderWorkflowTokens, toStr } from "./render-tokens";
 
 type AnyRow = Record<string, unknown>;
 type LogStep = { at: string; ok: boolean; action: string; detail?: unknown; error?: string };
@@ -55,29 +57,11 @@ function notificationLinkFor(entity: WorkflowEntity, entityId: string): string |
 }
 
 function getField(obj: AnyRow | null | undefined, path: string): unknown {
-  if (!obj) return undefined;
-  return path.split(".").reduce<unknown>((acc, k) => {
-    if (acc && typeof acc === "object") return (acc as AnyRow)[k];
-    return undefined;
-  }, obj);
+  return getPath(obj ?? null, path);
 }
 
-function toStr(v: unknown): string {
-  if (v == null) return "";
-  if (typeof v === "string") return v;
-  return JSON.stringify(v);
-}
-
-function renderTokens(input: unknown, after: AnyRow | null, vars?: AnyRow): unknown {
-  if (typeof input !== "string") return input;
-  return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key) => {
-    const path = String(key);
-    if (path.startsWith("vars.")) return toStr(getField(vars ?? null, path.slice(5)));
-    // Atalho: `steps.N.campo` lê a saída registrada de um passo anterior.
-    if (path.startsWith("steps.")) return toStr(getField(vars ?? null, path));
-    return toStr(getField(after, path));
-  });
-}
+/** Alias local: a implementação canônica vive em `./render-tokens`. */
+const renderTokens = renderWorkflowTokens;
 
 /**
  * Resolve tokens em valores de `extra_fields` de ações create_*.

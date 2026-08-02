@@ -1,3 +1,4 @@
+import { renderTokens as renderTemplate } from "@/lib/message-tokens";
 // Engine de envio de campanhas de email (broadcast).
 // - resolveRecipients: materializa destinatários a partir de segment (lead|contact) ou lista manual,
 //   aplicando supressão por email_unsubscribes.
@@ -30,13 +31,6 @@ async function getGmailAccount(
   if (accountId) q = q.eq("id", accountId);
   const { data } = await q.order("created_at", { ascending: false }).limit(1);
   return (data?.[0] as EmailAccountRow | undefined) ?? null;
-}
-
-function renderTemplate(tpl: string, vars: Record<string, string>): string {
-  return tpl.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key: string) => {
-    const v = vars[key];
-    return v == null ? "" : String(v);
-  });
 }
 
 function buildUnsubscribeLink(token: string, baseUrl: string) {
