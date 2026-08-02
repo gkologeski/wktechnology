@@ -176,7 +176,7 @@ export function ContractParentPicker({
             </li>
           )}
           {contractItems.map((it) => (
-            <li key={it.id} className="relative">
+            <li key={it.id}>
               <button
                 type="button"
                 onClick={() => onSelect(it.id)}
@@ -202,8 +202,9 @@ export function ContractParentPicker({
               {hoverId === it.id && (
                 <div
                   role="tooltip"
-                  className="pointer-events-none absolute right-2 top-full z-50 w-56 rounded-md border border-border bg-popover/80 p-2.5 text-[11px] text-popover-foreground shadow-md backdrop-blur-sm"
+                  className="pointer-events-none mx-3 mb-1 mt-1 rounded-md border border-border bg-popover/80 p-2.5 text-[11px] text-popover-foreground shadow-sm backdrop-blur-sm"
                 >
+
                   <FileText className="mb-1 h-3.5 w-3.5 opacity-60" />
                   <p>
                     <span className="text-muted-foreground">Vigência: </span>
