@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/crm";
 import { TokenPills } from "@/components/ui/token-pills";
-import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
+import { CAMPAIGN_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -296,7 +296,7 @@ function EmailBroadcastsPage() {
                 />
                 <TokenPills
                   className="mt-2"
-                  tokens={EMAIL_TOKENS}
+                  tokens={CAMPAIGN_TOKENS}
                   onInsert={subjectInserter.insert}
                 />
               </div>
@@ -311,7 +311,7 @@ function EmailBroadcastsPage() {
                   minHeight={220}
                   placeholder="Conteúdo do email…"
                 />
-                <TokenPills className="mt-2" tokens={EMAIL_TOKENS} onInsert={insertBodyHtmlToken} />
+                <TokenPills className="mt-2" tokens={CAMPAIGN_TOKENS} onInsert={insertBodyHtmlToken} />
               </div>
               <div>
                 <Label>Corpo texto (fallback)</Label>
@@ -323,7 +323,7 @@ function EmailBroadcastsPage() {
                 />
                 <TokenPills
                   className="mt-2"
-                  tokens={EMAIL_TOKENS}
+                  tokens={CAMPAIGN_TOKENS}
                   onInsert={bodyTextInserter.insert}
                 />
               </div>
