@@ -819,7 +819,9 @@ export function WorkflowBuilder({
 
               {/* Steps */}
               <StepsList
+                entityFields={fieldOptions}
                 actions={state.actions}
+
                 path={[]}
                 selection={selection}
                 library={library}
