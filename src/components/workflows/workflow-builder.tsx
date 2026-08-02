@@ -1083,6 +1083,7 @@ function StepsList({
               />
             ) : action.type === "switch_by_value" ? (
               <SwitchCard
+                entityFields={entityFields}
                 action={action}
                 stepPath={stepPath}
                 index={i + 1}
@@ -1585,6 +1586,7 @@ function SwitchCard({
   canMoveUp,
   canMoveDown,
   isDraggingSelf,
+  entityFields,
   dragging,
   onDragStartStep,
   onDragEndStep,
@@ -1617,7 +1619,7 @@ function SwitchCard({
     const str = String(raw);
     const opt = switchField?.options?.find((o) => o.value === str);
     if (opt) return opt.label;
-    return labels[str] ?? str;
+    return str;
   };
 
   const handleDragStart = (e: React.DragEvent) => {
