@@ -270,7 +270,53 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
 // Path: um passo é endereçado por um array de índices (branches criam níveis).
 // Ex: [0] = 1º passo topo. [1,"then",0] = 1º passo do ramo "sim" do 2º passo.
 // ============================================================================
-type StepPath = Array<number | "then" | "else">;
+type BranchKey = "then" | "else" | "default" | `case:${number}`;
+type StepPath = Array<number | BranchKey>;
+
+function isBranchKey(seg: unknown): seg is BranchKey {
+  return (
+    seg === "then" ||
+    seg === "else" ||
+    seg === "default" ||
+    (typeof seg === "string" && /^case:\d+$/.test(seg))
+  );
+}
+
+/** Lista de ações filhas de um ramo (then/else de branch_if, case/default de switch). */
+function getBranchList(a: WorkflowAction, key: BranchKey): WorkflowAction[] | null {
+  if (a.type === "branch_if") {
+    if (key === "then" || key === "else") return a[key] ?? [];
+    return null;
+  }
+  if (a.type === "switch_by_value") {
+    if (key === "default") return a.default ?? [];
+    if (typeof key === "string" && key.startsWith("case:")) {
+      const i = Number(key.slice(5));
+      const c = a.cases?.[i];
+      return c ? (c.actions ?? []) : null;
+    }
+  }
+  return null;
+}
+
+/** Substitui a lista de ações filhas de um ramo, preservando o restante da ação. */
+function setBranchList(a: WorkflowAction, key: BranchKey, list: WorkflowAction[]): WorkflowAction {
+  if (a.type === "branch_if" && (key === "then" || key === "else")) {
+    return { ...a, [key]: list };
+  }
+  if (a.type === "switch_by_value") {
+    if (key === "default") return { ...a, default: list };
+    if (typeof key === "string" && key.startsWith("case:")) {
+      const i = Number(key.slice(5));
+      return {
+        ...a,
+        cases: (a.cases ?? []).map((c, ci) => (ci === i ? { ...c, actions: list } : c)),
+      };
+    }
+  }
+  return a;
+}
+
 
 // ---------------------------------------------------------------------------
 // Saídas registradas por passo (espelha `detail` de cada ação em engine.server).
