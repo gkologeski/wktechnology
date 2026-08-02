@@ -101,6 +101,7 @@ function useEntityFieldOptions(entity: WorkflowEntity): FieldOpt[] {
       type: f.type,
       options: f.options,
       ref: (f as { ref?: FieldOpt["ref"] }).ref,
+      system: (f as { system?: boolean }).system,
     }));
   }
   // Fallback: usa constantes locais enquanto o catálogo carrega.
