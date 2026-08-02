@@ -412,11 +412,26 @@ export function FkPicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-[min(360px,90vw)] min-w-[--radix-popover-trigger-width] p-0"
+          className={cn(
+            "p-0",
+            kind === "contract"
+              ? "w-[min(640px,92vw)]"
+              : "w-[min(360px,90vw)] min-w-[--radix-popover-trigger-width]",
+          )}
           align="start"
           sideOffset={6}
         >
-          <Command shouldFilter={false}>
+          {kind === "contract" ? (
+            <ContractParentPicker
+              value={value}
+              onSelect={(id) => {
+                onChange(id);
+                setOpen(false);
+              }}
+            />
+          ) : (
+            <Command shouldFilter={false}>
+
             <CommandInput placeholder="Buscar por nome..." value={rawQ} onValueChange={setRawQ} />
             <CommandList>
               {isLoading && items.length === 0 && (
