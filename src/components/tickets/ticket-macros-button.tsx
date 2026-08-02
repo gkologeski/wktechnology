@@ -27,6 +27,7 @@ type Macro = {
 type Props = {
   ticket: {
     id: string;
+    subject?: string | null;
     contact_id: string | null;
     company_id: string | null;
     deal_id: string | null;
