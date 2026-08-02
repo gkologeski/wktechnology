@@ -696,7 +696,7 @@ export function WorkflowBuilder({
               </p>
               <p className="text-sm mt-1">{EVENT_LABELS[state.trigger.event]}</p>
               <p className="text-xs text-muted-foreground mt-1">
-                {(state.trigger.filters ?? []).length} condição(ões)
+                {conditionsSummary(state.trigger.filters)}
               </p>
             </div>
             <div>
@@ -857,7 +857,7 @@ function TriggerCard({
       {(trigger.filters ?? []).length > 0 && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
           <Filter className="h-3.5 w-3.5" />
-          {trigger.filters!.length} condição(ões)
+          {conditionsSummary(trigger.filters)}
         </div>
       )}
       {trigger.reenroll?.enabled && (
@@ -1222,7 +1222,7 @@ function BranchCard({
               Ramificação
             </p>
             <p className="text-sm font-medium">Se / Então / Senão</p>
-            <p className="text-xs text-muted-foreground">{action.filters.length} condição(ões)</p>
+            <p className="text-xs text-muted-foreground">{conditionsSummary(action.filters)}</p>
           </div>
         </button>
         <div className="flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
