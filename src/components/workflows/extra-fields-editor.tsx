@@ -601,6 +601,12 @@ export function ExtraFieldsEditor({
     assignee_id: "{{owner_id}}",
     hiring_manager_id: "{{owner_id}}",
     approver_user_id: "{{owner_id}}",
+    // Vínculo contextual: quando o workflow dispara de um negócio, o contrato
+    // criado deve apontar para o próprio registro origem ({{id}}).
+    ...(triggerEntity === "deals" ? { deal_id: "{{id}}" } : {}),
+    // Vínculo contextual: quando o workflow dispara de um contrato, o novo
+    // contrato (aditivo/renovação) deve apontar para o contrato origem.
+    ...(triggerEntity === "contracts" ? { parent_contract_id: "{{id}}" } : {}),
   };
 
   function tokenForField(field: EntityFieldDef): string | null {
