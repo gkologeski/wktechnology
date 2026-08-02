@@ -187,8 +187,16 @@ export function SendEmailDialog({
       full_name: tokenContext?.full_name ?? contactName ?? "",
       email: tokenContext?.email ?? defaultTo,
       company: tokenContext?.company ?? "",
+      // Remetente: alimenta {{agent.name}} / {{agent.email}}.
+      agent: {
+        name:
+          (user?.user_metadata as { full_name?: string } | undefined)?.full_name ??
+          user?.email ??
+          "",
+        email: account?.email ?? user?.email ?? "",
+      },
     }),
-    [tokenContext, contactName, defaultTo],
+    [tokenContext, contactName, defaultTo, user, account],
   );
 
   const applyTemplate = (id: string) => {
