@@ -1023,6 +1023,7 @@ function StepsList({
   onSelect,
   onRemove,
   onAddAt,
+  onChangeAction,
   dragging,
   onDragStartStep,
   onDragEndStep,
@@ -1036,6 +1037,8 @@ function StepsList({
   onSelect: (p: StepPath) => void;
   onRemove: (p: StepPath) => void;
   onAddAt: (parentPath: StepPath) => void;
+  onChangeAction: (p: StepPath, a: WorkflowAction) => void;
+
 } & DragProps) {
   return (
     <>
