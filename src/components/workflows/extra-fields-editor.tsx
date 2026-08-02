@@ -60,6 +60,7 @@ import {
   searchCompanies,
   searchContacts,
   searchContracts,
+  searchDeals,
   searchLegalEntities,
   searchPipelines,
   searchUsers,
