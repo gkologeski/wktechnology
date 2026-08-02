@@ -551,3 +551,54 @@ export const searchContracts = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return ((rows ?? []) as ContractRow[]).map(toItem);
   });
+
+/**
+ * Negócios — usado em `deal_id`. Aceita `company_id` para listar apenas os
+ * negócios de uma empresa. Retorna etapa/valor/previsão para o card de
+ * detalhe do seletor.
+ */
+type DealRow = {
+  id: string;
+  name: string | null;
+  stage: string | null;
+  value: number | null;
+  currency: string | null;
+  expected_close_date: string | null;
+};
+
+const DEAL_SELECT = "id, name, stage, value, currency, expected_close_date";
+
+export const searchDeals = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => ContractRefInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const toItem = (r: DealRow) => ({
+      id: r.id,
+      name: (r.name ?? "").trim() || "Negócio sem nome",
+      status: r.stage,
+      value: r.value,
+      currency: r.currency,
+      expected_close_date: r.expected_close_date,
+    });
+    if (data.ids && data.ids.length > 0) {
+      const { data: rows, error } = await supabase
+        .from("deals")
+        .select(DEAL_SELECT)
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      return ((rows ?? []) as DealRow[]).map(toItem);
+    }
+    const q = data.q?.trim();
+    let query = supabase
+      .from("deals")
+      .select(DEAL_SELECT)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(LIMIT);
+    if (data.company_id) query = query.eq("company_id", data.company_id);
+    if (q) query = query.ilike("name", `%${escapeLike(q)}%`);
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return ((rows ?? []) as DealRow[]).map(toItem);
+  });
