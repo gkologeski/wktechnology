@@ -1,3 +1,4 @@
+import { conditionsSummary, evaluateConditions } from "@/lib/workflows/conditions";
 // Server functions para o builder de Workflows.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -274,9 +275,11 @@ export const testWorkflow = createServerFn({ method: "POST" })
     // Log simulado: filtros do trigger + lista linear das ações (branches expandidos).
     const log: Array<{ step: string; ok: boolean; note?: string }> = [];
     const triggerFilters = trigger.filters ?? [];
-    const triggerOk = triggerFilters.every((f) => passesFilter(rec as Record<string, unknown>, f));
+    const triggerOk = evaluateConditions(triggerFilters, (f) =>
+      passesFilter(rec as Record<string, unknown>, f),
+    );
     log.push({
-      step: `Trigger: ${trigger.event ?? "?"} (${triggerFilters.length} filtro(s))`,
+      step: `Trigger: ${trigger.event ?? "?"} (${conditionsSummary(triggerFilters)})`,
       ok: triggerOk,
       note: triggerOk ? "registro passa nos filtros do gatilho" : "registro NÃO passa nos filtros do gatilho",
     });
@@ -285,8 +288,10 @@ export const testWorkflow = createServerFn({ method: "POST" })
       for (const a of list) {
         const prefix = "  ".repeat(depth);
         if (a.type === "branch_if") {
-          const passes = a.filters.every((f) => passesFilter(rec as Record<string, unknown>, f));
-          log.push({ step: `${prefix}branch_if (${a.filters.length} filtro(s)) → ${passes ? "então" : "senão"}`, ok: true });
+          const passes = evaluateConditions(a.filters, (f) =>
+            passesFilter(rec as Record<string, unknown>, f),
+          );
+          log.push({ step: `${prefix}branch_if (${conditionsSummary(a.filters)}) → ${passes ? "então" : "senão"}`, ok: true });
           walk(passes ? a.then : a.else, depth + 1);
         } else if (a.type === "switch_by_value") {
           const v = (rec as Record<string, unknown>)[a.field];
@@ -294,7 +299,9 @@ export const testWorkflow = createServerFn({ method: "POST" })
           log.push({ step: `${prefix}switch_by_value(${a.field}=${String(v)}) → ${match ? (match.label ?? String(match.value)) : "default"}`, ok: true });
           walk(match ? match.actions : a.default, depth + 1);
         } else if (a.type === "branch_multi") {
-          const hit = a.branches.find((b) => b.filters.every((f) => passesFilter(rec as Record<string, unknown>, f)));
+          const hit = a.branches.find((b) =>
+            evaluateConditions(b.filters, (f) => passesFilter(rec as Record<string, unknown>, f)),
+          );
           log.push({ step: `${prefix}branch_multi → ${hit ? (hit.label ?? "ramo") : "senão"}`, ok: true });
           walk(hit ? hit.actions : a.else, depth + 1);
         } else {
@@ -357,7 +364,7 @@ export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
 
     let enqueued = 0;
     for (const rec of (records ?? []) as Record<string, unknown>[]) {
-      if (!filters.every((f) => passesFilter(rec, f))) continue;
+      if (!evaluateConditions(filters, (f) => passesFilter(rec, f))) continue;
       const { error: evErr } = await supabase.from("workflow_events").insert({
         owner_id: userId,
         entity: wf.entity,
