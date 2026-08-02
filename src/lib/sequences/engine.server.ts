@@ -86,7 +86,6 @@ async function executeStep(
   if (error) throw new Error(error.message);
 }
 
-
 export async function tickSequences(supabase: SupabaseClient, limit = 100) {
   const nowIso = new Date().toISOString();
   const { data: enrollments, error } = await supabase

@@ -96,7 +96,15 @@ export async function processDueEnrollments(limit = 50): Promise<{
       });
       const parts = fmt.formatToParts(new Date());
       const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
-      const wkMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      const wkMap: Record<string, number> = {
+        Sun: 0,
+        Mon: 1,
+        Tue: 2,
+        Wed: 3,
+        Thu: 4,
+        Fri: 5,
+        Sat: 6,
+      };
       const day = wkMap[parts.find((p) => p.type === "weekday")?.value ?? "Mon"] ?? 1;
       return { hour: hour % 24, day };
     } catch {
@@ -211,9 +219,12 @@ export async function processDueEnrollments(limit = 50): Promise<{
           .limit(1)
           .maybeSingle();
 
-        const inviteRow = lastInvite as
-          | { id: string; status: string; sent_at: string | null; accepted_at: string | null }
-          | null;
+        const inviteRow = lastInvite as {
+          id: string;
+          status: string;
+          sent_at: string | null;
+          accepted_at: string | null;
+        } | null;
 
         if (inviteRow?.status === "accepted") {
           // Avança normalmente para o próximo step
@@ -293,9 +304,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
         if (onTimeout === "skip_messages") {
           let cursor = next.step_order + 1;
           while (
-            stepList.some(
-              (s) => s.step_order === cursor && s.channel === "linkedin_message",
-            )
+            stepList.some((s) => s.step_order === cursor && s.channel === "linkedin_message")
           ) {
             cursor += 1;
           }
@@ -320,7 +329,6 @@ export async function processDueEnrollments(limit = 50): Promise<{
         continue;
       }
 
-
       const candidate = e.candidate as {
         full_name?: string;
         email?: string;
@@ -343,7 +351,8 @@ export async function processDueEnrollments(limit = 50): Promise<{
         "candidate.email": candidate?.email ?? null,
         agent,
       };
-      const render = (v: string | null | undefined) => (v ? renderTokens(v, tokenCtx) : v ?? null);
+      const render = (v: string | null | undefined) =>
+        v ? renderTokens(v, tokenCtx) : (v ?? null);
       next = {
         ...next,
         subject: render(next.subject),
@@ -398,10 +407,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
             const providerInviteId =
               next.channel === "linkedin_invite"
                 ? String(
-                    inviteResp?.invitation_id ??
-                      inviteResp?.invite_id ??
-                      inviteResp?.id ??
-                      "",
+                    inviteResp?.invitation_id ?? inviteResp?.invite_id ?? inviteResp?.id ?? "",
                   ) || null
                 : null;
             const isInvite = next.channel === "linkedin_invite";

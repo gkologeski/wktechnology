@@ -91,7 +91,9 @@ describe("sequências (vendas e sourcing ATS)", () => {
       "candidate.full_name": "Ana Souza",
       agent: { name: "Bruno", email: null },
     };
-    expect(renderTokens("{{candidate.full_name}} — {{headline}}", ctx)).toBe("Ana Souza — Dev Sênior");
+    expect(renderTokens("{{candidate.full_name}} — {{headline}}", ctx)).toBe(
+      "Ana Souza — Dev Sênior",
+    );
     expect(renderTokens("[{{job.title}}]", ctx)).toBe("[]");
   });
 });

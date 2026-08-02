@@ -23,9 +23,17 @@ export async function loadAgentContext(
     // segue sem nome
   }
   try {
-    const auth = (admin as unknown as {
-      auth?: { admin?: { getUserById?: (id: string) => Promise<{ data?: { user?: { email?: string | null } | null } }> } };
-    }).auth;
+    const auth = (
+      admin as unknown as {
+        auth?: {
+          admin?: {
+            getUserById?: (
+              id: string,
+            ) => Promise<{ data?: { user?: { email?: string | null } | null } }>;
+          };
+        };
+      }
+    ).auth;
     if (auth?.admin?.getUserById) {
       const res = await auth.admin.getUserById(ownerId);
       email = res?.data?.user?.email ?? null;
