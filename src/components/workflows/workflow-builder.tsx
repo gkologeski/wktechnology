@@ -1355,127 +1355,388 @@ function BranchCard({
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3 p-3 pt-0">
-        {(["then", "else"] as const).map((branch) => {
-          const parentPath: StepPath = [...stepPath, branch];
-          const children = action[branch] ?? [];
-          return (
-            <div key={branch} className="rounded-md border bg-muted/20 p-2">
-              <p className="text-[11px] uppercase tracking-wide font-semibold mb-2">
-                {branch === "then" ? "Sim" : "Não"}
-              </p>
-              <div className="space-y-1">
-                <DropSlot
-                  parentPath={parentPath}
-                  index={0}
-                  dragging={dragging}
-                  onDropAt={onDropAt}
-                  variant={children.length === 0 && !!dragging ? "empty" : "between"}
-                />
-                {children.map((child, ci) => {
-                  const childPath: StepPath = [...parentPath, ci];
-                  const isSel =
-                    Array.isArray(selection) &&
-                    JSON.stringify(selection) === JSON.stringify(childPath);
-                  const isDraggingChild =
-                    dragging !== null && JSON.stringify(dragging) === JSON.stringify(childPath);
-                  const Icon = ACTION_ICONS[child.type] ?? Sparkles;
-                  return (
-                    <div key={ci}>
-                      <div
-                        className={cn(
-                          "group/step relative rounded border bg-card p-2",
-                          isSel && "border-primary ring-1 ring-primary/20",
-                          isDraggingChild && "opacity-40",
-                        )}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            draggable
-                            onDragStart={(e) => {
-                              e.dataTransfer.effectAllowed = "move";
-                              e.dataTransfer.setData("text/plain", JSON.stringify(childPath));
-                              onDragStartStep(childPath);
-                            }}
-                            onDragEnd={onDragEndStep}
-                            role="button"
-                            aria-label="Arrastar passo"
-                            tabIndex={-1}
-                            className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover/step:opacity-100 focus-visible:opacity-100 shrink-0"
-                          >
-                            <GripVertical className="h-3 w-3" />
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => onSelectPath(childPath)}
-                            aria-pressed={isSel}
-                            className="flex-1 min-w-0 text-left"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Icon className="h-3.5 w-3.5 shrink-0" />
-                              <span className="text-xs font-medium truncate">
-                                {ACTION_LABELS[child.type]}
-                              </span>
-                            </div>
-                          </button>
-                        </div>
-                        <div className="absolute top-0.5 right-0.5 flex items-center opacity-0 group-hover/step:opacity-100 focus-within:opacity-100">
-                          <button
-                            type="button"
-                            onClick={() => onMove(childPath, -1)}
-                            disabled={ci === 0}
-                            className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
-                            aria-label="Mover para cima"
-                          >
-                            <ArrowUp className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onMove(childPath, 1)}
-                            disabled={ci === children.length - 1}
-                            className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
-                            aria-label="Mover para baixo"
-                          >
-                            <ArrowDown className="h-3 w-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onRemovePath(childPath)}
-                            className="p-0.5 text-muted-foreground hover:text-destructive"
-                            aria-label="Remover"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                      <DropSlot
-                        parentPath={parentPath}
-                        index={ci + 1}
-                        dragging={dragging}
-                        onDropAt={onDropAt}
-                      />
-                    </div>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => onAddAt(parentPath)}
-                  className={cn(
-                    "w-full rounded border border-dashed text-xs py-1.5 text-muted-foreground hover:text-primary hover:border-primary",
-                    library && JSON.stringify(library.parentPath) === JSON.stringify(parentPath)
-                      ? "border-primary text-primary"
-                      : "",
-                  )}
-                >
-                  + Adicionar
-                </button>
-              </div>
-            </div>
-          );
-        })}
+        {(["then", "else"] as const).map((branch) => (
+          <BranchColumn
+            key={branch}
+            title={branch === "then" ? "Sim" : "Não"}
+            parentPath={[...stepPath, branch]}
+            actions={action[branch] ?? []}
+            selection={selection}
+            library={library}
+            onSelectPath={onSelectPath}
+            onRemovePath={onRemovePath}
+            onAddAt={onAddAt}
+            dragging={dragging}
+            onDragStartStep={onDragStartStep}
+            onDragEndStep={onDragEndStep}
+            onDropAt={onDropAt}
+            onMove={onMove}
+          />
+        ))}
       </div>
     </div>
   );
 }
+
+/**
+ * Coluna de ramo no canvas: lista de passos filhos com drag & drop, mover,
+ * remover e adicionar. Compartilhada por branch_if (Sim/Não) e switch (cases).
+ */
+function BranchColumn({
+  title,
+  subtitle,
+  parentPath,
+  actions,
+  selection,
+  library,
+  onSelectPath,
+  onRemovePath,
+  onAddAt,
+  dragging,
+  onDragStartStep,
+  onDragEndStep,
+  onDropAt,
+  onMove,
+  headerExtra,
+}: {
+  title: string;
+  subtitle?: string;
+  parentPath: StepPath;
+  actions: WorkflowAction[];
+  selection: StepPath | "trigger" | null;
+  library: { parentPath: StepPath } | null;
+  onSelectPath: (p: StepPath) => void;
+  onRemovePath: (p: StepPath) => void;
+  onAddAt: (parentPath: StepPath) => void;
+  headerExtra?: React.ReactNode;
+} & DragProps) {
+  return (
+    <div className="rounded-md border bg-muted/20 p-2">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="min-w-0">
+          <p className="text-[11px] uppercase tracking-wide font-semibold truncate" title={title}>
+            {title}
+          </p>
+          {subtitle && (
+            <p className="text-[11px] text-muted-foreground truncate" title={subtitle}>
+              {subtitle}
+            </p>
+          )}
+        </div>
+        {headerExtra}
+      </div>
+      <div className="space-y-1">
+        <DropSlot
+          parentPath={parentPath}
+          index={0}
+          dragging={dragging}
+          onDropAt={onDropAt}
+          variant={actions.length === 0 && !!dragging ? "empty" : "between"}
+        />
+        {actions.length === 0 && !dragging && (
+          <p className="text-[11px] text-muted-foreground py-1">Nenhum passo neste ramo.</p>
+        )}
+        {actions.map((child, ci) => {
+          const childPath: StepPath = [...parentPath, ci];
+          const isSel =
+            Array.isArray(selection) && JSON.stringify(selection) === JSON.stringify(childPath);
+          const isDraggingChild =
+            dragging !== null && JSON.stringify(dragging) === JSON.stringify(childPath);
+          const Icon = ACTION_ICONS[child.type] ?? Sparkles;
+          return (
+            <div key={ci}>
+              <div
+                className={cn(
+                  "group/step relative rounded border bg-card p-2",
+                  isSel && "border-primary ring-1 ring-primary/20",
+                  isDraggingChild && "opacity-40",
+                )}
+              >
+                <div className="flex items-center gap-1.5">
+                  <span
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.effectAllowed = "move";
+                      e.dataTransfer.setData("text/plain", JSON.stringify(childPath));
+                      onDragStartStep(childPath);
+                    }}
+                    onDragEnd={onDragEndStep}
+                    role="button"
+                    aria-label="Arrastar passo"
+                    tabIndex={-1}
+                    className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground opacity-0 group-hover/step:opacity-100 focus-visible:opacity-100 shrink-0"
+                  >
+                    <GripVertical className="h-3 w-3" />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onSelectPath(childPath)}
+                    aria-pressed={isSel}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="text-xs font-medium truncate">
+                        {ACTION_LABELS[child.type]}
+                      </span>
+                    </div>
+                  </button>
+                </div>
+                <div className="absolute top-0.5 right-0.5 flex items-center opacity-0 group-hover/step:opacity-100 focus-within:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => onMove(childPath, -1)}
+                    disabled={ci === 0}
+                    className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+                    aria-label="Mover para cima"
+                  >
+                    <ArrowUp className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onMove(childPath, 1)}
+                    disabled={ci === actions.length - 1}
+                    className="p-0.5 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:pointer-events-none"
+                    aria-label="Mover para baixo"
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemovePath(childPath)}
+                    className="p-0.5 text-muted-foreground hover:text-destructive"
+                    aria-label="Remover"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+              <DropSlot
+                parentPath={parentPath}
+                index={ci + 1}
+                dragging={dragging}
+                onDropAt={onDropAt}
+              />
+            </div>
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => onAddAt(parentPath)}
+          className={cn(
+            "w-full rounded border border-dashed text-xs py-1.5 text-muted-foreground hover:text-primary hover:border-primary",
+            library && JSON.stringify(library.parentPath) === JSON.stringify(parentPath)
+              ? "border-primary text-primary"
+              : "",
+          )}
+        >
+          + Adicionar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Cartão de switch no canvas: uma coluna por case + coluna "Padrão",
+ * no mesmo padrão visual do Se/Então/Senão.
+ */
+function SwitchCard({
+  action,
+  stepPath,
+  index,
+  selected,
+  selection,
+  library,
+  onSelect,
+  onRemove,
+  onSelectPath,
+  onRemovePath,
+  onAddAt,
+  onChangeAction,
+  canMoveUp,
+  canMoveDown,
+  isDraggingSelf,
+  dragging,
+  onDragStartStep,
+  onDragEndStep,
+  onDropAt,
+  onMove,
+}: {
+  action: Extract<WorkflowAction, { type: "switch_by_value" }>;
+  stepPath: StepPath;
+  index: number;
+  selected: boolean;
+  selection: StepPath | "trigger" | null;
+  library: { parentPath: StepPath } | null;
+  onSelect: () => void;
+  onRemove: () => void;
+  onSelectPath: (p: StepPath) => void;
+  onRemovePath: (p: StepPath) => void;
+  onAddAt: (parentPath: StepPath) => void;
+  onChangeAction: (p: StepPath, a: WorkflowAction) => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  isDraggingSelf: boolean;
+} & DragProps) {
+  const labels = useReferenceLabels();
+  const cases = action.cases ?? [];
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", JSON.stringify(stepPath));
+    onDragStartStep(stepPath);
+  };
+  const addCase = () =>
+    onChangeAction(stepPath, { ...action, cases: [...cases, { value: "", actions: [] }] });
+  const removeCase = (i: number) =>
+    onChangeAction(stepPath, { ...action, cases: cases.filter((_, idx) => idx !== i) });
+  return (
+    <div
+      className={cn(
+        "group relative rounded-lg border bg-card shadow-sm",
+        selected && "border-primary ring-2 ring-primary/20",
+        isDraggingSelf && "opacity-40",
+      )}
+    >
+      <div className="flex items-center gap-2 p-3">
+        <DragHandle
+          onDragStart={handleDragStart}
+          onDragEnd={onDragEndStep}
+          label="Arrastar ramificação por valor"
+        />
+        <button
+          type="button"
+          onClick={onSelect}
+          aria-pressed={selected}
+          className="flex-1 min-w-0 text-left flex items-center gap-3"
+        >
+          <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+            <SplitSquareHorizontal className="h-4 w-4" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
+              Passo {index}
+            </p>
+            <p className="text-sm font-medium">Ramificar por valor</p>
+            <p className="text-xs text-muted-foreground truncate">
+              {describeAction(action, labels)}
+            </p>
+          </div>
+        </button>
+        <div className="flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              addCase();
+            }}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1" /> Case
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(stepPath, -1);
+            }}
+            disabled={!canMoveUp}
+            aria-label="Mover ramificação para cima"
+          >
+            <ArrowUp className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(stepPath, 1);
+            }}
+            disabled={!canMoveDown}
+            aria-label="Mover ramificação para baixo"
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+            aria-label="Remover ramificação"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      <div className="p-3 pt-0 overflow-x-auto">
+        <div className="flex gap-3 min-w-max items-start">
+          {cases.map((c, ci) => {
+            const valueText =
+              c.value === "" || c.value === null || c.value === undefined
+                ? "(vazio)"
+                : String(c.value);
+            return (
+              <div key={ci} className="w-64 shrink-0">
+                <BranchColumn
+                  title={c.label?.trim() ? c.label : valueText}
+                  subtitle={c.label?.trim() ? valueText : undefined}
+                  parentPath={[...stepPath, `case:${ci}`]}
+                  actions={c.actions ?? []}
+                  selection={selection}
+                  library={library}
+                  onSelectPath={onSelectPath}
+                  onRemovePath={onRemovePath}
+                  onAddAt={onAddAt}
+                  dragging={dragging}
+                  onDragStartStep={onDragStartStep}
+                  onDragEndStep={onDragEndStep}
+                  onDropAt={onDropAt}
+                  onMove={onMove}
+                  headerExtra={
+                    <button
+                      type="button"
+                      onClick={() => removeCase(ci)}
+                      aria-label="Remover case"
+                      className="p-0.5 text-muted-foreground hover:text-destructive shrink-0"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  }
+                />
+              </div>
+            );
+          })}
+          <div className="w-64 shrink-0">
+            <BranchColumn
+              title="Padrão"
+              subtitle="Quando nenhum valor bate"
+              parentPath={[...stepPath, "default"]}
+              actions={action.default ?? []}
+              selection={selection}
+              library={library}
+              onSelectPath={onSelectPath}
+              onRemovePath={onRemovePath}
+              onAddAt={onAddAt}
+              dragging={dragging}
+              onDragStartStep={onDragStartStep}
+              onDragEndStep={onDragEndStep}
+              onDropAt={onDropAt}
+              onMove={onMove}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 function Connector({ onAdd, active }: { onAdd: () => void; active?: boolean }) {
   return (
