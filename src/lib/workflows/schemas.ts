@@ -107,19 +107,19 @@ export const TimeTriggerConfigSchema = z.object({
   field: z.string().max(100).optional(),
   amount: z.number().int().min(1).max(100_000),
   unit: z.enum(["minutes", "hours", "days"]),
-  filters: z.array(FilterSchema).max(20).optional(),
+  filters: ConditionListSchema.optional(),
 });
 
 export const TriggerSchema = z.object({
   event: EventEnum,
-  filters: z.array(FilterSchema).max(20).default([]),
+  filters: ConditionListSchema.default([]),
   reenroll: z
     .object({
       enabled: z.boolean(),
       events: z.array(EventEnum).max(3).optional(),
     })
     .optional(),
-  goal_filters: z.array(FilterSchema).max(20).optional(),
+  goal_filters: ConditionListSchema.optional(),
   time_based: TimeTriggerConfigSchema.optional(),
 });
 
@@ -346,7 +346,7 @@ export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
     const src = raw as ActionInput;
     if (src.type === "branch_if") {
       if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima de branch_if excedida");
-      const filters = z.array(FilterSchema).max(20).parse(src.filters ?? []);
+      const filters = ConditionListSchema.parse(src.filters ?? []);
       const thenActions = parseActionsAtDepth(src.then ?? [], depth + 1);
       const elseActions = parseActionsAtDepth(src.else ?? [], depth + 1);
       return { type: "branch_if", filters, then: thenActions, else: elseActions };
@@ -375,7 +375,7 @@ export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
         const bo = (b ?? {}) as ActionInput;
         return {
           label: typeof bo.label === "string" ? bo.label : undefined,
-          filters: z.array(FilterSchema).max(20).parse(bo.filters ?? []),
+          filters: ConditionListSchema.parse(bo.filters ?? []),
           actions: parseActionsAtDepth(bo.actions ?? [], depth + 1),
         };
       });
