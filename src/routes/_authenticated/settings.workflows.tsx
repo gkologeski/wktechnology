@@ -115,16 +115,43 @@ function WorkflowsPage() {
     refresh(); /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, []);
 
+  const editingRow = draft?.id ? (rows.find((r) => r.id === draft.id) ?? null) : null;
+
   const handleSave = async (d: WorkflowDraft) => {
     try {
-      await saveFn({ data: d });
-      toast.success("Rascunho salvo");
+      const res = await saveFn({ data: d });
+      const id = (res as { id?: string } | undefined)?.id ?? d.id;
+      toast.success("Rascunho salvo — publique para ativar", {
+        action: id
+          ? {
+              label: "Publicar",
+              onClick: () => {
+                void handlePublishById(id);
+              },
+            }
+          : undefined,
+      });
       setDraft(null);
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar");
     }
   };
+
+  const handleSaveAndPublish = async (d: WorkflowDraft) => {
+    try {
+      const res = await saveFn({ data: d });
+      const id = (res as { id?: string } | undefined)?.id ?? d.id;
+      if (!id) throw new Error("Não foi possível identificar o workflow salvo");
+      const r = await publishFn({ data: { id } });
+      toast.success(`Publicado — v${r.version}`);
+      setDraft(null);
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao publicar");
+    }
+  };
+
 
   const handleDelete = async (id: string) => {
     if (!(await confirmDialog("Excluir este workflow?"))) return;
@@ -165,15 +192,18 @@ function WorkflowsPage() {
     }
   };
 
-  const handlePublish = async (row: WorkflowRow) => {
+  const handlePublishById = async (id: string) => {
     try {
-      const r = await publishFn({ data: { id: row.id } });
+      const r = await publishFn({ data: { id } });
       toast.success(`Publicado — v${r.version}`);
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao publicar");
     }
   };
+
+  const handlePublish = (row: WorkflowRow) => handlePublishById(row.id);
+
 
   const handleDiscard = async (row: WorkflowRow) => {
     if (
@@ -293,21 +323,29 @@ function WorkflowsPage() {
                       {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[draftTrigger.event ?? "created"]}{" "}
                       · {draftActions.length} ação(ões) · {row.runs_24h} exec / 24h
                     </p>
+                    {!isPublished && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {row.published_version > 0
+                          ? `A versão v${row.published_version} continua em execução; publique para aplicar o rascunho.`
+                          : "Ainda não publicado — o workflow não executa até ser publicado."}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap justify-end">
                     <Switch checked={row.enabled} onCheckedChange={(v) => handleToggle(row, v)} />
-                    {row.has_draft_changes && (
+                    {!isPublished && (
                       <>
                         <Button size="sm" variant="default" onClick={() => handlePublish(row)}>
                           <Upload className="h-3.5 w-3.5 mr-1" /> Publicar
                         </Button>
-                        {row.published_version > 0 && (
+                        {row.published_version > 0 && row.has_draft_changes && (
                           <Button size="sm" variant="ghost" onClick={() => handleDiscard(row)}>
                             Descartar
                           </Button>
                         )}
                       </>
                     )}
+
                     <Button
                       size="sm"
                       variant="ghost"
@@ -368,7 +406,11 @@ function WorkflowsPage() {
         draft={draft}
         onClose={() => setDraft(null)}
         onSave={handleSave}
+        onSaveAndPublish={handleSaveAndPublish}
+        publishedVersion={editingRow?.published_version ?? 0}
+        hasDraftChanges={editingRow ? editingRow.has_draft_changes : true}
       />
+
 
       <Dialog
         open={!!testTarget}
