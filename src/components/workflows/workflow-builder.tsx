@@ -317,7 +317,6 @@ function setBranchList(a: WorkflowAction, key: BranchKey, list: WorkflowAction[]
   return a;
 }
 
-
 // ---------------------------------------------------------------------------
 // Saídas registradas por passo (espelha `detail` de cada ação em engine.server).
 // Usadas para oferecer, nas condições, valores de passos anteriores.
@@ -526,7 +525,6 @@ function insertStepAt(
     return setBranchList(a, branch, insertStepAt(list, remaining, index, newAction));
   });
 }
-
 
 // True se `target` está dentro (ou é igual a) `source`.
 function isDescendantOrSelf(target: StepPath, source: StepPath): boolean {
@@ -759,8 +757,6 @@ export function WorkflowBuilder({
           </div>
         )}
 
-
-
         {/* 3-panel body */}
         <div className="flex-1 flex overflow-hidden">
           {/* Sidebar esquerda */}
@@ -839,7 +835,6 @@ export function WorkflowBuilder({
                 }}
                 onAddAt={(parentPath) => setLibrary({ parentPath })}
                 onChangeAction={(p, na) => setActions((prev) => updateStep(prev, p, () => na))}
-
                 dragging={dragging}
                 onDragStartStep={(p) => setDragging(p)}
                 onDragEndStep={() => setDragging(null)}
@@ -1040,7 +1035,6 @@ function StepsList({
   onRemove: (p: StepPath) => void;
   onAddAt: (parentPath: StepPath) => void;
   onChangeAction: (p: StepPath, a: WorkflowAction) => void;
-
 } & DragProps) {
   return (
     <>
@@ -1108,7 +1102,6 @@ function StepsList({
               <StepCard
                 action={action}
                 index={i + 1}
-
                 stepPath={stepPath}
                 selected={isSelected}
                 canMoveUp={i > 0}
@@ -1765,7 +1758,6 @@ function SwitchCard({
     </div>
   );
 }
-
 
 function Connector({ onAdd, active }: { onAdd: () => void; active?: boolean }) {
   return (
@@ -3789,7 +3781,6 @@ function SwitchByValueForm({
     </div>
   );
 }
-
 
 function BranchMultiForm({
   entity,
