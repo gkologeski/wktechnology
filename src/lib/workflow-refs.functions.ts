@@ -445,3 +445,77 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
       }
     }
   });
+
+/** Empresas do grupo (legal_entities) — usado em `contracting_legal_entity_id`. */
+export const searchLegalEntities = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => RefInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const toName = (r: {
+      id: string;
+      name: string | null;
+      trade_name: string | null;
+      cnpj: string | null;
+    }) => ({
+      id: r.id,
+      name:
+        [(r.trade_name ?? "").trim() || (r.name ?? "").trim(), r.cnpj ?? ""]
+          .filter(Boolean)
+          .join(" · ") || "Empresa sem nome",
+    });
+    if (data.ids && data.ids.length > 0) {
+      const { data: rows, error } = await supabase
+        .from("legal_entities")
+        .select("id, name, trade_name, cnpj")
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      return (rows ?? []).map(toName);
+    }
+    const q = data.q?.trim();
+    let query = supabase
+      .from("legal_entities")
+      .select("id, name, trade_name, cnpj")
+      .order("name")
+      .limit(LIMIT);
+    if (q) {
+      const like = `%${escapeLike(q)}%`;
+      query = query.or(`name.ilike.${like},trade_name.ilike.${like},cnpj.ilike.${like}`);
+    }
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(toName);
+  });
+
+/** Contratos — usado em `parent_contract_id` (contrato-pai / aditivo). */
+export const searchContracts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => RefInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const toName = (r: { id: string; number: string | null; title: string | null }) => ({
+      id: r.id,
+      name: [r.number, (r.title ?? "").trim()].filter(Boolean).join(" — ") || "Contrato sem título",
+    });
+    if (data.ids && data.ids.length > 0) {
+      const { data: rows, error } = await supabase
+        .from("contracts")
+        .select("id, number, title")
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      return (rows ?? []).map(toName);
+    }
+    const q = data.q?.trim();
+    let query = supabase
+      .from("contracts")
+      .select("id, number, title")
+      .order("created_at", { ascending: false })
+      .limit(LIMIT);
+    if (q) {
+      const like = `%${escapeLike(q)}%`;
+      query = query.or(`title.ilike.${like},number.ilike.${like}`);
+    }
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(toName);
+  });
