@@ -1021,6 +1021,8 @@ function StepsList({
   onRemove,
   onAddAt,
   onChangeAction,
+  entityFields,
+
   dragging,
   onDragStartStep,
   onDragEndStep,
