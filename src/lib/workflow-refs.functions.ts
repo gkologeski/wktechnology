@@ -486,35 +486,69 @@ export const searchLegalEntities = createServerFn({ method: "POST" })
     return (rows ?? []).map(toName);
   });
 
-/** Contratos — usado em `parent_contract_id` (contrato-pai / aditivo). */
+/**
+ * Contratos — usado em `parent_contract_id` (contrato-pai / aditivo).
+ * Aceita `company_id` para listar apenas contratos de uma empresa contraparte.
+ * Retorna também vigência/valor para o card de detalhe do seletor.
+ */
+const ContractRefInput = RefInput.extend({
+  company_id: z
+    .string()
+    .optional()
+    .transform((v) => (v && UUID_RE.test(v) ? v : undefined)),
+});
+
+type ContractRow = {
+  id: string;
+  number: string | null;
+  title: string | null;
+  status: string | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  monthly_value: number | null;
+  total_value: number | null;
+  currency: string | null;
+};
+
+const CONTRACT_SELECT =
+  "id, number, title, status, starts_at, ends_at, monthly_value, total_value, currency";
+
 export const searchContracts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => RefInput.parse(i))
+  .inputValidator((i) => ContractRefInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const toName = (r: { id: string; number: string | null; title: string | null }) => ({
+    const toItem = (r: ContractRow) => ({
       id: r.id,
       name: [r.number, (r.title ?? "").trim()].filter(Boolean).join(" — ") || "Contrato sem título",
+      status: r.status,
+      starts_at: r.starts_at,
+      ends_at: r.ends_at,
+      monthly_value: r.monthly_value,
+      total_value: r.total_value,
+      currency: r.currency,
     });
     if (data.ids && data.ids.length > 0) {
       const { data: rows, error } = await supabase
         .from("contracts")
-        .select("id, number, title")
+        .select(CONTRACT_SELECT)
         .in("id", data.ids);
       if (error) throw new Error(error.message);
-      return (rows ?? []).map(toName);
+      return ((rows ?? []) as ContractRow[]).map(toItem);
     }
     const q = data.q?.trim();
     let query = supabase
       .from("contracts")
-      .select("id, number, title")
+      .select(CONTRACT_SELECT)
       .order("created_at", { ascending: false })
       .limit(LIMIT);
+    if (data.company_id) query = query.eq("counterparty_company_id", data.company_id);
     if (q) {
       const like = `%${escapeLike(q)}%`;
       query = query.or(`title.ilike.${like},number.ilike.${like}`);
     }
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
-    return (rows ?? []).map(toName);
+    return ((rows ?? []) as ContractRow[]).map(toItem);
   });
+
