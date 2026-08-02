@@ -44,6 +44,7 @@ import {
   type WorkflowActionTemplateRow,
 } from "@/lib/workflow-action-templates.functions";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowEntity } from "@/lib/workflows/types";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 interface Props {
   action: WorkflowAction;
@@ -183,8 +184,8 @@ export function ActionTemplatesBar({ action, entity, onApply }: Props) {
                 <button
                   type="button"
                   aria-label={`Excluir modelo ${t.name}`}
-                  onClick={() => {
-                    if (confirm(`Excluir o modelo "${t.name}"?`)) {
+                  onClick={async () => {
+                    if ((await confirmDialog(`Excluir o modelo "${t.name}"?`))) {
                       removeMut.mutate(t.id);
                     }
                   }}

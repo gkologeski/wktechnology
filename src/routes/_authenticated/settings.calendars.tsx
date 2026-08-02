@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listCalendarAccounts,
   startCalendarOAuth,
@@ -323,8 +324,8 @@ function CalendarsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        if (confirm("Desconectar calendário?")) remove.mutate(row.id);
+                      onClick={async () => {
+                        if ((await confirmDialog("Desconectar calendário?"))) remove.mutate(row.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />

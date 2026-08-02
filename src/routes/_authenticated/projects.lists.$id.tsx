@@ -39,6 +39,7 @@ import { TaskDetailsSheet } from "@/components/projects/task-details-sheet";
 import { CalendarView, TimelineView, WorkloadView } from "@/components/projects/list-views";
 import { CustomFieldsManagerButton } from "@/components/projects/custom-fields-manager";
 import { SaveAsTemplateButton } from "@/components/projects/list-templates-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/lists/$id")({
   head: () => ({
@@ -552,8 +553,8 @@ function ManageStatusesButton({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7"
-                  onClick={() => {
-                    if (confirm("Remover status? As tarefas nele ficarão sem status.")) deleteM.mutate(s.id);
+                  onClick={async () => {
+                    if ((await confirmDialog("Remover status? As tarefas nele ficarão sem status."))) deleteM.mutate(s.id);
                   }}
                 >
                   <Trash2 className="h-3.5 w-3.5" />

@@ -47,6 +47,7 @@ import {
 } from "@/components/entity/assignee-filter";
 import { useResourceScope } from "@/lib/access-control/use-resource-scope";
 import { TablePagination } from "@/components/table-pagination";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -161,8 +162,8 @@ function TasksHubspotView() {
     );
   };
 
-  const deleteSavedView = (id: string) => {
-    if (!window.confirm("Excluir esta visualização?")) return;
+  const deleteSavedView = async (id: string) => {
+    if (!(await confirmDialog("Excluir esta visualização?"))) return;
     savedViews.remove.mutate(id, {
       onSuccess: () => {
         if (activeSavedId === id) setActiveSavedId(null);
@@ -412,7 +413,7 @@ function TasksHubspotView() {
     qc.invalidateQueries({ queryKey: ["tasks"] });
   };
   const removeOne = async (id: string) => {
-    if (!confirm("Excluir esta tarefa?")) return;
+    if (!(await confirmDialog("Excluir esta tarefa?"))) return;
     const { error } = await supabase.from("activities").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Removida");
@@ -433,7 +434,7 @@ function TasksHubspotView() {
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    if (!confirm(`Excluir ${ids.length} tarefa(s)?`)) return;
+    if (!(await confirmDialog(`Excluir ${ids.length} tarefa(s)?`))) return;
     const { error } = await supabase.from("activities").delete().in("id", ids);
     if (error) return toast.error(error.message);
     toast.success(`${ids.length} excluída(s)`);

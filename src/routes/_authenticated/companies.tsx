@@ -43,6 +43,7 @@ import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
 import { DateFilter } from "@/components/date-filter";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 import {
   CheckboxFilter,
@@ -416,7 +417,7 @@ function CompaniesHubspotView() {
     filters.includeUnassigned;
 
   const removeOne = async (id: string) => {
-    if (!confirm("Excluir esta empresa?")) return;
+    if (!(await confirmDialog("Excluir esta empresa?"))) return;
     const { error } = await supabase.from("companies").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Removida");
@@ -441,7 +442,7 @@ function CompaniesHubspotView() {
   const runBulkCep = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    if (!confirm(`Buscar endereço (ViaCEP) de ${ids.length} empresa(s)?`)) return;
+    if (!(await confirmDialog(`Buscar endereço (ViaCEP) de ${ids.length} empresa(s)?`))) return;
     const r = await enrichCeps({ data: { ids } });
     toast.success(`${r.succeeded} ok · ${r.failed} falhas · ${r.skipped} sem CEP`);
     qc.invalidateQueries({ queryKey: ["companies"] });

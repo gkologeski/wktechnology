@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2, Zap } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 // (Dialog imports above already provide Dialog/DialogContent/etc.)
 import {
   listSlaPolicies,
@@ -112,7 +113,7 @@ export function SlaPoliciesSection() {
                       size="icon"
                       variant="ghost"
                       onClick={async () => {
-                        if (!confirm(`Excluir "${p.name}"?`)) return;
+                        if (!(await confirmDialog(`Excluir "${p.name}"?`))) return;
                         await del({ data: { id: p.id } });
                         toast.success("Política removida");
                         qc.invalidateQueries({ queryKey: ["sla-policies"] });

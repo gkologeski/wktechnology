@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { TokenPills } from "@/components/ui/token-pills";
 import { HUNTING_TOKENS } from "@/lib/message-tokens-catalog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 import {
   Select,
@@ -180,8 +181,8 @@ function HuntingTemplatesPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm(`Remover "${t.name}"?`)) del.mutate(t.id);
+                      onClick={async () => {
+                        if ((await confirmDialog(`Remover "${t.name}"?`))) del.mutate(t.id);
                       }}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

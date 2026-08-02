@@ -22,6 +22,7 @@ import {
   type SnippetRow,
 } from "@/lib/snippets.functions";
 import { useMyRole } from "@/lib/use-my-role";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/snippets")({
   component: SnippetsSettings,
@@ -169,8 +170,8 @@ function SnippetsSettings() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          if (confirm(`Remover /${s.shortcut}?`)) delMut.mutate(s.id);
+                        onClick={async () => {
+                          if ((await confirmDialog(`Remover /${s.shortcut}?`))) delMut.mutate(s.id);
                         }}
                         aria-label="Remover"
                       >

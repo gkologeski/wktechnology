@@ -27,6 +27,7 @@ import {
 } from "@/lib/services.functions";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/services/$id")({
   head: () => ({ meta: [{ title: "Serviço" }] }),
@@ -139,7 +140,7 @@ function ServiceDetail() {
   }
 
   async function del() {
-    if (!confirm("Excluir este serviço?")) return;
+    if (!(await confirmDialog("Excluir este serviço?"))) return;
     try {
       await remove({ data: { id } });
       toast.success("Serviço excluído.");

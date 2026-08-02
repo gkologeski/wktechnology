@@ -27,6 +27,7 @@ import {
   runScoringTickNow,
 } from "@/lib/scoring.functions";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type FieldOpt = {
   name: string;
@@ -179,7 +180,7 @@ export function ScoringPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta regra?")) return;
+    if (!(await confirmDialog("Excluir esta regra?"))) return;
     await delFn({ data: { id } });
     refresh();
   };

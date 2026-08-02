@@ -42,6 +42,7 @@ import {
 } from "@/lib/prospecting/queues.functions";
 import { listCadences } from "@/lib/prospecting/cadences.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   QUEUE_CREATE,
   QUEUE_DELETE,
@@ -169,8 +170,8 @@ export function QueueTab() {
                 canUpdate={canUpdate}
                 canDelete={canDelete}
                 onEdit={() => setEditing(activeQueue as unknown as QueueRow)}
-                onDelete={() => {
-                  if (confirm(`Excluir a fila "${activeQueue.name}"?`))
+                onDelete={async () => {
+                  if ((await confirmDialog(`Excluir a fila "${activeQueue.name}"?`)))
                     delMut.mutate(activeQueue.id);
                 }}
               />

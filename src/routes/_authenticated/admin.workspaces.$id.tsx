@@ -37,6 +37,7 @@ import {
   removeWorkspaceMember,
 } from "@/lib/platform-admin.functions";
 import { ArrowLeft, Plus, ShieldAlert, Trash2, Pencil, AlertTriangle } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   EditWorkspaceDialog,
   SoftDeleteWorkspaceDialog,
@@ -257,8 +258,8 @@ function WorkspaceDetailPage() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm(`Remover ${m.full_name || m.email}?`)) rmMut.mutate(m.user_id);
+                      onClick={async () => {
+                        if ((await confirmDialog(`Remover ${m.full_name || m.email}?`))) rmMut.mutate(m.user_id);
                       }}
                       disabled={rmMut.isPending}
                     >

@@ -29,6 +29,7 @@ import { ContractApprovalsPanel } from "@/components/contracts/contract-approval
 import { ContractParentLink } from "@/components/contracts/contract-parent-link";
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
@@ -128,7 +129,7 @@ function ContractDetail() {
   }
 
   async function remove() {
-    if (!confirm("Excluir este contrato?")) return;
+    if (!(await confirmDialog("Excluir este contrato?"))) return;
     try {
       await del({ data: { id } });
       toast.success("Contrato excluído.");

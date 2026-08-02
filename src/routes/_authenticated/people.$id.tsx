@@ -62,6 +62,7 @@ import { TimesheetPanel } from "@/components/people/timesheet-panel";
 import { OnboardingPanel } from "@/components/people/onboarding-panel";
 import { OffboardingCompliancePanel } from "@/components/people/offboarding-compliance-panel";
 import { BenefitsPanel } from "@/components/people/benefits-panel";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 
 export const Route = createFileRoute("/_authenticated/people/$id")({
@@ -824,8 +825,8 @@ function DocumentsPanel({
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => {
-                      if (confirm(`Remover documento "${d.doc_type}"?`)) del.mutate(d.id);
+                    onClick={async () => {
+                      if ((await confirmDialog(`Remover documento "${d.doc_type}"?`))) del.mutate(d.id);
                     }}
                     title="Remover"
                     aria-label="Remover"

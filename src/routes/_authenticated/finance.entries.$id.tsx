@@ -26,6 +26,7 @@ import {
   deleteInstallmentGroup,
 } from "@/lib/finance.functions";
 import { RegisterPaymentDialog } from "@/components/finance/register-payment-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/finance/entries/$id")({
   component: EntryDetailsPage,
@@ -201,7 +202,7 @@ function EntryDetailsPage() {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  if (!confirm("Excluir todas as parcelas em aberto deste grupo?")) return;
+                  if (!(await confirmDialog("Excluir todas as parcelas em aberto deste grupo?"))) return;
                   const r = await delGroup({ data: { parent_entry_id: parentId, only_open: true } });
                   toast.success(`${r.deleted} parcela(s) excluída(s); ${r.kept} mantida(s).`);
                   invalidate();

@@ -35,6 +35,7 @@ import {
   deleteList,
 } from "@/lib/project-hierarchy.functions";
 import { CreateListFromTemplateButton } from "@/components/projects/list-templates-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/spaces")({
   head: () => ({
@@ -212,8 +213,8 @@ function SpaceCard({
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               className="text-destructive"
-              onClick={() => {
-                if (confirm("Remover espaço e tudo dentro dele?")) delSpaceM.mutate();
+              onClick={async () => {
+                if ((await confirmDialog("Remover espaço e tudo dentro dele?"))) delSpaceM.mutate();
               }}
             >
               <Trash2 className="h-4 w-4 mr-2" /> Remover
@@ -280,8 +281,8 @@ function FolderRowUI({
           variant="ghost"
           size="icon"
           className="h-7 w-7"
-          onClick={() => {
-            if (confirm("Remover pasta? As listas ficarão soltas no espaço.")) delM.mutate();
+          onClick={async () => {
+            if ((await confirmDialog("Remover pasta? As listas ficarão soltas no espaço."))) delM.mutate();
           }}
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -333,8 +334,8 @@ function ListRowUI({ list, onChanged }: { list: ListRow; onChanged: () => void }
         variant="ghost"
         size="icon"
         className="h-7 w-7"
-        onClick={() => {
-          if (confirm("Remover lista?")) delM.mutate();
+        onClick={async () => {
+          if ((await confirmDialog("Remover lista?"))) delM.mutate();
         }}
       >
         <Trash2 className="h-3.5 w-3.5" />

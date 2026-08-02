@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type Product = {
   id: string;
@@ -93,7 +94,7 @@ export function ProductsPage() {
     qc.invalidateQueries({ queryKey: ["products"] });
   }
   async function remove(id: string) {
-    if (!confirm("Excluir este produto?")) return;
+    if (!(await confirmDialog("Excluir este produto?"))) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("products").delete().eq("id", id);
     if (error) {

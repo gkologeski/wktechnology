@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Select,
   SelectContent,
@@ -152,8 +153,8 @@ function OnbTemplatesPage() {
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground"
-                    onClick={() => {
-                      if (confirm(`Excluir modelo "${tpl.name}"?`)) {
+                    onClick={async () => {
+                      if ((await confirmDialog(`Excluir modelo "${tpl.name}"?`))) {
                         delMut.mutate(tpl.id);
                       }
                     }}

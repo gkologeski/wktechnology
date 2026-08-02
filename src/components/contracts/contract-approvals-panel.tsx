@@ -17,6 +17,7 @@ import {
 } from "@/lib/contract-approvals.functions";
 import { formatDateTime } from "@/lib/crm";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 const STAGE_LABEL: Record<string, string> = {
   legal: "Jurídico",
@@ -80,7 +81,7 @@ export function ContractApprovalsPanel({ contractId }: { contractId: string }) {
   };
 
   const handleReset = async () => {
-    if (!confirm("Reiniciar o fluxo de aprovação removerá as decisões atuais. Continuar?")) return;
+    if (!(await confirmDialog("Reiniciar o fluxo de aprovação removerá as decisões atuais. Continuar?"))) return;
     try {
       await reset({ data: { contractId } });
       toast.success("Fluxo reiniciado");

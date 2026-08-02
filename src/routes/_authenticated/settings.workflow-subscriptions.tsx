@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -239,8 +240,8 @@ function WorkflowSubscriptionsPage() {
                       <Button
                         size="icon"
                         variant="ghost"
-                        onClick={() => {
-                          if (confirm(`Remover "${row.name}"?`)) {
+                        onClick={async () => {
+                          if ((await confirmDialog(`Remover "${row.name}"?`))) {
                             deleteMut.mutate(row.id);
                           }
                         }}

@@ -30,6 +30,7 @@ import { HubspotTwoWaySync } from "@/components/hubspot/two-way-sync";
 import { HubspotLossReasonsSync } from "@/components/hubspot/loss-reasons-sync";
 import { HubspotMaintenancePanel } from "@/components/hubspot/maintenance-panel";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/integrations/$slug")({
   component: IntegrationDetail,
@@ -93,7 +94,7 @@ function IntegrationDetail() {
   }, [slug, sweep, refetchJobs]);
 
   const handleCancelJob = async (jobId: string) => {
-    if (!confirm("Cancelar esta execução? O job será marcado como falho.")) return;
+    if (!(await confirmDialog("Cancelar esta execução? O job será marcado como falho."))) return;
     try {
       await cancel({ data: { jobId } });
       toast.success("Execução cancelada");
@@ -137,7 +138,7 @@ function IntegrationDetail() {
   };
 
   const handleDisconnect = async () => {
-    if (!confirm(`Desconectar ${provider.name}?`)) return;
+    if (!(await confirmDialog(`Desconectar ${provider.name}?`))) return;
     await disconnect({ data: { provider: provider.slug } });
     toast.success("Desconectado");
     qc.invalidateQueries({ queryKey: ["integrations"] });
@@ -157,7 +158,7 @@ function IntegrationDetail() {
 
   const runEnrichAllAddresses = async () => {
     if (
-      !confirm("Buscar endereço (ViaCEP) de todas as empresas com CEP preenchido e cidade vazia?")
+      !(await confirmDialog("Buscar endereço (ViaCEP) de todas as empresas com CEP preenchido e cidade vazia?"))
     )
       return;
     const r = await enrichCeps({ data: { all_missing: true } });

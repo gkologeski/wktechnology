@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   PageHeader,
   EmptyState,
@@ -125,7 +126,7 @@ function OffersPage() {
     }
   };
   const handleCancel = async (id: string) => {
-    if (!confirm("Cancelar esta oferta?")) return;
+    if (!(await confirmDialog("Cancelar esta oferta?"))) return;
     try {
       await cancel({ data: { id } });
       toast.success("Oferta cancelada");
@@ -135,7 +136,7 @@ function OffersPage() {
     }
   };
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir definitivamente?")) return;
+    if (!(await confirmDialog("Excluir definitivamente?"))) return;
     try {
       await del({ data: { id } });
       toast.success("Excluída");

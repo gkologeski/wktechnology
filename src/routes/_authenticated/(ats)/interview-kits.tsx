@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Select,
   SelectContent,
@@ -107,7 +108,7 @@ function InterviewKitsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este kit?")) return;
+    if (!(await confirmDialog("Excluir este kit?"))) return;
     await delFn({ data: { id } });
     toast.success("Excluído");
     reload();

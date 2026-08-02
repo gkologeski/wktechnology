@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/quotes")({
   component: QuotesPage,
@@ -33,7 +34,7 @@ function QuotesPage() {
   });
 
   async function remove(id: string) {
-    if (!confirm("Excluir esta cotação?")) return;
+    if (!(await confirmDialog("Excluir esta cotação?"))) return;
     await del({ data: { id } });
     qc.invalidateQueries({ queryKey: ["quotes"] });
   }

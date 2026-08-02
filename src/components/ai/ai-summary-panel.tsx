@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { generateAiSummary, listAiSummaries, deleteAiSummary } from "@/lib/ai-summaries.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type Entity = "lead" | "contact" | "deal" | "ticket";
 type Kind = "conversation" | "call" | "meeting" | "email" | "notes" | "tasks" | "all";
@@ -113,7 +114,7 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Excluir este resumo?")) return;
+    if (!(await confirmDialog("Excluir este resumo?"))) return;
     try {
       await del({ data: { id } });
       await load();

@@ -35,6 +35,7 @@ import {
   deleteWidget,
 } from "@/lib/dashboards.functions";
 import { listReports, runReport } from "@/lib/reports.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ResponsiveContainer,
   BarChart,
@@ -160,7 +161,7 @@ function DashboardsPage() {
 
   async function handleDeleteDash() {
     if (!active) return;
-    if (!confirm(`Excluir o painel "${active.name}"?`)) return;
+    if (!(await confirmDialog(`Excluir o painel "${active.name}"?`))) return;
     await deleteDash({ data: { id: active.id } });
     setActiveId(null);
     qc.invalidateQueries({ queryKey: ["dashboards"] });
@@ -216,7 +217,7 @@ function DashboardsPage() {
   }
 
   async function removeWidget(id: string) {
-    if (!confirm("Remover este widget?")) return;
+    if (!(await confirmDialog("Remover este widget?"))) return;
     await deleteW({ data: { id } });
     qc.invalidateQueries({ queryKey: ["dashboard-widgets", activeId] });
   }

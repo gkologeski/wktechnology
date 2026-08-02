@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -113,7 +114,7 @@ function ScorecardsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir scorecard?")) return;
+    if (!(await confirmDialog("Excluir scorecard?"))) return;
     await del({ data: { id } });
     refresh();
   };

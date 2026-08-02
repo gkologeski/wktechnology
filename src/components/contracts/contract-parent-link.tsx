@@ -24,6 +24,7 @@ import {
   linkContractParent,
 } from "@/lib/contracts.functions";
 import { formatCurrency } from "@/lib/crm";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type Role = "provider" | "client";
 
@@ -206,7 +207,7 @@ function ChildRowItem({ row, onUnlink: _onUnlink }: { row: ChildRow; onUnlink: (
   const qc = useQueryClient();
   const link = useServerFn(linkContractParent);
   async function unlink() {
-    if (!confirm("Remover o vínculo deste contrato de compra?")) return;
+    if (!(await confirmDialog("Remover o vínculo deste contrato de compra?"))) return;
     try {
       await link({ data: { childId: row.id, parentId: null } });
       toast.success("Vínculo removido.");
@@ -252,7 +253,7 @@ function ClientView({
   const { setParent } = useLinkMutations(contractId);
 
   async function remove() {
-    if (!confirm("Remover o vínculo com o contrato de venda?")) return;
+    if (!(await confirmDialog("Remover o vínculo com o contrato de venda?"))) return;
     try {
       await setParent(null);
       toast.success("Vínculo removido.");

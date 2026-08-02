@@ -26,6 +26,7 @@ import {
 import { listChargingTemplates } from "@/lib/charging-templates.functions";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/dunning")({
   component: DunningPage,
@@ -134,7 +135,7 @@ function DunningPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Excluir régua?")) return;
+    if (!(await confirmDialog("Excluir régua?"))) return;
     try {
       await del({ data: { id } });
       qc.invalidateQueries({ queryKey: ["dunning-policies"] });

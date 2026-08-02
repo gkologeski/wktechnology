@@ -68,6 +68,7 @@ import { useReferenceLabels } from "./use-reference-labels";
 
 import type { WorkflowEntity, WorkflowWritableTable } from "@/lib/workflows/types";
 import { sortFieldsByCanonicalOrder } from "@/lib/workflows/entity-field-order";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type EntityName = WorkflowWritableTable;
 
@@ -655,8 +656,8 @@ export function ExtraFieldsEditor({
     });
   }
 
-  function deleteGroup(gid: string) {
-    if (!window.confirm("Remover este grupo? Os campos voltam para 'Sem grupo'.")) return;
+  async function deleteGroup(gid: string) {
+    if (!(await confirmDialog("Remover este grupo? Os campos voltam para 'Sem grupo'."))) return;
     persistLayout({
       ...layout,
       groups: layout.groups.filter((g) => g.id !== gid),
@@ -670,8 +671,8 @@ export function ExtraFieldsEditor({
     });
   }
 
-  function resetLayout() {
-    if (!window.confirm("Restaurar layout padrão? Todos os grupos serão removidos.")) return;
+  async function resetLayout() {
+    if (!(await confirmDialog("Restaurar layout padrão? Todos os grupos serão removidos."))) return;
     clearFieldLayout(entity);
     setLayout({ version: 1, groups: [] });
   }

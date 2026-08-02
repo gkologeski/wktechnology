@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Table,
   TableBody,
@@ -92,7 +93,7 @@ function ImportFormsPage() {
   }
 
   async function execute() {
-    if (!window.confirm("Executar a importação? Pode levar alguns minutos.")) return;
+    if (!(await confirmDialog("Executar a importação? Pode levar alguns minutos."))) return;
     setRunning("exec");
     setTotals(zero);
     setProcessed(0);
@@ -128,7 +129,7 @@ function ImportFormsPage() {
   }
 
   async function reimportBroken() {
-    if (!window.confirm("Reimportar todos os anexos quebrados (.bin)? Pode levar alguns minutos.")) return;
+    if (!(await confirmDialog("Reimportar todos os anexos quebrados (.bin)? Pode levar alguns minutos."))) return;
     setRunning("reimport");
     setReimport(null);
     try {

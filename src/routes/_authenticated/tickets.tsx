@@ -81,6 +81,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import { SlaBadge } from "@/components/sla/sla-badge";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -299,7 +300,7 @@ function TicketsIndex() {
   }
 
   async function removeOne(id: string) {
-    if (!confirm("Excluir este ticket?")) return;
+    if (!(await confirmDialog("Excluir este ticket?"))) return;
     const { error } = await supabase.from("tickets").delete().eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -347,7 +348,7 @@ function TicketsIndex() {
 
   async function bulkDelete() {
     if (selected.size === 0) return;
-    if (!confirm(`Excluir ${selected.size} ticket(s)?`)) return;
+    if (!(await confirmDialog(`Excluir ${selected.size} ticket(s)?`))) return;
     const ids = Array.from(selected);
     const { error } = await supabase.from("tickets").delete().in("id", ids);
     if (error) {

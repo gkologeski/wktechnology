@@ -53,6 +53,7 @@ import {
   upsertRecurrence,
 } from "@/lib/finance-recurrences.functions";
 import { listCategories } from "@/lib/finance.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   LegalEntitySelect,
   useLegalEntityFilter,
@@ -214,7 +215,7 @@ function RecurrencesPage() {
                           variant="ghost"
                           size="icon"
                           onClick={async () => {
-                            if (!confirm("Excluir esta recorrência? Lançamentos já gerados serão mantidos.")) return;
+                            if (!(await confirmDialog("Excluir esta recorrência? Lançamentos já gerados serão mantidos."))) return;
                             await del({ data: { id: r.id } });
                             toast.success("Recorrência excluída.");
                             invalidate();

@@ -37,6 +37,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { AtsSectionHeader, EmptyState } from "@/components/ats/ui";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listCadences,
   getCadence,
@@ -149,8 +150,8 @@ export function CadencesTab() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => {
-                      if (confirm(`Excluir "${c.name}"?`)) delMut.mutate(c.id);
+                    onClick={async () => {
+                      if ((await confirmDialog(`Excluir "${c.name}"?`))) delMut.mutate(c.id);
                     }}
                     aria-label="Excluir"
                   >
@@ -677,8 +678,8 @@ function CadenceEditorSheet({
                             <Button
                               size="icon"
                               variant="ghost"
-                              onClick={() => {
-                                if (confirm("Excluir este passo?")) removeStep.mutate(s.id);
+                              onClick={async () => {
+                                if ((await confirmDialog("Excluir este passo?"))) removeStep.mutate(s.id);
                               }}
                               aria-label="Excluir"
                             >

@@ -35,6 +35,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { AtsSectionHeader, EmptyState } from "@/components/ats/ui";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listQuestionnaires,
   getQuestionnaire,
@@ -229,8 +230,8 @@ export function QuestionnairesTab() {
                   <Button
                     size="icon"
                     variant="ghost"
-                    onClick={() => {
-                      if (confirm(`Excluir "${q.name}"?`)) delMut.mutate(q.id);
+                    onClick={async () => {
+                      if ((await confirmDialog(`Excluir "${q.name}"?`))) delMut.mutate(q.id);
                     }}
                     aria-label="Excluir"
                     title="Excluir"
@@ -775,8 +776,8 @@ function QuestionRow({
             <Button
               size="icon"
               variant="ghost"
-              onClick={() => {
-                if (confirm("Excluir esta pergunta?")) del.mutate();
+              onClick={async () => {
+                if ((await confirmDialog("Excluir esta pergunta?"))) del.mutate();
               }}
               aria-label="Excluir"
             >

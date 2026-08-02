@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Linkedin, Link2, Power, RefreshCw, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   getLinkedinAccount,
   startLinkedinConnect,
@@ -124,7 +125,7 @@ function LinkedinIntegrationPage() {
   };
 
   const onDisconnect = async () => {
-    if (!confirm("Desconectar conta LinkedIn?")) return;
+    if (!(await confirmDialog("Desconectar conta LinkedIn?"))) return;
     await disconnect({});
     toast.success("Desconectada.");
     refresh();

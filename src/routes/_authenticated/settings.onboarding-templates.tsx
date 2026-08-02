@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -260,8 +261,8 @@ function OnbTemplatesPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => {
-                            if (confirm(`Remover "${r.name}"?`)) delMut.mutate(r.id);
+                          onClick={async () => {
+                            if ((await confirmDialog(`Remover "${r.name}"?`))) delMut.mutate(r.id);
                           }}
                           aria-label="Remover"
                         >

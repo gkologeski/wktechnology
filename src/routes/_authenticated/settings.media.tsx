@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   createMediaUploadUrl,
   registerMediaAsset,
@@ -109,7 +110,7 @@ function MediaLibraryPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Excluir este arquivo?")) return;
+    if (!(await confirmDialog("Excluir este arquivo?"))) return;
     try {
       await delFn({ data: { id } });
       setRows((r) => r.filter((x) => x.id !== id));

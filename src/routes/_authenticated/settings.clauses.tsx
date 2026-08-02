@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Trash2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/clauses")({
   component: ClausesPage,
@@ -141,8 +142,8 @@ function ClausesPage() {
             key={c.id}
             clause={c}
             onSave={(body) => updM.mutate({ id: c.id, body })}
-            onDelete={() => {
-              if (confirm("Excluir cláusula?")) delM.mutate(c.id);
+            onDelete={async () => {
+              if ((await confirmDialog("Excluir cláusula?"))) delM.mutate(c.id);
             }}
           />
         ))}

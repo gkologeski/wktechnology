@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { exportMyData, requestAccountDeletion } from "@/lib/lgpd.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/privacy")({
   component: PrivacyPage,
@@ -42,7 +43,7 @@ function PrivacyPage() {
   }
 
   async function handleDelete() {
-    if (!window.confirm("Esta ação é IRREVERSÍVEL. Tem certeza?")) return;
+    if (!(await confirmDialog("Esta ação é IRREVERSÍVEL. Tem certeza?"))) return;
     setDeleting(true);
     try {
       await deleteFn({ data: { confirm } });

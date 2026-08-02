@@ -52,6 +52,7 @@ import {
   deleteInvoice,
 } from "@/lib/invoices.functions";
 import { issueNfse } from "@/lib/nfse.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 
 export const Route = createFileRoute("/_authenticated/invoices")({
@@ -115,7 +116,7 @@ function InvoicesPage() {
   }
 
   async function onDelete(id: string) {
-    if (!confirm("Excluir fatura?")) return;
+    if (!(await confirmDialog("Excluir fatura?"))) return;
     try {
       await del({ data: { id } });
       toast.success("Excluída");

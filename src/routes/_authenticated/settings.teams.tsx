@@ -87,6 +87,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEntitlements } from "@/lib/use-entitlements";
 import { ENT, PLAN_LABELS } from "@/lib/entitlements";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/teams")({
   component: UsersPage,
@@ -634,9 +635,7 @@ function UsersPage() {
                 size="sm"
                 onClick={async () => {
                   if (
-                    !window.confirm(
-                      "Revogar todos os convites pendentes sem conjunto de permissões?",
-                    )
+                    !(await confirmDialog("Revogar todos os convites pendentes sem conjunto de permissões?"))
                   )
                     return;
                   try {

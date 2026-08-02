@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Select,
   SelectContent,
@@ -209,8 +210,8 @@ export function BenefitsPanel({
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => {
-                          if (confirm("Remover este benefício?")) del.mutate(r.id);
+                        onClick={async () => {
+                          if ((await confirmDialog("Remover este benefício?"))) del.mutate(r.id);
                         }}
                       >
                         <Trash2 className="h-4 w-4" />

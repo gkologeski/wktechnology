@@ -13,6 +13,7 @@ import { MessageCircle, Pencil, Trash2, Check, X, Loader2 } from "lucide-react";
 import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
 import { notifyActivityCommentEvent } from "@/lib/notifications.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type CommentRow = {
   id: string;
@@ -195,7 +196,7 @@ export function ActivityComments({ activityId, workspaceId, team, disabled }: Pr
   };
 
   const removeOne = async (c: CommentRow) => {
-    if (!confirm("Excluir este comentário?")) return;
+    if (!(await confirmDialog("Excluir este comentário?"))) return;
     try {
       const { error } = await supabase.from("activity_comments").delete().eq("id", c.id);
       if (error) throw error;

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -121,7 +122,7 @@ export function LegalEntitiesPage() {
       toast.error(`Existem ${row.totals.count} lançamentos vinculados. Desative em vez de excluir.`);
       return;
     }
-    if (!confirm(`Excluir ${row.name}?`)) return;
+    if (!(await confirmDialog(`Excluir ${row.name}?`))) return;
     try {
       await del({ data: { id: row.id } });
       toast.success("Excluída");

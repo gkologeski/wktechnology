@@ -21,6 +21,7 @@ import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { TokenPills } from "@/components/ui/token-pills";
 import { MACRO_TOKENS } from "@/lib/message-tokens-catalog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 
 export const Route = createFileRoute("/_authenticated/settings/macros")({
@@ -90,7 +91,7 @@ function MacrosPage() {
     qc.invalidateQueries({ queryKey: ["macros"] });
   }
   async function remove(id: string) {
-    if (!confirm("Excluir esta macro?")) return;
+    if (!(await confirmDialog("Excluir esta macro?"))) return;
     const { error } = await supabase.from("macros").delete().eq("id", id);
     if (error) {
       toast.error(error.message);

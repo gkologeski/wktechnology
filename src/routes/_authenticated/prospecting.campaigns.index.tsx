@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Play, Pause, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listCampaigns,
   upsertCampaign,
@@ -144,7 +145,7 @@ function CampaignsListPage() {
                   size="icon"
                   variant="ghost"
                   onClick={async () => {
-                    if (confirm("Remover?")) {
+                    if ((await confirmDialog("Remover?"))) {
                       await delFn({ data: { id: c.id } });
                       refresh();
                     }

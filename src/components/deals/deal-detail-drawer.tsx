@@ -35,6 +35,7 @@ import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 const LEGACY_ENUM = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
 
@@ -172,7 +173,7 @@ export function DealDetailDrawer({
       toast.error("Você não tem permissão para excluir este negócio.");
       return;
     }
-    if (!confirm("Excluir este negócio?")) return;
+    if (!(await confirmDialog("Excluir este negócio?"))) return;
     const id = deal.id;
     // Optimistic: remover de todas as queries de deals em cache imediatamente
     const snapshots = qc.getQueriesData<Deal[]>({ queryKey: ["deals"] });

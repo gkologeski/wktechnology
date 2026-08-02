@@ -32,6 +32,7 @@ import {
 import { Plus, Trash2, Pencil, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/catalog/services")({
   component: ServiceCatalogPage,
@@ -188,7 +189,7 @@ function ServiceCatalogPage() {
     qc.invalidateQueries({ queryKey: ["catalog_items"] });
   }
   async function remove(id: string) {
-    if (!confirm("Excluir este serviço do catálogo?")) return;
+    if (!(await confirmDialog("Excluir este serviço do catálogo?"))) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from("service_catalog").delete().eq("id", id);
     if (error) {

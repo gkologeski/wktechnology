@@ -29,6 +29,7 @@ import { KbSuggestions } from "@/components/tickets/kb-suggestions";
 import { HtmlContent } from "@/components/rich-html-editor";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
@@ -112,7 +113,7 @@ function TicketDetail() {
   };
 
   const remove = async () => {
-    if (!confirm("Excluir este ticket?")) return;
+    if (!(await confirmDialog("Excluir este ticket?"))) return;
     const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
     if (error) {
       toast.error(error.message);

@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -126,8 +127,8 @@ export function OneOnOnesPanel({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
-                        if (confirm("Remover 1:1?")) del.mutate(it.id);
+                      onClick={async () => {
+                        if ((await confirmDialog("Remover 1:1?"))) del.mutate(it.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />

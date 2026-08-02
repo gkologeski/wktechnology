@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listChargingTemplates,
   upsertChargingTemplate,
@@ -114,7 +115,7 @@ function ChargingTemplatesPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Excluir template?")) return;
+    if (!(await confirmDialog("Excluir template?"))) return;
     try {
       await del({ data: { id } });
       qc.invalidateQueries({ queryKey: ["charging-templates"] });

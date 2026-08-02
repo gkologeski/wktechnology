@@ -57,6 +57,7 @@ import {
 } from "@/lib/projects.functions";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/projects/$id")({
   component: ProjectDetailPage,
@@ -292,7 +293,7 @@ function TasksKanban({ projectId }: { projectId: string }) {
                     <button
                       className="text-muted-foreground hover:text-destructive"
                       onClick={async () => {
-                        if (!confirm("Remover tarefa?")) return;
+                        if (!(await confirmDialog("Remover tarefa?"))) return;
                         await del({ data: { id: t.id } });
                         qc.invalidateQueries({ queryKey: ["project-tasks", projectId] });
                       }}
@@ -477,7 +478,7 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
                       size="sm"
                       variant="ghost"
                       onClick={async () => {
-                        if (!confirm("Remover marco?")) return;
+                        if (!(await confirmDialog("Remover marco?"))) return;
                         await del({ data: { id: m.id } });
                         qc.invalidateQueries({ queryKey: ["project-milestones", projectId] });
                       }}
@@ -642,7 +643,7 @@ function TimesheetPanel({ projectId }: { projectId: string }) {
                     <button
                       className="text-muted-foreground hover:text-destructive"
                       onClick={async () => {
-                        if (!confirm("Remover apontamento?")) return;
+                        if (!(await confirmDialog("Remover apontamento?"))) return;
                         await del({ data: { id: e.id } });
                         qc.invalidateQueries({ queryKey: ["project-time-entries", projectId] });
                         qc.invalidateQueries({ queryKey: ["project-financials", projectId] });
@@ -789,7 +790,7 @@ function MembersPanel({ projectId }: { projectId: string }) {
                     <button
                       className="text-muted-foreground hover:text-destructive"
                       onClick={async () => {
-                        if (!confirm("Remover membro?")) return;
+                        if (!(await confirmDialog("Remover membro?"))) return;
                         await rm({ data: { id: m.id } });
                         qc.invalidateQueries({ queryKey: ["project-members", projectId] });
                       }}

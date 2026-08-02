@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { qk } from "@/lib/entity-queries";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type FieldType = "text" | "textarea" | "json" | "number" | "switch";
 
@@ -108,7 +109,7 @@ export function CrudSettings<T extends { id: string }>({
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Excluir?")) return;
+    if (!(await confirmDialog("Excluir?"))) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).from(table).delete().eq("id", id);
     if (error) return toast.error(error.message);

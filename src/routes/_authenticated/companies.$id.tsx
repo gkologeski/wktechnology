@@ -17,6 +17,7 @@ import { qk } from "@/lib/entity-queries";
 
 import type { Company } from "@/lib/db-types";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/companies/$id")({
   component: CompanyDetail,
@@ -51,7 +52,7 @@ function CompanyDetail() {
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const remove = async () => {
-    if (!confirm("Excluir empresa?")) return;
+    if (!(await confirmDialog("Excluir empresa?"))) return;
     const { error } = await supabase.from("companies").delete().eq("id", company.id);
     if (error) {
       toast.error(error.message);

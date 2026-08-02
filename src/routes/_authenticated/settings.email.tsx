@@ -15,6 +15,7 @@ import {
 } from "@/lib/email-accounts.functions";
 import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 const searchSchema = z.object({ gmail: z.string().optional() });
 const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set(["https://crm.wktechnology.com.br"]);
@@ -102,7 +103,7 @@ function EmailSettings() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Desconectar esta conta?")) return;
+    if (!(await confirmDialog("Desconectar esta conta?"))) return;
     try {
       await disconnect({ data: { id } });
       toast.success("Conta desconectada");

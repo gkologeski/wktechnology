@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 import {
   Select,
@@ -183,8 +184,8 @@ export function OnboardingPanel({
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-muted-foreground"
-                            onClick={() => {
-                              if (confirm("Excluir plano e todas suas tarefas?")) {
+                            onClick={async () => {
+                              if ((await confirmDialog("Excluir plano e todas suas tarefas?"))) {
                                 delMut.mutate(plan.id);
                               }
                             }}
@@ -384,8 +385,8 @@ function PlanTasks({
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 text-muted-foreground"
-                    onClick={() => {
-                      if (confirm("Excluir tarefa?")) delMut.mutate(t.id);
+                    onClick={async () => {
+                      if ((await confirmDialog("Excluir tarefa?"))) delMut.mutate(t.id);
                     }}
                   >
                     <Trash2 className="h-3.5 w-3.5" />

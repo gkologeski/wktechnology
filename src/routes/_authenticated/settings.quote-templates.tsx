@@ -23,6 +23,7 @@ import { QuoteTemplateEditor } from "@/components/quote-templates/template-edito
 import { isTemplateDocument, type TemplateDocument } from "@/lib/quote-template-blocks";
 import { Plus, Copy, Trash2, Star, Save } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/quote-templates")({
   component: QuoteTemplatesPage,
@@ -305,8 +306,8 @@ function QuoteTemplatesPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => {
-                            if (confirm(`Excluir o modelo "${current.name}"?`))
+                          onClick={async () => {
+                            if ((await confirmDialog(`Excluir o modelo "${current.name}"?`)))
                               deleteMut.mutate(current.id);
                           }}
                           disabled={deleteMut.isPending}

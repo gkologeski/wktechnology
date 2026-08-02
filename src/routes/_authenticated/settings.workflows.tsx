@@ -48,6 +48,7 @@ import {
   type WorkflowDraft,
 } from "@/components/workflows/workflow-builder";
 import { WorkflowRunsList } from "@/components/workflows/workflow-runs-list";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ENTITY_LABELS,
   EVENT_LABELS,
@@ -124,7 +125,7 @@ function WorkflowsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este workflow?")) return;
+    if (!(await confirmDialog("Excluir este workflow?"))) return;
     try {
       await deleteFn({ data: { id } });
       toast.success("Workflow removido");
@@ -173,7 +174,7 @@ function WorkflowsPage() {
   };
 
   const handleDiscard = async (row: WorkflowRow) => {
-    if (!confirm("Descartar alterações do rascunho e voltar para a versão publicada?")) return;
+    if (!(await confirmDialog("Descartar alterações do rascunho e voltar para a versão publicada?"))) return;
     try {
       await discardFn({ data: { id: row.id } });
       toast.success("Rascunho descartado");
@@ -185,9 +186,7 @@ function WorkflowsPage() {
 
   const handleBulk = async (row: WorkflowRow) => {
     if (
-      !confirm(
-        `Aplicar "${row.name}" aos registros existentes de ${ENTITY_LABELS[row.entity]} que batem no gatilho? (limite 200)`,
-      )
+      !(await confirmDialog(`Aplicar "${row.name}" aos registros existentes de ${ENTITY_LABELS[row.entity]} que batem no gatilho? (limite 200)`))
     )
       return;
     try {

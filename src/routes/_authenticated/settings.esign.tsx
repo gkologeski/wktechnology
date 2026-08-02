@@ -33,6 +33,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Send, X, Trash2, Copy, ExternalLink, Eye, FileSignature } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/esign")({
   component: EsignPage,
@@ -321,7 +322,7 @@ function EsignPage() {
                       size="sm"
                       variant="ghost"
                       onClick={async () => {
-                        if (!confirm("Cancelar este documento?")) return;
+                        if (!(await confirmDialog("Cancelar este documento?"))) return;
                         await cancel({ data: { id: d.id } });
                         qc.invalidateQueries({ queryKey: ["esign-docs"] });
                       }}
@@ -333,7 +334,7 @@ function EsignPage() {
                     size="sm"
                     variant="ghost"
                     onClick={async () => {
-                      if (!confirm("Excluir definitivamente?")) return;
+                      if (!(await confirmDialog("Excluir definitivamente?"))) return;
                       await del({ data: { id: d.id } });
                       qc.invalidateQueries({ queryKey: ["esign-docs"] });
                     }}

@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   createCategory,
   deleteCategory,
@@ -145,7 +146,7 @@ function CategoriesPage() {
   }
 
   async function remove(id: string) {
-    if (!confirm("Excluir categoria? Subcategorias ficarão sem pai.")) return;
+    if (!(await confirmDialog("Excluir categoria? Subcategorias ficarão sem pai."))) return;
     try {
       await del({ data: { id } });
       qc.invalidateQueries({ queryKey: ["finance-categories"] });

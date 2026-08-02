@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Dialog,
   DialogContent,
@@ -171,8 +172,8 @@ export function ReviewsPanel({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => {
-                        if (confirm("Remover avaliação?")) del.mutate(r.id);
+                      onClick={async () => {
+                        if ((await confirmDialog("Remover avaliação?"))) del.mutate(r.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4" />

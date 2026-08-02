@@ -27,6 +27,7 @@ import {
   setLegalEntityGroupMembers,
 } from "@/lib/legal-entity-groups.functions";
 import { listLegalEntities } from "@/lib/legal-entities.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 type Group = {
   id: string;
@@ -113,7 +114,7 @@ export function LegalEntityGroupsPage() {
   }
 
   async function remove(g: Group) {
-    if (!confirm(`Excluir grupo "${g.name}"?`)) return;
+    if (!(await confirmDialog(`Excluir grupo "${g.name}"?`))) return;
     try {
       await del({ data: { id: g.id } });
       toast.success("Grupo excluído");

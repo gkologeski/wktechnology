@@ -33,6 +33,7 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/deals/$id")({
   component: DealDetail,
@@ -141,7 +142,7 @@ function DealDetail() {
       toast.error("Você não tem permissão para excluir este negócio.");
       return;
     }
-    if (!confirm("Excluir negócio?")) return;
+    if (!(await confirmDialog("Excluir negócio?"))) return;
     const { data: deleted, error } = await supabase
       .from("deals")
       .delete()

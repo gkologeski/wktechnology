@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Pencil, Plus, Trash2 } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listCustomProperties,
   upsertCustomProperty,
@@ -103,9 +104,7 @@ function CustomPropsPage() {
 
   const handleDelete = async (r: Row) => {
     if (
-      !confirm(
-        `Remover a propriedade "${r.label}"? Os valores já gravados nos registros não serão excluídos.`,
-      )
+      !(await confirmDialog(`Remover a propriedade "${r.label}"? Os valores já gravados nos registros não serão excluídos.`))
     )
       return;
     try {

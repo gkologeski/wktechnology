@@ -18,6 +18,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from "@/components/ui/sheet";
 import { Plus, Trash2, Pencil, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   listRotationRules,
   saveRotationRule,
@@ -99,7 +100,7 @@ function RotationPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta regra?")) return;
+    if (!(await confirmDialog("Excluir esta regra?"))) return;
     await delFn({ data: { id } });
     refresh();
   };

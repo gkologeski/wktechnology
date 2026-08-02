@@ -37,6 +37,7 @@ import {
 } from "@/components/prospecting/prospect-search-form-dialog";
 import { AddToProspectingDialog } from "@/components/prospecting/add-to-prospecting-dialog";
 import { countActiveFilters, ProspectFilters } from "@/lib/prospecting-options";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/prospecting")({
   beforeLoad: () => {
@@ -340,7 +341,7 @@ export function ProspectingPage() {
                     variant="ghost"
                     size="icon"
                     onClick={async () => {
-                      if (confirm("Remover?")) {
+                      if ((await confirmDialog("Remover?"))) {
                         await delFn({ data: { id: r.id } });
                         refresh();
                       }

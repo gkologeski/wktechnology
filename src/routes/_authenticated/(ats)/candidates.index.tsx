@@ -79,6 +79,7 @@ import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-contain
 import { cn } from "@/lib/utils";
 import { computeCandidateSignals } from "@/lib/kanban/candidates-signals";
 import { KanbanSignalIcons, kanbanBorderStyle } from "@/components/kanban/kanban-signal-indicator";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 
 
@@ -402,7 +403,7 @@ function CandidatesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir este candidato?")) return;
+    if (!(await confirmDialog("Excluir este candidato?"))) return;
     try {
       await del({ data: { id } });
       refresh();

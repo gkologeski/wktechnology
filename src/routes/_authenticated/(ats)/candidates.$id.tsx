@@ -52,6 +52,7 @@ import {
 } from "@/components/ats/candidate/rich-profile-blocks";
 import { formatDateTime } from "@/lib/crm";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 function CandidateLoading() {
   return (
@@ -159,7 +160,7 @@ function CandidateDetailPage() {
   const status = STATUS_LABELS[data.derived_status];
 
   const handleDelete = async () => {
-    if (!confirm(`Excluir candidato "${c.full_name}"?`)) return;
+    if (!(await confirmDialog(`Excluir candidato "${c.full_name}"?`))) return;
     try {
       await deleteFn({ data: { id: c.id } });
       toast.success("Candidato excluído");

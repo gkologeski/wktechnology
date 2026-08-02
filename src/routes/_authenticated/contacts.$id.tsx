@@ -13,6 +13,7 @@ import { qk } from "@/lib/entity-queries";
 
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
   component: ContactDetail,
@@ -86,7 +87,7 @@ function ContactDetail() {
     );
 
   const remove = async () => {
-    if (!confirm("Excluir contato?")) return;
+    if (!(await confirmDialog("Excluir contato?"))) return;
     const { error } = await supabase.from("contacts").delete().eq("id", contact.id);
     if (error) {
       toast.error(error.message);

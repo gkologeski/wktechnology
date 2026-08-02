@@ -39,6 +39,7 @@ import {
 import { listContracts } from "@/lib/contracts.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listPeople } from "@/lib/people/people.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 const brl = (n: number) =>
   n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
@@ -200,8 +201,8 @@ export function AllocationsPanel({
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => {
-                            if (confirm("Remover esta alocação?"))
+                          onClick={async () => {
+                            if ((await confirmDialog("Remover esta alocação?")))
                               delMut.mutate(r.id);
                           }}
                         >

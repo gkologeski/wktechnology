@@ -30,6 +30,7 @@ import {
   setGroupMembers,
 } from "@/lib/user-groups.functions";
 import { listTeamMembers } from "@/lib/teams.functions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/user-groups")({
   component: UserGroupsPage,
@@ -211,8 +212,8 @@ function UserGroupsPage() {
                     <Button
                       size="icon"
                       variant="ghost"
-                      onClick={() => {
-                        if (confirm(`Remover equipe "${g.name}"?`)) removeMutation.mutate(g.id);
+                      onClick={async () => {
+                        if ((await confirmDialog(`Remover equipe "${g.name}"?`))) removeMutation.mutate(g.id);
                       }}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />

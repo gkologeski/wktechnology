@@ -54,6 +54,7 @@ import {
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
 import { cn } from "@/lib/utils";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/(ats)/pipelines")({
   component: PipelinesPage,
@@ -385,8 +386,8 @@ function PipelinesPage() {
                     <Button
                       variant="ghost"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => {
-                        if (confirm("Excluir este pipeline?")) deleteMut.mutate();
+                      onClick={async () => {
+                        if ((await confirmDialog("Excluir este pipeline?"))) deleteMut.mutate();
                       }}
                     >
                       <Trash2 className="h-4 w-4 mr-1" aria-hidden="true" />

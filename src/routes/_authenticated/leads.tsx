@@ -60,6 +60,7 @@ import { toE164 } from "@/lib/validators";
 import { useSavedViews } from "@/lib/saved-views";
 import { TablePagination } from "@/components/table-pagination";
 import { startFocusQueue } from "@/lib/focus-queue";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ArrowRightLeft,
   ChevronDown,
@@ -254,8 +255,8 @@ function LeadsHubspotView() {
     );
   };
 
-  const deleteSavedView = (id: string) => {
-    if (!window.confirm("Excluir esta visualização?")) return;
+  const deleteSavedView = async (id: string) => {
+    if (!(await confirmDialog("Excluir esta visualização?"))) return;
     savedViews.remove.mutate(id, {
       onSuccess: () => {
         if (activeSavedId === id) setActiveSavedId(null);

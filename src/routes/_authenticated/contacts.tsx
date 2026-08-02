@@ -61,6 +61,7 @@ import {
 } from "@/components/crm/hubspot-shell";
 import { formatDateTime } from "@/lib/crm";
 import { exportRowsToCsv } from "@/lib/csv-export";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
@@ -425,7 +426,7 @@ function ContactsHubspotView() {
     filters.createdPreset !== "any";
 
   const removeOne = async (id: string) => {
-    if (!confirm("Excluir este contato?")) return;
+    if (!(await confirmDialog("Excluir este contato?"))) return;
     const { error } = await supabase.from("contacts").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Removido");
@@ -434,7 +435,7 @@ function ContactsHubspotView() {
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    if (!confirm(`Excluir ${ids.length} contato(s)?`)) return;
+    if (!(await confirmDialog(`Excluir ${ids.length} contato(s)?`))) return;
     const { error } = await supabase.from("contacts").delete().in("id", ids);
     if (error) return toast.error(error.message);
     toast.success(`${ids.length} excluído(s)`);

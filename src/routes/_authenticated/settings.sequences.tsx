@@ -25,6 +25,7 @@ import {
   type SequenceDraft,
 } from "@/components/sequences/sequence-builder";
 import { ENTITY_LABELS } from "@/lib/sequences/types";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/sequences")({
   component: SequencesPage,
@@ -68,7 +69,7 @@ function SequencesPage() {
     }
   };
   const handleDelete = async (id: string) => {
-    if (!confirm("Excluir esta sequência?")) return;
+    if (!(await confirmDialog("Excluir esta sequência?"))) return;
     try {
       await deleteFn({ data: { id } });
       toast.success("Removida");
