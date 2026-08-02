@@ -323,21 +323,29 @@ function WorkflowsPage() {
                       {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[draftTrigger.event ?? "created"]}{" "}
                       · {draftActions.length} ação(ões) · {row.runs_24h} exec / 24h
                     </p>
+                    {!isPublished && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {row.published_version > 0
+                          ? `A versão v${row.published_version} continua em execução; publique para aplicar o rascunho.`
+                          : "Ainda não publicado — o workflow não executa até ser publicado."}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-1 flex-wrap justify-end">
                     <Switch checked={row.enabled} onCheckedChange={(v) => handleToggle(row, v)} />
-                    {row.has_draft_changes && (
+                    {!isPublished && (
                       <>
                         <Button size="sm" variant="default" onClick={() => handlePublish(row)}>
                           <Upload className="h-3.5 w-3.5 mr-1" /> Publicar
                         </Button>
-                        {row.published_version > 0 && (
+                        {row.published_version > 0 && row.has_draft_changes && (
                           <Button size="sm" variant="ghost" onClick={() => handleDiscard(row)}>
                             Descartar
                           </Button>
                         )}
                       </>
                     )}
+
                     <Button
                       size="sm"
                       variant="ghost"
