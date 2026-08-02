@@ -12,9 +12,17 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const RefInput = z.object({
   q: z.string().trim().max(120).optional(),
-  ids: z.array(z.string().uuid()).max(50).optional(),
+  // Valores salvos podem conter tokens (`{{...}}`) ou texto livre; ignoramos
+  // silenciosamente o que não é UUID em vez de falhar a requisição.
+  ids: z
+    .array(z.string())
+    .max(200)
+    .optional()
+    .transform((arr) => (arr ? arr.filter((v) => UUID_RE.test(v)).slice(0, 50) : arr)),
 });
 
 const LIMIT = 50;
