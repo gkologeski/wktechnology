@@ -319,7 +319,13 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
     failed = 0;
   for (const r of list) {
     try {
-      const vars = { ...(r.variables ?? {}), name: r.name ?? "" };
+      const base = (r.variables ?? {}) as Record<string, string>;
+      // `company` é alias de `company_name` para templates antigos.
+      const vars = {
+        ...base,
+        name: r.name ?? "",
+        company: base["company"] ?? base["company_name"] ?? "",
+      };
       const subject = renderTemplate(b.subject ?? "", vars);
       const htmlRaw = renderTemplate(b.body_html ?? "", vars);
       const textRaw = renderTemplate(b.body_text ?? "", vars);
