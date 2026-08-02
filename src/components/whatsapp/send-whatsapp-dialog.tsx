@@ -112,20 +112,16 @@ export function SendWhatsAppDialog({
   );
 
   // Atalhos de preenchimento para variáveis posicionais de templates oficiais.
-  const quickValues = useMemo(
-    () =>
-      (
-        [
-          ["Nome", ctx.first_name],
-          ["Nome completo", ctx.full_name],
-          ["Empresa", ctx.company],
-          ["E-mail", ctx.email],
-        ] as const
-      )
-        .filter((p): p is readonly [string, string] => typeof p[1] === "string" && !!p[1].trim())
-        .map(([label, value]) => ({ label, value })),
-    [ctx],
-  );
+  const quickValues = useMemo(() => {
+    const pairs: { label: string; value: string }[] = [
+      { label: "Nome", value: ctx.first_name ?? "" },
+      { label: "Nome completo", value: ctx.full_name ?? "" },
+      { label: "Empresa", value: ctx.company ?? "" },
+      { label: "E-mail", value: ctx.email ?? "" },
+    ];
+    return pairs.filter((p) => p.value.trim().length > 0);
+  }, [ctx]);
+
 
 
   async function handlePickFile(file: File) {
