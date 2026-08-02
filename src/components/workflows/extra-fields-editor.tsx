@@ -64,6 +64,7 @@ import {
   searchPipelines,
   searchUsers,
 } from "@/lib/workflow-refs.functions";
+import { ContractParentPicker } from "./contract-parent-picker";
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
