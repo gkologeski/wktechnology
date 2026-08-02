@@ -73,6 +73,20 @@ export interface WorkflowFilter {
   value?: unknown;
 }
 
+/** Grupo de condições combinadas com E/OU (agrupamento aninhado, estilo HubSpot). */
+export interface WorkflowFilterGroup {
+  logic: "and" | "or";
+  conditions: WorkflowCondition[];
+}
+
+/** Nó de condição: uma condição simples ou um grupo aninhado. */
+export type WorkflowCondition = WorkflowFilter | WorkflowFilterGroup;
+
+export function isFilterGroup(node: WorkflowCondition): node is WorkflowFilterGroup {
+  return typeof node === "object" && node !== null && Array.isArray((node as WorkflowFilterGroup).conditions);
+}
+
+
 export type TimeTriggerKind =
   | "time_since_field"
   | "no_activity_for"
