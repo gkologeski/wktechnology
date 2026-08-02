@@ -40,7 +40,7 @@ function tableLabel(t: WorkflowWritableTable): string {
   return (ENTITY_LABELS as Record<string, string>)[t] ?? t;
 }
 
-export function GenericRecordForm({ action, onChange }: Props) {
+export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
   const hasValues = action.type !== "delete_record";
 
   const values = useMemo<Record<string, unknown>>(() => {
