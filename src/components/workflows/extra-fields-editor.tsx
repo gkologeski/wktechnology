@@ -252,6 +252,18 @@ function FieldInput({
     return <FkPicker kind={fkKind} value={strVal} onChange={(v) => onChange(v)} />;
   }
 
+  // Texto rico (ex.: corpo do contrato) → editor WYSIWYG, sem HTML cru.
+  if (field.richText) {
+    return (
+      <WordEditor
+        value={strVal}
+        onChange={(html) => onChange(html)}
+        minHeight={220}
+        placeholder="Escreva o conteúdo. Aceita {{tokens}} do workflow."
+      />
+    );
+  }
+
 
   if (LONG_TEXT_FIELDS.has(field.name)) {
     return (
