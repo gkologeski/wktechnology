@@ -103,6 +103,7 @@ export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
             extraFields={values}
             hiddenKeys={HIDDEN_IN_GENERIC}
             onChange={setValues}
+            triggerEntity={triggerEntity}
             title="Campos do registro"
             defaultOpen
           />
