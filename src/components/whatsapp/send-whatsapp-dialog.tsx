@@ -38,7 +38,6 @@ import { useTokenInserter } from "@/lib/token-insert";
 import { renderTokens, type TokenContext } from "@/lib/email-tokens";
 import { useAuth } from "@/lib/auth";
 
-
 type Props = {
   defaultTo?: string;
   contactId?: string;
@@ -122,8 +121,6 @@ export function SendWhatsAppDialog({
     return pairs.filter((p) => p.value.trim().length > 0);
   }, [ctx]);
 
-
-
   async function handlePickFile(file: File) {
     setUploading(true);
     try {
@@ -153,9 +150,7 @@ export function SendWhatsAppDialog({
     : 0;
   const varCount = Math.max(placeholderCount, selectedTpl?.variableCount ?? 0);
 
-  const previewBody = selectedTpl
-    ? applyTemplate(selectedTpl.body, vars)
-    : renderTokens(body, ctx);
+  const previewBody = selectedTpl ? applyTemplate(selectedTpl.body, vars) : renderTokens(body, ctx);
   const isOfficialHsm = !!selectedTpl?.contentSid;
 
   const sendMut = useMutation({
@@ -310,12 +305,7 @@ export function SendWhatsAppDialog({
                   onApply={setBody}
                 />
               </div>
-              <SnippetTextarea
-                ref={bodyInserter.ref}
-                value={body}
-                onChange={setBody}
-                rows={4}
-              />
+              <SnippetTextarea ref={bodyInserter.ref} value={body} onChange={setBody} rows={4} />
               <TokenPills
                 className="mt-2"
                 tokens={availableTokens}
@@ -329,7 +319,6 @@ export function SendWhatsAppDialog({
                   </div>
                 </div>
               )}
-
             </div>
           )}
 

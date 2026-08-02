@@ -43,7 +43,6 @@ export const CAMPAIGN_TOKENS: MessageToken[] = [
  */
 export const WHATSAPP_TOKENS: MessageToken[] = [...CONTACT, ...AGENT];
 
-
 export const LINKEDIN_TOKENS: MessageToken[] = [
   { token: "{{first_name}}", label: "Nome", group: "Contato" },
   { token: "{{full_name}}", label: "Nome completo", group: "Contato" },
@@ -91,5 +90,3 @@ export const HUNTING_TOKENS: MessageToken[] = [
   { token: "{{vaga}}", label: "Vaga", group: "Contexto" },
   { token: "{{recrutador}}", label: "Recrutador", group: "Remetente" },
 ];
-
-
