@@ -340,6 +340,7 @@ export function FkPicker({
       if (kind === "pipeline") return await fetchPipelines({ data: { q: q || undefined } });
       if (kind === "legal_entity") return await fetchLegalEntities({ data: { q: q || undefined } });
       if (kind === "contract") return await fetchContracts({ data: { q: q || undefined } });
+      if (kind === "deal") return await fetchDeals({ data: { q: q || undefined } });
       const rows = await fetchUsers({ data: { q: q || undefined } });
       return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
     },
@@ -347,7 +348,8 @@ export function FkPicker({
 
   // Tipos sem cache global de rótulos: hidrata o nome pelo ID selecionado
   // para nunca exibir hash na interface.
-  const needsHydrate = !!value && !isToken && (kind === "legal_entity" || kind === "contract");
+  const needsHydrate =
+    !!value && !isToken && (kind === "legal_entity" || kind === "contract" || kind === "deal");
   const hydrated = useQuery({
     queryKey: ["wf-ref-label", kind, value],
     enabled: needsHydrate,
@@ -356,9 +358,12 @@ export function FkPicker({
       const rows =
         kind === "legal_entity"
           ? await fetchLegalEntities({ data: { ids: [value] } })
-          : await fetchContracts({ data: { ids: [value] } });
+          : kind === "deal"
+            ? await fetchDeals({ data: { ids: [value] } })
+            : await fetchContracts({ data: { ids: [value] } });
       return rows[0]?.name ?? "";
     },
+
   });
 
   const currentLabel = !value
