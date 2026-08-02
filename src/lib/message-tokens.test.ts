@@ -21,3 +21,50 @@ describe("renderTokens", () => {
     expect(renderTokens("[{{ company }}]", {})).toBe("[]");
   });
 });
+
+describe("renderTokens por superfície", () => {
+  it("e-mail: contato + remetente", () => {
+    const out = renderTokens("Olá {{first_name}}, sou {{agent.name}} ({{agent.email}}).", {
+      first_name: "Ana",
+      agent: { name: "Bruno", email: "bruno@wk.com" },
+    });
+    expect(out).toBe("Olá Ana, sou Bruno (bruno@wk.com).");
+  });
+
+  it("ATS: chaves da interface e aliases legados", () => {
+    const vars = {
+      candidate_name: "Ana Souza",
+      job_title: "Dev",
+      stage: "Entrevista",
+      "candidate.full_name": "Ana Souza",
+      "candidate.first_name": "Ana",
+      "job.title": "Dev",
+      "company.name": "WK",
+    };
+    expect(renderTokens("{{candidate.first_name}} — {{job.title}} @ {{company.name}}", vars)).toBe(
+      "Ana — Dev @ WK",
+    );
+    expect(renderTokens("{{candidate_name}} / {{job_title}} / {{stage}}", vars)).toBe(
+      "Ana Souza / Dev / Entrevista",
+    );
+  });
+
+  it("campanha: {{name}} e alias de empresa", () => {
+    expect(renderTokens("Oi {{name}} da {{company}}", { name: "Ana", company: "WK" })).toBe(
+      "Oi Ana da WK",
+    );
+  });
+
+  it("macro de atendimento", () => {
+    const out = renderTokens("{{contact_first_name}}, sobre {{ticket_subject}} — {{agent_name}}", {
+      contact_first_name: "Ana",
+      ticket_subject: "Fatura",
+      agent_name: "Bruno",
+    });
+    expect(out).toBe("Ana, sobre Fatura — Bruno");
+  });
+
+  it("WhatsApp texto livre não afeta variáveis posicionais desconhecidas", () => {
+    expect(renderTokens("Olá {{first_name}} {{1}}", { first_name: "Ana" })).toBe("Olá Ana {{1}}");
+  });
+});
