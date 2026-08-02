@@ -60,6 +60,8 @@ import {
   GripVertical,
   ArrowUp,
   ArrowDown,
+  Upload,
+  Info,
 } from "lucide-react";
 
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
