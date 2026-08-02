@@ -72,7 +72,8 @@ import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
 import { ExtraFieldsEditor, FkPicker } from "./extra-fields-editor";
 import { GenericRecordForm } from "./generic-record-form";
-import { TokenInput, TokenTextarea } from "./token-input";
+import { TokenInput, TokenTextarea, WorkflowTokensProvider } from "./token-input";
+import { buildIdTokens, buildTextTokens } from "@/lib/workflows/token-catalog";
 import { useReferenceLabels } from "./use-reference-labels";
 import { ActionTemplatesBar } from "./action-templates-bar";
 
