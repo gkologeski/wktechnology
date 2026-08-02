@@ -72,7 +72,6 @@ function renderTokens(input: unknown, after: AnyRow | null, vars?: AnyRow): unkn
   });
 }
 
-
 /**
  * Resolve tokens em valores de `extra_fields` de ações create_*.
  * Strings passam por renderTokens; objetos são percorridos recursivamente
@@ -95,9 +94,7 @@ function resolveExtraFields(
       const resolved = renderTokens(v, after, vars);
       out[k] = resolved === "" ? null : resolved;
     } else if (Array.isArray(v)) {
-      out[k] = v.map((item) =>
-        typeof item === "string" ? renderTokens(item, after, vars) : item,
-      );
+      out[k] = v.map((item) => (typeof item === "string" ? renderTokens(item, after, vars) : item));
     } else if (typeof v === "object") {
       out[k] = resolveExtraFields(v as Record<string, unknown>, after, vars);
     } else {
@@ -137,7 +134,6 @@ function mergeExtra(
   }
   return merged;
 }
-
 
 function evalFilter(
   f: WorkflowFilter,
@@ -238,7 +234,6 @@ async function runActions(
     const action = actions[i];
     currentStep = i;
 
-
     // Delay: agenda retomada e para aqui.
     if (action.type === "delay") {
       const mult =
@@ -257,9 +252,11 @@ async function runActions(
     // Branch: filtra e executa then/else recursivamente.
     if (action.type === "branch_if") {
       const filters = action.filters ?? [];
-      const passes = filters.length === 0 || filters.every((f) => evalFilter(f, ctx.after, ctx.before, ctx.vars));
+      const passes =
+        filters.length === 0 ||
+        filters.every((f) => evalFilter(f, ctx.after, ctx.before, ctx.vars));
       const branchName = passes ? "then" : "else";
-      const branchActions = passes ? action.then ?? [] : action.else ?? [];
+      const branchActions = passes ? (action.then ?? []) : (action.else ?? []);
       log.push({
         at: new Date().toISOString(),
         ok: true,
@@ -286,7 +283,7 @@ async function runActions(
     if (action.type === "switch_by_value") {
       const v = getField(ctx.after, action.field);
       const matched = action.cases.find((c) => c.value === v);
-      const branchActions = matched ? matched.actions : action.default ?? [];
+      const branchActions = matched ? matched.actions : (action.default ?? []);
       log.push({
         at: new Date().toISOString(),
         ok: true,
@@ -317,7 +314,7 @@ async function runActions(
       const matched = action.branches.find((b) =>
         (b.filters ?? []).every((f) => evalFilter(f, ctx.after, ctx.before, ctx.vars)),
       );
-      const branchActions = matched ? matched.actions : action.else ?? [];
+      const branchActions = matched ? matched.actions : (action.else ?? []);
       log.push({
         at: new Date().toISOString(),
         ok: true,
@@ -402,7 +399,12 @@ async function runActions(
         .select("id")
         .single();
       if (apprErr || !appr) {
-        log.push({ at: new Date().toISOString(), ok: false, action: "approval_step", error: apprErr?.message ?? "falha ao criar aprovação" });
+        log.push({
+          at: new Date().toISOString(),
+          ok: false,
+          action: "approval_step",
+          error: apprErr?.message ?? "falha ao criar aprovação",
+        });
         return { log: rawLog, hadError: true };
       }
       // Notifica o aprovador.
@@ -421,7 +423,11 @@ async function runActions(
         action: "approval_step",
         detail: { approval_id: appr.id, approver, title },
       });
-      return { log: rawLog, hadError: false, waitingApproval: { approvalId: appr.id as string, resumeCursor: i + 1 } };
+      return {
+        log: rawLog,
+        hadError: false,
+        waitingApproval: { approvalId: appr.id as string, resumeCursor: i + 1 },
+      };
     }
 
     const step = await runAction(supabase, action, ctx);
@@ -535,7 +541,12 @@ async function runAction(
           entity_id: ctx.entityId,
         } as never);
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "send_notification", detail: { title, user_id: targetUserId } };
+        return {
+          at,
+          ok: true,
+          action: "send_notification",
+          detail: { title, user_id: targetUserId },
+        };
       }
       case "webhook": {
         const payload = action.payload
@@ -551,7 +562,8 @@ async function runAction(
       }
       case "create_ats_job": {
         const after = ctx.after ?? {};
-        const title = (renderTokens(action.title, ctx.after) as string) ||
+        const title =
+          (renderTokens(action.title, ctx.after) as string) ||
           `Vaga para ${String((after as AnyRow).name ?? "")}`.trim();
         let pipelineId: string | null = null;
         const { data: pipe } = await supabase
@@ -566,7 +578,12 @@ async function runAction(
         else {
           const { data: created, error: pErr } = await supabase
             .from("ats_pipelines")
-            .insert({ owner_id: ctx.ownerId, name: "Pipeline padrão", is_default: true, stages: [] } as never)
+            .insert({
+              owner_id: ctx.ownerId,
+              name: "Pipeline padrão",
+              is_default: true,
+              stages: [],
+            } as never)
             .select("id")
             .single();
           if (pErr) throw new Error(pErr.message);
@@ -591,9 +608,8 @@ async function runAction(
               slug,
               status: "draft",
               deal_id: ctx.entity === "deals" ? ctx.entityId : null,
-              company_id:
-                (((after as AnyRow).company_id as string) ??
-                  (ctx.entity === "companies" ? ctx.entityId : null)) as string | null,
+              company_id: (((after as AnyRow).company_id as string) ??
+                (ctx.entity === "companies" ? ctx.entityId : null)) as string | null,
               hiring_manager_id: action.hiring_manager_id ?? null,
               recruiter_id: action.recruiter_id ?? null,
               metadata: action.department ? { department: action.department } : {},
@@ -639,10 +655,10 @@ async function runAction(
         const fullName = (renderTokens(action.full_name, ctx.after) as string).trim();
         if (!fullName) throw new Error("full_name obrigatório");
         const email = action.email
-          ? ((renderTokens(action.email, ctx.after) as string) || null)
+          ? (renderTokens(action.email, ctx.after) as string) || null
           : null;
         const phone = action.phone
-          ? ((renderTokens(action.phone, ctx.after) as string) || null)
+          ? (renderTokens(action.phone, ctx.after) as string) || null
           : null;
         const { data: inserted, error } = await supabase
           .from("ats_candidates")
@@ -710,14 +726,24 @@ async function runAction(
           owner_id: owner,
           status: "new",
           first_name: first,
-          last_name: action.last_name ? (renderTokens(action.last_name, ctx.after) as string) || null : null,
+          last_name: action.last_name
+            ? (renderTokens(action.last_name, ctx.after) as string) || null
+            : null,
           email: action.email ? (renderTokens(action.email, ctx.after) as string) || null : null,
           phone: action.phone ? (renderTokens(action.phone, ctx.after) as string) || null : null,
-          company_name: action.company_name ? (renderTokens(action.company_name, ctx.after) as string) || null : null,
-          source: action.source ? (renderTokens(action.source, ctx.after) as string) || null : "workflow",
+          company_name: action.company_name
+            ? (renderTokens(action.company_name, ctx.after) as string) || null
+            : null,
+          source: action.source
+            ? (renderTokens(action.source, ctx.after) as string) || null
+            : "workflow",
         };
         const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-        const { data, error } = await supabase.from("leads").insert(row as never).select("id").single();
+        const { data, error } = await supabase
+          .from("leads")
+          .insert(row as never)
+          .select("id")
+          .single();
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_lead", detail: { id: data.id, first_name: first } };
       }
@@ -728,16 +754,31 @@ async function runAction(
         const base: Record<string, unknown> = {
           owner_id: owner,
           first_name: first,
-          last_name: action.last_name ? (renderTokens(action.last_name, ctx.after) as string) || null : null,
+          last_name: action.last_name
+            ? (renderTokens(action.last_name, ctx.after) as string) || null
+            : null,
           email: action.email ? (renderTokens(action.email, ctx.after) as string) || null : null,
           phone: action.phone ? (renderTokens(action.phone, ctx.after) as string) || null : null,
-          job_title: action.job_title ? (renderTokens(action.job_title, ctx.after) as string) || null : null,
-          company_name: action.company_name ? (renderTokens(action.company_name, ctx.after) as string) || null : null,
+          job_title: action.job_title
+            ? (renderTokens(action.job_title, ctx.after) as string) || null
+            : null,
+          company_name: action.company_name
+            ? (renderTokens(action.company_name, ctx.after) as string) || null
+            : null,
         };
         const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-        const { data, error } = await supabase.from("contacts").insert(row as never).select("id").single();
+        const { data, error } = await supabase
+          .from("contacts")
+          .insert(row as never)
+          .select("id")
+          .single();
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "create_contact", detail: { id: data.id, first_name: first } };
+        return {
+          at,
+          ok: true,
+          action: "create_contact",
+          detail: { id: data.id, first_name: first },
+        };
       }
       case "create_company": {
         const name = (renderTokens(action.name, ctx.after) as string).trim();
@@ -747,10 +788,16 @@ async function runAction(
           owner_id: owner,
           name,
           domain: action.domain ? (renderTokens(action.domain, ctx.after) as string) || null : null,
-          industry: action.industry ? (renderTokens(action.industry, ctx.after) as string) || null : null,
+          industry: action.industry
+            ? (renderTokens(action.industry, ctx.after) as string) || null
+            : null,
         };
         const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-        const { data, error } = await supabase.from("companies").insert(row as never).select("id").single();
+        const { data, error } = await supabase
+          .from("companies")
+          .insert(row as never)
+          .select("id")
+          .single();
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_company", detail: { id: data.id, name } };
       }
@@ -784,7 +831,11 @@ async function runAction(
         if (ctx.entity === "contacts") base.contact_id = ctx.entityId;
         else if (ctx.entity === "companies") base.company_id = ctx.entityId;
         const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-        const { data, error } = await supabase.from("deals").insert(row as never).select("id").single();
+        const { data, error } = await supabase
+          .from("deals")
+          .insert(row as never)
+          .select("id")
+          .single();
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_deal", detail: { id: data.id, name } };
       }
@@ -818,7 +869,11 @@ async function runAction(
         else if (ctx.entity === "companies") base.company_id = ctx.entityId;
         else if (ctx.entity === "deals") base.deal_id = ctx.entityId;
         const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-        const { data, error } = await supabase.from("tickets").insert(row as never).select("id").single();
+        const { data, error } = await supabase
+          .from("tickets")
+          .insert(row as never)
+          .select("id")
+          .single();
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_ticket", detail: { id: data.id, subject } };
       }
@@ -868,7 +923,11 @@ async function runAction(
           at,
           ok: true,
           action: "copy_field_from_association",
-          detail: { from: `${assoc.target_table}.${action.source_field}`, target: action.target_field, value },
+          detail: {
+            from: `${assoc.target_table}.${action.source_field}`,
+            target: action.target_field,
+            value,
+          },
         };
       }
       case "associate_records": {
@@ -882,7 +941,12 @@ async function runAction(
           .update({ [assoc.fk_column]: targetId })
           .eq("id", ctx.entityId);
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "associate_records", detail: { [assoc.fk_column]: targetId } };
+        return {
+          at,
+          ok: true,
+          action: "associate_records",
+          detail: { [assoc.fk_column]: targetId },
+        };
       }
       case "disassociate_records": {
         const { findAssociation } = await import("./associations");
@@ -893,7 +957,12 @@ async function runAction(
           .update({ [assoc.fk_column]: null })
           .eq("id", ctx.entityId);
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "disassociate_records", detail: { [assoc.fk_column]: null } };
+        return {
+          at,
+          ok: true,
+          action: "disassociate_records",
+          detail: { [assoc.fk_column]: null },
+        };
       }
       case "clear_field": {
         const { error } = await supabase
@@ -911,7 +980,12 @@ async function runAction(
           .update({ [action.field]: next })
           .eq("id", ctx.entityId);
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "increment_field", detail: { field: action.field, from: current, to: next } };
+        return {
+          at,
+          ok: true,
+          action: "increment_field",
+          detail: { field: action.field, from: current, to: next },
+        };
       }
       case "send_email": {
         const toField = action.to_field || "email";
@@ -971,16 +1045,27 @@ async function runAction(
         let out: unknown = src;
         try {
           switch (action.op) {
-            case "upper": out = toStr(src).toUpperCase(); break;
-            case "lower": out = toStr(src).toLowerCase(); break;
-            case "trim": out = toStr(src).trim(); break;
+            case "upper":
+              out = toStr(src).toUpperCase();
+              break;
+            case "lower":
+              out = toStr(src).toLowerCase();
+              break;
+            case "trim":
+              out = toStr(src).trim();
+              break;
             case "template_string":
               out = renderTokens(action.template ?? "", ctx.after, ctx.vars);
               break;
             case "date_add": {
               const base = src ? new Date(String(src)) : new Date();
               if (Number.isNaN(base.getTime())) throw new Error("data inválida");
-              const mult = action.unit === "minutes" ? 60_000 : action.unit === "hours" ? 3_600_000 : 86_400_000;
+              const mult =
+                action.unit === "minutes"
+                  ? 60_000
+                  : action.unit === "hours"
+                    ? 3_600_000
+                    : 86_400_000;
               out = new Date(base.getTime() + (action.amount ?? 0) * mult).toISOString();
               break;
             }
@@ -1011,7 +1096,12 @@ async function runAction(
           throw new Error(`format_data: ${e instanceof Error ? e.message : String(e)}`);
         }
         (ctx.vars as AnyRow)[action.target_var] = out;
-        return { at, ok: true, action: "format_data", detail: { op: action.op, target_var: action.target_var, value: out } };
+        return {
+          at,
+          ok: true,
+          action: "format_data",
+          detail: { op: action.op, target_var: action.target_var, value: out },
+        };
       }
       case "send_slack": {
         const { data: integ } = await supabase
@@ -1037,7 +1127,9 @@ async function runAction(
       }
       case "send_teams": {
         const text = renderTokens(action.text, ctx.after, ctx.vars) as string;
-        const title = action.title ? (renderTokens(action.title, ctx.after, ctx.vars) as string) : undefined;
+        const title = action.title
+          ? (renderTokens(action.title, ctx.after, ctx.vars) as string)
+          : undefined;
         // Microsoft Teams Incoming Webhook aceita MessageCard simples.
         const body = title ? { title, text } : { text };
         const res = await fetch(action.webhook_url, {
@@ -1080,7 +1172,15 @@ async function runAction(
             .maybeSingle();
         }
         if (insertRes.error) throw new Error(insertRes.error.message);
-        return { at, ok: true, action: "create_record", detail: { table: action.table, id: (insertRes.data as { id?: string } | null)?.id ?? null } };
+        return {
+          at,
+          ok: true,
+          action: "create_record",
+          detail: {
+            table: action.table,
+            id: (insertRes.data as { id?: string } | null)?.id ?? null,
+          },
+        };
       }
       case "update_record": {
         const targetId = renderTokens(action.target_id, ctx.after, ctx.vars) as string;
@@ -1094,24 +1194,30 @@ async function runAction(
           .update(rendered as never)
           .eq("id", targetId);
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "update_record", detail: { table: action.table, id: targetId } };
+        return {
+          at,
+          ok: true,
+          action: "update_record",
+          detail: { table: action.table, id: targetId },
+        };
       }
       case "delete_record": {
         const targetId = renderTokens(action.target_id, ctx.after, ctx.vars) as string;
         if (!targetId) throw new Error("target_id vazio");
-        const { error } = await supabase
-          .from(action.table)
-          .delete()
-          .eq("id", targetId);
+        const { error } = await supabase.from(action.table).delete().eq("id", targetId);
         if (error) throw new Error(error.message);
-        return { at, ok: true, action: "delete_record", detail: { table: action.table, id: targetId } };
+        return {
+          at,
+          ok: true,
+          action: "delete_record",
+          detail: { table: action.table, id: targetId },
+        };
       }
       default: {
         const _exhaustive: never = action;
         void _exhaustive;
         return { at, ok: false, action: "unknown", error: "Ação não suportada" };
       }
-
     }
   } catch (e) {
     return {
@@ -1236,7 +1342,6 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     ) {
       continue;
     }
-
 
     // Re-enrollment: se desabilitado e já existe run bem-sucedido, pula.
     // Se habilitado, só reprocessa quando o evento atual está na lista permitida.
@@ -1381,7 +1486,12 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
 
   let enqueued = 0;
   const wfResults: Array<{ workflow_id: string; matched: number; enqueued: number }> = [];
-  for (const wf of (workflows ?? []) as Array<{ id: string; owner_id: string; entity: WorkflowEntity; trigger: WorkflowTrigger | null }>) {
+  for (const wf of (workflows ?? []) as Array<{
+    id: string;
+    owner_id: string;
+    entity: WorkflowEntity;
+    trigger: WorkflowTrigger | null;
+  }>) {
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
     const tb = trig.time_based;
     if (!tb) continue;
@@ -1395,9 +1505,14 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
         ? "updated_at"
         : tb.kind === "stuck_in_stage_for"
           ? "moved_at"
-          : tb.field ?? "updated_at";
+          : (tb.field ?? "updated_at");
 
-    let q = supabase.from(wf.entity as never).select("*").eq("owner_id", wf.owner_id).lte(field, thresholdIso).limit(limitPerWf);
+    let q = supabase
+      .from(wf.entity as never)
+      .select("*")
+      .eq("owner_id", wf.owner_id)
+      .lte(field, thresholdIso)
+      .limit(limitPerWf);
     const { data: records, error: recErr } = await q;
     if (recErr) {
       wfResults.push({ workflow_id: wf.id, matched: 0, enqueued: 0 });
@@ -1419,7 +1534,11 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
         .eq("entity_id", rec.id as string)
         .maybeSingle();
       const refIso = rec[field] as string | null | undefined;
-      if (cursor && refIso && new Date(cursor.last_fired_at).getTime() >= new Date(refIso).getTime()) {
+      if (
+        cursor &&
+        refIso &&
+        new Date(cursor.last_fired_at).getTime() >= new Date(refIso).getTime()
+      ) {
         continue; // já disparou depois da última mudança do campo de referência
       }
 
@@ -1433,20 +1552,19 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
       } as never);
       if (evErr) continue;
 
-      await supabase
-        .from("workflow_time_cursors")
-        .upsert({
-          workflow_id: wf.id,
-          entity_id: rec.id as string,
-          owner_id: wf.owner_id,
-          last_fired_at: new Date().toISOString(),
-        } as never);
+      await supabase.from("workflow_time_cursors").upsert({
+        workflow_id: wf.id,
+        entity_id: rec.id as string,
+        owner_id: wf.owner_id,
+        last_fired_at: new Date().toISOString(),
+      } as never);
       localEnqueued += 1;
       enqueued += 1;
     }
     wfResults.push({ workflow_id: wf.id, matched: rows.length, enqueued: localEnqueued });
   }
   // Processa imediatamente os eventos gerados
-  const tickRes = enqueued > 0 ? await tickWorkflows(supabase, Math.min(enqueued, 200)) : { processed: 0 };
+  const tickRes =
+    enqueued > 0 ? await tickWorkflows(supabase, Math.min(enqueued, 200)) : { processed: 0 };
   return { enqueued, processed: tickRes.processed, workflows: wfResults };
 }

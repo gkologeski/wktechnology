@@ -84,9 +84,7 @@ export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
 
       {(action.type === "update_record" || action.type === "delete_record") && (
         <div>
-          <Label className="text-xs">
-            ID do registro (aceita tokens, ex.: {"{{id}}"})
-          </Label>
+          <Label className="text-xs">ID do registro (aceita tokens, ex.: {"{{id}}"})</Label>
           <TokenInput
             value={action.target_id ?? ""}
             onValueChange={(v) => onChange({ ...action, target_id: v })}
@@ -121,8 +119,8 @@ export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
 
       {action.type === "create_record" && (
         <p className="text-[11px] text-muted-foreground">
-          O campo <code>owner_id</code> é preenchido automaticamente com o dono do workflow
-          quando a tabela alvo possuir essa coluna.
+          O campo <code>owner_id</code> é preenchido automaticamente com o dono do workflow quando a
+          tabela alvo possuir essa coluna.
         </p>
       )}
     </div>
