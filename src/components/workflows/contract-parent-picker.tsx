@@ -204,7 +204,6 @@ export function ContractParentPicker({
                   role="tooltip"
                   className="pointer-events-none mx-3 mb-1 mt-1 rounded-md border border-border bg-popover/80 p-2.5 text-[11px] text-popover-foreground shadow-sm backdrop-blur-sm"
                 >
-
                   <FileText className="mb-1 h-3.5 w-3.5 opacity-60" />
                   <p>
                     <span className="text-muted-foreground">Vigência: </span>
