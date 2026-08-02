@@ -394,10 +394,11 @@ function siblingsOfPath(
   if (typeof head !== "number") return { list: [], index: -1 };
   if (path.length === 1) return { list: actions, index: head };
   const parent = actions[head];
-  if (!parent || parent.type !== "branch_if") return { list: [], index: -1 };
   const branch = path[1];
-  if (branch !== "then" && branch !== "else") return { list: [], index: -1 };
-  return siblingsOfPath(parent[branch] ?? [], path.slice(2) as StepPath);
+  if (!parent || !isBranchKey(branch)) return { list: [], index: -1 };
+  const children = getBranchList(parent, branch);
+  if (!children) return { list: [], index: -1 };
+  return siblingsOfPath(children, path.slice(2) as StepPath);
 }
 
 /** Opções de campo referenciando saídas de passos anteriores (`steps.N.campo`). */
@@ -427,10 +428,11 @@ function getStep(actions: WorkflowAction[], path: StepPath): WorkflowAction | nu
   const a = actions[head];
   if (!a) return null;
   if (rest.length === 0) return a;
-  if (a.type !== "branch_if") return null;
   const branch = rest[0];
-  if (branch !== "then" && branch !== "else") return null;
-  return getStep(a[branch] ?? [], rest.slice(1) as StepPath);
+  if (!isBranchKey(branch)) return null;
+  const children = getBranchList(a, branch);
+  if (!children) return null;
+  return getStep(children, rest.slice(1) as StepPath);
 }
 
 function updateStep(
@@ -444,13 +446,11 @@ function updateStep(
   return actions.map((a, i) => {
     if (i !== head) return a;
     if (rest.length === 0) return updater(a);
-    if (a.type !== "branch_if") return a;
     const branch = rest[0];
-    if (branch !== "then" && branch !== "else") return a;
-    return {
-      ...a,
-      [branch]: updateStep(a[branch] ?? [], rest.slice(1) as StepPath, updater),
-    };
+    if (!isBranchKey(branch)) return a;
+    const children = getBranchList(a, branch);
+    if (!children) return a;
+    return setBranchList(a, branch, updateStep(children, rest.slice(1) as StepPath, updater));
   });
 }
 
@@ -460,13 +460,12 @@ function removeStep(actions: WorkflowAction[], path: StepPath): WorkflowAction[]
   if (typeof head !== "number") return actions;
   if (rest.length === 0) return actions.filter((_, i) => i !== head);
   return actions.map((a, i) => {
-    if (i !== head || a.type !== "branch_if") return a;
+    if (i !== head) return a;
     const branch = rest[0];
-    if (branch !== "then" && branch !== "else") return a;
-    return {
-      ...a,
-      [branch]: removeStep(a[branch] ?? [], rest.slice(1) as StepPath),
-    };
+    if (!isBranchKey(branch)) return a;
+    const children = getBranchList(a, branch);
+    if (!children) return a;
+    return setBranchList(a, branch, removeStep(children, rest.slice(1) as StepPath));
   });
 }
 
@@ -480,23 +479,19 @@ function insertStep(
   if (parentPath.length === 0) return [...actions, newAction];
   const [head, ...rest] = parentPath;
   if (typeof head !== "number") {
-    // parentPath começa por "then"/"else" — só existe no contexto recursivo.
+    // parentPath começa por chave de ramo — só existe no contexto recursivo.
     return actions;
   }
   return actions.map((a, i) => {
     if (i !== head) return a;
     if (rest.length === 0) return a;
-    if (a.type !== "branch_if") return a;
     const branch = rest[0];
-    if (branch !== "then" && branch !== "else") return a;
+    if (!isBranchKey(branch)) return a;
+    const children = getBranchList(a, branch);
+    if (!children) return a;
     const remaining = rest.slice(1) as StepPath;
-    if (remaining.length === 0) {
-      return { ...a, [branch]: [...(a[branch] ?? []), newAction] };
-    }
-    return {
-      ...a,
-      [branch]: insertStep(a[branch] ?? [], remaining, newAction),
-    };
+    if (remaining.length === 0) return setBranchList(a, branch, [...children, newAction]);
+    return setBranchList(a, branch, insertStep(children, remaining, newAction));
   });
 }
 
@@ -517,20 +512,21 @@ function insertStepAt(
   if (typeof head !== "number") return actions;
   return actions.map((a, i) => {
     if (i !== head) return a;
-    if (a.type !== "branch_if") return a;
     const branch = rest[0];
-    if (branch !== "then" && branch !== "else") return a;
+    if (!isBranchKey(branch)) return a;
+    const list = getBranchList(a, branch);
+    if (!list) return a;
     const remaining = rest.slice(1) as StepPath;
-    const list = a[branch] ?? [];
     if (remaining.length === 0) {
       const copy = [...list];
       const clamped = Math.max(0, Math.min(index, copy.length));
       copy.splice(clamped, 0, newAction);
-      return { ...a, [branch]: copy };
+      return setBranchList(a, branch, copy);
     }
-    return { ...a, [branch]: insertStepAt(list, remaining, index, newAction) };
+    return setBranchList(a, branch, insertStepAt(list, remaining, index, newAction));
   });
 }
+
 
 // True se `target` está dentro (ou é igual a) `source`.
 function isDescendantOrSelf(target: StepPath, source: StepPath): boolean {
