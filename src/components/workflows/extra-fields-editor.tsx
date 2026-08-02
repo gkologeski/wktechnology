@@ -266,7 +266,8 @@ function FieldInput({
   );
 }
 
-// Combobox de busca para FKs conhecidas (usuário / empresa / pipeline).
+// Combobox de busca para FKs conhecidas (usuário / empresa / contato /
+// pipeline / empresa contratante / contrato).
 // Busca é server-side com debounce, respeitando as RLS policies do usuário.
 // Aceita valor bruto (UUID) ou token {{...}} — o TokenInput continua no fallback.
 export function FkPicker({
@@ -274,7 +275,7 @@ export function FkPicker({
   value,
   onChange,
 }: {
-  kind: "user" | "company" | "pipeline" | "contact";
+  kind: RefKind;
   value: string;
   onChange: (v: string) => void;
 }) {
@@ -288,6 +289,8 @@ export function FkPicker({
   const fetchContacts = useServerFn(searchContacts);
   const fetchPipelines = useServerFn(searchPipelines);
   const fetchUsers = useServerFn(searchUsers);
+  const fetchLegalEntities = useServerFn(searchLegalEntities);
+  const fetchContracts = useServerFn(searchContracts);
 
   // debounce 200ms sobre o input
   useEffect(() => {
@@ -304,8 +307,28 @@ export function FkPicker({
       if (kind === "company") return await fetchCompanies({ data: { q: q || undefined } });
       if (kind === "contact") return await fetchContacts({ data: { q: q || undefined } });
       if (kind === "pipeline") return await fetchPipelines({ data: { q: q || undefined } });
+      if (kind === "legal_entity")
+        return await fetchLegalEntities({ data: { q: q || undefined } });
+      if (kind === "contract") return await fetchContracts({ data: { q: q || undefined } });
       const rows = await fetchUsers({ data: { q: q || undefined } });
       return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
+    },
+  });
+
+  // Tipos sem cache global de rótulos: hidrata o nome pelo ID selecionado
+  // para nunca exibir hash na interface.
+  const needsHydrate =
+    !!value && !isToken && (kind === "legal_entity" || kind === "contract");
+  const hydrated = useQuery({
+    queryKey: ["wf-ref-label", kind, value],
+    enabled: needsHydrate,
+    staleTime: 300_000,
+    queryFn: async () => {
+      const rows =
+        kind === "legal_entity"
+          ? await fetchLegalEntities({ data: { ids: [value] } })
+          : await fetchContracts({ data: { ids: [value] } });
+      return rows[0]?.name ?? "";
     },
   });
 
@@ -319,7 +342,9 @@ export function FkPicker({
           ? labels.labelForCompany(value)
           : kind === "contact"
             ? labels.labelForContact(value)
-            : labels.labelForPipeline(value);
+            : kind === "pipeline"
+              ? labels.labelForPipeline(value)
+              : hydrated.data || "Carregando…";
 
   const items = (searchQuery.data ?? []) as Array<{ id: string; name: string }>;
   const isLoading = searchQuery.isFetching;
