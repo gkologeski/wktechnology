@@ -72,11 +72,41 @@ export function TicketMacrosButton({ ticket, onApplied }: Props) {
       related_company_id: ticket.company_id,
       related_deal_id: ticket.deal_id,
     };
+    // Resolve as variáveis oferecidas na edição de macros (MACRO_TOKENS).
+    let contactName = "";
+    let companyName = "";
+    if (ticket.contact_id) {
+      const { data: c } = await supabase
+        .from("contacts")
+        .select("first_name, last_name")
+        .eq("id", ticket.contact_id)
+        .maybeSingle();
+      contactName = [c?.first_name, c?.last_name].filter(Boolean).join(" ");
+    }
+    if (ticket.company_id) {
+      const { data: co } = await supabase
+        .from("companies")
+        .select("name")
+        .eq("id", ticket.company_id)
+        .maybeSingle();
+      companyName = co?.name ?? "";
+    }
+    const body = renderTokens(m.body, {
+      contact_first_name: contactName.split(" ")[0] ?? "",
+      contact_name: contactName,
+      company_name: companyName,
+      ticket_subject: ticket.subject ?? "",
+      agent_name:
+        (user.user_metadata as { full_name?: string } | undefined)?.full_name ??
+        user.email ??
+        "",
+    });
+
     const { error } = await supabase.from("activities").insert({
       owner_id: user.id,
       type: "note",
       subject: m.name,
-      body: m.body,
+      body,
       completed: true,
       ...related,
     });
@@ -85,10 +115,11 @@ export function TicketMacrosButton({ ticket, onApplied }: Props) {
       return;
     }
     try {
-      await navigator.clipboard?.writeText(m.body);
+      await navigator.clipboard?.writeText(body);
     } catch {
       // ignore clipboard failures
     }
+
     toast.success(`Macro "${m.name}" aplicada — texto copiado.`);
     setOpen(false);
     setFilter("");
