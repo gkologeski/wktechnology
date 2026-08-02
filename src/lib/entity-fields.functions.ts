@@ -5,6 +5,12 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { REF_COLUMNS, type RefKind } from "./entity-fields-refs";
+import {
+  CONTRACT_FIELD_LABELS,
+  CONTRACT_FIELD_OPTIONS,
+  CONTRACT_FREE_TEXT_FIELDS,
+  CONTRACT_SYSTEM_FIELDS,
+} from "./contracts/workflow-field-meta";
 
 export type EntityFieldType = "text" | "number" | "date" | "select" | "boolean";
 
@@ -18,6 +24,10 @@ export type EntityFieldDef = {
   required?: boolean;
   /** Quando presente, o construtor renderiza seletor com busca por nome. */
   ref?: RefKind;
+  /** Campo normalmente preenchido pelo sistema/integração — vai em bloco colapsado. */
+  system?: boolean;
+  /** Campo de texto rico (HTML) — renderiza editor WYSIWYG. */
+  richText?: boolean;
 };
 
 type RawRow = {
@@ -63,7 +73,6 @@ const HIDDEN = new Set<string>([
 function isSyncColumn(col: string): boolean {
   return /^(hs_|hubspot_)/.test(col) && col !== "hs_lead_status" && col !== "hs_priority";
 }
-
 
 // Rótulos amigáveis (pt-BR) — fallback é snake_case → Title Case.
 const LABELS: Record<string, string> = {
@@ -201,7 +210,6 @@ const LABELS: Record<string, string> = {
   unit: "Unidade",
   billing_cycle: "Ciclo de cobrança",
   interval: "Intervalo",
-
 };
 
 /**
@@ -209,11 +217,7 @@ const LABELS: Record<string, string> = {
  * global (ex.: `title` = "Cargo" em contatos, mas "Título" em contratos).
  */
 const ENTITY_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
-  contracts: {
-    title: "Título do contrato",
-    role: "Papel na relação",
-    status: "Status do contrato",
-  },
+  contracts: CONTRACT_FIELD_LABELS,
   quotes: { title: "Título da cotação" },
   proposals: { title: "Título da proposta" },
   ats_jobs: { title: "Título da vaga" },
@@ -226,13 +230,11 @@ const ENTITY_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function toLabel(col: string, entity?: string): string {
-
   const override = entity ? ENTITY_LABEL_OVERRIDES[entity]?.[col] : undefined;
   if (override) return override;
   if (LABELS[col]) return LABELS[col];
   return col.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
 
 function inferType(dataType: string): EntityFieldType {
   if (dataType === "boolean") return "boolean";
@@ -279,10 +281,8 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
           "subscription_invoices",
           "customer_invoices",
         ]),
-
       })
       .parse(input),
-
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -365,6 +365,14 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       "subcategory",
     ]);
 
+    const isContracts = data.entity === "contracts";
+    // Listas canônicas por entidade (substituem amostragem de valores distintos).
+    const canonicalOptions: Record<string, { value: string; label: string }[]> = isContracts
+      ? CONTRACT_FIELD_OPTIONS
+      : {};
+    const freeTextByEntity = isContracts ? CONTRACT_FREE_TEXT_FIELDS : new Set<string>();
+    const systemFields = isContracts ? CONTRACT_SYSTEM_FIELDS : new Set<string>();
+
     const fields: EntityFieldDef[] = [];
     for (const r of allRows) {
       if (HIDDEN.has(r.column_name) || isSyncColumn(r.column_name)) continue;
@@ -375,19 +383,24 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         type,
         required: r.is_nullable === "NO" && !r.has_default,
       };
+      if (systemFields.has(r.column_name)) def.system = true;
+      if (isContracts && r.column_name === "body_html") def.richText = true;
 
       const ref = REF_COLUMNS[r.column_name];
       if (ref) {
         // Referência: seletor com busca por nome; grava o ID e nunca lista hashes.
         def.ref = ref;
         def.type = "text";
+      } else if (canonicalOptions[r.column_name]) {
+        def.type = "select";
+        def.options = canonicalOptions[r.column_name];
       } else if (pipelineStageOptions && r.column_name === "stage") {
         def.type = "select";
         def.options = pipelineStageOptions;
       } else if (registryOptions[r.column_name]) {
         def.type = "select";
         def.options = registryOptions[r.column_name];
-      } else if (FREE_TEXT.has(r.column_name)) {
+      } else if (FREE_TEXT.has(r.column_name) || freeTextByEntity.has(r.column_name)) {
         def.type = type === "boolean" ? "boolean" : "text";
       } else if (
         r.distinct_values &&
@@ -409,7 +422,6 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
 
       fields.push(def);
     }
-
 
     // Ordenação amigável: campos com valores listáveis primeiro,
     // depois datas, depois o resto alfabeticamente por label.

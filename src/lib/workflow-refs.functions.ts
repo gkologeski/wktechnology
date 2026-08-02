@@ -96,9 +96,7 @@ export const searchContacts = createServerFn({ method: "POST" })
       .limit(LIMIT);
     if (q) {
       const like = `%${escapeLike(q)}%`;
-      query = query.or(
-        `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like}`,
-      );
+      query = query.or(`first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like}`);
     }
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
@@ -190,9 +188,7 @@ export const searchUsers = createServerFn({ method: "POST" })
       // getUserById um a um — a Admin API não suporta filtro por id-set.
       // Lista sempre pequena (usuários fora do workspace referenciados no workflow).
       const lookups = await Promise.all(
-        missingName.map((id) =>
-          supabaseAdmin.auth.admin.getUserById(id).catch(() => null),
-        ),
+        missingName.map((id) => supabaseAdmin.auth.admin.getUserById(id).catch(() => null)),
       );
       lookups.forEach((res, i) => {
         const email = res?.data?.user?.email;
@@ -203,11 +199,9 @@ export const searchUsers = createServerFn({ method: "POST" })
     const results = idList.map((id) => {
       // Fallback em cascata: nome do perfil → e-mail → identificador curto.
       // Nunca devolvemos o UUID cru para a interface.
-      const name =
-        nameById.get(id) || emailById.get(id) || `Usuário ${id.slice(0, 8)}`;
+      const name = nameById.get(id) || emailById.get(id) || `Usuário ${id.slice(0, 8)}`;
       return { id, name, is_member: memberIds.has(id) };
     });
-
 
     // Filtra por q se veio, e prioriza membros do workspace nas sugestões livres.
     const q = data.q?.trim().toLowerCase();
@@ -282,7 +276,10 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
           const name = `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim();
           const company = (r.company_name as string | null) ?? "";
           const base = name || (r.email as string | null) || "";
-          return { id: r.id as string, label: company ? `${base} — ${company}` : base || "(sem nome)" };
+          return {
+            id: r.id as string,
+            label: company ? `${base} — ${company}` : base || "(sem nome)",
+          };
         });
       }
       case "contacts": {
@@ -293,9 +290,7 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
           .limit(LIMIT);
         if (ids) query = query.in("id", ids);
         else if (like)
-          query = query.or(
-            `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like}`,
-          );
+          query = query.or(`first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like}`);
         const { data: rows, error } = await query;
         if (error) throw new Error(error.message);
         return (rows ?? []).map((r) => {
@@ -387,9 +382,7 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
       case "ats_applications": {
         let query = supabase
           .from("ats_applications")
-          .select(
-            "id, updated_at, candidate:ats_candidates(full_name, email), job:ats_jobs(title)",
-          )
+          .select("id, updated_at, candidate:ats_candidates(full_name, email), job:ats_jobs(title)")
           .order("updated_at", { ascending: false })
           .limit(LIMIT);
         if (ids) query = query.in("id", ids);
@@ -401,8 +394,7 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
           job: { title: string | null } | null;
         };
         let mapped = ((rows ?? []) as unknown as Row[]).map((r) => {
-          const cand =
-            (r.candidate?.full_name ?? "").trim() || r.candidate?.email || "Candidato";
+          const cand = (r.candidate?.full_name ?? "").trim() || r.candidate?.email || "Candidato";
           const job = r.job?.title || "Vaga";
           return { id: r.id, label: `${cand} — ${job}` };
         });
@@ -430,8 +422,7 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
           job: { title: string | null } | null;
         };
         let mapped = ((rows ?? []) as unknown as Row[]).map((r) => {
-          const cand =
-            (r.candidate?.full_name ?? "").trim() || r.candidate?.email || "Candidato";
+          const cand = (r.candidate?.full_name ?? "").trim() || r.candidate?.email || "Candidato";
           const when = fmtDate(r.scheduled_at);
           const job = r.job?.title;
           const parts = [cand, job, when].filter(Boolean);
@@ -444,4 +435,78 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
         return mapped;
       }
     }
+  });
+
+/** Empresas do grupo (legal_entities) — usado em `contracting_legal_entity_id`. */
+export const searchLegalEntities = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => RefInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const toName = (r: {
+      id: string;
+      name: string | null;
+      trade_name: string | null;
+      cnpj: string | null;
+    }) => ({
+      id: r.id,
+      name:
+        [(r.trade_name ?? "").trim() || (r.name ?? "").trim(), r.cnpj ?? ""]
+          .filter(Boolean)
+          .join(" · ") || "Empresa sem nome",
+    });
+    if (data.ids && data.ids.length > 0) {
+      const { data: rows, error } = await supabase
+        .from("legal_entities")
+        .select("id, name, trade_name, cnpj")
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      return (rows ?? []).map(toName);
+    }
+    const q = data.q?.trim();
+    let query = supabase
+      .from("legal_entities")
+      .select("id, name, trade_name, cnpj")
+      .order("name")
+      .limit(LIMIT);
+    if (q) {
+      const like = `%${escapeLike(q)}%`;
+      query = query.or(`name.ilike.${like},trade_name.ilike.${like},cnpj.ilike.${like}`);
+    }
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(toName);
+  });
+
+/** Contratos — usado em `parent_contract_id` (contrato-pai / aditivo). */
+export const searchContracts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => RefInput.parse(i))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const toName = (r: { id: string; number: string | null; title: string | null }) => ({
+      id: r.id,
+      name: [r.number, (r.title ?? "").trim()].filter(Boolean).join(" — ") || "Contrato sem título",
+    });
+    if (data.ids && data.ids.length > 0) {
+      const { data: rows, error } = await supabase
+        .from("contracts")
+        .select("id, number, title")
+        .in("id", data.ids);
+      if (error) throw new Error(error.message);
+      return (rows ?? []).map(toName);
+    }
+    const q = data.q?.trim();
+    let query = supabase
+      .from("contracts")
+      .select("id, number, title")
+      .order("created_at", { ascending: false })
+      .limit(LIMIT);
+    if (q) {
+      const like = `%${escapeLike(q)}%`;
+      query = query.or(`title.ilike.${like},number.ilike.${like}`);
+    }
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map(toName);
   });
