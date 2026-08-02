@@ -821,7 +821,6 @@ export function WorkflowBuilder({
               <StepsList
                 entityFields={fieldOptions}
                 actions={state.actions}
-
                 path={[]}
                 selection={selection}
                 library={library}
@@ -1040,7 +1039,6 @@ function StepsList({
   onAddAt: (parentPath: StepPath) => void;
   onChangeAction: (p: StepPath, a: WorkflowAction) => void;
   entityFields: FieldOpt[];
-
 } & DragProps) {
   return (
     <>
