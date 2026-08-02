@@ -1,3 +1,4 @@
+import { renderTokens as renderTemplate } from "@/lib/message-tokens";
 // Engine de envio de e-mails do ATS (Fase 1).
 // Processa duas filas:
 //   1. ats_candidate_email_queue — e-mails para o CANDIDATO (confirmação de candidatura)
@@ -25,12 +26,6 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-function renderTemplate(tpl: string, vars: Record<string, string | null | undefined>): string {
-  return tpl.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key: string) => {
-    const v = vars[key];
-    return v == null ? "" : String(v);
-  });
-}
 
 async function getBrandingFor(ownerId: string): Promise<{
   productName: string;
