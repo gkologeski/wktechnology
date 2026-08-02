@@ -1507,7 +1507,7 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
           ? "moved_at"
           : (tb.field ?? "updated_at");
 
-    let q = supabase
+    const q = supabase
       .from(wf.entity as never)
       .select("*")
       .eq("owner_id", wf.owner_id)
