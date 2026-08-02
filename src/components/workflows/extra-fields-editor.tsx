@@ -568,8 +568,10 @@ export function ExtraFieldsEditor({
   // próprio (continuam editáveis, apenas fora do fluxo principal).
   const systemFields = ungrouped.filter((f) => f.system);
   const mainFields = ungrouped.filter((f) => !f.system);
-  const filled = mainFields.filter((f) => hasValue(f.name));
-  const empty = mainFields.filter((f) => !hasValue(f.name));
+  // Campos que o usuário editou e depois limpou continuam visíveis no mesmo
+  // lugar (bucket dos preenchidos) para não "sumirem" da tela.
+  const filled = mainFields.filter((f) => hasValue(f.name) || pinned.has(f.name));
+  const empty = mainFields.filter((f) => !hasValue(f.name) && !pinned.has(f.name));
   const orphanKeys = Object.keys(values).filter(
     (k) => !hidden.has(k) && !visibleFields.some((f) => f.name === k),
   );
@@ -583,6 +585,7 @@ export function ExtraFieldsEditor({
     const next: Record<string, unknown> = { ...values };
     if (value === null || value === undefined || value === "") {
       delete next[key];
+      setPinned((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
     } else {
       next[key] = value;
     }
@@ -592,8 +595,15 @@ export function ExtraFieldsEditor({
   function removeKey(key: string) {
     const next: Record<string, unknown> = { ...values };
     delete next[key];
+    setPinned((prev) => {
+      if (!prev.has(key)) return prev;
+      const s = new Set(prev);
+      s.delete(key);
+      return s;
+    });
     onChange(Object.keys(next).length ? next : undefined);
   }
+
 
   const TOKEN_ALIAS: Record<string, string> = {
     counterparty_company_id: "{{company_id}}",
