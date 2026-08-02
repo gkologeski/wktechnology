@@ -23,6 +23,19 @@ const AGENT: MessageToken[] = [
 
 export const EMAIL_TOKENS: MessageToken[] = [...CONTACT, ...AGENT];
 
+/**
+ * Campanhas de e-mail em massa: as variáveis vêm de
+ * `email_broadcast_recipients.variables`, resolvidas no motor de envio.
+ */
+export const CAMPAIGN_TOKENS: MessageToken[] = [
+  { token: "{{first_name}}", label: "Nome", group: "Destinatário" },
+  { token: "{{last_name}}", label: "Sobrenome", group: "Destinatário" },
+  { token: "{{full_name}}", label: "Nome completo", group: "Destinatário" },
+  { token: "{{name}}", label: "Nome do registro", group: "Destinatário" },
+  { token: "{{email}}", label: "E-mail", group: "Destinatário" },
+  { token: "{{company_name}}", label: "Empresa", group: "Destinatário" },
+];
+
 export const WHATSAPP_TOKENS: MessageToken[] = [
   { token: "{{first_name}}", label: "Nome", group: "Contato" },
   { token: "{{full_name}}", label: "Nome completo", group: "Contato" },
@@ -36,6 +49,7 @@ export const LINKEDIN_TOKENS: MessageToken[] = [
   { token: "{{headline}}", label: "Headline", group: "Contato" },
 ];
 
+/** Resolvidas no motor de e-mails do ATS (`ats_stage_email_log`). */
 export const ATS_CANDIDATE_TOKENS: MessageToken[] = [
   { token: "{{candidate.first_name}}", label: "Nome", group: "Candidato" },
   { token: "{{candidate.full_name}}", label: "Nome completo", group: "Candidato" },
@@ -43,6 +57,7 @@ export const ATS_CANDIDATE_TOKENS: MessageToken[] = [
   { token: "{{job.title}}", label: "Vaga", group: "Vaga" },
   { token: "{{job.department}}", label: "Departamento", group: "Vaga" },
   { token: "{{company.name}}", label: "Empresa", group: "Empresa" },
+  { token: "{{stage}}", label: "Etapa da candidatura", group: "Candidatura" },
 ];
 
 export const SEQUENCE_TOKENS: MessageToken[] = [...CONTACT, ...AGENT];
