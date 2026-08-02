@@ -127,6 +127,7 @@ import {
   isFilterGroup,
 } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export type WorkflowDraft = {
   id?: string;
@@ -585,11 +586,14 @@ export function WorkflowBuilder({
   const [library, setLibrary] = useState<{ parentPath: StepPath } | null>(null);
   const [entityPickerOpen, setEntityPickerOpen] = useState(false);
   const [dragging, setDragging] = useState<StepPath | null>(null);
+  // Snapshot do rascunho como estava ao abrir/salvar, para detectar alterações não salvas.
+  const [baseline, setBaseline] = useState<string>(() => JSON.stringify(draft ?? EMPTY_DRAFT));
   const fieldOptions = useEntityFieldOptions(state.entity);
 
   useEffect(() => {
     if (open) {
       setState(draft ?? EMPTY_DRAFT);
+      setBaseline(JSON.stringify(draft ?? EMPTY_DRAFT));
       setSelection("trigger");
       setLibrary(null);
       // Abre picker quando é um workflow novo sem entidade escolhida (id vazio + nome vazio).
@@ -613,10 +617,30 @@ export function WorkflowBuilder({
   const setTrigger = (fn: (t: WorkflowTrigger) => WorkflowTrigger) =>
     setState((s) => ({ ...s, trigger: fn(s.trigger) }));
 
+  const isDirty = JSON.stringify(state) !== baseline;
+
+  /** Fecha o editor, confirmando antes quando há alterações não salvas. */
+  const requestClose = async () => {
+    if (busy) return;
+    if (isDirty) {
+      const ok = await confirmDialog({
+        title: "Sair sem salvar?",
+        description:
+          "Há alterações não salvas neste rascunho. Se você sair agora, elas serão descartadas.",
+        confirmLabel: "Descartar alterações",
+        cancelLabel: "Continuar editando",
+        variant: "destructive",
+      });
+      if (!ok) return;
+    }
+    onClose();
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
       await onSave(state);
+      setBaseline(JSON.stringify(state));
     } finally {
       setSaving(false);
     }
@@ -627,6 +651,7 @@ export function WorkflowBuilder({
     setPublishing(true);
     try {
       await onSaveAndPublish(state);
+      setBaseline(JSON.stringify(state));
     } finally {
       setPublishing(false);
     }
@@ -691,7 +716,7 @@ export function WorkflowBuilder({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) void requestClose(); }}>
       <DialogContent className="max-w-none w-screen h-screen max-h-screen p-0 gap-0 rounded-none border-0 flex flex-col sm:rounded-none [&>button.absolute]:hidden">
         <DialogTitle className="sr-only">
           {state.id ? "Editar workflow" : "Novo workflow"}
@@ -702,7 +727,7 @@ export function WorkflowBuilder({
 
         {/* Header */}
         <header className="flex items-center gap-3 border-b bg-background px-4 h-14 shrink-0">
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Voltar">
+          <Button variant="ghost" size="icon" onClick={() => void requestClose()} aria-label="Voltar">
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1 min-w-0">
@@ -733,7 +758,7 @@ export function WorkflowBuilder({
                 ? `Rascunho pendente (v${publishedVersion} no ar)`
                 : "Rascunho"}
           </Badge>
-          <Button variant="ghost" onClick={onClose}>
+          <Button variant="ghost" onClick={() => void requestClose()}>
             Cancelar
           </Button>
           <Button variant="outline" onClick={handleSave} disabled={!canSubmit}>
