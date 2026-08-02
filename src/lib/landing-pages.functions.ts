@@ -99,8 +99,9 @@ export const deleteLandingPage = createServerFn({ method: "POST" })
 export const getPublishedBySlug = createServerFn({ method: "GET" })
   .inputValidator((d: { slug: string }) => z.object({ slug: SlugSchema }).parse(d))
   .handler(async ({ data }) => {
+    // Projeção mínima: sem owner_id/assigned_to nem contadores internos.
     const { data: row } = await (supabaseAdmin.from("landing_pages") as any)
-      .select("id,owner_id,title,description,blocks,theme,seo,slug")
+      .select("id,title,description,blocks,theme,seo,slug")
       .eq("slug", data.slug)
       .eq("status", "published")
       .maybeSingle();
