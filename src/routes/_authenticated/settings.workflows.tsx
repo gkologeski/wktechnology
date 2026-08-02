@@ -192,15 +192,18 @@ function WorkflowsPage() {
     }
   };
 
-  const handlePublish = async (row: WorkflowRow) => {
+  const handlePublishById = async (id: string) => {
     try {
-      const r = await publishFn({ data: { id: row.id } });
+      const r = await publishFn({ data: { id } });
       toast.success(`Publicado — v${r.version}`);
       refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao publicar");
     }
   };
+
+  const handlePublish = (row: WorkflowRow) => handlePublishById(row.id);
+
 
   const handleDiscard = async (row: WorkflowRow) => {
     if (
