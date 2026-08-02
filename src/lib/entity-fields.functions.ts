@@ -263,8 +263,6 @@ const LABELS: Record<string, string> = {
   signed_at: "Assinado em",
   starts_at: "Início",
   ends_at: "Término",
-  start_at: "Início",
-  end_at: "Término",
   next_action_at: "Próxima ação em",
   last_touch_at: "Último contato em",
   captured_at: "Capturado em",
