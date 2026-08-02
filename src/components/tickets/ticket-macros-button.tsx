@@ -98,9 +98,7 @@ export function TicketMacrosButton({ ticket, onApplied }: Props) {
       company_name: companyName,
       ticket_subject: ticket.subject ?? "",
       agent_name:
-        (user.user_metadata as { full_name?: string } | undefined)?.full_name ??
-        user.email ??
-        "",
+        (user.user_metadata as { full_name?: string } | undefined)?.full_name ?? user.email ?? "",
     });
 
     const { error } = await supabase.from("activities").insert({

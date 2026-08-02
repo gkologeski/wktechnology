@@ -13,11 +13,7 @@ export function toStr(v: unknown): string {
   return JSON.stringify(v);
 }
 
-export function renderWorkflowTokens(
-  input: unknown,
-  after: AnyRow | null,
-  vars?: AnyRow,
-): unknown {
+export function renderWorkflowTokens(input: unknown, after: AnyRow | null, vars?: AnyRow): unknown {
   if (typeof input !== "string") return input;
   return renderTokensWith(input, (path) => {
     if (path.startsWith("vars.")) return toStr(getPath(vars ?? null, path.slice(5)));

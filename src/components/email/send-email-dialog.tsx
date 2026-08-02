@@ -35,7 +35,6 @@ import { TokenPills } from "@/components/ui/token-pills";
 import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 
-
 type Props = {
   defaultTo?: string;
   defaultSubject?: string;
@@ -51,7 +50,6 @@ type Props = {
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
 };
-
 
 export function SendEmailDialog({
   defaultTo = "",
@@ -129,7 +127,10 @@ export function SendEmailDialog({
   const removeAttachment = async (idx: number) => {
     const a = attachments[idx];
     setAttachments((prev) => prev.filter((_, i) => i !== idx));
-    await supabase.storage.from("email-attachments").remove([a.path]).catch(() => {});
+    await supabase.storage
+      .from("email-attachments")
+      .remove([a.path])
+      .catch(() => {});
   };
 
   const subjectInserter = useTokenInserter<HTMLInputElement>(() => subject, setSubject);
@@ -146,7 +147,6 @@ export function SendEmailDialog({
     }
     setBody((prev) => (prev ?? "") + token);
   };
-
 
   const listAccounts = useServerFn(listEmailAccounts);
   const listTemplates = useServerFn(listEmailTemplates);
@@ -177,7 +177,6 @@ export function SendEmailDialog({
     }
   }, [open, defaultTo, defaultSubject, defaultBody]);
 
-
   const account = accountsQ.data?.items?.find((a) => a.status === "connected");
 
   const ctx = useMemo<TokenContext>(
@@ -203,7 +202,7 @@ export function SendEmailDialog({
     const t = templatesQ.data?.items.find((x) => x.id === id);
     if (!t) return;
     setSubject(renderTokens(t.subject ?? "", ctx));
-    const tplBody = (t.body_html && t.body_html.trim()) ? t.body_html : (t.body_text ?? "");
+    const tplBody = t.body_html && t.body_html.trim() ? t.body_html : (t.body_text ?? "");
     setBody(renderTokens(tplBody, ctx));
     toast.success(`Template "${t.name}" aplicado`);
   };
@@ -347,9 +346,13 @@ export function SendEmailDialog({
                   onApply={setBody}
                 />
               </div>
-              <RichHtmlEditor value={body} onChange={setBody} minHeight={220} placeholder="Escreva sua mensagem…" />
+              <RichHtmlEditor
+                value={body}
+                onChange={setBody}
+                minHeight={220}
+                placeholder="Escreva sua mensagem…"
+              />
               <TokenPills className="mt-2" tokens={EMAIL_TOKENS} onInsert={insertBodyToken} />
-
             </div>
 
             <div>
@@ -444,4 +447,3 @@ export function SendEmailDialog({
     </Dialog>
   );
 }
-

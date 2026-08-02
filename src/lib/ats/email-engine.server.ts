@@ -26,7 +26,6 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-
 async function getBrandingFor(ownerId: string): Promise<{
   productName: string;
   primaryColor: string | null;
@@ -98,7 +97,9 @@ export async function tickAtsCandidateEmails(limit = 20): Promise<{
 }> {
   const { data: pending } = await admin
     .from("ats_candidate_email_queue")
-    .select("id, owner_id, application_id, candidate_id, job_id, to_email, subject, body_html, body_text, attempts")
+    .select(
+      "id, owner_id, application_id, candidate_id, job_id, to_email, subject, body_html, body_text, attempts",
+    )
     .eq("status", "pending")
     .lte("scheduled_for", new Date().toISOString())
     .order("scheduled_for", { ascending: true })
@@ -170,7 +171,9 @@ export async function tickAtsStageEmails(limit = 20): Promise<{
 }> {
   const { data: pending } = await admin
     .from("ats_stage_email_log")
-    .select("id, owner_id, application_id, candidate_id, job_id, stage_value, to_email, subject, body, status, sent_at")
+    .select(
+      "id, owner_id, application_id, candidate_id, job_id, stage_value, to_email, subject, body, status, sent_at",
+    )
     .eq("status", "pending")
     .order("created_at", { ascending: true })
     .limit(limit);
@@ -233,7 +236,6 @@ export async function tickAtsStageEmails(limit = 20): Promise<{
     };
     const subject = renderTemplate(r.subject, vars);
     const bodyHtml = renderTemplate(r.body, vars);
-
 
     const res = await sendOne({
       to: r.to_email,

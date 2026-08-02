@@ -33,7 +33,6 @@ async function getGmailAccount(
   return (data?.[0] as EmailAccountRow | undefined) ?? null;
 }
 
-
 function buildUnsubscribeLink(token: string, baseUrl: string) {
   return `${baseUrl}/api/public/email/unsubscribe/${token}`;
 }
