@@ -26,8 +26,8 @@ O formulário do passo usa o catálogo genérico de campos (`src/lib/entity-fiel
 ### 1. Rótulos PT-BR completos para Contratos
 Preencher `ENTITY_LABEL_OVERRIDES.contracts` com todas as colunas: papel, contraparte, negócio, contrato-pai, vigência, renovação automática, aviso prévio, valores, moeda, índice/periodicidade de reajuste, dia e método de pagamento, multa, juros mensais, reembolso de despesas, multa rescisória, prazo de cura, período de teste, aviso de rescisão unilateral, tipo/escopo/local do serviço, lei aplicável, foro, sigilo (meses), empresa contratante, provedor de assinatura, assinado em, responsável, etc.
 
-### 2. Campos ocultos (gerados pelo sistema/integração)
-Ocultar do formulário: `number`, `public_token`, `signature_document_id`, `signature_document_path`, `signature_operation_id`, `signed_pdf_path`, `source_file_path`, `imported_from`, `metadata`, `payment_terms`. Ficam acessíveis apenas pelo escape hatch "Campo avançado (chave/valor livre)" já existente, para quem realmente precisar.
+### 2. Bloco colapsado "Outros campos (sistema e integração)"
+Em vez de esconder, agrupar `number`, `public_token`, `signature_document_id`, `signature_document_path`, `signature_operation_id`, `signed_pdf_path`, `source_file_path`, `imported_from`, `metadata` e `payment_terms` em uma seção colapsável fechada por padrão, logo abaixo dos campos principais, com rótulos PT-BR e nota curta explicando que normalmente são preenchidos pelo sistema ou pela integração de assinatura. Continuam editáveis quando o usuário abrir a seção.
 
 ### 3. Combos com listas canônicas
 `readjustment_index`, `readjustment_period`, `service_type`, `service_location`, `payment_method`, `signature_provider`, `role`, `status`, `currency` passam a usar listas fixas com rótulos PT-BR (reaproveitando as constantes de `import-schemas.ts` e os enums `contract_role`/`contract_status`).
