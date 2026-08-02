@@ -66,7 +66,7 @@ import {
 import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
-import type { WorkflowWritableTable } from "@/lib/workflows/types";
+import type { WorkflowEntity, WorkflowWritableTable } from "@/lib/workflows/types";
 import { sortFieldsByCanonicalOrder } from "@/lib/workflows/entity-field-order";
 
 type EntityName = WorkflowWritableTable;
@@ -76,6 +76,8 @@ interface Props {
   extraFields: Record<string, unknown> | undefined;
   hiddenKeys?: string[];
   onChange: (next: Record<string, unknown> | undefined) => void;
+  /** Entidade que dispara o workflow, usada para tokens contextualizados. */
+  triggerEntity?: WorkflowEntity;
   /** Rótulo do bloco colapsável. Padrão: "Mais campos". */
   title?: string;
   /** Inicia aberto (útil quando é o editor primário da ação). */
@@ -451,6 +453,7 @@ export function ExtraFieldsEditor({
   extraFields,
   hiddenKeys,
   onChange,
+  triggerEntity,
   title,
   defaultOpen,
 }: Props) {
@@ -598,6 +601,12 @@ export function ExtraFieldsEditor({
     assignee_id: "{{owner_id}}",
     hiring_manager_id: "{{owner_id}}",
     approver_user_id: "{{owner_id}}",
+    // Vínculo contextual: quando o workflow dispara de um negócio, o contrato
+    // criado deve apontar para o próprio registro origem ({{id}}).
+    ...(triggerEntity === "deals" ? { deal_id: "{{id}}" } : {}),
+    // Vínculo contextual: quando o workflow dispara de um contrato, o novo
+    // contrato (aditivo/renovação) deve apontar para o contrato origem.
+    ...(triggerEntity === "contracts" ? { parent_contract_id: "{{id}}" } : {}),
   };
 
   function tokenForField(field: EntityFieldDef): string | null {

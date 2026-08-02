@@ -20,6 +20,7 @@ import {
   WORKFLOW_WRITABLE_TABLES,
   ENTITY_LABELS,
   type WorkflowAction,
+  type WorkflowEntity,
   type WorkflowWritableTable,
 } from "@/lib/workflows/types";
 
@@ -31,13 +32,15 @@ type GenericAction = Extract<
 interface Props {
   action: GenericAction;
   onChange: (next: GenericAction) => void;
+  /** Entidade que dispara o workflow. */
+  triggerEntity?: WorkflowEntity;
 }
 
 function tableLabel(t: WorkflowWritableTable): string {
   return (ENTITY_LABELS as Record<string, string>)[t] ?? t;
 }
 
-export function GenericRecordForm({ action, onChange }: Props) {
+export function GenericRecordForm({ action, onChange, triggerEntity }: Props) {
   const hasValues = action.type !== "delete_record";
 
   const values = useMemo<Record<string, unknown>>(() => {
@@ -81,9 +84,7 @@ export function GenericRecordForm({ action, onChange }: Props) {
 
       {(action.type === "update_record" || action.type === "delete_record") && (
         <div>
-          <Label className="text-xs">
-            ID do registro (aceita tokens, ex.: {"{{id}}"})
-          </Label>
+          <Label className="text-xs">ID do registro (aceita tokens, ex.: {"{{id}}"})</Label>
           <TokenInput
             value={action.target_id ?? ""}
             onValueChange={(v) => onChange({ ...action, target_id: v })}
@@ -100,6 +101,7 @@ export function GenericRecordForm({ action, onChange }: Props) {
             extraFields={values}
             hiddenKeys={HIDDEN_IN_GENERIC}
             onChange={setValues}
+            triggerEntity={triggerEntity}
             title="Campos do registro"
             defaultOpen
           />
@@ -117,8 +119,8 @@ export function GenericRecordForm({ action, onChange }: Props) {
 
       {action.type === "create_record" && (
         <p className="text-[11px] text-muted-foreground">
-          O campo <code>owner_id</code> é preenchido automaticamente com o dono do workflow
-          quando a tabela alvo possuir essa coluna.
+          O campo <code>owner_id</code> é preenchido automaticamente com o dono do workflow quando a
+          tabela alvo possuir essa coluna.
         </p>
       )}
     </div>

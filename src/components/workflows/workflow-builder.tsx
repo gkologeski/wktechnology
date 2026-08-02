@@ -72,8 +72,6 @@ import { TokenInput, TokenTextarea } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 import { ActionTemplatesBar } from "./action-templates-bar";
 
-
-
 type FieldOpt = {
   name: string;
   label: string;
@@ -103,7 +101,6 @@ function useEntityFieldOptions(entity: WorkflowEntity): FieldOpt[] {
   return (ENTITY_FIELDS[entity] ?? []).map((n) => ({ name: n, label: n }));
 }
 
-
 import {
   ENTITY_FIELDS,
   ENTITY_LABELS,
@@ -113,7 +110,6 @@ import {
   ACTION_CATEGORIES,
   RECORD_ACTION_MODULES,
   type WorkflowWritableTable,
-
   FILTER_OPS,
   type WorkflowEntity,
   type WorkflowEventType,
@@ -181,7 +177,6 @@ const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   delete_record: Eraser,
 };
 
-
 function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
   switch (type) {
     case "set_field":
@@ -247,7 +242,11 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
     case "send_slack":
       return { type, text: "Notificação de workflow: {{name}}" };
     case "send_teams":
-      return { type, webhook_url: "https://outlook.office.com/webhook/...", text: "Notificação de workflow: {{name}}" };
+      return {
+        type,
+        webhook_url: "https://outlook.office.com/webhook/...",
+        text: "Notificação de workflow: {{name}}",
+      };
     case "approval_step":
       return { type, title: "Aprovar {{name}}", note: "", halt_on_reject: true };
     case "create_record":
@@ -258,7 +257,6 @@ function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, table: "activities", target_id: "{{id}}" };
   }
 }
-
 
 // ============================================================================
 // Path: um passo é endereçado por um array de índices (branches criam níveis).
@@ -367,7 +365,6 @@ function priorStepFieldOptions(actions: WorkflowAction[], path: StepPath | null)
   }
   return out;
 }
-
 
 function getStep(actions: WorkflowAction[], path: StepPath): WorkflowAction | null {
   if (path.length === 0) return null;
@@ -513,8 +510,6 @@ function moveStepTo(
   return { actions: afterInsert, newPath: [...to.parentPath, targetIndex] };
 }
 
-
-
 // ============================================================================
 // Componente principal
 // ============================================================================
@@ -551,9 +546,7 @@ export function WorkflowBuilder({
   // Precisa ficar antes do early return para manter a ordem dos hooks estável.
   const priorStepFields = useMemo(
     () =>
-      selection && selection !== "trigger"
-        ? priorStepFieldOptions(state.actions, selection)
-        : [],
+      selection && selection !== "trigger" ? priorStepFieldOptions(state.actions, selection) : [],
     [state.actions, selection],
   );
 
@@ -577,7 +570,6 @@ export function WorkflowBuilder({
   const selectedAction =
     selection && selection !== "trigger" ? getStep(state.actions, selection) : null;
 
-
   const addAction = (
     type: WorkflowActionType,
     parentPath: StepPath,
@@ -591,7 +583,6 @@ export function WorkflowBuilder({
     // Seleciona o novo passo (último índice do array em que foi inserido).
     // Como cálculo exato é chato, apenas fecha a biblioteca — usuário pode clicar no card.
   };
-
 
   const handleDropAt = (to: { parentPath: StepPath; index: number }) => {
     if (!dragging) return;
@@ -630,11 +621,9 @@ export function WorkflowBuilder({
     });
   };
 
-
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-none w-screen h-screen max-h-screen p-0 gap-0 rounded-none border-0 flex flex-col sm:rounded-none [&>button.absolute]:hidden">
-
         <DialogTitle className="sr-only">
           {state.id ? "Editar workflow" : "Novo workflow"}
         </DialogTitle>
@@ -751,10 +740,7 @@ export function WorkflowBuilder({
                 }}
                 onRemove={(p) => {
                   setActions((prev) => removeStep(prev, p));
-                  if (
-                    Array.isArray(selection) &&
-                    JSON.stringify(selection) === JSON.stringify(p)
-                  ) {
+                  if (Array.isArray(selection) && JSON.stringify(selection) === JSON.stringify(p)) {
                     setSelection("trigger");
                   }
                 }}
@@ -784,7 +770,6 @@ export function WorkflowBuilder({
                     onClose={() => setLibrary(null)}
                     onPick={(t, overrides) => addAction(t, library.parentPath, overrides)}
                   />
-
                 ) : selection === "trigger" ? (
                   <TriggerConfigPanel
                     entity={state.entity}
@@ -799,11 +784,8 @@ export function WorkflowBuilder({
                     entity={state.entity}
                     entityFields={fieldOptions}
                     priorFields={priorStepFields}
-                    onChange={(na) =>
-                      setActions((prev) => updateStep(prev, selection, () => na))
-                    }
+                    onChange={(na) => setActions((prev) => updateStep(prev, selection, () => na))}
                   />
-
                 ) : (
                   <p className="text-sm text-muted-foreground">
                     Selecione um passo no canvas para configurar.
@@ -976,7 +958,8 @@ function StepsList({
         const stepPath: StepPath = [...path, i];
         const isSelected =
           Array.isArray(selection) && JSON.stringify(selection) === JSON.stringify(stepPath);
-        const isDraggingSelf = dragging !== null && JSON.stringify(dragging) === JSON.stringify(stepPath);
+        const isDraggingSelf =
+          dragging !== null && JSON.stringify(dragging) === JSON.stringify(stepPath);
         return (
           <div key={i}>
             {action.type === "branch_if" ? (
@@ -1017,12 +1000,7 @@ function StepsList({
               />
             )}
             {/* Drop slot entre este e o próximo (e depois do último) */}
-            <DropSlot
-              parentPath={path}
-              index={i + 1}
-              dragging={dragging}
-              onDropAt={onDropAt}
-            />
+            <DropSlot parentPath={path} index={i + 1} dragging={dragging} onDropAt={onDropAt} />
             {i < actions.length - 1 && (
               <Connector
                 onAdd={() => onAddAt(path)}
@@ -1070,9 +1048,7 @@ function DragHandle({
 
 function StepCardDescription({ action }: { action: WorkflowAction }) {
   const labels = useReferenceLabels();
-  return (
-    <p className="text-xs text-muted-foreground truncate">{describeAction(action, labels)}</p>
-  );
+  return <p className="text-xs text-muted-foreground truncate">{describeAction(action, labels)}</p>;
 }
 
 function StepCard({
@@ -1241,9 +1217,7 @@ function BranchCard({
               Ramificação
             </p>
             <p className="text-sm font-medium">Se / Então / Senão</p>
-            <p className="text-xs text-muted-foreground">
-              {action.filters.length} condição(ões)
-            </p>
+            <p className="text-xs text-muted-foreground">{action.filters.length} condição(ões)</p>
           </div>
         </button>
         <div className="flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100">
@@ -1251,7 +1225,10 @@ function BranchCard({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={(e) => { e.stopPropagation(); onMove(stepPath, -1); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(stepPath, -1);
+            }}
             disabled={!canMoveUp}
             aria-label="Mover ramificação para cima"
           >
@@ -1261,7 +1238,10 @@ function BranchCard({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={(e) => { e.stopPropagation(); onMove(stepPath, 1); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onMove(stepPath, 1);
+            }}
             disabled={!canMoveDown}
             aria-label="Mover ramificação para baixo"
           >
@@ -1271,7 +1251,10 @@ function BranchCard({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
             aria-label="Remover ramificação"
           >
             <Trash2 className="h-4 w-4" />
@@ -1401,7 +1384,6 @@ function BranchCard({
   );
 }
 
-
 function Connector({ onAdd, active }: { onAdd: () => void; active?: boolean }) {
   return (
     <div className="flex flex-col items-center py-1">
@@ -1488,9 +1470,7 @@ function ActionLibraryPanel({
                 >
                   <Sparkles className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm flex-1">{mod.label}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {modOpen ? "−" : "+"}
-                  </span>
+                  <span className="text-[10px] text-muted-foreground">{modOpen ? "−" : "+"}</span>
                 </button>
                 {modOpen && (
                   <div className="border-t bg-muted/20 px-2 py-1.5 space-y-1">
@@ -1498,7 +1478,10 @@ function ActionLibraryPanel({
                       const entKey = `${mod.key}:${ent.table}`;
                       const entOpen = expandedEntity === entKey;
                       return (
-                        <div key={ent.table} className="rounded border border-border/60 bg-background">
+                        <div
+                          key={ent.table}
+                          className="rounded border border-border/60 bg-background"
+                        >
                           <button
                             type="button"
                             onClick={() => setExpandedEntity(entOpen ? null : entKey)}
@@ -1516,13 +1499,11 @@ function ActionLibraryPanel({
                                   {ent.hint}
                                 </p>
                               )}
-                              {(
-                                [
-                                  { op: "create_record" as const, label: `Criar ${ent.singular}` },
-                                  { op: "update_record" as const, label: `Editar ${ent.singular}` },
-                                  { op: "delete_record" as const, label: `Excluir ${ent.singular}` },
-                                ]
-                              ).map(({ op, label }) => (
+                              {[
+                                { op: "create_record" as const, label: `Criar ${ent.singular}` },
+                                { op: "update_record" as const, label: `Editar ${ent.singular}` },
+                                { op: "delete_record" as const, label: `Excluir ${ent.singular}` },
+                              ].map(({ op, label }) => (
                                 <button
                                   key={op}
                                   type="button"
@@ -1551,7 +1532,6 @@ function ActionLibraryPanel({
     </div>
   );
 }
-
 
 // ============================================================================
 // Right-panel: Trigger config
@@ -1614,8 +1594,9 @@ function TriggerConfigPanel({
         {trigger.event === "updated" &&
           (trigger.filters ?? []).some((f) => f.field === "stage_id" || f.field === "stage") && (
             <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
-              Para reagir a mudanças de etapa do pipeline, use o evento <strong>Mudou de etapa</strong>.
-              O evento <em>Atualizado</em> não dispara em transições de etapa.
+              Para reagir a mudanças de etapa do pipeline, use o evento{" "}
+              <strong>Mudou de etapa</strong>. O evento <em>Atualizado</em> não dispara em
+              transições de etapa.
             </p>
           )}
       </div>
@@ -1649,7 +1630,10 @@ function TriggerConfigPanel({
                 onValueChange={(v) =>
                   onChange((t) => ({
                     ...t,
-                    time_based: { ...(t.time_based ?? { amount: 1, unit: "days" }), kind: v as never },
+                    time_based: {
+                      ...(t.time_based ?? { amount: 1, unit: "days" }),
+                      kind: v as never,
+                    },
                   }))
                 }
               >
@@ -1673,7 +1657,10 @@ function TriggerConfigPanel({
                   onChange={(e) =>
                     onChange((t) => ({
                       ...t,
-                      time_based: { ...(t.time_based ?? { kind: "time_since_field", amount: 1, unit: "days" }), field: e.target.value },
+                      time_based: {
+                        ...(t.time_based ?? { kind: "time_since_field", amount: 1, unit: "days" }),
+                        field: e.target.value,
+                      },
                     }))
                   }
                   placeholder="created_at"
@@ -1689,7 +1676,10 @@ function TriggerConfigPanel({
                 onChange={(e) =>
                   onChange((t) => ({
                     ...t,
-                    time_based: { ...(t.time_based ?? { kind: "time_since_field", unit: "days" }), amount: Math.max(1, parseInt(e.target.value) || 1) },
+                    time_based: {
+                      ...(t.time_based ?? { kind: "time_since_field", unit: "days" }),
+                      amount: Math.max(1, parseInt(e.target.value) || 1),
+                    },
                   }))
                 }
               />
@@ -1701,7 +1691,10 @@ function TriggerConfigPanel({
                 onValueChange={(v) =>
                   onChange((t) => ({
                     ...t,
-                    time_based: { ...(t.time_based ?? { kind: "time_since_field", amount: 1 }), unit: v as "minutes" | "hours" | "days" },
+                    time_based: {
+                      ...(t.time_based ?? { kind: "time_since_field", amount: 1 }),
+                      unit: v as "minutes" | "hours" | "days",
+                    },
                   }))
                 }
               >
@@ -1716,8 +1709,8 @@ function TriggerConfigPanel({
               </Select>
             </div>
             <p className="col-span-2 text-[11px] text-muted-foreground">
-              Varredura executa a cada 15 min. Cada registro dispara no máximo uma vez até
-              o campo de referência mudar.
+              Varredura executa a cada 15 min. Cada registro dispara no máximo uma vez até o campo
+              de referência mudar.
             </p>
           </div>
         )}
@@ -1735,9 +1728,7 @@ function TriggerConfigPanel({
             variant="ghost"
             size="sm"
             disabled={!defaultField}
-            onClick={() =>
-              setFilters((p) => [...p, { field: defaultField, op: "eq", value: "" }])
-            }
+            onClick={() => setFilters((p) => [...p, { field: defaultField, op: "eq", value: "" }])}
           >
             <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
           </Button>
@@ -1820,7 +1811,10 @@ function TriggerConfigPanel({
             onClick={() =>
               onChange((t) => ({
                 ...t,
-                goal_filters: [...(t.goal_filters ?? []), { field: defaultField, op: "eq", value: "" }],
+                goal_filters: [
+                  ...(t.goal_filters ?? []),
+                  { field: defaultField, op: "eq", value: "" },
+                ],
               }))
             }
           >
@@ -1828,8 +1822,8 @@ function TriggerConfigPanel({
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          Se todos os critérios passarem no processamento do evento, o registro é considerado no objetivo
-          e não recebe novas execuções.
+          Se todos os critérios passarem no processamento do evento, o registro é considerado no
+          objetivo e não recebe novas execuções.
         </p>
         {(trigger.goal_filters ?? []).map((f, i) => (
           <FilterRow
@@ -1910,10 +1904,7 @@ function FilterRow({
         </Button>
       </div>
 
-      <Select
-        value={filter.op}
-        onValueChange={(v) => onChange({ ...filter, op: v as FilterOp })}
-      >
+      <Select value={filter.op} onValueChange={(v) => onChange({ ...filter, op: v as FilterOp })}>
         <SelectTrigger className="h-8 text-xs">
           <SelectValue />
         </SelectTrigger>
@@ -1949,7 +1940,6 @@ function FilterRow({
             </SelectContent>
           </Select>
         ) : (
-
           <Input
             className="h-8 text-xs"
             type={type === "number" ? "number" : type === "date" ? "date" : "text"}
@@ -1960,9 +1950,7 @@ function FilterRow({
               // Filtros contra colunas text (ex.: stage_id) devem ser string
               // — o engine usa comparação estrita (===).
               const coerced: string | number =
-                type === "number" && raw !== "" && !Number.isNaN(Number(raw))
-                  ? Number(raw)
-                  : raw;
+                type === "number" && raw !== "" && !Number.isNaN(Number(raw)) ? Number(raw) : raw;
               onChange({ ...filter, value: coerced });
             }}
             placeholder="valor"
@@ -2006,7 +1994,6 @@ function StepConfigPanel({
   );
 }
 
-
 function StepConfigForm({
   action,
   entity,
@@ -2020,10 +2007,6 @@ function StepConfigForm({
   priorFields?: FieldOpt[];
   onChange: (a: WorkflowAction) => void;
 }) {
-
-
-
-
   switch (action.type) {
     case "set_field":
       return (
@@ -2173,11 +2156,15 @@ function StepConfigForm({
               type="number"
               min={1}
               value={action.amount}
-              onChange={(e) => onChange({ ...action, amount: Math.max(1, Number(e.target.value) || 1) })}
+              onChange={(e) =>
+                onChange({ ...action, amount: Math.max(1, Number(e.target.value) || 1) })
+              }
             />
             <Select
               value={action.unit}
-              onValueChange={(v) => onChange({ ...action, unit: v as "minutes" | "hours" | "days" })}
+              onValueChange={(v) =>
+                onChange({ ...action, unit: v as "minutes" | "hours" | "days" })
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -2191,7 +2178,11 @@ function StepConfigForm({
           </div>
           <p className="text-xs text-muted-foreground">
             Esperar {action.amount}{" "}
-            {action.unit === "minutes" ? "minuto(s)" : action.unit === "hours" ? "hora(s)" : "dia(s)"}{" "}
+            {action.unit === "minutes"
+              ? "minuto(s)"
+              : action.unit === "hours"
+                ? "hora(s)"
+                : "dia(s)"}{" "}
             antes de executar as próximas ações.
           </p>
         </div>
@@ -2200,9 +2191,9 @@ function StepConfigForm({
       return (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">
-            O ramo <strong>Sim</strong> é executado quando todas as condições abaixo passam;
-            caso contrário, executa o ramo <strong>Não</strong>. Adicione passos filhos
-            diretamente no canvas.
+            O ramo <strong>Sim</strong> é executado quando todas as condições abaixo passam; caso
+            contrário, executa o ramo <strong>Não</strong>. Adicione passos filhos diretamente no
+            canvas.
           </p>
           <div className="flex items-center justify-between">
             <Label className="text-xs">Condições</Label>
@@ -2223,7 +2214,9 @@ function StepConfigForm({
             </Button>
           </div>
           {action.filters.length === 0 && (
-            <p className="text-xs text-muted-foreground">Sem condições — sempre executa o ramo Sim.</p>
+            <p className="text-xs text-muted-foreground">
+              Sem condições — sempre executa o ramo Sim.
+            </p>
           )}
           {action.filters.map((f, i) => (
             <FilterRow
@@ -2348,7 +2341,10 @@ function StepConfigForm({
       return (
         <div className="space-y-2">
           <Label className="text-xs">Recrutador / responsável</Label>
-          <UserPicker value={action.user_id} onChange={(v) => onChange({ ...action, user_id: v })} />
+          <UserPicker
+            value={action.user_id}
+            onChange={(v) => onChange({ ...action, user_id: v })}
+          />
           <Label className="text-xs">Alvo</Label>
           <Select
             value={action.target ?? "auto"}
@@ -2376,7 +2372,8 @@ function StepConfigForm({
       return (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">
-            Use <code className="text-[11px]">{`{{campo}}`}</code> para puxar valores do registro que disparou o workflow.
+            Use <code className="text-[11px]">{`{{campo}}`}</code> para puxar valores do registro
+            que disparou o workflow.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -2448,6 +2445,7 @@ function StepConfigForm({
               "owner_id",
               "status",
             ]}
+            triggerEntity={entity}
             onChange={(v) => onChange({ ...action, extra_fields: v })}
           />
         </div>
@@ -2516,6 +2514,7 @@ function StepConfigForm({
               "company_name",
               "owner_id",
             ]}
+            triggerEntity={entity}
             onChange={(v) => onChange({ ...action, extra_fields: v })}
           />
         </div>
@@ -2552,6 +2551,7 @@ function StepConfigForm({
             entity="companies"
             extraFields={action.extra_fields}
             hiddenKeys={["name", "domain", "industry", "owner_id"]}
+            triggerEntity={entity}
             onChange={(v) => onChange({ ...action, extra_fields: v })}
           />
         </div>
@@ -2596,14 +2596,8 @@ function StepConfigForm({
           <ExtraFieldsEditor
             entity="deals"
             extraFields={action.extra_fields}
-            hiddenKeys={[
-              "name",
-              "value",
-              "currency",
-              "pipeline_id",
-              "stage_id",
-              "owner_id",
-            ]}
+            hiddenKeys={["name", "value", "currency", "pipeline_id", "stage_id", "owner_id"]}
+            triggerEntity={entity}
             onChange={(v) => onChange({ ...action, extra_fields: v })}
           />
         </div>
@@ -2669,13 +2663,8 @@ function StepConfigForm({
           <ExtraFieldsEditor
             entity="tickets"
             extraFields={action.extra_fields}
-            hiddenKeys={[
-              "subject",
-              "description",
-              "priority",
-              "pipeline_id",
-              "assignee_id",
-            ]}
+            hiddenKeys={["subject", "description", "priority", "pipeline_id", "assignee_id"]}
+            triggerEntity={entity}
             onChange={(v) => onChange({ ...action, extra_fields: v })}
           />
         </div>
@@ -2737,6 +2726,7 @@ function StepConfigForm({
               "related_company_id",
               "related_deal_id",
             ]}
+            triggerEntity={entity}
             onChange={(v) => onChange({ ...action, extra_fields: v })}
           />
         </div>
@@ -2777,7 +2767,9 @@ function StepConfigForm({
               value={action.amount}
               onChange={(e) => onChange({ ...action, amount: Number(e.target.value) || 0 })}
             />
-            <p className="text-[11px] text-muted-foreground mt-1">Use valores negativos para decrementar.</p>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Use valores negativos para decrementar.
+            </p>
           </div>
         </div>
       );
@@ -2785,7 +2777,8 @@ function StepConfigForm({
       return (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">
-            Fica na caixa de saída (email_messages) como outbound; a entrega ocorre pela conta de email configurada.
+            Fica na caixa de saída (email_messages) como outbound; a entrega ocorre pela conta de
+            email configurada.
           </p>
           <div>
             <Label className="text-xs">Template (opcional)</Label>
@@ -2824,7 +2817,8 @@ function StepConfigForm({
       return (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">
-            Enfileira em whatsapp_messages (outbound, status queued). Entrega depende do provedor configurado.
+            Enfileira em whatsapp_messages (outbound, status queued). Entrega depende do provedor
+            configurado.
           </p>
           <div>
             <Label className="text-xs">Template (opcional)</Label>
@@ -2854,9 +2848,7 @@ function StepConfigForm({
         </div>
       );
     case "switch_by_value":
-      return (
-        <SwitchByValueForm entity={entity} action={action} onChange={onChange} />
-      );
+      return <SwitchByValueForm entity={entity} action={action} onChange={onChange} />;
     case "branch_multi":
       return (
         <BranchMultiForm
@@ -2868,9 +2860,7 @@ function StepConfigForm({
         />
       );
     case "delay_until_date":
-      return (
-        <DelayUntilDateForm entity={entity} action={action} onChange={onChange} />
-      );
+      return <DelayUntilDateForm entity={entity} action={action} onChange={onChange} />;
     case "format_data":
       return <FormatDataForm action={action} onChange={onChange} />;
     case "send_slack":
@@ -2882,7 +2872,7 @@ function StepConfigForm({
     case "create_record":
     case "update_record":
     case "delete_record":
-      return <GenericRecordForm action={action} onChange={onChange} />;
+      return <GenericRecordForm action={action} onChange={onChange} triggerEntity={entity} />;
     default: {
       const _exhaustive: never = action;
       void _exhaustive;
@@ -2903,7 +2893,9 @@ function AssociationSelect({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const [assocs, setAssocs] = useState<Array<{ key: string; label: string; target_table: string }>>([]);
+  const [assocs, setAssocs] = useState<Array<{ key: string; label: string; target_table: string }>>(
+    [],
+  );
   useEffect(() => {
     let alive = true;
     import("@/lib/workflows/associations").then((m) => {
@@ -2922,7 +2914,11 @@ function AssociationSelect({
     };
   }, [entity]);
   if (assocs.length === 0) {
-    return <p className="text-xs text-muted-foreground">Esta entidade não tem associações configuráveis.</p>;
+    return (
+      <p className="text-xs text-muted-foreground">
+        Esta entidade não tem associações configuráveis.
+      </p>
+    );
   }
   return (
     <Select value={value || undefined} onValueChange={onChange}>
@@ -3060,7 +3056,13 @@ function DisassociateRecordsForm({
   );
 }
 
-function EmailTemplatePicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function EmailTemplatePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
   const { data: templates = [] } = useQuery({
     queryKey: ["email-templates-picker"],
     queryFn: async () => {
@@ -3073,7 +3075,13 @@ function EmailTemplatePicker({ value, onChange }: { value: string; onChange: (v:
     },
   });
   if (templates.length === 0) {
-    return <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="UUID do template" />;
+    return (
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="UUID do template"
+      />
+    );
   }
   return (
     <Select value={value || undefined} onValueChange={onChange}>
@@ -3107,8 +3115,9 @@ function SwitchByValueForm({
   return (
     <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Executa o primeiro <em>case</em> cujo valor bate com o campo. Se nenhum bater, executa o padrão.
-        As ações filhas de cada case são configuradas via JSON até o editor visual completo estar pronto.
+        Executa o primeiro <em>case</em> cujo valor bate com o campo. Se nenhum bater, executa o
+        padrão. As ações filhas de cada case são configuradas via JSON até o editor visual completo
+        estar pronto.
       </p>
       <div>
         <Label className="text-xs">Campo</Label>
@@ -3140,7 +3149,11 @@ function SwitchByValueForm({
                 <Input
                   value={String(c.value ?? "")}
                   onChange={(e) =>
-                    setCases(action.cases.map((x, idx) => (idx === i ? { ...x, value: e.target.value } : x)))
+                    setCases(
+                      action.cases.map((x, idx) =>
+                        idx === i ? { ...x, value: e.target.value } : x,
+                      ),
+                    )
                   }
                 />
               </div>
@@ -3163,7 +3176,9 @@ function SwitchByValueForm({
                   try {
                     const parsed = JSON.parse(e.target.value);
                     if (Array.isArray(parsed)) {
-                      setCases(action.cases.map((x, idx) => (idx === i ? { ...x, actions: parsed } : x)));
+                      setCases(
+                        action.cases.map((x, idx) => (idx === i ? { ...x, actions: parsed } : x)),
+                      );
                     }
                   } catch {
                     /* ignore invalid json */
@@ -3221,7 +3236,10 @@ function BranchMultiForm({
           variant="ghost"
           size="sm"
           onClick={() =>
-            setBranches([...action.branches, { label: `Branch ${action.branches.length + 1}`, filters: [], actions: [] }])
+            setBranches([
+              ...action.branches,
+              { label: `Branch ${action.branches.length + 1}`, filters: [], actions: [] },
+            ])
           }
         >
           <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar
@@ -3235,7 +3253,11 @@ function BranchMultiForm({
               <Input
                 value={b.label ?? ""}
                 onChange={(e) =>
-                  setBranches(action.branches.map((x, idx) => (idx === i ? { ...x, label: e.target.value } : x)))
+                  setBranches(
+                    action.branches.map((x, idx) =>
+                      idx === i ? { ...x, label: e.target.value } : x,
+                    ),
+                  )
                 }
               />
             </div>
@@ -3258,7 +3280,13 @@ function BranchMultiForm({
                   setBranches(
                     action.branches.map((x, idx) =>
                       idx === i
-                        ? { ...x, filters: [...x.filters, { field: entityFields[0]?.name ?? "", op: "eq", value: "" }] }
+                        ? {
+                            ...x,
+                            filters: [
+                              ...x.filters,
+                              { field: entityFields[0]?.name ?? "", op: "eq", value: "" },
+                            ],
+                          }
                         : x,
                     ),
                   )
@@ -3302,7 +3330,9 @@ function BranchMultiForm({
                 try {
                   const parsed = JSON.parse(e.target.value);
                   if (Array.isArray(parsed)) {
-                    setBranches(action.branches.map((x, idx) => (idx === i ? { ...x, actions: parsed } : x)));
+                    setBranches(
+                      action.branches.map((x, idx) => (idx === i ? { ...x, actions: parsed } : x)),
+                    );
                   }
                 } catch {
                   /* ignore */
@@ -3344,8 +3374,8 @@ function DelayUntilDateForm({
   return (
     <div className="space-y-2">
       <p className="text-xs text-muted-foreground">
-        Espera até a data de um campo do registro. Use offset negativo para disparar antes (ex: -3 dias).
-        Se a data já passou, segue direto para a próxima ação.
+        Espera até a data de um campo do registro. Use offset negativo para disparar antes (ex: -3
+        dias). Se a data já passou, segue direto para a próxima ação.
       </p>
       <div>
         <Label className="text-xs">Campo de data</Label>
@@ -3368,7 +3398,9 @@ function DelayUntilDateForm({
           <Label className="text-xs">Unidade</Label>
           <Select
             value={action.offset_unit ?? "days"}
-            onValueChange={(v) => onChange({ ...action, offset_unit: v as "minutes" | "hours" | "days" })}
+            onValueChange={(v) =>
+              onChange({ ...action, offset_unit: v as "minutes" | "hours" | "days" })
+            }
           >
             <SelectTrigger>
               <SelectValue />
@@ -3384,7 +3416,6 @@ function DelayUntilDateForm({
     </div>
   );
 }
-
 
 // ============================================================================
 // Entity picker
@@ -3443,7 +3474,11 @@ function UserPicker({ value, onChange }: { value: string; onChange: (v: string) 
   const { data: members = [], nameFor } = useWorkspaceMembers();
   if (members.length === 0) {
     return (
-      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="UUID do usuário" />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="UUID do usuário"
+      />
     );
   }
   return (
@@ -3507,7 +3542,11 @@ function SequencePicker({ value, onChange }: { value: string; onChange: (v: stri
   });
   if (seqs.length === 0) {
     return (
-      <Input value={value} onChange={(e) => onChange(e.target.value)} placeholder="UUID da sequência" />
+      <Input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="UUID da sequência"
+      />
     );
   }
   return (
@@ -3558,14 +3597,13 @@ function describeAction(a: WorkflowAction, labels?: DescribeLabels): string {
   // Fallback quando labels não é passado: hash curto.
   const short = (id: string | null | undefined, prefix: string) =>
     id ? `${prefix} ${id.slice(0, 8)}…` : "—";
-  const L: DescribeLabels =
-    labels ?? {
-      labelForUser: (id) => (id ? `usuário ${id.slice(0, 8)}…` : "—"),
-      labelForCompany: (id) => short(id, "empresa"),
-      labelForPipeline: (id) => short(id, "pipeline"),
-      labelForSequence: (id) => short(id, "sequência"),
-      labelForRule: (id) => short(id, "regra"),
-    };
+  const L: DescribeLabels = labels ?? {
+    labelForUser: (id) => (id ? `usuário ${id.slice(0, 8)}…` : "—"),
+    labelForCompany: (id) => short(id, "empresa"),
+    labelForPipeline: (id) => short(id, "pipeline"),
+    labelForSequence: (id) => short(id, "sequência"),
+    labelForRule: (id) => short(id, "regra"),
+  };
 
   switch (a.type) {
     case "set_field":
@@ -3634,7 +3672,6 @@ function describeAction(a: WorkflowAction, labels?: DescribeLabels): string {
   }
 }
 
-
 // ============================================================================
 // Fase 5 — forms simples para novas ações
 // ============================================================================
@@ -3654,8 +3691,13 @@ function FormatDataForm({
     <div className="space-y-3">
       <div className="space-y-1">
         <Label>Operação</Label>
-        <Select value={action.op} onValueChange={(v) => onChange({ ...action, op: v as typeof action.op })}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+        <Select
+          value={action.op}
+          onValueChange={(v) => onChange({ ...action, op: v as typeof action.op })}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="upper">Maiúsculas</SelectItem>
             <SelectItem value="lower">Minúsculas</SelectItem>
@@ -3716,7 +3758,9 @@ function FormatDataForm({
             value={action.unit ?? "days"}
             onValueChange={(v) => onChange({ ...action, unit: v as "minutes" | "hours" | "days" })}
           >
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="minutes">Minutos</SelectItem>
               <SelectItem value="hours">Horas</SelectItem>
@@ -3733,7 +3777,8 @@ function FormatDataForm({
           placeholder="ex: score_pct"
         />
         <p className="text-xs text-muted-foreground">
-          Use nas ações seguintes como <code>{"{{vars." + (action.target_var || "nome") + "}}"}</code>.
+          Use nas ações seguintes como{" "}
+          <code>{"{{vars." + (action.target_var || "nome") + "}}"}</code>.
         </p>
       </div>
     </div>
@@ -3857,8 +3902,8 @@ function ApprovalStepForm({
         </Label>
       </div>
       <p className="text-xs text-muted-foreground">
-        O workflow pausa aqui. O aprovador recebe uma notificação e decide em
-        Configurações → Workflows → Aprovações pendentes.
+        O workflow pausa aqui. O aprovador recebe uma notificação e decide em Configurações →
+        Workflows → Aprovações pendentes.
       </p>
     </div>
   );
