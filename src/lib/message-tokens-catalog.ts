@@ -61,6 +61,19 @@ export const ATS_CANDIDATE_TOKENS: MessageToken[] = [
   { token: "{{stage}}", label: "Etapa da candidatura", group: "Candidatura" },
 ];
 
+/**
+ * Sequências de sourcing do ATS: não existe vaga vinculada à inscrição, então
+ * apenas candidato + remetente são resolvidos pelo worker.
+ */
+export const ATS_SOURCING_TOKENS: MessageToken[] = [
+  { token: "{{candidate.first_name}}", label: "Nome", group: "Candidato" },
+  { token: "{{candidate.full_name}}", label: "Nome completo", group: "Candidato" },
+  { token: "{{candidate.email}}", label: "E-mail", group: "Candidato" },
+  { token: "{{company}}", label: "Empresa atual", group: "Candidato" },
+  { token: "{{headline}}", label: "Headline", group: "Candidato" },
+  ...AGENT,
+];
+
 export const SEQUENCE_TOKENS: MessageToken[] = [...CONTACT, ...AGENT];
 
 export const WORKFLOW_TOKENS: MessageToken[] = [

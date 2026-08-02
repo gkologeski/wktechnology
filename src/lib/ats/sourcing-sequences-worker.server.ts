@@ -11,6 +11,8 @@ import {
   UnipileError,
 } from "@/lib/unipile/client.server";
 import { recordAtsEvent } from "./audit.server";
+import { renderTokens } from "@/lib/message-tokens";
+import { loadAgentContext } from "@/lib/message-tokens-agent.server";
 
 export async function processDueEnrollments(limit = 50): Promise<{
   processed: number;
@@ -24,7 +26,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
   const { data: due, error } = await supabaseAdmin
     .from("ats_sourcing_enrollments")
     .select(
-      "id, owner_id, sequence_id, candidate_id, current_step, status, waiting_since, candidate:ats_candidates(id, full_name, email, phone, linkedin_url)",
+      "id, owner_id, sequence_id, candidate_id, current_step, status, waiting_since, candidate:ats_candidates(id, full_name, email, phone, linkedin_url, headline, current_company)",
     )
     .eq("status", "active")
     .lte("next_run_at", new Date().toISOString())
@@ -94,7 +96,15 @@ export async function processDueEnrollments(limit = 50): Promise<{
       });
       const parts = fmt.formatToParts(new Date());
       const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
-      const wkMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+      const wkMap: Record<string, number> = {
+        Sun: 0,
+        Mon: 1,
+        Tue: 2,
+        Wed: 3,
+        Thu: 4,
+        Fri: 5,
+        Sat: 6,
+      };
       const day = wkMap[parts.find((p) => p.type === "weekday")?.value ?? "Mon"] ?? 1;
       return { hour: hour % 24, day };
     } catch {
@@ -209,9 +219,12 @@ export async function processDueEnrollments(limit = 50): Promise<{
           .limit(1)
           .maybeSingle();
 
-        const inviteRow = lastInvite as
-          | { id: string; status: string; sent_at: string | null; accepted_at: string | null }
-          | null;
+        const inviteRow = lastInvite as {
+          id: string;
+          status: string;
+          sent_at: string | null;
+          accepted_at: string | null;
+        } | null;
 
         if (inviteRow?.status === "accepted") {
           // Avança normalmente para o próximo step
@@ -291,9 +304,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
         if (onTimeout === "skip_messages") {
           let cursor = next.step_order + 1;
           while (
-            stepList.some(
-              (s) => s.step_order === cursor && s.channel === "linkedin_message",
-            )
+            stepList.some((s) => s.step_order === cursor && s.channel === "linkedin_message")
           ) {
             cursor += 1;
           }
@@ -318,12 +329,36 @@ export async function processDueEnrollments(limit = 50): Promise<{
         continue;
       }
 
-
       const candidate = e.candidate as {
         full_name?: string;
         email?: string;
         linkedin_url?: string | null;
+        headline?: string | null;
+        current_company?: string | null;
       } | null;
+
+      // Contexto das variáveis anunciadas na interface (candidato + remetente).
+      const agent = await loadAgentContext(supabaseAdmin, e.owner_id);
+      const candFirstName = (candidate?.full_name ?? "").split(" ")[0] || null;
+      const tokenCtx = {
+        first_name: candFirstName,
+        full_name: candidate?.full_name ?? null,
+        email: candidate?.email ?? null,
+        company: candidate?.current_company ?? null,
+        headline: candidate?.headline ?? null,
+        "candidate.first_name": candFirstName,
+        "candidate.full_name": candidate?.full_name ?? null,
+        "candidate.email": candidate?.email ?? null,
+        agent,
+      };
+      const render = (v: string | null | undefined) =>
+        v ? renderTokens(v, tokenCtx) : (v ?? null);
+      next = {
+        ...next,
+        subject: render(next.subject),
+        body: render(next.body),
+        task_instructions: render(next.task_instructions),
+      };
       let logStatus: "sent" | "task_created" | "failed" | "skipped" = "skipped";
       let logError: string | null = null;
 
@@ -372,10 +407,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
             const providerInviteId =
               next.channel === "linkedin_invite"
                 ? String(
-                    inviteResp?.invitation_id ??
-                      inviteResp?.invite_id ??
-                      inviteResp?.id ??
-                      "",
+                    inviteResp?.invitation_id ?? inviteResp?.invite_id ?? inviteResp?.id ?? "",
                   ) || null
                 : null;
             const isInvite = next.channel === "linkedin_invite";

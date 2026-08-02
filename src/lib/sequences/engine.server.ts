@@ -2,6 +2,8 @@
 // Chamado pelo endpoint /api/public/hooks/sequences-tick a cada minuto.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SequenceEntity, SequenceStep } from "./types";
+import { renderTokens } from "@/lib/message-tokens";
+import { loadAgentContext } from "@/lib/message-tokens-agent.server";
 
 interface EnrollmentRow {
   id: string;
@@ -23,6 +25,41 @@ function addDays(days: number): string {
   return new Date(Date.now() + Math.max(0, days) * 86_400_000).toISOString();
 }
 
+/**
+ * Monta o contexto das variáveis anunciadas na interface (SEQUENCE_TOKENS):
+ * contato/lead + remetente.
+ */
+export async function loadSequenceTokenContext(
+  supabase: SupabaseClient,
+  entity: SequenceEntity,
+  entityId: string,
+  ownerId: string,
+): Promise<Record<string, unknown>> {
+  const table = entity === "leads" ? "leads" : "contacts";
+  const { data } = await supabase
+    .from(table)
+    .select("first_name, last_name, email, company_name")
+    .eq("id", entityId)
+    .maybeSingle();
+  const row = (data ?? {}) as {
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+    company_name?: string | null;
+  };
+  const agent = await loadAgentContext(supabase, ownerId);
+  const fullName = [row.first_name, row.last_name].filter(Boolean).join(" ") || null;
+  return {
+    first_name: row.first_name ?? null,
+    last_name: row.last_name ?? null,
+    full_name: fullName,
+    email: row.email ?? null,
+    company: row.company_name ?? null,
+    company_name: row.company_name ?? null,
+    agent,
+  };
+}
+
 async function executeStep(
   supabase: SupabaseClient,
   enrollment: EnrollmentRow,
@@ -31,11 +68,18 @@ async function executeStep(
 ) {
   if (step.type === "wait") return;
   const relCol = seq.entity === "leads" ? "related_lead_id" : "related_contact_id";
+  const ctx = await loadSequenceTokenContext(
+    supabase,
+    seq.entity,
+    enrollment.entity_id,
+    enrollment.owner_id,
+  );
+  const rawBody = "body" in step ? (step.body ?? null) : null;
   const { error } = await supabase.from("activities").insert({
     owner_id: enrollment.owner_id,
     type: step.type === "email" ? "email" : "task",
-    subject: step.subject,
-    body: "body" in step ? (step.body ?? null) : null,
+    subject: step.subject ? renderTokens(step.subject, ctx) : step.subject,
+    body: rawBody ? renderTokens(rawBody, ctx) : rawBody,
     due_date: new Date().toISOString(),
     [relCol]: enrollment.entity_id,
   });

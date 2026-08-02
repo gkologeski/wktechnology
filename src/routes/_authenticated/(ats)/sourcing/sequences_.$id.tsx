@@ -19,10 +19,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TokenPills } from "@/components/ui/token-pills";
-import {
-  ATS_CANDIDATE_TOKENS,
-  LINKEDIN_TOKENS,
-} from "@/lib/message-tokens-catalog";
+import { ATS_SOURCING_TOKENS, LINKEDIN_TOKENS } from "@/lib/message-tokens-catalog";
+
 
 import {
   Select,
@@ -288,7 +286,7 @@ function SequenceDetailPage() {
                   />
                   <TokenPills
                     className="mt-1.5"
-                    tokens={ATS_CANDIDATE_TOKENS}
+                    tokens={ATS_SOURCING_TOKENS}
                     onInsert={(t) =>
                       setDraft((d) => ({ ...d, subject: (d.subject ?? "") + t }))
                     }
@@ -303,7 +301,7 @@ function SequenceDetailPage() {
                   />
                   <TokenPills
                     className="mt-1.5"
-                    tokens={ATS_CANDIDATE_TOKENS}
+                    tokens={ATS_SOURCING_TOKENS}
                     onInsert={(t) => setDraft((d) => ({ ...d, body: (d.body ?? "") + t }))}
                   />
                 </div>

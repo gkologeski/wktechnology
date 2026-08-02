@@ -70,3 +70,30 @@ describe("renderTokens por superfície", () => {
     expect(renderTokens("Olá {{first_name}} {{1}}", { first_name: "Ana" })).toBe("Olá Ana ");
   });
 });
+
+describe("sequências (vendas e sourcing ATS)", () => {
+  it("vendas: contato + remetente no assunto e corpo", () => {
+    const ctx = {
+      first_name: "Ana",
+      last_name: "Souza",
+      full_name: "Ana Souza",
+      company: "WK",
+      agent: { name: "Bruno", email: "bruno@wk.com" },
+    };
+    expect(renderTokens("Proposta para {{company}}", ctx)).toBe("Proposta para WK");
+    expect(renderTokens("Olá {{first_name}}, {{agent.name}}", ctx)).toBe("Olá Ana, Bruno");
+  });
+
+  it("sourcing ATS: candidato sem vaga vinculada", () => {
+    const ctx = {
+      first_name: "Ana",
+      headline: "Dev Sênior",
+      "candidate.full_name": "Ana Souza",
+      agent: { name: "Bruno", email: null },
+    };
+    expect(renderTokens("{{candidate.full_name}} — {{headline}}", ctx)).toBe(
+      "Ana Souza — Dev Sênior",
+    );
+    expect(renderTokens("[{{job.title}}]", ctx)).toBe("[]");
+  });
+});
