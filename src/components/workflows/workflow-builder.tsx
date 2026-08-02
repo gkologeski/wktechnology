@@ -625,7 +625,6 @@ export function WorkflowBuilder({
 
   if (!open) return null;
 
-
   const setActions = (fn: (prev: WorkflowAction[]) => WorkflowAction[]) =>
     setState((s) => ({ ...s, actions: fn(s.actions) }));
 
@@ -732,214 +731,227 @@ export function WorkflowBuilder({
 
   return (
     <WorkflowTokensProvider value={tokenSets}>
-    <Dialog open={open} onOpenChange={(o) => { if (!o) void requestClose(); }}>
-      <DialogContent className="max-w-none w-screen h-screen max-h-screen p-0 gap-0 rounded-none border-0 flex flex-col sm:rounded-none [&>button.absolute]:hidden">
-        <DialogTitle className="sr-only">
-          {state.id ? "Editar workflow" : "Novo workflow"}
-        </DialogTitle>
-        <DialogDescription className="sr-only">
-          Editor visual de workflow no padrão HubSpot com gatilho, condições e ações.
-        </DialogDescription>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          if (!o) void requestClose();
+        }}
+      >
+        <DialogContent className="max-w-none w-screen h-screen max-h-screen p-0 gap-0 rounded-none border-0 flex flex-col sm:rounded-none [&>button.absolute]:hidden">
+          <DialogTitle className="sr-only">
+            {state.id ? "Editar workflow" : "Novo workflow"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Editor visual de workflow no padrão HubSpot com gatilho, condições e ações.
+          </DialogDescription>
 
-        {/* Header */}
-        <header className="flex items-center gap-3 border-b bg-background px-4 h-14 shrink-0">
-          <Button variant="ghost" size="icon" onClick={() => void requestClose()} aria-label="Voltar">
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex-1 min-w-0">
-            <Input
-              value={state.name}
-              onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
-              placeholder="Nome do workflow"
-              className="h-9 text-base font-medium border-0 shadow-none focus-visible:ring-1 px-2"
-            />
-          </div>
-          <Badge variant="outline" className="hidden md:inline-flex">
-            {ENTITY_LABELS[state.entity]}
-          </Badge>
-          <div className="flex items-center gap-2 pr-1">
-            <Switch
-              id="wf-enabled"
-              checked={state.enabled}
-              onCheckedChange={(v) => setState((s) => ({ ...s, enabled: v }))}
-            />
-            <Label htmlFor="wf-enabled" className="text-sm">
-              {state.enabled ? "Ativo" : "Pausado"}
-            </Label>
-          </div>
-          <Badge variant={isUpToDate ? "secondary" : "outline"} className="hidden md:inline-flex">
-            {isUpToDate
-              ? `Publicado v${publishedVersion}`
-              : publishedVersion > 0
-                ? `Rascunho pendente (v${publishedVersion} no ar)`
-                : "Rascunho"}
-          </Badge>
-          <Button variant="ghost" onClick={() => void requestClose()}>
-            Cancelar
-          </Button>
-          <Button variant="outline" onClick={handleSave} disabled={!canSubmit}>
-            {saving ? "Salvando…" : "Salvar rascunho"}
-          </Button>
-          {onSaveAndPublish && (
-            <Button onClick={handleSaveAndPublish} disabled={!canSubmit}>
-              <Upload className="h-4 w-4 mr-1.5" />
-              {publishing ? "Publicando…" : "Salvar e publicar"}
+          {/* Header */}
+          <header className="flex items-center gap-3 border-b bg-background px-4 h-14 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => void requestClose()}
+              aria-label="Voltar"
+            >
+              <ChevronLeft className="h-4 w-4" />
             </Button>
+            <div className="flex-1 min-w-0">
+              <Input
+                value={state.name}
+                onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
+                placeholder="Nome do workflow"
+                className="h-9 text-base font-medium border-0 shadow-none focus-visible:ring-1 px-2"
+              />
+            </div>
+            <Badge variant="outline" className="hidden md:inline-flex">
+              {ENTITY_LABELS[state.entity]}
+            </Badge>
+            <div className="flex items-center gap-2 pr-1">
+              <Switch
+                id="wf-enabled"
+                checked={state.enabled}
+                onCheckedChange={(v) => setState((s) => ({ ...s, enabled: v }))}
+              />
+              <Label htmlFor="wf-enabled" className="text-sm">
+                {state.enabled ? "Ativo" : "Pausado"}
+              </Label>
+            </div>
+            <Badge variant={isUpToDate ? "secondary" : "outline"} className="hidden md:inline-flex">
+              {isUpToDate
+                ? `Publicado v${publishedVersion}`
+                : publishedVersion > 0
+                  ? `Rascunho pendente (v${publishedVersion} no ar)`
+                  : "Rascunho"}
+            </Badge>
+            <Button variant="ghost" onClick={() => void requestClose()}>
+              Cancelar
+            </Button>
+            <Button variant="outline" onClick={handleSave} disabled={!canSubmit}>
+              {saving ? "Salvando…" : "Salvar rascunho"}
+            </Button>
+            {onSaveAndPublish && (
+              <Button onClick={handleSaveAndPublish} disabled={!canSubmit}>
+                <Upload className="h-4 w-4 mr-1.5" />
+                {publishing ? "Publicando…" : "Salvar e publicar"}
+              </Button>
+            )}
+          </header>
+
+          {!isUpToDate && (
+            <div className="flex items-start gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground shrink-0">
+              <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden="true" />
+              <p>
+                Este workflow está em rascunho. As alterações só passam a valer para novos registros
+                depois de <span className="font-medium text-foreground">publicar</span>.
+              </p>
+            </div>
           )}
-        </header>
 
-        {!isUpToDate && (
-          <div className="flex items-start gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground shrink-0">
-            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden="true" />
-            <p>
-              Este workflow está em rascunho. As alterações só passam a valer para novos registros
-              depois de <span className="font-medium text-foreground">publicar</span>.
-            </p>
-          </div>
-        )}
-
-        {/* 3-panel body */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar esquerda */}
-          <aside className="hidden lg:flex flex-col w-56 border-r bg-muted/20 p-4 gap-4 shrink-0">
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-                Tipo
-              </p>
-              <p className="text-sm font-medium mt-1">{ENTITY_LABELS[state.entity]}</p>
-              <button
-                type="button"
-                className="text-xs text-primary hover:underline mt-1"
-                onClick={() => setEntityPickerOpen(true)}
-              >
-                Alterar
-              </button>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-                Gatilho
-              </p>
-              <p className="text-sm mt-1">{EVENT_LABELS[state.trigger.event]}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {conditionsSummary(state.trigger.filters)}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-                Passos
-              </p>
-              <p className="text-sm mt-1">{countSteps(state.actions)}</p>
-            </div>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
-                Reinscrição
-              </p>
-              <p className="text-sm mt-1">
-                {state.trigger.reenroll?.enabled ? "Habilitada" : "Desabilitada"}
-              </p>
-            </div>
-          </aside>
-
-          {/* Canvas central */}
-          <main className="flex-1 overflow-y-auto bg-muted/10">
-            <div className="max-w-3xl mx-auto py-8 px-4">
-              {/* Trigger card */}
-              <TriggerCard
-                trigger={state.trigger}
-                entity={state.entity}
-                selected={selection === "trigger"}
-                onSelect={() => {
-                  setSelection("trigger");
-                  setLibrary(null);
-                }}
-              />
-              <Connector
-                onAdd={() => setLibrary({ parentPath: [] })}
-                active={library?.parentPath.length === 0}
-              />
-
-              {/* Steps */}
-              <StepsList
-                entityFields={fieldOptions}
-                actions={state.actions}
-                path={[]}
-                selection={selection}
-                library={library}
-                onSelect={(p) => {
-                  setSelection(p);
-                  setLibrary(null);
-                }}
-                onRemove={(p) => {
-                  setActions((prev) => removeStep(prev, p));
-                  if (Array.isArray(selection) && JSON.stringify(selection) === JSON.stringify(p)) {
-                    setSelection("trigger");
-                  }
-                }}
-                onAddAt={(parentPath) => setLibrary({ parentPath })}
-                onChangeAction={(p, na) => setActions((prev) => updateStep(prev, p, () => na))}
-                dragging={dragging}
-                onDragStartStep={(p) => setDragging(p)}
-                onDragEndStep={() => setDragging(null)}
-                onDropAt={handleDropAt}
-                onMove={handleMove}
-              />
-
-              {state.actions.length === 0 && (
-                <p className="text-center text-sm text-muted-foreground mt-6">
-                  Clique no <span className="font-medium">+</span> acima para adicionar sua primeira
-                  ação.
+          {/* 3-panel body */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Sidebar esquerda */}
+            <aside className="hidden lg:flex flex-col w-56 border-r bg-muted/20 p-4 gap-4 shrink-0">
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
+                  Tipo
                 </p>
-              )}
-            </div>
-          </main>
+                <p className="text-sm font-medium mt-1">{ENTITY_LABELS[state.entity]}</p>
+                <button
+                  type="button"
+                  className="text-xs text-primary hover:underline mt-1"
+                  onClick={() => setEntityPickerOpen(true)}
+                >
+                  Alterar
+                </button>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
+                  Gatilho
+                </p>
+                <p className="text-sm mt-1">{EVENT_LABELS[state.trigger.event]}</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {conditionsSummary(state.trigger.filters)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
+                  Passos
+                </p>
+                <p className="text-sm mt-1">{countSteps(state.actions)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
+                  Reinscrição
+                </p>
+                <p className="text-sm mt-1">
+                  {state.trigger.reenroll?.enabled ? "Habilitada" : "Desabilitada"}
+                </p>
+              </div>
+            </aside>
 
-          {/* Painel direito */}
-          <aside className="w-full sm:w-[28rem] lg:w-[32rem] border-l bg-background flex flex-col shrink-0 max-w-full">
-            <ScrollArea className="flex-1">
-              <div className="p-4" aria-live="polite">
-                {library ? (
-                  <ActionLibraryPanel
-                    onClose={() => setLibrary(null)}
-                    onPick={(t, overrides) => addAction(t, library.parentPath, overrides)}
-                  />
-                ) : selection === "trigger" ? (
-                  <TriggerConfigPanel
-                    entity={state.entity}
-                    trigger={state.trigger}
-                    fields={fieldOptions}
-                    onEntityClick={() => setEntityPickerOpen(true)}
-                    onChange={setTrigger}
-                  />
-                ) : selection && selectedAction ? (
-                  <StepConfigPanel
-                    action={selectedAction}
-                    entity={state.entity}
-                    entityFields={fieldOptions}
-                    priorFields={priorStepFields}
-                    onChange={(na) => setActions((prev) => updateStep(prev, selection, () => na))}
-                  />
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Selecione um passo no canvas para configurar.
+            {/* Canvas central */}
+            <main className="flex-1 overflow-y-auto bg-muted/10">
+              <div className="max-w-3xl mx-auto py-8 px-4">
+                {/* Trigger card */}
+                <TriggerCard
+                  trigger={state.trigger}
+                  entity={state.entity}
+                  selected={selection === "trigger"}
+                  onSelect={() => {
+                    setSelection("trigger");
+                    setLibrary(null);
+                  }}
+                />
+                <Connector
+                  onAdd={() => setLibrary({ parentPath: [] })}
+                  active={library?.parentPath.length === 0}
+                />
+
+                {/* Steps */}
+                <StepsList
+                  entityFields={fieldOptions}
+                  actions={state.actions}
+                  path={[]}
+                  selection={selection}
+                  library={library}
+                  onSelect={(p) => {
+                    setSelection(p);
+                    setLibrary(null);
+                  }}
+                  onRemove={(p) => {
+                    setActions((prev) => removeStep(prev, p));
+                    if (
+                      Array.isArray(selection) &&
+                      JSON.stringify(selection) === JSON.stringify(p)
+                    ) {
+                      setSelection("trigger");
+                    }
+                  }}
+                  onAddAt={(parentPath) => setLibrary({ parentPath })}
+                  onChangeAction={(p, na) => setActions((prev) => updateStep(prev, p, () => na))}
+                  dragging={dragging}
+                  onDragStartStep={(p) => setDragging(p)}
+                  onDragEndStep={() => setDragging(null)}
+                  onDropAt={handleDropAt}
+                  onMove={handleMove}
+                />
+
+                {state.actions.length === 0 && (
+                  <p className="text-center text-sm text-muted-foreground mt-6">
+                    Clique no <span className="font-medium">+</span> acima para adicionar sua
+                    primeira ação.
                   </p>
                 )}
               </div>
-            </ScrollArea>
-          </aside>
-        </div>
+            </main>
 
-        {/* Entity picker */}
-        <EntityPickerDialog
-          open={entityPickerOpen}
-          currentEntity={state.entity}
-          onClose={() => setEntityPickerOpen(false)}
-          onPick={(entity) => {
-            setState((s) => ({ ...s, entity }));
-            setEntityPickerOpen(false);
-          }}
-        />
-      </DialogContent>
-    </Dialog>
+            {/* Painel direito */}
+            <aside className="w-full sm:w-[28rem] lg:w-[32rem] border-l bg-background flex flex-col shrink-0 max-w-full">
+              <ScrollArea className="flex-1">
+                <div className="p-4" aria-live="polite">
+                  {library ? (
+                    <ActionLibraryPanel
+                      onClose={() => setLibrary(null)}
+                      onPick={(t, overrides) => addAction(t, library.parentPath, overrides)}
+                    />
+                  ) : selection === "trigger" ? (
+                    <TriggerConfigPanel
+                      entity={state.entity}
+                      trigger={state.trigger}
+                      fields={fieldOptions}
+                      onEntityClick={() => setEntityPickerOpen(true)}
+                      onChange={setTrigger}
+                    />
+                  ) : selection && selectedAction ? (
+                    <StepConfigPanel
+                      action={selectedAction}
+                      entity={state.entity}
+                      entityFields={fieldOptions}
+                      priorFields={priorStepFields}
+                      onChange={(na) => setActions((prev) => updateStep(prev, selection, () => na))}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Selecione um passo no canvas para configurar.
+                    </p>
+                  )}
+                </div>
+              </ScrollArea>
+            </aside>
+          </div>
+
+          {/* Entity picker */}
+          <EntityPickerDialog
+            open={entityPickerOpen}
+            currentEntity={state.entity}
+            onClose={() => setEntityPickerOpen(false)}
+            onPick={(entity) => {
+              setState((s) => ({ ...s, entity }));
+              setEntityPickerOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </WorkflowTokensProvider>
   );
 }
