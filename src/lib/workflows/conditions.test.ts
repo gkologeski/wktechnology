@@ -25,10 +25,7 @@ describe("workflow conditions (E/OU + grupos)", () => {
     const list: WorkflowCondition[] = [
       {
         logic: "or",
-        conditions: [
-          { logic: "and", conditions: [leaf("a"), leaf("b")] },
-          leaf("c"),
-        ],
+        conditions: [{ logic: "and", conditions: [leaf("a"), leaf("b")] }, leaf("c")],
       },
     ];
     expect(evaluateConditions(list, (f) => f.field === "c")).toBe(true);

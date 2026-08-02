@@ -124,7 +124,6 @@ import {
 } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
 
-
 export type WorkflowDraft = {
   id?: string;
   name: string;

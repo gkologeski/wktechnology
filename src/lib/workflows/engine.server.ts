@@ -2,7 +2,13 @@
 // Roda no servidor (chamado pelo endpoint /api/public/hooks/workflows-tick).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { applyRotation } from "@/lib/rotation/engine.server";
-import type { WorkflowAction, WorkflowCondition, WorkflowEntity, WorkflowFilter, WorkflowTrigger } from "./types";
+import type {
+  WorkflowAction,
+  WorkflowCondition,
+  WorkflowEntity,
+  WorkflowFilter,
+  WorkflowTrigger,
+} from "./types";
 import { isFilterGroup } from "./types";
 
 type AnyRow = Record<string, unknown>;
@@ -1365,9 +1371,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     // Fase 3 — critérios de meta: se todos passam, o registro já atingiu o objetivo
     // e é removido do workflow (sem novas execuções).
     const goalFilters = trig.goal_filters ?? wf.goal_filters ?? [];
-    if (
-      goalFilters.length > 0 && evalConditions(goalFilters, event.after, event.before)
-    ) {
+    if (goalFilters.length > 0 && evalConditions(goalFilters, event.after, event.before)) {
       continue;
     }
 

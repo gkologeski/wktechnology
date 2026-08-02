@@ -83,9 +83,12 @@ export interface WorkflowFilterGroup {
 export type WorkflowCondition = WorkflowFilter | WorkflowFilterGroup;
 
 export function isFilterGroup(node: WorkflowCondition): node is WorkflowFilterGroup {
-  return typeof node === "object" && node !== null && Array.isArray((node as WorkflowFilterGroup).conditions);
+  return (
+    typeof node === "object" &&
+    node !== null &&
+    Array.isArray((node as WorkflowFilterGroup).conditions)
+  );
 }
-
 
 export type TimeTriggerKind =
   | "time_since_field"
@@ -353,8 +356,6 @@ export type WorkflowAction =
       target_id: string;
     };
 
-
-
 export type WorkflowActionType = WorkflowAction["type"];
 
 export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
@@ -451,7 +452,17 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
 export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionType[] }> = [
-  { label: "Controle de fluxo", actions: ["delay", "delay_until_date", "branch_if", "switch_by_value", "branch_multi", "approval_step"] },
+  {
+    label: "Controle de fluxo",
+    actions: [
+      "delay",
+      "delay_until_date",
+      "branch_if",
+      "switch_by_value",
+      "branch_multi",
+      "approval_step",
+    ],
+  },
   {
     label: "CRM",
     actions: [
@@ -481,7 +492,14 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
 
   {
     label: "Comunicação",
-    actions: ["create_activity", "send_notification", "send_email", "send_whatsapp", "send_slack", "send_teams"],
+    actions: [
+      "create_activity",
+      "send_notification",
+      "send_email",
+      "send_whatsapp",
+      "send_slack",
+      "send_teams",
+    ],
   },
   { label: "Sequências", actions: ["add_to_sequence"] },
   {
@@ -579,9 +597,6 @@ export const RECORD_ACTION_MODULES: RecordActionModule[] = [
     entities: [{ table: "activities", singular: "Atividade" }],
   },
 ];
-
-
-
 
 // Common fields by entity, used in filter dropdowns and set_field actions
 export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
@@ -688,10 +703,30 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "duration_min",
     "stage_value",
   ],
-  projects: ["name", "status", "priority", "company_id", "deal_id", "start_date", "end_date", "budget", "owner_id"],
+  projects: [
+    "name",
+    "status",
+    "priority",
+    "company_id",
+    "deal_id",
+    "start_date",
+    "end_date",
+    "budget",
+    "owner_id",
+  ],
   project_tasks: ["name", "status_id", "priority", "assignee_id", "project_id", "due_date"],
   project_milestones: ["name", "status", "due_date", "project_id"],
-  contracts: ["title", "status", "value", "currency", "start_date", "end_date", "company_id", "deal_id", "owner_id"],
+  contracts: [
+    "title",
+    "status",
+    "value",
+    "currency",
+    "start_date",
+    "end_date",
+    "company_id",
+    "deal_id",
+    "owner_id",
+  ],
   financial_entries: [
     "description",
     "kind",
@@ -706,8 +741,26 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "owner_id",
   ],
   bank_payments: ["description", "status", "amount", "due_date", "paid_at", "bank_account_id"],
-  quotes: ["title", "status", "total", "currency", "deal_id", "company_id", "valid_until", "owner_id"],
-  proposals: ["title", "status", "value", "deal_id", "company_id", "sent_at", "accepted_at", "owner_id"],
+  quotes: [
+    "title",
+    "status",
+    "total",
+    "currency",
+    "deal_id",
+    "company_id",
+    "valid_until",
+    "owner_id",
+  ],
+  proposals: [
+    "title",
+    "status",
+    "value",
+    "deal_id",
+    "company_id",
+    "sent_at",
+    "accepted_at",
+    "owner_id",
+  ],
   products: ["name", "sku", "price", "cost", "active", "category", "owner_id"],
   services: ["name", "unit_price", "duration_min", "active", "category", "owner_id"],
   recurring_plans: ["name", "amount", "currency", "interval", "active", "owner_id"],
