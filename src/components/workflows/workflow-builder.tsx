@@ -580,6 +580,20 @@ export function WorkflowBuilder({
     }
   };
 
+  const handleSaveAndPublish = async () => {
+    if (!onSaveAndPublish) return;
+    setPublishing(true);
+    try {
+      await onSaveAndPublish(state);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  const isUpToDate = publishedVersion > 0 && !hasDraftChanges;
+  const busy = saving || publishing;
+  const canSubmit = !busy && !!state.name && state.actions.length > 0;
+
   const selectedAction =
     selection && selection !== "trigger" ? getStep(state.actions, selection) : null;
 
