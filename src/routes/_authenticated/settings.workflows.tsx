@@ -368,7 +368,11 @@ function WorkflowsPage() {
         draft={draft}
         onClose={() => setDraft(null)}
         onSave={handleSave}
+        onSaveAndPublish={handleSaveAndPublish}
+        publishedVersion={editingRow?.published_version ?? 0}
+        hasDraftChanges={editingRow ? editingRow.has_draft_changes : true}
       />
+
 
       <Dialog
         open={!!testTarget}
