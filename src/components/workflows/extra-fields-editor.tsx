@@ -322,6 +322,7 @@ export function FkPicker({
   const fetchUsers = useServerFn(searchUsers);
   const fetchLegalEntities = useServerFn(searchLegalEntities);
   const fetchContracts = useServerFn(searchContracts);
+  const fetchDeals = useServerFn(searchDeals);
 
   // debounce 200ms sobre o input
   useEffect(() => {
