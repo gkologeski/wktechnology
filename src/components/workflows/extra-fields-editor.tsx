@@ -499,7 +499,10 @@ export function ExtraFieldsEditor({
     return m;
   }, [visibleFields]);
 
+  const [pinned, setPinned] = useState<Set<string>>(() => new Set());
+
   const values = (extraFields ?? {}) as Record<string, unknown>;
+
   const hasValue = (k: string) => {
     if (!(k in values)) return false;
     const v = values[k];
