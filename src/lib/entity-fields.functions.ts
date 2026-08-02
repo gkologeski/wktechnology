@@ -74,7 +74,6 @@ function isSyncColumn(col: string): boolean {
   return /^(hs_|hubspot_)/.test(col) && col !== "hs_lead_status" && col !== "hs_priority";
 }
 
-
 // Rótulos amigáveis (pt-BR) — fallback é snake_case → Title Case.
 const LABELS: Record<string, string> = {
   first_name: "Nome",
@@ -211,7 +210,6 @@ const LABELS: Record<string, string> = {
   unit: "Unidade",
   billing_cycle: "Ciclo de cobrança",
   interval: "Intervalo",
-
 };
 
 /**
@@ -232,13 +230,11 @@ const ENTITY_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function toLabel(col: string, entity?: string): string {
-
   const override = entity ? ENTITY_LABEL_OVERRIDES[entity]?.[col] : undefined;
   if (override) return override;
   if (LABELS[col]) return LABELS[col];
   return col.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
-
 
 function inferType(dataType: string): EntityFieldType {
   if (dataType === "boolean") return "boolean";
@@ -285,10 +281,8 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
           "subscription_invoices",
           "customer_invoices",
         ]),
-
       })
       .parse(input),
-
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -428,7 +422,6 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
 
       fields.push(def);
     }
-
 
     // Ordenação amigável: campos com valores listáveis primeiro,
     // depois datas, depois o resto alfabeticamente por label.

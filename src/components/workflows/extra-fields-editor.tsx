@@ -4,7 +4,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Plus, Trash2, ChevronDown, ChevronRight, Check, ChevronsUpDown, Wand2, AlertCircle, GripVertical, Pencil, Settings2, RotateCcw, FolderPlus } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronRight,
+  Check,
+  ChevronsUpDown,
+  Wand2,
+  AlertCircle,
+  GripVertical,
+  Pencil,
+  Settings2,
+  RotateCcw,
+  FolderPlus,
+} from "lucide-react";
 import {
   loadFieldLayout,
   saveFieldLayout,
@@ -68,15 +82,8 @@ interface Props {
   defaultOpen?: boolean;
 }
 
-
 // Campos longos usam Textarea em vez de Input.
-const LONG_TEXT_FIELDS = new Set([
-  "description",
-  "notes",
-  "body",
-  "summary",
-  "comments",
-]);
+const LONG_TEXT_FIELDS = new Set(["description", "notes", "body", "summary", "comments"]);
 
 function coerceValue(field: EntityFieldDef, raw: unknown): unknown {
   if (raw === "" || raw === null || raw === undefined) return null;
@@ -179,31 +186,20 @@ function FieldInput({
   const strVal = value == null ? "" : String(value);
 
   if (field.name === "custom_fields") {
-    return (
-      <CustomFieldsEditor
-        value={value}
-        onChange={(v) => onChange(v)}
-      />
-    );
+    return <CustomFieldsEditor value={value} onChange={(v) => onChange(v)} />;
   }
 
   if (field.type === "boolean") {
     return (
       <div className="flex h-9 items-center">
-        <Switch
-          checked={Boolean(value)}
-          onCheckedChange={(c) => onChange(c)}
-        />
+        <Switch checked={Boolean(value)} onCheckedChange={(c) => onChange(c)} />
       </div>
     );
   }
 
   if (field.type === "select" && field.options?.length) {
     return (
-      <Select
-        value={strVal || undefined}
-        onValueChange={(v) => onChange(v)}
-      >
+      <Select value={strVal || undefined} onValueChange={(v) => onChange(v)}>
         <SelectTrigger>
           <SelectValue placeholder="Selecionar..." />
         </SelectTrigger>
@@ -265,7 +261,6 @@ function FieldInput({
     );
   }
 
-
   if (LONG_TEXT_FIELDS.has(field.name)) {
     return (
       <TokenTextarea
@@ -278,11 +273,7 @@ function FieldInput({
   }
 
   return (
-    <TokenInput
-      value={strVal}
-      onValueChange={(v) => onChange(v)}
-      placeholder="Aceita {{tokens}}"
-    />
+    <TokenInput value={strVal} onValueChange={(v) => onChange(v)} placeholder="Aceita {{tokens}}" />
   );
 }
 
@@ -327,8 +318,7 @@ export function FkPicker({
       if (kind === "company") return await fetchCompanies({ data: { q: q || undefined } });
       if (kind === "contact") return await fetchContacts({ data: { q: q || undefined } });
       if (kind === "pipeline") return await fetchPipelines({ data: { q: q || undefined } });
-      if (kind === "legal_entity")
-        return await fetchLegalEntities({ data: { q: q || undefined } });
+      if (kind === "legal_entity") return await fetchLegalEntities({ data: { q: q || undefined } });
       if (kind === "contract") return await fetchContracts({ data: { q: q || undefined } });
       const rows = await fetchUsers({ data: { q: q || undefined } });
       return rows.map((r: { id: string; name: string }) => ({ id: r.id, name: r.name }));
@@ -337,8 +327,7 @@ export function FkPicker({
 
   // Tipos sem cache global de rótulos: hidrata o nome pelo ID selecionado
   // para nunca exibir hash na interface.
-  const needsHydrate =
-    !!value && !isToken && (kind === "legal_entity" || kind === "contract");
+  const needsHydrate = !!value && !isToken && (kind === "legal_entity" || kind === "contract");
   const hydrated = useQuery({
     queryKey: ["wf-ref-label", kind, value],
     enabled: needsHydrate,
@@ -372,11 +361,7 @@ export function FkPicker({
   if (tokenMode || isToken) {
     return (
       <div className="space-y-1.5">
-        <TokenInput
-          value={value}
-          onValueChange={(v) => onChange(v)}
-          placeholder="{{token}}"
-        />
+        <TokenInput value={value} onValueChange={(v) => onChange(v)} placeholder="{{token}}" />
         <button
           type="button"
           className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
@@ -413,16 +398,10 @@ export function FkPicker({
           sideOffset={6}
         >
           <Command shouldFilter={false}>
-            <CommandInput
-              placeholder="Buscar por nome..."
-              value={rawQ}
-              onValueChange={setRawQ}
-            />
+            <CommandInput placeholder="Buscar por nome..." value={rawQ} onValueChange={setRawQ} />
             <CommandList>
               {isLoading && items.length === 0 && (
-                <div className="px-3 py-6 text-center text-xs text-muted-foreground">
-                  Buscando…
-                </div>
+                <div className="px-3 py-6 text-center text-xs text-muted-foreground">Buscando…</div>
               )}
               {!isLoading && searchQuery.isError && (
                 <div className="px-3 py-6 text-center text-xs text-destructive">
@@ -467,7 +446,14 @@ export function FkPicker({
   );
 }
 
-export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, title, defaultOpen }: Props) {
+export function ExtraFieldsEditor({
+  entity,
+  extraFields,
+  hiddenKeys,
+  onChange,
+  title,
+  defaultOpen,
+}: Props) {
   const [open, setOpen] = useState(Boolean(defaultOpen));
   const [showEmpty, setShowEmpty] = useState(false);
   const [showSystem, setShowSystem] = useState(false);
@@ -495,7 +481,11 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
   const catalog = data?.fields ?? [];
 
   const visibleFields = useMemo(
-    () => sortFieldsByCanonicalOrder(entity, catalog.filter((f) => !hidden.has(f.name))),
+    () =>
+      sortFieldsByCanonicalOrder(
+        entity,
+        catalog.filter((f) => !hidden.has(f.name)),
+      ),
     [catalog, hidden, entity],
   );
 
@@ -515,8 +505,7 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
     return true;
   };
 
-  const isToken = (v: unknown) =>
-    typeof v === "string" && /\{\{\s*[\w.]+\s*\}\}/.test(v);
+  const isToken = (v: unknown) => typeof v === "string" && /\{\{\s*[\w.]+\s*\}\}/.test(v);
 
   function validateField(f: EntityFieldDef): string | null {
     const v = values[f.name];
@@ -549,16 +538,13 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
   }, [visibleFields, values]);
 
   const errorCount = fieldErrors.size;
-  const hasMissingRequired = visibleFields.some(
-    (f) => f.required && !hasValue(f.name),
-  );
+  const hasMissingRequired = visibleFields.some((f) => f.required && !hasValue(f.name));
 
   useEffect(() => {
     if (hasMissingRequired) {
       setOpen(true);
       setShowEmpty(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasMissingRequired]);
 
   // Nomes já alocados em algum grupo
@@ -587,10 +573,7 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
   const filledCount =
     filled.length +
     orphanKeys.length +
-    layout.groups.reduce(
-      (acc, g) => acc + g.fieldNames.filter((n) => hasValue(n)).length,
-      0,
-    );
+    layout.groups.reduce((acc, g) => acc + g.fieldNames.filter((n) => hasValue(n)).length, 0);
 
   function setKey(key: string, value: unknown) {
     const next: Record<string, unknown> = { ...values };
@@ -674,9 +657,7 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
   function toggleGroupCollapsed(gid: string) {
     persistLayout({
       ...layout,
-      groups: layout.groups.map((g) =>
-        g.id === gid ? { ...g, collapsed: !g.collapsed } : g,
-      ),
+      groups: layout.groups.map((g) => (g.id === gid ? { ...g, collapsed: !g.collapsed } : g)),
     });
   }
 
@@ -841,7 +822,9 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
             onClick={() => toggleGroupCollapsed(g.id)}
             className="flex items-center gap-1.5 text-xs font-medium text-foreground/90 hover:text-foreground"
           >
-            {customizeMode && <GripVertical className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />}
+            {customizeMode && (
+              <GripVertical className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+            )}
             {g.collapsed ? (
               <ChevronRight className="h-3.5 w-3.5" />
             ) : (
@@ -926,7 +909,11 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
         aria-expanded={open}
       >
         <span className="flex items-center gap-1.5">
-          {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+          {open ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronRight className="h-3.5 w-3.5" />
+          )}
           {title ?? "Mais campos"}
           {filledCount > 0 && (
             <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
@@ -1031,9 +1018,7 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
 
           {/* Grupos personalizados */}
           {layout.groups.length > 0 && (
-            <div className="space-y-2">
-              {layout.groups.map((g, i) => renderGroup(g, i))}
-            </div>
+            <div className="space-y-2">{layout.groups.map((g, i) => renderGroup(g, i))}</div>
           )}
 
           {/* Sem grupo — bucket clássico com filled/empty */}
@@ -1081,9 +1066,7 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
 
                 {showEmpty && (
                   <div className="space-y-2">
-                    {empty.map((f) =>
-                      renderRow(f, f.name, values[f.name], { draggable: true }),
-                    )}
+                    {empty.map((f) => renderRow(f, f.name, values[f.name], { draggable: true }))}
                   </div>
                 )}
               </div>
@@ -1103,9 +1086,7 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
                     <ChevronRight className="h-3 w-3" />
                   )}
                   Campos do sistema e integrações
-                  <span className="text-[10px] text-muted-foreground">
-                    ({systemFields.length})
-                  </span>
+                  <span className="text-[10px] text-muted-foreground">({systemFields.length})</span>
                 </button>
                 {showSystem && (
                   <div className="space-y-2">
@@ -1121,7 +1102,6 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
               </div>
             )}
           </div>
-
 
           {autofillableCount > 0 && !customizeMode && (
             <div className="flex justify-end">
@@ -1140,11 +1120,11 @@ export function ExtraFieldsEditor({ entity, extraFields, hiddenKeys, onChange, t
           )}
 
           <p className="pt-1 text-[10px] text-muted-foreground">
-            Use tokens <code className="text-[10px]">{`{{campo}}`}</code> nos campos texto para reutilizar valores do registro que disparou o workflow.
+            Use tokens <code className="text-[10px]">{`{{campo}}`}</code> nos campos texto para
+            reutilizar valores do registro que disparou o workflow.
           </p>
         </div>
       )}
     </div>
   );
 }
-
