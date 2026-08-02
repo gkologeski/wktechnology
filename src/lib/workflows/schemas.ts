@@ -60,26 +60,71 @@ export const FilterSchema = z.object({
   value: z.unknown().optional(),
 });
 
+/** Profundidade máxima de agrupamento de condições (grupo dentro de grupo). */
+export const MAX_CONDITION_DEPTH = 3;
+
+type ConditionNode =
+  | z.infer<typeof FilterSchema>
+  | { logic: "and" | "or"; conditions: ConditionNode[] };
+
+export const ConditionSchema: z.ZodType<ConditionNode> = z.lazy(() =>
+  z.union([
+    z.object({
+      logic: z.enum(["and", "or"]),
+      conditions: z.array(ConditionSchema).max(20),
+    }),
+    FilterSchema,
+  ]),
+);
+
+function assertConditionDepth(nodes: unknown, depth = 1): void {
+  if (depth > MAX_CONDITION_DEPTH)
+    throw new Error("profundidade máxima de grupos de condições excedida");
+  if (!Array.isArray(nodes)) return;
+  for (const n of nodes) {
+    if (n && typeof n === "object" && Array.isArray((n as { conditions?: unknown }).conditions)) {
+      assertConditionDepth((n as { conditions: unknown[] }).conditions, depth + 1);
+    }
+  }
+}
+
+/** Lista de condições (aceita condições simples e grupos aninhados). */
+export const ConditionListSchema = z
+  .array(ConditionSchema)
+  .max(20)
+  .superRefine((val, ctx) => {
+    try {
+      assertConditionDepth(val);
+    } catch (e) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: (e as Error).message });
+    }
+  });
+
 export const EventEnum = z.enum(["created", "updated", "stage_changed"]);
 
 export const TimeTriggerConfigSchema = z.object({
-  kind: z.enum(["time_since_field", "no_activity_for", "stuck_in_stage_for", "field_unchanged_for"]),
+  kind: z.enum([
+    "time_since_field",
+    "no_activity_for",
+    "stuck_in_stage_for",
+    "field_unchanged_for",
+  ]),
   field: z.string().max(100).optional(),
   amount: z.number().int().min(1).max(100_000),
   unit: z.enum(["minutes", "hours", "days"]),
-  filters: z.array(FilterSchema).max(20).optional(),
+  filters: ConditionListSchema.optional(),
 });
 
 export const TriggerSchema = z.object({
   event: EventEnum,
-  filters: z.array(FilterSchema).max(20).default([]),
+  filters: ConditionListSchema.default([]),
   reenroll: z
     .object({
       enabled: z.boolean(),
       events: z.array(EventEnum).max(3).optional(),
     })
     .optional(),
-  goal_filters: z.array(FilterSchema).max(20).optional(),
+  goal_filters: ConditionListSchema.optional(),
   time_based: TimeTriggerConfigSchema.optional(),
 });
 
@@ -244,9 +289,21 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
   // Fase 5 — Utilitários avançados
   z.object({
     type: z.literal("format_data"),
-    op: z.enum(["upper", "lower", "trim", "date_add", "date_format", "number_round", "template_string"]),
+    op: z.enum([
+      "upper",
+      "lower",
+      "trim",
+      "date_add",
+      "date_format",
+      "number_round",
+      "template_string",
+    ]),
     source_field: z.string().max(100).optional(),
-    target_var: z.string().min(1).max(60).regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "nome inválido"),
+    target_var: z
+      .string()
+      .min(1)
+      .max(60)
+      .regex(/^[A-Za-z_][A-Za-z0-9_]*$/, "nome inválido"),
     template: z.string().max(4000).optional(),
     format: z.string().max(60).optional(),
     amount: z.number().min(-1_000_000).max(1_000_000).optional(),
@@ -292,7 +349,6 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-
 const MAX_BRANCH_DEPTH = 3;
 
 export function parseActionsAtDepth(input: unknown, depth: number): ActionInput[] {
@@ -306,7 +362,7 @@ export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
     const src = raw as ActionInput;
     if (src.type === "branch_if") {
       if (depth >= MAX_BRANCH_DEPTH) throw new Error("profundidade máxima de branch_if excedida");
-      const filters = z.array(FilterSchema).max(20).parse(src.filters ?? []);
+      const filters = ConditionListSchema.parse(src.filters ?? []);
       const thenActions = parseActionsAtDepth(src.then ?? [], depth + 1);
       const elseActions = parseActionsAtDepth(src.else ?? [], depth + 1);
       return { type: "branch_if", filters, then: thenActions, else: elseActions };
@@ -335,7 +391,7 @@ export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
         const bo = (b ?? {}) as ActionInput;
         return {
           label: typeof bo.label === "string" ? bo.label : undefined,
-          filters: z.array(FilterSchema).max(20).parse(bo.filters ?? []),
+          filters: ConditionListSchema.parse(bo.filters ?? []),
           actions: parseActionsAtDepth(bo.actions ?? [], depth + 1),
         };
       });

@@ -1,3 +1,4 @@
+import { conditionsSummary, evaluateConditions } from "@/lib/workflows/conditions";
 // Server functions para o builder de Workflows.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -24,19 +25,37 @@ const EntityTableEnum = z.enum([
 function passesFilter(row: Record<string, unknown>, f: WorkflowFilter): boolean {
   const v = row?.[f.field];
   switch (f.op) {
-    case "eq": return v === f.value;
-    case "neq": return v !== f.value;
-    case "contains": return typeof v === "string" && typeof f.value === "string" && v.toLowerCase().includes(f.value.toLowerCase());
-    case "gt": return typeof v === "number" && typeof f.value === "number" && v > f.value;
-    case "lt": return typeof v === "number" && typeof f.value === "number" && v < f.value;
+    case "eq":
+      return v === f.value;
+    case "neq":
+      return v !== f.value;
+    case "contains":
+      return (
+        typeof v === "string" &&
+        typeof f.value === "string" &&
+        v.toLowerCase().includes(f.value.toLowerCase())
+      );
+    case "gt":
+      return typeof v === "number" && typeof f.value === "number" && v > f.value;
+    case "lt":
+      return typeof v === "number" && typeof f.value === "number" && v < f.value;
     case "in": {
-      const list = typeof f.value === "string" ? f.value.split(",").map((s) => s.trim()) : Array.isArray(f.value) ? f.value : [];
+      const list =
+        typeof f.value === "string"
+          ? f.value.split(",").map((s) => s.trim())
+          : Array.isArray(f.value)
+            ? f.value
+            : [];
       return list.includes(v as never);
     }
-    case "is_empty": return v == null || v === "";
-    case "is_not_empty": return !(v == null || v === "");
-    case "changed_to": return v === f.value; // sem "before" em bulk enroll
-    default: return true;
+    case "is_empty":
+      return v == null || v === "";
+    case "is_not_empty":
+      return !(v == null || v === "");
+    case "changed_to":
+      return v === f.value; // sem "before" em bulk enroll
+    default:
+      return true;
   }
 }
 
@@ -67,7 +86,8 @@ export const listWorkflows = createServerFn({ method: "GET" })
     return (data ?? []).map((w) => {
       const draftActions = (w as { draft_actions?: unknown }).draft_actions ?? w.actions;
       const draftTrigger = (w as { draft_trigger?: unknown }).draft_trigger ?? w.trigger;
-      const draftGoal = (w as { draft_goal_filters?: unknown }).draft_goal_filters ?? w.goal_filters;
+      const draftGoal =
+        (w as { draft_goal_filters?: unknown }).draft_goal_filters ?? w.goal_filters;
       const hasDraftChanges =
         JSON.stringify(draftActions ?? []) !== JSON.stringify(w.actions ?? []) ||
         JSON.stringify(draftTrigger ?? {}) !== JSON.stringify(w.trigger ?? {}) ||
@@ -269,33 +289,51 @@ export const testWorkflow = createServerFn({ method: "POST" })
     if (!rec) throw new Error("Registro não encontrado");
 
     const actions = ((data.useDraft ? wf.draft_actions : wf.actions) ?? []) as WorkflowAction[];
-    const trigger = ((data.useDraft ? wf.draft_trigger : wf.trigger) ?? {}) as unknown as WorkflowTrigger;
+    const trigger = ((data.useDraft ? wf.draft_trigger : wf.trigger) ??
+      {}) as unknown as WorkflowTrigger;
 
     // Log simulado: filtros do trigger + lista linear das ações (branches expandidos).
     const log: Array<{ step: string; ok: boolean; note?: string }> = [];
     const triggerFilters = trigger.filters ?? [];
-    const triggerOk = triggerFilters.every((f) => passesFilter(rec as Record<string, unknown>, f));
+    const triggerOk = evaluateConditions(triggerFilters, (f) =>
+      passesFilter(rec as Record<string, unknown>, f),
+    );
     log.push({
-      step: `Trigger: ${trigger.event ?? "?"} (${triggerFilters.length} filtro(s))`,
+      step: `Trigger: ${trigger.event ?? "?"} (${conditionsSummary(triggerFilters)})`,
       ok: triggerOk,
-      note: triggerOk ? "registro passa nos filtros do gatilho" : "registro NÃO passa nos filtros do gatilho",
+      note: triggerOk
+        ? "registro passa nos filtros do gatilho"
+        : "registro NÃO passa nos filtros do gatilho",
     });
 
     const walk = (list: WorkflowAction[], depth = 0) => {
       for (const a of list) {
         const prefix = "  ".repeat(depth);
         if (a.type === "branch_if") {
-          const passes = a.filters.every((f) => passesFilter(rec as Record<string, unknown>, f));
-          log.push({ step: `${prefix}branch_if (${a.filters.length} filtro(s)) → ${passes ? "então" : "senão"}`, ok: true });
+          const passes = evaluateConditions(a.filters, (f) =>
+            passesFilter(rec as Record<string, unknown>, f),
+          );
+          log.push({
+            step: `${prefix}branch_if (${conditionsSummary(a.filters)}) → ${passes ? "então" : "senão"}`,
+            ok: true,
+          });
           walk(passes ? a.then : a.else, depth + 1);
         } else if (a.type === "switch_by_value") {
           const v = (rec as Record<string, unknown>)[a.field];
           const match = a.cases.find((c) => c.value === v);
-          log.push({ step: `${prefix}switch_by_value(${a.field}=${String(v)}) → ${match ? (match.label ?? String(match.value)) : "default"}`, ok: true });
+          log.push({
+            step: `${prefix}switch_by_value(${a.field}=${String(v)}) → ${match ? (match.label ?? String(match.value)) : "default"}`,
+            ok: true,
+          });
           walk(match ? match.actions : a.default, depth + 1);
         } else if (a.type === "branch_multi") {
-          const hit = a.branches.find((b) => b.filters.every((f) => passesFilter(rec as Record<string, unknown>, f)));
-          log.push({ step: `${prefix}branch_multi → ${hit ? (hit.label ?? "ramo") : "senão"}`, ok: true });
+          const hit = a.branches.find((b) =>
+            evaluateConditions(b.filters, (f) => passesFilter(rec as Record<string, unknown>, f)),
+          );
+          log.push({
+            step: `${prefix}branch_multi → ${hit ? (hit.label ?? "ramo") : "senão"}`,
+            ok: true,
+          });
           walk(hit ? hit.actions : a.else, depth + 1);
         } else {
           log.push({ step: `${prefix}${a.type}`, ok: true, note: "(simulado — não executado)" });
@@ -344,7 +382,8 @@ export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
       .maybeSingle();
     if (wfErr) throw new Error(wfErr.message);
     if (!wf) throw new Error("Workflow não encontrado");
-    if (wf.status !== "published") throw new Error("Publique o workflow antes de aplicar aos existentes");
+    if (wf.status !== "published")
+      throw new Error("Publique o workflow antes de aplicar aos existentes");
 
     const trigger = (wf.trigger ?? {}) as unknown as WorkflowTrigger;
     const filters = trigger.filters ?? [];
@@ -357,7 +396,7 @@ export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
 
     let enqueued = 0;
     for (const rec of (records ?? []) as Record<string, unknown>[]) {
-      if (!filters.every((f) => passesFilter(rec, f))) continue;
+      if (!evaluateConditions(filters, (f) => passesFilter(rec, f))) continue;
       const { error: evErr } = await supabase.from("workflow_events").insert({
         owner_id: userId,
         entity: wf.entity,
@@ -387,7 +426,9 @@ export const listPendingApprovals = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("workflow_approvals")
-      .select("id, workflow_id, run_id, entity, entity_id, title, note, approver_user_id, status, created_at, workflows(name)")
+      .select(
+        "id, workflow_id, run_id, entity, entity_id, title, note, approver_user_id, status, created_at, workflows(name)",
+      )
       .eq("status", "pending")
       .order("created_at", { ascending: false })
       .limit(100);
@@ -411,7 +452,9 @@ export const decideApproval = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: appr, error: getErr } = await supabase
       .from("workflow_approvals")
-      .select("id, owner_id, workflow_id, run_id, entity, entity_id, status, resume_cursor, event_snapshot")
+      .select(
+        "id, owner_id, workflow_id, run_id, entity, entity_id, status, resume_cursor, event_snapshot",
+      )
       .eq("id", data.approvalId)
       .maybeSingle();
     if (getErr) throw new Error(getErr.message);
@@ -457,4 +500,3 @@ export const decideApproval = createServerFn({ method: "POST" })
 
 // Suprime warning de import não usado quando processEvent futuramente for referenciado.
 void processEvent;
-

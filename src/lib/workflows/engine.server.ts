@@ -2,7 +2,14 @@
 // Roda no servidor (chamado pelo endpoint /api/public/hooks/workflows-tick).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { applyRotation } from "@/lib/rotation/engine.server";
-import type { WorkflowAction, WorkflowEntity, WorkflowFilter, WorkflowTrigger } from "./types";
+import type {
+  WorkflowAction,
+  WorkflowCondition,
+  WorkflowEntity,
+  WorkflowFilter,
+  WorkflowTrigger,
+} from "./types";
+import { isFilterGroup } from "./types";
 
 type AnyRow = Record<string, unknown>;
 type LogStep = { at: string; ok: boolean; action: string; detail?: unknown; error?: string };
@@ -182,6 +189,36 @@ function evalFilter(
   }
 }
 
+/** Avalia um nó de condição (condição simples ou grupo E/OU aninhado). */
+function evalCondition(
+  node: WorkflowCondition,
+  after: AnyRow | null,
+  before: AnyRow | null,
+  vars?: AnyRow,
+): boolean {
+  if (isFilterGroup(node)) {
+    const children = node.conditions ?? [];
+    // Grupo vazio é neutro (não bloqueia a avaliação).
+    if (children.length === 0) return true;
+    return node.logic === "or"
+      ? children.some((c) => evalCondition(c, after, before, vars))
+      : children.every((c) => evalCondition(c, after, before, vars));
+  }
+  return evalFilter(node, after, before, vars);
+}
+
+/** Avalia uma lista de condições no topo, combinando com E (comportamento histórico). */
+function evalConditions(
+  nodes: WorkflowCondition[] | null | undefined,
+  after: AnyRow | null,
+  before: AnyRow | null,
+  vars?: AnyRow,
+): boolean {
+  const list = nodes ?? [];
+  if (list.length === 0) return true;
+  return list.every((c) => evalCondition(c, after, before, vars));
+}
+
 interface RunCtx {
   entity: WorkflowEntity;
   entityId: string;
@@ -252,9 +289,7 @@ async function runActions(
     // Branch: filtra e executa then/else recursivamente.
     if (action.type === "branch_if") {
       const filters = action.filters ?? [];
-      const passes =
-        filters.length === 0 ||
-        filters.every((f) => evalFilter(f, ctx.after, ctx.before, ctx.vars));
+      const passes = evalConditions(filters, ctx.after, ctx.before, ctx.vars);
       const branchName = passes ? "then" : "else";
       const branchActions = passes ? (action.then ?? []) : (action.else ?? []);
       log.push({
@@ -312,7 +347,7 @@ async function runActions(
     // Ramificação múltipla: executa 1ª branch cujos filtros passam, ou else.
     if (action.type === "branch_multi") {
       const matched = action.branches.find((b) =>
-        (b.filters ?? []).every((f) => evalFilter(f, ctx.after, ctx.before, ctx.vars)),
+        evalConditions(b.filters, ctx.after, ctx.before, ctx.vars),
       );
       const branchActions = matched ? matched.actions : (action.else ?? []);
       log.push({
@@ -1247,7 +1282,7 @@ interface WorkflowRow {
   entity: WorkflowEntity;
   trigger: WorkflowTrigger;
   actions: WorkflowAction[];
-  goal_filters?: WorkflowFilter[] | null;
+  goal_filters?: WorkflowCondition[] | null;
 }
 
 async function alreadyEnrolled(
@@ -1330,16 +1365,13 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
     if (trig.event && trig.event !== event.event_type) continue;
     const filters = trig.filters ?? [];
-    const passes = filters.every((f) => evalFilter(f, event.after, event.before));
+    const passes = evalConditions(filters, event.after, event.before);
     if (!passes) continue;
 
     // Fase 3 — critérios de meta: se todos passam, o registro já atingiu o objetivo
     // e é removido do workflow (sem novas execuções).
     const goalFilters = trig.goal_filters ?? wf.goal_filters ?? [];
-    if (
-      goalFilters.length > 0 &&
-      goalFilters.every((f) => evalFilter(f, event.after, event.before))
-    ) {
+    if (goalFilters.length > 0 && evalConditions(goalFilters, event.after, event.before)) {
       continue;
     }
 
@@ -1524,7 +1556,7 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
     for (const rec of rows) {
       // Aplica filtros do trigger + do time_based
       const filters = [...(trig.filters ?? []), ...(tb.filters ?? [])];
-      if (!filters.every((f) => evalFilter(f, rec, null))) continue;
+      if (!evalConditions(filters, rec, null)) continue;
 
       // Confere cursor
       const { data: cursor } = await supabase
