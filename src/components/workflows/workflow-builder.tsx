@@ -83,6 +83,8 @@ type FieldOpt = {
   options?: { value: string; label: string }[];
   /** Campo de referência: usa seletor com busca por nome (grava o ID). */
   ref?: "user" | "company" | "contact" | "pipeline";
+  /** Campo controlado pelo sistema (não deve virar variável de texto). */
+  system?: boolean;
 };
 
 function useEntityFieldOptions(entity: WorkflowEntity): FieldOpt[] {
