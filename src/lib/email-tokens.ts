@@ -26,10 +26,10 @@ function getPath(ctx: unknown, path: string): unknown {
 
 export function renderTokens(input: string, ctx: TokenContext): string {
   if (!input) return input;
-  return input.replace(/\{\{\s*([\w.]+)\s*\}\}/gi, (match, key: string) => {
-    const direct = (ctx as Record<string, unknown>)[key.toLowerCase()];
-    const value = direct !== undefined ? direct : getPath(ctx, key.toLowerCase());
-    if (value === undefined) return match; // token desconhecido permanece visível
+  return input.replace(/\{\{\s*([\w.]+)\s*\}\}/gi, (_m, key: string) => {
+    const lower = key.toLowerCase();
+    const direct = (ctx as Record<string, unknown>)[lower];
+    const value = direct !== undefined ? direct : getPath(ctx, lower);
     return value == null ? "" : String(value);
   });
 }
