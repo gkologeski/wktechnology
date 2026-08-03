@@ -412,7 +412,7 @@ function collectFlowVarNames(actions: WorkflowAction[]): string[] {
     for (const a of list) {
       if (!a) continue;
       if (a.type === "format_data" && a.target_var) out.push(a.target_var);
-      if (a.type === "condition") {
+      if (a.type === "branch_if") {
         walk(a.then ?? []);
         walk(a.else ?? []);
       }
