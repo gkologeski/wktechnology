@@ -1298,6 +1298,13 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       .maybeSingle();
     if (wf) {
       const wfr = wf as WorkflowRow;
+      const hydratedAfter = await hydrateTriggerAssociations(
+        supabase,
+        event.entity,
+        event.after,
+        JSON.stringify({ t: wfr.trigger, a: wfr.actions }),
+      );
+
       const { data: run } = await supabase
         .from("workflow_runs")
         .insert({
