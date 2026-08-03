@@ -66,7 +66,7 @@ import {
   searchUsers,
 } from "@/lib/workflow-refs.functions";
 import { CompanyScopedPicker } from "./company-scoped-picker";
-import { TokenInput, TokenTextarea } from "./token-input";
+import { TokenInput, TokenTextarea, useWorkflowRefOptions } from "./token-input";
 import { useReferenceLabels } from "./use-reference-labels";
 
 import type { WorkflowEntity, WorkflowWritableTable } from "@/lib/workflows/types";
@@ -387,6 +387,32 @@ export function FkPicker({
   const items = (searchQuery.data ?? []) as Array<{ id: string; name: string }>;
   const isLoading = searchQuery.isFetching;
 
+  // Token conhecido (ex.: "Empresa do gatilho"): mostra rótulo amigável em vez
+  // do token cru, mantendo o combo para trocar a escolha.
+  if (isToken && refOptionLabel && !tokenMode) {
+    return (
+      <div className="space-y-1.5">
+        <div className="flex h-9 items-center justify-between gap-2 rounded-md border border-input bg-muted/40 px-3 text-sm">
+          <span className="truncate">{refOptionLabel}</span>
+          <button
+            type="button"
+            className="text-[11px] text-muted-foreground hover:text-foreground"
+            onClick={() => onChange("")}
+          >
+            Limpar
+          </button>
+        </div>
+        <button
+          type="button"
+          className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+          onClick={() => setTokenMode(true)}
+        >
+          Editar token…
+        </button>
+      </div>
+    );
+  }
+
   if (tokenMode || isToken) {
     return (
       <div className="space-y-1.5">
@@ -449,6 +475,28 @@ export function FkPicker({
             <Command shouldFilter={false}>
               <CommandInput placeholder="Buscar por nome..." value={rawQ} onValueChange={setRawQ} />
               <CommandList>
+                {refOptions.length > 0 && (
+                  <CommandGroup heading="Dados do gatilho e passos anteriores">
+                    {refOptions.map((opt) => (
+                      <CommandItem
+                        key={opt.token}
+                        value={opt.token}
+                        onSelect={() => {
+                          onChange(opt.token);
+                          setOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-3.5 w-3.5",
+                            value.trim() === opt.token ? "opacity-100" : "opacity-0",
+                          )}
+                        />
+                        <span className="truncate">{opt.label}</span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
                 {isLoading && items.length === 0 && (
                   <div className="px-3 py-6 text-center text-xs text-muted-foreground">
                     Buscando…
