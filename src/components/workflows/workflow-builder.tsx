@@ -521,8 +521,23 @@ function removeStep(actions: WorkflowAction[], path: StepPath): WorkflowAction[]
   });
 }
 
+// Lista de ações endereçada por `parentPath` ([] = topo).
+function listAt(actions: WorkflowAction[], parentPath: StepPath): WorkflowAction[] | null {
+  if (parentPath.length === 0) return actions;
+  const [head, ...rest] = parentPath;
+  if (typeof head !== "number") return null;
+  const a = actions[head];
+  if (!a) return null;
+  const branch = rest[0];
+  if (!isBranchKey(branch)) return null;
+  const children = getBranchList(a, branch);
+  if (!children) return null;
+  return listAt(children, rest.slice(1) as StepPath);
+}
+
 // Insere ação no fim de uma lista endereçada por `parentPath`.
 // parentPath = [] → topo. parentPath = [2, "then"] → dentro do ramo then do passo 2.
+
 function insertStep(
   actions: WorkflowAction[],
   parentPath: StepPath,
