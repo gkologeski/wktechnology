@@ -496,9 +496,9 @@ export function FkPicker({
           {kind === "contract" || kind === "deal" ? (
             <>
               {refOptions.length > 0 && (
-                <div className="border-b p-1">
+                <div className="border-b border-border p-1">
                   <p className="px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                    Dados do gatilho e passos anteriores
+                    Do gatilho e passos anteriores
                   </p>
                   {refOptions.map((opt) => (
                     <button
@@ -521,21 +521,31 @@ export function FkPicker({
                   ))}
                 </div>
               )}
-              <CompanyScopedPicker
-              kind={kind}
-              value={value}
-                onSelect={(id: string) => {
-                  onChange(id);
-                  setOpen(false);
-                }}
-              />
+              {hideRecords ? (
+                <p className="p-3 text-[11px] text-muted-foreground">{hideRecordsHint}</p>
+              ) : (
+                <CompanyScopedPicker
+                  kind={kind}
+                  value={value}
+                  onSelect={(id: string) => {
+                    onChange(id);
+                    setOpen(false);
+                  }}
+                />
+              )}
             </>
           ) : (
             <Command shouldFilter={false}>
-              <CommandInput placeholder="Buscar por nome..." value={rawQ} onValueChange={setRawQ} />
+              {!hideRecords && (
+                <CommandInput
+                  placeholder="Buscar por nome..."
+                  value={rawQ}
+                  onValueChange={setRawQ}
+                />
+              )}
               <CommandList>
                 {refOptions.length > 0 && (
-                  <CommandGroup heading="Dados do gatilho e passos anteriores">
+                  <CommandGroup heading="Do gatilho e passos anteriores">
                     {refOptions.map((opt) => (
                       <CommandItem
                         key={opt.token}
@@ -556,42 +566,50 @@ export function FkPicker({
                     ))}
                   </CommandGroup>
                 )}
-                {isLoading && items.length === 0 && (
-                  <div className="px-3 py-6 text-center text-xs text-muted-foreground">
-                    Buscando…
-                  </div>
+                {hideRecords ? (
+                  <p className="p-3 text-[11px] text-muted-foreground">{hideRecordsHint}</p>
+                ) : (
+                  <>
+                    {refOptions.length > 0 && <CommandSeparator />}
+                    {isLoading && items.length === 0 && (
+                      <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                        Buscando…
+                      </div>
+                    )}
+                    {!isLoading && searchQuery.isError && (
+                      <div className="px-3 py-6 text-center text-xs text-destructive">
+                        Erro ao buscar.
+                      </div>
+                    )}
+                    {!isLoading && !searchQuery.isError && items.length === 0 && (
+                      <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                    )}
+                    <CommandGroup heading="Registros">
+                      {items.map((it) => (
+                        <CommandItem
+                          key={it.id}
+                          value={`${it.name} ${it.id}`}
+                          onSelect={() => {
+                            onChange(it.id);
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-3.5 w-3.5",
+                              value === it.id ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          <span className="truncate">{it.name}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </>
                 )}
-                {!isLoading && searchQuery.isError && (
-                  <div className="px-3 py-6 text-center text-xs text-destructive">
-                    Erro ao buscar.
-                  </div>
-                )}
-                {!isLoading && !searchQuery.isError && items.length === 0 && (
-                  <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                )}
-                <CommandGroup>
-                  {items.map((it) => (
-                    <CommandItem
-                      key={it.id}
-                      value={`${it.name} ${it.id}`}
-                      onSelect={() => {
-                        onChange(it.id);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-3.5 w-3.5",
-                          value === it.id ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                      <span className="truncate">{it.name}</span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
               </CommandList>
             </Command>
           )}
+
         </PopoverContent>
       </Popover>
       <button
