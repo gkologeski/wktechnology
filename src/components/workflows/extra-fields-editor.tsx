@@ -330,11 +330,18 @@ export function FkPicker({
   kind,
   value,
   onChange,
+  hideRecords,
+  hideRecordsHint,
 }: {
   kind: RefKind;
   value: string;
   onChange: (v: string) => void;
+  /** Oculta a busca/lista de registros, deixando só as opções pré-carregadas. */
+  hideRecords?: boolean;
+  /** Aviso curto explicando por que a lista de registros está oculta. */
+  hideRecordsHint?: string;
 }) {
+
   const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
   // Opções pré-carregadas (gatilho + passos anteriores) compatíveis com o campo.
   const refOptions = useWorkflowRefOptions(kind);
