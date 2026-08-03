@@ -186,11 +186,15 @@ function FieldInput({
   field,
   value,
   onChange,
+  siblingValues,
 }: {
   field: EntityFieldDef;
   value: unknown;
   onChange: (v: unknown) => void;
+  /** Outros valores do mesmo passo — usados em regras entre campos. */
+  siblingValues?: Record<string, unknown>;
 }) {
+
   const strVal = value == null ? "" : String(value);
 
   if (field.name === "custom_fields") {
