@@ -74,6 +74,12 @@ import { ExtraFieldsEditor, FkPicker } from "./extra-fields-editor";
 import { GenericRecordForm } from "./generic-record-form";
 import { TokenInput, TokenTextarea, WorkflowTokensProvider } from "./token-input";
 import { buildIdTokens, buildTextTokens, buildVarTokens } from "@/lib/workflows/token-catalog";
+import {
+  buildAssociationTextTokens,
+  priorStepRefOptions,
+  triggerRefOptions,
+} from "@/lib/workflows/association-tokens";
+import type { RefKind } from "@/lib/entity-fields-refs";
 import { useReferenceLabels } from "./use-reference-labels";
 import { ActionTemplatesBar } from "./action-templates-bar";
 
@@ -450,6 +456,23 @@ function priorStepFieldOptions(actions: WorkflowAction[], path: StepPath | null)
   return out;
 }
 
+/** Metadados dos passos anteriores (tipo + rótulo) para opções de referência. */
+function priorStepMeta(
+  actions: WorkflowAction[],
+  path: StepPath | null,
+): Array<{ index: number; type: string; label: string }> {
+  if (!path) return [];
+  const { list, index } = siblingsOfPath(actions, path);
+  if (index <= 0) return [];
+  const out: Array<{ index: number; type: string; label: string }> = [];
+  for (let i = 0; i < index; i++) {
+    const a = list[i];
+    if (!a) continue;
+    out.push({ index: i, type: a.type, label: ACTION_LABELS[a.type] ?? a.type });
+  }
+  return out;
+}
+
 function getStep(actions: WorkflowAction[], path: StepPath): WorkflowAction | null {
   if (path.length === 0) return null;
   const [head, ...rest] = path;
@@ -644,16 +667,38 @@ export function WorkflowBuilder({
   // Variáveis oferecidas nas pills: derivadas da entidade do gatilho, dos
   // passos anteriores e das variáveis do fluxo (o motor resolve
   // `{{coluna}}` / `{{steps.N.campo}}` / `{{vars.X}}`).
-  const tokenSets = useMemo(
-    () => ({
+  const priorSteps = useMemo(
+    () => (selection && selection !== "trigger" ? priorStepMeta(state.actions, selection) : []),
+    [state.actions, selection],
+  );
+
+  const tokenSets = useMemo(() => {
+    const refKinds: RefKind[] = [
+      "company",
+      "contact",
+      "deal",
+      "contract",
+      "legal_entity",
+      "pipeline",
+      "user",
+    ];
+    const refs: Record<string, { token: string; label: string; group: string }[]> = {};
+    for (const kind of refKinds) {
+      refs[kind] = [
+        ...triggerRefOptions(state.entity, kind),
+        ...priorStepRefOptions(priorSteps, kind),
+      ];
+    }
+    return {
       text: [
         ...buildTextTokens(fieldOptions, priorStepFields),
+        ...buildAssociationTextTokens(state.entity),
         ...buildVarTokens(flowVarNames),
       ],
       id: buildIdTokens(fieldOptions, priorStepFields),
-    }),
-    [fieldOptions, priorStepFields, flowVarNames],
-  );
+      refs,
+    };
+  }, [fieldOptions, priorStepFields, flowVarNames, state.entity, priorSteps]);
 
   if (!open) return null;
 
