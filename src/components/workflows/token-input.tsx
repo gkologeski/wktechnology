@@ -13,7 +13,12 @@ import { WORKFLOW_TOKENS, type MessageToken } from "@/lib/message-tokens-catalog
 import { insertAtCursor } from "@/lib/token-insert";
 import { cn } from "@/lib/utils";
 
-type TokenSets = { text: MessageToken[]; id: MessageToken[] };
+type TokenSets = {
+  text: MessageToken[];
+  id: MessageToken[];
+  /** Opções pré-carregadas de ID por tipo de referência (gatilho + passos). */
+  refs?: Record<string, MessageToken[]>;
+};
 
 const WorkflowTokensContext = createContext<TokenSets | null>(null);
 
@@ -33,6 +38,15 @@ export function useWorkflowTokens(kind: "text" | "id" = "text"): MessageToken[] 
   if (!ctx) return WORKFLOW_TOKENS;
   const list = kind === "id" ? ctx.id : ctx.text;
   return list.length > 0 ? list : WORKFLOW_TOKENS;
+}
+
+/**
+ * Opções de ID compatíveis com um campo de referência (empresa, negócio…),
+ * derivadas do registro do gatilho e dos passos anteriores.
+ */
+export function useWorkflowRefOptions(kind: string): MessageToken[] {
+  const ctx = useContext(WorkflowTokensContext);
+  return ctx?.refs?.[kind] ?? [];
 }
 
 type BaseInputProps = React.InputHTMLAttributes<HTMLInputElement>;
