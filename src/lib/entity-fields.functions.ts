@@ -618,7 +618,24 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       "notes",
       "description",
       "subcategory",
+      // Identificação/título: sempre texto livre (com pills de variáveis).
+      "name",
+      "title",
+      "subject",
+      "full_name",
+      "first_name",
+      "last_name",
+      "company_name",
+      "label",
+      "code",
+      "slug",
+      "email",
+      "phone",
+      "document",
+      "cnpj",
+      "cpf",
     ]);
+
 
     const isContracts = data.entity === "contracts";
     // Listas canônicas por entidade (substituem amostragem de valores distintos).
