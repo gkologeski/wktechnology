@@ -1215,7 +1215,7 @@ function StepsList({
         const isDraggingSelf =
           dragging !== null && JSON.stringify(dragging) === JSON.stringify(stepPath);
         return (
-          <div key={i}>
+          <div key={i} data-step-path={JSON.stringify(stepPath)}>
             {action.type === "branch_if" ? (
               <BranchCard
                 action={action}
