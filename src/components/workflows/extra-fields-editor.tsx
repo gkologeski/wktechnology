@@ -273,8 +273,26 @@ function FieldInput({
   // no catálogo mas editável aqui.
   const fkKind = field.ref ?? (field.name === "owner_id" ? "user" : REF_COLUMNS[field.name]);
   if (fkKind) {
-    return <FkPicker kind={fkKind} value={strVal} onChange={(v) => onChange(v)} />;
+    // Regra do contrato: em "Prestação (somos o prestador)" a empresa
+    // contratante é a contraparte, então não faz sentido listar as nossas
+    // pessoas jurídicas (CNPJs) do workspace para escolha.
+    const hideOwnLegalEntities =
+      field.name === "contracting_legal_entity_id" && siblingValues?.["role"] === "provider";
+    return (
+      <FkPicker
+        kind={fkKind}
+        value={strVal}
+        onChange={(v) => onChange(v)}
+        hideRecords={hideOwnLegalEntities}
+        hideRecordsHint={
+          hideOwnLegalEntities
+            ? "No papel de Prestação, a empresa contratante é a contraparte — use uma variável do gatilho ou de um passo anterior."
+            : undefined
+        }
+      />
+    );
   }
+
 
   // Texto rico (ex.: corpo do contrato) → editor WYSIWYG, sem HTML cru.
   if (field.richText) {
