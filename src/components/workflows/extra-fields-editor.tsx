@@ -51,7 +51,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
+
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
 import { WordEditor } from "@/components/word-editor-lazy";
@@ -184,11 +186,15 @@ function FieldInput({
   field,
   value,
   onChange,
+  siblingValues,
 }: {
   field: EntityFieldDef;
   value: unknown;
   onChange: (v: unknown) => void;
+  /** Outros valores do mesmo passo — usados em regras entre campos. */
+  siblingValues?: Record<string, unknown>;
 }) {
+
   const strVal = value == null ? "" : String(value);
 
   if (field.name === "custom_fields") {
@@ -267,8 +273,26 @@ function FieldInput({
   // no catálogo mas editável aqui.
   const fkKind = field.ref ?? (field.name === "owner_id" ? "user" : REF_COLUMNS[field.name]);
   if (fkKind) {
-    return <FkPicker kind={fkKind} value={strVal} onChange={(v) => onChange(v)} />;
+    // Regra do contrato: em "Prestação (somos o prestador)" a empresa
+    // contratante é a contraparte, então não faz sentido listar as nossas
+    // pessoas jurídicas (CNPJs) do workspace para escolha.
+    const hideOwnLegalEntities =
+      field.name === "contracting_legal_entity_id" && siblingValues?.["role"] === "provider";
+    return (
+      <FkPicker
+        kind={fkKind}
+        value={strVal}
+        onChange={(v) => onChange(v)}
+        hideRecords={hideOwnLegalEntities}
+        hideRecordsHint={
+          hideOwnLegalEntities
+            ? "No papel de Prestação, a empresa contratante é a contraparte — use uma variável do gatilho ou de um passo anterior."
+            : undefined
+        }
+      />
+    );
   }
+
 
   // Texto rico (ex.: corpo do contrato) → editor WYSIWYG, sem HTML cru.
   if (field.richText) {
@@ -306,11 +330,18 @@ export function FkPicker({
   kind,
   value,
   onChange,
+  hideRecords,
+  hideRecordsHint,
 }: {
   kind: RefKind;
   value: string;
   onChange: (v: string) => void;
+  /** Oculta a busca/lista de registros, deixando só as opções pré-carregadas. */
+  hideRecords?: boolean;
+  /** Aviso curto explicando por que a lista de registros está oculta. */
+  hideRecordsHint?: string;
 }) {
+
   const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
   // Opções pré-carregadas (gatilho + passos anteriores) compatíveis com o campo.
   const refOptions = useWorkflowRefOptions(kind);
@@ -336,7 +367,7 @@ export function FkPicker({
 
   const searchQuery = useQuery({
     queryKey: ["wf-ref-search", kind, q],
-    enabled: open,
+    enabled: open && !hideRecords,
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
@@ -465,9 +496,9 @@ export function FkPicker({
           {kind === "contract" || kind === "deal" ? (
             <>
               {refOptions.length > 0 && (
-                <div className="border-b p-1">
+                <div className="border-b border-border p-1">
                   <p className="px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                    Dados do gatilho e passos anteriores
+                    Do gatilho e passos anteriores
                   </p>
                   {refOptions.map((opt) => (
                     <button
@@ -490,21 +521,31 @@ export function FkPicker({
                   ))}
                 </div>
               )}
-              <CompanyScopedPicker
-              kind={kind}
-              value={value}
-                onSelect={(id: string) => {
-                  onChange(id);
-                  setOpen(false);
-                }}
-              />
+              {hideRecords ? (
+                <p className="p-3 text-[11px] text-muted-foreground">{hideRecordsHint}</p>
+              ) : (
+                <CompanyScopedPicker
+                  kind={kind}
+                  value={value}
+                  onSelect={(id: string) => {
+                    onChange(id);
+                    setOpen(false);
+                  }}
+                />
+              )}
             </>
           ) : (
             <Command shouldFilter={false}>
-              <CommandInput placeholder="Buscar por nome..." value={rawQ} onValueChange={setRawQ} />
+              {!hideRecords && (
+                <CommandInput
+                  placeholder="Buscar por nome..."
+                  value={rawQ}
+                  onValueChange={setRawQ}
+                />
+              )}
               <CommandList>
                 {refOptions.length > 0 && (
-                  <CommandGroup heading="Dados do gatilho e passos anteriores">
+                  <CommandGroup heading="Do gatilho e passos anteriores">
                     {refOptions.map((opt) => (
                       <CommandItem
                         key={opt.token}
@@ -525,42 +566,50 @@ export function FkPicker({
                     ))}
                   </CommandGroup>
                 )}
-                {isLoading && items.length === 0 && (
-                  <div className="px-3 py-6 text-center text-xs text-muted-foreground">
-                    Buscando…
-                  </div>
+                {hideRecords ? (
+                  <p className="p-3 text-[11px] text-muted-foreground">{hideRecordsHint}</p>
+                ) : (
+                  <>
+                    {refOptions.length > 0 && <CommandSeparator />}
+                    {isLoading && items.length === 0 && (
+                      <div className="px-3 py-6 text-center text-xs text-muted-foreground">
+                        Buscando…
+                      </div>
+                    )}
+                    {!isLoading && searchQuery.isError && (
+                      <div className="px-3 py-6 text-center text-xs text-destructive">
+                        Erro ao buscar.
+                      </div>
+                    )}
+                    {!isLoading && !searchQuery.isError && items.length === 0 && (
+                      <CommandEmpty>Nenhum resultado.</CommandEmpty>
+                    )}
+                    <CommandGroup heading="Registros">
+                      {items.map((it) => (
+                        <CommandItem
+                          key={it.id}
+                          value={`${it.name} ${it.id}`}
+                          onSelect={() => {
+                            onChange(it.id);
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-3.5 w-3.5",
+                              value === it.id ? "opacity-100" : "opacity-0",
+                            )}
+                          />
+                          <span className="truncate">{it.name}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </>
                 )}
-                {!isLoading && searchQuery.isError && (
-                  <div className="px-3 py-6 text-center text-xs text-destructive">
-                    Erro ao buscar.
-                  </div>
-                )}
-                {!isLoading && !searchQuery.isError && items.length === 0 && (
-                  <CommandEmpty>Nenhum resultado.</CommandEmpty>
-                )}
-                <CommandGroup>
-                  {items.map((it) => (
-                    <CommandItem
-                      key={it.id}
-                      value={`${it.name} ${it.id}`}
-                      onSelect={() => {
-                        onChange(it.id);
-                        setOpen(false);
-                      }}
-                    >
-                      <Check
-                        className={cn(
-                          "mr-2 h-3.5 w-3.5",
-                          value === it.id ? "opacity-100" : "opacity-0",
-                        )}
-                      />
-                      <span className="truncate">{it.name}</span>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
               </CommandList>
             </Command>
           )}
+
         </PopoverContent>
       </Popover>
       <button
@@ -933,7 +982,13 @@ export function ExtraFieldsEditor({
         {!customizeMode && (
           <div>
             {field ? (
-              <FieldInput field={field} value={value} onChange={(v) => setKey(key, v)} />
+              <FieldInput
+                field={field}
+                value={value}
+                onChange={(v) => setKey(key, v)}
+                siblingValues={values}
+              />
+
             ) : (
               <Input
                 value={typeof value === "string" ? value : value == null ? "" : String(value)}

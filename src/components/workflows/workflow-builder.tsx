@@ -521,8 +521,23 @@ function removeStep(actions: WorkflowAction[], path: StepPath): WorkflowAction[]
   });
 }
 
+// Lista de ações endereçada por `parentPath` ([] = topo).
+function listAt(actions: WorkflowAction[], parentPath: StepPath): WorkflowAction[] | null {
+  if (parentPath.length === 0) return actions;
+  const [head, ...rest] = parentPath;
+  if (typeof head !== "number") return null;
+  const a = actions[head];
+  if (!a) return null;
+  const branch = rest[0];
+  if (!isBranchKey(branch)) return null;
+  const children = getBranchList(a, branch);
+  if (!children) return null;
+  return listAt(children, rest.slice(1) as StepPath);
+}
+
 // Insere ação no fim de uma lista endereçada por `parentPath`.
 // parentPath = [] → topo. parentPath = [2, "then"] → dentro do ramo then do passo 2.
+
 function insertStep(
   actions: WorkflowAction[],
   parentPath: StepPath,
@@ -765,9 +780,21 @@ export function WorkflowBuilder({
 
     setActions((prev) => insertStep(prev, parentPath, newAction));
     setLibrary(null);
-    // Seleciona o novo passo (último índice do array em que foi inserido).
-    // Como cálculo exato é chato, apenas fecha a biblioteca — usuário pode clicar no card.
+    // Seleciona o novo passo (inserido no fim da lista do `parentPath`) e leva
+    // o foco/scroll até o card recém-criado.
+    const list = listAt(state.actions, parentPath);
+    if (list) {
+      const newPath = [...parentPath, list.length] as StepPath;
+      setSelection(newPath);
+      const key = JSON.stringify(newPath);
+      requestAnimationFrame(() => {
+        const el = document.querySelector<HTMLElement>(`[data-step-path='${key}']`);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.querySelector<HTMLElement>("button[aria-pressed]")?.focus();
+      });
+    }
   };
+
 
   const handleDropAt = (to: { parentPath: StepPath; index: number }) => {
     if (!dragging) return;
@@ -1188,7 +1215,7 @@ function StepsList({
         const isDraggingSelf =
           dragging !== null && JSON.stringify(dragging) === JSON.stringify(stepPath);
         return (
-          <div key={i}>
+          <div key={i} data-step-path={JSON.stringify(stepPath)}>
             {action.type === "branch_if" ? (
               <BranchCard
                 action={action}
