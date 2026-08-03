@@ -51,7 +51,9 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "@/components/ui/command";
+
 import { cn } from "@/lib/utils";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
 import { WordEditor } from "@/components/word-editor-lazy";
