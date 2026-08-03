@@ -982,7 +982,13 @@ export function ExtraFieldsEditor({
         {!customizeMode && (
           <div>
             {field ? (
-              <FieldInput field={field} value={value} onChange={(v) => setKey(key, v)} />
+              <FieldInput
+                field={field}
+                value={value}
+                onChange={(v) => setKey(key, v)}
+                siblingValues={values}
+              />
+
             ) : (
               <Input
                 value={typeof value === "string" ? value : value == null ? "" : String(value)}
