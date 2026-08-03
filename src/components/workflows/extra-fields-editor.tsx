@@ -367,7 +367,7 @@ export function FkPicker({
 
   const searchQuery = useQuery({
     queryKey: ["wf-ref-search", kind, q],
-    enabled: open,
+    enabled: open && !hideRecords,
     staleTime: 30_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
