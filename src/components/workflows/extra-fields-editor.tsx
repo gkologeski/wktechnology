@@ -1,7 +1,7 @@
 // Editor de "Mais campos" para ações create_* do workflow.
 // Permite adicionar qualquer campo da entidade alvo além dos já
 // cobertos no formulário principal da ação. Persiste em action.extra_fields.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
