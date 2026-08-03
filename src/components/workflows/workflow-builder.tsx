@@ -613,14 +613,21 @@ export function WorkflowBuilder({
     [state.actions, selection],
   );
 
-  // Variáveis oferecidas nas pills: derivadas da entidade do gatilho e dos
-  // passos anteriores (o motor resolve `{{coluna}}` / `{{steps.N.campo}}`).
+  // Variáveis do fluxo criadas por passos "Formatar dados" ({{vars.X}}).
+  const flowVarNames = useMemo(() => collectFlowVarNames(state.actions), [state.actions]);
+
+  // Variáveis oferecidas nas pills: derivadas da entidade do gatilho, dos
+  // passos anteriores e das variáveis do fluxo (o motor resolve
+  // `{{coluna}}` / `{{steps.N.campo}}` / `{{vars.X}}`).
   const tokenSets = useMemo(
     () => ({
-      text: buildTextTokens(fieldOptions, priorStepFields),
+      text: [
+        ...buildTextTokens(fieldOptions, priorStepFields),
+        ...buildVarTokens(flowVarNames),
+      ],
       id: buildIdTokens(fieldOptions, priorStepFields),
     }),
-    [fieldOptions, priorStepFields],
+    [fieldOptions, priorStepFields, flowVarNames],
   );
 
   if (!open) return null;
