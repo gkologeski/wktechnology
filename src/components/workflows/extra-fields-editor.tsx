@@ -1,7 +1,7 @@
 // Editor de "Mais campos" para ações create_* do workflow.
 // Permite adicionar qualquer campo da entidade alvo além dos já
 // cobertos no formulário principal da ação. Persiste em action.extra_fields.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -696,13 +696,31 @@ export function ExtraFieldsEditor({
   // próprio (continuam editáveis, apenas fora do fluxo principal).
   const systemFields = ungrouped.filter((f) => f.system);
   const mainFields = ungrouped.filter((f) => !f.system);
-  // Campos que o usuário editou e depois limpou continuam visíveis no mesmo
-  // lugar (bucket dos preenchidos) para não "sumirem" da tela.
-  const filled = mainFields.filter((f) => hasValue(f.name) || pinned.has(f.name));
-  const empty = mainFields.filter((f) => !hasValue(f.name) && !pinned.has(f.name));
+
+  // A posição de cada campo (bloco "preenchidos" x bloco "outros campos") é
+  // congelada enquanto o painel está aberto. Se recalculássemos a cada tecla,
+  // o campo mudaria de container pai ao receber o primeiro caractere, o React
+  // remontaria o input e a digitação perderia o foco.
+  const bucketRef = useRef<{ sig: string; map: Map<string, "filled" | "empty"> }>({
+    sig: "",
+    map: new Map(),
+  });
+  const bucketSig = `${entity}|${open ? "1" : "0"}|${mainFields.map((f) => f.name).join(",")}`;
+  if (bucketRef.current.sig !== bucketSig) {
+    const map = new Map<string, "filled" | "empty">();
+    for (const f of mainFields) {
+      map.set(f.name, hasValue(f.name) || pinned.has(f.name) ? "filled" : "empty");
+    }
+    bucketRef.current = { sig: bucketSig, map };
+  }
+  const bucketOf = (name: string) => bucketRef.current.map.get(name) ?? "empty";
+
+  const filled = mainFields.filter((f) => bucketOf(f.name) === "filled");
+  const empty = mainFields.filter((f) => bucketOf(f.name) === "empty");
   const orphanKeys = Object.keys(values).filter(
     (k) => !hidden.has(k) && !visibleFields.some((f) => f.name === k),
   );
+
 
   const filledCount =
     filled.length +
