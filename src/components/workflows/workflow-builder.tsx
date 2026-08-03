@@ -405,6 +405,31 @@ function siblingsOfPath(
   return siblingsOfPath(children, path.slice(2) as StepPath);
 }
 
+/** Nomes de variáveis do fluxo (`{{vars.X}}`) criadas por passos de formatação. */
+function collectFlowVarNames(actions: WorkflowAction[]): string[] {
+  const out: string[] = [];
+  const walk = (list: WorkflowAction[]) => {
+    for (const a of list) {
+      if (!a) continue;
+      if (a.type === "format_data" && a.target_var) out.push(a.target_var);
+      if (a.type === "condition") {
+        walk(a.then ?? []);
+        walk(a.else ?? []);
+      }
+      if (a.type === "switch_by_value") {
+        for (const c of a.cases ?? []) walk(c.actions ?? []);
+        walk(a.default ?? []);
+      }
+      if (a.type === "branch_multi") {
+        for (const b of a.branches ?? []) walk(b.actions ?? []);
+        walk(a.else ?? []);
+      }
+    }
+  };
+  walk(actions);
+  return out;
+}
+
 /** Opções de campo referenciando saídas de passos anteriores (`steps.N.campo`). */
 function priorStepFieldOptions(actions: WorkflowAction[], path: StepPath | null): FieldOpt[] {
   if (!path) return [];
