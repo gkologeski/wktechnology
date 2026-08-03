@@ -1356,16 +1356,27 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   for (const wf of (workflows ?? []) as WorkflowRow[]) {
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
     if (trig.event && trig.event !== event.event_type) continue;
+
+    // Hidrata associações do gatilho (empresa, contato, negócio…) antes de
+    // avaliar condições e executar ações, para resolver `{{company.name}}`.
+    const hydratedAfter = await hydrateTriggerAssociations(
+      supabase,
+      event.entity,
+      event.after,
+      JSON.stringify({ t: trig, a: wf.actions }),
+    );
+
     const filters = trig.filters ?? [];
-    const passes = evalConditions(filters, event.after, event.before);
+    const passes = evalConditions(filters, hydratedAfter, event.before);
     if (!passes) continue;
 
     // Fase 3 — critérios de meta: se todos passam, o registro já atingiu o objetivo
     // e é removido do workflow (sem novas execuções).
     const goalFilters = trig.goal_filters ?? wf.goal_filters ?? [];
-    if (goalFilters.length > 0 && evalConditions(goalFilters, event.after, event.before)) {
+    if (goalFilters.length > 0 && evalConditions(goalFilters, hydratedAfter, event.before)) {
       continue;
     }
+
 
     // Re-enrollment: se desabilitado e já existe run bem-sucedido, pula.
     // Se habilitado, só reprocessa quando o evento atual está na lista permitida.
