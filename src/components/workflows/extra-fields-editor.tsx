@@ -312,6 +312,9 @@ export function FkPicker({
   onChange: (v: string) => void;
 }) {
   const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
+  // Opções pré-carregadas (gatilho + passos anteriores) compatíveis com o campo.
+  const refOptions = useWorkflowRefOptions(kind);
+  const refOptionLabel = refOptions.find((o) => o.token === value.trim())?.label ?? null;
   const [open, setOpen] = useState(false);
   const [rawQ, setRawQ] = useState("");
   const [q, setQ] = useState("");
