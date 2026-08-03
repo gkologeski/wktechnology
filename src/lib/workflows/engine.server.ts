@@ -12,6 +12,7 @@ import type {
 import { isFilterGroup } from "./types";
 import { getPath } from "@/lib/message-tokens";
 import { renderWorkflowTokens, toStr } from "./render-tokens";
+import { hydrateTriggerAssociations } from "./hydrate-associations.server";
 
 type AnyRow = Record<string, unknown>;
 type LogStep = { at: string; ok: boolean; action: string; detail?: unknown; error?: string };
@@ -1326,7 +1327,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
             entity: event.entity,
             entityId: event.entity_id,
             ownerId: event.owner_id,
-            after: event.after,
+            after: hydratedAfter,
             before: event.before,
             workflowId: wfr.id,
             runId: run.id as string,
@@ -1401,7 +1402,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       entity: event.entity,
       entityId: event.entity_id,
       ownerId: event.owner_id,
-      after: event.after,
+      after: hydratedAfter,
       before: event.before,
       workflowId: wf.id,
       runId: run.id as string,
