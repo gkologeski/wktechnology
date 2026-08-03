@@ -475,8 +475,11 @@ export const searchLegalEntities = createServerFn({ method: "POST" })
     let query = supabase
       .from("legal_entities")
       .select("id, name, trade_name, cnpj")
+      // A pessoa jurídica padrão do workspace aparece no topo da lista.
+      .order("is_default", { ascending: false })
       .order("name")
       .limit(LIMIT);
+
     if (q) {
       const like = `%${escapeLike(q)}%`;
       query = query.or(`name.ilike.${like},trade_name.ilike.${like},cnpj.ilike.${like}`);
