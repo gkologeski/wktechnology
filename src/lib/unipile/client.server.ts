@@ -1051,9 +1051,29 @@ export async function listSentInvitations(
 
 
 
+export type LinkedinJobWorkplace = "REMOTE" | "HYBRID" | "ON_SITE";
+
+export type LinkedinJobEmploymentStatus =
+  | "FULL_TIME"
+  | "PART_TIME"
+  | "CONTRACT"
+  | "INTERNSHIP"
+  | "TEMPORARY"
+  | "VOLUNTEER"
+  | "OTHER";
+
+export type LinkedinJobApplyMethod =
+  | { type: "linkedin"; notificationEmail: string }
+  | { type: "external"; url: string };
+
 /**
- * Cria uma vaga (Job Posting) nativa no LinkedIn via Unipile.
- * Endpoint: POST /api/v1/linkedin/jobs
+ * Cria uma vaga (Job Posting) no LinkedIn via Unipile.
+ *
+ * v1: `POST /api/v1/linkedin/jobs` publica direto (account_id no body,
+ *     campos `workplace` e `apply_method.type`).
+ * v2: `POST /v2/:account_id/linkedin/jobs` cria apenas um **rascunho**
+ *     (`state: DRAFT`), usando `workplace_type` e `apply_method.method`.
+ *     A publicação é um segundo passo (`publishLinkedinJob`).
  *
  * Requer que a Company Page (`companyId`) seja administrada pela conta
  * conectada, e que `locationId` seja um geo ID válido do LinkedIn.
@@ -1062,64 +1082,166 @@ export async function createLinkedinJob(
   ctx: ThrottleCtx,
   params: {
     title: string;
+    titleId?: string;
     companyId: string;
     companyName?: string;
     locationId: string;
-    workplace: "REMOTE" | "HYBRID" | "ON_SITE";
-    employmentStatus:
-      | "FULL_TIME"
-      | "PART_TIME"
-      | "CONTRACT"
-      | "INTERNSHIP"
-      | "TEMPORARY"
-      | "VOLUNTEER"
-      | "OTHER";
+    workplace: LinkedinJobWorkplace;
+    employmentStatus: LinkedinJobEmploymentStatus;
     description: string;
-    applyMethod:
-      | { type: "linkedin"; notificationEmail: string }
-      | { type: "external"; url: string };
+    applyMethod: LinkedinJobApplyMethod;
   },
 ) {
-  const applyMethod =
-    params.applyMethod.type === "linkedin"
-      ? { type: "linkedin", notification_email: params.applyMethod.notificationEmail }
-      : { type: "external", url: params.applyMethod.url };
+  const jobTitle: Record<string, unknown> = { text: params.title };
+  if (params.titleId) jobTitle.id = params.titleId;
 
-  const jobPayload: Record<string, unknown> = {
-    job_title: { text: params.title },
+  const common: Record<string, unknown> = {
+    job_title: jobTitle,
     company: { id: params.companyId, text: params.companyName ?? "" },
-    workplace: params.workplace,
     location: params.locationId,
     employment_status: params.employmentStatus,
     description: params.description,
-    apply_method: applyMethod,
+  };
+
+  // v1: `workplace` + apply_method.type
+  const v1Payload: Record<string, unknown> = {
+    ...common,
+    workplace: params.workplace,
+    apply_method:
+      params.applyMethod.type === "linkedin"
+        ? { type: "linkedin", notification_email: params.applyMethod.notificationEmail }
+        : { type: "external", url: params.applyMethod.url },
+  };
+
+  // v2: `workplace_type` + apply_method.method
+  const v2Payload: Record<string, unknown> = {
+    ...common,
+    workplace_type: params.workplace,
+    apply_method:
+      params.applyMethod.type === "linkedin"
+        ? { method: "linkedin", notification_email: params.applyMethod.notificationEmail }
+        : { method: "external", url: params.applyMethod.url },
   };
 
   return call(ctx, {
     endpoint: "job.publish",
     method: "POST",
     path: "/api/v1/linkedin/jobs",
-    body: { account_id: ctx.unipileAccountId, ...jobPayload },
-    // v2: account_id sai do body e entra no path (a publicação em duas etapas
-    // — draft/publish — é tratada no adapter da Fase 5).
+    body: { account_id: ctx.unipileAccountId, ...v1Payload },
     v2: {
       method: "POST",
       path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs`,
-      body: jobPayload,
+      body: v2Payload,
     },
   }) as Promise<{
     id?: string;
     provider_id?: string;
     url?: string;
     object?: string;
+    state?: string;
     [k: string]: unknown;
   }>;
 }
 
 /**
+ * Extrai o ID de uma vaga a partir da resposta de criação/publicação.
+ * v1 devolve `id`/`provider_id`; a v2 pode devolver `job_id` ou aninhar em `job`.
+ */
+export function extractLinkedinJobId(res: Record<string, unknown> | null | undefined) {
+  if (!res) return null;
+  const nested = (res.job ?? res.job_posting ?? {}) as Record<string, unknown>;
+  const candidates = [
+    res.id,
+    res.job_id,
+    res.provider_id,
+    res.provider_job_id,
+    nested.id,
+    nested.job_id,
+    nested.provider_id,
+  ];
+  for (const v of candidates) {
+    if (typeof v === "string" && v.trim()) return v.trim();
+    if (typeof v === "number") return String(v);
+  }
+  return null;
+}
+
+/**
+ * Consulta o orçamento recomendado / elegibilidade de publicação gratuita
+ * de um rascunho de vaga. **Exclusivo da v2**
+ * (`GET /v2/:account_id/linkedin/jobs/:job_id/budget`).
+ */
+export async function getLinkedinJobBudget(ctx: ThrottleCtx, providerJobId: string) {
+  return call(ctx, {
+    endpoint: "chat.list", // leitura leve
+    method: "GET",
+    path: `/api/v1/linkedin/jobs/${encodeURIComponent(providerJobId)}/budget`,
+    query: { account_id: ctx.unipileAccountId },
+    v2: {
+      method: "GET",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/budget`,
+    },
+  }) as Promise<{
+    free_eligible?: boolean;
+    is_free_eligible?: boolean;
+    eligible_for_free?: boolean;
+    currency?: string;
+    [k: string]: unknown;
+  }>;
+}
+
+export type LinkedinJobPublishOptions = {
+  mode: "FREE" | "PROMOTED";
+  budget?: {
+    period: "total" | "daily";
+    amount: number;
+    currency: string;
+  };
+};
+
+/**
+ * Publica um rascunho de vaga (v2: `POST /v2/:account_id/linkedin/jobs/:job_id/publish`).
+ * Na v1 não existe etapa de publicação — a criação já publica —, então esta
+ * função é no-op nessa versão.
+ */
+export async function publishLinkedinJob(
+  ctx: ThrottleCtx,
+  providerJobId: string,
+  options: LinkedinJobPublishOptions = { mode: "FREE" },
+) {
+  if (unipileApiVersion() !== "v2") {
+    return { skipped: true, reason: "v1_publishes_on_create" } as Record<string, unknown>;
+  }
+  const body: Record<string, unknown> = { mode: options.mode };
+  if (options.mode === "PROMOTED" && options.budget) {
+    body.budget = {
+      [options.budget.period]: {
+        amount: options.budget.amount,
+        currency: options.budget.currency,
+      },
+    };
+  }
+  return call(ctx, {
+    endpoint: "job.publish",
+    method: "POST",
+    path: `/api/v1/linkedin/jobs/${encodeURIComponent(providerJobId)}/publish`,
+    body: { account_id: ctx.unipileAccountId, ...body },
+    v2: {
+      method: "POST",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/publish`,
+      body,
+    },
+  }) as Promise<Record<string, unknown>>;
+}
+
+/**
  * Fecha (despublica) uma vaga previamente criada no LinkedIn via Unipile.
- * Alguns tenants Unipile só suportam DELETE — se falhar, o caller deve
- * apenas marcar a `ats_job_postings` como unpublished localmente.
+ *
+ * v1: `DELETE /api/v1/linkedin/jobs/:job_id`.
+ * v2: `POST /v2/:account_id/linkedin/jobs/:job_id/close`.
+ *
+ * Se a chamada falhar, o caller deve apenas marcar a `ats_job_postings`
+ * como unpublished localmente.
  */
 export async function closeLinkedinJob(
   ctx: ThrottleCtx,
@@ -1131,45 +1253,68 @@ export async function closeLinkedinJob(
     path: `/api/v1/linkedin/jobs/${encodeURIComponent(providerJobId)}`,
     query: { account_id: ctx.unipileAccountId },
     v2: {
-      method: "DELETE",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}`,
+      method: "POST",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/close`,
     },
   }) as Promise<{ ok?: boolean; object?: string; [k: string]: unknown }>;
 }
 
+
 /**
  * Lista aplicantes de uma vaga LinkedIn publicada via Unipile.
- * Endpoint: GET /api/v1/linkedin/jobs/{provider_job_id}/applicants
  *
- * Paginação por cursor. Retorna estrutura crua da Unipile — normalização
- * fica no adapter.
+ * v1: `GET /api/v1/linkedin/jobs/:job_id/applicants` (paginação por cursor).
+ * v2: `POST /v2/:account_id/linkedin/jobs/:job_id/applicants` — filtros vão
+ *     no body e a paginação é por `offset`. Para manter o contrato de cursor
+ *     usado pelos callers, o offset seguinte é sintetizado como cursor.
  */
 export async function listLinkedinJobApplicants(
   ctx: ThrottleCtx,
   params: { providerJobId: string; cursor?: string | null; limit?: number; offset?: number },
 ) {
-  return call(ctx, {
+  const isV2 = unipileApiVersion() === "v2";
+  const limit = params.limit ?? 50;
+  const offset =
+    params.offset ??
+    (params.cursor && /^\d+$/.test(params.cursor) ? Number(params.cursor) : 0);
+
+  const res = (await call(ctx, {
     endpoint: "chat.list", // budget leve — leitura
     method: "GET",
     path: `/api/v1/linkedin/jobs/${encodeURIComponent(params.providerJobId)}/applicants`,
     query: {
       account_id: ctx.unipileAccountId,
-      limit: params.limit ?? 50,
+      limit,
       cursor: params.cursor ?? undefined,
     },
     v2: {
-      method: "GET",
+      method: "POST",
       path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(params.providerJobId)}/applicants`,
-      query: { limit: params.limit ?? 50, offset: params.offset },
+      query: { limit, offset },
+      body: {},
     },
-  }) as Promise<{
-
+  })) as {
     items?: Array<Record<string, unknown>>;
     data?: Array<Record<string, unknown>>;
     cursor?: string | null;
     next_cursor?: string | null;
     [k: string]: unknown;
-  }>;
+  };
+
+  if (isV2) {
+    const items = (res?.items ?? res?.data ?? []) as Array<Record<string, unknown>>;
+    const hasNext = items.length >= limit;
+    return {
+      ...res,
+      items,
+      next_cursor:
+        (res?.next_cursor as string | null | undefined) ??
+        (hasNext ? String(offset + limit) : null),
+    };
+  }
+
+  return res;
+
 }
 
 
