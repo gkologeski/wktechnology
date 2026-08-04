@@ -158,22 +158,24 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
       .single();
 
     try {
-      const res = (await sendLinkedinMessage(ctx, {
+      const res = await sendLinkedinMessage(ctx, {
         attendeeProviderId: providerId,
         text: renderedText,
-      })) as any;
-      const providerMessageId =
-        res?.message_id ?? res?.id ?? res?.chat_id ?? null;
+      });
+      // v2 responde com payload reduzido (só o id do recurso criado).
+      const { normalizeSendMessageResult } = await import("@/lib/unipile/client.server");
+      const { messageId, chatId } = normalizeSendMessageResult(res);
       await supabaseAdmin
         .from("unipile_message_log")
         .update({
           status: "sent",
-          provider_message_id: providerMessageId ? String(providerMessageId) : null,
+          provider_message_id: messageId,
           sent_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", logRow!.id);
-      return { ok: true as const, providerMessageId };
+      return { ok: true as const, providerMessageId: messageId, chatId };
+
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const code = err instanceof UnipileError ? err.code : "provider_error";
