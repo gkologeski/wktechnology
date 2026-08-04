@@ -47,6 +47,34 @@ export const getRateUsage = createServerFn({ method: "GET" })
     return { buckets: buckets ?? [] };
   });
 
+/** Mensagens pt-BR para falhas de credencial da Unipile. */
+const CREDENTIAL_MESSAGE: Record<string, string> = {
+  missing_credentials:
+    "Integração Unipile não configurada. Salve a chave da API (UNIPILE_API_KEY) nas configurações.",
+  invalid_credentials:
+    "Chave da API Unipile inválida ou expirada. Gere uma nova chave (API v2) no painel da Unipile e atualize nas configurações.",
+  provider_error: "A Unipile recusou a requisição. Tente novamente em alguns minutos.",
+  network_error: "Não foi possível falar com a Unipile. Verifique a conexão e tente novamente.",
+};
+
+/**
+ * Testa as credenciais da API v2 sem expor a chave.
+ */
+export const checkUnipileCredentials = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { verifyApiKey } = await import("@/lib/unipile/client.server");
+    const result = await verifyApiKey();
+    if (result.ok) return { ok: true as const, message: "Chave da API Unipile válida." };
+    return {
+      ok: false as const,
+      reason: result.reason,
+      status: result.status ?? null,
+      detail: result.detail ?? null,
+      message: CREDENTIAL_MESSAGE[result.reason] ?? CREDENTIAL_MESSAGE.provider_error,
+    };
+  });
+
 /**
  * Inicia o fluxo Hosted Auth: cria registro pending + retorna URL para o usuário.
  */
@@ -54,7 +82,13 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const { verifyApiKey } = await import("@/lib/unipile/client.server");
+    const check = await verifyApiKey();
+    if (!check.ok) {
+      throw new Error(CREDENTIAL_MESSAGE[check.reason] ?? CREDENTIAL_MESSAGE.provider_error);
+    }
     const connectToken = `lvb_${randomBytes(16).toString("hex")}`;
+
 
     // Upsert pending account (mantém uma única linha por usuário)
     const { data: existing } = await supabase

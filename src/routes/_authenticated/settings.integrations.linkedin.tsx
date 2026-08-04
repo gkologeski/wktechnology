@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Linkedin, Link2, Power, RefreshCw, Clock } from "lucide-react";
+import { Linkedin, Link2, Power, RefreshCw, Clock, KeyRound, CheckCircle2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
@@ -17,7 +17,9 @@ import {
   updateDailyWindow,
   getRateUsage,
   reconcileLinkedinAccount,
+  checkUnipileCredentials,
 } from "@/lib/unipile/accounts.functions";
+
 
 const searchSchema = z
   .object({
@@ -73,14 +75,20 @@ function LinkedinIntegrationPage() {
   const disconnect = useServerFn(disconnectLinkedinAccount);
   const saveWindow = useServerFn(updateDailyWindow);
   const reconcile = useServerFn(reconcileLinkedinAccount);
+  const checkCreds = useServerFn(checkUnipileCredentials);
 
   const [account, setAccount] = useState<AccountRow | null>(null);
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [credStatus, setCredStatus] = useState<
+    { ok: boolean; message: string; detail?: string | null } | null
+  >(null);
   const [tz, setTz] = useState("America/Sao_Paulo");
   const [startHour, setStartHour] = useState(8);
   const [endHour, setEndHour] = useState(20);
+
 
   const refresh = async () => {
     setLoading(true);
@@ -119,6 +127,22 @@ function LinkedinIntegrationPage() {
   }, [search.connected, search.state]);
 
 
+  const onCheckCredentials = async () => {
+    setChecking(true);
+    try {
+      const r = await checkCreds({});
+      setCredStatus({ ok: r.ok, message: r.message, detail: "detail" in r ? r.detail : null });
+      if (r.ok) toast.success(r.message);
+      else toast.error(r.message);
+    } catch (e) {
+      const message = (e as Error).message;
+      setCredStatus({ ok: false, message });
+      toast.error(message);
+    } finally {
+      setChecking(false);
+    }
+  };
+
   const onConnect = async () => {
     setConnecting(true);
     try {
@@ -126,11 +150,14 @@ function LinkedinIntegrationPage() {
       if (r.url) window.location.href = r.url;
       else toast.error("Não foi possível iniciar a conexão.");
     } catch (e) {
-      toast.error((e as Error).message);
+      const message = (e as Error).message;
+      setCredStatus({ ok: false, message });
+      toast.error(message);
     } finally {
       setConnecting(false);
     }
   };
+
 
   const onDisconnect = async () => {
     if (!(await confirmDialog("Desconectar conta LinkedIn?"))) return;
@@ -233,7 +260,52 @@ function LinkedinIntegrationPage() {
               </Button>
             </div>
           )}
+
+          <div className="border-t pt-4 space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Credenciais da API Unipile</p>
+                <p className="text-xs text-muted-foreground">
+                  Verifique se a chave da API (v2) configurada é aceita pela Unipile.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onCheckCredentials}
+                disabled={checking}
+                aria-label="Testar credenciais da API Unipile"
+              >
+                <KeyRound className={`h-4 w-4 mr-2 ${checking ? "animate-pulse" : ""}`} />
+                {checking ? "Testando…" : "Testar credenciais"}
+              </Button>
+            </div>
+            {credStatus && (
+              <div
+                role="status"
+                aria-live="polite"
+                className={`flex items-start gap-2 rounded-md border p-3 text-sm ${
+                  credStatus.ok
+                    ? "border-primary/30 bg-primary/5 text-foreground"
+                    : "border-destructive/30 bg-destructive/5 text-destructive"
+                }`}
+              >
+                {credStatus.ok ? (
+                  <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                )}
+                <div className="space-y-1">
+                  <p>{credStatus.message}</p>
+                  {credStatus.detail && (
+                    <p className="text-xs opacity-80 break-all">{credStatus.detail}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
+
       </Card>
 
       <Card>
