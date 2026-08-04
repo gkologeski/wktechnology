@@ -865,24 +865,33 @@ export async function createLinkedinJob(
       | { type: "external"; url: string };
   },
 ) {
-  const body: Record<string, unknown> = {
-    account_id: ctx.unipileAccountId,
+  const applyMethod =
+    params.applyMethod.type === "linkedin"
+      ? { type: "linkedin", notification_email: params.applyMethod.notificationEmail }
+      : { type: "external", url: params.applyMethod.url };
+
+  const jobPayload: Record<string, unknown> = {
     job_title: { text: params.title },
     company: { id: params.companyId, text: params.companyName ?? "" },
     workplace: params.workplace,
     location: params.locationId,
     employment_status: params.employmentStatus,
     description: params.description,
-    apply_method:
-      params.applyMethod.type === "linkedin"
-        ? { type: "linkedin", notification_email: params.applyMethod.notificationEmail }
-        : { type: "external", url: params.applyMethod.url },
+    apply_method: applyMethod,
   };
+
   return call(ctx, {
     endpoint: "job.publish",
     method: "POST",
     path: "/api/v1/linkedin/jobs",
-    body,
+    body: { account_id: ctx.unipileAccountId, ...jobPayload },
+    // v2: account_id sai do body e entra no path (a publicação em duas etapas
+    // — draft/publish — é tratada no adapter da Fase 5).
+    v2: {
+      method: "POST",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs`,
+      body: jobPayload,
+    },
   }) as Promise<{
     id?: string;
     provider_id?: string;
@@ -906,6 +915,10 @@ export async function closeLinkedinJob(
     method: "DELETE",
     path: `/api/v1/linkedin/jobs/${encodeURIComponent(providerJobId)}`,
     query: { account_id: ctx.unipileAccountId },
+    v2: {
+      method: "DELETE",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}`,
+    },
   }) as Promise<{ ok?: boolean; object?: string; [k: string]: unknown }>;
 }
 
@@ -918,7 +931,7 @@ export async function closeLinkedinJob(
  */
 export async function listLinkedinJobApplicants(
   ctx: ThrottleCtx,
-  params: { providerJobId: string; cursor?: string | null; limit?: number },
+  params: { providerJobId: string; cursor?: string | null; limit?: number; offset?: number },
 ) {
   return call(ctx, {
     endpoint: "chat.list", // budget leve — leitura
@@ -929,7 +942,13 @@ export async function listLinkedinJobApplicants(
       limit: params.limit ?? 50,
       cursor: params.cursor ?? undefined,
     },
+    v2: {
+      method: "GET",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(params.providerJobId)}/applicants`,
+      query: { limit: params.limit ?? 50, offset: params.offset },
+    },
   }) as Promise<{
+
     items?: Array<Record<string, unknown>>;
     data?: Array<Record<string, unknown>>;
     cursor?: string | null;
