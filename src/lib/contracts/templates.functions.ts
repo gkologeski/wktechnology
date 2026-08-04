@@ -100,7 +100,10 @@ export const listContractTemplates = createServerFn({ method: "POST" })
       ...r,
       services: links
         .filter((l) => l.template_id === r.id)
-        .map((l) => ({ id: l.service_catalog_id, name: nameById.get(l.service_catalog_id) ?? "—" })),
+        .map((l) => ({
+          id: l.service_catalog_id,
+          name: nameById.get(l.service_catalog_id) ?? "—",
+        })),
     }));
   });
 
@@ -197,9 +200,7 @@ export const createContractTemplate = createServerFn({ method: "POST" })
 export const updateContractTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z
-      .object({ id: z.string().uuid(), patch: upsertFields.partial() })
-      .parse(input),
+    z.object({ id: z.string().uuid(), patch: upsertFields.partial() }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -376,7 +377,11 @@ async function buildMergeContext(
   const now = new Date();
   const title =
     input.title?.trim() ||
-    (deal?.name ? `${template.name} — ${deal.name}` : company?.name ? `${template.name} — ${company.name}` : template.name);
+    (deal?.name
+      ? `${template.name} — ${deal.name}`
+      : company?.name
+        ? `${template.name} — ${company.name}`
+        : template.name);
 
   const contract = {
     number: generateNumber(),
@@ -453,7 +458,13 @@ export const previewContractFromTemplate = createServerFn({ method: "POST" })
     if (error) throw error;
     if (!template) throw new Error("Modelo não encontrado");
 
-    const { ctx, contract } = await buildMergeContext(supabase, workspaceId, userId, data, template);
+    const { ctx, contract } = await buildMergeContext(
+      supabase,
+      workspaceId,
+      userId,
+      data,
+      template,
+    );
     return {
       title: contract.title,
       body_html: mergeTemplateBody(template.body_html ?? "", ctx),

@@ -133,9 +133,7 @@ function ContractTemplateEditorPage() {
         setDirty(false);
         qc.invalidateQueries({ queryKey: ["contract-template", id] });
         qc.invalidateQueries({ queryKey: ["contract-templates"] });
-        toast.success(
-          patch?.status === "published" ? "Modelo publicado." : "Modelo salvo.",
-        );
+        toast.success(patch?.status === "published" ? "Modelo publicado." : "Modelo salvo.");
       } catch (e) {
         toast.error((e as Error).message);
       } finally {
@@ -145,10 +143,7 @@ function ContractTemplateEditorPage() {
     [id, name, description, role, serviceType, body, serviceIds, update, qc],
   );
 
-  const previewHtml = useMemo(
-    () => mergeTemplateBody(body, {}, { keepUnknown: false }),
-    [body],
-  );
+  const previewHtml = useMemo(() => mergeTemplateBody(body, {}, { keepUnknown: false }), [body]);
 
   if (isLoading) {
     return <div className="p-6 text-sm text-muted-foreground">Carregando modelo…</div>;
@@ -157,7 +152,11 @@ function ContractTemplateEditorPage() {
     return (
       <div className="p-6">
         <p className="text-sm text-muted-foreground">Modelo não encontrado.</p>
-        <Button variant="outline" className="mt-3" onClick={() => navigate({ to: "/contracts/templates" })}>
+        <Button
+          variant="outline"
+          className="mt-3"
+          onClick={() => navigate({ to: "/contracts/templates" })}
+        >
           Voltar para modelos
         </Button>
       </div>
@@ -179,7 +178,11 @@ function ContractTemplateEditorPage() {
             </h1>
             <div className="mt-1 flex items-center gap-2">
               <Badge variant="outline">
-                {template.status === "published" ? "Publicado" : template.status === "archived" ? "Arquivado" : "Rascunho"}
+                {template.status === "published"
+                  ? "Publicado"
+                  : template.status === "archived"
+                    ? "Arquivado"
+                    : "Rascunho"}
               </Badge>
               {dirty ? (
                 <span className="text-xs text-muted-foreground">Alterações não salvas</span>
@@ -192,7 +195,11 @@ function ContractTemplateEditorPage() {
             <Eye className="mr-1 h-4 w-4" /> Pré-visualizar
           </Button>
           <Button variant="outline" onClick={() => save()} disabled={saving}>
-            {saving ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Save className="mr-1 h-4 w-4" />}
+            {saving ? (
+              <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-1 h-4 w-4" />
+            )}
             Salvar rascunho
           </Button>
           <Button onClick={() => save({ status: "published" })} disabled={saving}>
@@ -349,9 +356,7 @@ function ContractTemplateEditorPage() {
           <div className="rounded-lg border bg-card p-4">
             <h2 className="text-sm font-medium">Variáveis usadas</h2>
             {tokensInBody.length === 0 ? (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Nenhuma variável no corpo ainda.
-              </p>
+              <p className="mt-2 text-xs text-muted-foreground">Nenhuma variável no corpo ainda.</p>
             ) : (
               <div className="mt-2 flex flex-wrap gap-1">
                 {tokensInBody.map((t) => (

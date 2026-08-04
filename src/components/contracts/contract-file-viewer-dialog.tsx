@@ -280,9 +280,7 @@ export function ContractFileViewerDialog({ open, onOpenChange, contractId, fileN
 
     if (kind === "office") {
       const officeSrc = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
-      return (
-        <iframe src={officeSrc} title={displayName} className="h-[70vh] w-full bg-muted/20" />
-      );
+      return <iframe src={officeSrc} title={displayName} className="h-[70vh] w-full bg-muted/20" />;
     }
 
     if (kind === "text") {

@@ -71,9 +71,7 @@ export function mergeTemplateBody(
     const value = getPath(ctx, key);
     if (value == null || value === "") {
       if (options?.keepUnknown) return `{{${key}}}`;
-      const label = CONTRACT_TEMPLATE_TOKENS.find(
-        (t) => t.token === `{{${key}}}`,
-      )?.label;
+      const label = CONTRACT_TEMPLATE_TOKENS.find((t) => t.token === `{{${key}}}`)?.label;
       return `[[${label ?? key}]]`;
     }
     return String(value);

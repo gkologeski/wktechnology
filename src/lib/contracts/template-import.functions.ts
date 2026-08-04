@@ -46,7 +46,12 @@ const ImportedTemplateSchema = z.object({
   service_type: z.string().optional().nullable(),
   body_html: z.string().optional().nullable(),
   suggestions: z
-    .array(z.object({ original: z.string().optional().nullable(), token: z.string().optional().nullable() }))
+    .array(
+      z.object({
+        original: z.string().optional().nullable(),
+        token: z.string().optional().nullable(),
+      }),
+    )
     .optional()
     .nullable(),
   warnings: z.array(z.string()).optional().nullable(),

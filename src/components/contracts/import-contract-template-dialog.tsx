@@ -184,7 +184,9 @@ export function ImportContractTemplateDialog({
             <label className="flex cursor-pointer flex-col items-center gap-2 rounded-md border border-dashed p-6 text-center transition-colors hover:border-primary/40 focus-within:ring-2 focus-within:ring-ring">
               <Upload className="h-5 w-5 text-muted-foreground" />
               <span className="text-sm font-medium">Escolher arquivo</span>
-              <span className="text-xs text-muted-foreground">.pdf até 15 MB · .docx até 10 MB</span>
+              <span className="text-xs text-muted-foreground">
+                .pdf até 15 MB · .docx até 10 MB
+              </span>
               <input
                 type="file"
                 accept=".pdf,.docx"

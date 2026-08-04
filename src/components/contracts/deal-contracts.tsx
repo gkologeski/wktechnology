@@ -7,10 +7,7 @@ import { FileText, FileStack, Plus, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  listContracts,
-  createContractFromDeal,
-} from "@/lib/contracts.functions";
+import { listContracts, createContractFromDeal } from "@/lib/contracts.functions";
 import { formatCurrency } from "@/lib/crm";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
 import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
@@ -83,12 +80,7 @@ export function DealContracts({
           >
             <FileStack className="h-3.5 w-3.5 mr-0.5" /> Gerar de modelo
           </Button>
-          <Button
-            size="sm"
-            variant="link"
-            className="h-auto p-0"
-            onClick={() => setOpenNew(true)}
-          >
+          <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
             <Plus className="h-3.5 w-3.5 mr-0.5" /> Adicionar
           </Button>
         </div>

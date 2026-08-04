@@ -87,8 +87,7 @@ function ContractTemplatesPage() {
       list({
         data: {
           search: search || undefined,
-          status:
-            status === "all" ? undefined : (status as "draft" | "published" | "archived"),
+          status: status === "all" ? undefined : (status as "draft" | "published" | "archived"),
         },
       }),
   });
@@ -206,9 +205,7 @@ function ContractTemplatesPage() {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {t.services.length === 0
-                      ? "—"
-                      : t.services.map((s) => s.name).join(", ")}
+                    {t.services.length === 0 ? "—" : t.services.map((s) => s.name).join(", ")}
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {formatDateTime(t.updated_at)}
@@ -270,7 +267,6 @@ function ContractTemplatesPage() {
           if (!next) qc.invalidateQueries({ queryKey: ["contract-templates"] });
         }}
       />
-
     </div>
   );
 }

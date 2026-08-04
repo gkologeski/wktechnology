@@ -59,7 +59,9 @@ Schema esperado (todos os campos podem ser null):
   "warnings": [string]
 }`;
 
-async function callGeminiExtract(userContent: Array<Record<string, unknown>>): Promise<ExtractedContract> {
+async function callGeminiExtract(
+  userContent: Array<Record<string, unknown>>,
+): Promise<ExtractedContract> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("LOVABLE_API_KEY ausente");
 
@@ -78,7 +80,8 @@ async function callGeminiExtract(userContent: Array<Record<string, unknown>>): P
 
   if (!resp.ok) {
     const body = await resp.text();
-    if (resp.status === 429) throw new Error("Limite de uso da IA atingido. Tente novamente em instantes.");
+    if (resp.status === 429)
+      throw new Error("Limite de uso da IA atingido. Tente novamente em instantes.");
     if (resp.status === 402) throw new Error("Créditos de IA esgotados no workspace.");
     throw new Error(`Falha na extração (${resp.status}): ${body.slice(0, 200)}`);
   }
@@ -245,7 +248,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       role,
       title: f.title?.trim() || "Contrato importado",
       counterparty_company_id: counterpartyCompanyId,
-      total_value: f.total_value ?? (f.monthly_value ?? 0),
+      total_value: f.total_value ?? f.monthly_value ?? 0,
       currency: f.currency ?? "BRL",
       starts_at: f.starts_at ?? null,
       ends_at: f.ends_at ?? null,

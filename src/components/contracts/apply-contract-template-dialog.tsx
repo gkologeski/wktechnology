@@ -145,8 +145,8 @@ export function ApplyContractTemplateDialog({
             <FileStack className="h-4 w-4 text-primary" /> Gerar contrato a partir de modelo
           </DialogTitle>
           <DialogDescription>
-            As variáveis do modelo são preenchidas com os dados da empresa, do negócio e do
-            serviço selecionados.
+            As variáveis do modelo são preenchidas com os dados da empresa, do negócio e do serviço
+            selecionados.
           </DialogDescription>
         </DialogHeader>
 
@@ -161,9 +161,7 @@ export function ApplyContractTemplateDialog({
               }}
             >
               <SelectTrigger id="apply-template">
-                <SelectValue
-                  placeholder={isLoading ? "Carregando…" : "Selecione um modelo"}
-                />
+                <SelectValue placeholder={isLoading ? "Carregando…" : "Selecione um modelo"} />
               </SelectTrigger>
               <SelectContent>
                 {templates.length === 0 ? (
