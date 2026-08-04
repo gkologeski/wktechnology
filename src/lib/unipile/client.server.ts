@@ -300,27 +300,56 @@ async function logRequest(
 
 // --------- HTTP ---------
 
-interface CallOptions {
-  endpoint: UnipileEndpoint;
-  method: "GET" | "POST" | "PUT" | "DELETE";
-  path: string; // relativo ao DSN, ex.: "/api/v1/users/abc"
+interface CallVariant {
+  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  path: string;
   query?: Record<string, string | number | undefined>;
   body?: unknown;
+}
+
+interface CallOptions {
+  endpoint: UnipileEndpoint;
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  path: string; // v1 — relativo ao DSN, ex.: "/api/v1/users/abc"
+  query?: Record<string, string | number | undefined>;
+  body?: unknown;
+  /**
+   * Variante v2 (relativa a https://api.unipile.com/v2), ex.:
+   * `/${accountId}/users/abc`. Obrigatória quando UNIPILE_API_VERSION=v2.
+   */
+  v2?: CallVariant;
+}
+
+function buildQuery(query?: Record<string, string | number | undefined>) {
+  if (!query) return "";
+  const parts = Object.entries(query)
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`);
+  return parts.length ? `?${parts.join("&")}` : "";
 }
 
 async function call(ctx: ThrottleCtx, opts: CallOptions) {
   const budget = BUDGETS[opts.endpoint];
   await enforceBudget(ctx, opts.endpoint, budget);
 
-  const { dsn, key } = getEnv();
-  const qs = opts.query
-    ? "?" +
-      Object.entries(opts.query)
-        .filter(([, v]) => v !== undefined && v !== null && v !== "")
-        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-        .join("&")
-    : "";
-  const url = `${dsn}${opts.path}${qs}`;
+  const { dsn, key, version } = getEnv();
+
+  if (version === "v2" && !opts.v2) {
+    throw new UnipileError(
+      `Endpoint ${opts.endpoint} (${opts.path}) ainda não migrado para a API v2.`,
+      "provider_error",
+    );
+  }
+
+  const variant: CallVariant =
+    version === "v2" && opts.v2
+      ? opts.v2
+      : { method: opts.method, path: opts.path, query: opts.query, body: opts.body };
+
+  const method = variant.method ?? opts.method;
+  const url = `${dsn}${variant.path}${buildQuery(variant.query)}`;
+  const requestBody = variant.body;
+
 
   const started = Date.now();
   let status: number | null = null;
