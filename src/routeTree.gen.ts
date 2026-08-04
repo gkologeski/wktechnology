@@ -18,6 +18,7 @@ import { Route as SalesRouteImport } from './routes/sales'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundRouteImport } from './routes/refund'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DpaRouteImport } from './routes/dpa'
 import { Route as AcceptInviteRouteImport } from './routes/accept-invite'
@@ -70,6 +71,8 @@ import { Route as AuthenticatedComplianceRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCompaniesRouteImport } from './routes/_authenticated/companies'
 import { Route as AuthenticatedCommunicationsRouteImport } from './routes/_authenticated/communications'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedWorkspaceIndexRouteImport } from './routes/_authenticated/workspace.index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
 import { Route as AuthenticatedServicesIndexRouteImport } from './routes/_authenticated/services.index'
@@ -246,6 +249,7 @@ import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedatsCopilotRouteImport } from './routes/_authenticated/(ats)/copilot'
 import { Route as AuthenticatedatsBriefingRouteImport } from './routes/_authenticated/(ats)/briefing'
 import { Route as AuthenticatedatsAtsDashboardRouteImport } from './routes/_authenticated/(ats)/ats-dashboard'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
@@ -404,6 +408,11 @@ const RefundRoute = RefundRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -672,6 +681,18 @@ const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedWorkspaceIndexRoute =
   AuthenticatedWorkspaceIndexRouteImport.update({
     id: '/workspace/',
@@ -1705,6 +1726,12 @@ const AuthenticatedatsAtsDashboardRoute =
     path: '/ats-dashboard',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   id: '/.lovable/oauth/consent',
   path: '/.lovable/oauth/consent',
@@ -2370,6 +2397,7 @@ export interface FileRoutesByFullPath {
   '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/dpa': typeof DpaRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -2379,6 +2407,8 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/unipile-connected': typeof UnipileConnectedRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/companies': typeof AuthenticatedCompaniesRouteWithChildren
@@ -2427,6 +2457,7 @@ export interface FileRoutesByFullPath {
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/ats-dashboard': typeof AuthenticatedatsAtsDashboardRoute
   '/briefing': typeof AuthenticatedatsBriefingRoute
   '/copilot': typeof AuthenticatedatsCopilotRoute
@@ -2722,6 +2753,7 @@ export interface FileRoutesByTo {
   '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/dpa': typeof DpaRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -2731,6 +2763,8 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/unipile-connected': typeof UnipileConnectedRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/communications': typeof AuthenticatedCommunicationsRoute
   '/companies': typeof AuthenticatedCompaniesRouteWithChildren
@@ -2774,6 +2808,7 @@ export interface FileRoutesByTo {
   '/careers': typeof CareersIndexRoute
   '/kb': typeof KbIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/ats-dashboard': typeof AuthenticatedatsAtsDashboardRoute
   '/briefing': typeof AuthenticatedatsBriefingRoute
   '/copilot': typeof AuthenticatedatsCopilotRoute
@@ -3070,6 +3105,7 @@ export interface FileRoutesById {
   '/accept-invite': typeof AcceptInviteRouteWithChildren
   '/dpa': typeof DpaRoute
   '/login': typeof LoginRoute
+  '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -3079,6 +3115,8 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/unipile-connected': typeof UnipileConnectedRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/communications': typeof AuthenticatedCommunicationsRoute
   '/_authenticated/companies': typeof AuthenticatedCompaniesRouteWithChildren
@@ -3127,6 +3165,7 @@ export interface FileRoutesById {
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/(ats)/ats-dashboard': typeof AuthenticatedatsAtsDashboardRoute
   '/_authenticated/(ats)/briefing': typeof AuthenticatedatsBriefingRoute
   '/_authenticated/(ats)/copilot': typeof AuthenticatedatsCopilotRoute
@@ -3424,6 +3463,7 @@ export interface FileRouteTypes {
     | '/accept-invite'
     | '/dpa'
     | '/login'
+    | '/mcp'
     | '/privacy'
     | '/refund'
     | '/reset-password'
@@ -3433,6 +3473,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/unipile-connected'
     | '/unsubscribe'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/analytics'
     | '/communications'
     | '/companies'
@@ -3481,6 +3523,7 @@ export interface FileRouteTypes {
     | '/careers/'
     | '/kb/'
     | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/ats-dashboard'
     | '/briefing'
     | '/copilot'
@@ -3776,6 +3819,7 @@ export interface FileRouteTypes {
     | '/accept-invite'
     | '/dpa'
     | '/login'
+    | '/mcp'
     | '/privacy'
     | '/refund'
     | '/reset-password'
@@ -3785,6 +3829,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/unipile-connected'
     | '/unsubscribe'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/analytics'
     | '/communications'
     | '/companies'
@@ -3828,6 +3874,7 @@ export interface FileRouteTypes {
     | '/careers'
     | '/kb'
     | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/ats-dashboard'
     | '/briefing'
     | '/copilot'
@@ -4123,6 +4170,7 @@ export interface FileRouteTypes {
     | '/accept-invite'
     | '/dpa'
     | '/login'
+    | '/mcp'
     | '/privacy'
     | '/refund'
     | '/reset-password'
@@ -4132,6 +4180,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/unipile-connected'
     | '/unsubscribe'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/analytics'
     | '/_authenticated/communications'
     | '/_authenticated/companies'
@@ -4180,6 +4230,7 @@ export interface FileRouteTypes {
     | '/careers/'
     | '/kb/'
     | '/.lovable/oauth/consent'
+    | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/(ats)/ats-dashboard'
     | '/_authenticated/(ats)/briefing'
     | '/_authenticated/(ats)/copilot'
@@ -4477,6 +4528,7 @@ export interface RootRouteChildren {
   AcceptInviteRoute: typeof AcceptInviteRouteWithChildren
   DpaRoute: typeof DpaRoute
   LoginRoute: typeof LoginRoute
+  McpRoute: typeof McpRoute
   PrivacyRoute: typeof PrivacyRoute
   RefundRoute: typeof RefundRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -4486,6 +4538,8 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   UnipileConnectedRoute: typeof UnipileConnectedRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   BookSlugRoute: typeof BookSlugRoute
   CareersSlugRoute: typeof CareersSlugRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
@@ -4506,6 +4560,7 @@ export interface RootRouteChildren {
   CareersIndexRoute: typeof CareersIndexRoute
   KbIndexRoute: typeof KbIndexRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiAgentChatRoute: typeof ApiAgentChatRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBankingInterWebhookRoute: typeof ApiPublicBankingInterWebhookRoute
@@ -4646,6 +4701,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -5011,6 +5073,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/analytics'
       preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/workspace/': {
       id: '/_authenticated/workspace/'
@@ -6243,6 +6319,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/ats-dashboard'
       preLoaderRoute: typeof AuthenticatedatsAtsDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/.lovable/oauth/consent': {
       id: '/.lovable/oauth/consent'
@@ -7836,6 +7919,7 @@ const rootRouteChildren: RootRouteChildren = {
   AcceptInviteRoute: AcceptInviteRouteWithChildren,
   DpaRoute: DpaRoute,
   LoginRoute: LoginRoute,
+  McpRoute: McpRoute,
   PrivacyRoute: PrivacyRoute,
   RefundRoute: RefundRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -7845,6 +7929,9 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   UnipileConnectedRoute: UnipileConnectedRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   BookSlugRoute: BookSlugRoute,
   CareersSlugRoute: CareersSlugRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
@@ -7865,6 +7952,7 @@ const rootRouteChildren: RootRouteChildren = {
   CareersIndexRoute: CareersIndexRoute,
   KbIndexRoute: KbIndexRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiAgentChatRoute: ApiAgentChatRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBankingInterWebhookRoute: ApiPublicBankingInterWebhookRoute,

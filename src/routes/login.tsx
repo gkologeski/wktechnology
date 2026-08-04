@@ -10,8 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 
+function safeNext(value: unknown): string {
+  return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") ? value : "";
+}
+
 export const Route = createFileRoute("/login")({
   component: LoginPage,
+  validateSearch: (s: Record<string, unknown>) => ({ next: safeNext(s.next) }),
   head: () => ({
     meta: [
       { title: "Entrar — WK Technology CRM" },
@@ -30,13 +35,19 @@ export const Route = createFileRoute("/login")({
 function LoginPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
+  const goAfterAuth = () => {
+    if (next) window.location.href = next;
+    else navigate({ to: "/dashboard" });
+  };
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/dashboard" });
-  }, [user, loading, navigate]);
+    if (!loading && user) goAfterAuth();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, loading, navigate, next]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -44,7 +55,7 @@ function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
     if (error) toast.error(error.message);
-    else navigate({ to: "/dashboard" });
+    else goAfterAuth();
   };
 
   return (
@@ -66,10 +77,12 @@ function LoginPage() {
             className="w-full"
             onClick={async () => {
               const r = await lovable.auth.signInWithOAuth("google", {
-                redirect_uri: window.location.origin,
+                redirect_uri: next
+                  ? `${window.location.origin}/login?next=${encodeURIComponent(next)}`
+                  : window.location.origin,
               });
               if (r.error) toast.error(r.error.message);
-              else if (!r.redirected) navigate({ to: "/dashboard" });
+              else if (!r.redirected) goAfterAuth();
             }}
           >
             <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
