@@ -6,6 +6,7 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { createRequire } from "node:module";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 
 const require = createRequire(import.meta.url);
 const eventsPolyfillPath = require.resolve("events/events.js");
@@ -30,6 +31,8 @@ export default defineConfig({
   },
   vite: {
     plugins: [
+      // Servidor MCP (integrações de agentes) gerado a partir de src/lib/mcp.
+      mcpPlugin(),
       {
         // @twilio/voice-sdk imports `node:events` / `events`. Vite's default
         // browser externalization replaces these with a stub that has no

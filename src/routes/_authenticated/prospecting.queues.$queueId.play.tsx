@@ -166,7 +166,7 @@ function PlayProspectingQueue() {
                 Nenhum questionário ativo. Crie um em{" "}
                 <Link
                   to="/prospecting"
-                  search={{ tab: "questionnaires" as const }}
+                  search={{ tab: "questionarios" as const }}
                   className="underline"
                 >
                   Prospecção → Questionários

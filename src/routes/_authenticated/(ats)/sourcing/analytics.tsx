@@ -406,7 +406,7 @@ function SourcingAnalyticsPage() {
                     <TableRow key={s.id}>
                       <TableCell>
                         <Link
-                          to="/sourcing/sequences_/$id"
+                          to="/sourcing/sequences/$id"
                           params={{ id: s.id }}
                           className="text-sm font-medium text-text-primary hover:underline"
                         >
