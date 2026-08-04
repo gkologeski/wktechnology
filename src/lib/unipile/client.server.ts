@@ -418,7 +418,7 @@ export async function createHostedAuthLink(params: {
 
   const body = {
     type: "create",
-    providers: ["LINKEDIN"],
+    providers: [HOSTED_AUTH_PROVIDER],
     expires_on: expiresOn,
     redirect_uri: appendQueryParam(
       params.successRedirect,
@@ -439,15 +439,31 @@ export async function createHostedAuthLink(params: {
   const text = await res.text();
   const data = safeJson(text);
   if (!res.ok) {
+    const type = typeof data?.type === "string" ? data.type : "";
+    const reason: UnipileErrorReason =
+      res.status === 401 || type === "api/invalid_credentials"
+        ? "invalid_credentials"
+        : res.status === 400 || type === "api/invalid_parameters"
+          ? "invalid_parameters"
+          : "provider_error";
     throw new UnipileError(
-      `Falha ao criar hosted auth (${res.status}): ${data?.message ?? text.slice(0, 300)}`,
+      `Falha ao criar hosted auth (${res.status}): ${data?.detail ?? data?.title ?? data?.message ?? text.slice(0, 300)}`,
+      reason,
+      res.status,
+    );
+  }
+  // resposta v2: { object: "HostedAuthLink", link: "https://auth.unipile.com/?token=..." }
+  const link = (data?.link ?? data?.url) as string | undefined;
+  if (!link) {
+    throw new UnipileError(
+      "A Unipile não retornou a URL de autenticação.",
       "provider_error",
       res.status,
     );
   }
-  // resposta típica: { url: "...", object: "AccountAuthLinkResource" }
-  return { url: data?.url as string, raw: data };
+  return { url: link, raw: data };
 }
+
 
 function appendQueryParam(url: string, key: string, value: string) {
   const sep = url.includes("?") ? "&" : "?";
