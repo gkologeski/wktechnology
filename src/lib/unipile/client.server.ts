@@ -642,8 +642,9 @@ export async function searchPeopleClassic(
   const bodyV2: Record<string, unknown> = { ...commonBody };
   if (filters.network?.length) {
     const distance = filters.network
-      .map((n) => (n === "F" ? 1 : n === "S" ? 2 : n === "O" ? 3 : null))
+      .map((n): number | null => (n === "F" ? 1 : n === "S" ? 2 : n === "O" ? 3 : null))
       .filter((n): n is number => n != null);
+
     if (distance.length) bodyV2.network_distance = distance;
   }
   const offset = filters.offset ?? (filters.cursor ? Number(filters.cursor) : undefined);
