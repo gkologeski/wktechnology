@@ -10,7 +10,6 @@
 //
 // Server-only.
 
-import { unipileApiVersion } from "./client.server";
 
 export type UnipileWebhookKind =
   | "account_connected"
@@ -109,13 +108,9 @@ function isSelfSent(payload: any): boolean {
 }
 
 /**
- * Converte o payload cru (v1 ou v2) em um evento canônico.
- * `version` permite forçar a leitura; por padrão usa UNIPILE_API_VERSION.
+ * Converte o payload cru da API v2 em um evento canônico.
  */
-export function parseUnipileWebhook(
-  payload: any,
-  version = unipileApiVersion(),
-): NormalizedUnipileEvent {
+export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
   const eventType =
     firstString(
       payload?.event_type, // v2
@@ -131,13 +126,11 @@ export function parseUnipileWebhook(
     payload?.account_id,
     payload?.account?.id,
     payload?.data?.account_id,
-    version === "v1" ? payload?.id : undefined,
   );
 
   const connectToken = firstString(
     payload?.state, // v2 (hosted auth `state`)
     payload?.connect_token,
-    payload?.name, // v1
     payload?.data?.state,
   );
 
