@@ -246,6 +246,7 @@ import { Route as AuthenticatedatsInsightsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedatsCopilotRouteImport } from './routes/_authenticated/(ats)/copilot'
 import { Route as AuthenticatedatsBriefingRouteImport } from './routes/_authenticated/(ats)/briefing'
 import { Route as AuthenticatedatsAtsDashboardRouteImport } from './routes/_authenticated/(ats)/ats-dashboard'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedContractsTemplatesIndexRouteImport } from './routes/_authenticated/contracts.templates.index'
@@ -1704,6 +1705,11 @@ const AuthenticatedatsAtsDashboardRoute =
     path: '/ats-dashboard',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsRolesIndexRoute =
   AuthenticatedSettingsRolesIndexRouteImport.update({
     id: '/',
@@ -2420,6 +2426,7 @@ export interface FileRoutesByFullPath {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/ats-dashboard': typeof AuthenticatedatsAtsDashboardRoute
   '/briefing': typeof AuthenticatedatsBriefingRoute
   '/copilot': typeof AuthenticatedatsCopilotRoute
@@ -2766,6 +2773,7 @@ export interface FileRoutesByTo {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers': typeof CareersIndexRoute
   '/kb': typeof KbIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/ats-dashboard': typeof AuthenticatedatsAtsDashboardRoute
   '/briefing': typeof AuthenticatedatsBriefingRoute
   '/copilot': typeof AuthenticatedatsCopilotRoute
@@ -3118,6 +3126,7 @@ export interface FileRoutesById {
   '/widget/$workspaceId': typeof WidgetWorkspaceIdRoute
   '/careers/': typeof CareersIndexRoute
   '/kb/': typeof KbIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/(ats)/ats-dashboard': typeof AuthenticatedatsAtsDashboardRoute
   '/_authenticated/(ats)/briefing': typeof AuthenticatedatsBriefingRoute
   '/_authenticated/(ats)/copilot': typeof AuthenticatedatsCopilotRoute
@@ -3471,6 +3480,7 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/careers/'
     | '/kb/'
+    | '/.lovable/oauth/consent'
     | '/ats-dashboard'
     | '/briefing'
     | '/copilot'
@@ -3817,6 +3827,7 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/careers'
     | '/kb'
+    | '/.lovable/oauth/consent'
     | '/ats-dashboard'
     | '/briefing'
     | '/copilot'
@@ -4168,6 +4179,7 @@ export interface FileRouteTypes {
     | '/widget/$workspaceId'
     | '/careers/'
     | '/kb/'
+    | '/.lovable/oauth/consent'
     | '/_authenticated/(ats)/ats-dashboard'
     | '/_authenticated/(ats)/briefing'
     | '/_authenticated/(ats)/copilot'
@@ -4493,6 +4505,7 @@ export interface RootRouteChildren {
   WidgetWorkspaceIdRoute: typeof WidgetWorkspaceIdRoute
   CareersIndexRoute: typeof CareersIndexRoute
   KbIndexRoute: typeof KbIndexRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiAgentChatRoute: typeof ApiAgentChatRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicBankingInterWebhookRoute: typeof ApiPublicBankingInterWebhookRoute
@@ -6231,6 +6244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsAtsDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings/roles/': {
       id: '/_authenticated/settings/roles/'
       path: '/'
@@ -7844,6 +7864,7 @@ const rootRouteChildren: RootRouteChildren = {
   WidgetWorkspaceIdRoute: WidgetWorkspaceIdRoute,
   CareersIndexRoute: CareersIndexRoute,
   KbIndexRoute: KbIndexRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiAgentChatRoute: ApiAgentChatRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicBankingInterWebhookRoute: ApiPublicBankingInterWebhookRoute,
