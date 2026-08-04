@@ -118,15 +118,26 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
     }
 
     const baseUrl = getAppUrl();
-    const { createHostedAuthLink } = await import("@/lib/unipile/client.server");
-    const link = await createHostedAuthLink({
-      ownerId: userId,
-      notifyUrl: `${baseUrl}/api/public/unipile/webhook`,
-      successRedirect: `${baseUrl}/unipile-connected?connected=1`,
-      failureRedirect: `${baseUrl}/unipile-connected?connected=0`,
-      connectToken,
-    });
-    return { url: link.url };
+    const { createHostedAuthLink, UnipileError } = await import(
+      "@/lib/unipile/client.server"
+    );
+    try {
+      const link = await createHostedAuthLink({
+        ownerId: userId,
+        notifyUrl: `${baseUrl}/api/public/unipile/webhook`,
+        successRedirect: `${baseUrl}/unipile-connected?connected=1`,
+        failureRedirect: `${baseUrl}/unipile-connected?connected=0`,
+        connectToken,
+      });
+      return { url: link.url };
+    } catch (e) {
+      if (e instanceof UnipileError) {
+        const friendly = CREDENTIAL_MESSAGE[e.code] ?? CREDENTIAL_MESSAGE.provider_error;
+        throw new Error(`${friendly} (detalhe: ${e.message})`);
+      }
+      throw e;
+    }
+
   });
 
 export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
