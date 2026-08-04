@@ -69,8 +69,7 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
     }
   }, [open, document]);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function uploadFile(file: File) {
     if (!file) return;
     if (file.size > 20 * 1024 * 1024) {
       toast.error("Arquivo maior que 20 MB");
@@ -178,16 +177,38 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
                   type="file"
                   className="hidden"
                   accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
-                  onChange={handleFileChange}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void uploadFile(f);
+                    e.target.value = "";
+                  }}
                   disabled={uploading}
                 />
               </label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPickerOpen(true)}
+                disabled={uploading}
+              >
+                <FolderOpen className="mr-2 h-4 w-4" /> Centro de Arquivos
+              </Button>
               {fileName ? (
                 <span className="truncate text-xs text-muted-foreground">{fileName}</span>
               ) : null}
             </div>
             <p className="text-xs text-muted-foreground">PDF, imagem ou Word. Até 20 MB.</p>
           </div>
+
+          <FileCenterPickerDialog
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            multiple={false}
+            onPicked={async (files) => {
+              if (files[0]) await uploadFile(files[0]);
+            }}
+          />
 
           <div className="space-y-2">
             <Label>Notas</Label>

@@ -20,9 +20,11 @@ export interface TemplateEntry {
 import { template as mentionNotification } from './mention-notification'
 import { template as workspaceInvite } from './workspace-invite'
 import { template as dunningNotice } from './dunning-notice'
+import { template as activityReminder } from './activity-reminder'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'mention-notification': mentionNotification,
   'workspace-invite': workspaceInvite,
   'dunning-notice': dunningNotice,
+  'activity-reminder': activityReminder,
 }
