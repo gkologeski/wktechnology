@@ -56,6 +56,7 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
   const [fileName, setFileName] = useState<string | null>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
