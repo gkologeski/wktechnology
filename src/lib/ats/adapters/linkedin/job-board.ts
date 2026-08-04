@@ -38,6 +38,7 @@ type LinkedinJobConfig = {
   companyId: string;
   companyName: string | null;
   locationId: string;
+  titleId: string | null;
   workplace: "REMOTE" | "HYBRID" | "ON_SITE";
   employmentStatus:
     | "FULL_TIME"
@@ -50,6 +51,11 @@ type LinkedinJobConfig = {
   applyType: "linkedin" | "external";
   applyUrl: string | null;
   notificationEmail: string | null;
+  /** v2 apenas: modo de publicação do rascunho. Padrão: FREE. */
+  publishMode: "FREE" | "PROMOTED";
+  budgetPeriod: "total" | "daily";
+  budgetAmount: number | null;
+  budgetCurrency: string | null;
 };
 
 async function hasConnectedAccount(ownerId: string): Promise<boolean> {
@@ -73,17 +79,26 @@ function readConfig(providerConfig: unknown): LinkedinJobConfig | null {
   const applyType = cfg.applyType ?? "linkedin";
   if (applyType === "linkedin" && !cfg.notificationEmail) return null;
   if (applyType === "external" && !cfg.applyUrl) return null;
+  const publishMode = cfg.publishMode === "PROMOTED" ? "PROMOTED" : "FREE";
+  const budgetAmount =
+    typeof cfg.budgetAmount === "number" && cfg.budgetAmount > 0 ? cfg.budgetAmount : null;
   return {
     companyId: cfg.companyId,
     companyName: cfg.companyName ?? null,
     locationId: cfg.locationId,
+    titleId: cfg.titleId ?? null,
     workplace: cfg.workplace,
     employmentStatus: cfg.employmentStatus,
     applyType,
     applyUrl: cfg.applyUrl ?? null,
     notificationEmail: cfg.notificationEmail ?? null,
+    publishMode,
+    budgetPeriod: cfg.budgetPeriod === "daily" ? "daily" : "total",
+    budgetAmount,
+    budgetCurrency: cfg.budgetCurrency ?? null,
   };
 }
+
 
 function mockPost(input: JobPostPayload, reason: string): AdapterResult<JobPostResult> {
   const externalId = `mock-li-${input.jobId.slice(0, 8)}-${Date.now().toString(36)}`;
