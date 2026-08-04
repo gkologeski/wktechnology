@@ -8,6 +8,8 @@ import {
   type ReactNode,
 } from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
+import { REMINDER_OPTIONS } from "@/lib/activity-reminders";
+import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +60,7 @@ import {
   Image as ImageIcon,
   Archive,
   File as FileIcon,
+  FolderOpen,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -652,6 +655,9 @@ export function ActivityTimeline({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [remindBefore, setRemindBefore] = useState("none");
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [editPickerOpen, setEditPickerOpen] = useState(false);
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [team, setTeam] = useState<TeamMember[]>([]);
@@ -1164,13 +1170,16 @@ export function ActivityTimeline({
     const autoLinks = await resolveAutoLinks();
     const waHtml = body ? maybeConvertWhatsAppPaste(body) : null;
     const finalBody = waHtml ?? (body || null);
+    const schedulable = type === "task" || type === "call" || type === "meeting";
     const payload: Record<string, unknown> = {
       owner_id: type === "task" && assigneeId ? assigneeId : user.id,
       created_by: user.id,
       type,
       subject: subject || (waHtml ? "Conversa de WhatsApp" : null),
       body: finalBody,
-      due_date: type === "task" && dueDate ? new Date(dueDate).toISOString() : null,
+      due_date: schedulable && dueDate ? new Date(dueDate).toISOString() : null,
+      remind_before_minutes:
+        schedulable && dueDate && remindBefore !== "none" ? Number(remindBefore) : null,
       mentions: waHtml ? [] : extractMentionIds(body),
       attachments,
       ...autoLinks,
@@ -1187,6 +1196,7 @@ export function ActivityTimeline({
     setSubject("");
     setBody("");
     setDueDate("");
+    setRemindBefore("none");
     setAssigneeId("");
     setPendingFiles([]);
     setMentions([]);
@@ -1546,6 +1556,7 @@ export function ActivityTimeline({
                   setSubject("");
                   setBody("");
                   setDueDate("");
+                  setRemindBefore("none");
                   setPendingFiles([]);
                 }}
               >
@@ -1559,28 +1570,48 @@ export function ActivityTimeline({
                 onChange={(e) => setSubject(e.target.value)}
                 className="flex-1 min-w-[200px]"
               />
-              {type === "task" && (
+              {(type === "task" || type === "call" || type === "meeting") && (
                 <>
                   <Input
                     type="datetime-local"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
                     className="w-56"
+                    aria-label={type === "task" ? "Vencimento" : "Data e hora"}
+                    title={type === "task" ? "Vencimento" : "Data e hora"}
                   />
                   <select
-                    value={assigneeId || user?.id || ""}
-                    onChange={(e) => setAssigneeId(e.target.value)}
-                    className="h-9 rounded-md border bg-background px-3 text-sm"
-                    title="Atribuir tarefa para"
+                    value={remindBefore}
+                    onChange={(e) => setRemindBefore(e.target.value)}
+                    disabled={!dueDate}
+                    className="h-9 rounded-md border bg-background px-3 text-sm disabled:opacity-50"
+                    aria-label="Lembrete"
+                    title="Lembrete"
                   >
-                    {team.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                        {m.id === user?.id ? " (você)" : ""}
+                    <option value="none">Sem lembrete</option>
+                    {REMINDER_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
                       </option>
                     ))}
                   </select>
                 </>
+              )}
+              {type === "task" && (
+                <select
+                  value={assigneeId || user?.id || ""}
+                  onChange={(e) => setAssigneeId(e.target.value)}
+                  className="h-9 rounded-md border bg-background px-3 text-sm"
+                  aria-label="Atribuir tarefa para"
+                  title="Atribuir tarefa para"
+                >
+                  {team.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                      {m.id === user?.id ? " (você)" : ""}
+                    </option>
+                  ))}
+                </select>
               )}
             </div>
             <div className="relative">
@@ -1612,19 +1643,28 @@ export function ActivityTimeline({
               </div>
             )}
             <div className="flex justify-between items-center pt-3 border-t border-border/60">
-              <label className="cursor-pointer text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-                <input
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files ?? []);
-                    if (files.length) setPendingFiles((p) => [...p, ...files]);
-                    e.target.value = "";
-                  }}
-                />
-                <Paperclip className="h-4 w-4" /> Anexar
-              </label>
+              <div className="flex items-center gap-3">
+                <label className="cursor-pointer text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files ?? []);
+                      if (files.length) setPendingFiles((p) => [...p, ...files]);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Paperclip className="h-4 w-4" /> Anexar
+                </label>
+                <button
+                  type="button"
+                  className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                  onClick={() => setPickerOpen(true)}
+                >
+                  <FolderOpen className="h-4 w-4" /> Centro de Arquivos
+                </button>
+              </div>
               <Button
                 onClick={async () => {
                   await add();
@@ -1639,6 +1679,17 @@ export function ActivityTimeline({
           </div>
         )}
       </div>
+
+      <FileCenterPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        onPicked={(files) => setPendingFiles((p) => [...p, ...files])}
+      />
+      <FileCenterPickerDialog
+        open={editPickerOpen}
+        onOpenChange={setEditPickerOpen}
+        onPicked={(files) => setEditingNewFiles((p) => [...p, ...files])}
+      />
 
       {/* Action dialogs */}
       <MeetingDialog
@@ -2089,19 +2140,28 @@ export function ActivityTimeline({
                         </div>
                       )}
                       <div className="flex items-center justify-between gap-2">
-                        <label className="cursor-pointer text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
-                          <input
-                            type="file"
-                            multiple
-                            className="hidden"
-                            onChange={(e) => {
-                              const files = Array.from(e.target.files ?? []);
-                              if (files.length) setEditingNewFiles((p) => [...p, ...files]);
-                              e.target.value = "";
-                            }}
-                          />
-                          <Paperclip className="h-3 w-3" /> Anexar
-                        </label>
+                        <div className="flex items-center gap-3">
+                          <label className="cursor-pointer text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+                            <input
+                              type="file"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files ?? []);
+                                if (files.length) setEditingNewFiles((p) => [...p, ...files]);
+                                e.target.value = "";
+                              }}
+                            />
+                            <Paperclip className="h-3 w-3" /> Anexar
+                          </label>
+                          <button
+                            type="button"
+                            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                            onClick={() => setEditPickerOpen(true)}
+                          >
+                            <FolderOpen className="h-3 w-3" /> Centro de Arquivos
+                          </button>
+                        </div>
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => saveEdit(a)}>
                             <Check className="h-3 w-3 mr-1" /> Salvar

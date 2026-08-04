@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Paperclip, Send, Loader2, X, FileIcon, Download } from "lucide-react";
+import { Paperclip, Send, Loader2, X, FileIcon, Download, FolderOpen } from "lucide-react";
+import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -61,6 +62,7 @@ export function ChatThread({
 
   const [body, setBody] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -128,9 +130,7 @@ export function ChatThread({
     onSettled: () => setSending(false),
   });
 
-  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = Array.from(e.target.files ?? []);
-    e.target.value = "";
+  const addFiles = (picked: File[]) => {
     const total = [...files, ...picked];
     if (total.length > MAX_FILES) {
       toast.error(`Máximo ${MAX_FILES} arquivos por mensagem.`);
@@ -144,6 +144,13 @@ export function ChatThread({
     }
     setFiles(total);
   };
+
+  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    addFiles(picked);
+  };
+
 
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -249,6 +256,20 @@ export function ChatThread({
               <Paperclip className="h-4 w-4" />
             </span>
           </label>
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+            onClick={() => setPickerOpen(true)}
+            aria-label="Escolher do Centro de Arquivos"
+            title="Centro de Arquivos"
+          >
+            <FolderOpen className="h-4 w-4" />
+          </button>
+          <FileCenterPickerDialog
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            onPicked={(picked) => addFiles(picked)}
+          />
           <SnippetTextarea
             value={body}
             onChange={setBody}

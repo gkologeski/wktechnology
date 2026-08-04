@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, FolderOpen } from "lucide-react";
+import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
   const [fileName, setFileName] = useState<string | null>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -69,8 +71,7 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
     }
   }, [open, document]);
 
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function uploadFile(file: File) {
     if (!file) return;
     if (file.size > 20 * 1024 * 1024) {
       toast.error("Arquivo maior que 20 MB");
@@ -178,16 +179,38 @@ export function PersonDocumentDialog({ open, onOpenChange, personId, document }:
                   type="file"
                   className="hidden"
                   accept=".pdf,.png,.jpg,.jpeg,.webp,.doc,.docx"
-                  onChange={handleFileChange}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void uploadFile(f);
+                    e.target.value = "";
+                  }}
                   disabled={uploading}
                 />
               </label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setPickerOpen(true)}
+                disabled={uploading}
+              >
+                <FolderOpen className="mr-2 h-4 w-4" /> Centro de Arquivos
+              </Button>
               {fileName ? (
                 <span className="truncate text-xs text-muted-foreground">{fileName}</span>
               ) : null}
             </div>
             <p className="text-xs text-muted-foreground">PDF, imagem ou Word. Até 20 MB.</p>
           </div>
+
+          <FileCenterPickerDialog
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            multiple={false}
+            onPicked={async (files) => {
+              if (files[0]) await uploadFile(files[0]);
+            }}
+          />
 
           <div className="space-y-2">
             <Label>Notas</Label>
