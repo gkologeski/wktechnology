@@ -13,6 +13,9 @@ export const Route = createFileRoute("/unipile-connected")({
 function UnipileConnectedPage() {
   const search = Route.useSearch() as Record<string, unknown>;
   const ok = search.connected !== "0";
+  // Na API v2 o hosted auth não aceita mais notify_url/name: o connect_token
+  // volta como `state` e precisa chegar na tela de settings para reconciliação.
+  const state = typeof search.state === "string" ? search.state : "";
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
@@ -23,15 +26,16 @@ function UnipileConnectedPage() {
       if (cancelled) return;
       if (data.session) {
         setRedirecting(true);
-        window.location.replace(
-          `/settings/integrations/linkedin?connected=${ok ? "1" : "0"}`,
-        );
+        const qs = new URLSearchParams({ connected: ok ? "1" : "0" });
+        if (state) qs.set("state", state);
+        window.location.replace(`/settings/integrations/linkedin?${qs.toString()}`);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [ok]);
+  }, [ok, state]);
+
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
