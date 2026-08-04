@@ -98,3 +98,19 @@ Autenticação de webhooks: cron usa `apikey` (anon) ou `CRON_SECRET` (rotas com
 - **Suporte plataforma:** suporte@wktechnology.com.br
 - **Engenharia (24x7):** definir lista no DPA / contrato.
 - **Status público:** publicar incidentes em `/kb` na categoria "Status".
+
+## 9. Integração Unipile (API v2)
+
+A integração LinkedIn/mensageria usa exclusivamente a **API v2** da Unipile. Apenas duas variáveis de ambiente são suportadas:
+
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `UNIPILE_API_KEY` | Sim | Chave de API da Unipile (header `X-API-KEY`). |
+| `UNIPILE_API_BASE_URL` | Não | Override da base da API. Padrão: `https://api.unipile.com/v2`. Use somente em testes/ambientes isolados. |
+
+Variáveis descontinuadas e **removidas** do ambiente:
+
+- `UNIPILE_DSN` — o DSN por tenant não existe na v2 (base fixa).
+- `UNIPILE_API_VERSION` — não há mais seleção de versão; o cliente fala apenas v2.
+
+Se qualquer uma delas for recriada, será ignorada pelo código.
