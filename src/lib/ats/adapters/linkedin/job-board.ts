@@ -169,7 +169,7 @@ export const LinkedInJobBoardAdapter: JobBoardAdapter = {
         `https://www.linkedin.com/jobs/view/${externalId}`;
 
       // Passo 2 — publicar o rascunho.
-      let mode: "FREE" | "PROMOTED" = cfg.publishMode;
+      const mode: "FREE" | "PROMOTED" = cfg.publishMode;
       let budget: { period: "total" | "daily"; amount: number; currency: string } | undefined;
 
       if (mode === "PROMOTED" && cfg.budgetAmount) {
