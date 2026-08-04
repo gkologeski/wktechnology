@@ -516,6 +516,53 @@ function appendQueryParam(url: string, key: string, value: string) {
   return `${url}${sep}${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
 }
 
+export type UnipileAccountSummary = {
+  id: string;
+  name: string | null;
+  provider: string;
+  created_at: string | null;
+  raw: Record<string, unknown>;
+};
+
+/**
+ * Lista as contas do tenant Unipile.
+ *
+ * v1: GET /api/v1/accounts (item traz `type` e `name`).
+ * v2: GET /v2/accounts (item traz `provider`; `name` não é mais definível
+ * por nós no hosted auth, então a correlação passa a ser via `state`).
+ *
+ * Não usa `call()` porque não é uma chamada por conta (sem throttle bucket).
+ */
+export async function listUnipileAccounts(
+  limit = 50,
+): Promise<{ ok: true; items: UnipileAccountSummary[] } | { ok: false; reason: string }> {
+  let env: ReturnType<typeof getEnv>;
+  try {
+    env = getEnv();
+  } catch {
+    return { ok: false, reason: "missing_credentials" };
+  }
+  const { dsn, key, version } = env;
+  const path = version === "v2" ? "/accounts" : "/api/v1/accounts";
+  const res = await fetch(`${dsn}${path}?limit=${limit}`, {
+    headers: { "X-API-KEY": key, Accept: "application/json" },
+  });
+  if (!res.ok) return { ok: false, reason: `unipile_${res.status}` };
+  const json: any = await res.json().catch(() => ({}));
+  const raw: any[] = json?.items ?? json?.data ?? json?.accounts ?? [];
+  const items = raw
+    .filter((a) => a && a.id)
+    .map((a) => ({
+      id: String(a.id),
+      name: (a.name ?? a.display_name ?? null) as string | null,
+      provider: String(a.provider ?? a.type ?? "").toUpperCase(),
+      created_at: (a.created_at ?? a.createdAt ?? null) as string | null,
+      raw: a as Record<string, unknown>,
+    }));
+  return { ok: true, items };
+}
+
+
 
 /**
  * Busca pessoas no LinkedIn Classic. Filtros mapeados ao endpoint
