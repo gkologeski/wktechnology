@@ -25,8 +25,11 @@ const searchSchema = z
       .union([z.string(), z.number(), z.boolean()])
       .transform((v) => (v === true || v === 1 || v === "1" ? "1" : "0"))
       .optional(),
+    // `state` = connect_token devolvido pelo hosted auth (API v2).
+    state: z.string().trim().max(128).optional(),
   })
   .passthrough();
+
 
 export const Route = createFileRoute("/_authenticated/settings/integrations/linkedin")({
   validateSearch: (s: Record<string, unknown>) => searchSchema.parse(s),
