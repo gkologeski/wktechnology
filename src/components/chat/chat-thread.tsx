@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Paperclip, Send, Loader2, X, FileIcon, Download } from "lucide-react";
+import { Paperclip, Send, Loader2, X, FileIcon, Download, FolderOpen } from "lucide-react";
+import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
