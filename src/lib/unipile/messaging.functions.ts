@@ -276,16 +276,21 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
       .single();
 
     try {
-      await sendLinkedinInvite(ctx, { providerId, message: renderedMessage });
+      const res = await sendLinkedinInvite(ctx, { providerId, message: renderedMessage });
+      // v1: invitation_id/invite_id; v2 (relation-requests): apenas `id`.
+      const { normalizeInviteResult } = await import("@/lib/unipile/client.server");
+      const { invitationId } = normalizeInviteResult(res);
       await supabaseAdmin
         .from("unipile_message_log")
         .update({
           status: "sent",
+          ...(invitationId ? { provider_invite_id: invitationId } : {}),
           sent_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", logRow!.id);
-      return { ok: true as const };
+      return { ok: true as const, invitationId };
+
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const code = err instanceof UnipileError ? err.code : "provider_error";
