@@ -715,29 +715,45 @@ export async function fetchProfile(ctx: ThrottleCtx, publicIdentifier: string) {
 }
 
 /**
- * Mapa de tipos de search parameters v1 -> v2 (produto Classic).
- * Os tipos que usamos (LOCATION/INDUSTRY/COMPANY/SCHOOL/LANGUAGE) mantêm o
- * nome; CONNECTIONS virou RELATION.
+ * Mapa de tipos de search parameters v1 -> v2.
+ * Os tipos que usamos (LOCATION/INDUSTRY/COMPANY/SCHOOL/PROFILE_LANGUAGE)
+ * mantêm o nome; CONNECTIONS virou RELATION.
  */
 const SEARCH_PARAM_TYPE_V2: Record<string, string> = {
   CONNECTIONS: "RELATION",
+  LANGUAGE: "PROFILE_LANGUAGE",
 };
 
 export function toV2SearchParameterType(type: string): string {
   return SEARCH_PARAM_TYPE_V2[type] ?? type;
 }
 
+/** Produto LinkedIn usado na resolução de parâmetros de busca. */
+export type LinkedinSearchProduct = "CLASSIC" | "RECRUITER" | "SALES_NAVIGATOR";
+
+/** Paths v2 de search/parameters por produto (a v1 usava a query `service`). */
+const SEARCH_PARAM_PATH_V2: Record<LinkedinSearchProduct, string> = {
+  CLASSIC: "linkedin/search/parameters",
+  RECRUITER: "linkedin/recruiter/search/parameters",
+  SALES_NAVIGATOR: "linkedin/sales-navigator/search/parameters",
+};
+
+export type SearchParameterItem = { id: string; title: string };
+
 /**
- * Resolve texto livre (ex.: "São Paulo") em IDs/URNs aceitos pela busca
- * Classic do LinkedIn via Unipile. Retorna array de IDs (string) — vazio se nada bater.
+ * Resolve texto livre (ex.: "São Paulo") em parâmetros de busca do LinkedIn.
+ * Retorna `{ id, title }` — na v1 os IDs são numéricos; na v2 são strings
+ * opacas, então não aplicamos filtro numérico nessa versão.
  */
-export async function resolveSearchParameter(
+export async function resolveSearchParameterItems(
   ctx: ThrottleCtx,
   type: "LOCATION" | "INDUSTRY" | "COMPANY" | "SCHOOL" | "LANGUAGE",
   keywords: string,
   limit = 5,
-): Promise<string[]> {
+  product: LinkedinSearchProduct = "CLASSIC",
+): Promise<SearchParameterItem[]> {
   if (!keywords?.trim()) return [];
+  const isV2 = unipileApiVersion() === "v2";
   try {
     const data = (await call(ctx, {
       endpoint: "chat.list", // budget leve — não é fetch de perfil
@@ -748,10 +764,11 @@ export async function resolveSearchParameter(
         type,
         keywords: keywords.trim(),
         limit,
+        service: product,
       },
       v2: {
         method: "GET",
-        path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/search/parameters`,
+        path: `/${encodeURIComponent(ctx.unipileAccountId)}/${SEARCH_PARAM_PATH_V2[product]}`,
         query: {
           type: toV2SearchParameterType(type),
           keywords: keywords.trim(),
@@ -759,18 +776,39 @@ export async function resolveSearchParameter(
         },
       },
     })) as {
-      items?: Array<{ id?: string | number; entity_urn?: string }>;
-      data?: Array<{ id?: string | number; entity_urn?: string }>;
+      items?: Array<Record<string, unknown>>;
+      data?: Array<Record<string, unknown>>;
     } | null;
     const items = data?.items ?? data?.data ?? [];
-    const ids = items
-      .map((it) => (it.id != null ? String(it.id) : it.entity_urn ?? null))
-      .filter((v): v is string => !!v && /^\d{3,}$/.test(v));
-    return ids.slice(0, limit);
+    const mapped = items
+      .map((it) => {
+        const rawId =
+          it.id != null ? String(it.id) : ((it.entity_urn as string) ?? "").split(":").pop() ?? "";
+        const id = rawId.trim();
+        // v2 renomeou `title` para `name`.
+        const title = String(it.name ?? it.title ?? it.text ?? "").trim();
+        return { id, title };
+      })
+      // v1 exige IDs numéricos; v2 aceita qualquer string opaca.
+      .filter((it) => !!it.id && (isV2 || /^\d{3,}$/.test(it.id)));
+    return mapped.slice(0, limit);
   } catch {
     return [];
   }
 }
+
+/** Compatibilidade: devolve apenas os IDs resolvidos. */
+export async function resolveSearchParameter(
+  ctx: ThrottleCtx,
+  type: "LOCATION" | "INDUSTRY" | "COMPANY" | "SCHOOL" | "LANGUAGE",
+  keywords: string,
+  limit = 5,
+  product: LinkedinSearchProduct = "CLASSIC",
+): Promise<string[]> {
+  const items = await resolveSearchParameterItems(ctx, type, keywords, limit, product);
+  return items.map((it) => it.id);
+}
+
 
 
 // --------- Mensageria (Fase 4) ---------
