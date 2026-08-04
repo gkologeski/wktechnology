@@ -135,9 +135,42 @@ function isInsideWindow(window: { tz?: string; start_hour?: number; end_hour?: n
   }
 }
 
+/**
+ * Versão da API Unipile em uso. Padrão: "v1" (comportamento atual).
+ * Defina UNIPILE_API_VERSION="v2" para usar a API v2 (api.unipile.com/v2).
+ * Lido a cada chamada (env é injetado em runtime, não em module scope).
+ */
+export type UnipileApiVersion = "v1" | "v2";
+
+export function unipileApiVersion(): UnipileApiVersion {
+  return String(process.env.UNIPILE_API_VERSION ?? "").trim().toLowerCase() === "v2"
+    ? "v2"
+    : "v1";
+}
+
+const V2_DEFAULT_BASE_URL = "https://api.unipile.com/v2";
+
+/**
+ * Base URL + API key. Na v1 usamos o DSN do tenant; na v2 o DSN foi
+ * descontinuado e a base é fixa (com override opcional para testes).
+ */
 function getEnv() {
-  const dsn = process.env.UNIPILE_DSN;
   const key = process.env.UNIPILE_API_KEY;
+  const version = unipileApiVersion();
+
+  if (version === "v2") {
+    if (!key) {
+      throw new UnipileError(
+        "Credenciais Unipile não configuradas (UNIPILE_API_KEY).",
+        "missing_credentials",
+      );
+    }
+    const override = process.env.UNIPILE_API_BASE_URL?.trim();
+    const base = (override || V2_DEFAULT_BASE_URL).replace(/\/$/, "");
+    return { dsn: base, key, version };
+  }
+
+  const dsn = process.env.UNIPILE_DSN;
   if (!dsn || !key) {
     throw new UnipileError(
       "Credenciais Unipile não configuradas (UNIPILE_DSN / UNIPILE_API_KEY).",
@@ -145,8 +178,9 @@ function getEnv() {
     );
   }
   const normalized = /^https?:\/\//i.test(dsn) ? dsn : `https://${dsn}`;
-  return { dsn: normalized.replace(/\/$/, ""), key };
+  return { dsn: normalized.replace(/\/$/, ""), key, version };
 }
+
 
 function hashPayload(input: unknown): string {
   return createHash("sha256")
