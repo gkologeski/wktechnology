@@ -564,18 +564,22 @@ export async function listUnipileAccounts(
 
 
 
+/** Valor de filtro estruturado: texto livre (string) ou ID já resolvido. */
+export type SearchParamValue = string | { id: string };
+
 /**
- * Busca pessoas no LinkedIn Classic. Filtros mapeados ao endpoint
- * POST /api/v1/linkedin/search com category=people, api=classic.
+ * Busca pessoas no LinkedIn Classic.
+ * v1: POST /api/v1/linkedin/search (api=classic, category=people).
+ * v2: POST /v2/:account_id/linkedin/search/people (sem api/category, offset).
  */
 export async function searchPeopleClassic(
   ctx: ThrottleCtx,
   filters: {
     keywords?: string;
-    location?: string[]; // geoUrns (IDs numéricos) — texto livre vai para keywords
-    industry?: string[]; // industry IDs — texto livre vai para keywords
-    current_company?: string[]; // company IDs — texto livre vai para keywords
-    school?: string[]; // school IDs — texto livre vai para keywords
+    location?: SearchParamValue[]; // IDs de parâmetro — texto livre vai para keywords
+    industry?: SearchParamValue[];
+    current_company?: SearchParamValue[];
+    school?: SearchParamValue[];
     network?: ("F" | "S" | "O")[];
     language?: string[];
     cursor?: string;
@@ -584,15 +588,21 @@ export async function searchPeopleClassic(
 
   },
 ) {
-  // LinkedIn Classic search exige IDs (URNs) para location/industry/company/school.
-  // Quando o usuário envia texto livre, mesclamos no `keywords` para não quebrar
-  // o schema da Unipile (que rejeita strings não-numéricas nesses campos).
+  // A busca do LinkedIn exige IDs de parâmetro para location/industry/company/school.
+  // Na v1 os IDs são numéricos; na v2 são strings opacas — por isso aceitamos
+  // `{ id }` para valores já resolvidos via search/parameters. Texto livre é
+  // mesclado em `keywords` para não quebrar o schema da Unipile.
   const isId = (v: string) => /^\d{3,}$/.test(v.trim());
-  const splitIds = (arr?: string[]) => {
+  const splitIds = (arr?: SearchParamValue[]) => {
     const ids: string[] = [];
     const text: string[] = [];
     for (const v of arr ?? []) {
       if (!v) continue;
+      if (typeof v === "object") {
+        const id = String(v.id ?? "").trim();
+        if (id) ids.push(id);
+        continue;
+      }
       (isId(v) ? ids : text).push(v.trim());
     }
     return { ids: ids.length ? ids : undefined, text };
@@ -617,7 +627,6 @@ export async function searchPeopleClassic(
   if (ind.ids) commonBody.industry = ind.ids;
   if (comp.ids) commonBody.current_company = comp.ids;
   if (sch.ids) commonBody.school = sch.ids;
-  if (filters.network?.length) commonBody.network = filters.network;
   if (filters.language?.length) commonBody.profile_language = filters.language;
 
   const bodyV1: Record<string, unknown> = {
@@ -625,14 +634,22 @@ export async function searchPeopleClassic(
     category: "people",
     ...commonBody,
   };
+  if (filters.network?.length) bodyV1.network = filters.network;
   if (filters.cursor) bodyV1.cursor = filters.cursor;
 
-  // v2: `api`/`category` removidos e paginação por offset.
+  // v2: `api`/`category` removidos, paginação por offset e `network` virou
+  // `network_distance` (array de números: 1 = 1º grau, 2 = 2º, 3 = 3º+).
   const bodyV2: Record<string, unknown> = { ...commonBody };
-  const offset = filters.offset ?? (filters.cursor ? Number(filters.cursor) : undefined);
-  if (typeof offset === "number" && Number.isFinite(offset) && offset > 0) {
-    bodyV2.offset = offset;
+  if (filters.network?.length) {
+    const distance = filters.network
+      .map((n) => (n === "F" ? 1 : n === "S" ? 2 : n === "O" ? 3 : null))
+      .filter((n): n is number => n != null);
+    if (distance.length) bodyV2.network_distance = distance;
   }
+  const offset = filters.offset ?? (filters.cursor ? Number(filters.cursor) : undefined);
+  const safeOffset =
+    typeof offset === "number" && Number.isFinite(offset) && offset > 0 ? offset : 0;
+  if (safeOffset > 0) bodyV2.offset = safeOffset;
 
   const data = await call(ctx, {
     endpoint: "profile.search",
@@ -647,8 +664,11 @@ export async function searchPeopleClassic(
     },
   });
 
-  return unipileApiVersion() === "v2" ? normalizePeopleSearchResponse(data) : data;
+  return unipileApiVersion() === "v2"
+    ? normalizePeopleSearchResponse(data, safeOffset)
+    : data;
 }
+
 
 /**
  * Normaliza a resposta de busca de pessoas da v2 para o shape que o restante
