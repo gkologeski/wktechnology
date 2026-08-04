@@ -356,13 +356,13 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
   let errorMsg: string | null = null;
   try {
     const res = await fetch(url, {
-      method: opts.method,
+      method,
       headers: {
         "X-API-KEY": key,
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: opts.body ? JSON.stringify(opts.body) : undefined,
+      body: requestBody ? JSON.stringify(requestBody) : undefined,
     });
     status = res.status;
     const text = await res.text();
@@ -397,12 +397,14 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
     await logRequest(
       ctx,
       opts.endpoint,
-      opts.method,
+      method,
       status,
       Date.now() - started,
       errorMsg,
-      opts.body,
+      requestBody,
     );
+  }
+
   }
 }
 
