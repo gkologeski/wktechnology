@@ -1,11 +1,13 @@
 // Webhook público chamado pela Unipile quando uma conta termina o
-// fluxo Hosted Auth (sucesso/erro) ou muda de estado.
+// fluxo Hosted Auth (sucesso/erro), muda de estado ou recebe mensagem.
 //
 // Auth: validamos HMAC SHA-256 sobre o corpo cru usando
 // UNIPILE_WEBHOOK_SECRET. Sem header válido => 401.
 //
-// Idempotência: o payload identifica a conta por `name` (o
-// connect_token gerado em startLinkedinConnect) e por account_id.
+// v1: payload "gordo" com `status`/`event` e `name` = connect_token.
+// v2: payload reduzido com `event_type` e `state` (hosted auth). Quando os
+// dados da mensagem não vêm no corpo, hidratamos via API (ver
+// src/lib/unipile/webhook-events.server.ts).
 
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
@@ -33,6 +35,13 @@ function verifySignature(body: string, headerValue: string | null, secret: strin
   }
 }
 
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
 export const Route = createFileRoute("/api/public/unipile/webhook")({
   server: {
     handlers: {
@@ -56,53 +65,38 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { parseUnipileWebhook, hydrateV2Message } = await import(
+          "@/lib/unipile/webhook-events.server"
+        );
 
-        // Eventos esperados:
-        //  - creation_success / account.connected => grava unipile_account_id
-        //  - creation_failed                       => marca error
-        //  - credentials_invalid / account.disconnected => marca disconnected
-        //  - message_received / new_message        => pausa enrollments (opt-out on reply)
-        const status =
-          payload.status ?? payload.event ?? payload.type ?? payload.account_status ?? "";
-        const unipileAccountId =
-          payload.account_id ?? payload.id ?? payload.account?.id ?? null;
-        const connectToken = payload.name ?? payload.connect_token ?? null;
-        const errorMsg = payload.error ?? payload.message ?? null;
+        const event = parseUnipileWebhook(payload);
+        const unipileAccountId = event.unipileAccountId;
+        const connectToken = event.connectToken;
 
-        // --- Opt-out on reply: detecta mensagem recebida no LinkedIn ---
-        const statusStr = String(status).toLowerCase();
-        const isIncomingMessage =
-          statusStr.includes("message_received") ||
-          statusStr.includes("new_message") ||
-          statusStr === "message.received" ||
-          statusStr === "messaging.received" ||
-          statusStr === "message";
-        if (isIncomingMessage && unipileAccountId) {
-          // Guard 1: ignora echo do próprio outbound.
-          // Unipile envia is_sender=1/true e/ou direction="out" quando a mensagem
-          // partiu da conta conectada (nossos envios de sourcing).
-          const isSelfSent =
-            payload.is_sender === true ||
-            payload.is_sender === 1 ||
-            payload.is_sender === "1" ||
-            String(payload.direction ?? "").toLowerCase() === "out" ||
-            String(payload.direction ?? "").toLowerCase() === "outgoing" ||
-            payload.sender?.is_self === true;
-          if (isSelfSent) {
-            return new Response(JSON.stringify({ ok: true, event: "self_echo_ignored" }), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            });
+        // --- Opt-out on reply: mensagem recebida no LinkedIn ---
+        if (event.kind === "message_received" && unipileAccountId) {
+          let msg = event.message!;
+
+          // v2 reduzido: busca os dados completos da mensagem.
+          if (msg.needsHydration && msg.messageId) {
+            const full = await hydrateV2Message(unipileAccountId, msg.messageId);
+            if (full) {
+              msg = {
+                ...msg,
+                senderProviderId: msg.senderProviderId ?? full.senderProviderId,
+                text: msg.text ?? full.text,
+                chatId: msg.chatId ?? full.chatId,
+                isSelfSent: msg.isSelfSent || full.isSelfSent,
+              };
+            }
           }
 
-          // provider_id do remetente (candidato)
-          const senderId =
-            payload.sender?.provider_id ??
-            payload.sender_id ??
-            payload.from?.provider_id ??
-            payload.attendee_provider_id ??
-            payload.sender?.attendee_provider_id ??
-            null;
+          // Guard: ignora echo do próprio outbound (nossos envios de sourcing).
+          if (msg.isSelfSent) {
+            return json({ ok: true, event: "self_echo_ignored" });
+          }
+
+          const senderId = msg.senderProviderId;
           if (senderId) {
             const { data: acc } = await supabaseAdmin
               .from("unipile_accounts")
@@ -110,12 +104,8 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
               .eq("unipile_account_id", unipileAccountId)
               .maybeSingle();
             if (acc) {
-              // Guard 2: se o "sender" for a própria conta conectada, ignora.
-              // (Unipile pode espelhar mensagens enviadas via outros dispositivos.)
-              // O identificador da conta em unipile_accounts pode ou não bater com o
-              // provider_id do remetente; a checagem principal continua sendo is_sender.
-
-              // localiza candidato pelo último log de mensagem/convite enviado a esse provider_id
+              // localiza candidato pelo último log de mensagem/convite enviado
+              // a esse provider_id
               const { data: log } = await supabaseAdmin
                 .from("unipile_message_log")
                 .select("candidate_id")
@@ -127,8 +117,6 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
                 .maybeSingle();
               if (log?.candidate_id) {
                 // Pausa qualquer enrollment ativo desse candidato para esse owner.
-                // status=replied + finished_at impede que processDueEnrollments
-                // pegue novamente (o worker filtra por status='active').
                 const { data: updated } = await supabaseAdmin
                   .from("ats_sourcing_enrollments")
                   .update({
@@ -142,40 +130,39 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
                   .eq("status", "active")
                   .select("id");
 
-                // Registra a resposta no log de mensagens para auditoria/timeline
+                // Registra a resposta para auditoria/timeline
                 await supabaseAdmin.from("unipile_message_log").insert({
                   account_id: acc.id,
                   owner_id: acc.owner_id,
                   kind: "reply",
                   target_identifier: String(senderId),
                   candidate_id: log.candidate_id,
-                  body: (payload.text ?? payload.message ?? payload.body ?? "").slice(0, 4000) || null,
+                  body: (msg.text ?? "").slice(0, 4000) || null,
                   status: "received",
                   sent_at: new Date().toISOString(),
                 } as never);
 
-                return new Response(
-                  JSON.stringify({
-                    ok: true,
-                    event: "reply_processed",
-                    paused_enrollments: updated?.length ?? 0,
-                  }),
-                  { status: 200, headers: { "Content-Type": "application/json" } },
-                );
+                return json({
+                  ok: true,
+                  event: "reply_processed",
+                  paused_enrollments: updated?.length ?? 0,
+                });
               }
             }
           }
-          return new Response(JSON.stringify({ ok: true, event: "reply_no_match" }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
+          return json({ ok: true, event: "reply_no_match" });
+        }
+
+        // Eventos de mensageria irrelevantes (message.sent, message.read, ...)
+        if (event.kind === "unknown" && !connectToken && !unipileAccountId) {
+          return json({ ok: true, event: "ignored", event_type: event.eventType });
         }
 
         if (!connectToken && !unipileAccountId) {
           return new Response("Missing identifiers", { status: 200 });
         }
 
-        // Busca o registro pelo connect_token (preferência) ou unipile_account_id
+        // Busca o registro pelo connect_token/state (preferência) ou unipile_account_id
         let query = supabaseAdmin
           .from("unipile_accounts")
           .select("id, owner_id")
@@ -187,24 +174,12 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
         }
         const { data: row } = await query.maybeSingle();
 
-        const isSuccess =
-          String(status).toLowerCase().includes("success") ||
-          String(status).toLowerCase().includes("connected") ||
-          String(status).toLowerCase() === "ok";
-        const isFailure =
-          String(status).toLowerCase().includes("fail") ||
-          String(status).toLowerCase().includes("invalid") ||
-          String(status).toLowerCase().includes("error");
-        const isDisconnect =
-          String(status).toLowerCase().includes("disconnect") ||
-          String(status).toLowerCase().includes("credentials_invalid");
-
         if (row) {
           const nowIso = new Date().toISOString();
           let status: "connected" | "disconnected" | "error" | null = null;
-          if (isSuccess && unipileAccountId) status = "connected";
-          else if (isDisconnect) status = "disconnected";
-          else if (isFailure) status = "error";
+          if (event.kind === "account_connected" && unipileAccountId) status = "connected";
+          else if (event.kind === "account_disconnected") status = "disconnected";
+          else if (event.kind === "account_failed") status = "error";
 
           await supabaseAdmin
             .from("unipile_accounts")
@@ -219,16 +194,16 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
                   }
                 : {}),
               ...(status === "error" || status === "disconnected"
-                ? { last_error: errorMsg ?? (status === "error" ? "Falha na conexão" : null) }
+                ? {
+                    last_error:
+                      event.error ?? (status === "error" ? "Falha na conexão" : null),
+                  }
                 : {}),
             })
             .eq("id", row.id);
         }
 
-        return new Response(JSON.stringify({ ok: true }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
+        return json({ ok: true, event_type: event.eventType, kind: event.kind });
       },
     },
   },
