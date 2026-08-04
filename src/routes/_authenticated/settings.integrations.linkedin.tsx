@@ -75,14 +75,20 @@ function LinkedinIntegrationPage() {
   const disconnect = useServerFn(disconnectLinkedinAccount);
   const saveWindow = useServerFn(updateDailyWindow);
   const reconcile = useServerFn(reconcileLinkedinAccount);
+  const checkCreds = useServerFn(checkUnipileCredentials);
 
   const [account, setAccount] = useState<AccountRow | null>(null);
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [credStatus, setCredStatus] = useState<
+    { ok: boolean; message: string; detail?: string | null } | null
+  >(null);
   const [tz, setTz] = useState("America/Sao_Paulo");
   const [startHour, setStartHour] = useState(8);
   const [endHour, setEndHour] = useState(20);
+
 
   const refresh = async () => {
     setLoading(true);
