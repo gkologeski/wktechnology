@@ -254,6 +254,20 @@ export function ChatThread({
               <Paperclip className="h-4 w-4" />
             </span>
           </label>
+          <button
+            type="button"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
+            onClick={() => setPickerOpen(true)}
+            aria-label="Escolher do Centro de Arquivos"
+            title="Centro de Arquivos"
+          >
+            <FolderOpen className="h-4 w-4" />
+          </button>
+          <FileCenterPickerDialog
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            onPicked={(picked) => addFiles(picked)}
+          />
           <SnippetTextarea
             value={body}
             onChange={setBody}
