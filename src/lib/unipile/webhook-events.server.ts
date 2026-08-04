@@ -176,7 +176,7 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
       senderProviderId,
       text,
       isSelfSent: isSelfSent(payload),
-      needsHydration: version === "v2" && !senderProviderId && !!messageId,
+      needsHydration: !senderProviderId && !!messageId,
     };
   }
 
@@ -184,7 +184,7 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
 }
 
 /**
- * Hidrata os dados da mensagem quando a v2 envia payload reduzido.
+ * Hidrata os dados da mensagem quando o webhook envia payload reduzido.
  * GET /v2/{account_id}/messages/{message_id}
  * Falhas são silenciosas (retorna null) — o handler segue com o que tem.
  */
