@@ -74,6 +74,16 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
     .single();
   if (de) throw new Error(de.message);
 
+  // Associa o contato ao negócio para aparecer nas associações/aba de contatos.
+  if (deal?.id && contact?.id) {
+    const { error: dcErr } = await supabase
+      .from("deal_contacts")
+      .insert({ deal_id: deal.id, contact_id: contact.id });
+    if (dcErr && !/duplicate key/i.test(dcErr.message)) throw new Error(dcErr.message);
+  }
+
+
+
   const { error: ue } = await supabase
     .from("leads")
     .update({
