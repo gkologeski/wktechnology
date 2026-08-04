@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { REMINDER_OPTIONS } from "@/lib/activity-reminders";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -585,6 +586,7 @@ export function QuickCreateTaskDialog({
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
   const [dueDate, setDueDate] = useState("");
+  const [remindBefore, setRemindBefore] = useState("none");
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -602,6 +604,8 @@ export function QuickCreateTaskDialog({
           task_status: "NOT_STARTED",
           task_priority: priority,
           due_date: dueDate ? new Date(dueDate).toISOString() : null,
+          remind_before_minutes:
+            dueDate && remindBefore !== "none" ? Number(remindBefore) : null,
           completed: false,
           related_contact_id: defaultContactId ?? null,
           related_company_id: defaultCompanyId ?? null,
@@ -618,6 +622,7 @@ export function QuickCreateTaskDialog({
       setSubject("");
       setPriority("MEDIUM");
       setDueDate("");
+      setRemindBefore("none");
       onCreated?.(data.id);
       onSaved?.({ id: data.id, action: "created" });
     } catch (e) {
@@ -670,6 +675,27 @@ export function QuickCreateTaskDialog({
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Lembrete</Label>
+            <Select value={remindBefore} onValueChange={setRemindBefore} disabled={!dueDate}>
+              <SelectTrigger aria-label="Lembrete">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem lembrete</SelectItem>
+                {REMINDER_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!dueDate && (
+              <p className="text-xs text-muted-foreground">
+                Defina um vencimento para habilitar o lembrete.
+              </p>
+            )}
           </div>
         </div>
         <DialogFooter>

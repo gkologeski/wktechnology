@@ -224,7 +224,17 @@ export function CreateDealFromLeadDialog({
         .single();
       if (de) throw new Error(de.message);
 
-      // mark lead qualified
+      // Associa o contato ao negócio (aba "Contatos"/associações do negócio).
+      if (resolvedContactId) {
+        const { error: dcErr } = await supabase
+          .from("deal_contacts")
+          .insert({ deal_id: deal!.id, contact_id: resolvedContactId });
+        if (dcErr && !/duplicate key/i.test(dcErr.message)) {
+          toast.error(`Negócio criado, mas o contato não foi associado: ${dcErr.message}`);
+        }
+      }
+
+      // mark lead qualified (e vincula a empresa resolvida quando o lead ainda não tem)
       await supabase
         .from("leads")
         .update({
@@ -232,8 +242,10 @@ export function CreateDealFromLeadDialog({
           converted_at: new Date().toISOString(),
           converted_contact_id: resolvedContactId,
           converted_deal_id: deal!.id,
+          ...(resolvedCompanyId && !lead.company_id ? { company_id: resolvedCompanyId } : {}),
         })
         .eq("id", lead.id);
+
 
       toastCreated("Negócio criado e lead qualificado", "Ir para o negócio", (nav) =>
         nav({ to: "/deals/$id", params: { id: deal!.id } }),

@@ -315,6 +315,7 @@ import { Route as ApiPublicHooksAuditExportTickRouteImport } from './routes/api/
 import { Route as ApiPublicHooksAtsInterviewRemindersTickRouteImport } from './routes/api/public/hooks/ats-interview-reminders-tick'
 import { Route as ApiPublicHooksAtsEmailsTickRouteImport } from './routes/api/public/hooks/ats-emails-tick'
 import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/public/hooks/ai-summary-tick'
+import { Route as ApiPublicHooksActivityRemindersTickRouteImport } from './routes/api/public/hooks/activity-reminders-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicFilesTokenRouteImport } from './routes/api/public/files/$token'
@@ -2108,6 +2109,12 @@ const ApiPublicHooksAiSummaryTickRoute =
     path: '/api/public/hooks/ai-summary-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksActivityRemindersTickRoute =
+  ApiPublicHooksActivityRemindersTickRouteImport.update({
+    id: '/api/public/hooks/activity-reminders-tick',
+    path: '/api/public/hooks/activity-reminders-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
   id: '/api/public/forms/embed-js',
   path: '/api/public/forms/embed-js',
@@ -2664,6 +2671,7 @@ export interface FileRoutesByFullPath {
   '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
@@ -3014,6 +3022,7 @@ export interface FileRoutesByTo {
   '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
@@ -3372,6 +3381,7 @@ export interface FileRoutesById {
   '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
@@ -3730,6 +3740,7 @@ export interface FileRouteTypes {
     | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
     | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/ats-interview-reminders-tick'
@@ -4080,6 +4091,7 @@ export interface FileRouteTypes {
     | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
     | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/ats-interview-reminders-tick'
@@ -4437,6 +4449,7 @@ export interface FileRouteTypes {
     | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
     | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/ats-interview-reminders-tick'
@@ -4568,6 +4581,7 @@ export interface RootRouteChildren {
   ApiPublicFilesTokenRoute: typeof ApiPublicFilesTokenRoute
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
+  ApiPublicHooksActivityRemindersTickRoute: typeof ApiPublicHooksActivityRemindersTickRoute
   ApiPublicHooksAiSummaryTickRoute: typeof ApiPublicHooksAiSummaryTickRoute
   ApiPublicHooksAtsEmailsTickRoute: typeof ApiPublicHooksAtsEmailsTickRoute
   ApiPublicHooksAtsInterviewRemindersTickRoute: typeof ApiPublicHooksAtsInterviewRemindersTickRoute
@@ -6782,6 +6796,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksAiSummaryTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/activity-reminders-tick': {
+      id: '/api/public/hooks/activity-reminders-tick'
+      path: '/api/public/hooks/activity-reminders-tick'
+      fullPath: '/api/public/hooks/activity-reminders-tick'
+      preLoaderRoute: typeof ApiPublicHooksActivityRemindersTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/forms/embed-js': {
       id: '/api/public/forms/embed-js'
       path: '/api/public/forms/embed-js'
@@ -7960,6 +7981,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicFilesTokenRoute: ApiPublicFilesTokenRoute,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
+  ApiPublicHooksActivityRemindersTickRoute:
+    ApiPublicHooksActivityRemindersTickRoute,
   ApiPublicHooksAiSummaryTickRoute: ApiPublicHooksAiSummaryTickRoute,
   ApiPublicHooksAtsEmailsTickRoute: ApiPublicHooksAtsEmailsTickRoute,
   ApiPublicHooksAtsInterviewRemindersTickRoute:

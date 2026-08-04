@@ -1,6 +1,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -159,16 +161,52 @@ export function DealLineItemsCount({ dealId }: { dealId: string }) {
 
 export function LineItemsEditorBody({
   dealId,
-  ownerId,
+  // Mantido por compatibilidade com as telas que já passam o dono do negócio,
+  // mas o dono do item precisa ser o usuário autenticado (regras de acesso).
+  ownerId: _ownerId,
   currency,
 }: {
   dealId: string;
   ownerId: string;
   currency: string;
 }) {
-
   const qc = useQueryClient();
   const { data: items = [], isLoading } = useLineItems(dealId);
+  const currentUserId = useCurrentUserId();
+
+  // O item precisa herdar o workspace do negócio para passar pelas regras de acesso.
+  const { data: dealScope } = useQuery({
+    queryKey: ["deal_scope", dealId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("deals")
+        .select("workspace_id")
+        .eq("id", dealId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { workspace_id: string | null } | null;
+    },
+  });
+
+  function baseInsertScope() {
+    if (!currentUserId) {
+      toast.error("Sessão não identificada. Recarregue a página e tente novamente.");
+      return null;
+    }
+    if (!dealScope?.workspace_id) {
+      toast.error("Não foi possível identificar o workspace do negócio.");
+      return null;
+    }
+    return { owner_id: currentUserId, workspace_id: dealScope.workspace_id, deal_id: dealId };
+  }
+
+  function insertErrorMessage(message: string) {
+    if (/row-level security/i.test(message)) {
+      return "Você não tem permissão para alterar os itens deste negócio.";
+    }
+    return message;
+  }
+
 
   const setItemsCache = (updater: (current: LineItem[]) => LineItem[]) => {
     qc.setQueryData<LineItem[]>(lineItemsQueryKey(dealId), (current = []) => updater(current));
@@ -191,12 +229,13 @@ export function LineItemsEditorBody({
   }
 
   async function addBlank() {
+    const scope = baseInsertScope();
+    if (!scope) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from("deal_line_items")
       .insert({
-        owner_id: ownerId,
-        deal_id: dealId,
+        ...scope,
         name: "Novo item",
         quantity: 1,
         unit_price: 0,
@@ -208,7 +247,8 @@ export function LineItemsEditorBody({
       })
       .select("*")
       .single();
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(insertErrorMessage(error.message));
+
     if (data) {
       setItemsCache((current) =>
         [...current.filter((it) => it.id !== (data as LineItem).id), data as LineItem].sort(
@@ -219,6 +259,8 @@ export function LineItemsEditorBody({
     notifyDealsChanged();
   }
   async function addFromProduct(pid: string) {
+    const scope = baseInsertScope();
+    if (!scope) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: p, error: perr } = await (supabase as any)
       .from("products")
@@ -230,8 +272,7 @@ export function LineItemsEditorBody({
     const { data, error } = await (supabase as any)
       .from("deal_line_items")
       .insert({
-        owner_id: ownerId,
-        deal_id: dealId,
+        ...scope,
         product_id: p.id,
         name: p.name,
         quantity: 1,
@@ -244,7 +285,8 @@ export function LineItemsEditorBody({
       })
       .select("*")
       .single();
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(insertErrorMessage(error.message));
+
     if (data) {
       setItemsCache((current) =>
         [...current.filter((it) => it.id !== (data as LineItem).id), data as LineItem].sort(
@@ -265,7 +307,7 @@ export function LineItemsEditorBody({
     if (error) {
       qc.setQueryData(lineItemsQueryKey(dealId), previous);
       refreshItems();
-      return toast.error(error.message);
+      return toast.error(insertErrorMessage(error.message));
     }
     notifyDealsChanged();
   }
@@ -277,7 +319,7 @@ export function LineItemsEditorBody({
     if (error) {
       qc.setQueryData(lineItemsQueryKey(dealId), previous);
       refreshItems();
-      return toast.error(error.message);
+      return toast.error(insertErrorMessage(error.message));
     }
     notifyDealsChanged();
   }

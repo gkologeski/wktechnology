@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mail, Send, FileText, Paperclip, X, Loader2 } from "lucide-react";
+import { Mail, Send, FileText, Paperclip, X, Loader2, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { sendGmailEmail } from "@/lib/email-send.functions";
@@ -34,6 +34,7 @@ import { SmartComposeMenu } from "@/components/ai/smart-compose-menu";
 import { TokenPills } from "@/components/ui/token-pills";
 import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
+import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 
 type Props = {
   defaultTo?: string;
@@ -80,12 +81,13 @@ export function SendEmailDialog({
   type Attachment = { path: string; filename: string; content_type: string; size: number };
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [fileCenterOpen, setFileCenterOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const MAX_TOTAL = 25 * 1024 * 1024;
   const MAX_FILES = 10;
 
-  const handleFilesSelected = async (files: FileList | null) => {
+  const handleFilesSelected = async (files: FileList | File[] | null) => {
     if (!files || !files.length || !user) return;
     const currentBytes = attachments.reduce((s, a) => s + a.size, 0);
     const newFiles = Array.from(files);
@@ -169,15 +171,27 @@ export function SendEmailDialog({
     enabled: open,
   });
 
+  const account = accountsQ.data?.items?.find((a) => a.status === "connected");
+
+  // Assinatura da conta: anexada ao corpo ao abrir uma nova composição.
+  const signatureApplied = useRef(false);
   useEffect(() => {
     if (open) {
       setTo(defaultTo);
       setSubject(defaultSubject);
       setBody(defaultBody);
+      signatureApplied.current = false;
     }
   }, [open, defaultTo, defaultSubject, defaultBody]);
 
-  const account = accountsQ.data?.items?.find((a) => a.status === "connected");
+  useEffect(() => {
+    if (!open || signatureApplied.current) return;
+    const sig = (account as { signature_html?: string | null } | undefined)?.signature_html;
+    if (!sig || !sig.trim()) return;
+    signatureApplied.current = true;
+    setBody((prev) => `${prev ?? ""}<br/><br/>${sig}`);
+  }, [open, account]);
+
 
   const ctx = useMemo<TokenContext>(
     () => ({
@@ -384,6 +398,16 @@ export function SendEmailDialog({
                   )}
                   {uploading ? "Enviando…" : "Anexar arquivo"}
                 </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFileCenterOpen(true)}
+                  disabled={uploading || attachments.length >= MAX_FILES}
+                >
+                  <FolderOpen className="mr-2 h-4 w-4" /> Centro de Arquivos
+                </Button>
+
                 {attachments.map((a, i) => (
                   <div
                     key={a.path}
@@ -444,6 +468,12 @@ export function SendEmailDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <FileCenterPickerDialog
+        open={fileCenterOpen}
+        onOpenChange={setFileCenterOpen}
+        onPicked={(files) => handleFilesSelected(files)}
+        title="Anexar do Centro de Arquivos"
+      />
     </Dialog>
   );
 }

@@ -284,6 +284,8 @@ export type Database = {
           related_lead_id: string | null
           related_ticket_id: string | null
           relink_checked_at: string | null
+          remind_before_minutes: number | null
+          reminder_sent_at: string | null
           subject: string | null
           task_priority: string | null
           task_status: string | null
@@ -331,6 +333,8 @@ export type Database = {
           related_lead_id?: string | null
           related_ticket_id?: string | null
           relink_checked_at?: string | null
+          remind_before_minutes?: number | null
+          reminder_sent_at?: string | null
           subject?: string | null
           task_priority?: string | null
           task_status?: string | null
@@ -378,6 +382,8 @@ export type Database = {
           related_lead_id?: string | null
           related_ticket_id?: string | null
           relink_checked_at?: string | null
+          remind_before_minutes?: number | null
+          reminder_sent_at?: string | null
           subject?: string | null
           task_priority?: string | null
           task_status?: string | null
@@ -6107,6 +6113,7 @@ export type Database = {
           provider: string
           refresh_token: string | null
           scopes: string[]
+          signature_html: string | null
           status: string
           updated_at: string
           workspace_id: string
@@ -6124,6 +6131,7 @@ export type Database = {
           provider?: string
           refresh_token?: string | null
           scopes?: string[]
+          signature_html?: string | null
           status?: string
           updated_at?: string
           workspace_id?: string
@@ -6141,6 +6149,7 @@ export type Database = {
           provider?: string
           refresh_token?: string | null
           scopes?: string[]
+          signature_html?: string | null
           status?: string
           updated_at?: string
           workspace_id?: string

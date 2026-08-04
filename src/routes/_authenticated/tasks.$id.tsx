@@ -1,3 +1,4 @@
+import { REMINDER_OPTIONS } from "@/lib/activity-reminders";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
@@ -178,7 +179,14 @@ function TaskDetail() {
               { key: "task_status", label: "Status", primary: true },
               { key: "task_priority", label: "Prioridade", primary: true },
               { key: "due_date", label: "Vencimento", type: "datetime", primary: true },
+              {
+                key: "remind_before_minutes",
+                label: "Lembrete",
+                primary: true,
+                options: REMINDER_OPTIONS,
+              },
               { key: "body", label: "Descrição" },
+
             ]}
             onSaved={load}
           />

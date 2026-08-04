@@ -16,6 +16,7 @@ import {
 import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { EmailSignatureEditor } from "@/components/email/email-signature-editor";
 
 const searchSchema = z.object({ gmail: z.string().optional() });
 const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set(["https://crm.wktechnology.com.br"]);
@@ -144,46 +145,56 @@ function EmailSettings() {
           <p className="text-sm text-muted-foreground">Nenhuma conta conectada ainda.</p>
         ) : (
           items.map((a) => (
-            <Card key={a.id}>
-              <CardContent className="pt-6 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{a.email}</div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
-                    <Badge variant="outline">{a.provider}</Badge>
-                    <Badge variant={a.status === "connected" ? "default" : "destructive"}>
-                      {a.status}
-                    </Badge>
-                    {a.last_sync_at && (
-                      <span>último sync: {new Date(a.last_sync_at).toLocaleString()}</span>
+            <div key={a.id} className="space-y-2">
+              <Card>
+                <CardContent className="pt-6 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{a.email}</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                      <Badge variant="outline">{a.provider}</Badge>
+                      <Badge variant={a.status === "connected" ? "default" : "destructive"}>
+                        {a.status}
+                      </Badge>
+                      {a.last_sync_at && (
+                        <span>último sync: {new Date(a.last_sync_at).toLocaleString()}</span>
+                      )}
+                    </div>
+                    {a.last_error && (
+                      <p className="text-xs text-destructive mt-1">{a.last_error}</p>
                     )}
                   </div>
-                  {a.last_error && <p className="text-xs text-destructive mt-1">{a.last_error}</p>}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => syncMut.mutate(a.id)}
-                    disabled={syncMut.isPending}
-                    title="Sincronizar agora"
-                  >
-                    <RefreshCw
-                      className={`h-3 w-3 mr-1 ${syncMut.isPending ? "animate-spin" : ""}`}
-                    />
-                    Sincronizar
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => remove(a.id)}
-                    title="Desconectar"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => syncMut.mutate(a.id)}
+                      disabled={syncMut.isPending}
+                      title="Sincronizar agora"
+                    >
+                      <RefreshCw
+                        className={`h-3 w-3 mr-1 ${syncMut.isPending ? "animate-spin" : ""}`}
+                      />
+                      Sincronizar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(a.id)}
+                      title="Desconectar"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              <EmailSignatureEditor
+                accountId={a.id}
+                accountEmail={a.email}
+                initialHtml={a.signature_html ?? null}
+              />
+            </div>
           ))
+
         )}
       </div>
     </div>
