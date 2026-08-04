@@ -169,15 +169,27 @@ export function SendEmailDialog({
     enabled: open,
   });
 
+  const account = accountsQ.data?.items?.find((a) => a.status === "connected");
+
+  // Assinatura da conta: anexada ao corpo ao abrir uma nova composição.
+  const signatureApplied = useRef(false);
   useEffect(() => {
     if (open) {
       setTo(defaultTo);
       setSubject(defaultSubject);
       setBody(defaultBody);
+      signatureApplied.current = false;
     }
   }, [open, defaultTo, defaultSubject, defaultBody]);
 
-  const account = accountsQ.data?.items?.find((a) => a.status === "connected");
+  useEffect(() => {
+    if (!open || signatureApplied.current) return;
+    const sig = (account as { signature_html?: string | null } | undefined)?.signature_html;
+    if (!sig || !sig.trim()) return;
+    signatureApplied.current = true;
+    setBody((prev) => `${prev ?? ""}<br/><br/>${sig}`);
+  }, [open, account]);
+
 
   const ctx = useMemo<TokenContext>(
     () => ({
