@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://czrmhtzaeonzjmbgbabz.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "techerp",
+      "version": "0.1.0",
+      "title": "TechERP"
+    },
+    "tools": [
+      {
+        "name": "whoami",
+        "title": "Identificar usuário conectado",
+        "description": "Retorna o usuário autenticado e o workspace ativo usado pelas demais ferramentas.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_companies",
+        "title": "Buscar empresas",
+        "description": "Busca empresas do CRM por nome, domínio ou CNPJ no workspace do usuário autenticado.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Termo de busca (nome, domínio ou CNPJ)."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "description": "Número máximo de empresas retornadas."
+            }
+          },
+          "required": [
+            "query"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_leads",
+        "title": "Buscar leads",
+        "description": "Busca leads do workspace por nome, e-mail, telefone ou empresa, com filtro opcional por status.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Termo de busca (nome, e-mail, telefone ou empresa)."
+            },
+            "status": {
+              "type": "string",
+              "description": "Filtrar por status do lead (ex.: new, qualified)."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "description": "Número máximo de leads retornados."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_deals",
+        "title": "Listar negócios",
+        "description": "Lista os negócios (pipeline de vendas) do workspace do usuário, com filtro opcional por estágio ou empresa.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "stage": {
+              "type": "string",
+              "description": "Filtrar por estágio do negócio (ex.: qualification)."
+            },
+            "company_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Filtrar pelos negócios de uma empresa específica."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 10,
+              "description": "Número máximo de negócios retornados."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_lead",
+        "title": "Criar lead",
+        "description": "Cria um novo lead no CRM em nome do usuário autenticado, respeitando as permissões do workspace.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "first_name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Nome do lead."
+            },
+            "last_name": {
+              "type": "string",
+              "description": "Sobrenome do lead."
+            },
+            "email": {
+              "type": "string",
+              "format": "email",
+              "description": "E-mail do lead."
+            },
+            "phone": {
+              "type": "string",
+              "description": "Telefone do lead."
+            },
+            "company_name": {
+              "type": "string",
+              "description": "Nome da empresa informada pelo lead."
+            },
+            "source": {
+              "type": "string",
+              "description": "Origem do lead (ex.: indicação, site, evento)."
+            },
+            "notes": {
+              "type": "string",
+              "description": "Observações iniciais sobre o lead."
+            }
+          },
+          "required": [
+            "first_name"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
