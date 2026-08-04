@@ -82,19 +82,26 @@ const BUDGETS: Record<UnipileEndpoint, ThrottleBudget> = {
   },
 };
 
+/** Provedor aceito pela API v2 no hosted auth (enum em minúsculas). */
+export const HOSTED_AUTH_PROVIDER = "linkedin";
+
+export type UnipileErrorReason =
+  | "missing_credentials"
+  | "invalid_credentials"
+  | "invalid_parameters"
+  | "rate_limited"
+  | "daily_budget_reached"
+  | "out_of_window"
+  | "account_disconnected"
+  | "provider_error"
+  | "network_error";
 
 export class UnipileError extends Error {
   constructor(
     message: string,
-    public readonly code:
-      | "missing_credentials"
-      | "rate_limited"
-      | "daily_budget_reached"
-      | "out_of_window"
-      | "account_disconnected"
-      | "provider_error"
-      | "network_error",
+    public readonly code: UnipileErrorReason,
     public readonly status?: number,
+
     public readonly retryAfterMs?: number,
   ) {
     super(message);
