@@ -121,7 +121,7 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
     const { data: job, error: jobErr } = await context.supabase
       .from("ats_jobs")
       .select(
-        "id, owner_id, title, description, location, remote_mode, employment_type, salary_min, salary_max, linkedin_company_id, linkedin_company_name, linkedin_location_id, linkedin_workplace, linkedin_employment_status, linkedin_apply_type, linkedin_apply_url, linkedin_notification_email",
+        "id, owner_id, title, description, location, remote_mode, employment_type, salary_min, salary_max, linkedin_company_id, linkedin_company_name, linkedin_location_id, linkedin_workplace, linkedin_employment_status, linkedin_apply_type, linkedin_apply_url, linkedin_notification_email, linkedin_publish_mode, linkedin_budget_period, linkedin_budget_amount, linkedin_budget_currency",
       )
       .eq("id", data.job_id)
       .maybeSingle();
@@ -141,6 +141,10 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
       linkedin_apply_type: string | null;
       linkedin_apply_url: string | null;
       linkedin_notification_email: string | null;
+      linkedin_publish_mode: string | null;
+      linkedin_budget_period: string | null;
+      linkedin_budget_amount: number | string | null;
+      linkedin_budget_currency: string | null;
     };
     const providerConfig =
       data.provider === "linkedin"
@@ -153,6 +157,13 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
             applyType: jobAny.linkedin_apply_type ?? "linkedin",
             applyUrl: jobAny.linkedin_apply_url,
             notificationEmail: jobAny.linkedin_notification_email,
+            publishMode: jobAny.linkedin_publish_mode ?? "FREE",
+            budgetPeriod: jobAny.linkedin_budget_period ?? "total",
+            budgetAmount:
+              jobAny.linkedin_budget_amount == null
+                ? null
+                : Number(jobAny.linkedin_budget_amount),
+            budgetCurrency: jobAny.linkedin_budget_currency,
           }
         : undefined;
 

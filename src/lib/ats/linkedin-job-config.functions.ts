@@ -26,6 +26,10 @@ const CONFIG = z.object({
     .nullable()
     .optional()
     .or(z.literal("").transform(() => null)),
+  linkedin_publish_mode: z.enum(["FREE", "PROMOTED"]).nullable().optional(),
+  linkedin_budget_period: z.enum(["total", "daily"]).nullable().optional(),
+  linkedin_budget_amount: z.number().positive().nullable().optional(),
+  linkedin_budget_currency: z.string().trim().min(3).max(3).nullable().optional(),
 });
 
 export const getLinkedinJobConfig = createServerFn({ method: "POST" })
@@ -35,12 +39,13 @@ export const getLinkedinJobConfig = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase
       .from("ats_jobs")
       .select(
-        "linkedin_company_id, linkedin_company_name, linkedin_location_id, linkedin_location_name, linkedin_workplace, linkedin_employment_status, linkedin_apply_type, linkedin_apply_url, linkedin_notification_email",
+        "linkedin_company_id, linkedin_company_name, linkedin_location_id, linkedin_location_name, linkedin_workplace, linkedin_employment_status, linkedin_apply_type, linkedin_apply_url, linkedin_notification_email, linkedin_publish_mode, linkedin_budget_period, linkedin_budget_amount, linkedin_budget_currency",
       )
       .eq("id", data.job_id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return row ?? {};
+    const { unipileApiVersion } = await import("@/lib/unipile/client.server");
+    return { ...(row ?? {}), api_version: unipileApiVersion() };
   });
 
 export const updateLinkedinJobConfig = createServerFn({ method: "POST" })
@@ -66,6 +71,10 @@ export const updateLinkedinJobConfig = createServerFn({ method: "POST" })
       linkedin_apply_type: data.linkedin_apply_type ?? "linkedin",
       linkedin_apply_url: data.linkedin_apply_url ?? null,
       linkedin_notification_email: data.linkedin_notification_email ?? null,
+      linkedin_publish_mode: data.linkedin_publish_mode ?? "FREE",
+      linkedin_budget_period: data.linkedin_budget_period ?? "total",
+      linkedin_budget_amount: data.linkedin_budget_amount ?? null,
+      linkedin_budget_currency: data.linkedin_budget_currency ?? null,
     };
     // UPDATE via admin: autorização já garantida acima. Preserva owner_id original.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

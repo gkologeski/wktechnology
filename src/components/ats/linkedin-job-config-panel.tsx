@@ -38,6 +38,10 @@ type Config = {
   linkedin_apply_type: "linkedin" | "external" | null;
   linkedin_apply_url: string | null;
   linkedin_notification_email: string | null;
+  linkedin_publish_mode: "FREE" | "PROMOTED" | null;
+  linkedin_budget_period: "total" | "daily" | null;
+  linkedin_budget_amount: number | null;
+  linkedin_budget_currency: string | null;
 };
 
 const EMPTY: Config = {
@@ -50,7 +54,21 @@ const EMPTY: Config = {
   linkedin_apply_type: "linkedin",
   linkedin_apply_url: null,
   linkedin_notification_email: null,
+  linkedin_publish_mode: "FREE",
+  linkedin_budget_period: "total",
+  linkedin_budget_amount: null,
+  linkedin_budget_currency: "BRL",
 };
+
+const PUBLISH_MODE_LABEL: Record<string, string> = {
+  FREE: "Gratuito (Job Slot)",
+  PROMOTED: "Promovido (pago)",
+};
+const BUDGET_PERIOD_LABEL: Record<string, string> = {
+  total: "Orçamento total",
+  daily: "Orçamento diário",
+};
+const CURRENCIES = ["BRL", "USD", "EUR"];
 
 const WORKPLACE_LABEL: Record<string, string> = {
   REMOTE: "Remoto",
@@ -76,12 +94,22 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [apiVersion, setApiVersion] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
       try {
-        const r = (await getCfg({ data: { job_id: jobId } })) as Partial<Config>;
-        setCfg({ ...EMPTY, ...r });
+        const r = (await getCfg({ data: { job_id: jobId } })) as Partial<Config> & {
+          api_version?: string;
+        };
+        const { api_version, ...rest } = r;
+        setApiVersion(api_version ?? null);
+        setCfg({
+          ...EMPTY,
+          ...rest,
+          linkedin_budget_amount:
+            rest.linkedin_budget_amount == null ? null : Number(rest.linkedin_budget_amount),
+        });
       } catch (e) {
         toast.error((e as Error).message);
       } finally {
@@ -116,6 +144,9 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
     ((cfg.linkedin_apply_type ?? "linkedin") === "linkedin"
       ? Boolean(cfg.linkedin_notification_email)
       : Boolean(cfg.linkedin_apply_url));
+
+  const isV2 = apiVersion === "v2";
+  const promoted = (cfg.linkedin_publish_mode ?? "FREE") === "PROMOTED";
 
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3">
@@ -256,8 +287,122 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
             </div>
           )}
 
+          <div className="space-y-2 rounded-md border border-border-subtle bg-surface-2 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-xs font-medium text-text-secondary">
+                Fluxo de publicação (rascunho → publicação → fechamento)
+              </Label>
+              {apiVersion ? (
+                <span className="rounded-full border border-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-text-tertiary">
+                  API {apiVersion}
+                </span>
+              ) : null}
+            </div>
+            {isV2 ? null : (
+              <p className="text-xs text-text-tertiary">
+                Disponível apenas na API v2 da Unipile. Os valores são salvos e passam a ser
+                aplicados automaticamente quando a v2 estiver ativa.
+              </p>
+            )}
+
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div>
+                <Label className="text-xs text-text-tertiary" htmlFor="li-publish-mode">
+                  Modo de publicação
+                </Label>
+                <Select
+                  value={cfg.linkedin_publish_mode ?? "FREE"}
+                  onValueChange={(v) =>
+                    update({ linkedin_publish_mode: v as Config["linkedin_publish_mode"] })
+                  }
+                >
+                  <SelectTrigger id="li-publish-mode" aria-label="Modo de publicação">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(PUBLISH_MODE_LABEL).map(([v, l]) => (
+                      <SelectItem key={v} value={v}>
+                        {l}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-text-tertiary" htmlFor="li-budget-period">
+                  Período do orçamento
+                </Label>
+                <Select
+                  value={cfg.linkedin_budget_period ?? "total"}
+                  onValueChange={(v) =>
+                    update({ linkedin_budget_period: v as Config["linkedin_budget_period"] })
+                  }
+                  disabled={!promoted}
+                >
+                  <SelectTrigger id="li-budget-period" aria-label="Período do orçamento">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(BUDGET_PERIOD_LABEL).map(([v, l]) => (
+                      <SelectItem key={v} value={v}>
+                        {l}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-text-tertiary" htmlFor="li-budget-amount">
+                  Valor do orçamento
+                </Label>
+                <Input
+                  id="li-budget-amount"
+                  type="number"
+                  min={1}
+                  step="0.01"
+                  inputMode="decimal"
+                  disabled={!promoted}
+                  value={cfg.linkedin_budget_amount ?? ""}
+                  onChange={(e) =>
+                    update({
+                      linkedin_budget_amount:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                  placeholder="Ex.: 500"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-text-tertiary" htmlFor="li-budget-currency">
+                  Moeda
+                </Label>
+                <Select
+                  value={cfg.linkedin_budget_currency ?? "BRL"}
+                  onValueChange={(v) => update({ linkedin_budget_currency: v })}
+                  disabled={!promoted}
+                >
+                  <SelectTrigger id="li-budget-currency" aria-label="Moeda do orçamento">
+                    <SelectValue placeholder="—" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CURRENCIES.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            {promoted && !cfg.linkedin_budget_amount ? (
+              <p className="text-xs text-risk-medium">
+                Informe um valor de orçamento para publicar como promovida.
+              </p>
+            ) : null}
+          </div>
+
           <div className="flex justify-end">
-            <Button onClick={onSave} disabled={!dirty || saving} size="sm">
+            <Button onClick={onSave} disabled={!dirty || saving || (promoted && !cfg.linkedin_budget_amount)} size="sm">
               {saving ? (
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
