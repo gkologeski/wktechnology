@@ -1118,3 +1118,45 @@ export async function listLinkedinJobApplicants(
 
 
 
+
+/**
+ * Verificação leve das credenciais da API v2 (não é chamada por conta, sem
+ * throttle). Nunca retorna a chave. Usada pelo botão "Testar credenciais" e
+ * antes de gerar o hosted auth link, para gerar mensagem compreensível.
+ */
+export type UnipileCredentialCheck =
+  | { ok: true; accounts: number }
+  | { ok: false; reason: "missing_credentials" | "invalid_credentials" | "provider_error" | "network_error"; status?: number; detail?: string };
+
+export async function verifyApiKey(): Promise<UnipileCredentialCheck> {
+  let env: ReturnType<typeof getEnv>;
+  try {
+    env = getEnv();
+  } catch {
+    return { ok: false, reason: "missing_credentials" };
+  }
+  const { baseUrl, key } = env;
+  try {
+    const res = await fetch(`${baseUrl}/accounts?limit=1`, {
+      headers: { "X-API-KEY": key, Accept: "application/json" },
+    });
+    const text = await res.text();
+    if (res.ok) {
+      const json: any = safeJson(text) ?? {};
+      const raw: any[] = json?.items ?? json?.data ?? json?.accounts ?? [];
+      return { ok: true, accounts: Array.isArray(raw) ? raw.length : 0 };
+    }
+    if (res.status === 401 || res.status === 403) {
+      return { ok: false, reason: "invalid_credentials", status: res.status };
+    }
+    const data: any = safeJson(text);
+    return {
+      ok: false,
+      reason: "provider_error",
+      status: res.status,
+      detail: String(data?.detail ?? data?.title ?? text.slice(0, 200)),
+    };
+  } catch (e) {
+    return { ok: false, reason: "network_error", detail: (e as Error).message };
+  }
+}
