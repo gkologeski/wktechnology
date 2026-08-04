@@ -16,6 +16,7 @@ import {
 import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { EmailSignatureEditor } from "@/components/email/email-signature-editor";
 
 const searchSchema = z.object({ gmail: z.string().optional() });
 const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set(["https://crm.wktechnology.com.br"]);
