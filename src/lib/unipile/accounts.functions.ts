@@ -105,13 +105,24 @@ export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
   });
 
 /**
- * Fallback de reconciliação: quando o webhook não chegou ainda mas o usuário
- * voltou do Hosted Auth, consultamos a API Unipile e procuramos uma conta
- * cujo `name` bate com o connect_token salvo. Marca status=connected.
+ * Fallback de reconciliação após o retorno do Hosted Auth.
+ *
+ * v1: o webhook pode não ter chegado ainda; procuramos na API Unipile uma conta
+ * cujo `name` bate com o `connect_token` salvo.
+ * v2: o hosted auth não aceita mais `name` nem `notify_url`, então o
+ * `connect_token` volta como `state` na URL de retorno. Validamos esse `state`
+ * contra o token salvo e adotamos a conta LinkedIn mais recente de
+ * `GET /v2/accounts`.
  */
 export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((i: unknown) =>
+    z
+      .object({ state: z.string().trim().min(1).max(128).optional() })
+      .partial()
+      .parse(i ?? {}),
+  )
+  .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: row } = await supabase
       .from("unipile_accounts")
@@ -126,28 +137,28 @@ export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
       return { ok: true, already: true };
     }
 
-    const dsn = process.env.UNIPILE_DSN;
-    const key = process.env.UNIPILE_API_KEY;
-    if (!dsn || !key) return { ok: false, reason: "missing_credentials" };
-    const baseUrl = (/^https?:\/\//i.test(dsn) ? dsn : `https://${dsn}`).replace(/\/$/, "");
+    const { listUnipileAccounts, unipileApiVersion } = await import(
+      "@/lib/unipile/client.server"
+    );
+    const version = unipileApiVersion();
 
-    const res = await fetch(`${baseUrl}/api/v1/accounts?limit=50`, {
-      headers: { "X-API-KEY": key, Accept: "application/json" },
-    });
-    if (!res.ok) return { ok: false, reason: `unipile_${res.status}` };
-    const json: any = await res.json().catch(() => ({}));
-    const items: any[] = json?.items ?? json?.data ?? json?.accounts ?? [];
+    // Na v2 o `state` é a única correlação disponível: se veio e não bate com o
+    // token emitido por nós, não adotamos nenhuma conta.
+    if (version === "v2" && data.state && data.state !== row.connect_token) {
+      return { ok: false, reason: "state_mismatch" };
+    }
 
-    // Procura por name == connect_token; senão, pega a conta LinkedIn mais recente
-    let match = items.find((a) => a?.name && row.connect_token && a.name === row.connect_token);
+    const listed = await listUnipileAccounts(50);
+    if (!listed.ok) return { ok: false, reason: listed.reason };
+
+    let match =
+      version === "v2"
+        ? undefined
+        : listed.items.find((a) => a.name && row.connect_token && a.name === row.connect_token);
     if (!match) {
-      match = items
-        .filter((a) =>
-          String(a?.type ?? a?.provider ?? "").toUpperCase().includes("LINKEDIN"),
-        )
-        .sort((a, b) =>
-          String(b?.created_at ?? "").localeCompare(String(a?.created_at ?? "")),
-        )[0];
+      match = listed.items
+        .filter((a) => a.provider.includes("LINKEDIN"))
+        .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))[0];
     }
     if (!match?.id) return { ok: false, reason: "no_match" };
 
@@ -161,11 +172,12 @@ export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
         connected_at: nowIso,
         last_seen_at: nowIso,
         last_error: null,
-        display_name: match?.name ?? match?.display_name ?? null,
+        display_name: match.name,
       })
       .eq("id", row.id);
     return { ok: true, account_id: match.id };
   });
+
 
 export const updateDailyWindow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
