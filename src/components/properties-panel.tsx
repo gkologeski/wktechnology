@@ -531,7 +531,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             Ver todas as propriedades
           </Button>
         </DialogTrigger>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Todas as propriedades</DialogTitle>
           </DialogHeader>
@@ -690,7 +690,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               Mais campos (HubSpot) {extraHsEntries.length ? `· ${extraHsEntries.length}` : ""}
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Campos do HubSpot</DialogTitle>
             </DialogHeader>

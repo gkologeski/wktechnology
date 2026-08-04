@@ -296,7 +296,7 @@ export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: 
   return (
     <>
       <Dialog open={dialogVisible} onOpenChange={handleClose}>
-        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Abrir chamado</DialogTitle>
             <DialogDescription>

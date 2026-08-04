@@ -198,7 +198,7 @@ export function FormsPage() {
       </Card>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing?.id ? "Editar" : "Novo"} formulário</DialogTitle>
           </DialogHeader>
@@ -214,7 +214,7 @@ export function FormsPage() {
       </Dialog>
 
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{viewing?.name} — envios & embed</DialogTitle>
           </DialogHeader>

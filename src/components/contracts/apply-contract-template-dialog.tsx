@@ -139,7 +139,7 @@ export function ApplyContractTemplateDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileStack className="h-4 w-4 text-primary" /> Gerar contrato a partir de modelo

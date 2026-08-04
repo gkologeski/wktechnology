@@ -513,7 +513,7 @@ function QueueDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto">
+      <DialogContent className="overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {isEdit ? "Editar fila de prospecção" : "Nova fila de prospecção"}

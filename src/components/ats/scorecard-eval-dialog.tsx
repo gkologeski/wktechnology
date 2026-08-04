@@ -146,7 +146,7 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Avaliar — {candidateName}</DialogTitle>
         </DialogHeader>

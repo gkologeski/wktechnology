@@ -384,7 +384,7 @@ function ContractTemplateEditorPage() {
       </div>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogContent className="max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Pré-visualização do modelo</DialogTitle>
             <DialogDescription>

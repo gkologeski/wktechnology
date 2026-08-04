@@ -287,7 +287,7 @@ function OnbTemplatesPage() {
       )}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing?.id ? "Editar modelo" : "Novo modelo"} de onboarding</DialogTitle>
             <DialogDescription>

@@ -91,7 +91,7 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{local.id ? "Editar sequência" : "Nova sequência"}</DialogTitle>
         </DialogHeader>

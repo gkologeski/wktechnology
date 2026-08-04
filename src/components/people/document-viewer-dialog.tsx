@@ -314,7 +314,7 @@ export function PersonDocumentViewerDialog({ open, onOpenChange, document }: Pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl overflow-hidden p-0">
+      <DialogContent className="max-w-4xl p-0 gap-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Visualizar documento</DialogTitle>
           <DialogDescription>{fileName}</DialogDescription>
