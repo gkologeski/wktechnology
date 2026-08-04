@@ -396,6 +396,16 @@ export function SendEmailDialog({
                   )}
                   {uploading ? "Enviando…" : "Anexar arquivo"}
                 </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFileCenterOpen(true)}
+                  disabled={uploading || attachments.length >= MAX_FILES}
+                >
+                  <FolderOpen className="mr-2 h-4 w-4" /> Centro de Arquivos
+                </Button>
+
                 {attachments.map((a, i) => (
                   <div
                     key={a.path}
