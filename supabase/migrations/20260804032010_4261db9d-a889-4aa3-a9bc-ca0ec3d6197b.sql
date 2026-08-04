@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS lpe_auth_insert ON public.landing_page_events;
