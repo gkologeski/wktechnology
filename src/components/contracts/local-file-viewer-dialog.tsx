@@ -5,7 +5,15 @@
 // À direita, exibe o progresso da extração por IA e os dados extraídos, com
 // atalhos para extrair e para salvar o contrato.
 import { useEffect, useState } from "react";
-import { Download, FileText, Loader2, RotateCcw, Save, Sparkles, AlertTriangle } from "lucide-react";
+import {
+  Download,
+  FileText,
+  Loader2,
+  RotateCcw,
+  Save,
+  Sparkles,
+  AlertTriangle,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

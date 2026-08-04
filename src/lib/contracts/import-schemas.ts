@@ -13,13 +13,7 @@ export const SERVICE_TYPES = [
 
 export const SERVICE_LOCATIONS = ["remoto", "presencial", "hibrido"] as const;
 
-export const PAYMENT_METHODS = [
-  "pix",
-  "ted",
-  "boleto",
-  "transferencia",
-  "outros",
-] as const;
+export const PAYMENT_METHODS = ["pix", "ted", "boleto", "transferencia", "outros"] as const;
 
 export const SIGNATURE_PROVIDERS = [
   "forsign",

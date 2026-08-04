@@ -49,7 +49,6 @@ import {
   SIGNATURE_PROVIDERS,
 } from "@/lib/contracts/import-schemas";
 
-
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -73,10 +72,7 @@ async function fileToBase64(file: File): Promise<string> {
   let binary = "";
   const chunk = 0x8000;
   for (let i = 0; i < bytes.length; i += chunk) {
-    binary += String.fromCharCode.apply(
-      null,
-      Array.from(bytes.subarray(i, i + chunk)),
-    );
+    binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + chunk)));
   }
   return btoa(binary);
 }
@@ -157,7 +153,9 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
         .from("contract-imports")
         .upload(path, f, { contentType: f.type || undefined, upsert: false });
       if (error) {
-        toast.warning(`Rascunho criado, mas o arquivo original não foi guardado (${error.message}).`);
+        toast.warning(
+          `Rascunho criado, mas o arquivo original não foi guardado (${error.message}).`,
+        );
         return null;
       }
       return path;
@@ -219,7 +217,6 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     }
   }, [file, kind, parsePdf, parseText, uploadOriginal, createFromImport]);
 
-
   const buildPatch = useCallback((f: ExtractedContract) => {
     const num = (v: unknown) =>
       typeof v === "number" && Number.isFinite(v) ? v : v == null || v === "" ? null : Number(v);
@@ -278,7 +275,6 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   // Silence unused warnings — sourceFilePath is stored for future retry surfaces.
   void sourceFilePath;
 
-
   const patch = useCallback(
     (p: Partial<ExtractedContract>) => setFields((prev) => (prev ? { ...prev, ...p } : prev)),
     [],
@@ -293,16 +289,12 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             Importar contrato
           </DialogTitle>
           <DialogDescription>
-            Faça upload de um .pdf ou .docx. A IA extrai os campos e cria um rascunho que você revisa em seguida.
+            Faça upload de um .pdf ou .docx. A IA extrai os campos e cria um rascunho que você
+            revisa em seguida.
           </DialogDescription>
           {file ? (
             <div className="pt-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setViewerOpen(true)}
-              >
+              <Button type="button" variant="outline" size="sm" onClick={() => setViewerOpen(true)}>
                 <Eye className="h-4 w-4 mr-1" /> Visualizar contrato
               </Button>
             </div>
@@ -313,13 +305,9 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
           <div className="space-y-2 rounded-md border bg-muted/20 p-3" aria-live="polite">
             <Progress value={progress.percent} />
             <p className="text-xs font-medium">{progress.message}</p>
-            {progress.detail ? (
-              <p className="text-xs text-destructive">{progress.detail}</p>
-            ) : null}
+            {progress.detail ? <p className="text-xs text-destructive">{progress.detail}</p> : null}
           </div>
         ) : null}
-
-
 
         {step === "upload" && (
           <UploadStep
@@ -332,9 +320,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
           />
         )}
 
-        {step === "review" && fields && (
-          <ReviewStep fields={fields} onPatch={patch} />
-        )}
+        {step === "review" && fields && <ReviewStep fields={fields} onPatch={patch} />}
 
         <DialogFooter className="gap-2">
           {step === "review" && (
@@ -382,7 +368,6 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
           onSave={submit}
           saving={saving}
         />
-
       </DialogContent>
     </Dialog>
   );
@@ -482,8 +467,8 @@ function UploadStep({
       </label>
 
       <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
-        A extração é feita por IA e nunca cria o contrato sozinha. Você revisa e edita
-        todos os campos antes de salvar.
+        A extração é feita por IA e nunca cria o contrato sozinha. Você revisa e edita todos os
+        campos antes de salvar.
       </div>
 
       {/* Botão de extrair está no footer; este bloco existe para acessibilidade caso a UI
@@ -516,7 +501,8 @@ function ReviewStep({
       <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3 text-sm">
         <Sparkles className="h-4 w-4 text-primary" />
         <div className="flex-1">
-          Rascunho salvo. Edite o que precisar e clique em Finalizar — ou feche: o rascunho continua em Contratos.
+          Rascunho salvo. Edite o que precisar e clique em Finalizar — ou feche: o rascunho continua
+          em Contratos.
         </div>
         {confidence !== null && (
           <Badge variant="outline">Confiança: {(confidence * 100).toFixed(0)}%</Badge>
@@ -539,10 +525,7 @@ function ReviewStep({
 
       <FieldSection title="Identificação">
         <Field label="Título">
-          <Input
-            value={fields.title ?? ""}
-            onChange={(e) => onPatch({ title: e.target.value })}
-          />
+          <Input value={fields.title ?? ""} onChange={(e) => onPatch({ title: e.target.value })} />
         </Field>
         <Field label="Nosso papel">
           <Select
@@ -664,7 +647,9 @@ function ReviewStep({
         <Field label="Método de pagamento">
           <Select
             value={fields.payment_method ?? undefined}
-            onValueChange={(v) => onPatch({ payment_method: v as ExtractedContract["payment_method"] })}
+            onValueChange={(v) =>
+              onPatch({ payment_method: v as ExtractedContract["payment_method"] })
+            }
           >
             <SelectTrigger>
               <SelectValue placeholder="—" />
@@ -764,9 +749,7 @@ function ReviewStep({
             value={fields.unilateral_termination_notice_days ?? ""}
             onChange={(e) =>
               onPatch({
-                unilateral_termination_notice_days: e.target.value
-                  ? Number(e.target.value)
-                  : null,
+                unilateral_termination_notice_days: e.target.value ? Number(e.target.value) : null,
               })
             }
           />
@@ -777,9 +760,7 @@ function ReviewStep({
         <Field label="Tipo de serviço">
           <Select
             value={fields.service_type ?? undefined}
-            onValueChange={(v) =>
-              onPatch({ service_type: v as ExtractedContract["service_type"] })
-            }
+            onValueChange={(v) => onPatch({ service_type: v as ExtractedContract["service_type"] })}
           >
             <SelectTrigger>
               <SelectValue placeholder="—" />

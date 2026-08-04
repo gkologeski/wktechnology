@@ -3,16 +3,14 @@ import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { FileText, Plus, ExternalLink } from "lucide-react";
+import { FileText, FileStack, Plus, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  listContracts,
-  createContractFromDeal,
-} from "@/lib/contracts.functions";
+import { listContracts, createContractFromDeal } from "@/lib/contracts.functions";
 import { formatCurrency } from "@/lib/crm";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
+import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
@@ -36,6 +34,7 @@ export function DealContracts({
   const list = useServerFn(listContracts);
   const fromDeal = useServerFn(createContractFromDeal);
   const [openNew, setOpenNew] = useState(false);
+  const [openTemplate, setOpenTemplate] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const { data: rows = [], isLoading } = useQuery({
@@ -77,8 +76,11 @@ export function DealContracts({
             size="sm"
             variant="link"
             className="h-auto p-0"
-            onClick={() => setOpenNew(true)}
+            onClick={() => setOpenTemplate(true)}
           >
+            <FileStack className="h-3.5 w-3.5 mr-0.5" /> Gerar de modelo
+          </Button>
+          <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
             <Plus className="h-3.5 w-3.5 mr-0.5" /> Adicionar
           </Button>
         </div>
@@ -111,6 +113,17 @@ export function DealContracts({
           ))}
         </div>
       )}
+
+      <ApplyContractTemplateDialog
+        open={openTemplate}
+        onOpenChange={setOpenTemplate}
+        dealId={dealId}
+        companyId={companyId ?? null}
+        onCreated={() => {
+          qc.invalidateQueries({ queryKey: ["deal-contracts", dealId] });
+          qc.invalidateQueries({ queryKey: ["contracts"] });
+        }}
+      />
 
       <QuickCreateContractDialog
         open={openNew}
