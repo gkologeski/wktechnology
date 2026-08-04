@@ -714,9 +714,9 @@ export async function resolveSearchParameter(
 
 // --------- Mensageria (Fase 4) ---------
 
-// Normalizadores v1/v2. Na v2 o vocabulário mudou (`provider_id` -> `id`/
-// `user_id`, `attendees` -> `users`) e as respostas de escrita são reduzidas
-// (normalmente só o id do recurso criado).
+// Normalizadores da v2: o vocabulário usa `id`/`user_id` (não `provider_id`) e
+// `users` (não `attendees`); as respostas de escrita são reduzidas (normalmente
+// só o id do recurso criado).
 
 function pickString(...values: unknown[]): string | null {
   for (const v of values) {
@@ -729,17 +729,15 @@ function pickString(...values: unknown[]): string | null {
 
 /**
  * Extrai o identificador do destinatário a partir de um perfil.
- * v1: `provider_id`. v2: `id` / `user_id` (o objeto User perdeu `provider_id`).
+ * Na v2 o objeto User traz `id` / `user_id` como identificador canônico.
  */
 export function extractProfileProviderId(profile: any): string | null {
   const node = profile?.user ?? profile ?? {};
   return pickString(
-    node.provider_id,
     node.user_id,
-    profile?.provider_id,
-    profile?.user_id,
     // v2: o User traz `id` como identificador canônico.
-    unipileApiVersion() === "v2" ? node.id : undefined,
+    node.id,
+    profile?.user_id,
     node.member_urn,
     node.urn,
     profile?.public_profile_url_id,
@@ -749,7 +747,7 @@ export function extractProfileProviderId(profile: any): string | null {
 
 /**
  * Campos de perfil usados na renderização de tokens ({{first_name}}, ...),
- * tolerante às diferenças de shape entre v1 e v2.
+ * tolerante às variações de shape da v2.
  */
 export function extractProfileFields(profile: any): {
   firstName: string | null;
@@ -782,7 +780,7 @@ export function extractProfileFields(profile: any): {
   };
 }
 
-/** Normaliza a resposta de envio de mensagem (v1: chat criado; v2: reduzida). */
+/** Normaliza a resposta (reduzida) de envio de mensagem da v2. */
 export function normalizeSendMessageResult(res: any): {
   messageId: string | null;
   chatId: string | null;
@@ -800,8 +798,7 @@ export function normalizeSendMessageResult(res: any): {
 }
 
 /**
- * Normaliza a resposta de convite de conexão.
- * v1: `invitation_id`/`invite_id`. v2 (relation-requests): `id`.
+ * Normaliza a resposta de convite de conexão (v2: relation-requests devolve `id`).
  */
 export function normalizeInviteResult(res: any): { invitationId: string | null } {
   const node = res?.data ?? res ?? {};
@@ -819,59 +816,38 @@ export function normalizeInviteResult(res: any): { invitationId: string | null }
 
 /**
  * Envia DM em uma conversa 1:1 no LinkedIn (cria a conversa se necessário).
- * `attendeeProviderId` é o `provider_id` do destinatário (obtido via fetchProfile).
+ * `attendeeProviderId` é o id do destinatário (obtido via fetchProfile).
  */
 export async function sendLinkedinMessage(
   ctx: ThrottleCtx,
   params: { attendeeProviderId: string; text: string },
 ) {
-  const body = {
-    account_id: ctx.unipileAccountId,
-    attendees_ids: [params.attendeeProviderId],
-    text: params.text,
-  };
+  // v2: POST /:account_id/chats/send — os destinatários vão em `users_ids`.
   return call(ctx, {
     endpoint: "message.send",
     method: "POST",
-    path: "/api/v1/chats",
-    body,
-    // v2: POST /:account_id/chats/send — `attendees_ids` virou `users_ids`.
-    v2: {
-      method: "POST",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/send`,
-      body: { users_ids: [params.attendeeProviderId], text: params.text },
-    },
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/send`,
+    body: { users_ids: [params.attendeeProviderId], text: params.text },
   });
 }
 
 /**
- * Envia convite de conexão no LinkedIn.
- * `providerId` é o `provider_id` do destinatário.
+ * Envia convite de conexão no LinkedIn (v2: relation requests).
+ * `providerId` é o id do destinatário.
  */
 export async function sendLinkedinInvite(
   ctx: ThrottleCtx,
   params: { providerId: string; message?: string },
 ) {
-  const body: Record<string, unknown> = {
-    account_id: ctx.unipileAccountId,
-    provider_id: params.providerId,
-  };
+  // v2: relation requests — o destinatário vai em `user_id`.
+  const body: Record<string, unknown> = { user_id: params.providerId };
   if (params.message?.trim()) body.message = params.message.trim();
-
-  // v2: relation requests — `provider_id` virou `user_id`.
-  const bodyV2: Record<string, unknown> = { user_id: params.providerId };
-  if (params.message?.trim()) bodyV2.message = params.message.trim();
 
   return call(ctx, {
     endpoint: "invite.send",
     method: "POST",
-    path: "/api/v1/users/invite",
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/me/relation-requests`,
     body,
-    v2: {
-      method: "POST",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/me/relation-requests`,
-      body: bodyV2,
-    },
   });
 }
 
@@ -883,17 +859,8 @@ export async function listLinkedinChats(
   return call(ctx, {
     endpoint: "chat.list",
     method: "GET",
-    path: "/api/v1/chats",
-    query: {
-      account_id: ctx.unipileAccountId,
-      limit: params.limit ?? 20,
-      cursor: params.cursor,
-    },
-    v2: {
-      method: "GET",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats`,
-      query: { limit: params.limit ?? 20, cursor: params.cursor },
-    },
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats`,
+    query: { limit: params.limit ?? 20, cursor: params.cursor },
   });
 }
 
@@ -905,16 +872,8 @@ export async function listLinkedinChatMessages(
   return call(ctx, {
     endpoint: "chat.list",
     method: "GET",
-    path: `/api/v1/chats/${encodeURIComponent(params.chatId)}/messages`,
-    query: {
-      limit: params.limit ?? 50,
-      cursor: params.cursor,
-    },
-    v2: {
-      method: "GET",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/${encodeURIComponent(params.chatId)}/messages`,
-      query: { limit: params.limit ?? 50, cursor: params.cursor },
-    },
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/${encodeURIComponent(params.chatId)}/messages`,
+    query: { limit: params.limit ?? 50, cursor: params.cursor },
   });
 }
 
@@ -932,20 +891,11 @@ export async function listSentInvitations(
   return call(ctx, {
     endpoint: "chat.list",
     method: "GET",
-    path: "/api/v1/users/invite/sent",
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/me/relation-requests`,
     query: {
-      account_id: ctx.unipileAccountId,
+      type: "sent",
       limit: params.limit ?? 100,
-      cursor: params.cursor,
-    },
-    v2: {
-      method: "GET",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/me/relation-requests`,
-      query: {
-        type: "sent",
-        limit: params.limit ?? 100,
-        offset: params.offset,
-      },
+      offset: params.offset,
     },
   });
 }
@@ -970,11 +920,9 @@ export type LinkedinJobApplyMethod =
 /**
  * Cria uma vaga (Job Posting) no LinkedIn via Unipile.
  *
- * v1: `POST /api/v1/linkedin/jobs` publica direto (account_id no body,
- *     campos `workplace` e `apply_method.type`).
- * v2: `POST /v2/:account_id/linkedin/jobs` cria apenas um **rascunho**
- *     (`state: DRAFT`), usando `workplace_type` e `apply_method.method`.
- *     A publicação é um segundo passo (`publishLinkedinJob`).
+ * `POST /v2/:account_id/linkedin/jobs` cria apenas um **rascunho**
+ * (`state: DRAFT`), usando `workplace_type` e `apply_method.method`.
+ * A publicação é um segundo passo (`publishLinkedinJob`).
  *
  * Requer que a Company Page (`companyId`) seja administrada pela conta
  * conectada, e que `locationId` seja um geo ID válido do LinkedIn.
@@ -1004,16 +952,6 @@ export async function createLinkedinJob(
     description: params.description,
   };
 
-  // v1: `workplace` + apply_method.type
-  const v1Payload: Record<string, unknown> = {
-    ...common,
-    workplace: params.workplace,
-    apply_method:
-      params.applyMethod.type === "linkedin"
-        ? { type: "linkedin", notification_email: params.applyMethod.notificationEmail }
-        : { type: "external", url: params.applyMethod.url },
-  };
-
   // v2: `workplace_type` + apply_method.method
   const v2Payload: Record<string, unknown> = {
     ...common,
@@ -1027,13 +965,8 @@ export async function createLinkedinJob(
   return call(ctx, {
     endpoint: "job.publish",
     method: "POST",
-    path: "/api/v1/linkedin/jobs",
-    body: { account_id: ctx.unipileAccountId, ...v1Payload },
-    v2: {
-      method: "POST",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs`,
-      body: v2Payload,
-    },
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs`,
+    body: v2Payload,
   }) as Promise<{
     id?: string;
     provider_id?: string;
@@ -1046,7 +979,7 @@ export async function createLinkedinJob(
 
 /**
  * Extrai o ID de uma vaga a partir da resposta de criação/publicação.
- * v1 devolve `id`/`provider_id`; a v2 pode devolver `job_id` ou aninhar em `job`.
+ * A v2 pode devolver `id`, `job_id` ou aninhar o recurso em `job`.
  */
 export function extractLinkedinJobId(res: Record<string, unknown> | null | undefined) {
   if (!res) return null;
@@ -1069,19 +1002,13 @@ export function extractLinkedinJobId(res: Record<string, unknown> | null | undef
 
 /**
  * Consulta o orçamento recomendado / elegibilidade de publicação gratuita
- * de um rascunho de vaga. **Exclusivo da v2**
- * (`GET /v2/:account_id/linkedin/jobs/:job_id/budget`).
+ * de um rascunho de vaga (`GET /v2/:account_id/linkedin/jobs/:job_id/budget`).
  */
 export async function getLinkedinJobBudget(ctx: ThrottleCtx, providerJobId: string) {
   return call(ctx, {
     endpoint: "chat.list", // leitura leve
     method: "GET",
-    path: `/api/v1/linkedin/jobs/${encodeURIComponent(providerJobId)}/budget`,
-    query: { account_id: ctx.unipileAccountId },
-    v2: {
-      method: "GET",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/budget`,
-    },
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/budget`,
   }) as Promise<{
     free_eligible?: boolean;
     is_free_eligible?: boolean;
@@ -1101,18 +1028,14 @@ export type LinkedinJobPublishOptions = {
 };
 
 /**
- * Publica um rascunho de vaga (v2: `POST /v2/:account_id/linkedin/jobs/:job_id/publish`).
- * Na v1 não existe etapa de publicação — a criação já publica —, então esta
- * função é no-op nessa versão.
+ * Publica um rascunho de vaga
+ * (`POST /v2/:account_id/linkedin/jobs/:job_id/publish`).
  */
 export async function publishLinkedinJob(
   ctx: ThrottleCtx,
   providerJobId: string,
   options: LinkedinJobPublishOptions = { mode: "FREE" },
 ) {
-  if (unipileApiVersion() !== "v2") {
-    return { skipped: true, reason: "v1_publishes_on_create" } as Record<string, unknown>;
-  }
   const body: Record<string, unknown> = { mode: options.mode };
   if (options.mode === "PROMOTED" && options.budget) {
     body.budget = {
@@ -1125,21 +1048,14 @@ export async function publishLinkedinJob(
   return call(ctx, {
     endpoint: "job.publish",
     method: "POST",
-    path: `/api/v1/linkedin/jobs/${encodeURIComponent(providerJobId)}/publish`,
-    body: { account_id: ctx.unipileAccountId, ...body },
-    v2: {
-      method: "POST",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/publish`,
-      body,
-    },
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/publish`,
+    body,
   }) as Promise<Record<string, unknown>>;
 }
 
 /**
  * Fecha (despublica) uma vaga previamente criada no LinkedIn via Unipile.
- *
- * v1: `DELETE /api/v1/linkedin/jobs/:job_id`.
- * v2: `POST /v2/:account_id/linkedin/jobs/:job_id/close`.
+ * `POST /v2/:account_id/linkedin/jobs/:job_id/close`.
  *
  * Se a chamada falhar, o caller deve apenas marcar a `ats_job_postings`
  * como unpublished localmente.
@@ -1150,13 +1066,8 @@ export async function closeLinkedinJob(
 ) {
   return call(ctx, {
     endpoint: "job.publish",
-    method: "DELETE",
-    path: `/api/v1/linkedin/jobs/${encodeURIComponent(providerJobId)}`,
-    query: { account_id: ctx.unipileAccountId },
-    v2: {
-      method: "POST",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/close`,
-    },
+    method: "POST",
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/close`,
   }) as Promise<{ ok?: boolean; object?: string; [k: string]: unknown }>;
 }
 
@@ -1164,16 +1075,14 @@ export async function closeLinkedinJob(
 /**
  * Lista aplicantes de uma vaga LinkedIn publicada via Unipile.
  *
- * v1: `GET /api/v1/linkedin/jobs/:job_id/applicants` (paginação por cursor).
- * v2: `POST /v2/:account_id/linkedin/jobs/:job_id/applicants` — filtros vão
- *     no body e a paginação é por `offset`. Para manter o contrato de cursor
- *     usado pelos callers, o offset seguinte é sintetizado como cursor.
+ * `POST /v2/:account_id/linkedin/jobs/:job_id/applicants` — filtros vão no body
+ * e a paginação é por `offset`. Para manter o contrato de cursor usado pelos
+ * callers, o offset seguinte é sintetizado como cursor.
  */
 export async function listLinkedinJobApplicants(
   ctx: ThrottleCtx,
   params: { providerJobId: string; cursor?: string | null; limit?: number; offset?: number },
 ) {
-  const isV2 = unipileApiVersion() === "v2";
   const limit = params.limit ?? 50;
   const offset =
     params.offset ??
@@ -1181,19 +1090,10 @@ export async function listLinkedinJobApplicants(
 
   const res = (await call(ctx, {
     endpoint: "chat.list", // budget leve — leitura
-    method: "GET",
-    path: `/api/v1/linkedin/jobs/${encodeURIComponent(params.providerJobId)}/applicants`,
-    query: {
-      account_id: ctx.unipileAccountId,
-      limit,
-      cursor: params.cursor ?? undefined,
-    },
-    v2: {
-      method: "POST",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(params.providerJobId)}/applicants`,
-      query: { limit, offset },
-      body: {},
-    },
+    method: "POST",
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(params.providerJobId)}/applicants`,
+    query: { limit, offset },
+    body: {},
   })) as {
     items?: Array<Record<string, unknown>>;
     data?: Array<Record<string, unknown>>;
@@ -1202,19 +1102,15 @@ export async function listLinkedinJobApplicants(
     [k: string]: unknown;
   };
 
-  if (isV2) {
-    const items = (res?.items ?? res?.data ?? []) as Array<Record<string, unknown>>;
-    const hasNext = items.length >= limit;
-    return {
-      ...res,
-      items,
-      next_cursor:
-        (res?.next_cursor as string | null | undefined) ??
-        (hasNext ? String(offset + limit) : null),
-    };
-  }
-
-  return res;
+  const items = (res?.items ?? res?.data ?? []) as Array<Record<string, unknown>>;
+  const hasNext = items.length >= limit;
+  return {
+    ...res,
+    items,
+    next_cursor:
+      (res?.next_cursor as string | null | undefined) ??
+      (hasNext ? String(offset + limit) : null),
+  };
 
 }
 
