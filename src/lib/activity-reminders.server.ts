@@ -12,7 +12,6 @@ const admin = supabaseAdmin as any;
 type ActivityRow = {
   id: string;
   owner_id: string | null;
-  assigned_user_id: string | null;
   workspace_id: string | null;
   type: string | null;
   subject: string | null;
@@ -81,7 +80,7 @@ export async function tickActivityReminders(limit = 200): Promise<{
   const { data, error } = await admin
     .from("activities")
     .select(
-      "id, owner_id, assigned_user_id, workspace_id, type, subject, due_date, remind_before_minutes, related_deal_id, related_contact_id, related_company_id, related_lead_id, related_ticket_id",
+      "id, owner_id, workspace_id, type, subject, due_date, remind_before_minutes, related_deal_id, related_contact_id, related_company_id, related_lead_id, related_ticket_id",
     )
     .not("remind_before_minutes", "is", null)
     .is("reminder_sent_at", null)
@@ -107,7 +106,7 @@ export async function tickActivityReminders(limit = 200): Promise<{
   if (due.length === 0) return { scanned: rows.length, notified: 0, skipped: 0 };
 
   const targetIds = Array.from(
-    new Set(due.flatMap((a) => [a.assigned_user_id, a.owner_id].filter(Boolean) as string[])),
+    new Set(due.flatMap((a) => [a.owner_id].filter(Boolean) as string[])),
   );
   const { data: profiles } = await admin
     .from("profiles")
@@ -122,7 +121,7 @@ export async function tickActivityReminders(limit = 200): Promise<{
 
   const notifications: Array<Record<string, unknown>> = [];
   for (const a of due) {
-    const userId = a.assigned_user_id ?? a.owner_id;
+    const userId = a.owner_id;
     if (!userId || !a.workspace_id) {
       skipped += 1;
       continue;
