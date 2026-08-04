@@ -1825,12 +1825,16 @@ export type Database = {
           id: string
           linkedin_apply_type: string | null
           linkedin_apply_url: string | null
+          linkedin_budget_amount: number | null
+          linkedin_budget_currency: string | null
+          linkedin_budget_period: string | null
           linkedin_company_id: string | null
           linkedin_company_name: string | null
           linkedin_employment_status: string | null
           linkedin_location_id: string | null
           linkedin_location_name: string | null
           linkedin_notification_email: string | null
+          linkedin_publish_mode: string | null
           linkedin_workplace: string | null
           location: string | null
           metadata: Json
@@ -1861,12 +1865,16 @@ export type Database = {
           id?: string
           linkedin_apply_type?: string | null
           linkedin_apply_url?: string | null
+          linkedin_budget_amount?: number | null
+          linkedin_budget_currency?: string | null
+          linkedin_budget_period?: string | null
           linkedin_company_id?: string | null
           linkedin_company_name?: string | null
           linkedin_employment_status?: string | null
           linkedin_location_id?: string | null
           linkedin_location_name?: string | null
           linkedin_notification_email?: string | null
+          linkedin_publish_mode?: string | null
           linkedin_workplace?: string | null
           location?: string | null
           metadata?: Json
@@ -1897,12 +1905,16 @@ export type Database = {
           id?: string
           linkedin_apply_type?: string | null
           linkedin_apply_url?: string | null
+          linkedin_budget_amount?: number | null
+          linkedin_budget_currency?: string | null
+          linkedin_budget_period?: string | null
           linkedin_company_id?: string | null
           linkedin_company_name?: string | null
           linkedin_employment_status?: string | null
           linkedin_location_id?: string | null
           linkedin_location_name?: string | null
           linkedin_notification_email?: string | null
+          linkedin_publish_mode?: string | null
           linkedin_workplace?: string | null
           location?: string | null
           metadata?: Json
