@@ -157,16 +157,18 @@ export const searchLinkedinPeople = createServerFn({ method: "POST" })
         data.school ? resolveSearchParameter(ctx, "SCHOOL", data.school) : Promise.resolve([]),
       ]);
 
+      // IDs resolvidos vão como `{ id }` (a v2 usa IDs opacos, não numéricos);
+      // texto livre continua como string e é mesclado em keywords pelo cliente.
+      const asIds = (ids: string[], fallback?: string) =>
+        ids.length ? ids.map((id) => ({ id })) : fallback ? [fallback] : undefined;
+
       const result = (await searchPeopleClassic(ctx, {
         keywords: data.keywords,
-        location: locationIds.length ? locationIds : data.location ? [data.location] : undefined,
-        industry: industryIds.length ? industryIds : data.industry ? [data.industry] : undefined,
-        current_company: companyIds.length
-          ? companyIds
-          : data.current_company
-            ? [data.current_company]
-            : undefined,
-        school: schoolIds.length ? schoolIds : data.school ? [data.school] : undefined,
+        location: asIds(locationIds, data.location),
+        industry: asIds(industryIds, data.industry),
+        current_company: asIds(companyIds, data.current_company),
+        school: asIds(schoolIds, data.school),
+
         network: data.network,
         language: data.language ? [data.language] : undefined,
         cursor: data.cursor,
