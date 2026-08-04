@@ -128,9 +128,7 @@ export function ChatThread({
     onSettled: () => setSending(false),
   });
 
-  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = Array.from(e.target.files ?? []);
-    e.target.value = "";
+  const addFiles = (picked: File[]) => {
     const total = [...files, ...picked];
     if (total.length > MAX_FILES) {
       toast.error(`Máximo ${MAX_FILES} arquivos por mensagem.`);
@@ -144,6 +142,13 @@ export function ChatThread({
     }
     setFiles(total);
   };
+
+  const onPickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    addFiles(picked);
+  };
+
 
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
