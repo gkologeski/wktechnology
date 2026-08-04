@@ -397,7 +397,7 @@ function IntegrationDetail() {
           </section>
 
           <Dialog open={!!liveJobId} onOpenChange={(o) => !o && setLiveJobId(null)}>
-            <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Acompanhamento em tempo real</DialogTitle>
               </DialogHeader>

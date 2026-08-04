@@ -1106,7 +1106,7 @@ function EntityDialog<T extends { id: string }>({
       <DialogTrigger asChild>
         <span />
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editing ? "Editar" : "Novo registro"}</DialogTitle>
         </DialogHeader>

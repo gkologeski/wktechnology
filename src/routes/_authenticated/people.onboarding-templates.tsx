@@ -250,7 +250,7 @@ function TemplateDialog({
 
   return (
     <Dialog open onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{template ? "Editar modelo" : "Novo modelo"}</DialogTitle>
           <DialogDescription>

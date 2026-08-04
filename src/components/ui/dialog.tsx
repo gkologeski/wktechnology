@@ -50,7 +50,11 @@ const DialogContent = React.forwardRef<
       ref={ref}
       data-dialog-content=""
       className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg max-h-[90vh] translate-x-[-50%] translate-y-[-50%] gap-5 overflow-y-auto border border-border/60 bg-card text-card-foreground p-7 rounded-[24px] shadow-[0_32px_64px_-16px_rgb(0_0_0/0.18)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+        // `w-[calc(100vw-2rem)]` limita a largura real à janela (o `max-w-*` de cada
+        // modal continua valendo, pois width e max-width são propriedades distintas);
+        // `grid-cols-[minmax(0,1fr)]` permite que filhos largos encolham/quebrem em vez
+        // de estourar lateralmente e cortar o conteúdo.
+        "fixed left-[50%] top-[50%] z-50 grid grid-cols-[minmax(0,1fr)] w-[calc(100vw-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] translate-x-[-50%] translate-y-[-50%] gap-5 overflow-y-auto overflow-x-hidden overscroll-contain border border-border/60 bg-card text-card-foreground p-7 rounded-[24px] shadow-[0_32px_64px_-16px_rgb(0_0_0/0.18)] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
         className,
       )}
       {...props}
@@ -69,7 +73,7 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
   <div
     className={cn(
       // negative margins pull the header to the edge so it sits flush with the modal frame
-      "flex flex-col space-y-1.5 -mx-7 -mt-7 px-7 pt-7 pb-5 border-b border-border/60 text-left",
+      "flex min-w-0 flex-col space-y-1.5 -mx-7 -mt-7 px-7 pt-7 pb-5 pr-14 border-b border-border/60 text-left",
       className,
     )}
     {...props}
@@ -78,7 +82,7 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
 DialogHeader.displayName = "DialogHeader";
 
 const DialogBody = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("space-y-5", className)} {...props} />
+  <div className={cn("min-w-0 space-y-5", className)} {...props} />
 );
 DialogBody.displayName = "DialogBody";
 
@@ -99,7 +103,10 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn("text-xl font-bold leading-tight tracking-tight text-foreground", className)}
+    className={cn(
+      "text-xl font-bold leading-tight tracking-tight text-foreground break-words",
+      className,
+    )}
     {...props}
   />
 ));
@@ -111,7 +118,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn("text-sm leading-relaxed text-muted-foreground", className)}
+    className={cn("text-sm leading-relaxed text-muted-foreground break-words", className)}
     {...props}
   />
 ));

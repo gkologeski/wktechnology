@@ -261,7 +261,7 @@ function DetailDialog({ row, onClose }: { row: Row | null; onClose: () => void }
 
   return (
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Detalhes do evento</DialogTitle>
         </DialogHeader>

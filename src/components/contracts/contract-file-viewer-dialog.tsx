@@ -307,7 +307,7 @@ export function ContractFileViewerDialog({ open, onOpenChange, contractId, fileN
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl overflow-hidden p-0">
+      <DialogContent className="max-w-4xl p-0 gap-0">
         <DialogHeader className="sr-only">
           <DialogTitle>Visualizar contrato</DialogTitle>
           <DialogDescription>{displayName}</DialogDescription>

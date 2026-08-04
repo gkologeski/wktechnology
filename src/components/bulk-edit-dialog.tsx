@@ -75,7 +75,7 @@ export function BulkEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-lg overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Editar {ids.length} registro(s)</DialogTitle>
         </DialogHeader>

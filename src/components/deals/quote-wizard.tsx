@@ -407,7 +407,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
   return (
     <>
       <Dialog open={open} onOpenChange={(v) => (isBusy ? undefined : onOpenChange(v))}>
-        <DialogContent className="max-w-3xl max-h-[88vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {existingQuote ? "Editar cotação" : "Nova cotação"}
