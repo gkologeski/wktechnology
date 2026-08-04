@@ -560,27 +560,66 @@ export async function searchPeopleClassic(
   const mergedKeywords =
     [filters.keywords?.trim(), extraKeywords].filter(Boolean).join(" ").trim() || undefined;
 
-  const body: Record<string, unknown> = {
-    api: "classic",
-    category: "people",
+  const commonBody: Record<string, unknown> = {
     limit: filters.limit ?? 10,
   };
-  if (mergedKeywords) body.keywords = mergedKeywords;
-  if (loc.ids) body.location = loc.ids;
-  if (ind.ids) body.industry = ind.ids;
-  if (comp.ids) body.current_company = comp.ids;
-  if (sch.ids) body.school = sch.ids;
-  if (filters.network?.length) body.network = filters.network;
-  if (filters.language?.length) body.profile_language = filters.language;
-  if (filters.cursor) body.cursor = filters.cursor;
+  if (mergedKeywords) commonBody.keywords = mergedKeywords;
+  if (loc.ids) commonBody.location = loc.ids;
+  if (ind.ids) commonBody.industry = ind.ids;
+  if (comp.ids) commonBody.current_company = comp.ids;
+  if (sch.ids) commonBody.school = sch.ids;
+  if (filters.network?.length) commonBody.network = filters.network;
+  if (filters.language?.length) commonBody.profile_language = filters.language;
 
-  return call(ctx, {
+  const bodyV1: Record<string, unknown> = {
+    api: "classic",
+    category: "people",
+    ...commonBody,
+  };
+  if (filters.cursor) bodyV1.cursor = filters.cursor;
+
+  // v2: `api`/`category` removidos e paginação por offset.
+  const bodyV2: Record<string, unknown> = { ...commonBody };
+  const offset = filters.offset ?? (filters.cursor ? Number(filters.cursor) : undefined);
+  if (typeof offset === "number" && Number.isFinite(offset) && offset > 0) {
+    bodyV2.offset = offset;
+  }
+
+  const data = await call(ctx, {
     endpoint: "profile.search",
     method: "POST",
     path: "/api/v1/linkedin/search",
     query: { account_id: ctx.unipileAccountId },
-    body,
+    body: bodyV1,
+    v2: {
+      method: "POST",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/search/people`,
+      body: bodyV2,
+    },
   });
+
+  return unipileApiVersion() === "v2" ? normalizePeopleSearchResponse(data) : data;
+}
+
+/**
+ * Normaliza a resposta de busca de pessoas da v2 para o shape que o restante
+ * da aplicação já consome (nomes de campos da v1).
+ */
+function normalizePeopleSearchResponse(data: any) {
+  if (!data || typeof data !== "object") return data;
+  const items: any[] = Array.isArray(data.items)
+    ? data.items
+    : Array.isArray(data.data)
+      ? data.data
+      : [];
+  const mapped = items.map((it) => ({
+    ...it,
+    verified: it.is_verified ?? it.verified,
+    premium: it.is_premium ?? it.premium,
+    open_profile: it.is_open_profile ?? it.open_profile,
+    shared_connections_count: it.shared_relations_count ?? it.shared_connections_count,
+  }));
+  return { ...data, items: mapped, cursor: data.next_cursor ?? data.cursor ?? null };
 }
 
 /**
@@ -592,7 +631,24 @@ export async function fetchProfile(ctx: ThrottleCtx, publicIdentifier: string) {
     method: "GET",
     path: `/api/v1/users/${encodeURIComponent(publicIdentifier)}`,
     query: { account_id: ctx.unipileAccountId, linkedin_sections: "*" },
+    v2: {
+      method: "GET",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/${encodeURIComponent(publicIdentifier)}`,
+    },
   });
+}
+
+/**
+ * Mapa de tipos de search parameters v1 -> v2 (produto Classic).
+ * Os tipos que usamos (LOCATION/INDUSTRY/COMPANY/SCHOOL/LANGUAGE) mantêm o
+ * nome; CONNECTIONS virou RELATION.
+ */
+const SEARCH_PARAM_TYPE_V2: Record<string, string> = {
+  CONNECTIONS: "RELATION",
+};
+
+export function toV2SearchParameterType(type: string): string {
+  return SEARCH_PARAM_TYPE_V2[type] ?? type;
 }
 
 /**
@@ -617,8 +673,20 @@ export async function resolveSearchParameter(
         keywords: keywords.trim(),
         limit,
       },
-    })) as { items?: Array<{ id?: string | number; entity_urn?: string }> } | null;
-    const items = data?.items ?? [];
+      v2: {
+        method: "GET",
+        path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/search/parameters`,
+        query: {
+          type: toV2SearchParameterType(type),
+          keywords: keywords.trim(),
+          limit,
+        },
+      },
+    })) as {
+      items?: Array<{ id?: string | number; entity_urn?: string }>;
+      data?: Array<{ id?: string | number; entity_urn?: string }>;
+    } | null;
+    const items = data?.items ?? data?.data ?? [];
     const ids = items
       .map((it) => (it.id != null ? String(it.id) : it.entity_urn ?? null))
       .filter((v): v is string => !!v && /^\d{3,}$/.test(v));
@@ -627,6 +695,7 @@ export async function resolveSearchParameter(
     return [];
   }
 }
+
 
 // --------- Mensageria (Fase 4) ---------
 
