@@ -532,7 +532,9 @@ export async function searchPeopleClassic(
     network?: ("F" | "S" | "O")[];
     language?: string[];
     cursor?: string;
+    offset?: number;
     limit?: number;
+
   },
 ) {
   // LinkedIn Classic search exige IDs (URNs) para location/industry/company/school.
