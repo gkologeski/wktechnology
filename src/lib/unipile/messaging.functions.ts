@@ -34,17 +34,15 @@ async function renderLinkedinTokens(
       .maybeSingle();
     candidate = data ?? null;
   }
-  const p = opts.profileRaw ?? {};
-  const fullName =
-    candidate?.full_name ??
-    [p?.first_name, p?.last_name].filter(Boolean).join(" ").trim() ??
-    p?.name ??
-    "";
+  // Shape do perfil difere entre v1 e v2 — normalizado no client.
+  const { extractProfileFields } = await import("@/lib/unipile/client.server");
+  const p = extractProfileFields(opts.profileRaw ?? {});
+  const fullName = candidate?.full_name ?? p.fullName ?? "";
   const values: Record<string, string> = {
-    first_name: firstNameOf(fullName) || (p?.first_name ?? ""),
+    first_name: firstNameOf(fullName) || p.firstName || "",
     full_name: fullName || "",
-    company: candidate?.current_company ?? p?.company ?? p?.current_company ?? "",
-    headline: candidate?.headline ?? p?.headline ?? "",
+    company: candidate?.current_company ?? p.company ?? "",
+    headline: candidate?.headline ?? p.headline ?? "",
     email: candidate?.email ?? "",
   };
   return text.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_m, key) => {
@@ -61,16 +59,13 @@ async function resolveProviderId(
   ctx: any,
   publicIdentifier: string,
 ): Promise<{ providerId: string | null; raw: any }> {
-  const { fetchProfile } = await import("@/lib/unipile/client.server");
+  const { fetchProfile, extractProfileProviderId } = await import(
+    "@/lib/unipile/client.server"
+  );
   const profile = (await fetchProfile(ctx, publicIdentifier)) as any;
-  const providerId =
-    profile?.provider_id ??
-    profile?.user?.provider_id ??
-    profile?.public_profile_url_id ??
-    profile?.member_urn ??
-    null;
-  return { providerId: providerId ? String(providerId) : null, raw: profile };
+  return { providerId: extractProfileProviderId(profile), raw: profile };
 }
+
 
 // ---------- send message ----------
 
@@ -163,22 +158,24 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
       .single();
 
     try {
-      const res = (await sendLinkedinMessage(ctx, {
+      const res = await sendLinkedinMessage(ctx, {
         attendeeProviderId: providerId,
         text: renderedText,
-      })) as any;
-      const providerMessageId =
-        res?.message_id ?? res?.id ?? res?.chat_id ?? null;
+      });
+      // v2 responde com payload reduzido (só o id do recurso criado).
+      const { normalizeSendMessageResult } = await import("@/lib/unipile/client.server");
+      const { messageId, chatId } = normalizeSendMessageResult(res);
       await supabaseAdmin
         .from("unipile_message_log")
         .update({
           status: "sent",
-          provider_message_id: providerMessageId ? String(providerMessageId) : null,
+          provider_message_id: messageId,
           sent_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", logRow!.id);
-      return { ok: true as const, providerMessageId };
+      return { ok: true as const, providerMessageId: messageId, chatId };
+
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const code = err instanceof UnipileError ? err.code : "provider_error";
@@ -279,16 +276,21 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
       .single();
 
     try {
-      await sendLinkedinInvite(ctx, { providerId, message: renderedMessage });
+      const res = await sendLinkedinInvite(ctx, { providerId, message: renderedMessage });
+      // v1: invitation_id/invite_id; v2 (relation-requests): apenas `id`.
+      const { normalizeInviteResult } = await import("@/lib/unipile/client.server");
+      const { invitationId } = normalizeInviteResult(res);
       await supabaseAdmin
         .from("unipile_message_log")
         .update({
           status: "sent",
+          ...(invitationId ? { provider_invite_id: invitationId } : {}),
           sent_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", logRow!.id);
-      return { ok: true as const };
+      return { ok: true as const, invitationId };
+
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const code = err instanceof UnipileError ? err.code : "provider_error";
