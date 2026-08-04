@@ -1,8 +1,9 @@
 // Upload de PDF de CV: faz upload pro bucket ats-cvs, extrai texto via pdfjs-dist
 // no browser e retorna {url, text} pra chamar parseCv.
 import { useRef, useState } from "react";
-import { Loader2, Upload } from "lucide-react";
+import { FolderOpen, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -14,6 +15,7 @@ type Props = {
 export function CvPdfUploadButton({ onExtracted, disabled }: Props) {
   const ref = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const handle = async (file: File) => {
     setBusy(true);
