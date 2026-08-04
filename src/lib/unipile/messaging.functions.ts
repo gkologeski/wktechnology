@@ -34,17 +34,15 @@ async function renderLinkedinTokens(
       .maybeSingle();
     candidate = data ?? null;
   }
-  const p = opts.profileRaw ?? {};
-  const fullName =
-    candidate?.full_name ??
-    [p?.first_name, p?.last_name].filter(Boolean).join(" ").trim() ??
-    p?.name ??
-    "";
+  // Shape do perfil difere entre v1 e v2 — normalizado no client.
+  const { extractProfileFields } = await import("@/lib/unipile/client.server");
+  const p = extractProfileFields(opts.profileRaw ?? {});
+  const fullName = candidate?.full_name ?? p.fullName ?? "";
   const values: Record<string, string> = {
-    first_name: firstNameOf(fullName) || (p?.first_name ?? ""),
+    first_name: firstNameOf(fullName) || p.firstName || "",
     full_name: fullName || "",
-    company: candidate?.current_company ?? p?.company ?? p?.current_company ?? "",
-    headline: candidate?.headline ?? p?.headline ?? "",
+    company: candidate?.current_company ?? p.company ?? "",
+    headline: candidate?.headline ?? p.headline ?? "",
     email: candidate?.email ?? "",
   };
   return text.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_m, key) => {
@@ -61,16 +59,13 @@ async function resolveProviderId(
   ctx: any,
   publicIdentifier: string,
 ): Promise<{ providerId: string | null; raw: any }> {
-  const { fetchProfile } = await import("@/lib/unipile/client.server");
+  const { fetchProfile, extractProfileProviderId } = await import(
+    "@/lib/unipile/client.server"
+  );
   const profile = (await fetchProfile(ctx, publicIdentifier)) as any;
-  const providerId =
-    profile?.provider_id ??
-    profile?.user?.provider_id ??
-    profile?.public_profile_url_id ??
-    profile?.member_urn ??
-    null;
-  return { providerId: providerId ? String(providerId) : null, raw: profile };
+  return { providerId: extractProfileProviderId(profile), raw: profile };
 }
+
 
 // ---------- send message ----------
 
