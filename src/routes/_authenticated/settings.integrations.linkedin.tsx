@@ -127,6 +127,22 @@ function LinkedinIntegrationPage() {
   }, [search.connected, search.state]);
 
 
+  const onCheckCredentials = async () => {
+    setChecking(true);
+    try {
+      const r = await checkCreds({});
+      setCredStatus({ ok: r.ok, message: r.message, detail: "detail" in r ? r.detail : null });
+      if (r.ok) toast.success(r.message);
+      else toast.error(r.message);
+    } catch (e) {
+      const message = (e as Error).message;
+      setCredStatus({ ok: false, message });
+      toast.error(message);
+    } finally {
+      setChecking(false);
+    }
+  };
+
   const onConnect = async () => {
     setConnecting(true);
     try {
@@ -134,11 +150,14 @@ function LinkedinIntegrationPage() {
       if (r.url) window.location.href = r.url;
       else toast.error("Não foi possível iniciar a conexão.");
     } catch (e) {
-      toast.error((e as Error).message);
+      const message = (e as Error).message;
+      setCredStatus({ ok: false, message });
+      toast.error(message);
     } finally {
       setConnecting(false);
     }
   };
+
 
   const onDisconnect = async () => {
     if (!(await confirmDialog("Desconectar conta LinkedIn?"))) return;
