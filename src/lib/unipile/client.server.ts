@@ -136,49 +136,23 @@ function isInsideWindow(window: { tz?: string; start_hour?: number; end_hour?: n
 }
 
 /**
- * Versão da API Unipile em uso. Padrão: "v1" (comportamento atual).
- * Defina UNIPILE_API_VERSION="v2" para usar a API v2 (api.unipile.com/v2).
- * Lido a cada chamada (env é injetado em runtime, não em module scope).
+ * Base URL da API Unipile v2. O DSN por tenant (UNIPILE_DSN) foi descontinuado
+ * na v2 — a base é fixa, com override opcional apenas para testes.
  */
-export type UnipileApiVersion = "v1" | "v2";
-
-export function unipileApiVersion(): UnipileApiVersion {
-  return String(process.env.UNIPILE_API_VERSION ?? "").trim().toLowerCase() === "v2"
-    ? "v2"
-    : "v1";
-}
-
 const V2_DEFAULT_BASE_URL = "https://api.unipile.com/v2";
 
-/**
- * Base URL + API key. Na v1 usamos o DSN do tenant; na v2 o DSN foi
- * descontinuado e a base é fixa (com override opcional para testes).
- */
+/** Base URL + API key da API v2. Lido em runtime (env não existe em module scope). */
 function getEnv() {
   const key = process.env.UNIPILE_API_KEY;
-  const version = unipileApiVersion();
-
-  if (version === "v2") {
-    if (!key) {
-      throw new UnipileError(
-        "Credenciais Unipile não configuradas (UNIPILE_API_KEY).",
-        "missing_credentials",
-      );
-    }
-    const override = process.env.UNIPILE_API_BASE_URL?.trim();
-    const base = (override || V2_DEFAULT_BASE_URL).replace(/\/$/, "");
-    return { dsn: base, key, version };
-  }
-
-  const dsn = process.env.UNIPILE_DSN;
-  if (!dsn || !key) {
+  if (!key) {
     throw new UnipileError(
-      "Credenciais Unipile não configuradas (UNIPILE_DSN / UNIPILE_API_KEY).",
+      "Credenciais Unipile não configuradas (UNIPILE_API_KEY).",
       "missing_credentials",
     );
   }
-  const normalized = /^https?:\/\//i.test(dsn) ? dsn : `https://${dsn}`;
-  return { dsn: normalized.replace(/\/$/, ""), key, version };
+  const override = process.env.UNIPILE_API_BASE_URL?.trim();
+  const base = (override || V2_DEFAULT_BASE_URL).replace(/\/$/, "");
+  return { baseUrl: base, key };
 }
 
 
@@ -300,24 +274,13 @@ async function logRequest(
 
 // --------- HTTP ---------
 
-interface CallVariant {
-  method?: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  path: string;
-  query?: Record<string, string | number | undefined>;
-  body?: unknown;
-}
-
 interface CallOptions {
   endpoint: UnipileEndpoint;
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
-  path: string; // v1 — relativo ao DSN, ex.: "/api/v1/users/abc"
+  /** Path relativo à base v2, ex.: `/${accountId}/users/abc`. */
+  path: string;
   query?: Record<string, string | number | undefined>;
   body?: unknown;
-  /**
-   * Variante v2 (relativa a https://api.unipile.com/v2), ex.:
-   * `/${accountId}/users/abc`. Obrigatória quando UNIPILE_API_VERSION=v2.
-   */
-  v2?: CallVariant;
 }
 
 function buildQuery(query?: Record<string, string | number | undefined>) {
@@ -332,23 +295,11 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
   const budget = BUDGETS[opts.endpoint];
   await enforceBudget(ctx, opts.endpoint, budget);
 
-  const { dsn, key, version } = getEnv();
+  const { baseUrl, key } = getEnv();
 
-  if (version === "v2" && !opts.v2) {
-    throw new UnipileError(
-      `Endpoint ${opts.endpoint} (${opts.path}) ainda não migrado para a API v2.`,
-      "provider_error",
-    );
-  }
-
-  const variant: CallVariant =
-    version === "v2" && opts.v2
-      ? opts.v2
-      : { method: opts.method, path: opts.path, query: opts.query, body: opts.body };
-
-  const method = variant.method ?? opts.method;
-  const url = `${dsn}${variant.path}${buildQuery(variant.query)}`;
-  const requestBody = variant.body;
+  const method = opts.method;
+  const url = `${baseUrl}${opts.path}${buildQuery(opts.query)}`;
+  const requestBody = opts.body;
 
 
   const started = Date.now();
@@ -448,9 +399,8 @@ export async function loadAccountCtx(ownerId: string): Promise<ThrottleCtx> {
 /**
  * Gera URL Hosted Auth para conectar uma conta LinkedIn.
  *
- * v1: POST /api/v1/hosted/accounts/link (usa notify_url + name para correlacionar).
- * v2: POST /v2/auth/link — não existem mais `api_url`, `notify_url`, `name` nem
- * redirects separados de sucesso/erro. O `connectToken` viaja como `state` no
+ * POST /v2/auth/link — não existem `api_url`, `notify_url`, `name` nem redirects
+ * separados de sucesso/erro. O `connectToken` viaja como `state` no
  * `redirect_uri`, e a tela de sucesso é responsabilidade da nossa aplicação.
  */
 export async function createHostedAuthLink(params: {
@@ -460,34 +410,21 @@ export async function createHostedAuthLink(params: {
   failureRedirect: string;
   connectToken: string;
 }) {
-  const { dsn, key, version } = getEnv();
+  const { baseUrl, key } = getEnv();
   const expiresOn = new Date(Date.now() + 30 * 60 * 1000).toISOString();
 
-  const url =
-    version === "v2" ? `${dsn}/auth/link` : `${dsn}/api/v1/hosted/accounts/link`;
+  const url = `${baseUrl}/auth/link`;
 
-  const body =
-    version === "v2"
-      ? {
-          type: "create",
-          providers: ["LINKEDIN"],
-          expires_on: expiresOn,
-          redirect_uri: appendQueryParam(
-            params.successRedirect,
-            "state",
-            params.connectToken,
-          ),
-        }
-      : {
-          type: "create",
-          providers: ["LINKEDIN"],
-          api_url: dsn,
-          expiresOn,
-          notify_url: params.notifyUrl,
-          name: params.connectToken,
-          success_redirect_url: params.successRedirect,
-          failure_redirect_url: params.failureRedirect,
-        };
+  const body = {
+    type: "create",
+    providers: ["LINKEDIN"],
+    expires_on: expiresOn,
+    redirect_uri: appendQueryParam(
+      params.successRedirect,
+      "state",
+      params.connectToken,
+    ),
+  };
 
   const res = await fetch(url, {
     method: "POST",
@@ -527,9 +464,8 @@ export type UnipileAccountSummary = {
 /**
  * Lista as contas do tenant Unipile.
  *
- * v1: GET /api/v1/accounts (item traz `type` e `name`).
- * v2: GET /v2/accounts (item traz `provider`; `name` não é mais definível
- * por nós no hosted auth, então a correlação passa a ser via `state`).
+ * GET /v2/accounts (item traz `provider`; `name` não é mais definível por nós
+ * no hosted auth, então a correlação passa a ser via `state`).
  *
  * Não usa `call()` porque não é uma chamada por conta (sem throttle bucket).
  */
@@ -542,9 +478,8 @@ export async function listUnipileAccounts(
   } catch {
     return { ok: false, reason: "missing_credentials" };
   }
-  const { dsn, key, version } = env;
-  const path = version === "v2" ? "/accounts" : "/api/v1/accounts";
-  const res = await fetch(`${dsn}${path}?limit=${limit}`, {
+  const { baseUrl, key } = env;
+  const res = await fetch(`${baseUrl}/accounts?limit=${limit}`, {
     headers: { "X-API-KEY": key, Accept: "application/json" },
   });
   if (!res.ok) return { ok: false, reason: `unipile_${res.status}` };
@@ -555,7 +490,7 @@ export async function listUnipileAccounts(
     .map((a) => ({
       id: String(a.id),
       name: (a.name ?? a.display_name ?? null) as string | null,
-      provider: String(a.provider ?? a.type ?? "").toUpperCase(),
+      provider: String(a.provider ?? "").toUpperCase(),
       created_at: (a.created_at ?? a.createdAt ?? null) as string | null,
       raw: a as Record<string, unknown>,
     }));
@@ -569,8 +504,7 @@ export type SearchParamValue = string | { id: string };
 
 /**
  * Busca pessoas no LinkedIn Classic.
- * v1: POST /api/v1/linkedin/search (api=classic, category=people).
- * v2: POST /v2/:account_id/linkedin/search/people (sem api/category, offset).
+ * POST /v2/:account_id/linkedin/search/people (paginação por offset).
  */
 export async function searchPeopleClassic(
   ctx: ThrottleCtx,
@@ -589,9 +523,9 @@ export async function searchPeopleClassic(
   },
 ) {
   // A busca do LinkedIn exige IDs de parâmetro para location/industry/company/school.
-  // Na v1 os IDs são numéricos; na v2 são strings opacas — por isso aceitamos
-  // `{ id }` para valores já resolvidos via search/parameters. Texto livre é
-  // mesclado em `keywords` para não quebrar o schema da Unipile.
+  // Na v2 os IDs são strings opacas — por isso aceitamos `{ id }` para valores já
+  // resolvidos via search/parameters. Texto livre é mesclado em `keywords` para
+  // não quebrar o schema da Unipile.
   const isId = (v: string) => /^\d{3,}$/.test(v.trim());
   const splitIds = (arr?: SearchParamValue[]) => {
     const ids: string[] = [];
@@ -629,16 +563,8 @@ export async function searchPeopleClassic(
   if (sch.ids) commonBody.school = sch.ids;
   if (filters.language?.length) commonBody.profile_language = filters.language;
 
-  const bodyV1: Record<string, unknown> = {
-    api: "classic",
-    category: "people",
-    ...commonBody,
-  };
-  if (filters.network?.length) bodyV1.network = filters.network;
-  if (filters.cursor) bodyV1.cursor = filters.cursor;
-
-  // v2: `api`/`category` removidos, paginação por offset e `network` virou
-  // `network_distance` (array de números: 1 = 1º grau, 2 = 2º, 3 = 3º+).
+  // v2: paginação por offset e `network` virou `network_distance`
+  // (array de números: 1 = 1º grau, 2 = 2º, 3 = 3º+).
   const bodyV2: Record<string, unknown> = { ...commonBody };
   if (filters.network?.length) {
     const distance = filters.network
@@ -655,25 +581,17 @@ export async function searchPeopleClassic(
   const data = await call(ctx, {
     endpoint: "profile.search",
     method: "POST",
-    path: "/api/v1/linkedin/search",
-    query: { account_id: ctx.unipileAccountId },
-    body: bodyV1,
-    v2: {
-      method: "POST",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/search/people`,
-      body: bodyV2,
-    },
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/search/people`,
+    body: bodyV2,
   });
 
-  return unipileApiVersion() === "v2"
-    ? normalizePeopleSearchResponse(data, safeOffset)
-    : data;
+  return normalizePeopleSearchResponse(data, safeOffset);
 }
 
 
 /**
  * Normaliza a resposta de busca de pessoas da v2 para o shape que o restante
- * da aplicação já consome (nomes de campos da v1). A v2 devolve `data` e pagina
+ * da aplicação já consome. A v2 devolve `data` e pagina
  * por `offset`, então expomos o próximo offset em `cursor` (string) para manter
  * a interface dos consumidores.
  */
@@ -705,17 +623,12 @@ export async function fetchProfile(ctx: ThrottleCtx, publicIdentifier: string) {
   return call(ctx, {
     endpoint: "profile.fetch",
     method: "GET",
-    path: `/api/v1/users/${encodeURIComponent(publicIdentifier)}`,
-    query: { account_id: ctx.unipileAccountId, linkedin_sections: "*" },
-    v2: {
-      method: "GET",
-      path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/${encodeURIComponent(publicIdentifier)}`,
-    },
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/${encodeURIComponent(publicIdentifier)}`,
   });
 }
 
 /**
- * Mapa de tipos de search parameters v1 -> v2.
+ * Mapa de tipos de search parameters para o vocabulário v2.
  * Os tipos que usamos (LOCATION/INDUSTRY/COMPANY/SCHOOL/PROFILE_LANGUAGE)
  * mantêm o nome; CONNECTIONS virou RELATION.
  */
@@ -731,7 +644,7 @@ export function toV2SearchParameterType(type: string): string {
 /** Produto LinkedIn usado na resolução de parâmetros de busca. */
 export type LinkedinSearchProduct = "CLASSIC" | "RECRUITER" | "SALES_NAVIGATOR";
 
-/** Paths v2 de search/parameters por produto (a v1 usava a query `service`). */
+/** Paths de search/parameters por produto. */
 const SEARCH_PARAM_PATH_V2: Record<LinkedinSearchProduct, string> = {
   CLASSIC: "linkedin/search/parameters",
   RECRUITER: "linkedin/recruiter/search/parameters",
@@ -742,8 +655,8 @@ export type SearchParameterItem = { id: string; title: string };
 
 /**
  * Resolve texto livre (ex.: "São Paulo") em parâmetros de busca do LinkedIn.
- * Retorna `{ id, title }` — na v1 os IDs são numéricos; na v2 são strings
- * opacas, então não aplicamos filtro numérico nessa versão.
+ * Retorna `{ id, title }` — na v2 os IDs são strings opacas, então não
+ * aplicamos filtro numérico.
  */
 export async function resolveSearchParameterItems(
   ctx: ThrottleCtx,
@@ -753,27 +666,15 @@ export async function resolveSearchParameterItems(
   product: LinkedinSearchProduct = "CLASSIC",
 ): Promise<SearchParameterItem[]> {
   if (!keywords?.trim()) return [];
-  const isV2 = unipileApiVersion() === "v2";
   try {
     const data = (await call(ctx, {
       endpoint: "chat.list", // budget leve — não é fetch de perfil
       method: "GET",
-      path: "/api/v1/linkedin/search/parameters",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/${SEARCH_PARAM_PATH_V2[product]}`,
       query: {
-        account_id: ctx.unipileAccountId,
-        type,
+        type: toV2SearchParameterType(type),
         keywords: keywords.trim(),
         limit,
-        service: product,
-      },
-      v2: {
-        method: "GET",
-        path: `/${encodeURIComponent(ctx.unipileAccountId)}/${SEARCH_PARAM_PATH_V2[product]}`,
-        query: {
-          type: toV2SearchParameterType(type),
-          keywords: keywords.trim(),
-          limit,
-        },
       },
     })) as {
       items?: Array<Record<string, unknown>>;
@@ -789,8 +690,8 @@ export async function resolveSearchParameterItems(
         const title = String(it.name ?? it.title ?? it.text ?? "").trim();
         return { id, title };
       })
-      // v1 exige IDs numéricos; v2 aceita qualquer string opaca.
-      .filter((it) => !!it.id && (isV2 || /^\d{3,}$/.test(it.id)));
+      // v2 aceita qualquer string opaca como ID.
+      .filter((it) => !!it.id);
     return mapped.slice(0, limit);
   } catch {
     return [];
