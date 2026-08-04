@@ -47,15 +47,18 @@ export const getRateUsage = createServerFn({ method: "GET" })
     return { buckets: buckets ?? [] };
   });
 
-/** Mensagens pt-BR para falhas de credencial da Unipile. */
+/** Mensagens pt-BR para falhas de credencial/requisição da Unipile. */
 const CREDENTIAL_MESSAGE: Record<string, string> = {
   missing_credentials:
     "Integração Unipile não configurada. Salve a chave da API (UNIPILE_API_KEY) nas configurações.",
   invalid_credentials:
     "Chave da API Unipile inválida ou expirada. Gere uma nova chave (API v2) no painel da Unipile e atualize nas configurações.",
+  invalid_parameters:
+    "A Unipile recusou os parâmetros da conexão. Tente novamente; se persistir, veja o detalhe técnico abaixo.",
   provider_error: "A Unipile recusou a requisição. Tente novamente em alguns minutos.",
   network_error: "Não foi possível falar com a Unipile. Verifique a conexão e tente novamente.",
 };
+
 
 /**
  * Testa as credenciais da API v2 sem expor a chave.
