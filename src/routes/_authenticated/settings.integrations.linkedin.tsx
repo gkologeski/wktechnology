@@ -106,16 +106,18 @@ function LinkedinIntegrationPage() {
   useEffect(() => {
     if (search.connected === "1") {
       toast.success("Conta LinkedIn conectada via Unipile.");
-      // Fallback caso o webhook ainda não tenha chegado: reconcilia via API
+      // Fallback caso o webhook ainda não tenha chegado: reconcilia via API.
+      // Na v2 o `state` é a correlação com o connect_token emitido no início.
       (async () => {
         try {
-          await reconcile({});
+          await reconcile({ data: search.state ? { state: search.state } : {} });
         } catch {}
         await refresh();
       })();
     }
     if (search.connected === "0") toast.error("Falha ao conectar conta LinkedIn.");
-  }, [search.connected]);
+  }, [search.connected, search.state]);
+
 
   const onConnect = async () => {
     setConnecting(true);
