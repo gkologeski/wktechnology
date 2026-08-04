@@ -1,0 +1,67 @@
+# Levantamento: migração Unipile v1 → v2
+
+Auditoria de todas as chamadas Unipile do código-fonte contra a documentação v2 (`https://developer.unipile.com/v2.0`). Nenhuma alteração de código foi feita — este documento é o levantamento pedido, com o plano de execução caso você aprove a migração.
+
+## Contexto importante antes de decidir
+
+- A v2 está **em beta** e roda em uma **conta/dashboard separada** (`dashboardv2`). É necessário criar conta nova, transferir assinatura e migrar as contas LinkedIn conectadas. Sem isso, a API key atual não funciona na v2.
+- A v2 **não usa mais DSN**. Base fixa: `https://api.unipile.com/v2`. Nosso secret `UNIPILE_DSN` deixa de ter sentido (ou passa a ser opcional/override).
+- IDs mudam de formato: contas viram `acc_...`, webhooks `we_...`, e a distinção "Unipile ID x Provider ID" acaba (tudo é provider ID). Os valores já gravados em `unipile_accounts.unipile_account_id` e em `unipile_message_log` **não são válidos na v2**.
+- Todo endpoint agora carrega a conta no path (`/v2/:account_id/...`); `account_id` em query/body é removido.
+- Paginação: `cursor` foi removido em várias rotas, substituído por `offset`/`limit` (LinkedIn search, jobs, applicants, accounts).
+- Não há mais pré-sincronização; a Unipile aplica cache e rate limit próprios.
+
+## Inventário do que temos hoje (v1)
+
+Arquivo central: `src/lib/unipile/client.server.ts` (todas as chamadas passam por `call()`), mais uma chamada direta em `src/lib/unipile/accounts.functions.ts` e outra em `src/lib/ats/linkedin-job-config.functions.ts`.
+
+| Uso no código | Rota v1 atual | Equivalente v2 | Impacto |
+| --- | --- | --- | --- |
+| `createHostedAuthLink` | `POST /api/v1/hosted/accounts/link` | `POST /v2/auth/link` | Alto: corpo diferente (`redirect_uri`, `expires_on`, `providers`, `config`); não há mais `api_url`, `success_redirect_url`/`failure_redirect_url` separados nem `name` para correlacionar. O `connect_token` precisa virar state na nossa própria rota de callback. |
+| `reconcileLinkedinAccount` | `GET /api/v1/accounts?limit=50` | `GET /v2/accounts` | Médio: `cursor` → `offset`/`limit`; campo `type` → `provider`; casamento por `name` deixa de existir. |
+| `searchPeopleClassic` | `POST /api/v1/linkedin/search` (`api=classic`, `category=people`) | `POST /v2/:account_id/linkedin/search/people` | Alto: `api`/`category` removidos, `company` → `current_company`, `cursor` → `offset`, resposta renomeada (`verified`→`is_verified`, `premium`→`is_premium`, `shared_connections_count`→`shared_relations_count`, etc.). |
+| `resolveSearchParameter` e `searchLinkedinDirectory` | `GET /api/v1/linkedin/search/parameters` | `GET /v2/:account_id/linkedin/search/parameters` (variantes classic/recruiter/sales) | Médio: `service` removido; alguns `type` renomeados (ex. `CONNECTIONS`→`RELATION`). Nossos tipos usados (`LOCATION`, `INDUSTRY`, `COMPANY`, `SCHOOL`, `LANGUAGE`) precisam ser reconferidos contra o enum classic da v2. |
+| `fetchProfile` | `GET /api/v1/users/:identifier` | `GET /v2/:account_id/users/:user_id` | Médio: shape do `UserProfile` mudou; `linkedin_sections` precisa ser revalidado. |
+| `sendLinkedinMessage` | `POST /api/v1/chats` | `POST /v2/:account_id/chats/send` | Alto: `attendees_ids` → `users_ids`, `subject` → `name`, opções LinkedIn passam para `specifics.linkedin.classic`, anexos em base64 JSON. |
+| `listLinkedinChats` | `GET /api/v1/chats` | `GET /v2/:account_id/chats` | Médio: `unread` → `is_unread`, sem `account_type`, shape de Chat novo. |
+| `listLinkedinChatMessages` | `GET /api/v1/chats/:id/messages` | `GET /v2/:account_id/chats/:chat_id/messages` | Baixo/médio: `sender_id` → `user_id`, shape de Message novo. |
+| `sendLinkedinInvite` | `POST /api/v1/users/invite` | `POST /v2/:account_id/users/me/relation-requests` | Alto: `provider_id` → `user_id`; retorno passa a ser um `relation request` (o ID que gravamos em `provider_invite_id` muda de semântica). |
+| `listSentInvitations` (usado pelo cron `unipile-invites-sync`) | `GET /api/v1/users/invite/sent` | `GET /v2/:account_id/users/me/relation-requests?type=sent` | Alto: rota removida; o sync de aceite precisa ler `relation-requests` e comparar `request_id`. |
+| `createLinkedinJob` | `POST /api/v1/linkedin/jobs` | `POST /v2/:account_id/linkedin/jobs` + `POST .../jobs/:job_id/publish` | Alto: a v2 cria **draft** e publica em duas etapas; `job_title.text`/`company.text` → `name`, `workplace` → `workplace_type`, `apply_method` reorganizado. |
+| `closeLinkedinJob` | `DELETE /api/v1/linkedin/jobs/:id` | `POST /v2/:account_id/linkedin/jobs/:job_id/close` | Alto: método e rota mudam. |
+| `listLinkedinJobApplicants` | `GET /api/v1/linkedin/jobs/:id/applicants` | `POST /v2/:account_id/linkedin/jobs/:job_id/applicants` | Alto: virou POST com filtros no body; `cursor` → `offset`. |
+| Checkpoint de publicação de vaga | `POST /api/v1/linkedin/jobs/:id/checkpoint` | Removido | Substituir por verificação de identidade da company (`verify-email` + `submit-otp`) quando vier `insufficient_permissions`. |
+| Webhook `src/routes/api/public/unipile/webhook.ts` | tipos `ACCOUNT_STATUS`, `message_received` | Event types (`account.add`, `account.reconnect`, `account.remove`, `account.status.disconnected`, `account.status.errored`, `account.status.running`, eventos de mensagem) | Alto: payload novo e mais enxuto (só IDs em vários eventos); nossa detecção por `payload.status/event/type` e por `sender.provider_id` precisa ser reescrita; correlação por `name` (connect_token) desaparece. |
+
+Consumidores indiretos que herdam essas mudanças de shape (sem chamar HTTP direto): `src/lib/ats/unipile-hunting.functions.ts`, `src/lib/ats/candidates-linkedin-preview.functions.ts`, `src/lib/ats/sourcing-sequences-worker.server.ts`, `src/lib/ats/job-postings.functions.ts`, `src/lib/ats/adapters/linkedin/job-board.ts`, `src/lib/unipile/messaging.functions.ts`, `src/lib/unipile/observability.functions.ts`, `src/lib/ats/hunting-public.server.ts` (extensão Chrome), telas `hunting/*`, `settings.integrations.linkedin`, `unipile-connected.tsx`.
+
+## O que precisa ser alterado (resumo por camada)
+
+1. **Transporte** (`client.server.ts`): base URL fixa `https://api.unipile.com/v2`, path com `:account_id`, remoção de `account_id` de query/body, paginação `offset` onde a v2 exige, e um flag de versão para permitir rollback.
+2. **Auth/contas**: novo `POST /v2/auth/link` + rota de callback própria carregando nosso `state`, já que `name`/`notify_url` não existem mais; reconciliação por `GET /v2/accounts` com `provider`.
+3. **Mensageria/convites**: renomes de params e nova semântica de relation requests, incluindo o cron de sync de aceites.
+4. **Vagas (ATS)**: fluxo draft → publish → close, e applicants via POST.
+5. **Webhook**: novo roteamento por `event type` e payload reduzido (buscar detalhes via API quando necessário).
+6. **Dados/secrets**: `UNIPILE_DSN` deixa de ser usado; contas conectadas precisam reconectar (novos `acc_...`), e `unipile_message_log.provider_invite_id` histórico fica órfão.
+7. **Observabilidade**: os `endpoint` gravados em `unipile_rate_buckets`/`unipile_request_log` continuam válidos, mas vale registrar a versão da API para comparar antes/depois.
+
+## Riscos
+
+- Beta com breaking changes possíveis durante o período.
+- Migração exige **reconexão das contas LinkedIn** dos usuários (não é transparente).
+- Sem ambiente v2 provisionado, a migração só pode ser entregue como código + testes internos, sem validação real contra a API.
+- Publicação de vagas passa a ter duas etapas e pode exigir verificação de identidade na company page.
+
+## Detalhes técnicos da execução sugerida
+
+Se aprovado, sugiro fasear assim (cada fase revisada e validada com `tsgo`/lint antes da próxima):
+
+- **Fase 0** — camada de compatibilidade: `UNIPILE_API_VERSION` (`v1`|`v2`) e `buildUrl()` no `client.server.ts`, mantendo v1 como default. Nada muda em produção.
+- **Fase 1** — Auth/Contas: `POST /v2/auth/link`, callback próprio com state, reconciliação via `GET /v2/accounts`.
+- **Fase 2** — Webhook v2: handler que aceita os novos event types mantendo compatibilidade com os v1 enquanto ambas convivem.
+- **Fase 3** — Users/Search: `search/people`, `search/parameters`, `users/:user_id`, com normalizadores de resposta isolados para não espalhar renomes pela UI.
+- **Fase 4** — Mensageria e relation requests, incluindo o cron `unipile-invites-sync`.
+- **Fase 5** — Jobs ATS: draft/publish/close/applicants no adapter LinkedIn.
+- **Fase 6** — Limpeza: remoção do caminho v1, ajuste de secrets e documentação em `docs/`.
+
+Nenhuma alteração de schema é obrigatória; se quisermos manter histórico durante a transição, o mais conservador é adicionar colunas novas (ex. `api_version`) em vez de sobrescrever IDs existentes.
