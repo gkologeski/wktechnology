@@ -44,8 +44,7 @@ export const getLinkedinJobConfig = createServerFn({ method: "POST" })
       .eq("id", data.job_id)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    const { unipileApiVersion } = await import("@/lib/unipile/client.server");
-    return { ...(row ?? {}), api_version: unipileApiVersion() };
+    return row ?? {};
   });
 
 export const updateLinkedinJobConfig = createServerFn({ method: "POST" })

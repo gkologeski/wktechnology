@@ -94,16 +94,11 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
-  const [apiVersion, setApiVersion] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
       try {
-        const r = (await getCfg({ data: { job_id: jobId } })) as Partial<Config> & {
-          api_version?: string;
-        };
-        const { api_version, ...rest } = r;
-        setApiVersion(api_version ?? null);
+        const rest = (await getCfg({ data: { job_id: jobId } })) as Partial<Config>;
         setCfg({
           ...EMPTY,
           ...rest,
@@ -145,7 +140,6 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
       ? Boolean(cfg.linkedin_notification_email)
       : Boolean(cfg.linkedin_apply_url));
 
-  const isV2 = apiVersion === "v2";
   const promoted = (cfg.linkedin_publish_mode ?? "FREE") === "PROMOTED";
 
   return (
@@ -292,18 +286,10 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
               <Label className="text-xs font-medium text-text-secondary">
                 Fluxo de publicação (rascunho → publicação → fechamento)
               </Label>
-              {apiVersion ? (
-                <span className="rounded-full border border-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-text-tertiary">
-                  API {apiVersion}
-                </span>
-              ) : null}
+              <span className="rounded-full border border-border-subtle px-2 py-0.5 text-[10px] uppercase tracking-wide text-text-tertiary">
+                API v2
+              </span>
             </div>
-            {isV2 ? null : (
-              <p className="text-xs text-text-tertiary">
-                Disponível apenas na API v2 da Unipile. Os valores são salvos e passam a ser
-                aplicados automaticamente quando a v2 estiver ativa.
-              </p>
-            )}
 
             <div className="grid gap-2 sm:grid-cols-2">
               <div>

@@ -137,25 +137,19 @@ export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
       return { ok: true, already: true };
     }
 
-    const { listUnipileAccounts, unipileApiVersion } = await import(
-      "@/lib/unipile/client.server"
-    );
-    const version = unipileApiVersion();
+    const { listUnipileAccounts } = await import("@/lib/unipile/client.server");
 
     // Na v2 o `state` é a única correlação disponível: se veio e não bate com o
     // token emitido por nós, não adotamos nenhuma conta.
-    if (version === "v2" && data.state && data.state !== row.connect_token) {
+    if (data.state && data.state !== row.connect_token) {
       return { ok: false, reason: "state_mismatch" };
     }
 
     const listed = await listUnipileAccounts(50);
     if (!listed.ok) return { ok: false, reason: listed.reason };
 
-    let match =
-      version === "v2"
-        ? undefined
-        : listed.items.find((a) => a.name && row.connect_token && a.name === row.connect_token);
-    if (!match) {
+    let match: (typeof listed.items)[number] | undefined;
+    {
       match = listed.items
         .filter((a) => a.provider.includes("LINKEDIN"))
         .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))[0];

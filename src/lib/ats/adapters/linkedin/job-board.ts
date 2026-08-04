@@ -2,8 +2,8 @@
  * LinkedIn Job Board Adapter — via Unipile.
  *
  * Publica vagas nativas no LinkedIn usando a conta LinkedIn conectada via
- * Unipile (mesma conta usada em outreach/hunting). Endpoint:
- * `POST /api/v1/linkedin/jobs`.
+ * Unipile (mesma conta usada em outreach/hunting). Fluxo v2:
+ * `POST /v2/:account_id/linkedin/jobs` (rascunho) + `/publish` + `/close`.
  *
  * Requer, na `ats_jobs`:
  *  - linkedin_company_id (Company Page ID, ex.: "10108877")
@@ -51,7 +51,7 @@ type LinkedinJobConfig = {
   applyType: "linkedin" | "external";
   applyUrl: string | null;
   notificationEmail: string | null;
-  /** v2 apenas: modo de publicação do rascunho. Padrão: FREE. */
+  /** Modo de publicação do rascunho. Padrão: FREE. */
   publishMode: "FREE" | "PROMOTED";
   budgetPeriod: "total" | "daily";
   budgetAmount: number | null;
@@ -137,12 +137,10 @@ export const LinkedInJobBoardAdapter: JobBoardAdapter = {
         extractLinkedinJobId,
         getLinkedinJobBudget,
         publishLinkedinJob,
-        unipileApiVersion,
       } = await import("@/lib/unipile/client.server");
       const upCtx = await loadAccountCtx(ctx.ownerId);
-      const isV2 = unipileApiVersion() === "v2";
 
-      // Passo 1 — na v2 isso cria apenas o rascunho (DRAFT); na v1 já publica.
+      // Passo 1 — cria o rascunho (DRAFT) da vaga.
       const res = await createLinkedinJob(upCtx, {
         title: input.title,
         titleId: cfg.titleId ?? undefined,
@@ -170,53 +168,51 @@ export const LinkedInJobBoardAdapter: JobBoardAdapter = {
         (res?.url as string | undefined) ??
         `https://www.linkedin.com/jobs/view/${externalId}`;
 
-      // Passo 2 (v2) — publicar o rascunho.
-      if (isV2) {
-        let mode: "FREE" | "PROMOTED" = cfg.publishMode;
-        let budget: { period: "total" | "daily"; amount: number; currency: string } | undefined;
+      // Passo 2 — publicar o rascunho.
+      const mode: "FREE" | "PROMOTED" = cfg.publishMode;
+      let budget: { period: "total" | "daily"; amount: number; currency: string } | undefined;
 
-        if (mode === "PROMOTED" && cfg.budgetAmount) {
-          budget = {
-            period: cfg.budgetPeriod,
-            amount: cfg.budgetAmount,
-            currency: cfg.budgetCurrency ?? "BRL",
-          };
-        }
-
-        if (mode === "FREE") {
-          // A v2 exige verificar elegibilidade antes de publicar em modo gratuito.
-          try {
-            const b = await getLinkedinJobBudget(upCtx, externalId);
-            const eligible =
-              (b?.free_eligible as boolean | undefined) ??
-              (b?.is_free_eligible as boolean | undefined) ??
-              (b?.eligible_for_free as boolean | undefined);
-            if (eligible === false) {
-              return {
-                ok: false,
-                error:
-                  "Rascunho criado no LinkedIn, mas a conta não está elegível à publicação gratuita. Configure um orçamento (modo PROMOTED) e tente publicar novamente.",
-                retriable: false,
-              };
-            }
-          } catch {
-            // Consulta de orçamento é best-effort — segue para a publicação.
-          }
-        } else if (!budget) {
-          return {
-            ok: false,
-            error:
-              "Modo de publicação PROMOTED exige orçamento (valor e moeda) na configuração da vaga.",
-            retriable: false,
-          };
-        }
-
-        const published = await publishLinkedinJob(upCtx, externalId, { mode, budget });
-        const publishedUrl = (published?.url ?? (published?.job as Record<string, unknown> | undefined)?.url) as
-          | string
-          | undefined;
-        if (publishedUrl) url = publishedUrl;
+      if (mode === "PROMOTED" && cfg.budgetAmount) {
+        budget = {
+          period: cfg.budgetPeriod,
+          amount: cfg.budgetAmount,
+          currency: cfg.budgetCurrency ?? "BRL",
+        };
       }
+
+      if (mode === "FREE") {
+        // A v2 exige verificar elegibilidade antes de publicar em modo gratuito.
+        try {
+          const b = await getLinkedinJobBudget(upCtx, externalId);
+          const eligible =
+            (b?.free_eligible as boolean | undefined) ??
+            (b?.is_free_eligible as boolean | undefined) ??
+            (b?.eligible_for_free as boolean | undefined);
+          if (eligible === false) {
+            return {
+              ok: false,
+              error:
+                "Rascunho criado no LinkedIn, mas a conta não está elegível à publicação gratuita. Configure um orçamento (modo PROMOTED) e tente publicar novamente.",
+              retriable: false,
+            };
+          }
+        } catch {
+          // Consulta de orçamento é best-effort — segue para a publicação.
+        }
+      } else if (!budget) {
+        return {
+          ok: false,
+          error:
+            "Modo de publicação PROMOTED exige orçamento (valor e moeda) na configuração da vaga.",
+          retriable: false,
+        };
+      }
+
+      const published = await publishLinkedinJob(upCtx, externalId, { mode, budget });
+      const publishedUrl = (published?.url ?? (published?.job as Record<string, unknown> | undefined)?.url) as
+        | string
+        | undefined;
+      if (publishedUrl) url = publishedUrl;
 
       return { ok: true, data: { externalId, url } };
     } catch (e) {
