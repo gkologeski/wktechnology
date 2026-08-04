@@ -93,6 +93,23 @@ export function CvPdfUploadButton({ onExtracted, disabled }: Props) {
         {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
         {busy ? "Processando…" : "Enviar PDF"}
       </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => setPickerOpen(true)}
+        disabled={busy || disabled}
+      >
+        <FolderOpen className="h-4 w-4 mr-2" /> Centro de Arquivos
+      </Button>
+      <FileCenterPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        multiple={false}
+        onPicked={async (files) => {
+          if (files[0]) await handle(files[0]);
+        }}
+      />
     </>
   );
 }
