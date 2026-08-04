@@ -136,8 +136,9 @@ function isInsideWindow(window: { tz?: string; start_hour?: number; end_hour?: n
 }
 
 /**
- * Base URL da API Unipile v2. O DSN por tenant (UNIPILE_DSN) foi descontinuado
- * na v2 — a base é fixa, com override opcional apenas para testes.
+ * Base URL da API Unipile v2. Na v2 a base é fixa; o único override suportado é
+ * `UNIPILE_API_BASE_URL` (uso em testes/ambientes isolados). As únicas variáveis
+ * de ambiente da integração são `UNIPILE_API_KEY` e `UNIPILE_API_BASE_URL`.
  */
 const V2_DEFAULT_BASE_URL = "https://api.unipile.com/v2";
 
