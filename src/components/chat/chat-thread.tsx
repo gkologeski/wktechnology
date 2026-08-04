@@ -62,6 +62,7 @@ export function ChatThread({
 
   const [body, setBody] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
