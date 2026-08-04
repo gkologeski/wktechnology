@@ -748,6 +748,109 @@ export async function resolveSearchParameter(
 
 // --------- Mensageria (Fase 4) ---------
 
+// Normalizadores v1/v2. Na v2 o vocabulário mudou (`provider_id` -> `id`/
+// `user_id`, `attendees` -> `users`) e as respostas de escrita são reduzidas
+// (normalmente só o id do recurso criado).
+
+function pickString(...values: unknown[]): string | null {
+  for (const v of values) {
+    if (v === null || v === undefined) continue;
+    const s = String(v).trim();
+    if (s) return s;
+  }
+  return null;
+}
+
+/**
+ * Extrai o identificador do destinatário a partir de um perfil.
+ * v1: `provider_id`. v2: `id` / `user_id` (o objeto User perdeu `provider_id`).
+ */
+export function extractProfileProviderId(profile: any): string | null {
+  const node = profile?.user ?? profile ?? {};
+  return pickString(
+    node.provider_id,
+    node.user_id,
+    profile?.provider_id,
+    profile?.user_id,
+    // v2: o User traz `id` como identificador canônico.
+    unipileApiVersion() === "v2" ? node.id : undefined,
+    node.member_urn,
+    node.urn,
+    profile?.public_profile_url_id,
+    profile?.member_urn,
+  );
+}
+
+/**
+ * Campos de perfil usados na renderização de tokens ({{first_name}}, ...),
+ * tolerante às diferenças de shape entre v1 e v2.
+ */
+export function extractProfileFields(profile: any): {
+  firstName: string | null;
+  lastName: string | null;
+  fullName: string | null;
+  headline: string | null;
+  company: string | null;
+} {
+  const node = profile?.user ?? profile ?? {};
+  const firstName = pickString(node.first_name, node.firstName);
+  const lastName = pickString(node.last_name, node.lastName);
+  const fullName =
+    pickString(node.name, node.display_name, node.full_name) ??
+    ([firstName, lastName].filter(Boolean).join(" ").trim() || null);
+  const experience =
+    (Array.isArray(node.work_experience) ? node.work_experience[0] : null) ??
+    (Array.isArray(node.experience) ? node.experience[0] : null) ??
+    null;
+  return {
+    firstName,
+    lastName,
+    fullName,
+    headline: pickString(node.headline, node.summary),
+    company: pickString(
+      node.company,
+      node.current_company,
+      experience?.company,
+      experience?.company_name,
+    ),
+  };
+}
+
+/** Normaliza a resposta de envio de mensagem (v1: chat criado; v2: reduzida). */
+export function normalizeSendMessageResult(res: any): {
+  messageId: string | null;
+  chatId: string | null;
+} {
+  const node = res?.data ?? res ?? {};
+  const chatId = pickString(node.chat_id, node.chat?.id, res?.chat_id);
+  const messageId = pickString(
+    node.message_id,
+    node.message?.id,
+    res?.message_id,
+    // v2 devolve apenas `id` do recurso criado.
+    node.id,
+  );
+  return { messageId: messageId ?? chatId, chatId };
+}
+
+/**
+ * Normaliza a resposta de convite de conexão.
+ * v1: `invitation_id`/`invite_id`. v2 (relation-requests): `id`.
+ */
+export function normalizeInviteResult(res: any): { invitationId: string | null } {
+  const node = res?.data ?? res ?? {};
+  return {
+    invitationId: pickString(
+      node.invitation_id,
+      node.invite_id,
+      node.relation_request_id,
+      node.id,
+      res?.invitation_id,
+    ),
+  };
+}
+
+
 /**
  * Envia DM em uma conversa 1:1 no LinkedIn (cria a conversa se necessário).
  * `attendeeProviderId` é o `provider_id` do destinatário (obtido via fetchProfile).
