@@ -404,9 +404,8 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
       requestBody,
     );
   }
-
-  }
 }
+
 
 function safeJson(text: string): any {
   try {
