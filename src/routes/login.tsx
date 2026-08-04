@@ -16,7 +16,10 @@ function safeNext(value: unknown): string {
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
-  validateSearch: (s: Record<string, unknown>) => ({ next: safeNext(s.next) }),
+  validateSearch: (s: Record<string, unknown>): { next?: string } => {
+    const next = safeNext(s.next);
+    return next ? { next } : {};
+  },
   head: () => ({
     meta: [
       { title: "Entrar — WK Technology CRM" },
