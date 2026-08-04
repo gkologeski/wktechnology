@@ -673,9 +673,11 @@ export async function searchPeopleClassic(
 
 /**
  * Normaliza a resposta de busca de pessoas da v2 para o shape que o restante
- * da aplicação já consome (nomes de campos da v1).
+ * da aplicação já consome (nomes de campos da v1). A v2 devolve `data` e pagina
+ * por `offset`, então expomos o próximo offset em `cursor` (string) para manter
+ * a interface dos consumidores.
  */
-function normalizePeopleSearchResponse(data: any) {
+function normalizePeopleSearchResponse(data: any, offset = 0) {
   if (!data || typeof data !== "object") return data;
   const items: any[] = Array.isArray(data.items)
     ? data.items
@@ -689,8 +691,12 @@ function normalizePeopleSearchResponse(data: any) {
     open_profile: it.is_open_profile ?? it.open_profile,
     shared_connections_count: it.shared_relations_count ?? it.shared_connections_count,
   }));
-  return { ...data, items: mapped, cursor: data.next_cursor ?? data.cursor ?? null };
+  const nextOffset = offset + mapped.length;
+  const cursor =
+    data.next_cursor ?? (mapped.length > 0 ? String(nextOffset) : null);
+  return { ...data, items: mapped, cursor };
 }
+
 
 /**
  * Obtém o perfil completo de um usuário pelo identifier público.
