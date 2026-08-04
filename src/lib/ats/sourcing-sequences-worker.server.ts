@@ -384,12 +384,10 @@ export async function processDueEnrollments(limit = 50): Promise<{
             const publicId = m ? decodeURIComponent(m[1]).replace(/\/$/, "") : null;
             if (!publicId) throw new UnipileError("linkedin_url inválido", "provider_error");
             const profile: any = await fetchProfile(ctx, publicId);
-            const providerId =
-              profile?.provider_id ??
-              profile?.user?.provider_id ??
-              profile?.public_profile_url_id ??
-              profile?.member_urn ??
-              null;
+            const { extractProfileProviderId, normalizeInviteResult } = await import(
+              "@/lib/unipile/client.server"
+            );
+            const providerId = extractProfileProviderId(profile);
             if (!providerId) throw new UnipileError("provider_id não resolvido", "provider_error");
             const body = (next.body ?? next.task_instructions ?? "").slice(0, 8000);
             let inviteResp: any = null;
@@ -406,10 +404,9 @@ export async function processDueEnrollments(limit = 50): Promise<{
             }
             const providerInviteId =
               next.channel === "linkedin_invite"
-                ? String(
-                    inviteResp?.invitation_id ?? inviteResp?.invite_id ?? inviteResp?.id ?? "",
-                  ) || null
+                ? normalizeInviteResult(inviteResp).invitationId
                 : null;
+
             const isInvite = next.channel === "linkedin_invite";
             await supabaseAdmin.from("unipile_message_log").insert({
               account_id: ctx.accountId,
