@@ -447,7 +447,11 @@ export async function loadAccountCtx(ownerId: string): Promise<ThrottleCtx> {
 
 /**
  * Gera URL Hosted Auth para conectar uma conta LinkedIn.
- * `notifyUrl` é o webhook público que receberá o callback do account.connected.
+ *
+ * v1: POST /api/v1/hosted/accounts/link (usa notify_url + name para correlacionar).
+ * v2: POST /v2/auth/link — não existem mais `api_url`, `notify_url`, `name` nem
+ * redirects separados de sucesso/erro. O `connectToken` viaja como `state` no
+ * `redirect_uri`, e a tela de sucesso é responsabilidade da nossa aplicação.
  */
 export async function createHostedAuthLink(params: {
   ownerId: string;
@@ -456,18 +460,36 @@ export async function createHostedAuthLink(params: {
   failureRedirect: string;
   connectToken: string;
 }) {
-  const { dsn, key } = getEnv();
-  const body = {
-    type: "create",
-    providers: ["LINKEDIN"],
-    api_url: dsn,
-    expiresOn: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
-    notify_url: params.notifyUrl,
-    name: params.connectToken,
-    success_redirect_url: params.successRedirect,
-    failure_redirect_url: params.failureRedirect,
-  };
-  const res = await fetch(`${dsn}/api/v1/hosted/accounts/link`, {
+  const { dsn, key, version } = getEnv();
+  const expiresOn = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+
+  const url =
+    version === "v2" ? `${dsn}/auth/link` : `${dsn}/api/v1/hosted/accounts/link`;
+
+  const body =
+    version === "v2"
+      ? {
+          type: "create",
+          providers: ["LINKEDIN"],
+          expires_on: expiresOn,
+          redirect_uri: appendQueryParam(
+            params.successRedirect,
+            "state",
+            params.connectToken,
+          ),
+        }
+      : {
+          type: "create",
+          providers: ["LINKEDIN"],
+          api_url: dsn,
+          expiresOn,
+          notify_url: params.notifyUrl,
+          name: params.connectToken,
+          success_redirect_url: params.successRedirect,
+          failure_redirect_url: params.failureRedirect,
+        };
+
+  const res = await fetch(url, {
     method: "POST",
     headers: {
       "X-API-KEY": key,
@@ -488,6 +510,12 @@ export async function createHostedAuthLink(params: {
   // resposta típica: { url: "...", object: "AccountAuthLinkResource" }
   return { url: data?.url as string, raw: data };
 }
+
+function appendQueryParam(url: string, key: string, value: string) {
+  const sep = url.includes("?") ? "&" : "?";
+  return `${url}${sep}${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+}
+
 
 /**
  * Busca pessoas no LinkedIn Classic. Filtros mapeados ao endpoint
