@@ -1262,37 +1262,59 @@ export async function closeLinkedinJob(
 
 /**
  * Lista aplicantes de uma vaga LinkedIn publicada via Unipile.
- * Endpoint: GET /api/v1/linkedin/jobs/{provider_job_id}/applicants
  *
- * Paginação por cursor. Retorna estrutura crua da Unipile — normalização
- * fica no adapter.
+ * v1: `GET /api/v1/linkedin/jobs/:job_id/applicants` (paginação por cursor).
+ * v2: `POST /v2/:account_id/linkedin/jobs/:job_id/applicants` — filtros vão
+ *     no body e a paginação é por `offset`. Para manter o contrato de cursor
+ *     usado pelos callers, o offset seguinte é sintetizado como cursor.
  */
 export async function listLinkedinJobApplicants(
   ctx: ThrottleCtx,
   params: { providerJobId: string; cursor?: string | null; limit?: number; offset?: number },
 ) {
-  return call(ctx, {
+  const isV2 = unipileApiVersion() === "v2";
+  const limit = params.limit ?? 50;
+  const offset =
+    params.offset ??
+    (params.cursor && /^\d+$/.test(params.cursor) ? Number(params.cursor) : 0);
+
+  const res = (await call(ctx, {
     endpoint: "chat.list", // budget leve — leitura
     method: "GET",
     path: `/api/v1/linkedin/jobs/${encodeURIComponent(params.providerJobId)}/applicants`,
     query: {
       account_id: ctx.unipileAccountId,
-      limit: params.limit ?? 50,
+      limit,
       cursor: params.cursor ?? undefined,
     },
     v2: {
-      method: "GET",
+      method: "POST",
       path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(params.providerJobId)}/applicants`,
-      query: { limit: params.limit ?? 50, offset: params.offset },
+      query: { limit, offset },
+      body: {},
     },
-  }) as Promise<{
-
+  })) as {
     items?: Array<Record<string, unknown>>;
     data?: Array<Record<string, unknown>>;
     cursor?: string | null;
     next_cursor?: string | null;
     [k: string]: unknown;
-  }>;
+  };
+
+  if (isV2) {
+    const items = (res?.items ?? res?.data ?? []) as Array<Record<string, unknown>>;
+    const hasNext = items.length >= limit;
+    return {
+      ...res,
+      items,
+      next_cursor:
+        (res?.next_cursor as string | null | undefined) ??
+        (hasNext ? String(offset + limit) : null),
+    };
+  }
+
+  return res;
+
 }
 
 
