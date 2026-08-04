@@ -719,6 +719,12 @@ export async function sendLinkedinMessage(
     method: "POST",
     path: "/api/v1/chats",
     body,
+    // v2: POST /:account_id/chats/send — `attendees_ids` virou `users_ids`.
+    v2: {
+      method: "POST",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/send`,
+      body: { users_ids: [params.attendeeProviderId], text: params.text },
+    },
   });
 }
 
@@ -735,11 +741,21 @@ export async function sendLinkedinInvite(
     provider_id: params.providerId,
   };
   if (params.message?.trim()) body.message = params.message.trim();
+
+  // v2: relation requests — `provider_id` virou `user_id`.
+  const bodyV2: Record<string, unknown> = { user_id: params.providerId };
+  if (params.message?.trim()) bodyV2.message = params.message.trim();
+
   return call(ctx, {
     endpoint: "invite.send",
     method: "POST",
     path: "/api/v1/users/invite",
     body,
+    v2: {
+      method: "POST",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/me/relation-requests`,
+      body: bodyV2,
+    },
   });
 }
 
@@ -757,6 +773,11 @@ export async function listLinkedinChats(
       limit: params.limit ?? 20,
       cursor: params.cursor,
     },
+    v2: {
+      method: "GET",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats`,
+      query: { limit: params.limit ?? 20, cursor: params.cursor },
+    },
   });
 }
 
@@ -773,6 +794,11 @@ export async function listLinkedinChatMessages(
       limit: params.limit ?? 50,
       cursor: params.cursor,
     },
+    v2: {
+      method: "GET",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/${encodeURIComponent(params.chatId)}/messages`,
+      query: { limit: params.limit ?? 50, cursor: params.cursor },
+    },
   });
 }
 
@@ -780,10 +806,12 @@ export async function listLinkedinChatMessages(
  * Lista convites de conexão pendentes (enviados) na conta LinkedIn.
  * Usado para detectar aceite: se um `provider_invite_id` deixa de aparecer
  * na lista de pendentes, o convite foi aceito ou retirado.
+ *
+ * v2: GET /:account_id/users/me/relation-requests?type=sent
  */
 export async function listSentInvitations(
   ctx: ThrottleCtx,
-  params: { cursor?: string; limit?: number } = {},
+  params: { cursor?: string; limit?: number; offset?: number } = {},
 ) {
   return call(ctx, {
     endpoint: "chat.list",
@@ -794,8 +822,18 @@ export async function listSentInvitations(
       limit: params.limit ?? 100,
       cursor: params.cursor,
     },
+    v2: {
+      method: "GET",
+      path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/me/relation-requests`,
+      query: {
+        type: "sent",
+        limit: params.limit ?? 100,
+        offset: params.offset,
+      },
+    },
   });
 }
+
 
 
 /**
