@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mail, Send, FileText, Paperclip, X, Loader2 } from "lucide-react";
+import { Mail, Send, FileText, Paperclip, X, Loader2, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { sendGmailEmail } from "@/lib/email-send.functions";
@@ -34,6 +34,7 @@ import { SmartComposeMenu } from "@/components/ai/smart-compose-menu";
 import { TokenPills } from "@/components/ui/token-pills";
 import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
+import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 
 type Props = {
   defaultTo?: string;
@@ -80,12 +81,13 @@ export function SendEmailDialog({
   type Attachment = { path: string; filename: string; content_type: string; size: number };
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [fileCenterOpen, setFileCenterOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const MAX_TOTAL = 25 * 1024 * 1024;
   const MAX_FILES = 10;
 
-  const handleFilesSelected = async (files: FileList | null) => {
+  const handleFilesSelected = async (files: FileList | File[] | null) => {
     if (!files || !files.length || !user) return;
     const currentBytes = attachments.reduce((s, a) => s + a.size, 0);
     const newFiles = Array.from(files);
@@ -466,6 +468,12 @@ export function SendEmailDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      <FileCenterPickerDialog
+        open={fileCenterOpen}
+        onOpenChange={setFileCenterOpen}
+        onPicked={(files) => handleFilesSelected(files)}
+        title="Anexar do Centro de Arquivos"
+      />
     </Dialog>
   );
 }
