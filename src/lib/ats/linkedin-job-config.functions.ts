@@ -96,41 +96,21 @@ export const searchLinkedinDirectory = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
-    const { loadAccountCtx } = await import("@/lib/unipile/client.server");
-    // Reaproveita o helper existente que fala com /linkedin/search/parameters
-    // e devolve items com {id,title}.
+    const { loadAccountCtx, resolveSearchParameterItems } = await import(
+      "@/lib/unipile/client.server"
+    );
+    // Reaproveita o helper versionado (v1/v2) que fala com
+    // /linkedin/search/parameters e devolve items com {id,title}.
     const ctxUp = await loadAccountCtx(context.userId).catch(() => null);
     if (!ctxUp) {
       return { items: [] as Array<{ id: string; title: string }>, connected: false };
     }
-    const { dsn, key } = getEnv();
-    const url = `${dsn}/api/v1/linkedin/search/parameters?account_id=${encodeURIComponent(ctxUp.unipileAccountId)}&type=${data.type}&keywords=${encodeURIComponent(data.keywords)}&limit=${data.limit}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: { "X-API-KEY": key, Accept: "application/json" },
-    });
-    if (!res.ok) {
-      return { items: [], connected: true, error: `Unipile ${res.status}` };
-    }
-    const json = (await res.json()) as {
-      items?: Array<{ id?: string | number; entity_urn?: string; title?: string; text?: string }>;
-    };
-    const items = (json?.items ?? [])
-      .map((it) => ({
-        id:
-          it.id != null
-            ? String(it.id)
-            : (it.entity_urn ?? "").split(":").pop() ?? "",
-        title: it.title ?? it.text ?? "",
-      }))
-      .filter((it) => it.id && /^\d{3,}$/.test(it.id));
-    return { items, connected: true };
+    const items = await resolveSearchParameterItems(
+      ctxUp,
+      data.type,
+      data.keywords,
+      data.limit,
+    );
+    return { items: items.filter((it) => it.title), connected: true };
   });
 
-function getEnv() {
-  const dsn = process.env.UNIPILE_DSN;
-  const key = process.env.UNIPILE_API_KEY;
-  if (!dsn || !key) throw new Error("Credenciais Unipile não configuradas.");
-  const normalized = /^https?:\/\//i.test(dsn) ? dsn : `https://${dsn}`;
-  return { dsn: normalized.replace(/\/$/, ""), key };
-}
