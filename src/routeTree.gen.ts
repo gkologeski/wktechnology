@@ -248,6 +248,7 @@ import { Route as AuthenticatedatsBriefingRouteImport } from './routes/_authenti
 import { Route as AuthenticatedatsAtsDashboardRouteImport } from './routes/_authenticated/(ats)/ats-dashboard'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
+import { Route as AuthenticatedContractsTemplatesIndexRouteImport } from './routes/_authenticated/contracts.templates.index'
 import { Route as AuthenticatedatsSourcingIndexRouteImport } from './routes/_authenticated/(ats)/sourcing/index'
 import { Route as AuthenticatedatsJobsIndexRouteImport } from './routes/_authenticated/(ats)/jobs.index'
 import { Route as AuthenticatedatsHuntingIndexRouteImport } from './routes/_authenticated/(ats)/hunting/index'
@@ -1714,6 +1715,12 @@ const AuthenticatedProspectingCampaignsIndexRoute =
     path: '/campaigns/',
     getParentRoute: () => AuthenticatedProspectingRoute,
   } as any)
+const AuthenticatedContractsTemplatesIndexRoute =
+  AuthenticatedContractsTemplatesIndexRouteImport.update({
+    id: '/contracts/templates/',
+    path: '/contracts/templates/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedatsSourcingIndexRoute =
   AuthenticatedatsSourcingIndexRouteImport.update({
     id: '/(ats)/sourcing/',
@@ -2672,6 +2679,7 @@ export interface FileRoutesByFullPath {
   '/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/jobs/': typeof AuthenticatedatsJobsIndexRoute
   '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
+  '/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
@@ -3015,6 +3023,7 @@ export interface FileRoutesByTo {
   '/hunting': typeof AuthenticatedatsHuntingIndexRoute
   '/jobs': typeof AuthenticatedatsJobsIndexRoute
   '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
+  '/contracts/templates': typeof AuthenticatedContractsTemplatesIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
@@ -3366,6 +3375,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/hunting/': typeof AuthenticatedatsHuntingIndexRoute
   '/_authenticated/(ats)/jobs/': typeof AuthenticatedatsJobsIndexRoute
   '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
+  '/_authenticated/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/(ats)/sourcing/sequences_/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
@@ -3717,6 +3727,7 @@ export interface FileRouteTypes {
     | '/hunting/'
     | '/jobs/'
     | '/sourcing/'
+    | '/contracts/templates/'
     | '/prospecting/campaigns/'
     | '/settings/roles/'
     | '/sourcing/sequences/$id'
@@ -4060,6 +4071,7 @@ export interface FileRouteTypes {
     | '/hunting'
     | '/jobs'
     | '/sourcing'
+    | '/contracts/templates'
     | '/prospecting/campaigns'
     | '/settings/roles'
     | '/sourcing/sequences/$id'
@@ -4410,6 +4422,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/hunting/'
     | '/_authenticated/(ats)/jobs/'
     | '/_authenticated/(ats)/sourcing/'
+    | '/_authenticated/contracts/templates/'
     | '/_authenticated/prospecting/campaigns/'
     | '/_authenticated/settings/roles/'
     | '/_authenticated/(ats)/sourcing/sequences_/$id'
@@ -6219,6 +6232,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProspectingCampaignsIndexRouteImport
       parentRoute: typeof AuthenticatedProspectingRoute
     }
+    '/_authenticated/contracts/templates/': {
+      id: '/_authenticated/contracts/templates/'
+      path: '/contracts/templates'
+      fullPath: '/contracts/templates/'
+      preLoaderRoute: typeof AuthenticatedContractsTemplatesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/(ats)/sourcing/': {
       id: '/_authenticated/(ats)/sourcing/'
       path: '/sourcing'
@@ -7543,6 +7563,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsHuntingIndexRoute: typeof AuthenticatedatsHuntingIndexRoute
   AuthenticatedatsJobsIndexRoute: typeof AuthenticatedatsJobsIndexRoute
   AuthenticatedatsSourcingIndexRoute: typeof AuthenticatedatsSourcingIndexRoute
+  AuthenticatedContractsTemplatesIndexRoute: typeof AuthenticatedContractsTemplatesIndexRoute
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
 }
 
@@ -7685,6 +7706,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsHuntingIndexRoute: AuthenticatedatsHuntingIndexRoute,
   AuthenticatedatsJobsIndexRoute: AuthenticatedatsJobsIndexRoute,
   AuthenticatedatsSourcingIndexRoute: AuthenticatedatsSourcingIndexRoute,
+  AuthenticatedContractsTemplatesIndexRoute:
+    AuthenticatedContractsTemplatesIndexRoute,
   AuthenticatedatsSourcingSequencesIdRoute:
     AuthenticatedatsSourcingSequencesIdRoute,
 }
@@ -7888,13 +7911,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

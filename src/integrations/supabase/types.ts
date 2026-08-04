@@ -4604,6 +4604,105 @@ export type Database = {
           },
         ]
       }
+      contract_template_services: {
+        Row: {
+          created_at: string
+          id: string
+          service_catalog_id: string
+          template_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          service_catalog_id: string
+          template_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          service_catalog_id?: string
+          template_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_template_services_service_catalog_id_fkey"
+            columns: ["service_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_template_services_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_templates: {
+        Row: {
+          assigned_to: string | null
+          body_html: string | null
+          created_at: string
+          defaults: Json
+          description: string | null
+          id: string
+          imported_from: string
+          is_default: boolean
+          name: string
+          owner_id: string
+          role: Database["public"]["Enums"]["contract_role"]
+          service_type: string | null
+          source_file_path: string | null
+          status: string
+          updated_at: string
+          variables: Json
+          workspace_id: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          body_html?: string | null
+          created_at?: string
+          defaults?: Json
+          description?: string | null
+          id?: string
+          imported_from?: string
+          is_default?: boolean
+          name: string
+          owner_id?: string
+          role?: Database["public"]["Enums"]["contract_role"]
+          service_type?: string | null
+          source_file_path?: string | null
+          status?: string
+          updated_at?: string
+          variables?: Json
+          workspace_id: string
+        }
+        Update: {
+          assigned_to?: string | null
+          body_html?: string | null
+          created_at?: string
+          defaults?: Json
+          description?: string | null
+          id?: string
+          imported_from?: string
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          role?: Database["public"]["Enums"]["contract_role"]
+          service_type?: string | null
+          source_file_path?: string | null
+          status?: string
+          updated_at?: string
+          variables?: Json
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       contracts: {
         Row: {
           assigned_to: string | null
