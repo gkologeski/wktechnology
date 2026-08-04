@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, FolderOpen } from "lucide-react";
+import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
