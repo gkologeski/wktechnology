@@ -564,18 +564,22 @@ export async function listUnipileAccounts(
 
 
 
+/** Valor de filtro estruturado: texto livre (string) ou ID já resolvido. */
+export type SearchParamValue = string | { id: string };
+
 /**
- * Busca pessoas no LinkedIn Classic. Filtros mapeados ao endpoint
- * POST /api/v1/linkedin/search com category=people, api=classic.
+ * Busca pessoas no LinkedIn Classic.
+ * v1: POST /api/v1/linkedin/search (api=classic, category=people).
+ * v2: POST /v2/:account_id/linkedin/search/people (sem api/category, offset).
  */
 export async function searchPeopleClassic(
   ctx: ThrottleCtx,
   filters: {
     keywords?: string;
-    location?: string[]; // geoUrns (IDs numéricos) — texto livre vai para keywords
-    industry?: string[]; // industry IDs — texto livre vai para keywords
-    current_company?: string[]; // company IDs — texto livre vai para keywords
-    school?: string[]; // school IDs — texto livre vai para keywords
+    location?: SearchParamValue[]; // IDs de parâmetro — texto livre vai para keywords
+    industry?: SearchParamValue[];
+    current_company?: SearchParamValue[];
+    school?: SearchParamValue[];
     network?: ("F" | "S" | "O")[];
     language?: string[];
     cursor?: string;
@@ -584,15 +588,21 @@ export async function searchPeopleClassic(
 
   },
 ) {
-  // LinkedIn Classic search exige IDs (URNs) para location/industry/company/school.
-  // Quando o usuário envia texto livre, mesclamos no `keywords` para não quebrar
-  // o schema da Unipile (que rejeita strings não-numéricas nesses campos).
+  // A busca do LinkedIn exige IDs de parâmetro para location/industry/company/school.
+  // Na v1 os IDs são numéricos; na v2 são strings opacas — por isso aceitamos
+  // `{ id }` para valores já resolvidos via search/parameters. Texto livre é
+  // mesclado em `keywords` para não quebrar o schema da Unipile.
   const isId = (v: string) => /^\d{3,}$/.test(v.trim());
-  const splitIds = (arr?: string[]) => {
+  const splitIds = (arr?: SearchParamValue[]) => {
     const ids: string[] = [];
     const text: string[] = [];
     for (const v of arr ?? []) {
       if (!v) continue;
+      if (typeof v === "object") {
+        const id = String(v.id ?? "").trim();
+        if (id) ids.push(id);
+        continue;
+      }
       (isId(v) ? ids : text).push(v.trim());
     }
     return { ids: ids.length ? ids : undefined, text };
@@ -617,7 +627,6 @@ export async function searchPeopleClassic(
   if (ind.ids) commonBody.industry = ind.ids;
   if (comp.ids) commonBody.current_company = comp.ids;
   if (sch.ids) commonBody.school = sch.ids;
-  if (filters.network?.length) commonBody.network = filters.network;
   if (filters.language?.length) commonBody.profile_language = filters.language;
 
   const bodyV1: Record<string, unknown> = {
@@ -625,14 +634,23 @@ export async function searchPeopleClassic(
     category: "people",
     ...commonBody,
   };
+  if (filters.network?.length) bodyV1.network = filters.network;
   if (filters.cursor) bodyV1.cursor = filters.cursor;
 
-  // v2: `api`/`category` removidos e paginação por offset.
+  // v2: `api`/`category` removidos, paginação por offset e `network` virou
+  // `network_distance` (array de números: 1 = 1º grau, 2 = 2º, 3 = 3º+).
   const bodyV2: Record<string, unknown> = { ...commonBody };
-  const offset = filters.offset ?? (filters.cursor ? Number(filters.cursor) : undefined);
-  if (typeof offset === "number" && Number.isFinite(offset) && offset > 0) {
-    bodyV2.offset = offset;
+  if (filters.network?.length) {
+    const distance = filters.network
+      .map((n): number | null => (n === "F" ? 1 : n === "S" ? 2 : n === "O" ? 3 : null))
+      .filter((n): n is number => n != null);
+
+    if (distance.length) bodyV2.network_distance = distance;
   }
+  const offset = filters.offset ?? (filters.cursor ? Number(filters.cursor) : undefined);
+  const safeOffset =
+    typeof offset === "number" && Number.isFinite(offset) && offset > 0 ? offset : 0;
+  if (safeOffset > 0) bodyV2.offset = safeOffset;
 
   const data = await call(ctx, {
     endpoint: "profile.search",
@@ -647,14 +665,19 @@ export async function searchPeopleClassic(
     },
   });
 
-  return unipileApiVersion() === "v2" ? normalizePeopleSearchResponse(data) : data;
+  return unipileApiVersion() === "v2"
+    ? normalizePeopleSearchResponse(data, safeOffset)
+    : data;
 }
+
 
 /**
  * Normaliza a resposta de busca de pessoas da v2 para o shape que o restante
- * da aplicação já consome (nomes de campos da v1).
+ * da aplicação já consome (nomes de campos da v1). A v2 devolve `data` e pagina
+ * por `offset`, então expomos o próximo offset em `cursor` (string) para manter
+ * a interface dos consumidores.
  */
-function normalizePeopleSearchResponse(data: any) {
+function normalizePeopleSearchResponse(data: any, offset = 0) {
   if (!data || typeof data !== "object") return data;
   const items: any[] = Array.isArray(data.items)
     ? data.items
@@ -668,8 +691,12 @@ function normalizePeopleSearchResponse(data: any) {
     open_profile: it.is_open_profile ?? it.open_profile,
     shared_connections_count: it.shared_relations_count ?? it.shared_connections_count,
   }));
-  return { ...data, items: mapped, cursor: data.next_cursor ?? data.cursor ?? null };
+  const nextOffset = offset + mapped.length;
+  const cursor =
+    data.next_cursor ?? (mapped.length > 0 ? String(nextOffset) : null);
+  return { ...data, items: mapped, cursor };
 }
+
 
 /**
  * Obtém o perfil completo de um usuário pelo identifier público.
@@ -688,29 +715,45 @@ export async function fetchProfile(ctx: ThrottleCtx, publicIdentifier: string) {
 }
 
 /**
- * Mapa de tipos de search parameters v1 -> v2 (produto Classic).
- * Os tipos que usamos (LOCATION/INDUSTRY/COMPANY/SCHOOL/LANGUAGE) mantêm o
- * nome; CONNECTIONS virou RELATION.
+ * Mapa de tipos de search parameters v1 -> v2.
+ * Os tipos que usamos (LOCATION/INDUSTRY/COMPANY/SCHOOL/PROFILE_LANGUAGE)
+ * mantêm o nome; CONNECTIONS virou RELATION.
  */
 const SEARCH_PARAM_TYPE_V2: Record<string, string> = {
   CONNECTIONS: "RELATION",
+  LANGUAGE: "PROFILE_LANGUAGE",
 };
 
 export function toV2SearchParameterType(type: string): string {
   return SEARCH_PARAM_TYPE_V2[type] ?? type;
 }
 
+/** Produto LinkedIn usado na resolução de parâmetros de busca. */
+export type LinkedinSearchProduct = "CLASSIC" | "RECRUITER" | "SALES_NAVIGATOR";
+
+/** Paths v2 de search/parameters por produto (a v1 usava a query `service`). */
+const SEARCH_PARAM_PATH_V2: Record<LinkedinSearchProduct, string> = {
+  CLASSIC: "linkedin/search/parameters",
+  RECRUITER: "linkedin/recruiter/search/parameters",
+  SALES_NAVIGATOR: "linkedin/sales-navigator/search/parameters",
+};
+
+export type SearchParameterItem = { id: string; title: string };
+
 /**
- * Resolve texto livre (ex.: "São Paulo") em IDs/URNs aceitos pela busca
- * Classic do LinkedIn via Unipile. Retorna array de IDs (string) — vazio se nada bater.
+ * Resolve texto livre (ex.: "São Paulo") em parâmetros de busca do LinkedIn.
+ * Retorna `{ id, title }` — na v1 os IDs são numéricos; na v2 são strings
+ * opacas, então não aplicamos filtro numérico nessa versão.
  */
-export async function resolveSearchParameter(
+export async function resolveSearchParameterItems(
   ctx: ThrottleCtx,
   type: "LOCATION" | "INDUSTRY" | "COMPANY" | "SCHOOL" | "LANGUAGE",
   keywords: string,
   limit = 5,
-): Promise<string[]> {
+  product: LinkedinSearchProduct = "CLASSIC",
+): Promise<SearchParameterItem[]> {
   if (!keywords?.trim()) return [];
+  const isV2 = unipileApiVersion() === "v2";
   try {
     const data = (await call(ctx, {
       endpoint: "chat.list", // budget leve — não é fetch de perfil
@@ -721,10 +764,11 @@ export async function resolveSearchParameter(
         type,
         keywords: keywords.trim(),
         limit,
+        service: product,
       },
       v2: {
         method: "GET",
-        path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/search/parameters`,
+        path: `/${encodeURIComponent(ctx.unipileAccountId)}/${SEARCH_PARAM_PATH_V2[product]}`,
         query: {
           type: toV2SearchParameterType(type),
           keywords: keywords.trim(),
@@ -732,18 +776,39 @@ export async function resolveSearchParameter(
         },
       },
     })) as {
-      items?: Array<{ id?: string | number; entity_urn?: string }>;
-      data?: Array<{ id?: string | number; entity_urn?: string }>;
+      items?: Array<Record<string, unknown>>;
+      data?: Array<Record<string, unknown>>;
     } | null;
     const items = data?.items ?? data?.data ?? [];
-    const ids = items
-      .map((it) => (it.id != null ? String(it.id) : it.entity_urn ?? null))
-      .filter((v): v is string => !!v && /^\d{3,}$/.test(v));
-    return ids.slice(0, limit);
+    const mapped = items
+      .map((it) => {
+        const rawId =
+          it.id != null ? String(it.id) : ((it.entity_urn as string) ?? "").split(":").pop() ?? "";
+        const id = rawId.trim();
+        // v2 renomeou `title` para `name`.
+        const title = String(it.name ?? it.title ?? it.text ?? "").trim();
+        return { id, title };
+      })
+      // v1 exige IDs numéricos; v2 aceita qualquer string opaca.
+      .filter((it) => !!it.id && (isV2 || /^\d{3,}$/.test(it.id)));
+    return mapped.slice(0, limit);
   } catch {
     return [];
   }
 }
+
+/** Compatibilidade: devolve apenas os IDs resolvidos. */
+export async function resolveSearchParameter(
+  ctx: ThrottleCtx,
+  type: "LOCATION" | "INDUSTRY" | "COMPANY" | "SCHOOL" | "LANGUAGE",
+  keywords: string,
+  limit = 5,
+  product: LinkedinSearchProduct = "CLASSIC",
+): Promise<string[]> {
+  const items = await resolveSearchParameterItems(ctx, type, keywords, limit, product);
+  return items.map((it) => it.id);
+}
+
 
 
 // --------- Mensageria (Fase 4) ---------
