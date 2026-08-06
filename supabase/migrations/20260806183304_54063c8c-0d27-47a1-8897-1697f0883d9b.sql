@@ -1,0 +1,1 @@
+ALTER TABLE public.activities ALTER COLUMN remind_before_minutes SET DEFAULT 0;
