@@ -65,6 +65,10 @@ function ContactDetail() {
     { table: "activities", queryKeys: [qk.activities("related_contact_id", id)] },
   ]);
 
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.contacts");
+  const canDelete = !deletePermLoading && canDeleteRecord(contact);
+
+
   if (loading && !contact)
     return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
   if (loadError)
