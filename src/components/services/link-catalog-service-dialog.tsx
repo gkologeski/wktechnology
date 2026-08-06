@@ -5,7 +5,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, Loader2, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,11 +27,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatCurrency } from "@/lib/crm";
 import {
-  listCatalogServiceOptions,
-  linkCatalogServiceToContract,
-} from "@/lib/services.functions";
+  Command,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { formatCurrency } from "@/lib/crm";
+import { listCatalogServiceOptions, linkCatalogServiceToContract } from "@/lib/services.functions";
 
 type CatalogItem = {
   id: string;
@@ -72,6 +77,7 @@ export function LinkCatalogServiceDialog({
   const link = useServerFn(linkCatalogServiceToContract);
 
   const [search, setSearch] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [type, setType] = useState<"one_time" | "recurring" | "usage_based" | "milestone">(
     "recurring",
@@ -98,6 +104,7 @@ export function LinkCatalogServiceDialog({
   useEffect(() => {
     if (open) {
       setSearch("");
+      setPickerOpen(false);
       setSelectedId(null);
       setType("recurring");
       setCadence("monthly");
@@ -112,8 +119,7 @@ export function LinkCatalogServiceDialog({
     const term = search.trim().toLowerCase();
     if (!term) return catalog;
     return catalog.filter(
-      (c) =>
-        c.name.toLowerCase().includes(term) || (c.code ?? "").toLowerCase().includes(term),
+      (c) => c.name.toLowerCase().includes(term) || (c.code ?? "").toLowerCase().includes(term),
     );
   }, [catalog, search]);
 
@@ -122,6 +128,7 @@ export function LinkCatalogServiceDialog({
   function pick(item: CatalogItem) {
     setSelectedId(item.id);
     setUnitPrice(Number(item.base_price) || 0);
+    setPickerOpen(false);
   }
 
   async function submit() {
@@ -166,86 +173,108 @@ export function LinkCatalogServiceDialog({
 
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="catalog-search">Serviço do catálogo *</Label>
-            <div className="relative">
-              <Search
-                aria-hidden="true"
-                className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"
-              />
-              <Input
-                id="catalog-search"
-                className="pl-8"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nome ou código"
-              />
-            </div>
-
-            {isLoading ? (
-              <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" /> Carregando
-                catálogo…
-              </p>
-            ) : isError ? (
-              <div className="rounded-md border border-destructive/40 p-3 text-sm">
-                <p className="text-muted-foreground">Não foi possível carregar o catálogo.</p>
-                <Button size="sm" variant="outline" className="mt-2" onClick={() => refetch()}>
-                  Tentar novamente
-                </Button>
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="rounded-md border p-3 text-sm">
-                <p className="text-muted-foreground">
-                  {catalog.length === 0
-                    ? "Nenhum serviço ativo no catálogo."
-                    : "Nenhum serviço encontrado para esta busca."}
-                </p>
-                <Button asChild size="sm" variant="outline" className="mt-2">
-                  <Link to="/catalog/services" onClick={() => onOpenChange(false)}>
-                    Abrir catálogo de serviços
-                  </Link>
-                </Button>
-              </div>
-            ) : (
-              <div
-                role="listbox"
-                aria-label="Serviços do catálogo"
-                className="max-h-52 space-y-1 overflow-y-auto rounded-md border p-1"
-              >
-                {filtered.map((item) => {
-                  const active = item.id === selectedId;
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      role="option"
-                      aria-selected={active}
-                      onClick={() => pick(item)}
-                      className={`flex w-full items-start gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                        active ? "bg-accent" : ""
-                      }`}
-                    >
-                      <Check
-                        aria-hidden="true"
-                        className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${active ? "opacity-100" : "opacity-0"}`}
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="flex items-center gap-2">
-                          <span className="truncate font-medium">{item.name}</span>
-                          <Badge variant="outline" className="shrink-0">
-                            {SERVICE_TYPE_LABEL[item.service_type] ?? item.service_type}
-                          </Badge>
-                        </span>
-                        <span className="mt-0.5 block text-xs text-muted-foreground tabular-nums">
-                          {item.code ? `${item.code} · ` : ""}
-                          {formatCurrency(Number(item.base_price), item.currency)} / {item.unit}
-                        </span>
+            <Label htmlFor="catalog-picker">Serviço do catálogo *</Label>
+            <Popover open={pickerOpen} onOpenChange={setPickerOpen} modal>
+              <PopoverTrigger asChild>
+                <Button
+                  id="catalog-picker"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={pickerOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {selected ? (
+                    <span className="min-w-0 truncate">
+                      {selected.name}
+                      <span className="ml-2 text-xs text-muted-foreground tabular-nums">
+                        {selected.code ? `${selected.code} · ` : ""}
+                        {formatCurrency(Number(selected.base_price), selected.currency)} /{" "}
+                        {selected.unit}
                       </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">Buscar serviço do catálogo</span>
+                  )}
+                  <ChevronsUpDown aria-hidden="true" className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-[--radix-popover-trigger-width] p-0"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                {isLoading ? (
+                  <p className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
+                    <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" /> Carregando
+                    catálogo…
+                  </p>
+                ) : isError ? (
+                  <div className="p-3 text-sm">
+                    <p className="text-muted-foreground">Não foi possível carregar o catálogo.</p>
+                    <Button size="sm" variant="outline" className="mt-2" onClick={() => refetch()}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : (
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      value={search}
+                      onValueChange={setSearch}
+                      placeholder="Buscar por nome ou código"
+                    />
+                    <CommandList>
+                      {filtered.length === 0 ? (
+                        <div className="p-3 text-sm">
+                          <p className="text-muted-foreground">
+                            {catalog.length === 0
+                              ? "Nenhum serviço ativo no catálogo."
+                              : "Nenhum serviço encontrado para esta busca."}
+                          </p>
+                          <Button asChild size="sm" variant="outline" className="mt-2">
+                            <Link to="/catalog/services" onClick={() => onOpenChange(false)}>
+                              Abrir catálogo de serviços
+                            </Link>
+                          </Button>
+                        </div>
+                      ) : (
+                        <CommandGroup>
+                          {filtered.map((item) => {
+                            const active = item.id === selectedId;
+                            return (
+                              <CommandItem
+                                key={item.id}
+                                value={item.id}
+                                onSelect={() => pick(item)}
+                                className="items-start gap-2"
+                              >
+                                <Check
+                                  aria-hidden="true"
+                                  className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${active ? "opacity-100" : "opacity-0"}`}
+                                />
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex items-center gap-2">
+                                    <span className="truncate font-medium">{item.name}</span>
+                                    <Badge variant="outline" className="shrink-0">
+                                      {SERVICE_TYPE_LABEL[item.service_type] ?? item.service_type}
+                                    </Badge>
+                                  </span>
+                                  <span className="mt-0.5 block text-xs text-muted-foreground tabular-nums">
+                                    {item.code ? `${item.code} · ` : ""}
+                                    {formatCurrency(Number(item.base_price), item.currency)} /{" "}
+                                    {item.unit}
+                                  </span>
+                                </span>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
 
           {selected ? (
