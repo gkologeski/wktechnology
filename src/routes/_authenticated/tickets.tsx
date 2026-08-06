@@ -82,6 +82,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { notifyTicketStatusChange } from "@/lib/tickets-notify.functions";
 import { SlaBadge } from "@/components/sla/sla-badge";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 
 export const Route = createFileRoute("/_authenticated/tickets")({
   component: TicketsPage,
@@ -301,9 +302,9 @@ function TicketsIndex() {
 
   async function removeOne(id: string) {
     if (!(await confirmDialog("Excluir este ticket?"))) return;
-    const { error } = await supabase.from("tickets").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
+    const res = await deleteRowGuarded("tickets", id);
+    if (!res.ok) {
+      toast.error(res.message);
       return;
     }
     qc.invalidateQueries({ queryKey: ["tickets"] });
@@ -350,12 +351,13 @@ function TicketsIndex() {
     if (selected.size === 0) return;
     if (!(await confirmDialog(`Excluir ${selected.size} ticket(s)?`))) return;
     const ids = Array.from(selected);
-    const { error } = await supabase.from("tickets").delete().in("id", ids);
-    if (error) {
-      toast.error(error.message);
+    const res = await deleteRowsGuarded("tickets", ids);
+    if (!res.ok) {
+      toast.error(res.message);
       return;
     }
-    toast.success(`${ids.length} ticket(s) excluído(s).`);
+    if (res.deleted < res.requested) toast.warning(partialDeleteMessage(res.deleted, res.requested));
+    else toast.success(`${res.deleted} ticket(s) excluído(s).`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["tickets"] });
   }
