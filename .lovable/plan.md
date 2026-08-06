@@ -24,7 +24,7 @@ Observação importante: hoje a exclusão indevida não passa silenciosamente no
 
 - Novo hook em `src/lib/access-control/use-can-delete.tsx`: `useCanDelete(resourceKey)` retorna `canDeleteRecord(record)` avaliando `${resourceKey}.manage.workspace`, `.delete.workspace`, `.delete.team`, `.delete.own` via `usePermissions()`, comparando `owner_id`/`assigned_to`/`created_by` com o usuário atual; para o escopo de equipe, reaproveita `useResourceScope(resourceKey, "delete")` (que já devolve `owner_ids` da equipe).
 - Refatorar `deals.$id.tsx` e `deal-detail-drawer.tsx` para consumirem o hook, eliminando a duplicação da regra.
-- Telas de detalhe: envolver o botão de lixeira com a checagem e adicionar early-return na função `remove()`; trocar `supabase.from(...).delete()` direto por `deleteRowGuarded` onde ainda não é usado.
+- Telas de detalhe: manter o botão de lixeira renderizado, aplicando `disabled` conforme o hook, `title`/tooltip com o motivo e `aria-disabled`; nos grids, usar `DropdownMenuItem disabled`. Adicionar early-return na função `remove()`; trocar `supabase.from(...).delete()` direto por `deleteRowGuarded` onde ainda não é usado. Enquanto as permissões carregam, o botão fica desabilitado.
 - Chaves de recurso por tela: `techsales.companies`, `techsales.contacts`, `techsales.leads`, `techsales.deals`, `techsales.activities` (tarefas), `techsales.tickets`, `techcontract.contracts`, `catalog.services`, `techpeople.people`, `techprojects.projects` e correlatos — cada tela usará a chave já cadastrada no RBAC para o seu recurso (confirmada no catálogo de recursos antes da edição).
 - Sem alteração de RLS, schema, autenticação ou regra de negócio. A camada de banco continua sendo a autoridade final; esta mudança corrige a UI e o feedback.
 
