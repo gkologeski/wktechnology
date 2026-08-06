@@ -139,7 +139,7 @@ function ContractDetail() {
       toast.success("Contrato excluído.");
       qc.removeQueries({ queryKey: ["contract", id] });
       await qc.invalidateQueries({ queryKey: ["contracts"] });
-      navigate({ to: "/contracts" });
+      navigate({ to: "/contracts", search: { groupBy: "none" } });
 
     } catch (e) {
       toast.error((e as Error).message);
@@ -154,7 +154,9 @@ function ContractDetail() {
       <div className="p-6">
         <p className="text-sm text-muted-foreground">Contrato não encontrado.</p>
         <Button variant="outline" asChild className="mt-4">
-          <Link to="/contracts">Voltar</Link>
+          <Link to="/contracts" search={{ groupBy: "none" }}>
+            Voltar
+          </Link>
         </Button>
       </div>
     );
