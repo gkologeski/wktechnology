@@ -8,6 +8,8 @@ import { Link2, Play, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { listServices, activateService } from "@/lib/services.functions";
+import { listJobProfileOptions } from "@/lib/job-profiles.functions";
+import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { LinkCatalogServiceDialog } from "@/components/services/link-catalog-service-dialog";
 
