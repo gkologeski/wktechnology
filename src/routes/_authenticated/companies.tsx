@@ -409,8 +409,8 @@ function CompaniesHubspotView() {
 
   const removeOne = async (id: string) => {
     if (!(await confirmDialog("Excluir esta empresa?"))) return;
-    const { error } = await supabase.from("companies").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    const res = await deleteRowGuarded("companies", id);
+    if (!res.ok) return toast.error(res.message);
     toast.success("Removida");
     qc.invalidateQueries({ queryKey: ["companies"] });
   };
@@ -421,12 +421,13 @@ function CompaniesHubspotView() {
   const confirmBulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    const { error } = await supabase.from("companies").delete().in("id", ids);
-    if (error) {
-      toast.error(error.message);
+    const res = await deleteRowsGuarded("companies", ids);
+    if (!res.ok) {
+      toast.error(res.message);
       return;
     }
-    toast.success(`${ids.length} excluída(s)`);
+    if (res.deleted < res.requested) toast.warning(partialDeleteMessage(res.deleted, res.requested));
+    else toast.success(`${res.deleted} excluída(s)`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["companies"] });
   };
