@@ -168,7 +168,7 @@ function ContractDetail() {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-5 min-w-0">
             <Button variant="ghost" size="icon" asChild className="rounded-full">
-              <Link to="/contracts">
+              <Link to="/contracts" search={{ groupBy: "none" }}>
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
