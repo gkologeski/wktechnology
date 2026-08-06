@@ -342,3 +342,107 @@ export const runServicesBillingNow = createServerFn({ method: "POST" })
 
     return { ok: true, generated };
   });
+
+// ============= CATÁLOGO → CONTRATO =============
+// Dentro de um contrato não se cria serviço livre: associa-se um serviço já
+// existente no catálogo (public.service_catalog), definindo apenas os
+// parâmetros comerciais daquela associação.
+
+export const listCatalogServiceOptions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({ search: z.string().optional() })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.view.workspace",
+      "techservice.services.view.own",
+    ]);
+    let q = supabase
+      .from("service_catalog")
+      .select("id, name, code, service_type, unit, base_price, currency, description")
+      .eq("active", true)
+      .order("name", { ascending: true })
+      .limit(200);
+    if (data.search && data.search.trim()) {
+      q = q.ilike("name", `%${data.search.trim()}%`);
+    }
+    const { data: rows, error } = await q;
+    if (error) throw error;
+    return rows ?? [];
+  });
+
+const linkCatalogInput = z.object({
+  contractId: z.string().uuid(),
+  serviceCatalogId: z.string().uuid(),
+  type: typeEnum.default("recurring"),
+  cadence: cadenceEnum.nullable().optional(),
+  quantity: z.number().nonnegative().default(1),
+  unitPrice: z.number().nonnegative().default(0),
+  startsAt: z.string().nullable().optional(),
+  endsAt: z.string().nullable().optional(),
+});
+
+export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => linkCatalogInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techservice.services.create.own",
+    ]);
+
+    const { data: catalog, error: catErr } = await supabase
+      .from("service_catalog")
+      .select("id, name, description, base_price, currency, active")
+      .eq("id", data.serviceCatalogId)
+      .maybeSingle();
+    if (catErr) throw catErr;
+    if (!catalog || catalog.active === false) {
+      throw new Error("Serviço do catálogo não encontrado ou inativo");
+    }
+
+    const { data: contract, error: cErr } = await supabase
+      .from("contracts")
+      .select("id, role, currency")
+      .eq("id", data.contractId)
+      .maybeSingle();
+    if (cErr) throw cErr;
+    if (!contract) throw new Error("Contrato não encontrado");
+
+    const cadence =
+      data.type === "recurring"
+        ? (data.cadence ?? "monthly")
+        : data.type === "milestone"
+          ? "on_delivery"
+          : null;
+
+    const { data: row, error } = await supabase
+      .from("services")
+      .insert({
+        workspace_id: workspaceId,
+        owner_id: userId,
+        contract_id: data.contractId,
+        role: contract.role,
+        name: catalog.name,
+        description: catalog.description ?? null,
+        type: data.type,
+        cadence,
+        quantity: data.quantity,
+        unit_price: data.unitPrice,
+        currency: contract.currency || catalog.currency || "BRL",
+        starts_at: data.startsAt ?? null,
+        ends_at: data.endsAt ?? null,
+        status: "pending",
+        metadata: { service_catalog_id: catalog.id },
+      })
+      .select("*")
+      .single();
+    if (error) throw error;
+    return row;
+  });
