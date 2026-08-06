@@ -338,6 +338,49 @@ function RbacDiagnosticsPage() {
             <MetricCard label="Itens de menu visíveis" value={`${visibleCount} / ${rows.length}`} />
           </div>
 
+          {diag.warnings.length > 0 && (
+            <Card className="border-amber-500/40">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  Alertas de escopo ({diag.warnings.length})
+                </CardTitle>
+                <CardDescription>
+                  Situações em que o usuário alcança registros de outros responsáveis.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {diag.warnings.map((w) => (
+                  <div key={w.kind} className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={
+                          w.severity === "high"
+                            ? "border-destructive/40 text-destructive"
+                            : "border-amber-500/40 text-amber-600 dark:text-amber-400"
+                        }
+                      >
+                        {w.severity === "high" ? "Alto" : "Médio"}
+                      </Badge>
+                      <span className="text-sm font-medium">{w.title}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{w.detail}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {w.keys.map((k) => (
+                        <Badge key={k} variant="secondary" className="font-mono text-[10px]">
+                          {k}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
