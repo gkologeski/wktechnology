@@ -8,6 +8,8 @@ import { Link2, Play, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { listServices, activateService } from "@/lib/services.functions";
+import { listJobProfileOptions } from "@/lib/job-profiles.functions";
+import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { LinkCatalogServiceDialog } from "@/components/services/link-catalog-service-dialog";
 
@@ -47,10 +49,20 @@ export function ContractServices({
   const [openNew, setOpenNew] = useState(false);
   const [activatingId, setActivatingId] = useState<string | null>(null);
 
+  const listProfiles = useServerFn(listJobProfileOptions);
+
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["contract-services", contractId],
     queryFn: () => list({ data: { contractId } }),
   });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["job-profile-options"],
+    queryFn: () => listProfiles({ data: {} }) as Promise<{ id: string; name: string }[]>,
+    staleTime: 60_000,
+  });
+  const profileName = (id: string | null | undefined) =>
+    id ? (profiles.find((p) => p.id === id)?.name ?? null) : null;
 
   async function activateOne(id: string) {
     setActivatingId(id);
@@ -99,6 +111,23 @@ export function ContractServices({
                     {STATUS_LABEL[s.status] ?? s.status}
                   </Badge>
                 </div>
+                {profileName(s.job_profile_id) || s.seniority ? (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {profileName(s.job_profile_id) ? (
+                      <Badge variant="secondary">{profileName(s.job_profile_id)}</Badge>
+                    ) : null}
+                    {s.seniority ? (
+                      <Badge variant="outline">
+                        {SENIORITY_LABEL[s.seniority as string] ?? s.seniority}
+                      </Badge>
+                    ) : null}
+                    {(s.competencies ?? []).length > 0 ? (
+                      <span className="truncate text-xs text-muted-foreground">
+                        {(s.competencies as string[]).join(", ")}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className="mt-1 text-xs text-muted-foreground tabular-nums flex flex-wrap gap-x-2">
                   <span>{TYPE_LABEL[s.type] ?? s.type}</span>
                   {s.cadence ? <span>· {CADENCE_LABEL[s.cadence] ?? s.cadence}</span> : null}

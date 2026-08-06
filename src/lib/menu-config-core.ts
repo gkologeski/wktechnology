@@ -1,7 +1,7 @@
 // Grupo "Cadastros" — entidades globais do ERP compartilhadas entre módulos.
 // Prepend no sidebar de módulos consumidores (Sales, Contracts, Services,
 // Projects, Finance). NÃO é usado no TechHire/ATS, que tem catálogos próprios.
-import { Building2, Users, Package, Wrench } from "lucide-react";
+import { Building2, Users, Package, Wrench, BriefcaseBusiness } from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 import type { ModuleId } from "@/lib/modules/registry";
 
@@ -13,6 +13,7 @@ export const CORE_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Contatos", url: "/contacts", icon: Users },
       { title: "Catálogo de Produtos", url: "/catalog/products", icon: Package },
       { title: "Catálogo de Serviços", url: "/catalog/services", icon: Wrench },
+      { title: "Cargos e Perfis", url: "/catalog/job-profiles", icon: BriefcaseBusiness },
     ],
   },
 ];

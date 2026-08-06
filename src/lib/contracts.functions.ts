@@ -398,12 +398,15 @@ export const listContractGroupings = createServerFn({ method: "POST" })
       serviceName: string;
       catalogId: string | null;
       catalogName: string | null;
+      jobProfileId: string | null;
+      jobProfileName: string | null;
+      seniority: string | null;
     };
     let services: ServiceLink[] = [];
     if (contractIds.length > 0) {
       const { data: svc, error } = await supabase
         .from("services")
-        .select("id, contract_id, name, metadata")
+        .select("id, contract_id, name, metadata, job_profile_id, seniority")
         .in("contract_id", contractIds)
         .limit(2000);
       if (error) throw error;
@@ -418,6 +421,8 @@ export const listContractGroupings = createServerFn({ method: "POST" })
           serviceId: s.id as string,
           serviceName: (s.name as string) ?? "—",
           catalogId,
+          jobProfileId: (s.job_profile_id as string | null) ?? null,
+          seniority: (s.seniority as string | null) ?? null,
         };
       });
       const catalogIds = Array.from(
@@ -432,9 +437,22 @@ export const listContractGroupings = createServerFn({ method: "POST" })
         if (catErr) throw catErr;
         for (const c of cat ?? []) catalogNames.set(c.id, c.name ?? "—");
       }
+      const profileIds = Array.from(
+        new Set(raw.map((r) => r.jobProfileId).filter(Boolean) as string[]),
+      );
+      const profileNames = new Map<string, string>();
+      if (profileIds.length > 0) {
+        const { data: jp, error: jpErr } = await supabase
+          .from("job_profiles")
+          .select("id, name")
+          .in("id", profileIds);
+        if (jpErr) throw jpErr;
+        for (const p of jp ?? []) profileNames.set(p.id, p.name ?? "—");
+      }
       services = raw.map((r) => ({
         ...r,
         catalogName: r.catalogId ? (catalogNames.get(r.catalogId) ?? null) : null,
+        jobProfileName: r.jobProfileId ? (profileNames.get(r.jobProfileId) ?? null) : null,
       }));
     }
 

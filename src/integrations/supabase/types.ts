@@ -8221,6 +8221,71 @@ export type Database = {
         }
         Relationships: []
       }
+      job_profiles: {
+        Row: {
+          active: boolean
+          code: string | null
+          competencies: string[]
+          created_at: string
+          created_by: string | null
+          currency: string
+          default_unit_price: number
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          seniority: string | null
+          service_catalog_id: string | null
+          tags: string[]
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          code?: string | null
+          competencies?: string[]
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          default_unit_price?: number
+          description?: string | null
+          id?: string
+          name: string
+          owner_id: string
+          seniority?: string | null
+          service_catalog_id?: string | null
+          tags?: string[]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string | null
+          competencies?: string[]
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          default_unit_price?: number
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          seniority?: string | null
+          service_catalog_id?: string | null
+          tags?: string[]
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_profiles_service_catalog_id_fkey"
+            columns: ["service_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_role_default_permissions: {
         Row: {
           permission_key: string
@@ -15068,6 +15133,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           cadence: Database["public"]["Enums"]["service_cadence"] | null
+          competencies: string[]
           contract_id: string
           created_at: string
           currency: string
@@ -15075,6 +15141,7 @@ export type Database = {
           description: string | null
           ends_at: string | null
           id: string
+          job_profile_id: string | null
           metadata: Json
           name: string
           next_billing_at: string | null
@@ -15082,6 +15149,7 @@ export type Database = {
           product_id: string | null
           quantity: number
           role: Database["public"]["Enums"]["contract_role"]
+          seniority: string | null
           starts_at: string | null
           status: Database["public"]["Enums"]["service_status"]
           type: Database["public"]["Enums"]["service_type"]
@@ -15092,6 +15160,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           cadence?: Database["public"]["Enums"]["service_cadence"] | null
+          competencies?: string[]
           contract_id: string
           created_at?: string
           currency?: string
@@ -15099,6 +15168,7 @@ export type Database = {
           description?: string | null
           ends_at?: string | null
           id?: string
+          job_profile_id?: string | null
           metadata?: Json
           name: string
           next_billing_at?: string | null
@@ -15106,6 +15176,7 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           role: Database["public"]["Enums"]["contract_role"]
+          seniority?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           type?: Database["public"]["Enums"]["service_type"]
@@ -15116,6 +15187,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           cadence?: Database["public"]["Enums"]["service_cadence"] | null
+          competencies?: string[]
           contract_id?: string
           created_at?: string
           currency?: string
@@ -15123,6 +15195,7 @@ export type Database = {
           description?: string | null
           ends_at?: string | null
           id?: string
+          job_profile_id?: string | null
           metadata?: Json
           name?: string
           next_billing_at?: string | null
@@ -15130,6 +15203,7 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           role?: Database["public"]["Enums"]["contract_role"]
+          seniority?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["service_status"]
           type?: Database["public"]["Enums"]["service_type"]
@@ -15143,6 +15217,13 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_job_profile_id_fkey"
+            columns: ["job_profile_id"]
+            isOneToOne: false
+            referencedRelation: "job_profiles"
             referencedColumns: ["id"]
           },
           {

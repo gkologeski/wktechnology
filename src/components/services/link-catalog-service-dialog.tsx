@@ -37,6 +37,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatCurrency } from "@/lib/crm";
 import { listCatalogServiceOptions, linkCatalogServiceToContract } from "@/lib/services.functions";
+import { listJobProfileOptions } from "@/lib/job-profiles.functions";
+import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 
 type CatalogItem = {
   id: string;
@@ -47,6 +49,17 @@ type CatalogItem = {
   base_price: number;
   currency: string;
   description: string | null;
+};
+
+type JobProfileOption = {
+  id: string;
+  name: string;
+  code: string | null;
+  seniority: string | null;
+  default_unit_price: number;
+  currency: string;
+  competencies: string[] | null;
+  service_catalog_id: string | null;
 };
 
 type Props = {
@@ -74,11 +87,17 @@ export function LinkCatalogServiceDialog({
   onCreated,
 }: Props) {
   const listCatalog = useServerFn(listCatalogServiceOptions);
+  const listProfiles = useServerFn(listJobProfileOptions);
   const link = useServerFn(linkCatalogServiceToContract);
 
   const [search, setSearch] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [profileSearch, setProfileSearch] = useState("");
+  const [profilePickerOpen, setProfilePickerOpen] = useState(false);
+  const [jobProfileId, setJobProfileId] = useState<string | null>(null);
+  const [seniority, setSeniority] = useState<string>("");
+  const [competencies, setCompetencies] = useState<string>("");
   const [type, setType] = useState<"one_time" | "recurring" | "usage_based" | "milestone">(
     "recurring",
   );
@@ -101,11 +120,23 @@ export function LinkCatalogServiceDialog({
     staleTime: 60_000,
   });
 
+  const { data: profiles = [], isLoading: profilesLoading } = useQuery({
+    queryKey: ["job-profile-options"],
+    queryFn: () => listProfiles({ data: {} }) as Promise<JobProfileOption[]>,
+    enabled: open,
+    staleTime: 60_000,
+  });
+
   useEffect(() => {
     if (open) {
       setSearch("");
       setPickerOpen(false);
       setSelectedId(null);
+      setProfileSearch("");
+      setProfilePickerOpen(false);
+      setJobProfileId(null);
+      setSeniority("");
+      setCompetencies("");
       setType("recurring");
       setCadence("monthly");
       setQuantity(1);
@@ -123,12 +154,41 @@ export function LinkCatalogServiceDialog({
     );
   }, [catalog, search]);
 
+  const filteredProfiles = useMemo(() => {
+    const term = profileSearch.trim().toLowerCase();
+    if (!term) return profiles;
+    return profiles.filter(
+      (p) =>
+        p.name.toLowerCase().includes(term) ||
+        (p.code ?? "").toLowerCase().includes(term) ||
+        (p.competencies ?? []).some((c) => c.toLowerCase().includes(term)),
+    );
+  }, [profiles, profileSearch]);
+
   const selected = catalog.find((c) => c.id === selectedId) ?? null;
+  const selectedProfile = profiles.find((p) => p.id === jobProfileId) ?? null;
 
   function pick(item: CatalogItem) {
     setSelectedId(item.id);
     setUnitPrice(Number(item.base_price) || 0);
     setPickerOpen(false);
+  }
+
+  // Escolher o cargo preenche automaticamente a linha de serviço, o preço,
+  // a senioridade e a stack — todos ainda editáveis.
+  function pickProfile(p: JobProfileOption) {
+    setJobProfileId(p.id);
+    setSeniority(p.seniority ?? "");
+    setCompetencies((p.competencies ?? []).join(", "));
+    if (p.service_catalog_id) {
+      setSelectedId(p.service_catalog_id);
+      const item = catalog.find((c) => c.id === p.service_catalog_id);
+      const price = Number(p.default_unit_price) || Number(item?.base_price) || 0;
+      setUnitPrice(price);
+    } else if (Number(p.default_unit_price) > 0) {
+      setUnitPrice(Number(p.default_unit_price));
+    }
+    setProfilePickerOpen(false);
   }
 
   async function submit() {
@@ -148,6 +208,12 @@ export function LinkCatalogServiceDialog({
           unitPrice: typeof unitPrice === "number" ? unitPrice : 0,
           startsAt: startsAt || null,
           endsAt: endsAt || null,
+          jobProfileId: jobProfileId,
+          seniority: seniority || null,
+          competencies: competencies
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean),
         },
       });
       toast.success("Serviço associado ao contrato.");
@@ -282,6 +348,144 @@ export function LinkCatalogServiceDialog({
               Nome e descrição vêm do catálogo e não são editáveis no contrato.
             </p>
           ) : null}
+
+          <div className="space-y-2">
+            <Label htmlFor="profile-picker">Cargo / perfil contratado</Label>
+            <Popover open={profilePickerOpen} onOpenChange={setProfilePickerOpen} modal>
+              <PopoverTrigger asChild>
+                <Button
+                  id="profile-picker"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={profilePickerOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {selectedProfile ? (
+                    <span className="min-w-0 truncate">
+                      {selectedProfile.name}
+                      {selectedProfile.seniority ? (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {SENIORITY_LABEL[selectedProfile.seniority] ?? selectedProfile.seniority}
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Buscar cargo (opcional, ex.: Coordenador de RH)
+                    </span>
+                  )}
+                  <ChevronsUpDown aria-hidden="true" className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-[--radix-popover-trigger-width] p-0"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                {profilesLoading ? (
+                  <p className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
+                    <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" /> Carregando
+                    cargos…
+                  </p>
+                ) : (
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      value={profileSearch}
+                      onValueChange={setProfileSearch}
+                      placeholder="Buscar cargo, código ou stack"
+                    />
+                    <CommandList>
+                      {filteredProfiles.length === 0 ? (
+                        <div className="p-3 text-sm">
+                          <p className="text-muted-foreground">
+                            {profiles.length === 0
+                              ? "Nenhum cargo cadastrado."
+                              : "Nenhum cargo encontrado para esta busca."}
+                          </p>
+                          <Button asChild size="sm" variant="outline" className="mt-2">
+                            <Link to="/catalog/job-profiles" onClick={() => onOpenChange(false)}>
+                              Abrir cadastro de cargos
+                            </Link>
+                          </Button>
+                        </div>
+                      ) : (
+                        <CommandGroup>
+                          {filteredProfiles.map((p) => {
+                            const active = p.id === jobProfileId;
+                            return (
+                              <CommandItem
+                                key={p.id}
+                                value={p.id}
+                                onSelect={() => pickProfile(p)}
+                                className="items-start gap-2"
+                              >
+                                <Check
+                                  aria-hidden="true"
+                                  className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${active ? "opacity-100" : "opacity-0"}`}
+                                />
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex items-center gap-2">
+                                    <span className="truncate font-medium">{p.name}</span>
+                                    {p.seniority ? (
+                                      <Badge variant="outline" className="shrink-0">
+                                        {SENIORITY_LABEL[p.seniority] ?? p.seniority}
+                                      </Badge>
+                                    ) : null}
+                                  </span>
+                                  {(p.competencies ?? []).length > 0 ? (
+                                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                                      {(p.competencies ?? []).join(", ")}
+                                    </span>
+                                  ) : null}
+                                </span>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                )}
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">
+              O cargo preenche a linha de serviço, o preço, a senioridade e a stack — tudo ainda
+              editável aqui.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="svc-seniority">Senioridade</Label>
+              <Select
+                value={seniority || "none"}
+                onValueChange={(v) => setSeniority(v === "none" ? "" : v)}
+              >
+                <SelectTrigger id="svc-seniority">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não se aplica</SelectItem>
+                  {SENIORITY_OPTIONS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="svc-competencies">Stack / competências</Label>
+              <Input
+                id="svc-competencies"
+                placeholder="React, Node"
+                value={competencies}
+                onChange={(e) => setCompetencies(e.target.value)}
+              />
+            </div>
+          </div>
+
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
