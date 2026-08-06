@@ -258,25 +258,25 @@ export function LineItemsEditorBody({
     }
     notifyDealsChanged();
   }
-  async function addFromProduct(pid: string) {
+  async function addFromCatalogService(sid: string) {
     const scope = baseInsertScope();
     if (!scope) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: p, error: perr } = await (supabase as any)
-      .from("products")
-      .select("*")
-      .eq("id", pid)
+      .from("service_catalog")
+      .select("id, name, base_price, tax_rate")
+      .eq("id", sid)
       .maybeSingle();
-    if (perr || !p) return toast.error(perr?.message ?? "Produto não encontrado");
+    if (perr || !p) return toast.error(perr?.message ?? "Serviço não encontrado");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from("deal_line_items")
       .insert({
         ...scope,
-        product_id: p.id,
+        service_catalog_id: p.id,
         name: p.name,
         quantity: 1,
-        unit_price: p.unit_price,
+        unit_price: p.base_price ?? 0,
         discount_pct: 0,
         discount_amount: 0,
         discount_type: "pct",
