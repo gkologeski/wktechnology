@@ -124,7 +124,18 @@ export const updateJobProfile = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, UPDATE);
 
     const p = data.patch;
-    const patch: Record<string, unknown> = {};
+    const patch: Partial<{
+      name: string;
+      code: string | null;
+      description: string | null;
+      service_catalog_id: string | null;
+      seniority: string | null;
+      default_unit_price: number;
+      currency: string;
+      competencies: string[];
+      tags: string[];
+      active: boolean;
+    }> = {};
     if (p.name !== undefined) patch["name"] = p.name.trim();
     if (p.code !== undefined) patch["code"] = p.code?.trim() || null;
     if (p.description !== undefined) patch["description"] = p.description ?? null;
