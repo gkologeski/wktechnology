@@ -7,6 +7,14 @@ import type { PermissionCatalogRow } from "@/lib/access-control/action-matrix";
 export type RbacRoleInfo = { id: string; name: string; is_primary: boolean };
 export type RbacSetInfo = { id: string; name: string; module: string };
 
+export type RbacWarning = {
+  kind: "broad_permission" | "multiple_roles";
+  severity: "high" | "medium";
+  title: string;
+  detail: string;
+  keys: string[];
+};
+
 export type RbacDiagnostics = {
   workspace_id: string | null;
   workspace_name: string | null;
@@ -20,7 +28,46 @@ export type RbacDiagnostics = {
   permission_sets: RbacSetInfo[];
   permissions: string[];
   permission_labels: Record<string, string>;
+  warnings: RbacWarning[];
 };
+
+/**
+ * Permissões "amplas": ações que alcançam registros de outros usuários.
+ * `manage` engloba todas as ações do recurso; escopos workspace/org/all
+ * ignoram o vínculo de responsável.
+ */
+function computeWarnings(permissions: string[], roles: RbacRoleInfo[]): RbacWarning[] {
+  const warnings: RbacWarning[] = [];
+  const broad = permissions.filter((key) => {
+    const parts = key.split(".");
+    const action = parts[parts.length - 2];
+    const scope = parts[parts.length - 1];
+    const wide = scope === "workspace" || scope === "org" || scope === "all";
+    return action === "manage" || (wide && (action === "delete" || action === "update"));
+  });
+  if (broad.length > 0) {
+    warnings.push({
+      kind: "broad_permission",
+      severity: "high",
+      title: `${broad.length} permissão(ões) ampla(s) detectada(s)`,
+      detail:
+        "Estas permissões permitem editar/excluir registros de outros usuários, ignorando o escopo de responsável. Revise em Configurações › Permissões.",
+      keys: broad.sort(),
+    });
+  }
+  if (roles.length > 1) {
+    warnings.push({
+      kind: "multiple_roles",
+      severity: "medium",
+      title: `Usuário acumula ${roles.length} cargos`,
+      detail:
+        "As permissões são somadas entre os cargos: o escopo mais amplo prevalece. Mantenha apenas o cargo necessário para que restrições de escopo próprio tenham efeito.",
+      keys: roles.map((r) => r.name),
+    });
+  }
+  return warnings;
+}
+
 
 export type WorkspaceMemberOption = { user_id: string; full_name: string | null };
 
