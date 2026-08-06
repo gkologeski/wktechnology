@@ -53,10 +53,16 @@ function CompanyDetail() {
     { table: "companies", queryKeys: [qk.company(id)] },
     { table: "activities", queryKeys: [qk.activities("related_company_id", id)] },
   ]);
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.companies");
+  const canDelete = !deletePermLoading && canDeleteRecord(company);
 
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const remove = async () => {
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      return;
+    }
     if (!(await confirmDialog("Excluir empresa?"))) return;
     const res = await deleteRowGuarded("companies", company.id);
     if (!res.ok) {
