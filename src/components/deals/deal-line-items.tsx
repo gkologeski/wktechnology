@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
-import { Package, Plus, Trash2, Pencil } from "lucide-react";
+import { Wrench, Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
 import {
