@@ -126,7 +126,7 @@ export function ContractServices({
         </div>
       )}
 
-      <QuickCreateServiceDialog
+      <LinkCatalogServiceDialog
         open={openNew}
         onOpenChange={setOpenNew}
         contractId={contractId}
