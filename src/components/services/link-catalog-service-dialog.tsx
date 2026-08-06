@@ -37,6 +37,8 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatCurrency } from "@/lib/crm";
 import { listCatalogServiceOptions, linkCatalogServiceToContract } from "@/lib/services.functions";
+import { listJobProfileOptions } from "@/lib/job-profiles.functions";
+import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 
 type CatalogItem = {
   id: string;
@@ -47,6 +49,17 @@ type CatalogItem = {
   base_price: number;
   currency: string;
   description: string | null;
+};
+
+type JobProfileOption = {
+  id: string;
+  name: string;
+  code: string | null;
+  seniority: string | null;
+  default_unit_price: number;
+  currency: string;
+  competencies: string[] | null;
+  service_catalog_id: string | null;
 };
 
 type Props = {
