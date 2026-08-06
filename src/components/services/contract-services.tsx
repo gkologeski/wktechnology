@@ -49,10 +49,20 @@ export function ContractServices({
   const [openNew, setOpenNew] = useState(false);
   const [activatingId, setActivatingId] = useState<string | null>(null);
 
+  const listProfiles = useServerFn(listJobProfileOptions);
+
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["contract-services", contractId],
     queryFn: () => list({ data: { contractId } }),
   });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["job-profile-options"],
+    queryFn: () => listProfiles({ data: {} }) as Promise<{ id: string; name: string }[]>,
+    staleTime: 60_000,
+  });
+  const profileName = (id: string | null | undefined) =>
+    id ? (profiles.find((p) => p.id === id)?.name ?? null) : null;
 
   async function activateOne(id: string) {
     setActivatingId(id);
