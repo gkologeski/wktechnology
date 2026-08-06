@@ -655,7 +655,7 @@ export function ActivityTimeline({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [remindBefore, setRemindBefore] = useState("none");
+  const [remindBefore, setRemindBefore] = useState("0");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editPickerOpen, setEditPickerOpen] = useState(false);
   const [assigneeId, setAssigneeId] = useState<string>("");
