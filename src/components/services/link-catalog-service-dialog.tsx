@@ -87,11 +87,17 @@ export function LinkCatalogServiceDialog({
   onCreated,
 }: Props) {
   const listCatalog = useServerFn(listCatalogServiceOptions);
+  const listProfiles = useServerFn(listJobProfileOptions);
   const link = useServerFn(linkCatalogServiceToContract);
 
   const [search, setSearch] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [profileSearch, setProfileSearch] = useState("");
+  const [profilePickerOpen, setProfilePickerOpen] = useState(false);
+  const [jobProfileId, setJobProfileId] = useState<string | null>(null);
+  const [seniority, setSeniority] = useState<string>("");
+  const [competencies, setCompetencies] = useState<string>("");
   const [type, setType] = useState<"one_time" | "recurring" | "usage_based" | "milestone">(
     "recurring",
   );
@@ -114,11 +120,23 @@ export function LinkCatalogServiceDialog({
     staleTime: 60_000,
   });
 
+  const { data: profiles = [], isLoading: profilesLoading } = useQuery({
+    queryKey: ["job-profile-options"],
+    queryFn: () => listProfiles({ data: {} }) as Promise<JobProfileOption[]>,
+    enabled: open,
+    staleTime: 60_000,
+  });
+
   useEffect(() => {
     if (open) {
       setSearch("");
       setPickerOpen(false);
       setSelectedId(null);
+      setProfileSearch("");
+      setProfilePickerOpen(false);
+      setJobProfileId(null);
+      setSeniority("");
+      setCompetencies("");
       setType("recurring");
       setCadence("monthly");
       setQuantity(1);
@@ -136,12 +154,41 @@ export function LinkCatalogServiceDialog({
     );
   }, [catalog, search]);
 
+  const filteredProfiles = useMemo(() => {
+    const term = profileSearch.trim().toLowerCase();
+    if (!term) return profiles;
+    return profiles.filter(
+      (p) =>
+        p.name.toLowerCase().includes(term) ||
+        (p.code ?? "").toLowerCase().includes(term) ||
+        (p.competencies ?? []).some((c) => c.toLowerCase().includes(term)),
+    );
+  }, [profiles, profileSearch]);
+
   const selected = catalog.find((c) => c.id === selectedId) ?? null;
+  const selectedProfile = profiles.find((p) => p.id === jobProfileId) ?? null;
 
   function pick(item: CatalogItem) {
     setSelectedId(item.id);
     setUnitPrice(Number(item.base_price) || 0);
     setPickerOpen(false);
+  }
+
+  // Escolher o cargo preenche automaticamente a linha de serviço, o preço,
+  // a senioridade e a stack — todos ainda editáveis.
+  function pickProfile(p: JobProfileOption) {
+    setJobProfileId(p.id);
+    setSeniority(p.seniority ?? "");
+    setCompetencies((p.competencies ?? []).join(", "));
+    if (p.service_catalog_id) {
+      setSelectedId(p.service_catalog_id);
+      const item = catalog.find((c) => c.id === p.service_catalog_id);
+      const price = Number(p.default_unit_price) || Number(item?.base_price) || 0;
+      setUnitPrice(price);
+    } else if (Number(p.default_unit_price) > 0) {
+      setUnitPrice(Number(p.default_unit_price));
+    }
+    setProfilePickerOpen(false);
   }
 
   async function submit() {
