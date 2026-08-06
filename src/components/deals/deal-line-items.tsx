@@ -339,26 +339,27 @@ export function LineItemsEditorBody({
       <div className="flex gap-2 flex-wrap">
         <div className="w-[260px]">
           <EntityCombobox
-            key={`product-picker-${productPickerKey}`}
-            entity="products"
-            select="id, name, unit_price, currency"
-            searchColumns={["name", "sku", "description"]}
-            labelFrom={(r) => String((r as { name?: string }).name ?? "Produto")}
+            key={`service-picker-${productPickerKey}`}
+            entity="service_catalog"
+            select="id, name, code, base_price, currency, unit"
+            searchColumns={["name", "code", "description"]}
+            labelFrom={(r) => String((r as { name?: string }).name ?? "Serviço")}
             hintFrom={(r) => {
-              const row = r as { unit_price?: number; currency?: string };
-              return row.unit_price != null
-                ? formatCurrency(Number(row.unit_price), row.currency ?? "BRL")
-                : null;
+              const row = r as { base_price?: number; currency?: string; unit?: string };
+              if (row.base_price == null) return null;
+              const price = formatCurrency(Number(row.base_price), row.currency ?? "BRL");
+              return row.unit ? `${price} / ${row.unit}` : price;
             }}
             value={null}
             onChange={(id) => {
-              if (id) addFromProduct(id);
+              if (id) addFromCatalogService(id);
             }}
-            placeholder="Adicionar do catálogo…"
-            emptyLabel="Nenhum produto"
-            icon={Package}
+            placeholder="Adicionar serviço do catálogo…"
+            emptyLabel="Nenhum serviço"
+            icon={Wrench}
             clearable={false}
           />
+
         </div>
         <Button size="sm" variant="outline" onClick={addBlank}>
           <Plus className="h-4 w-4 mr-1" /> Item em branco
