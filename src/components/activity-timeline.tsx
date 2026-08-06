@@ -1196,7 +1196,7 @@ export function ActivityTimeline({
     setSubject("");
     setBody("");
     setDueDate("");
-    setRemindBefore("none");
+    setRemindBefore("0");
     setAssigneeId("");
     setPendingFiles([]);
     setMentions([]);
@@ -1556,7 +1556,7 @@ export function ActivityTimeline({
                   setSubject("");
                   setBody("");
                   setDueDate("");
-                  setRemindBefore("none");
+                  setRemindBefore("0");
                   setPendingFiles([]);
                 }}
               >

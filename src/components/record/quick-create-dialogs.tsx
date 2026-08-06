@@ -622,7 +622,7 @@ export function QuickCreateTaskDialog({
       setSubject("");
       setPriority("MEDIUM");
       setDueDate("");
-      setRemindBefore("none");
+      setRemindBefore("0");
       onCreated?.(data.id);
       onSaved?.({ id: data.id, action: "created" });
     } catch (e) {
