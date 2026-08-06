@@ -31,6 +31,10 @@ import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import {
+  useCanDelete,
+  DELETE_NOT_ALLOWED_TITLE,
+} from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   component: LeadDetail,
