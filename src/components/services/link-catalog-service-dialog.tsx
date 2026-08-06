@@ -80,6 +80,7 @@ export function LinkCatalogServiceDialog({
   const link = useServerFn(linkCatalogServiceToContract);
 
   const [search, setSearch] = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [type, setType] = useState<"one_time" | "recurring" | "usage_based" | "milestone">(
     "recurring",
