@@ -26,11 +26,11 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
 
-
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   component: LeadDetail,
@@ -60,6 +60,9 @@ function LeadDetail() {
     { table: "activities", queryKeys: [qk.activities("related_lead_id", id)] },
   ]);
 
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.leads");
+  const canDelete = !deletePermLoading && canDeleteRecord(lead);
+
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const setStatus = async (v: string) => {
@@ -75,6 +78,11 @@ function LeadDetail() {
     void load();
   };
   const doDelete = async () => {
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      setConfirmDelete(false);
+      return;
+    }
     setBusy(true);
     try {
       await deleteLeadsByIds(supabase, [lead.id]);
@@ -127,6 +135,10 @@ function LeadDetail() {
             size="icon"
             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
             onClick={() => setConfirmDelete(true)}
+            disabled={!canDelete}
+            aria-disabled={!canDelete}
+            title={canDelete ? "Excluir lead" : DELETE_NOT_ALLOWED_TITLE}
+            aria-label="Excluir lead"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -151,7 +163,6 @@ function LeadDetail() {
 
   return (
     <>
-      
       <RecordLayout
         header={header}
         left={

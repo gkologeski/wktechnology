@@ -14,6 +14,8 @@ import { qk } from "@/lib/entity-queries";
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { deleteRowGuarded } from "@/lib/delete-guard";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
   component: ContactDetail,
@@ -60,6 +62,9 @@ function ContactDetail() {
     { table: "activities", queryKeys: [qk.activities("related_contact_id", id)] },
   ]);
 
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.contacts");
+  const canDelete = !deletePermLoading && canDeleteRecord(contact);
+
   if (loading && !contact)
     return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;
   if (loadError)
@@ -88,10 +93,14 @@ function ContactDetail() {
     );
 
   const remove = async () => {
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      return;
+    }
     if (!(await confirmDialog("Excluir contato?"))) return;
-    const { error } = await supabase.from("contacts").delete().eq("id", contact.id);
-    if (error) {
-      toast.error(error.message);
+    const res = await deleteRowGuarded("contacts", contact.id);
+    if (!res.ok) {
+      toast.error(res.message);
       return;
     }
     toast.success("Excluído");
@@ -141,6 +150,10 @@ function ContactDetail() {
           size="icon"
           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
           onClick={remove}
+          disabled={!canDelete}
+          aria-disabled={!canDelete}
+          title={canDelete ? "Excluir contato" : DELETE_NOT_ALLOWED_TITLE}
+          aria-label="Excluir contato"
         >
           <Trash2 className="h-4 w-4" />
         </Button>

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { ArrowLeft, Package, Play, Save, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,12 @@ function ServiceDetail() {
     queryKey: ["service", id],
     queryFn: () => get({ data: { id } }),
   });
+
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete(
+    "techsales.catalog.services",
+  );
+  const canDelete =
+    !deletePermLoading && canDeleteRecord(row as Parameters<typeof canDeleteRecord>[0]);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -140,6 +147,10 @@ function ServiceDetail() {
   }
 
   async function del() {
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      return;
+    }
     if (!(await confirmDialog("Excluir este serviço?"))) return;
     try {
       await remove({ data: { id } });
@@ -200,7 +211,15 @@ function ServiceDetail() {
           <Button variant="outline" onClick={save} disabled={saving}>
             <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
           </Button>
-          <Button variant="ghost" size="icon" onClick={del}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={del}
+            disabled={!canDelete}
+            aria-disabled={!canDelete}
+            title={canDelete ? "Excluir serviço" : DELETE_NOT_ALLOWED_TITLE}
+            aria-label="Excluir serviço"
+          >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>

@@ -18,6 +18,7 @@ import { qk } from "@/lib/entity-queries";
 import type { Company } from "@/lib/db-types";
 import { toast } from "sonner";
 import { deleteRowGuarded } from "@/lib/delete-guard";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/companies/$id")({
@@ -49,10 +50,16 @@ function CompanyDetail() {
     { table: "companies", queryKeys: [qk.company(id)] },
     { table: "activities", queryKeys: [qk.activities("related_company_id", id)] },
   ]);
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.companies");
+  const canDelete = !deletePermLoading && canDeleteRecord(company);
 
   if (!company) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const remove = async () => {
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      return;
+    }
     if (!(await confirmDialog("Excluir empresa?"))) return;
     const res = await deleteRowGuarded("companies", company.id);
     if (!res.ok) {
@@ -64,7 +71,6 @@ function CompanyDetail() {
     await qc.invalidateQueries({ queryKey: ["companies"] });
     navigate({ to: "/companies" });
   };
-
 
   const enrich = async () => {
     if (!company?.cnpj) {
@@ -141,6 +147,10 @@ function CompanyDetail() {
           size="icon"
           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
           onClick={remove}
+          disabled={!canDelete}
+          aria-disabled={!canDelete}
+          title={canDelete ? "Excluir empresa" : DELETE_NOT_ALLOWED_TITLE}
+          aria-label="Excluir empresa"
         >
           <Trash2 className="h-4 w-4" />
         </Button>

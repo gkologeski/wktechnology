@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ArrowLeft, Ban, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -72,6 +73,10 @@ function EntryDetailsPage() {
     queryFn: () => listSiblings({ data: { entry_id: id } }),
     enabled: isInstallment,
   });
+
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techfinance.entries");
+  const canDelete =
+    !deletePermLoading && canDeleteRecord(entry as Parameters<typeof canDeleteRecord>[0]);
 
   const invalidate = () => {
     refetch();
@@ -203,7 +208,14 @@ function EntryDetailsPage() {
               <Button
                 variant="outline"
                 size="sm"
+                disabled={!canDelete}
+                aria-disabled={!canDelete}
+                title={canDelete ? "Excluir parcelas em aberto" : DELETE_NOT_ALLOWED_TITLE}
                 onClick={async () => {
+                  if (!canDelete) {
+                    toast.error(DELETE_NOT_ALLOWED_TITLE);
+                    return;
+                  }
                   if (!(await confirmDialog("Excluir todas as parcelas em aberto deste grupo?")))
                     return;
                   const r = await delGroup({

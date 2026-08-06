@@ -29,6 +29,8 @@ import { TASK_STATUSES, TASK_PRIORITIES, formatDateTime } from "@/lib/crm";
 import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { deleteRowGuarded } from "@/lib/delete-guard";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/tasks/$id")({
   component: TaskDetail,
@@ -59,12 +61,20 @@ function TaskDetail() {
     return DOMPurify.sanitize(task.body, { USE_PROFILES: { html: true } });
   }, [task?.body]);
 
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.activities");
+  const canDelete = !deletePermLoading && canDeleteRecord(task);
+
   if (!task) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const remove = async () => {
-    const { error } = await supabase.from("activities").delete().eq("id", task.id);
-    if (error) {
-      toast.error(error.message);
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      setConfirmDelete(false);
+      return;
+    }
+    const res = await deleteRowGuarded("activities", task.id);
+    if (!res.ok) {
+      toast.error(res.message);
       return;
     }
     toast.success("Excluída");
@@ -140,9 +150,7 @@ function TaskDetail() {
                   <>
                     <span className="text-border">·</span>
                     por{" "}
-                    <span className="font-medium text-foreground">
-                      {nameFor(task.created_by)}
-                    </span>
+                    <span className="font-medium text-foreground">{nameFor(task.created_by)}</span>
                   </>
                 )}
               </p>
@@ -159,6 +167,9 @@ function TaskDetail() {
               size="icon"
               className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
               onClick={() => setConfirmDelete(true)}
+              disabled={!canDelete}
+              aria-disabled={!canDelete}
+              title={canDelete ? "Excluir tarefa" : DELETE_NOT_ALLOWED_TITLE}
               aria-label="Excluir tarefa"
             >
               <Trash2 className="h-4 w-4" />
@@ -186,7 +197,6 @@ function TaskDetail() {
                 options: REMINDER_OPTIONS,
               },
               { key: "body", label: "Descrição" },
-
             ]}
             onSaved={load}
           />
@@ -234,9 +244,7 @@ function TaskDetail() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir tarefa?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>

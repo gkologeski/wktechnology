@@ -26,6 +26,7 @@ import { ContractParentLink } from "@/components/contracts/contract-parent-link"
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({ meta: [{ title: "Contrato" }] }),
@@ -68,6 +69,10 @@ function ContractDetail() {
     queryKey: ["contract", id],
     queryFn: () => get({ data: { id } }),
   });
+
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techcontracts.contracts");
+  const canDelete =
+    !deletePermLoading && canDeleteRecord(contract as Parameters<typeof canDeleteRecord>[0]);
 
   const [title, setTitle] = useState("");
   const [role, setRole] = useState<"provider" | "client">("provider");
@@ -124,6 +129,10 @@ function ContractDetail() {
   }
 
   async function remove() {
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      return;
+    }
     if (!(await confirmDialog("Excluir este contrato?"))) return;
     try {
       await del({ data: { id } });
@@ -186,7 +195,15 @@ function ContractDetail() {
             <Button onClick={save} disabled={saving}>
               <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
             </Button>
-            <Button variant="ghost" size="icon" onClick={remove} aria-label="Excluir">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={remove}
+              disabled={!canDelete}
+              aria-disabled={!canDelete}
+              title={canDelete ? "Excluir contrato" : DELETE_NOT_ALLOWED_TITLE}
+              aria-label="Excluir"
+            >
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
