@@ -3,13 +3,14 @@ import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Package, Plus, Play, ExternalLink } from "lucide-react";
+import { Link2, Play, ExternalLink } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { listServices, activateService } from "@/lib/services.functions";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
-import { QuickCreateServiceDialog } from "@/components/services/quick-create-service-dialog";
+import { LinkCatalogServiceDialog } from "@/components/services/link-catalog-service-dialog";
+
 
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pendente",
@@ -72,8 +73,9 @@ export function ContractServices({
           {rows.length === 0 ? "Nenhum serviço" : `${rows.length} serviço(s)`}
         </span>
         <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
-          <Plus className="h-3.5 w-3.5 mr-0.5" /> Adicionar
+          <Link2 aria-hidden="true" className="h-3.5 w-3.5 mr-0.5" /> Associar serviço
         </Button>
+
       </div>
 
       {isLoading ? (
@@ -124,7 +126,7 @@ export function ContractServices({
         </div>
       )}
 
-      <QuickCreateServiceDialog
+      <LinkCatalogServiceDialog
         open={openNew}
         onOpenChange={setOpenNew}
         contractId={contractId}
