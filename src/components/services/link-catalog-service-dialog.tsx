@@ -107,6 +107,7 @@ export function LinkCatalogServiceDialog({
   useEffect(() => {
     if (open) {
       setSearch("");
+      setPickerOpen(false);
       setSelectedId(null);
       setType("recurring");
       setCadence("monthly");
