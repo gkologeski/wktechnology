@@ -185,6 +185,7 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
       permission_sets: [],
       permissions: [],
       permission_labels: {},
+      warnings: [],
     };
     if (!ws.workspaceId) return empty;
 
