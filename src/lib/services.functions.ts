@@ -204,9 +204,18 @@ export const deleteService = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techservice.services.delete.workspace",
     ]);
-    const { error } = await supabase.from("services").delete().eq("id", data.id);
+    const { data: deleted, error } = await supabase
+      .from("services")
+      .delete()
+      .eq("id", data.id)
+      .select("id");
     if (error) throw error;
-    return { ok: true };
+    if (!deleted || deleted.length === 0) {
+      // A política de acesso do banco recusou silenciosamente (0 linhas).
+      throw new Error("Você não tem permissão para excluir este registro.");
+    }
+    return { ok: true, deleted: deleted.length };
+
   });
 
 // ============= ACTIVATE =============
