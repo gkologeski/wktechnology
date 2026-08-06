@@ -5699,6 +5699,7 @@ export type Database = {
           position: number
           product_id: string | null
           quantity: number
+          service_catalog_id: string | null
           tax_rate: number
           unit_price: number
           updated_at: string
@@ -5717,6 +5718,7 @@ export type Database = {
           position?: number
           product_id?: string | null
           quantity?: number
+          service_catalog_id?: string | null
           tax_rate?: number
           unit_price?: number
           updated_at?: string
@@ -5735,6 +5737,7 @@ export type Database = {
           position?: number
           product_id?: string | null
           quantity?: number
+          service_catalog_id?: string | null
           tax_rate?: number
           unit_price?: number
           updated_at?: string
@@ -5753,6 +5756,13 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_line_items_service_catalog_id_fkey"
+            columns: ["service_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
             referencedColumns: ["id"]
           },
           {

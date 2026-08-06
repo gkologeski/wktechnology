@@ -7,6 +7,14 @@ import type { PermissionCatalogRow } from "@/lib/access-control/action-matrix";
 export type RbacRoleInfo = { id: string; name: string; is_primary: boolean };
 export type RbacSetInfo = { id: string; name: string; module: string };
 
+export type RbacWarning = {
+  kind: "broad_permission" | "multiple_roles";
+  severity: "high" | "medium";
+  title: string;
+  detail: string;
+  keys: string[];
+};
+
 export type RbacDiagnostics = {
   workspace_id: string | null;
   workspace_name: string | null;
@@ -20,7 +28,46 @@ export type RbacDiagnostics = {
   permission_sets: RbacSetInfo[];
   permissions: string[];
   permission_labels: Record<string, string>;
+  warnings: RbacWarning[];
 };
+
+/**
+ * Permissões "amplas": ações que alcançam registros de outros usuários.
+ * `manage` engloba todas as ações do recurso; escopos workspace/org/all
+ * ignoram o vínculo de responsável.
+ */
+function computeWarnings(permissions: string[], roles: RbacRoleInfo[]): RbacWarning[] {
+  const warnings: RbacWarning[] = [];
+  const broad = permissions.filter((key) => {
+    const parts = key.split(".");
+    const action = parts[parts.length - 2];
+    const scope = parts[parts.length - 1];
+    const wide = scope === "workspace" || scope === "org" || scope === "all";
+    return action === "manage" || (wide && (action === "delete" || action === "update"));
+  });
+  if (broad.length > 0) {
+    warnings.push({
+      kind: "broad_permission",
+      severity: "high",
+      title: `${broad.length} permissão(ões) ampla(s) detectada(s)`,
+      detail:
+        "Estas permissões permitem editar/excluir registros de outros usuários, ignorando o escopo de responsável. Revise em Configurações › Permissões.",
+      keys: broad.sort(),
+    });
+  }
+  if (roles.length > 1) {
+    warnings.push({
+      kind: "multiple_roles",
+      severity: "medium",
+      title: `Usuário acumula ${roles.length} cargos`,
+      detail:
+        "As permissões são somadas entre os cargos: o escopo mais amplo prevalece. Mantenha apenas o cargo necessário para que restrições de escopo próprio tenham efeito.",
+      keys: roles.map((r) => r.name),
+    });
+  }
+  return warnings;
+}
+
 
 export type WorkspaceMemberOption = { user_id: string; full_name: string | null };
 
@@ -138,6 +185,7 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
       permission_sets: [],
       permissions: [],
       permission_labels: {},
+      warnings: [],
     };
     if (!ws.workspaceId) return empty;
 
@@ -192,17 +240,19 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
       permission_sets: { id: string; name: string; module: string } | null;
     };
 
+    const jobRoles: RbacRoleInfo[] = ((ujrRes.data ?? []) as UjrRow[]).map((r) => ({
+      id: r.role_id,
+      name: r.job_roles?.name ?? r.role_id,
+      is_primary: r.is_primary,
+    }));
+
     return {
       ...empty,
       full_name: (profRes.data?.full_name as string) ?? null,
       member_role: (memberRes.data?.role as string) ?? (ws.createdBy === targetId ? "owner" : null),
       is_workspace_admin: !!adminRes.data,
       is_platform_admin: !!platformRes.data,
-      job_roles: ((ujrRes.data ?? []) as UjrRow[]).map((r) => ({
-        id: r.role_id,
-        name: r.job_roles?.name ?? r.role_id,
-        is_primary: r.is_primary,
-      })),
+      job_roles: jobRoles,
       permission_sets: ((upsRes.data ?? []) as UpsRow[]).map((r) => ({
         id: r.set_id,
         name: r.permission_sets?.name ?? r.set_id,
@@ -210,5 +260,6 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
       })),
       permissions: permissions.sort(),
       permission_labels: labels,
+      warnings: computeWarnings(permissions, jobRoles),
     };
   });

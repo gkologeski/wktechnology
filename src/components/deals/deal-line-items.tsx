@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
-import { Package, Plus, Trash2, Pencil } from "lucide-react";
+import { Wrench, Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
 import {
@@ -26,6 +26,7 @@ type LineItem = {
   owner_id: string;
   deal_id: string;
   product_id: string | null;
+  service_catalog_id?: string | null;
   name: string;
   description: string | null;
   quantity: number;
@@ -258,25 +259,25 @@ export function LineItemsEditorBody({
     }
     notifyDealsChanged();
   }
-  async function addFromProduct(pid: string) {
+  async function addFromCatalogService(sid: string) {
     const scope = baseInsertScope();
     if (!scope) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: p, error: perr } = await (supabase as any)
-      .from("products")
-      .select("*")
-      .eq("id", pid)
+      .from("service_catalog")
+      .select("id, name, base_price, tax_rate")
+      .eq("id", sid)
       .maybeSingle();
-    if (perr || !p) return toast.error(perr?.message ?? "Produto não encontrado");
+    if (perr || !p) return toast.error(perr?.message ?? "Serviço não encontrado");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from("deal_line_items")
       .insert({
         ...scope,
-        product_id: p.id,
+        service_catalog_id: p.id,
         name: p.name,
         quantity: 1,
-        unit_price: p.unit_price,
+        unit_price: p.base_price ?? 0,
         discount_pct: 0,
         discount_amount: 0,
         discount_type: "pct",
@@ -339,26 +340,27 @@ export function LineItemsEditorBody({
       <div className="flex gap-2 flex-wrap">
         <div className="w-[260px]">
           <EntityCombobox
-            key={`product-picker-${productPickerKey}`}
-            entity="products"
-            select="id, name, unit_price, currency"
-            searchColumns={["name", "sku", "description"]}
-            labelFrom={(r) => String((r as { name?: string }).name ?? "Produto")}
+            key={`service-picker-${productPickerKey}`}
+            entity="service_catalog"
+            select="id, name, code, base_price, currency, unit"
+            searchColumns={["name", "code", "description"]}
+            labelFrom={(r) => String((r as { name?: string }).name ?? "Serviço")}
             hintFrom={(r) => {
-              const row = r as { unit_price?: number; currency?: string };
-              return row.unit_price != null
-                ? formatCurrency(Number(row.unit_price), row.currency ?? "BRL")
-                : null;
+              const row = r as { base_price?: number; currency?: string; unit?: string };
+              if (row.base_price == null) return null;
+              const price = formatCurrency(Number(row.base_price), row.currency ?? "BRL");
+              return row.unit ? `${price} / ${row.unit}` : price;
             }}
             value={null}
             onChange={(id) => {
-              if (id) addFromProduct(id);
+              if (id) addFromCatalogService(id);
             }}
-            placeholder="Adicionar do catálogo…"
-            emptyLabel="Nenhum produto"
-            icon={Package}
+            placeholder="Adicionar serviço do catálogo…"
+            emptyLabel="Nenhum serviço"
+            icon={Wrench}
             clearable={false}
           />
+
         </div>
         <Button size="sm" variant="outline" onClick={addBlank}>
           <Plus className="h-4 w-4 mr-1" /> Item em branco

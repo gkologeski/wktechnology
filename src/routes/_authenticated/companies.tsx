@@ -7,6 +7,7 @@ import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 import type { Company } from "@/lib/db-types";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { cn } from "@/lib/utils";
@@ -409,8 +410,8 @@ function CompaniesHubspotView() {
 
   const removeOne = async (id: string) => {
     if (!(await confirmDialog("Excluir esta empresa?"))) return;
-    const { error } = await supabase.from("companies").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    const res = await deleteRowGuarded("companies", id);
+    if (!res.ok) return toast.error(res.message);
     toast.success("Removida");
     qc.invalidateQueries({ queryKey: ["companies"] });
   };
@@ -421,12 +422,13 @@ function CompaniesHubspotView() {
   const confirmBulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    const { error } = await supabase.from("companies").delete().in("id", ids);
-    if (error) {
-      toast.error(error.message);
+    const res = await deleteRowsGuarded("companies", ids);
+    if (!res.ok) {
+      toast.error(res.message);
       return;
     }
-    toast.success(`${ids.length} excluída(s)`);
+    if (res.deleted < res.requested) toast.warning(partialDeleteMessage(res.deleted, res.requested));
+    else toast.success(`${res.deleted} excluída(s)`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["companies"] });
   };
@@ -528,7 +530,13 @@ function CompaniesHubspotView() {
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
-          <Can permission="techsales.companies.manage.workspace">
+          <Can
+            any={[
+              "techsales.companies.manage.workspace",
+              "techsales.companies.create.workspace",
+              "techsales.companies.create.own",
+            ]}
+          >
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="mr-1.5 h-4 w-4" /> Criar empresa
             </Button>
@@ -663,7 +671,13 @@ function CompaniesHubspotView() {
                   <MapPin className="mr-1 h-3.5 w-3.5" /> Buscar CEP
                 </Button>
                 {can("bulk_delete") && (
-                  <Can permission="techsales.companies.manage.workspace">
+                  <Can
+                    any={[
+                      "techsales.companies.manage.workspace",
+                      "techsales.companies.delete.workspace",
+                      "techsales.companies.delete.own",
+                    ]}
+                  >
                     <Button
                       variant="ghost"
                       size="sm"
@@ -779,7 +793,13 @@ function CompaniesHubspotView() {
                               >
                                 Abrir
                               </DropdownMenuItem>
-                              <Can permission="techsales.companies.manage.workspace">
+                              <Can
+                    any={[
+                      "techsales.companies.manage.workspace",
+                      "techsales.companies.delete.workspace",
+                      "techsales.companies.delete.own",
+                    ]}
+                  >
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
