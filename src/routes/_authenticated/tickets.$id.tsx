@@ -30,6 +30,11 @@ import { HtmlContent } from "@/components/rich-html-editor";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { deleteRowGuarded } from "@/lib/delete-guard";
+import {
+  useCanDelete,
+  DELETE_NOT_ALLOWED_TITLE,
+} from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,
@@ -73,6 +78,9 @@ function TicketDetail() {
   }, [ticket, pipeline]);
   const currentStage = pipeline?.stages.find((s) => s.value === currentStageValue) ?? null;
 
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.tickets");
+  const canDelete = !deletePermLoading && canDeleteRecord(ticket);
+
   if (!ticket) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const setStage = async (v: string) => {
@@ -109,10 +117,14 @@ function TicketDetail() {
   };
 
   const remove = async () => {
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      return;
+    }
     if (!(await confirmDialog("Excluir este ticket?"))) return;
-    const { error } = await supabase.from("tickets").delete().eq("id", ticket.id);
-    if (error) {
-      toast.error(error.message);
+    const res = await deleteRowGuarded("tickets", ticket.id);
+    if (!res.ok) {
+      toast.error(res.message);
       return;
     }
     toast.success("Excluído");
@@ -187,6 +199,10 @@ function TicketDetail() {
             size="icon"
             className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
             onClick={remove}
+            disabled={!canDelete}
+            aria-disabled={!canDelete}
+            title={canDelete ? "Excluir ticket" : DELETE_NOT_ALLOWED_TITLE}
+            aria-label="Excluir ticket"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
