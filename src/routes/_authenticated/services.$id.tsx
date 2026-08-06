@@ -155,7 +155,10 @@ function ServiceDetail() {
     try {
       await remove({ data: { id } });
       toast.success("Serviço excluído.");
+      qc.removeQueries({ queryKey: ["service", id] });
+      await qc.invalidateQueries({ queryKey: ["services"] });
       navigate({ to: "/services" });
+
     } catch (e) {
       toast.error((e as Error).message);
     }
