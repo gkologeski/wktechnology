@@ -355,3 +355,92 @@ export const deleteContract = createServerFn({ method: "POST" })
     return { ok: true, deleted: deleted.length };
 
   });
+
+// ============= AGRUPAMENTO (empresa / serviço do catálogo) =============
+// Retorna mapas auxiliares para agrupar a lista de contratos na UI.
+// Nomes de empresa vêm de `companies`; o serviço do catálogo é resolvido
+// a partir de `services.metadata->>service_catalog_id`.
+export const listContractGroupings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({ contractIds: z.array(z.string().uuid()).max(500).optional() })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    let cq = supabase.from("contracts").select("id, counterparty_company_id").limit(500);
+    if (data.contractIds && data.contractIds.length > 0) {
+      cq = cq.in("id", data.contractIds);
+    }
+    const { data: contracts, error: cErr } = await cq;
+    if (cErr) throw cErr;
+    const rows = contracts ?? [];
+    const contractIds = rows.map((r) => r.id);
+
+    const companyIds = Array.from(
+      new Set(rows.map((r) => r.counterparty_company_id).filter(Boolean) as string[]),
+    );
+    let companies: { id: string; name: string }[] = [];
+    if (companyIds.length > 0) {
+      const { data: comp, error } = await supabase
+        .from("companies")
+        .select("id, name")
+        .in("id", companyIds);
+      if (error) throw error;
+      companies = (comp ?? []).map((c) => ({ id: c.id, name: c.name ?? "—" }));
+    }
+
+    type ServiceLink = {
+      contractId: string;
+      serviceId: string;
+      serviceName: string;
+      catalogId: string | null;
+      catalogName: string | null;
+    };
+    let services: ServiceLink[] = [];
+    if (contractIds.length > 0) {
+      const { data: svc, error } = await supabase
+        .from("services")
+        .select("id, contract_id, name, metadata")
+        .in("contract_id", contractIds)
+        .limit(2000);
+      if (error) throw error;
+      const raw = (svc ?? []).map((s) => {
+        const meta = (s.metadata ?? {}) as Record<string, unknown>;
+        const catalogId =
+          typeof meta["service_catalog_id"] === "string"
+            ? (meta["service_catalog_id"] as string)
+            : null;
+        return {
+          contractId: s.contract_id as string,
+          serviceId: s.id as string,
+          serviceName: (s.name as string) ?? "—",
+          catalogId,
+        };
+      });
+      const catalogIds = Array.from(
+        new Set(raw.map((r) => r.catalogId).filter(Boolean) as string[]),
+      );
+      const catalogNames = new Map<string, string>();
+      if (catalogIds.length > 0) {
+        const { data: cat, error: catErr } = await supabase
+          .from("service_catalog")
+          .select("id, name")
+          .in("id", catalogIds);
+        if (catErr) throw catErr;
+        for (const c of cat ?? []) catalogNames.set(c.id, c.name ?? "—");
+      }
+      services = raw.map((r) => ({
+        ...r,
+        catalogName: r.catalogId ? (catalogNames.get(r.catalogId) ?? null) : null,
+      }));
+    }
+
+    const companyByContract = rows
+      .filter((r) => r.counterparty_company_id)
+      .map((r) => ({ contractId: r.id, companyId: r.counterparty_company_id as string }));
+
+    return { companies, companyByContract, services };
+  });

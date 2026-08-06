@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,7 +7,7 @@ import { FileStack, FileText, Plus, Search, Upload } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -15,23 +15,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { listContracts } from "@/lib/contracts.functions";
+import { listContracts, listContractGroupings } from "@/lib/contracts.functions";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
 import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
 import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
-import { AssigneeCell } from "@/components/entity/assignee-cell";
-import { formatCurrency, formatDateTime } from "@/lib/crm";
+import {
+  ContractsTable,
+  ContractsGroupedList,
+  type ContractRow,
+} from "@/components/contracts/contracts-grouped-list";
+
+type GroupBy = "none" | "company" | "service";
 
 export const Route = createFileRoute("/_authenticated/contracts/")({
+  validateSearch: (search: Record<string, unknown>) => {
+    const raw = String(search["groupBy"] ?? "none");
+    const groupBy: GroupBy =
+      raw === "company" || raw === "service" ? (raw as GroupBy) : "none";
+    return { groupBy };
+  },
   head: () => ({
     meta: [
       { title: "Contratos" },
@@ -52,25 +55,12 @@ const STATUS_LABEL: Record<string, string> = {
   terminated: "Rescindido",
 };
 
-const STATUS_TONE: Record<string, string> = {
-  draft: "bg-muted text-muted-foreground",
-  in_review: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-  in_negotiation: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
-  awaiting_signature: "bg-purple-500/10 text-purple-700 dark:text-purple-400",
-  active: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
-  renewing: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-400",
-  ended: "bg-muted text-muted-foreground",
-  terminated: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
-};
-
-const ROLE_LABEL: Record<string, string> = {
-  provider: "Prestação",
-  client: "Compra",
-};
-
 function ContractsPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const { groupBy } = Route.useSearch();
   const list = useServerFn(listContracts);
+  const groupings = useServerFn(listContractGroupings);
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<string>("all");
@@ -102,7 +92,15 @@ function ContractsPage() {
       }),
   });
 
-  const filtered = useMemo(() => filterRows(rows), [rows, filterRows]);
+  const filtered = useMemo(() => filterRows(rows) as ContractRow[], [rows, filterRows]);
+
+  const contractIds = useMemo(() => filtered.map((c) => c.id), [filtered]);
+
+  const groupQuery = useQuery({
+    queryKey: ["contracts", "groupings", contractIds],
+    queryFn: () => groupings({ data: { contractIds } }),
+    enabled: groupBy !== "none" && contractIds.length > 0,
+  });
 
   return (
     <div className="p-6 space-y-5">
@@ -160,85 +158,55 @@ function ContractsPage() {
           </SelectContent>
         </Select>
         <AssigneeFilter value={assignee} onChange={setAssignee} />
+        <div className="flex items-center gap-2">
+          <Label htmlFor="contracts-group-by" className="text-sm text-muted-foreground">
+            Agrupar por
+          </Label>
+          <Select
+            value={groupBy}
+            onValueChange={(next) => navigate({ search: { groupBy: next as GroupBy } })}
+          >
+            <SelectTrigger id="contracts-group-by" className="w-40">
+              <SelectValue placeholder="Nenhum" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Nenhum</SelectItem>
+              <SelectItem value="company">Empresa</SelectItem>
+              <SelectItem value="service">Serviço</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
-        ) : filtered.length === 0 ? (
-          <div className="p-12 text-center">
-            <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">Nenhum contrato ainda</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Comece criando um contrato ou gere um a partir de um negócio ganho.
-            </p>
-            <Button className="mt-4" onClick={() => setOpenNew(true)}>
-              <Plus className="h-4 w-4 mr-1" /> Novo contrato
-            </Button>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Número</TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead>Vigência</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead>Criado em</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((c) => (
-                <TableRow key={c.id} className="cursor-pointer">
-                  <TableCell className="font-mono text-xs">
-                    <Link to="/contracts/$id" params={{ id: c.id }} className="hover:underline">
-                      {c.number ?? "—"}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Link
-                        to="/contracts/$id"
-                        params={{ id: c.id }}
-                        className="font-medium hover:underline"
-                      >
-                        {c.title}
-                      </Link>
-                      {c.imported_from ? (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                          Importado
-                        </Badge>
-                      ) : null}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-sm">{ROLE_LABEL[c.role] ?? c.role}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={STATUS_TONE[c.status] ?? ""}>
-                      {STATUS_LABEL[c.status] ?? c.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatCurrency(Number(c.total_value), c.currency)}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {c.starts_at ? formatDateTime(c.starts_at).split(" ")[0] : "—"}
-                    {c.ends_at ? ` → ${formatDateTime(c.ends_at).split(" ")[0]}` : ""}
-                  </TableCell>
-                  <TableCell>
-                    <AssigneeCell assignedTo={(c as { assigned_to?: string | null }).assigned_to} />
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {formatDateTime(c.created_at)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
+          Carregando…
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="rounded-lg border bg-card p-12 text-center">
+          <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-medium">Nenhum contrato ainda</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Comece criando um contrato ou gere um a partir de um negócio ganho.
+          </p>
+          <Button className="mt-4" onClick={() => setOpenNew(true)}>
+            <Plus className="h-4 w-4 mr-1" /> Novo contrato
+          </Button>
+        </div>
+      ) : groupBy === "none" ? (
+        <div className="rounded-lg border bg-card">
+          <ContractsTable rows={filtered} />
+        </div>
+      ) : (
+        <ContractsGroupedList
+          rows={filtered}
+          groupBy={groupBy}
+          groupings={groupQuery.data}
+          isLoading={groupQuery.isLoading}
+          isError={groupQuery.isError}
+          onRetry={() => groupQuery.refetch()}
+        />
+      )}
 
       <QuickCreateContractDialog
         open={openNew}
