@@ -35,6 +35,7 @@ import { qk } from "@/lib/entity-queries";
 import type { Deal } from "@/lib/db-types";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
+import { useCanDelete } from "@/lib/access-control/use-can-delete";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -50,6 +51,7 @@ function DealDetail() {
   const { pipelines } = usePipelines("deal");
   const { can } = usePermissions();
   const { user } = useAuth();
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.deals");
 
   const { data: deal } = useQuery({
     queryKey: qk.deal(id),
@@ -133,11 +135,7 @@ function DealDetail() {
   };
 
   const canDelete =
-    can("techsales.deals.delete.workspace") ||
-    can("techsales.deals.delete.team") ||
-    (can("techsales.deals.delete.own") &&
-      !!user?.id &&
-      (deal as unknown as { owner_id?: string | null }).owner_id === user.id);
+    !deletePermLoading && canDeleteRecord(deal as Parameters<typeof canDeleteRecord>[0]);
 
   const remove = async () => {
     if (!canDelete) {
