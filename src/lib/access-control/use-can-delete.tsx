@@ -66,6 +66,11 @@ const RESOURCE_DELETE_RULES: Record<string, DeleteRule> = {
     ownerFields: ["owner_id"],
     scopes: { workspace: true, team: false, own: true },
   },
+  "techsales.catalog.services": {
+    ownerFields: ["owner_id"],
+    scopes: { workspace: true, team: false, own: true },
+  },
+
   "techfinance.entries": {
     ownerFields: ["owner_id"],
     scopes: { workspace: true, team: false, own: false },
