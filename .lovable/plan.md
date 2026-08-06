@@ -36,4 +36,4 @@ Observação importante: hoje a exclusão indevida não passa silenciosamente no
 
 ## Como validar
 
-Com o usuário `marketing@` (vendedor interno): abrir o detalhe de uma empresa de outro responsável — o botão excluir não deve aparecer; abrir uma empresa própria — o botão aparece e funciona. Repetir em Contatos, Leads, Tarefas e Contratos.
+Com o usuário `marketing@` (vendedor interno): abrir o detalhe de uma empresa de outro responsável — o botão excluir aparece, mas desabilitado, com tooltip de permissão; abrir uma empresa própria — o botão aparece habilitado e funciona. Repetir em Contatos, Leads, Tarefas e Contratos, e nos menus de linha dos grids.
