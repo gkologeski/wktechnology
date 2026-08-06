@@ -14,6 +14,11 @@ import { qk } from "@/lib/entity-queries";
 import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { deleteRowGuarded } from "@/lib/delete-guard";
+import {
+  useCanDelete,
+  DELETE_NOT_ALLOWED_TITLE,
+} from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
   component: ContactDetail,
