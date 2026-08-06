@@ -586,7 +586,7 @@ export function QuickCreateTaskDialog({
   const [subject, setSubject] = useState("");
   const [priority, setPriority] = useState("MEDIUM");
   const [dueDate, setDueDate] = useState("");
-  const [remindBefore, setRemindBefore] = useState("none");
+  const [remindBefore, setRemindBefore] = useState("0");
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -622,7 +622,7 @@ export function QuickCreateTaskDialog({
       setSubject("");
       setPriority("MEDIUM");
       setDueDate("");
-      setRemindBefore("none");
+      setRemindBefore("0");
       onCreated?.(data.id);
       onSaved?.({ id: data.id, action: "created" });
     } catch (e) {
