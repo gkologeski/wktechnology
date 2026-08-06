@@ -164,9 +164,7 @@ function ContractsPage() {
           </Label>
           <Select
             value={groupBy}
-            onValueChange={(next) =>
-              navigate({ search: (prev) => ({ ...prev, groupBy: next as GroupBy }) })
-            }
+            onValueChange={(next) => navigate({ search: { groupBy: next as GroupBy } })}
           >
             <SelectTrigger id="contracts-group-by" className="w-40">
               <SelectValue placeholder="Nenhum" />
