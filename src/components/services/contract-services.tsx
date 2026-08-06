@@ -73,8 +73,9 @@ export function ContractServices({
           {rows.length === 0 ? "Nenhum serviço" : `${rows.length} serviço(s)`}
         </span>
         <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
-          <Plus className="h-3.5 w-3.5 mr-0.5" /> Adicionar
+          <Link2 aria-hidden="true" className="h-3.5 w-3.5 mr-0.5" /> Associar serviço
         </Button>
+
       </div>
 
       {isLoading ? (
