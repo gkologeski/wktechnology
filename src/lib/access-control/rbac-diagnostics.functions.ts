@@ -240,17 +240,19 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
       permission_sets: { id: string; name: string; module: string } | null;
     };
 
+    const jobRoles: RbacRoleInfo[] = ((ujrRes.data ?? []) as UjrRow[]).map((r) => ({
+      id: r.role_id,
+      name: r.job_roles?.name ?? r.role_id,
+      is_primary: r.is_primary,
+    }));
+
     return {
       ...empty,
       full_name: (profRes.data?.full_name as string) ?? null,
       member_role: (memberRes.data?.role as string) ?? (ws.createdBy === targetId ? "owner" : null),
       is_workspace_admin: !!adminRes.data,
       is_platform_admin: !!platformRes.data,
-      job_roles: ((ujrRes.data ?? []) as UjrRow[]).map((r) => ({
-        id: r.role_id,
-        name: r.job_roles?.name ?? r.role_id,
-        is_primary: r.is_primary,
-      })),
+      job_roles: jobRoles,
       permission_sets: ((upsRes.data ?? []) as UpsRow[]).map((r) => ({
         id: r.set_id,
         name: r.permission_sets?.name ?? r.set_id,
@@ -258,5 +260,6 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
       })),
       permissions: permissions.sort(),
       permission_labels: labels,
+      warnings: computeWarnings(permissions, jobRoles),
     };
   });
