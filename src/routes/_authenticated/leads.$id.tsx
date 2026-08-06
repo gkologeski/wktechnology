@@ -60,6 +60,10 @@ function LeadDetail() {
     { table: "activities", queryKeys: [qk.activities("related_lead_id", id)] },
   ]);
 
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.leads");
+  const canDelete = !deletePermLoading && canDeleteRecord(lead);
+
+
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const setStatus = async (v: string) => {
