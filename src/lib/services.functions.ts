@@ -437,6 +437,23 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
           ? "on_delivery"
           : null;
 
+    // valida o cargo (quando informado) e herda senioridade/competências dele
+    let jobProfileId: string | null = null;
+    let seniority: string | null = data.seniority ?? null;
+    let competencies: string[] = data.competencies ?? [];
+    if (data.jobProfileId) {
+      const { data: jp, error: jpErr } = await supabase
+        .from("job_profiles")
+        .select("id, seniority, competencies, active")
+        .eq("id", data.jobProfileId)
+        .maybeSingle();
+      if (jpErr) throw jpErr;
+      if (!jp || jp.active === false) throw new Error("Cargo não encontrado ou inativo");
+      jobProfileId = jp.id;
+      if (!seniority) seniority = jp.seniority ?? null;
+      if (competencies.length === 0) competencies = jp.competencies ?? [];
+    }
+
     const { data: row, error } = await supabase
       .from("services")
       .insert({
@@ -454,6 +471,9 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
         starts_at: data.startsAt ?? null,
         ends_at: data.endsAt ?? null,
         status: "pending",
+        job_profile_id: jobProfileId,
+        seniority,
+        competencies,
         metadata: { service_catalog_id: catalog.id },
       })
       .select("*")
