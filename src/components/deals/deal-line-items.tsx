@@ -26,6 +26,7 @@ type LineItem = {
   owner_id: string;
   deal_id: string;
   product_id: string | null;
+  service_catalog_id?: string | null;
   name: string;
   description: string | null;
   quantity: number;
