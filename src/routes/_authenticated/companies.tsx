@@ -530,7 +530,13 @@ function CompaniesHubspotView() {
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
           )}
-          <Can permission="techsales.companies.manage.workspace">
+          <Can
+            any={[
+              "techsales.companies.manage.workspace",
+              "techsales.companies.create.workspace",
+              "techsales.companies.create.own",
+            ]}
+          >
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="mr-1.5 h-4 w-4" /> Criar empresa
             </Button>
@@ -665,7 +671,13 @@ function CompaniesHubspotView() {
                   <MapPin className="mr-1 h-3.5 w-3.5" /> Buscar CEP
                 </Button>
                 {can("bulk_delete") && (
-                  <Can permission="techsales.companies.manage.workspace">
+                  <Can
+                    any={[
+                      "techsales.companies.manage.workspace",
+                      "techsales.companies.delete.workspace",
+                      "techsales.companies.delete.own",
+                    ]}
+                  >
                     <Button
                       variant="ghost"
                       size="sm"
@@ -781,7 +793,13 @@ function CompaniesHubspotView() {
                               >
                                 Abrir
                               </DropdownMenuItem>
-                              <Can permission="techsales.companies.manage.workspace">
+                              <Can
+                    any={[
+                      "techsales.companies.manage.workspace",
+                      "techsales.companies.delete.workspace",
+                      "techsales.companies.delete.own",
+                    ]}
+                  >
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"
