@@ -36,10 +36,7 @@ import {
 } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatCurrency } from "@/lib/crm";
-import {
-  listCatalogServiceOptions,
-  linkCatalogServiceToContract,
-} from "@/lib/services.functions";
+import { listCatalogServiceOptions, linkCatalogServiceToContract } from "@/lib/services.functions";
 
 type CatalogItem = {
   id: string;
@@ -122,8 +119,7 @@ export function LinkCatalogServiceDialog({
     const term = search.trim().toLowerCase();
     if (!term) return catalog;
     return catalog.filter(
-      (c) =>
-        c.name.toLowerCase().includes(term) || (c.code ?? "").toLowerCase().includes(term),
+      (c) => c.name.toLowerCase().includes(term) || (c.code ?? "").toLowerCase().includes(term),
     );
   }, [catalog, search]);
 
