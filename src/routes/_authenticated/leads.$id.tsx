@@ -83,6 +83,11 @@ function LeadDetail() {
     void load();
   };
   const doDelete = async () => {
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      setConfirmDelete(false);
+      return;
+    }
     setBusy(true);
     try {
       await deleteLeadsByIds(supabase, [lead.id]);
