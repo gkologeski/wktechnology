@@ -18,6 +18,10 @@ import { qk } from "@/lib/entity-queries";
 import type { Company } from "@/lib/db-types";
 import { toast } from "sonner";
 import { deleteRowGuarded } from "@/lib/delete-guard";
+import {
+  useCanDelete,
+  DELETE_NOT_ALLOWED_TITLE,
+} from "@/lib/access-control/use-can-delete";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/companies/$id")({
