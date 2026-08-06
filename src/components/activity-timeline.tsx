@@ -1215,8 +1215,9 @@ export function ActivityTimeline({
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from("activities").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    const res = await deleteRowGuarded("activities", id);
+    if (!res.ok) return toast.error(res.message);
+
     void load();
     window.dispatchEvent(new CustomEvent("activities:changed"));
   };
