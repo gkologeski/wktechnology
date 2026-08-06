@@ -137,7 +137,10 @@ function ContractDetail() {
     try {
       await del({ data: { id } });
       toast.success("Contrato excluído.");
+      qc.removeQueries({ queryKey: ["contract", id] });
+      await qc.invalidateQueries({ queryKey: ["contracts"] });
       navigate({ to: "/contracts" });
+
     } catch (e) {
       toast.error((e as Error).message);
     }

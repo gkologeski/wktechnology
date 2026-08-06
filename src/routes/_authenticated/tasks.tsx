@@ -48,6 +48,7 @@ import {
 import { useResourceScope } from "@/lib/access-control/use-resource-scope";
 import { TablePagination } from "@/components/table-pagination";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -414,8 +415,8 @@ function TasksHubspotView() {
   };
   const removeOne = async (id: string) => {
     if (!(await confirmDialog("Excluir esta tarefa?"))) return;
-    const { error } = await supabase.from("activities").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    const res = await deleteRowGuarded("activities", id);
+    if (!res.ok) return toast.error(res.message);
     toast.success("Removida");
     qc.invalidateQueries({ queryKey: ["tasks"] });
   };
@@ -435,9 +436,10 @@ function TasksHubspotView() {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
     if (!(await confirmDialog(`Excluir ${ids.length} tarefa(s)?`))) return;
-    const { error } = await supabase.from("activities").delete().in("id", ids);
-    if (error) return toast.error(error.message);
-    toast.success(`${ids.length} excluída(s)`);
+    const res = await deleteRowsGuarded("activities", ids);
+    if (!res.ok) return toast.error(res.message);
+    if (res.deleted < res.requested) toast.warning(partialDeleteMessage(res.deleted, res.requested));
+    else toast.success(`${res.deleted} excluída(s)`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["tasks"] });
   };

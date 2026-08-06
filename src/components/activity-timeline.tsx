@@ -88,6 +88,8 @@ import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { Eye, MousePointerClick } from "lucide-react";
+import { deleteRowGuarded } from "@/lib/delete-guard";
+
 
 type EmailMeta = {
   direction: "inbound" | "outbound" | null;
@@ -1215,8 +1217,9 @@ export function ActivityTimeline({
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from("activities").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    const res = await deleteRowGuarded("activities", id);
+    if (!res.ok) return toast.error(res.message);
+
     void load();
     window.dispatchEvent(new CustomEvent("activities:changed"));
   };
