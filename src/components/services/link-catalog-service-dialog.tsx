@@ -131,6 +131,7 @@ export function LinkCatalogServiceDialog({
   function pick(item: CatalogItem) {
     setSelectedId(item.id);
     setUnitPrice(Number(item.base_price) || 0);
+    setPickerOpen(false);
   }
 
   async function submit() {
