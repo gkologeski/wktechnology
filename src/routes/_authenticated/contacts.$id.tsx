@@ -97,10 +97,14 @@ function ContactDetail() {
     );
 
   const remove = async () => {
+    if (!canDelete) {
+      toast.error(DELETE_NOT_ALLOWED_TITLE);
+      return;
+    }
     if (!(await confirmDialog("Excluir contato?"))) return;
-    const { error } = await supabase.from("contacts").delete().eq("id", contact.id);
-    if (error) {
-      toast.error(error.message);
+    const res = await deleteRowGuarded("contacts", contact.id);
+    if (!res.ok) {
+      toast.error(res.message);
       return;
     }
     toast.success("Excluído");
