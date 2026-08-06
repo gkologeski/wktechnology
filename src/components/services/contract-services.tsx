@@ -111,6 +111,23 @@ export function ContractServices({
                     {STATUS_LABEL[s.status] ?? s.status}
                   </Badge>
                 </div>
+                {profileName(s.job_profile_id) || s.seniority ? (
+                  <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    {profileName(s.job_profile_id) ? (
+                      <Badge variant="secondary">{profileName(s.job_profile_id)}</Badge>
+                    ) : null}
+                    {s.seniority ? (
+                      <Badge variant="outline">
+                        {SENIORITY_LABEL[s.seniority as string] ?? s.seniority}
+                      </Badge>
+                    ) : null}
+                    {(s.competencies ?? []).length > 0 ? (
+                      <span className="truncate text-xs text-muted-foreground">
+                        {(s.competencies as string[]).join(", ")}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
                 <div className="mt-1 text-xs text-muted-foreground tabular-nums flex flex-wrap gap-x-2">
                   <span>{TYPE_LABEL[s.type] ?? s.type}</span>
                   {s.cadence ? <span>· {CADENCE_LABEL[s.cadence] ?? s.cadence}</span> : null}
