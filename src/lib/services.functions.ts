@@ -169,6 +169,9 @@ const patchInput = z.object({
       next_billing_at: z.string().nullable().optional(),
       delivery_owner_id: z.string().uuid().nullable().optional(),
       product_id: z.string().uuid().nullable().optional(),
+      job_profile_id: z.string().uuid().nullable().optional(),
+      seniority: z.string().nullable().optional(),
+      competencies: z.array(z.string()).optional(),
     })
     .strict(),
 });
