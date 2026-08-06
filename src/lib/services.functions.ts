@@ -397,6 +397,9 @@ const linkCatalogInput = z.object({
   unitPrice: z.number().nonnegative().default(0),
   startsAt: z.string().nullable().optional(),
   endsAt: z.string().nullable().optional(),
+  jobProfileId: z.string().uuid().nullable().optional(),
+  seniority: z.string().nullable().optional(),
+  competencies: z.array(z.string()).optional(),
 });
 
 export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
