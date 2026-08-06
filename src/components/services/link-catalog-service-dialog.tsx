@@ -349,6 +349,144 @@ export function LinkCatalogServiceDialog({
             </p>
           ) : null}
 
+          <div className="space-y-2">
+            <Label htmlFor="profile-picker">Cargo / perfil contratado</Label>
+            <Popover open={profilePickerOpen} onOpenChange={setProfilePickerOpen} modal>
+              <PopoverTrigger asChild>
+                <Button
+                  id="profile-picker"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={profilePickerOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {selectedProfile ? (
+                    <span className="min-w-0 truncate">
+                      {selectedProfile.name}
+                      {selectedProfile.seniority ? (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {SENIORITY_LABEL[selectedProfile.seniority] ?? selectedProfile.seniority}
+                        </span>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Buscar cargo (opcional, ex.: Coordenador de RH)
+                    </span>
+                  )}
+                  <ChevronsUpDown aria-hidden="true" className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-[--radix-popover-trigger-width] p-0"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                {profilesLoading ? (
+                  <p className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
+                    <Loader2 aria-hidden="true" className="h-3.5 w-3.5 animate-spin" /> Carregando
+                    cargos…
+                  </p>
+                ) : (
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      value={profileSearch}
+                      onValueChange={setProfileSearch}
+                      placeholder="Buscar cargo, código ou stack"
+                    />
+                    <CommandList>
+                      {filteredProfiles.length === 0 ? (
+                        <div className="p-3 text-sm">
+                          <p className="text-muted-foreground">
+                            {profiles.length === 0
+                              ? "Nenhum cargo cadastrado."
+                              : "Nenhum cargo encontrado para esta busca."}
+                          </p>
+                          <Button asChild size="sm" variant="outline" className="mt-2">
+                            <Link to="/catalog/job-profiles" onClick={() => onOpenChange(false)}>
+                              Abrir cadastro de cargos
+                            </Link>
+                          </Button>
+                        </div>
+                      ) : (
+                        <CommandGroup>
+                          {filteredProfiles.map((p) => {
+                            const active = p.id === jobProfileId;
+                            return (
+                              <CommandItem
+                                key={p.id}
+                                value={p.id}
+                                onSelect={() => pickProfile(p)}
+                                className="items-start gap-2"
+                              >
+                                <Check
+                                  aria-hidden="true"
+                                  className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${active ? "opacity-100" : "opacity-0"}`}
+                                />
+                                <span className="min-w-0 flex-1">
+                                  <span className="flex items-center gap-2">
+                                    <span className="truncate font-medium">{p.name}</span>
+                                    {p.seniority ? (
+                                      <Badge variant="outline" className="shrink-0">
+                                        {SENIORITY_LABEL[p.seniority] ?? p.seniority}
+                                      </Badge>
+                                    ) : null}
+                                  </span>
+                                  {(p.competencies ?? []).length > 0 ? (
+                                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                                      {(p.competencies ?? []).join(", ")}
+                                    </span>
+                                  ) : null}
+                                </span>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                )}
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">
+              O cargo preenche a linha de serviço, o preço, a senioridade e a stack — tudo ainda
+              editável aqui.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="svc-seniority">Senioridade</Label>
+              <Select
+                value={seniority || "none"}
+                onValueChange={(v) => setSeniority(v === "none" ? "" : v)}
+              >
+                <SelectTrigger id="svc-seniority">
+                  <SelectValue placeholder="Selecionar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Não se aplica</SelectItem>
+                  {SENIORITY_OPTIONS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="svc-competencies">Stack / competências</Label>
+              <Input
+                id="svc-competencies"
+                placeholder="React, Node"
+                value={competencies}
+                onChange={(e) => setCompetencies(e.target.value)}
+              />
+            </div>
+          </div>
+
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="svc-type">Tipo de cobrança</Label>
