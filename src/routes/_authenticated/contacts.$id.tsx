@@ -154,6 +154,10 @@ function ContactDetail() {
           size="icon"
           className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg"
           onClick={remove}
+          disabled={!canDelete}
+          aria-disabled={!canDelete}
+          title={canDelete ? "Excluir contato" : DELETE_NOT_ALLOWED_TITLE}
+          aria-label="Excluir contato"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
