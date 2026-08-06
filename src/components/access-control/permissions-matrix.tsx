@@ -527,11 +527,15 @@ export function PermissionsMatrix() {
                   >
                     {row.actionLabel}
                     {row.action === "manage" && (
-                      <AlertTriangle
-                        className="h-3.5 w-3.5 shrink-0 text-amber-500"
-                        aria-label="Permissão ampla"
+                      <span
+                        className="inline-flex"
                         title="Gerenciar engloba todas as ações neste recurso, inclusive editar e excluir registros de outros usuários. Para limitar ao responsável, use Ver/Criar/Editar/Excluir com escopo Próprio."
-                      />
+                      >
+                        <AlertTriangle
+                          className="h-3.5 w-3.5 shrink-0 text-amber-500"
+                          aria-label="Permissão ampla: inclui registros de outros usuários"
+                        />
+                      </span>
                     )}
                   </span>
                 </td>
