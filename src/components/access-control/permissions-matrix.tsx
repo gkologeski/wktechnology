@@ -67,6 +67,7 @@ import {
   Pencil,
   Trash2,
   RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
