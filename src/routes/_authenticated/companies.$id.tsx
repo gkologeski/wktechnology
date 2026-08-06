@@ -53,9 +53,9 @@ function CompanyDetail() {
 
   const remove = async () => {
     if (!(await confirmDialog("Excluir empresa?"))) return;
-    const { error } = await supabase.from("companies").delete().eq("id", company.id);
-    if (error) {
-      toast.error(error.message);
+    const res = await deleteRowGuarded("companies", company.id);
+    if (!res.ok) {
+      toast.error(res.message);
       return;
     }
     toast.success("Excluído");
@@ -63,6 +63,7 @@ function CompanyDetail() {
     await qc.invalidateQueries({ queryKey: ["companies"] });
     navigate({ to: "/companies" });
   };
+
 
   const enrich = async () => {
     if (!company?.cnpj) {
