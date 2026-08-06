@@ -31,10 +31,7 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded } from "@/lib/delete-guard";
-import {
-  useCanDelete,
-  DELETE_NOT_ALLOWED_TITLE,
-} from "@/lib/access-control/use-can-delete";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/tickets/$id")({
   component: TicketDetail,

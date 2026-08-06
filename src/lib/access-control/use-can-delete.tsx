@@ -7,16 +7,18 @@ import { useAuth } from "@/lib/auth";
 import { usePermissions } from "./use-permissions";
 import { useResourceScope } from "./use-resource-scope";
 
-export const DELETE_NOT_ALLOWED_TITLE =
-  "Você não tem permissão para excluir este registro.";
+export const DELETE_NOT_ALLOWED_TITLE = "Você não tem permissão para excluir este registro.";
 
 /** Campos usados para descobrir o responsável do registro. */
-export type OwnableRecord = {
-  owner_id?: string | null;
-  assigned_to?: string | null;
-  created_by?: string | null;
-  user_id?: string | null;
-} | null | undefined;
+export type OwnableRecord =
+  | {
+      owner_id?: string | null;
+      assigned_to?: string | null;
+      created_by?: string | null;
+      user_id?: string | null;
+    }
+  | null
+  | undefined;
 
 export type UseCanDeleteResult = {
   /** true enquanto as permissões carregam (mantenha a ação desabilitada). */

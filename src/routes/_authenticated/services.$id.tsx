@@ -3,10 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import {
-  useCanDelete,
-  DELETE_NOT_ALLOWED_TITLE,
-} from "@/lib/access-control/use-can-delete";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { ArrowLeft, Package, Play, Save, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

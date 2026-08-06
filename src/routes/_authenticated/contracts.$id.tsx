@@ -26,10 +26,7 @@ import { ContractParentLink } from "@/components/contracts/contract-parent-link"
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  useCanDelete,
-  DELETE_NOT_ALLOWED_TITLE,
-} from "@/lib/access-control/use-can-delete";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({ meta: [{ title: "Contrato" }] }),

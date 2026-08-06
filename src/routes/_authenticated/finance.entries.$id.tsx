@@ -4,10 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { ArrowLeft, Ban, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  useCanDelete,
-  DELETE_NOT_ALLOWED_TITLE,
-} from "@/lib/access-control/use-can-delete";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";

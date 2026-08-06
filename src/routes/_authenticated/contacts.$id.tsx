@@ -15,10 +15,7 @@ import type { Contact, Company } from "@/lib/db-types";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded } from "@/lib/delete-guard";
-import {
-  useCanDelete,
-  DELETE_NOT_ALLOWED_TITLE,
-} from "@/lib/access-control/use-can-delete";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
   component: ContactDetail,
@@ -67,7 +64,6 @@ function ContactDetail() {
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.contacts");
   const canDelete = !deletePermLoading && canDeleteRecord(contact);
-
 
   if (loading && !contact)
     return <p className="text-sm text-muted-foreground p-6">Carregando...</p>;

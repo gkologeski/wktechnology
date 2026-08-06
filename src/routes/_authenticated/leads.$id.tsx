@@ -26,15 +26,11 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
 
-
 import { LEAD_STATUSES } from "@/lib/crm";
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import {
-  useCanDelete,
-  DELETE_NOT_ALLOWED_TITLE,
-} from "@/lib/access-control/use-can-delete";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   component: LeadDetail,
@@ -66,7 +62,6 @@ function LeadDetail() {
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.leads");
   const canDelete = !deletePermLoading && canDeleteRecord(lead);
-
 
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
@@ -168,7 +163,6 @@ function LeadDetail() {
 
   return (
     <>
-      
       <RecordLayout
         header={header}
         left={

@@ -30,10 +30,7 @@ import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { deleteRowGuarded } from "@/lib/delete-guard";
-import {
-  useCanDelete,
-  DELETE_NOT_ALLOWED_TITLE,
-} from "@/lib/access-control/use-can-delete";
+import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 
 export const Route = createFileRoute("/_authenticated/tasks/$id")({
   component: TaskDetail,
@@ -153,9 +150,7 @@ function TaskDetail() {
                   <>
                     <span className="text-border">·</span>
                     por{" "}
-                    <span className="font-medium text-foreground">
-                      {nameFor(task.created_by)}
-                    </span>
+                    <span className="font-medium text-foreground">{nameFor(task.created_by)}</span>
                   </>
                 )}
               </p>
@@ -202,7 +197,6 @@ function TaskDetail() {
                 options: REMINDER_OPTIONS,
               },
               { key: "body", label: "Descrição" },
-
             ]}
             onSaved={load}
           />
@@ -250,9 +244,7 @@ function TaskDetail() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir tarefa?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
