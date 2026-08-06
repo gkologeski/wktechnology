@@ -208,6 +208,12 @@ export function LinkCatalogServiceDialog({
           unitPrice: typeof unitPrice === "number" ? unitPrice : 0,
           startsAt: startsAt || null,
           endsAt: endsAt || null,
+          jobProfileId: jobProfileId,
+          seniority: seniority || null,
+          competencies: competencies
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean),
         },
       });
       toast.success("Serviço associado ao contrato.");
