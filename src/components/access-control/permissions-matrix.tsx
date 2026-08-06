@@ -521,12 +521,20 @@ export function PermissionsMatrix() {
                 </td>
                 <td className="sticky left-[270px] z-10 bg-background p-3 border-b border-r align-middle">
                   <span
-                    className="whitespace-normal break-words leading-snug"
+                    className="inline-flex items-center gap-1 whitespace-normal break-words leading-snug"
                     title={row.description}
                   >
                     {row.actionLabel}
+                    {row.action === "manage" && (
+                      <AlertTriangle
+                        className="h-3.5 w-3.5 shrink-0 text-amber-500"
+                        aria-label="Permissão ampla"
+                        title="Gerenciar engloba todas as ações neste recurso, inclusive editar e excluir registros de outros usuários. Para limitar ao responsável, use Ver/Criar/Editar/Excluir com escopo Próprio."
+                      />
+                    )}
                   </span>
                 </td>
+
                 {roles.map((r) => {
                   const granted = grantedByRole(r.id);
                   const value = selectValue(row, granted);
