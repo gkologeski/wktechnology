@@ -14,16 +14,17 @@ Observação importante: hoje a exclusão indevida não passa silenciosamente no
    - permissão de gerência/exclusão no workspace → pode excluir qualquer registro;
    - permissão de exclusão por equipe → pode excluir registros de responsáveis da sua equipe;
    - permissão de exclusão apenas própria → só quando o registro é dele (responsável/criador);
-   - nenhuma dessas → botão não aparece.
-2. **Aplicar em todas as telas de detalhe** listadas acima: o botão de excluir só é renderizado quando a regra permite, e a função de exclusão bloqueia com mensagem clara caso seja chamada sem permissão (defesa em profundidade).
+    - nenhuma dessas → sem permissão de exclusão para aquele registro.
+2. **Botão sempre visível, habilitado só com permissão** — em todas as telas de detalhe (e nos menus de linha dos grids) o botão/item "Excluir" passa a aparecer sempre, mas fica desabilitado quando o usuário não pode excluir aquele registro, com tooltip explicando o motivo ("Você não tem permissão para excluir este registro"). A função de exclusão também bloqueia com mensagem clara caso seja chamada sem permissão (defesa em profundidade).
 3. **Padronizar o feedback de exclusão** nas telas que ainda excluem sem o guard: usar o guard existente, que exibe "Você não tem permissão para excluir este registro" quando o banco bloqueia, em vez de dizer "excluído" e voltar para a lista.
-4. **Alinhar o grid de empresas** para usar a mesma regra por registro (hoje o menu da linha aparece com permissão "própria" mesmo em empresas de outro responsável).
+4. **Alinhar o grid de empresas** para usar a mesma regra por registro (hoje o item da linha aparece habilitado com permissão "própria" mesmo em empresas de outro responsável) — passa a aparecer sempre, desabilitado quando não permitido.
+
 
 ## Detalhes técnicos
 
 - Novo hook em `src/lib/access-control/use-can-delete.tsx`: `useCanDelete(resourceKey)` retorna `canDeleteRecord(record)` avaliando `${resourceKey}.manage.workspace`, `.delete.workspace`, `.delete.team`, `.delete.own` via `usePermissions()`, comparando `owner_id`/`assigned_to`/`created_by` com o usuário atual; para o escopo de equipe, reaproveita `useResourceScope(resourceKey, "delete")` (que já devolve `owner_ids` da equipe).
 - Refatorar `deals.$id.tsx` e `deal-detail-drawer.tsx` para consumirem o hook, eliminando a duplicação da regra.
-- Telas de detalhe: envolver o botão de lixeira com a checagem e adicionar early-return na função `remove()`; trocar `supabase.from(...).delete()` direto por `deleteRowGuarded` onde ainda não é usado.
+- Telas de detalhe: manter o botão de lixeira renderizado, aplicando `disabled` conforme o hook, `title`/tooltip com o motivo e `aria-disabled`; nos grids, usar `DropdownMenuItem disabled`. Adicionar early-return na função `remove()`; trocar `supabase.from(...).delete()` direto por `deleteRowGuarded` onde ainda não é usado. Enquanto as permissões carregam, o botão fica desabilitado.
 - Chaves de recurso por tela: `techsales.companies`, `techsales.contacts`, `techsales.leads`, `techsales.deals`, `techsales.activities` (tarefas), `techsales.tickets`, `techcontract.contracts`, `catalog.services`, `techpeople.people`, `techprojects.projects` e correlatos — cada tela usará a chave já cadastrada no RBAC para o seu recurso (confirmada no catálogo de recursos antes da edição).
 - Sem alteração de RLS, schema, autenticação ou regra de negócio. A camada de banco continua sendo a autoridade final; esta mudança corrige a UI e o feedback.
 
@@ -35,4 +36,4 @@ Observação importante: hoje a exclusão indevida não passa silenciosamente no
 
 ## Como validar
 
-Com o usuário `marketing@` (vendedor interno): abrir o detalhe de uma empresa de outro responsável — o botão excluir não deve aparecer; abrir uma empresa própria — o botão aparece e funciona. Repetir em Contatos, Leads, Tarefas e Contratos.
+Com o usuário `marketing@` (vendedor interno): abrir o detalhe de uma empresa de outro responsável — o botão excluir aparece, mas desabilitado, com tooltip de permissão; abrir uma empresa própria — o botão aparece habilitado e funciona. Repetir em Contatos, Leads, Tarefas e Contratos, e nos menus de linha dos grids.
