@@ -88,6 +88,8 @@ import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { Eye, MousePointerClick } from "lucide-react";
+import { deleteRowGuarded } from "@/lib/delete-guard";
+
 
 type EmailMeta = {
   direction: "inbound" | "outbound" | null;
