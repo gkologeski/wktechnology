@@ -283,6 +283,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
               amendmentNumber: item.amendmentNumber,
               contractingName: fields.contracting_name,
               counterpartyName: fields.counterparty_name,
+              startsAt: fields.starts_at ?? null,
             }) ??
             fields.title ??
             item.file.name,
