@@ -669,7 +669,12 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           </label>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 sm:items-center">
+          {missingMain > 0 && !processing ? (
+            <p className="mr-auto text-xs text-destructive" aria-live="polite">
+              {missingMain} aditivo(s) sem contrato principal selecionado.
+            </p>
+          ) : null}
           <Button variant="ghost" onClick={() => handleClose(false)} disabled={processing}>
             {finished ? "Fechar" : "Cancelar"}
           </Button>
