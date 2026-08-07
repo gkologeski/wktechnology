@@ -63,17 +63,29 @@ describe("buildContractTitle", () => {
     ).toBe("CCO CLIENTE BETA X WK TECHNOLOGY");
   });
 
-  it("acrescenta o ano quando solicitado", () => {
+  it("acrescenta o ano da vigência por padrão", () => {
     expect(
       buildContractTitle({
         role: "provider",
         contractingName: "Cliente Beta",
         ownName: "WK Technology",
         startsAt: "2026-03-01",
-        includeYear: true,
       }),
     ).toBe("CPS CLIENTE BETA X WK TECHNOLOGY — 2026");
   });
+
+  it("omite o ano quando includeYear é false", () => {
+    expect(
+      buildContractTitle({
+        role: "provider",
+        contractingName: "Cliente Beta",
+        ownName: "WK Technology",
+        startsAt: "2026-03-01",
+        includeYear: false,
+      }),
+    ).toBe("CPS CLIENTE BETA X WK TECHNOLOGY");
+  });
+
 
   it("retorna null quando falta uma das partes", () => {
     expect(buildContractTitle({ role: "provider", contractingName: "Cliente Beta" })).toBeNull();
