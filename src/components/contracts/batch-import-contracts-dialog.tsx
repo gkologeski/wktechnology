@@ -344,10 +344,18 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
     onImported,
   ]);
 
-  const canProcess = useMemo(
-    () => items.some((i) => i.status === "queued" || i.status === "error"),
+  const pendingItems = useMemo(
+    () => items.filter((i) => i.status === "queued" || i.status === "error"),
     [items],
   );
+  const missingMain = useMemo(
+    () =>
+      pendingItems.filter(
+        (i) => i.docKind === "amendment" && !i.mainContract && !i.mainFromKey,
+      ).length,
+    [pendingItems],
+  );
+  const canProcess = pendingItems.length > 0 && missingMain === 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
