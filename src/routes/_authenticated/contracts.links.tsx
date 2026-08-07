@@ -84,7 +84,9 @@ function ContractLinksPage() {
     onSuccess: () => {
       toast.success("Contrato removido da fila de vinculação.");
       void qc.invalidateQueries({ queryKey: ["contracts-pending-link"] });
+      void qc.invalidateQueries({ queryKey: ["contracts", "pending-link-count"] });
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
