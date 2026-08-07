@@ -26,13 +26,16 @@ import {
   type ContractRow,
 } from "@/components/contracts/contracts-grouped-list";
 
-type GroupBy = "none" | "company" | "service";
+type GroupBy = "none" | "company" | "service" | "job_profile" | "seniority";
+
+const GROUP_BY_VALUES: GroupBy[] = ["none", "company", "service", "job_profile", "seniority"];
 
 export const Route = createFileRoute("/_authenticated/contracts/")({
   validateSearch: (search: Record<string, unknown>) => {
     const raw = String(search["groupBy"] ?? "none");
-    const groupBy: GroupBy =
-      raw === "company" || raw === "service" ? (raw as GroupBy) : "none";
+    const groupBy: GroupBy = (GROUP_BY_VALUES as string[]).includes(raw)
+      ? (raw as GroupBy)
+      : "none";
     return { groupBy };
   },
   head: () => ({
@@ -166,13 +169,15 @@ function ContractsPage() {
             value={groupBy}
             onValueChange={(next) => navigate({ search: { groupBy: next as GroupBy } })}
           >
-            <SelectTrigger id="contracts-group-by" className="w-40">
+            <SelectTrigger id="contracts-group-by" className="w-44">
               <SelectValue placeholder="Nenhum" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Nenhum</SelectItem>
               <SelectItem value="company">Empresa</SelectItem>
               <SelectItem value="service">Serviço</SelectItem>
+              <SelectItem value="job_profile">Cargo</SelectItem>
+              <SelectItem value="seniority">Senioridade</SelectItem>
             </SelectContent>
           </Select>
         </div>
