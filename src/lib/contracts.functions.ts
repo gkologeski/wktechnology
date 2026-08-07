@@ -64,6 +64,74 @@ export const listContracts = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
+// ============= LIST PAGINADO (grid de /contracts) =============
+// Retorna apenas a página solicitada + total real, aplicando todos os filtros
+// no servidor. Mantido separado de `listContracts` para não alterar o contrato
+// dos demais chamadores (detalhe, pickers, fila de vínculo, negócios).
+
+export const listContractsPaged = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        role: roleEnum.optional(),
+        status: statusEnum.optional(),
+        search: z.string().max(200).optional(),
+        companyId: z.string().uuid().optional(),
+        legalEntityId: z.string().uuid().optional(),
+        legalEntityName: z.string().max(200).optional(),
+        assignedTo: z.string().optional(),
+        startsFrom: z.string().optional(),
+        startsTo: z.string().optional(),
+        endsFrom: z.string().optional(),
+        endsTo: z.string().optional(),
+        page: z.number().int().min(1).default(1),
+        pageSize: z.number().int().min(1).max(200).default(50),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const from = (data.page - 1) * data.pageSize;
+    const to = from + data.pageSize - 1;
+
+    let q = supabase
+      .from("contracts")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (data.role) q = q.eq("role", data.role);
+    if (data.status) q = q.eq("status", data.status);
+    if (data.companyId) q = q.eq("counterparty_company_id", data.companyId);
+    if (data.assignedTo === "__none__") q = q.is("assigned_to", null);
+    else if (data.assignedTo) q = q.eq("assigned_to", data.assignedTo);
+    if (data.startsFrom) q = q.gte("starts_at", data.startsFrom);
+    if (data.startsTo) q = q.lte("starts_at", data.startsTo);
+    if (data.endsFrom) q = q.gte("ends_at", data.endsFrom);
+    if (data.endsTo) q = q.lte("ends_at", data.endsTo);
+    if (data.search && data.search.trim()) {
+      const t = `%${data.search.trim().replace(/[,()%]/g, " ").trim()}%`;
+      q = q.or(`title.ilike.${t},number.ilike.${t}`);
+    }
+    if (data.legalEntityId) {
+      // Contratos importados podem ter apenas o nome do contratante extraído
+      // do documento, sem FK — o filtro considera os dois casos.
+      const name = (data.legalEntityName ?? "").replace(/[,()%]/g, " ").trim();
+      q = name
+        ? q.or(
+            `contracting_legal_entity_id.eq.${data.legalEntityId},metadata->>contracting_name_extracted.ilike.%${name}%`,
+          )
+        : q.eq("contracting_legal_entity_id", data.legalEntityId);
+    }
+
+    const { data: rows, error, count } = await q;
+    if (error) throw error;
+    return { rows: rows ?? [], total: count ?? 0 };
+  });
+
+
+
 export const getContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
