@@ -75,7 +75,50 @@ const allocationSchema = z.object({
   ends_at: z.string().nullable().optional(),
   status: z.enum(ALLOCATION_STATUSES).default("active"),
   notes: z.string().max(4000).nullable().optional(),
+  // Senioridade não é coluna da alocação: serve para sugerir/preencher
+  // people.seniority quando o cadastro da pessoa estiver vazio.
+  seniority: z.string().max(60).nullable().optional(),
 });
+
+export type ContractRoleSuggestion = {
+  service_id: string;
+  service_name: string;
+  job_profile_id: string | null;
+  job_profile_name: string | null;
+  seniority: string | null;
+  competencies: string[];
+};
+
+// Sugestões de cargo/senioridade a partir dos serviços associados ao contrato.
+export const listContractRoleSuggestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i) => z.object({ contract_id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: rows, error } = await context.supabase
+      .from("services")
+      .select("id, name, seniority, competencies, job_profile_id, job_profiles(id, name)")
+      .eq("contract_id", data.contract_id)
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (rows ?? []).map((r) => {
+      const row = r as unknown as {
+        id: string;
+        name: string | null;
+        seniority: string | null;
+        competencies: string[] | null;
+        job_profile_id: string | null;
+        job_profiles?: { name: string | null } | null;
+      };
+      return {
+        service_id: row.id,
+        service_name: row.name ?? "Serviço",
+        job_profile_id: row.job_profile_id ?? null,
+        job_profile_name: row.job_profiles?.name ?? null,
+        seniority: row.seniority ?? null,
+        competencies: row.competencies ?? [],
+      } satisfies ContractRoleSuggestion;
+    });
+  });
 
 export const listAllocationsByPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -150,12 +193,35 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       status: data.status,
       notes: data.notes ?? null,
     };
+    // Preenche o cadastro da pessoa só quando os campos estão vazios —
+    // nunca sobrescreve informação já cadastrada pelo RH.
+    async function syncPerson() {
+      const roleTitle = (data.role_title ?? "").trim();
+      const seniority = (data.seniority ?? "").trim();
+      if (!roleTitle && !seniority) return;
+      const { data: person } = await supabase
+        .from("people")
+        .select("id, role_title, seniority")
+        .eq("id", data.person_id)
+        .maybeSingle();
+      const p = person as { role_title: string | null; seniority: string | null } | null;
+      if (!p) return;
+      const patch: { role_title?: string; seniority?: string } = {};
+      if (roleTitle && !(p.role_title ?? "").trim()) patch.role_title = roleTitle;
+      if (seniority && !(p.seniority ?? "").trim()) patch.seniority = seniority;
+      if (Object.keys(patch).length === 0) return;
+      await supabase
+        .from("people")
+        .update(patch as never)
+        .eq("id", data.person_id);
+    }
     if (data.id) {
       const { error } = await supabase
         .from("people_allocations")
         .update(payload as never)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
+      await syncPerson();
       return { id: data.id };
     }
     const workspaceId = await resolveWorkspaceId(supabase, userId);
@@ -165,6 +231,7 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    await syncPerson();
     return { id: (row as { id: string }).id };
   });
 
@@ -172,16 +239,16 @@ export const deleteAllocation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_allocations")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("people_allocations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 // Cálculo de margem por alocação: (billable - cost) * allocation_pct / 100
-export function computeMonthlyMargin(row: AllocationRow, hoursPerMonth = 160): {
+export function computeMonthlyMargin(
+  row: AllocationRow,
+  hoursPerMonth = 160,
+): {
   revenue: number;
   cost: number;
   margin: number;
