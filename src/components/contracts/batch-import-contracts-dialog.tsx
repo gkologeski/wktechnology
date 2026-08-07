@@ -1,7 +1,7 @@
 // Importação em lote de contratos (.pdf / .docx).
 // Fluxo: 1) Seleção de vários arquivos → 2) Grid de revisão (tipo: prestação/compra)
 // → 3) Processar: IA extrai, cria rascunhos e tenta vincular compra ↔ prestação.
-import { useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
