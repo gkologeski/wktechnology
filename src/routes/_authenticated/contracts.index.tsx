@@ -160,7 +160,7 @@ function ContractsPage() {
   useEffect(() => {
     if (searchDraft === sp.q) return;
     const t = setTimeout(() => {
-      navigate({ search: (prev) => ({ ...prev, q: searchDraft, page: 1 }) });
+      navigate({ search: (prev: ContractSearch) => ({ ...prev, q: searchDraft, page: 1 }) });
     }, 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,9 +172,9 @@ function ContractsPage() {
   }, [sp.q]);
 
   const setFilter = (patch: Partial<ContractSearch>) =>
-    navigate({ search: (prev) => ({ ...prev, ...patch, page: 1 }) });
+    navigate({ search: (prev: ContractSearch) => ({ ...prev, ...patch, page: 1 }) });
 
-  const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
+  const setPage = (page: number) => navigate({ search: (prev: ContractSearch) => ({ ...prev, page }) });
 
   const assigneeParam = useMemo(() => {
     if (!sp.assignee || sp.assignee === ASSIGNEE_ALL) return undefined;
@@ -317,7 +317,7 @@ function ContractsPage() {
 
   const clearAll = () =>
     navigate({
-      search: (prev) => ({
+      search: (prev: ContractSearch) => ({
         ...prev,
         q: "",
         role: "",
@@ -587,7 +587,7 @@ function ContractsPage() {
           <Select
             value={sp.groupBy}
             onValueChange={(next) =>
-              navigate({ search: (prev) => ({ ...prev, groupBy: next as GroupBy }) })
+              navigate({ search: (prev: ContractSearch) => ({ ...prev, groupBy: next as GroupBy }) })
             }
           >
             <SelectTrigger id="contracts-group-by" className="w-44">
