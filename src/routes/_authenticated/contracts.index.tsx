@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileStack, FileText, Plus, Search, Upload } from "lucide-react";
+import { FileStack, FileText, Link2, Plus, Search, Upload } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
 import { listContracts, listContractGroupings } from "@/lib/contracts.functions";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
 import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
+import { BatchImportContractsDialog } from "@/components/contracts/batch-import-contracts-dialog";
 import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
 import {
@@ -70,6 +71,7 @@ function ContractsPage() {
   const [status, setStatus] = useState<string>("all");
   const [openNew, setOpenNew] = useState(false);
   const [openImport, setOpenImport] = useState(false);
+  const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
 
   const { data: rows = [], isLoading } = useQuery({
@@ -234,6 +236,12 @@ function ContractsPage() {
           setOpenTemplate(next);
           if (!next) qc.invalidateQueries({ queryKey: ["contracts"] });
         }}
+      />
+
+      <BatchImportContractsDialog
+        open={openBatch}
+        onOpenChange={setOpenBatch}
+        onImported={() => qc.invalidateQueries({ queryKey: ["contracts"] })}
       />
 
       <ImportContractFileDialog
