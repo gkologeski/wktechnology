@@ -153,7 +153,7 @@ function ContractsPage() {
   const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
   const [openFilters, setOpenFilters] = useState(false);
-  const [nestAmendments, setNestAmendments] = useState(true);
+  const [nestLinks, setNestAmendments] = useState(true);
   const [selectedMap, setSelectedMap] = useState<Map<string, ContractRow>>(new Map());
 
   // Atualiza a busca na URL com debounce, voltando para a página 1.
@@ -605,7 +605,7 @@ function ContractsPage() {
         <div className="flex items-center gap-2">
           <Checkbox
             id="nest-amendments"
-            checked={nestAmendments}
+            checked={nestLinks}
             onCheckedChange={(v) => setNestAmendments(v === true)}
           />
           <Label htmlFor="nest-amendments" className="text-sm text-muted-foreground">
@@ -674,7 +674,7 @@ function ContractsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {(sp.groupBy !== "none" || nestAmendments) && total > rows.length && (
+          {(sp.groupBy !== "none" || nestLinks) && total > rows.length && (
             <p className="text-xs text-muted-foreground">
               O agrupamento e o aninhamento de aditivos consideram apenas os contratos da página
               exibida.
@@ -687,7 +687,7 @@ function ContractsPage() {
                 rows={rows}
                 selection={selection}
                 editable
-                nestAmendments={nestAmendments}
+                nestLinks={nestLinks}
               />
             </div>
           ) : (
@@ -700,7 +700,7 @@ function ContractsPage() {
               onRetry={() => groupQuery.refetch()}
               selection={selection}
               editable
-              nestAmendments={nestAmendments}
+              nestLinks={nestLinks}
             />
           )}
 

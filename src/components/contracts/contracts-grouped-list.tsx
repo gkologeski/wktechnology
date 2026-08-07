@@ -548,7 +548,7 @@ export function ContractsGroupedList({
   onRetry,
   selection,
   editable = false,
-  nestAmendments = false,
+  nestLinks = false,
 }: {
   rows: ContractRow[];
   groupBy: ContractGroupBy;
@@ -558,7 +558,7 @@ export function ContractsGroupedList({
   onRetry?: () => void;
   selection?: ContractsSelection;
   editable?: boolean;
-  nestAmendments?: boolean;
+  nestLinks?: boolean;
 }) {
   const groups = useMemo(() => buildGroups(rows, groupBy, groupings), [rows, groupBy, groupings]);
 
@@ -600,7 +600,7 @@ export function ContractsGroupedList({
           groupBy={groupBy}
           {...(selection ? { selection } : {})}
           editable={editable}
-          nestAmendments={nestAmendments}
+          nestLinks={nestLinks}
         />
       ))}
     </div>
@@ -619,13 +619,13 @@ function GroupSection({
   groupBy,
   selection,
   editable = false,
-  nestAmendments = false,
+  nestLinks = false,
 }: {
   group: Group;
   groupBy: ContractGroupBy;
   selection?: ContractsSelection;
   editable?: boolean;
-  nestAmendments?: boolean;
+  nestLinks?: boolean;
 }) {
   const [open, setOpen] = useState(true);
   const Icon = GROUP_ICON[groupBy];
@@ -658,7 +658,7 @@ function GroupSection({
             rows={group.rows}
             {...(selection ? { selection } : {})}
             editable={editable}
-            nestAmendments={nestAmendments}
+            nestLinks={nestLinks}
           />
         </div>
       </CollapsibleContent>
