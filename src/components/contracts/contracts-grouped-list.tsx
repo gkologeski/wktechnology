@@ -43,8 +43,14 @@ export type ContractGroupings = {
     serviceName: string;
     catalogId: string | null;
     catalogName: string | null;
+    jobProfileId?: string | null;
+    jobProfileName?: string | null;
+    seniority?: string | null;
   }[];
 };
+
+export type ContractGroupBy = "company" | "service" | "job_profile" | "seniority";
+
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
