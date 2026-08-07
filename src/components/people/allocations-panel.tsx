@@ -220,6 +220,9 @@ export function AllocationsPanel({
         canViewSensitive={canViewSensitive}
         onSaved={() => {
           qc.invalidateQueries({ queryKey: ["person-allocations", personId] });
+          // O cadastro da pessoa pode ter recebido cargo/senioridade.
+          qc.invalidateQueries({ queryKey: ["person", personId] });
+          qc.invalidateQueries({ queryKey: ["people"] });
           setOpen(false);
         }}
       />
