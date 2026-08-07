@@ -11,6 +11,10 @@ type: feature
 - Toda `CREATE TABLE public.*` na mesma migration: `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated`, `GRANT ALL TO service_role`.
 - Nenhuma leitura `anon` em tabelas de negócio.
 - Consolidação de writes (jul/2026) em `calendar_events`, `meetings`, `email_threads`, `email_messages`, `email_broadcasts`, `whatsapp_conversations`, `whatsapp_messages`, `whatsapp_campaigns`, `quote_line_items`, `quote_templates`: **uma única** policy `*_write_update` + `*_write_delete` = `is_workspace_admin_of(owner_id, auth.uid()) OR can_write_owner(owner_id, auth.uid())`. SELECT/INSERT permanecem `ws_*` (workspace inteiro). Não recriar `ws_update_*`/`ws_delete_*`/`*_admin_update`/`*_team_update` para essas tabelas.
+- Limpeza de legado (ago/2026): `custom_reports`, `dashboards`, `dashboard_widgets`, `email_templates`, `email_snippets`, `macros`, `sequences`, `sequence_enrollments`, `forms`, `form_submissions`, `custom_objects`, `custom_object_records`, `webhook_deliveries`, `workflow_runs`, `saved_views` usam APENAS o conjunto canônico `ws_*` (SELECT/INSERT/UPDATE/DELETE). Não recriar `*_admin_*`/`*_team_*` nessas tabelas.
+- `landing_pages`, `sla_policies` e `outbound_webhooks` ainda usam o conjunto legado `*_admin_*`/`*_team_*` como fonte única de enforcement (não existe `ws_*` para elas). Não remover essas policies sem antes criar o conjunto canônico equivalente — removê-las derrubaria todo o acesso.
+- Todas as policies de tabelas de negócio devem declarar `TO authenticated` (nunca o role `public`), mesmo quando a expressão já depende de `auth.uid()`.
+
 
 ## Tabelas de controle de acesso (owner-scoped)
 - `job_roles`, `permission_sets`, `user_permission_sets`, `field_permission_rules`, `user_job_roles` usam a coluna `owner_id` (auth.uid do dono do workspace). Não renomear de volta para `workspace_id` e não comparar `owner_id` com `workspaces.id`. Policies: `*_read` (is_system OR owner_id = auth.uid() OR shares_workspace_with(owner_id)); `*_write` FOR ALL restrita a `owner_id = auth.uid()`.
