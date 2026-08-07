@@ -48,6 +48,7 @@ import {
   type MainContractOption,
 } from "@/components/contracts/main-contract-picker";
 import { Input } from "@/components/ui/input";
+import { buildContractTitle } from "@/lib/contracts/title";
 
 type Props = {
   open: boolean;
@@ -274,7 +275,17 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           message: "Rascunho criado",
           contractId: result.id,
           detectedRole: role,
-          title: fields.title ?? item.file.name,
+          title:
+            buildContractTitle({
+              role,
+              serviceType: fields.service_type,
+              documentKind: item.docKind,
+              amendmentNumber: item.amendmentNumber,
+              contractingName: fields.contracting_name,
+              counterpartyName: fields.counterparty_name,
+            }) ??
+            fields.title ??
+            item.file.name,
         });
 
         if (item.docKind === "amendment") {
