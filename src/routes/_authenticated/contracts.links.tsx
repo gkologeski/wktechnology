@@ -84,7 +84,9 @@ function ContractLinksPage() {
     onSuccess: () => {
       toast.success("Contrato removido da fila de vinculação.");
       void qc.invalidateQueries({ queryKey: ["contracts-pending-link"] });
+      void qc.invalidateQueries({ queryKey: ["contracts", "pending-link-count"] });
     },
+
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -92,7 +94,11 @@ function ContractLinksPage() {
     <div className="space-y-6">
       <PageHeader
         title="Vinculação de contratos"
+        count={rows.length}
+        countLabel={rows.length === 1 ? "pendência" : "pendências"}
+
         description="Contratos importados em que o par prestação ↔ compra não foi identificado automaticamente."
+
         actions={
           <Button variant="outline" asChild>
             <Link to="/contracts" search={{ groupBy: "none" }}>

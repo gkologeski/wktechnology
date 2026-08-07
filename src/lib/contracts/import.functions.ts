@@ -433,20 +433,7 @@ export const linkImportedContracts = createServerFn({ method: "POST" })
 
 // ============= FILA DE VINCULAÇÃO MANUAL =============
 
-export type PendingLinkRow = {
-  id: string;
-  role: "provider" | "client";
-  number: string | null;
-  title: string;
-  status: string;
-  starts_at: string | null;
-  ends_at: string | null;
-  company_name: string | null;
-  contracting_name: string | null;
-  contracting_cnpj: string | null;
-  referenced_numbers: string[];
-  reason: string;
-};
+export type { PendingLinkRow } from "./pending-link";
 
 export const listContractsPendingLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -460,6 +447,7 @@ export const listContractsPendingLink = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    const { computePendingLinks } = await import("./pending-link");
 
     const { data: rows, error } = await supabase
       .from("contracts")
@@ -470,71 +458,32 @@ export const listContractsPendingLink = createServerFn({ method: "POST" })
       .limit(500);
     if (error) throw error;
 
-    const all = (rows ?? []).map((r) => {
-      const row = r as unknown as {
-        id: string;
-        role: "provider" | "client";
-        number: string | null;
-        title: string;
-        status: string;
-        starts_at: string | null;
-        ends_at: string | null;
-        parent_contract_id: string | null;
-        metadata: Record<string, unknown> | null;
-        companies?: { name: string | null } | null;
-      };
-      return row;
-    });
-
-    const parentIds = new Set(
-      all.map((r) => r.parent_contract_id).filter((v): v is string => Boolean(v)),
+    return computePendingLinks(
+      (rows ?? []) as unknown as Parameters<typeof computePendingLinks>[0],
+      { role: data.role, search: data.search },
     );
-
-    const term = (data.search ?? "").trim().toLowerCase();
-    const roleFilter = data.role && data.role !== "all" ? data.role : null;
-
-    const pending: PendingLinkRow[] = [];
-    for (const row of all) {
-      const dismissed = row.metadata?.["link_dismissed"] === true;
-      if (dismissed) continue;
-      const referenced = Array.isArray(row.metadata?.["referenced_contract_numbers"])
-        ? (row.metadata?.["referenced_contract_numbers"] as string[])
-        : [];
-
-      let reason: string | null = null;
-      if (row.role === "client" && !row.parent_contract_id) {
-        reason = referenced.length
-          ? `Número citado (${referenced.join(", ")}) não encontrado`
-          : "Nenhum número de contrato citado no documento";
-      } else if (row.role === "provider" && !parentIds.has(row.id)) {
-        reason = "Sem contrato de compra vinculado";
-      }
-      if (!reason) continue;
-      if (roleFilter && row.role !== roleFilter) continue;
-      if (
-        term &&
-        !`${row.title} ${row.number ?? ""} ${row.companies?.name ?? ""}`.toLowerCase().includes(term)
-      ) {
-        continue;
-      }
-
-      pending.push({
-        id: row.id,
-        role: row.role,
-        number: row.number,
-        title: row.title,
-        status: row.status,
-        starts_at: row.starts_at,
-        ends_at: row.ends_at,
-        company_name: row.companies?.name ?? null,
-        contracting_name: (row.metadata?.["contracting_name_extracted"] as string | null) ?? null,
-        contracting_cnpj: (row.metadata?.["contracting_cnpj_extracted"] as string | null) ?? null,
-        referenced_numbers: referenced,
-        reason,
-      });
-    }
-    return pending;
   });
+
+// Contagem leve da fila de vinculação, usada na badge do botão em /contracts.
+export const countContractsPendingLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase } = context;
+    const { computePendingLinks } = await import("./pending-link");
+
+    const { data: rows, error } = await supabase
+      .from("contracts")
+      .select("id, role, number, title, status, starts_at, ends_at, parent_contract_id, metadata")
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (error) throw error;
+
+    const pending = computePendingLinks(
+      (rows ?? []) as unknown as Parameters<typeof computePendingLinks>[0],
+    );
+    return { count: pending.length };
+  });
+
 
 // Remove um contrato da fila de vinculação (declara que não há contrato par).
 export const dismissContractLink = createServerFn({ method: "POST" })
