@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Briefcase } from "lucide-react";
+import { Plus, Pencil, Trash2, Briefcase, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   listAllocationsByPerson,
+  listContractRoleSuggestions,
   upsertAllocation,
   deleteAllocation,
   computeMonthlyMargin,
@@ -35,7 +36,9 @@ import {
   ALLOCATION_STATUS_LABELS,
   type AllocationRow,
   type AllocationStatus,
+  type ContractRoleSuggestion,
 } from "@/lib/people/allocations.functions";
+import { SENIORITY_OPTIONS, SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { listContracts } from "@/lib/contracts.functions";
 import { listProjects } from "@/lib/projects.functions";
 import { listPeople } from "@/lib/people/people.functions";
@@ -277,6 +280,25 @@ function AllocationDialog({
   const [endsAt, setEndsAt] = useState<string>(editing?.ends_at ?? "");
   const [status, setStatus] = useState<AllocationStatus>(editing?.status ?? "active");
   const [notes, setNotes] = useState<string>(editing?.notes ?? "");
+  const [seniority, setSeniority] = useState<string>("");
+
+  const suggestFn = useServerFn(listContractRoleSuggestions);
+  const { data: suggestions = [] } = useQuery({
+    queryKey: ["allocation-role-suggestions", contractId],
+    queryFn: () =>
+      suggestFn({ data: { contract_id: contractId as string } }) as Promise<
+        ContractRoleSuggestion[]
+      >,
+    enabled: open && !!contractId,
+    staleTime: 60_000,
+  });
+
+  // Sugestões vêm dos serviços do contrato; só aparecem quando há cargo definido.
+  const usable = suggestions.filter((s) => s.job_profile_name || s.seniority);
+  const applySuggestion = (s: ContractRoleSuggestion) => {
+    if (s.job_profile_name) setRoleTitle(s.job_profile_name);
+    if (s.seniority) setSeniority(s.seniority);
+  };
 
   const mut = useMutation({
     mutationFn: () =>
@@ -296,6 +318,7 @@ function AllocationDialog({
           ends_at: endsAt || null,
           status,
           notes: notes || null,
+          seniority: seniority || null,
         },
       }),
     onSuccess: () => {
@@ -329,12 +352,62 @@ function AllocationDialog({
             <ManagerSelect value={managerId} onChange={setManagerId} excludePersonId={personId} />
           </div>
           <div className="space-y-2 md:col-span-2">
-            <Label>Cargo/Função na alocação</Label>
+            <Label htmlFor="alloc-role-title">Cargo/Função na alocação</Label>
             <Input
+              id="alloc-role-title"
               value={roleTitle}
               onChange={(e) => setRoleTitle(e.target.value)}
               placeholder="Ex.: Desenvolvedor Sênior"
             />
+            {usable.length > 0 ? (
+              <div className="rounded-md border bg-muted/40 p-2.5">
+                <div className="flex items-center gap-1.5 text-xs font-medium">
+                  <Sparkles aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground" />
+                  Sugestões dos serviços do contrato
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {usable.map((s) => (
+                    <Button
+                      key={s.service_id}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-auto py-1"
+                      onClick={() => applySuggestion(s)}
+                      aria-label={`Aplicar sugestão do serviço ${s.service_name}`}
+                    >
+                      <span className="text-xs">
+                        {s.job_profile_name ?? s.service_name}
+                        {s.seniority ? ` · ${SENIORITY_LABEL[s.seniority] ?? s.seniority}` : ""}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="alloc-seniority">Senioridade</Label>
+            <Select
+              value={seniority || "__none"}
+              onValueChange={(v) => setSeniority(v === "__none" ? "" : v)}
+            >
+              <SelectTrigger id="alloc-seniority">
+                <SelectValue placeholder="Selecionar senioridade…" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__none">Não informada</SelectItem>
+                {SENIORITY_OPTIONS.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Cargo e senioridade são copiados para o cadastro da pessoa apenas se lá estiverem
+              vazios.
+            </p>
           </div>
           <div className="space-y-2">
             <Label>Alocação (%)</Label>
