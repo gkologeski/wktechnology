@@ -64,9 +64,12 @@ Regras da etapa 2:
 
 - `src/components/contracts/import-contract-file-dialog.tsx`: refatorado para fila de arquivos (`upload → grid → result`), reaproveitando `import-progress.ts` por item. A revisão campo a campo do fluxo individual é preservada quando o lote tem apenas 1 arquivo.
 - `src/lib/contracts/import-schemas.ts`: acrescenta `self_contract_number` e `referenced_contract_numbers: string[]` ao `ExtractedContractSchema` (ambos opcionais/nullable).
-- `src/lib/contracts/import.functions.ts`: prompt atualizado; nova server fn `linkImportedContracts` que resolve os números citados e grava `parent_contract_id`, com `assertAnyPermission` de update de contrato e escopo por workspace.
+- `src/lib/contracts/import.functions.ts`: prompt atualizado; nova server fn `linkImportedContracts` que resolve os números citados e grava `parent_contract_id`, com `assertAnyPermission` de update de contrato e escopo por workspace; nova server fn `listContractsPendingLink` para a aba manual e `setContractLink` para confirmar/limpar vínculo.
+- Aba manual: nova rota `/contracts/links` (ou aba na tela de contratos) usando `PageHeader`, `FilterBar`, `DataTable`, `EmptyState`, `LoadingSkeleton` e `ErrorState` do design system.
+- Elegibilidade TechPeople: consulta a `public.legal_entities` do workspace para obter os CNPJs próprios; filtro aplicado no servidor (nova opção `contracting_is_own_entity` em `listContracts` ou fn dedicada), nunca só na UI.
 - Migration: adiciona `purchase_contract_id uuid references public.contracts(id)` em `public.people_allocations` (aditiva, nullable); `contract_id` continua sendo o contrato de prestação. Índice em `purchase_contract_id`. RLS atual da tabela é mantida.
 - `src/lib/people/allocations.functions.ts`: schema e `upsertAllocation` aceitam `purchase_contract_id`; leituras retornam número/título dos dois contratos.
+
 - `src/components/people/allocations-panel.tsx`: dois `ContractSelect` filtrados por `role`.
 - Sem alteração de autenticação, RBAC existente, ou regras de negócio fora deste escopo.
 
