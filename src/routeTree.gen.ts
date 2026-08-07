@@ -226,6 +226,7 @@ import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCatalogServicesRouteImport } from './routes/_authenticated/catalog.services'
 import { Route as AuthenticatedCatalogProductsRouteImport } from './routes/_authenticated/catalog.products'
 import { Route as AuthenticatedCatalogJobProfilesRouteImport } from './routes/_authenticated/catalog.job-profiles'
+import { Route as AuthenticatedCatalogContractingPresetsRouteImport } from './routes/_authenticated/catalog.contracting-presets'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
 import { Route as AuthenticatedCampaignsEmailRouteImport } from './routes/_authenticated/campaigns.email'
 import { Route as AuthenticatedAuthExtensionLinkRouteImport } from './routes/_authenticated/auth/extension-link'
@@ -1594,6 +1595,12 @@ const AuthenticatedCatalogJobProfilesRoute =
     path: '/catalog/job-profiles',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedCatalogContractingPresetsRoute =
+  AuthenticatedCatalogContractingPresetsRouteImport.update({
+    id: '/catalog/contracting-presets',
+    path: '/catalog/contracting-presets',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedCampaignsWhatsappRoute =
   AuthenticatedCampaignsWhatsappRouteImport.update({
     id: '/campaigns/whatsapp',
@@ -2496,6 +2503,7 @@ export interface FileRoutesByFullPath {
   '/auth/extension-link': typeof AuthenticatedAuthExtensionLinkRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/catalog/contracting-presets': typeof AuthenticatedCatalogContractingPresetsRoute
   '/catalog/job-profiles': typeof AuthenticatedCatalogJobProfilesRoute
   '/catalog/products': typeof AuthenticatedCatalogProductsRoute
   '/catalog/services': typeof AuthenticatedCatalogServicesRoute
@@ -2849,6 +2857,7 @@ export interface FileRoutesByTo {
   '/auth/extension-link': typeof AuthenticatedAuthExtensionLinkRoute
   '/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/catalog/contracting-presets': typeof AuthenticatedCatalogContractingPresetsRoute
   '/catalog/job-profiles': typeof AuthenticatedCatalogJobProfilesRoute
   '/catalog/products': typeof AuthenticatedCatalogProductsRoute
   '/catalog/services': typeof AuthenticatedCatalogServicesRoute
@@ -3208,6 +3217,7 @@ export interface FileRoutesById {
   '/_authenticated/auth/extension-link': typeof AuthenticatedAuthExtensionLinkRoute
   '/_authenticated/campaigns/email': typeof AuthenticatedCampaignsEmailRoute
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
+  '/_authenticated/catalog/contracting-presets': typeof AuthenticatedCatalogContractingPresetsRoute
   '/_authenticated/catalog/job-profiles': typeof AuthenticatedCatalogJobProfilesRoute
   '/_authenticated/catalog/products': typeof AuthenticatedCatalogProductsRoute
   '/_authenticated/catalog/services': typeof AuthenticatedCatalogServicesRoute
@@ -3568,6 +3578,7 @@ export interface FileRouteTypes {
     | '/auth/extension-link'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
+    | '/catalog/contracting-presets'
     | '/catalog/job-profiles'
     | '/catalog/products'
     | '/catalog/services'
@@ -3921,6 +3932,7 @@ export interface FileRouteTypes {
     | '/auth/extension-link'
     | '/campaigns/email'
     | '/campaigns/whatsapp'
+    | '/catalog/contracting-presets'
     | '/catalog/job-profiles'
     | '/catalog/products'
     | '/catalog/services'
@@ -4279,6 +4291,7 @@ export interface FileRouteTypes {
     | '/_authenticated/auth/extension-link'
     | '/_authenticated/campaigns/email'
     | '/_authenticated/campaigns/whatsapp'
+    | '/_authenticated/catalog/contracting-presets'
     | '/_authenticated/catalog/job-profiles'
     | '/_authenticated/catalog/products'
     | '/_authenticated/catalog/services'
@@ -6186,6 +6199,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCatalogJobProfilesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/catalog/contracting-presets': {
+      id: '/_authenticated/catalog/contracting-presets'
+      path: '/catalog/contracting-presets'
+      fullPath: '/catalog/contracting-presets'
+      preLoaderRoute: typeof AuthenticatedCatalogContractingPresetsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/campaigns/whatsapp': {
       id: '/_authenticated/campaigns/whatsapp'
       path: '/campaigns/whatsapp'
@@ -7651,6 +7671,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAuthExtensionLinkRoute: typeof AuthenticatedAuthExtensionLinkRoute
   AuthenticatedCampaignsEmailRoute: typeof AuthenticatedCampaignsEmailRoute
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
+  AuthenticatedCatalogContractingPresetsRoute: typeof AuthenticatedCatalogContractingPresetsRoute
   AuthenticatedCatalogJobProfilesRoute: typeof AuthenticatedCatalogJobProfilesRoute
   AuthenticatedCatalogProductsRoute: typeof AuthenticatedCatalogProductsRoute
   AuthenticatedCatalogServicesRoute: typeof AuthenticatedCatalogServicesRoute
@@ -7786,6 +7807,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAuthExtensionLinkRoute: AuthenticatedAuthExtensionLinkRoute,
   AuthenticatedCampaignsEmailRoute: AuthenticatedCampaignsEmailRoute,
   AuthenticatedCampaignsWhatsappRoute: AuthenticatedCampaignsWhatsappRoute,
+  AuthenticatedCatalogContractingPresetsRoute:
+    AuthenticatedCatalogContractingPresetsRoute,
   AuthenticatedCatalogJobProfilesRoute: AuthenticatedCatalogJobProfilesRoute,
   AuthenticatedCatalogProductsRoute: AuthenticatedCatalogProductsRoute,
   AuthenticatedCatalogServicesRoute: AuthenticatedCatalogServicesRoute,
