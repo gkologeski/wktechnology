@@ -52,7 +52,9 @@ export type ContractRow = {
   assigned_to?: string | null;
   document_kind?: string | null;
   amendment_of_id?: string | null;
+  parent_contract_id?: string | null;
   amendment_number?: string | null;
+
 };
 
 export type ContractGroupings = {
