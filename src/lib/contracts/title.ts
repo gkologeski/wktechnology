@@ -13,8 +13,9 @@ export type ContractTitleParts = {
   counterpartyName?: string | null;
   /** Nome da nossa entidade legal (quando identificada). */
   ownName?: string | null;
-  /** Início da vigência (ISO) — usado apenas quando `includeYear`. */
+  /** Início da vigência (ISO) — usado para o sufixo do ano. */
   startsAt?: string | null;
+  /** Sufixo com o ano da vigência. Ativo por padrão; passe `false` para omitir. */
   includeYear?: boolean;
 };
 
@@ -97,7 +98,7 @@ export function buildContractTitle(parts: ContractTitleParts): string | null {
   segments.push(prefixFor(parts));
   let title = `${segments.join(" ")} ${contracting} X ${contracted}`;
 
-  if (parts.includeYear) {
+  if (parts.includeYear !== false) {
     const year = (parts.startsAt ?? "").slice(0, 4);
     if (/^\d{4}$/.test(year)) title = `${title} — ${year}`;
   }

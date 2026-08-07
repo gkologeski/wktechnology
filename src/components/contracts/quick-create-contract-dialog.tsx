@@ -76,6 +76,7 @@ export function QuickCreateContractDialog({
       contractingName: role === "client" ? (ownEntityQuery.data ?? null) : companyName,
       counterpartyName: companyName,
       ownName: ownEntityQuery.data ?? null,
+      startsAt: startsAt || null,
     });
     if (!suggestion) return;
     setTitle((current) => {
@@ -83,7 +84,7 @@ export function QuickCreateContractDialog({
       lastSuggestion.current = suggestion;
       return suggestion;
     });
-  }, [open, role, companyName, ownEntityQuery.data]);
+  }, [open, role, companyName, startsAt, ownEntityQuery.data]);
 
   useEffect(() => {
     if (open) {

@@ -274,6 +274,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
           contractingName: f.contracting_name,
           counterpartyName: f.counterparty_name,
           ownName: ownEntity?.name ?? null,
+          startsAt: f.starts_at ?? null,
         }) ||
         f.title?.trim() ||
         "Contrato importado",
