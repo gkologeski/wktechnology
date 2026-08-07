@@ -38,6 +38,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { formatCurrency } from "@/lib/crm";
 import { listCatalogServiceOptions, linkCatalogServiceToContract } from "@/lib/services.functions";
 import { listJobProfileOptions } from "@/lib/job-profiles.functions";
+import { listContractingPresetOptions } from "@/lib/contracting-presets.functions";
 import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 
 type CatalogItem = {
@@ -60,6 +61,19 @@ type JobProfileOption = {
   currency: string;
   competencies: string[] | null;
   service_catalog_id: string | null;
+};
+
+type PresetOption = {
+  id: string;
+  name: string;
+  code: string | null;
+  service_catalog_id: string | null;
+  job_profile_id: string | null;
+  seniority: string | null;
+  competencies: string[] | null;
+  unit: string;
+  default_unit_price: number;
+  currency: string;
 };
 
 type Props = {
@@ -88,9 +102,13 @@ export function LinkCatalogServiceDialog({
 }: Props) {
   const listCatalog = useServerFn(listCatalogServiceOptions);
   const listProfiles = useServerFn(listJobProfileOptions);
+  const listPresets = useServerFn(listContractingPresetOptions);
   const link = useServerFn(linkCatalogServiceToContract);
 
   const [search, setSearch] = useState("");
+  const [presetSearch, setPresetSearch] = useState("");
+  const [presetPickerOpen, setPresetPickerOpen] = useState(false);
+  const [presetId, setPresetId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [profileSearch, setProfileSearch] = useState("");
@@ -120,6 +138,13 @@ export function LinkCatalogServiceDialog({
     staleTime: 60_000,
   });
 
+  const { data: presets = [] } = useQuery({
+    queryKey: ["contracting-preset-options"],
+    queryFn: () => listPresets({ data: {} }) as Promise<PresetOption[]>,
+    enabled: open,
+    staleTime: 60_000,
+  });
+
   const { data: profiles = [], isLoading: profilesLoading } = useQuery({
     queryKey: ["job-profile-options"],
     queryFn: () => listProfiles({ data: {} }) as Promise<JobProfileOption[]>,
@@ -130,6 +155,9 @@ export function LinkCatalogServiceDialog({
   useEffect(() => {
     if (open) {
       setSearch("");
+      setPresetSearch("");
+      setPresetPickerOpen(false);
+      setPresetId(null);
       setPickerOpen(false);
       setSelectedId(null);
       setProfileSearch("");
@@ -165,7 +193,19 @@ export function LinkCatalogServiceDialog({
     );
   }, [profiles, profileSearch]);
 
+  const filteredPresets = useMemo(() => {
+    const term = presetSearch.trim().toLowerCase();
+    if (!term) return presets;
+    return presets.filter(
+      (p) =>
+        p.name.toLowerCase().includes(term) ||
+        (p.code ?? "").toLowerCase().includes(term) ||
+        (p.competencies ?? []).some((c) => c.toLowerCase().includes(term)),
+    );
+  }, [presets, presetSearch]);
+
   const selected = catalog.find((c) => c.id === selectedId) ?? null;
+  const selectedPreset = presets.find((p) => p.id === presetId) ?? null;
   const selectedProfile = profiles.find((p) => p.id === jobProfileId) ?? null;
 
   function pick(item: CatalogItem) {
@@ -189,6 +229,22 @@ export function LinkCatalogServiceDialog({
       setUnitPrice(Number(p.default_unit_price));
     }
     setProfilePickerOpen(false);
+  }
+
+  // O preset é apenas um atalho: preenche linha de serviço, cargo, senioridade,
+  // stack e preço. Todos os campos continuam editáveis depois.
+  function pickPreset(p: PresetOption) {
+    setPresetId(p.id);
+    if (p.job_profile_id) setJobProfileId(p.job_profile_id);
+    setSeniority(p.seniority ?? "");
+    setCompetencies((p.competencies ?? []).join(", "));
+    if (p.service_catalog_id) setSelectedId(p.service_catalog_id);
+    const item = p.service_catalog_id
+      ? catalog.find((c) => c.id === p.service_catalog_id)
+      : undefined;
+    const price = Number(p.default_unit_price) || Number(item?.base_price) || 0;
+    if (price > 0) setUnitPrice(price);
+    setPresetPickerOpen(false);
   }
 
   async function submit() {
@@ -238,6 +294,103 @@ export function LinkCatalogServiceDialog({
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="preset-picker">Preset de contratação</Label>
+            <Popover open={presetPickerOpen} onOpenChange={setPresetPickerOpen} modal>
+              <PopoverTrigger asChild>
+                <Button
+                  id="preset-picker"
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={presetPickerOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {selectedPreset ? (
+                    <span className="min-w-0 truncate">{selectedPreset.name}</span>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      Opcional — preencher a partir de um preset
+                    </span>
+                  )}
+                  <ChevronsUpDown aria-hidden="true" className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-[--radix-popover-trigger-width] p-0"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <Command shouldFilter={false}>
+                  <CommandInput
+                    value={presetSearch}
+                    onValueChange={setPresetSearch}
+                    placeholder="Buscar preset por nome, código ou stack"
+                  />
+                  <CommandList>
+                    {filteredPresets.length === 0 ? (
+                      <div className="p-3 text-sm">
+                        <p className="text-muted-foreground">
+                          {presets.length === 0
+                            ? "Nenhum preset ativo cadastrado."
+                            : "Nenhum preset encontrado para esta busca."}
+                        </p>
+                        <Button asChild size="sm" variant="outline" className="mt-2">
+                          <Link
+                            to="/catalog/contracting-presets"
+                            onClick={() => onOpenChange(false)}
+                          >
+                            Abrir presets de contratação
+                          </Link>
+                        </Button>
+                      </div>
+                    ) : (
+                      <CommandGroup>
+                        {filteredPresets.map((p) => {
+                          const active = p.id === presetId;
+                          return (
+                            <CommandItem
+                              key={p.id}
+                              value={p.id}
+                              onSelect={() => pickPreset(p)}
+                              className="items-start gap-2"
+                            >
+                              <Check
+                                aria-hidden="true"
+                                className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${active ? "opacity-100" : "opacity-0"}`}
+                              />
+                              <span className="min-w-0 flex-1">
+                                <span className="flex items-center gap-2">
+                                  <span className="truncate font-medium">{p.name}</span>
+                                  {p.seniority ? (
+                                    <Badge variant="secondary" className="shrink-0">
+                                      {SENIORITY_LABEL[p.seniority] ?? p.seniority}
+                                    </Badge>
+                                  ) : null}
+                                </span>
+                                <span className="mt-0.5 block text-xs text-muted-foreground tabular-nums">
+                                  {p.code ? `${p.code} · ` : ""}
+                                  {formatCurrency(Number(p.default_unit_price), p.currency)} /{" "}
+                                  {p.unit}
+                                  {(p.competencies ?? []).length > 0
+                                    ? ` · ${(p.competencies ?? []).join(", ")}`
+                                    : ""}
+                                </span>
+                              </span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+            <p className="text-xs text-muted-foreground">
+              Preenche serviço, cargo, senioridade, stack e preço — tudo editável depois.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="catalog-picker">Serviço do catálogo *</Label>
             <Popover open={pickerOpen} onOpenChange={setPickerOpen} modal>

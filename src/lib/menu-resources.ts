@@ -56,6 +56,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/catalog/products": ["techsales.catalog.products"],
   "/catalog/services": ["techsales.catalog.services"],
   "/catalog/job-profiles": ["techsales.catalog.services"],
+  "/catalog/contracting-presets": ["techsales.catalog.services"],
   "/settings/products": ["techsales.catalog.products"],
   "/services/products": ["techsales.catalog.products"],
   "/leads/import-hubspot": ["system.import"],

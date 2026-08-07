@@ -2,7 +2,7 @@
 // empresa contraparte ou por serviço do catálogo associado.
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Building2, ChevronDown, Package } from "lucide-react";
+import { Briefcase, Building2, ChevronDown, Layers, Package } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 
 export type ContractRow = {
   id: string;
@@ -43,8 +44,14 @@ export type ContractGroupings = {
     serviceName: string;
     catalogId: string | null;
     catalogName: string | null;
+    jobProfileId?: string | null;
+    jobProfileName?: string | null;
+    seniority?: string | null;
   }[];
 };
+
+export type ContractGroupBy = "company" | "service" | "job_profile" | "seniority";
+
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
@@ -138,15 +145,25 @@ export function ContractsTable({ rows }: { rows: ContractRow[] }) {
   );
 }
 
-type Group = { key: string; label: string; rows: ContractRow[]; total: number; currency: string };
+type Group = {
+  key: string;
+  label: string;
+  sublabel?: string;
+  rows: ContractRow[];
+  total: number;
+  currency: string;
+  order?: number;
+};
+
+const SENIORITY_ORDER = new Map(SENIORITY_OPTIONS.map((s, i) => [s.value as string, i]));
 
 function buildGroups(
   rows: ContractRow[],
-  groupBy: "company" | "service",
+  groupBy: ContractGroupBy,
   groupings: ContractGroupings | undefined,
 ): Group[] {
   const map = new Map<string, Group>();
-  const push = (key: string, label: string, row: ContractRow) => {
+  const push = (key: string, label: string, row: ContractRow, order?: number) => {
     const existing = map.get(key);
     const value = Number(row.total_value ?? 0);
     if (existing) {
@@ -159,6 +176,7 @@ function buildGroups(
         rows: [row],
         total: value,
         currency: row.currency || "BRL",
+        ...(order === undefined ? {} : { order }),
       });
     }
   };
@@ -170,7 +188,7 @@ function buildGroups(
       if (companyId) push(companyId, names.get(companyId) ?? "Empresa sem nome", row);
       else push("__none__", "Sem empresa", row);
     }
-  } else {
+  } else if (groupBy === "service") {
     const byContract = new Map<string, { id: string; name: string }[]>();
     for (const s of groupings?.services ?? []) {
       if (!s.catalogId || !s.catalogName) continue;
@@ -183,15 +201,60 @@ function buildGroups(
       if (list.length === 0) push("__none__", "Sem serviço", row);
       else for (const item of list) push(item.id, item.name, row);
     }
+  } else if (groupBy === "job_profile") {
+    const byContract = new Map<string, { id: string; name: string }[]>();
+    for (const s of groupings?.services ?? []) {
+      if (!s.jobProfileId || !s.jobProfileName) continue;
+      const list = byContract.get(s.contractId) ?? [];
+      if (!list.some((i) => i.id === s.jobProfileId))
+        list.push({ id: s.jobProfileId, name: s.jobProfileName });
+      byContract.set(s.contractId, list);
+    }
+    for (const row of rows) {
+      const list = byContract.get(row.id) ?? [];
+      if (list.length === 0) push("__none__", "Sem cargo", row);
+      else for (const item of list) push(item.id, item.name, row);
+    }
+    // Quando todos os contratos do grupo são da mesma prestadora, exibimos o
+    // nome dela ao lado do cargo ("função + prestadora").
+    const companyNames = new Map((groupings?.companies ?? []).map((c) => [c.id, c.name]));
+    for (const group of map.values()) {
+      const ids = new Set(
+        group.rows.map((r) => r.counterparty_company_id ?? "").filter(Boolean) as string[],
+      );
+      if (ids.size === 1) {
+        const name = companyNames.get(Array.from(ids)[0] as string);
+        if (name) group.sublabel = name;
+      }
+    }
+  } else {
+    const byContract = new Map<string, string[]>();
+    for (const s of groupings?.services ?? []) {
+      if (!s.seniority) continue;
+      const list = byContract.get(s.contractId) ?? [];
+      if (!list.includes(s.seniority)) list.push(s.seniority);
+      byContract.set(s.contractId, list);
+    }
+    for (const row of rows) {
+      const list = byContract.get(row.id) ?? [];
+      if (list.length === 0) push("__none__", "Sem senioridade", row);
+      else
+        for (const value of list)
+          push(value, SENIORITY_LABEL[value] ?? value, row, SENIORITY_ORDER.get(value) ?? 99);
+    }
   }
 
   return Array.from(map.values()).sort((a, b) => {
     if (a.key === "__none__") return 1;
     if (b.key === "__none__") return -1;
+    if (a.order !== undefined || b.order !== undefined) {
+      return (a.order ?? 99) - (b.order ?? 99);
+    }
     if (b.rows.length !== a.rows.length) return b.rows.length - a.rows.length;
     return a.label.localeCompare(b.label, "pt-BR");
   });
 }
+
 
 export function ContractsGroupedList({
   rows,
@@ -202,7 +265,7 @@ export function ContractsGroupedList({
   onRetry,
 }: {
   rows: ContractRow[];
-  groupBy: "company" | "service";
+  groupBy: ContractGroupBy;
   groupings: ContractGroupings | undefined;
   isLoading?: boolean;
   isError?: boolean;
@@ -248,9 +311,16 @@ export function ContractsGroupedList({
   );
 }
 
-function GroupSection({ group, groupBy }: { group: Group; groupBy: "company" | "service" }) {
+const GROUP_ICON = {
+  company: Building2,
+  service: Package,
+  job_profile: Briefcase,
+  seniority: Layers,
+} as const;
+
+function GroupSection({ group, groupBy }: { group: Group; groupBy: ContractGroupBy }) {
   const [open, setOpen] = useState(true);
-  const Icon = groupBy === "company" ? Building2 : Package;
+  const Icon = GROUP_ICON[groupBy];
   return (
     <Collapsible
       open={open}
@@ -264,6 +334,9 @@ function GroupSection({ group, groupBy }: { group: Group; groupBy: "company" | "
         />
         <Icon aria-hidden="true" className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="font-medium truncate">{group.label}</span>
+        {group.sublabel ? (
+          <span className="text-sm text-muted-foreground truncate">· {group.sublabel}</span>
+        ) : null}
         <Badge variant="secondary" className="shrink-0">
           {group.rows.length}
         </Badge>
