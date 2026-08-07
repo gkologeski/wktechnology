@@ -215,16 +215,18 @@ export function ContractsTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {arranged.map(({ row: c, nested }) => (
+        {arranged.map(({ row: c, depth, linkKind }) => (
           <ContractTableRow
             key={c.id}
             contract={c}
-            nested={nested}
+            depth={depth}
+            linkKind={linkKind}
             selection={selection}
             editable={editable}
             onChanged={onChanged}
           />
         ))}
+
       </TableBody>
     </Table>
   );
