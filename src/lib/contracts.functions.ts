@@ -104,7 +104,47 @@ export const getContract = createServerFn({ method: "POST" })
       .eq("parent_contract_id", data.id)
       .order("created_at", { ascending: true });
 
-    return { ...row, parent, children: children ?? [] };
+    // Aditivos: contrato principal deste aditivo e aditivos deste contrato.
+    const AMENDMENT_COLS =
+      "id, number, title, status, total_value, currency, role, starts_at, ends_at, amendment_number, amendment_effective_at, document_kind";
+    type AmendmentRow = {
+      id: string;
+      number: string | null;
+      title: string;
+      status: string;
+      total_value: number;
+      currency: string;
+      role: "provider" | "client";
+      starts_at: string | null;
+      ends_at: string | null;
+      amendment_number: string | null;
+      amendment_effective_at: string | null;
+      document_kind: string;
+    };
+    let amendmentOf: AmendmentRow | null = null;
+    const rowAny = row as unknown as { amendment_of_id?: string | null };
+    if (rowAny.amendment_of_id) {
+      const { data: a } = await supabase
+        .from("contracts")
+        .select(AMENDMENT_COLS)
+        .eq("id", rowAny.amendment_of_id)
+        .maybeSingle();
+      if (a) amendmentOf = a as unknown as AmendmentRow;
+    }
+    const { data: amendments } = await supabase
+      .from("contracts")
+      .select(AMENDMENT_COLS)
+      .eq("amendment_of_id", data.id)
+      .order("amendment_effective_at", { ascending: true });
+
+    return {
+      ...row,
+      parent,
+      children: children ?? [],
+      amendmentOf,
+      amendments: (amendments ?? []) as unknown as AmendmentRow[],
+    };
+
   });
 
 // ============= LINKABLE (para o seletor de vínculo) =============
@@ -244,6 +284,101 @@ export const linkContractParent = createServerFn({ method: "POST" })
     return row;
   });
 
+// ============= ADITIVOS (amendments) =============
+// O vínculo de aditivo é independente de `parent_contract_id`, que já é usado
+// para o pareamento Prestação ↔ Compra (outsourcing).
+
+export const searchMainContracts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        q: z.string().optional(),
+        role: roleEnum.optional(),
+        excludeId: z.string().uuid().optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    let query = supabase
+      .from("contracts")
+      .select("id, number, title, status, total_value, currency, role, counterparty_company_id")
+      .eq("document_kind", "main")
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 20);
+    if (data.role) query = query.eq("role", data.role);
+    if (data.excludeId) query = query.neq("id", data.excludeId);
+    if (data.q && data.q.trim()) {
+      const t = `%${data.q.trim()}%`;
+      query = query.or(`title.ilike.${t},number.ilike.${t}`);
+    }
+    const { data: rows, error } = await query;
+    if (error) throw error;
+    return rows ?? [];
+  });
+
+export const linkContractAmendment = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        amendmentId: z.string().uuid(),
+        mainContractId: z.string().uuid().nullable(),
+        amendmentNumber: z.string().nullable().optional(),
+        effectiveAt: z.string().nullable().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+      "techcontracts.contracts.update.workspace",
+    ]);
+
+    if (data.mainContractId === data.amendmentId) {
+      throw new Error("Um contrato não pode ser aditivo de si mesmo.");
+    }
+
+    const patch = data.mainContractId
+      ? {
+          document_kind: "amendment",
+          amendment_of_id: data.mainContractId,
+          amendment_number: data.amendmentNumber ?? null,
+          amendment_effective_at: data.effectiveAt ?? null,
+        }
+      : {
+          document_kind: "main",
+          amendment_of_id: null,
+          amendment_number: null,
+          amendment_effective_at: null,
+        };
+
+    const { data: row, error } = await supabase
+      .from("contracts")
+      .update(patch as never)
+      .eq("id", data.amendmentId)
+      .select("id, document_kind, amendment_of_id")
+      .maybeSingle();
+    if (error) throw error;
+    if (!row) throw new Error("Você não tem permissão para alterar este contrato.");
+
+    await (supabase as any).from("contract_events").insert({
+      workspace_id: workspaceId,
+      contract_id: data.amendmentId,
+      actor_id: userId,
+      event_type: data.mainContractId ? "amendment_linked" : "amendment_unlinked",
+      payload: { amendment_of_id: data.mainContractId },
+    });
+
+    return row;
+  });
+
+
+
 
 // ============= CREATE =============
 
@@ -343,7 +478,13 @@ const patchInput = z.object({
   patch: z
     .object({
       title: z.string().min(1).optional(),
+      document_kind: z.enum(["main", "amendment"]).optional(),
+      amendment_of_id: z.string().uuid().nullable().optional(),
+      amendment_number: z.string().nullable().optional(),
+      amendment_effective_at: z.string().nullable().optional(),
+      assigned_to: z.string().uuid().nullable().optional(),
       role: roleEnum.optional(),
+
       status: statusEnum.optional(),
       counterparty_company_id: z.string().uuid().nullable().optional(),
       contracting_legal_entity_id: z.string().uuid().nullable().optional(),
