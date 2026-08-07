@@ -4721,6 +4721,91 @@ export type Database = {
         }
         Relationships: []
       }
+      contracting_presets: {
+        Row: {
+          active: boolean
+          code: string | null
+          competencies: string[]
+          created_at: string
+          currency: string
+          default_unit_cost: number
+          default_unit_price: number
+          description: string | null
+          id: string
+          job_profile_id: string | null
+          name: string
+          notes: string | null
+          owner_id: string
+          seniority: string | null
+          service_catalog_id: string | null
+          unit: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          code?: string | null
+          competencies?: string[]
+          created_at?: string
+          currency?: string
+          default_unit_cost?: number
+          default_unit_price?: number
+          description?: string | null
+          id?: string
+          job_profile_id?: string | null
+          name: string
+          notes?: string | null
+          owner_id?: string
+          seniority?: string | null
+          service_catalog_id?: string | null
+          unit?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          code?: string | null
+          competencies?: string[]
+          created_at?: string
+          currency?: string
+          default_unit_cost?: number
+          default_unit_price?: number
+          description?: string | null
+          id?: string
+          job_profile_id?: string | null
+          name?: string
+          notes?: string | null
+          owner_id?: string
+          seniority?: string | null
+          service_catalog_id?: string | null
+          unit?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracting_presets_job_profile_id_fkey"
+            columns: ["job_profile_id"]
+            isOneToOne: false
+            referencedRelation: "job_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracting_presets_service_catalog_id_fkey"
+            columns: ["service_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracting_presets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contracts: {
         Row: {
           assigned_to: string | null
