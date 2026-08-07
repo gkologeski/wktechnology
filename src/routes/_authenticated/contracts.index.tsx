@@ -230,7 +230,26 @@ function ContractsPage() {
             </SelectContent>
           </Select>
         </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="nest-amendments"
+            checked={nestAmendments}
+            onCheckedChange={(v) => setNestAmendments(v === true)}
+          />
+          <Label htmlFor="nest-amendments" className="text-sm text-muted-foreground">
+            Aninhar aditivos
+          </Label>
+        </div>
       </div>
+
+      {selectedRows.length > 0 ? (
+        <ContractsBulkBar
+          selected={selectedRows}
+          onClear={() => setSelectedIds(new Set())}
+          canDelete={(row) => canDeleteRecord(row)}
+          canDeleteLoading={deletePermLoading}
+        />
+      ) : null}
 
       {isLoading ? (
         <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -249,7 +268,12 @@ function ContractsPage() {
         </div>
       ) : groupBy === "none" ? (
         <div className="rounded-lg border bg-card">
-          <ContractsTable rows={filtered} />
+          <ContractsTable
+            rows={filtered}
+            selection={selection}
+            editable
+            nestAmendments={nestAmendments}
+          />
         </div>
       ) : (
         <ContractsGroupedList
@@ -259,7 +283,11 @@ function ContractsPage() {
           isLoading={groupQuery.isLoading}
           isError={groupQuery.isError}
           onRetry={() => groupQuery.refetch()}
+          selection={selection}
+          editable
+          nestAmendments={nestAmendments}
         />
+
       )}
 
       <QuickCreateContractDialog
