@@ -234,17 +234,20 @@ export function ContractsTable({
 
 function ContractTableRow({
   contract: c,
-  nested,
+  depth,
+  linkKind,
   selection,
   editable,
   onChanged,
 }: {
   contract: ContractRow;
-  nested: boolean;
+  depth: number;
+  linkKind: ArrangedContract["linkKind"];
   selection?: ContractsSelection;
   editable: boolean;
   onChanged?: () => void;
 }) {
+
   const qc = useQueryClient();
   const update = useServerFn(updateContract);
   const [saving, setSaving] = useState(false);
