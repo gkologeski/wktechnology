@@ -12,6 +12,7 @@ import {
   CreateFromImportSchema,
   type ExtractedContract,
 } from "@/lib/contracts/import-schemas";
+import { buildContractTitle } from "@/lib/contracts/title";
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
