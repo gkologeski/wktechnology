@@ -481,6 +481,16 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                             <span className="break-words">{i.message}</span>
                           </span>
                         )}
+                        {i.linkMessage ? (
+                          <span
+                            className={`mt-1 text-xs flex items-start gap-1 ${
+                              i.linkError ? "text-destructive" : "text-muted-foreground"
+                            }`}
+                          >
+                            <Link2 className="h-3 w-3 mt-0.5 shrink-0" />
+                            <span className="break-words">{i.linkMessage}</span>
+                          </span>
+                        ) : null}
                       </td>
                       <td className="p-2 text-right">
                         {i.status === "done" && i.contractId ? (
@@ -510,7 +520,113 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                         )}
                       </td>
                     </tr>
+                    {i.docKind === "amendment" && i.status !== "done" ? (
+                      <tr className="bg-muted/20">
+                        <td colSpan={5} className="p-2">
+                          <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                Contrato principal
+                              </span>
+                              {i.mainFromKey ? (
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="truncate">
+                                    Neste lote:{" "}
+                                    {items.find((x) => x.key === i.mainFromKey)?.file.name ?? "—"}
+                                  </Badge>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={processing}
+                                    onClick={() => patchItem(i.key, { mainFromKey: undefined })}
+                                  >
+                                    Trocar
+                                  </Button>
+                                </div>
+                              ) : (
+                                <MainContractPicker
+                                  value={i.mainContract}
+                                  onChange={(next) =>
+                                    patchItem(i.key, { mainContract: next, mainFromKey: undefined })
+                                  }
+                                  disabled={processing}
+                                  ariaLabel={`Contrato principal de ${i.file.name}`}
+                                />
+                              )}
+                              {items.some((x) => x.docKind === "main" && x.key !== i.key) &&
+                              !i.mainFromKey ? (
+                                <Select
+                                  value=""
+                                  onValueChange={(v) =>
+                                    patchItem(i.key, { mainFromKey: v, mainContract: null })
+                                  }
+                                  disabled={processing}
+                                >
+                                  <SelectTrigger
+                                    aria-label={`Usar arquivo do lote como principal de ${i.file.name}`}
+                                    className="h-8 text-xs"
+                                  >
+                                    <SelectValue placeholder="Ou usar um arquivo deste lote…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {items
+                                      .filter((x) => x.docKind === "main" && x.key !== i.key)
+                                      .map((x) => (
+                                        <SelectItem key={x.key} value={x.key}>
+                                          {x.title ?? x.file.name}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : null}
+                              {!i.mainContract && !i.mainFromKey ? (
+                                <span className="text-xs text-destructive">
+                                  Escolha o contrato principal para processar este aditivo.
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="space-y-1">
+                              <label
+                                className="text-xs font-medium text-muted-foreground"
+                                htmlFor={`amd-num-${i.key}`}
+                              >
+                                Nº do aditivo (opcional)
+                              </label>
+                              <Input
+                                id={`amd-num-${i.key}`}
+                                value={i.amendmentNumber ?? ""}
+                                disabled={processing}
+                                placeholder="Ex.: 1"
+                                onChange={(e) =>
+                                  patchItem(i.key, { amendmentNumber: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label
+                                className="text-xs font-medium text-muted-foreground"
+                                htmlFor={`amd-date-${i.key}`}
+                              >
+                                Vigência (opcional)
+                              </label>
+                              <Input
+                                id={`amd-date-${i.key}`}
+                                type="date"
+                                value={i.amendmentEffectiveAt ?? ""}
+                                disabled={processing}
+                                onChange={(e) =>
+                                  patchItem(i.key, { amendmentEffectiveAt: e.target.value })
+                                }
+                              />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null}
+                    </Fragment>
                   ))}
+
                 </tbody>
               </table>
             </div>
