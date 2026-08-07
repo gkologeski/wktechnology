@@ -51,10 +51,14 @@ Regras da etapa 2:
 ## Fase 3 — Contratos de prestação e compra em pessoas
 
 - A alocação da pessoa hoje guarda **um** contrato. Passa a guardar dois: contrato de prestação e contrato de compra.
-- No painel de Alocação (TechPeople), dois seletores separados e rotulados, cada um filtrando apenas contratos do tipo correspondente, com busca por número/título/empresa.
+- Regra de elegibilidade: o seletor de contrato de compra em TechPeople oferece apenas contratos cujo **CONTRATANTE é um CNPJ cadastrado nas entidades legais do workspace** — são os contratos em que compramos mão de obra de prestadores, que é justamente o que o TechPeople administra. Contratos de compra cujo contratante não é CNPJ do workspace não aparecem.
+- A comparação usa o CNPJ do contratante extraído na importação (e o campo de entidade legal contratante do contrato quando já preenchido), normalizado para 14 dígitos, contra os CNPJs das entidades legais do workspace.
+- Durante a importação, contratos de compra com contratante = CNPJ do workspace já são marcados como elegíveis para TechPeople, para facilitar a associação.
+- No painel de Alocação, dois seletores separados e rotulados (Prestação / Compra), com busca por número/título/empresa.
 - A listagem de alocações mostra os dois contratos quando existirem.
 - Compatibilidade: alocações existentes continuam funcionando — o contrato atual é tratado como o contrato de prestação e nada é apagado.
 - As sugestões de cargo/senioridade já existentes continuam saindo do contrato de prestação.
+
 
 ## Detalhes técnicos
 
