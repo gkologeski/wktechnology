@@ -210,7 +210,10 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       if (roleTitle && !(p.role_title ?? "").trim()) patch.role_title = roleTitle;
       if (seniority && !(p.seniority ?? "").trim()) patch.seniority = seniority;
       if (Object.keys(patch).length === 0) return;
-      await supabase.from("people").update(patch as never).eq("id", data.person_id);
+      await supabase
+        .from("people")
+        .update(patch as never)
+        .eq("id", data.person_id);
     }
     if (data.id) {
       const { error } = await supabase
@@ -236,16 +239,16 @@ export const deleteAllocation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_allocations")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("people_allocations").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
 
 // Cálculo de margem por alocação: (billable - cost) * allocation_pct / 100
-export function computeMonthlyMargin(row: AllocationRow, hoursPerMonth = 160): {
+export function computeMonthlyMargin(
+  row: AllocationRow,
+  hoursPerMonth = 160,
+): {
   revenue: number;
   cost: number;
   margin: number;
