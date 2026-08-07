@@ -410,13 +410,15 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                   <tr>
                     <th className="p-2 text-left font-medium">Arquivo</th>
                     <th className="p-2 text-left font-medium w-44">Tipo</th>
+                    <th className="p-2 text-left font-medium w-36">Documento</th>
                     <th className="p-2 text-left font-medium w-56">Status</th>
                     <th className="p-2 w-10" />
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((i) => (
-                    <tr key={i.key} className="border-t">
+                    <Fragment key={i.key}>
+                    <tr className="border-t">
                       <td className="p-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -442,6 +444,22 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                           </SelectContent>
                         </Select>
                       </td>
+                      <td className="p-2">
+                        <Select
+                          value={i.docKind}
+                          onValueChange={(v) => setDocKind(i.key, v as DocKind)}
+                          disabled={processing || i.status === "done"}
+                        >
+                          <SelectTrigger aria-label={`Tipo de documento de ${i.file.name}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="main">Principal</SelectItem>
+                            <SelectItem value="amendment">Aditivo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+
                       <td className="p-2">
                         {i.status === "queued" && (
                           <span className="text-xs text-muted-foreground">Na fila</span>
