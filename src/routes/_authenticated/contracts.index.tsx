@@ -153,7 +153,7 @@ function ContractsPage() {
   const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
   const [openFilters, setOpenFilters] = useState(false);
-  const [nestLinks, setNestAmendments] = useState(true);
+  const [nestLinks, setNestLinks] = useState(true);
   const [selectedMap, setSelectedMap] = useState<Map<string, ContractRow>>(new Map());
 
   // Atualiza a busca na URL com debounce, voltando para a página 1.
