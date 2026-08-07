@@ -50,6 +50,8 @@ export function normalizePartyName(value: string | null | undefined): string | n
         .replace(/[\s-]+\S*$/, "")
         .trim() || name.slice(0, MAX_PARTY_CHARS);
   }
+  // Remove pontuação/conectores soltos nas pontas (ex.: "GM KOLOGESKI &").
+  name = name.replace(/^[\s&/\-–—+.]+|[\s&/\-–—+.]+$/g, "").trim();
   return name || null;
 }
 
