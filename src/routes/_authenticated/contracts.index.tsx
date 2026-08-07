@@ -26,6 +26,10 @@ import {
   ContractsGroupedList,
   type ContractRow,
 } from "@/components/contracts/contracts-grouped-list";
+import { ContractsBulkBar } from "@/components/contracts/contracts-bulk-bar";
+import { useCanDelete } from "@/lib/access-control/use-can-delete";
+import { Checkbox } from "@/components/ui/checkbox";
+
 
 type GroupBy = "none" | "company" | "service" | "job_profile" | "seniority";
 
@@ -66,6 +70,7 @@ function ContractsPage() {
   const list = useServerFn(listContracts);
   const groupings = useServerFn(listContractGroupings);
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techcontracts.contracts");
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
@@ -73,6 +78,9 @@ function ContractsPage() {
   const [openImport, setOpenImport] = useState(false);
   const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
+  const [nestAmendments, setNestAmendments] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["contracts", { role, status, search }],
@@ -106,6 +114,36 @@ function ContractsPage() {
     queryFn: () => groupings({ data: { contractIds } }),
     enabled: groupBy !== "none" && contractIds.length > 0,
   });
+
+  const selection = useMemo(
+    () => ({
+      selectedIds,
+      onToggle: (id: string) =>
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        }),
+      onToggleMany: (ids: string[], checked: boolean) =>
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          for (const id of ids) {
+            if (checked) next.add(id);
+            else next.delete(id);
+          }
+          return next;
+        }),
+    }),
+    [selectedIds],
+  );
+
+  const selectedRows = useMemo(
+    () => filtered.filter((c) => selectedIds.has(c.id)),
+    [filtered, selectedIds],
+  );
+
+
 
   return (
     <div className="p-6 space-y-5">
@@ -192,7 +230,26 @@ function ContractsPage() {
             </SelectContent>
           </Select>
         </div>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="nest-amendments"
+            checked={nestAmendments}
+            onCheckedChange={(v) => setNestAmendments(v === true)}
+          />
+          <Label htmlFor="nest-amendments" className="text-sm text-muted-foreground">
+            Aninhar aditivos
+          </Label>
+        </div>
       </div>
+
+      {selectedRows.length > 0 ? (
+        <ContractsBulkBar
+          selected={selectedRows}
+          onClear={() => setSelectedIds(new Set())}
+          canDelete={(row) => canDeleteRecord(row)}
+          canDeleteLoading={deletePermLoading}
+        />
+      ) : null}
 
       {isLoading ? (
         <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -211,7 +268,12 @@ function ContractsPage() {
         </div>
       ) : groupBy === "none" ? (
         <div className="rounded-lg border bg-card">
-          <ContractsTable rows={filtered} />
+          <ContractsTable
+            rows={filtered}
+            selection={selection}
+            editable
+            nestAmendments={nestAmendments}
+          />
         </div>
       ) : (
         <ContractsGroupedList
@@ -221,7 +283,11 @@ function ContractsPage() {
           isLoading={groupQuery.isLoading}
           isError={groupQuery.isError}
           onRetry={() => groupQuery.refetch()}
+          selection={selection}
+          editable
+          nestAmendments={nestAmendments}
         />
+
       )}
 
       <QuickCreateContractDialog

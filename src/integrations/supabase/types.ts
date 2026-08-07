@@ -4808,6 +4808,9 @@ export type Database = {
       }
       contracts: {
         Row: {
+          amendment_effective_at: string | null
+          amendment_number: string | null
+          amendment_of_id: string | null
           assigned_to: string | null
           auto_renew: boolean
           body_html: string | null
@@ -4818,6 +4821,7 @@ export type Database = {
           cure_period_days: number | null
           currency: string
           deal_id: string | null
+          document_kind: string
           ends_at: string | null
           expense_reimbursement_days: number | null
           governing_law: string | null
@@ -4861,6 +4865,9 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          amendment_effective_at?: string | null
+          amendment_number?: string | null
+          amendment_of_id?: string | null
           assigned_to?: string | null
           auto_renew?: boolean
           body_html?: string | null
@@ -4871,6 +4878,7 @@ export type Database = {
           cure_period_days?: number | null
           currency?: string
           deal_id?: string | null
+          document_kind?: string
           ends_at?: string | null
           expense_reimbursement_days?: number | null
           governing_law?: string | null
@@ -4914,6 +4922,9 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          amendment_effective_at?: string | null
+          amendment_number?: string | null
+          amendment_of_id?: string | null
           assigned_to?: string | null
           auto_renew?: boolean
           body_html?: string | null
@@ -4924,6 +4935,7 @@ export type Database = {
           cure_period_days?: number | null
           currency?: string
           deal_id?: string | null
+          document_kind?: string
           ends_at?: string | null
           expense_reimbursement_days?: number | null
           governing_law?: string | null
@@ -4967,6 +4979,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contracts_amendment_of_id_fkey"
+            columns: ["amendment_of_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contracts_contracting_legal_entity_id_fkey"
             columns: ["contracting_legal_entity_id"]

@@ -1,12 +1,27 @@
 // Tabela de contratos reutilizável (visão plana) e visão agrupada por
-// empresa contraparte ou por serviço do catálogo associado.
+// empresa contraparte, serviço do catálogo, cargo ou senioridade.
+// A tabela suporta seleção múltipla e edição inline dos campos operacionais
+// (status, responsável, vigência e valor). A gravação usa as server functions
+// existentes, que continuam validando permissão e workspace.
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Briefcase, Building2, ChevronDown, Layers, Package } from "lucide-react";
+import { Briefcase, Building2, ChevronDown, CornerDownRight, Layers, Package } from "lucide-react";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -16,8 +31,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
+import { AssigneeField } from "@/components/entity/assignee-field";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
+import { updateContract } from "@/lib/contracts.functions";
 
 export type ContractRow = {
   id: string;
@@ -33,6 +50,9 @@ export type ContractRow = {
   imported_from?: string | null;
   counterparty_company_id?: string | null;
   assigned_to?: string | null;
+  document_kind?: string | null;
+  amendment_of_id?: string | null;
+  amendment_number?: string | null;
 };
 
 export type ContractGroupings = {
@@ -52,6 +72,11 @@ export type ContractGroupings = {
 
 export type ContractGroupBy = "company" | "service" | "job_profile" | "seniority";
 
+export type ContractsSelection = {
+  selectedIds: Set<string>;
+  onToggle: (id: string) => void;
+  onToggleMany: (ids: string[], checked: boolean) => void;
+};
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
@@ -80,11 +105,77 @@ const ROLE_LABEL: Record<string, string> = {
   client: "Compra",
 };
 
-export function ContractsTable({ rows }: { rows: ContractRow[] }) {
+const STATUS_VALUES = Object.keys(STATUS_LABEL);
+
+function dateOnly(value: string | null | undefined) {
+  return value ? value.slice(0, 10) : "";
+}
+
+/**
+ * Ordena as linhas colocando cada aditivo imediatamente abaixo do seu contrato
+ * principal (quando ele está na lista). Retorna a marcação de indentação.
+ */
+export function arrangeWithAmendments(
+  rows: ContractRow[],
+  nest: boolean,
+): { row: ContractRow; nested: boolean }[] {
+  if (!nest) return rows.map((row) => ({ row, nested: false }));
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  const childrenByMain = new Map<string, ContractRow[]>();
+  for (const r of rows) {
+    const mainId = r.amendment_of_id ?? null;
+    if (mainId && byId.has(mainId)) {
+      const list = childrenByMain.get(mainId) ?? [];
+      list.push(r);
+      childrenByMain.set(mainId, list);
+    }
+  }
+  const out: { row: ContractRow; nested: boolean }[] = [];
+  for (const r of rows) {
+    const mainId = r.amendment_of_id ?? null;
+    if (mainId && byId.has(mainId)) continue; // entra sob o principal
+    out.push({ row: r, nested: false });
+    for (const child of childrenByMain.get(r.id) ?? []) {
+      out.push({ row: child, nested: true });
+    }
+  }
+  return out;
+}
+
+export function ContractsTable({
+  rows,
+  selection,
+  editable = false,
+  nestAmendments = false,
+  onChanged,
+}: {
+  rows: ContractRow[];
+  selection?: ContractsSelection;
+  editable?: boolean;
+  nestAmendments?: boolean;
+  onChanged?: () => void;
+}) {
+  const arranged = useMemo(
+    () => arrangeWithAmendments(rows, nestAmendments),
+    [rows, nestAmendments],
+  );
+  const ids = useMemo(() => rows.map((r) => r.id), [rows]);
+  const allSelected = selection ? ids.length > 0 && ids.every((id) => selection.selectedIds.has(id)) : false;
+  const someSelected = selection ? ids.some((id) => selection.selectedIds.has(id)) : false;
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
+          {selection ? (
+            <TableHead className="w-10">
+              <Checkbox
+                aria-label="Selecionar todos os contratos"
+                checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                onCheckedChange={(checked) => selection.onToggleMany(ids, checked === true)}
+              />
+            </TableHead>
+          ) : null}
           <TableHead>Número</TableHead>
           <TableHead>Título</TableHead>
           <TableHead>Tipo</TableHead>
@@ -96,52 +187,201 @@ export function ContractsTable({ rows }: { rows: ContractRow[] }) {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rows.map((c) => (
-          <TableRow key={c.id} className="cursor-pointer">
-            <TableCell className="font-mono text-xs">
-              <Link to="/contracts/$id" params={{ id: c.id }} className="hover:underline">
-                {c.number ?? "—"}
-              </Link>
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center gap-2">
-                <Link
-                  to="/contracts/$id"
-                  params={{ id: c.id }}
-                  className="font-medium hover:underline"
-                >
-                  {c.title}
-                </Link>
-                {c.imported_from ? (
-                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
-                    Importado
-                  </Badge>
-                ) : null}
-              </div>
-            </TableCell>
-            <TableCell className="text-sm">{ROLE_LABEL[c.role] ?? c.role}</TableCell>
-            <TableCell>
-              <Badge variant="outline" className={STATUS_TONE[c.status] ?? ""}>
-                {STATUS_LABEL[c.status] ?? c.status}
-              </Badge>
-            </TableCell>
-            <TableCell className="text-right tabular-nums">
-              {formatCurrency(Number(c.total_value ?? 0), c.currency)}
-            </TableCell>
-            <TableCell className="text-xs text-muted-foreground">
-              {c.starts_at ? formatDateTime(c.starts_at).split(" ")[0] : "—"}
-              {c.ends_at ? ` → ${formatDateTime(c.ends_at).split(" ")[0]}` : ""}
-            </TableCell>
-            <TableCell>
-              <AssigneeCell assignedTo={c.assigned_to} />
-            </TableCell>
-            <TableCell className="text-xs text-muted-foreground">
-              {formatDateTime(c.created_at)}
-            </TableCell>
-          </TableRow>
+        {arranged.map(({ row: c, nested }) => (
+          <ContractTableRow
+            key={c.id}
+            contract={c}
+            nested={nested}
+            selection={selection}
+            editable={editable}
+            onChanged={onChanged}
+          />
         ))}
       </TableBody>
     </Table>
+  );
+}
+
+function ContractTableRow({
+  contract: c,
+  nested,
+  selection,
+  editable,
+  onChanged,
+}: {
+  contract: ContractRow;
+  nested: boolean;
+  selection?: ContractsSelection;
+  editable: boolean;
+  onChanged?: () => void;
+}) {
+  const qc = useQueryClient();
+  const update = useServerFn(updateContract);
+  const [saving, setSaving] = useState(false);
+
+  const isAmendment = c.document_kind === "amendment" || Boolean(c.amendment_of_id);
+  const selected = selection?.selectedIds.has(c.id) ?? false;
+
+  async function patch(patchData: Record<string, unknown>, label: string) {
+    setSaving(true);
+    try {
+      await update({ data: { id: c.id, patch: patchData as never } });
+      toast.success(`${label} atualizado.`);
+      await qc.invalidateQueries({ queryKey: ["contracts"] });
+      await qc.invalidateQueries({ queryKey: ["contract", c.id] });
+      onChanged?.();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <TableRow data-state={selected ? "selected" : undefined}>
+      {selection ? (
+        <TableCell className="w-10">
+          <Checkbox
+            aria-label={`Selecionar contrato ${c.title}`}
+            checked={selected}
+            onCheckedChange={() => selection.onToggle(c.id)}
+          />
+        </TableCell>
+      ) : null}
+      <TableCell className="font-mono text-xs">
+        <Link to="/contracts/$id" params={{ id: c.id }} className="hover:underline">
+          {c.number ?? "—"}
+        </Link>
+      </TableCell>
+      <TableCell>
+        <div className={`flex items-center gap-2 ${nested ? "pl-5" : ""}`}>
+          {nested ? (
+            <CornerDownRight
+              className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
+          ) : null}
+          <Link
+            to="/contracts/$id"
+            params={{ id: c.id }}
+            className="font-medium hover:underline truncate"
+          >
+            {c.title}
+          </Link>
+          {isAmendment ? (
+            <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
+              Aditivo{c.amendment_number ? ` ${c.amendment_number}` : ""}
+            </Badge>
+          ) : null}
+          {c.imported_from ? (
+            <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
+              Importado
+            </Badge>
+          ) : null}
+        </div>
+      </TableCell>
+      <TableCell className="text-sm">{ROLE_LABEL[c.role] ?? c.role}</TableCell>
+      <TableCell>
+        {editable ? (
+          <Select
+            value={c.status}
+            disabled={saving}
+            onValueChange={(next) => void patch({ status: next }, "Status")}
+          >
+            <SelectTrigger className="h-8 w-40" aria-label={`Status do contrato ${c.title}`}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_VALUES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Badge variant="outline" className={STATUS_TONE[c.status] ?? ""}>
+            {STATUS_LABEL[c.status] ?? c.status}
+          </Badge>
+        )}
+      </TableCell>
+      <TableCell className="text-right tabular-nums">
+        {editable ? (
+          <Input
+            type="number"
+            min={0}
+            step="0.01"
+            defaultValue={Number(c.total_value ?? 0)}
+            disabled={saving}
+            aria-label={`Valor total do contrato ${c.title}`}
+            className="h-8 w-32 text-right"
+            onBlur={(e) => {
+              const next = Number(e.target.value);
+              if (Number.isNaN(next) || next < 0) return;
+              if (next === Number(c.total_value ?? 0)) return;
+              void patch({ total_value: next }, "Valor");
+            }}
+          />
+        ) : (
+          formatCurrency(Number(c.total_value ?? 0), c.currency)
+        )}
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
+        {editable ? (
+          <div className="flex items-center gap-1">
+            <Input
+              type="date"
+              defaultValue={dateOnly(c.starts_at)}
+              disabled={saving}
+              aria-label={`Início da vigência do contrato ${c.title}`}
+              className="h-8 w-32"
+              onBlur={(e) => {
+                const next = e.target.value || null;
+                if (next === (dateOnly(c.starts_at) || null)) return;
+                void patch({ starts_at: next }, "Início da vigência");
+              }}
+            />
+            <span aria-hidden="true">→</span>
+            <Input
+              type="date"
+              defaultValue={dateOnly(c.ends_at)}
+              disabled={saving}
+              aria-label={`Fim da vigência do contrato ${c.title}`}
+              className="h-8 w-32"
+              onBlur={(e) => {
+                const next = e.target.value || null;
+                if (next === (dateOnly(c.ends_at) || null)) return;
+                void patch({ ends_at: next }, "Fim da vigência");
+              }}
+            />
+          </div>
+        ) : (
+          <>
+            {c.starts_at ? formatDateTime(c.starts_at).split(" ")[0] : "—"}
+            {c.ends_at ? ` → ${formatDateTime(c.ends_at).split(" ")[0]}` : ""}
+          </>
+        )}
+      </TableCell>
+      <TableCell>
+        {editable ? (
+          <AssigneeField
+            table="contracts"
+            rowId={c.id}
+            assignedTo={c.assigned_to}
+            compact
+            onChanged={() => {
+              void qc.invalidateQueries({ queryKey: ["contracts"] });
+              onChanged?.();
+            }}
+          />
+        ) : (
+          <AssigneeCell assignedTo={c.assigned_to} />
+        )}
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
+        {formatDateTime(c.created_at)}
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -263,6 +503,9 @@ export function ContractsGroupedList({
   isLoading,
   isError,
   onRetry,
+  selection,
+  editable = false,
+  nestAmendments = false,
 }: {
   rows: ContractRow[];
   groupBy: ContractGroupBy;
@@ -270,6 +513,9 @@ export function ContractsGroupedList({
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
+  selection?: ContractsSelection;
+  editable?: boolean;
+  nestAmendments?: boolean;
 }) {
   const groups = useMemo(() => buildGroups(rows, groupBy, groupings), [rows, groupBy, groupings]);
 
@@ -305,7 +551,14 @@ export function ContractsGroupedList({
   return (
     <div className="space-y-3">
       {groups.map((g) => (
-        <GroupSection key={g.key} group={g} groupBy={groupBy} />
+        <GroupSection
+          key={g.key}
+          group={g}
+          groupBy={groupBy}
+          {...(selection ? { selection } : {})}
+          editable={editable}
+          nestAmendments={nestAmendments}
+        />
       ))}
     </div>
   );
@@ -318,7 +571,19 @@ const GROUP_ICON = {
   seniority: Layers,
 } as const;
 
-function GroupSection({ group, groupBy }: { group: Group; groupBy: ContractGroupBy }) {
+function GroupSection({
+  group,
+  groupBy,
+  selection,
+  editable = false,
+  nestAmendments = false,
+}: {
+  group: Group;
+  groupBy: ContractGroupBy;
+  selection?: ContractsSelection;
+  editable?: boolean;
+  nestAmendments?: boolean;
+}) {
   const [open, setOpen] = useState(true);
   const Icon = GROUP_ICON[groupBy];
   return (
@@ -346,7 +611,12 @@ function GroupSection({ group, groupBy }: { group: Group; groupBy: ContractGroup
       </CollapsibleTrigger>
       <CollapsibleContent>
         <div className="border-t">
-          <ContractsTable rows={group.rows} />
+          <ContractsTable
+            rows={group.rows}
+            {...(selection ? { selection } : {})}
+            editable={editable}
+            nestAmendments={nestAmendments}
+          />
         </div>
       </CollapsibleContent>
     </Collapsible>

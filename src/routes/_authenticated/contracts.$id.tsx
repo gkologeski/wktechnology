@@ -23,6 +23,11 @@ import { getContract, updateContract, deleteContract } from "@/lib/contracts.fun
 import { ContractServices } from "@/components/services/contract-services";
 import { ContractApprovalsPanel } from "@/components/contracts/contract-approvals-panel";
 import { ContractParentLink } from "@/components/contracts/contract-parent-link";
+import {
+  ContractAmendmentsPanel,
+  type AmendmentRow,
+} from "@/components/contracts/contract-amendments-panel";
+
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -333,6 +338,20 @@ function ContractDetail() {
             .children ?? []
         }
       />
+
+      <ContractAmendmentsPanel
+        contractId={contract.id}
+        documentKind={(contract as { document_kind?: string }).document_kind ?? "main"}
+        amendmentOf={
+          (contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null
+        }
+        amendments={(contract as { amendments?: AmendmentRow[] }).amendments ?? []}
+        amendmentNumber={(contract as { amendment_number?: string | null }).amendment_number ?? null}
+        amendmentEffectiveAt={
+          (contract as { amendment_effective_at?: string | null }).amendment_effective_at ?? null
+        }
+      />
+
 
       <ContractApprovalsPanel contractId={contract.id} />
 

@@ -66,7 +66,6 @@ type QueueItem = {
 
 const MAX_PDF_BYTES = 15 * 1024 * 1024;
 const MAX_DOCX_BYTES = 10 * 1024 * 1024;
-const MAX_FILES = 20;
 
 const ROLE_LABEL: Record<"provider" | "client", string> = {
   provider: "Prestação",
@@ -149,10 +148,6 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           continue;
         }
         if (next.some((i) => i.file.name === f.name && i.file.size === f.size)) continue;
-        if (next.length >= MAX_FILES) {
-          toast.warning(`Limite de ${MAX_FILES} arquivos por lote.`);
-          break;
-        }
         next.push({
           key: `${f.name}-${f.size}-${next.length}-${Date.now()}`,
           file: f,
@@ -294,8 +289,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
             <Upload className="h-7 w-7 text-muted-foreground" />
             <div className="text-sm font-medium">Arraste os arquivos aqui</div>
             <div className="text-xs text-muted-foreground">
-              ou clique para escolher · .pdf (até 15 MB) ou .docx (até 10 MB) · até {MAX_FILES}{" "}
-              arquivos
+              ou clique para escolher · .pdf (até 15 MB) ou .docx (até 10 MB) · sem limite de
+              arquivos por lote
             </div>
             <input
               type="file"
