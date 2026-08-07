@@ -1,7 +1,7 @@
 // Importação em lote de contratos (.pdf / .docx).
 // Fluxo: 1) Seleção de vários arquivos → 2) Grid de revisão (tipo: prestação/compra)
 // → 3) Processar: IA extrai, cria rascunhos e tenta vincular compra ↔ prestação.
-import { useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -42,6 +42,12 @@ import {
   parseContractText,
 } from "@/lib/contracts/import.functions";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
+import { linkContractAmendment } from "@/lib/contracts.functions";
+import {
+  MainContractPicker,
+  type MainContractOption,
+} from "@/components/contracts/main-contract-picker";
+import { Input } from "@/components/ui/input";
 
 type Props = {
   open: boolean;
@@ -51,6 +57,7 @@ type Props = {
 
 type RoleHint = "auto" | "provider" | "client";
 type ItemStatus = "queued" | "processing" | "done" | "error";
+type DocKind = "main" | "amendment";
 
 type QueueItem = {
   key: string;
@@ -62,7 +69,17 @@ type QueueItem = {
   contractId?: string;
   detectedRole?: "provider" | "client";
   title?: string;
+  docKind: DocKind;
+  /** Contrato principal já existente. */
+  mainContract: MainContractOption | null;
+  /** Contrato principal que será criado neste mesmo lote (key do item). */
+  mainFromKey?: string;
+  amendmentNumber?: string;
+  amendmentEffectiveAt?: string;
+  linkMessage?: string;
+  linkError?: boolean;
 };
+
 
 const MAX_PDF_BYTES = 15 * 1024 * 1024;
 const MAX_DOCX_BYTES = 10 * 1024 * 1024;
@@ -100,6 +117,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);
   const linkFn = useServerFn(linkImportedContracts);
+  const linkAmendment = useServerFn(linkContractAmendment);
   const navigate = useNavigate();
 
   const [items, setItems] = useState<QueueItem[]>([]);
@@ -154,6 +172,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           kind,
           roleHint: "auto",
           status: "queued",
+          docKind: "main",
+          mainContract: null,
         });
       }
       return next;
@@ -165,11 +185,27 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
   }, []);
 
   const removeItem = useCallback((key: string) => {
-    setItems((prev) => prev.filter((i) => i.key !== key));
+    setItems((prev) =>
+      prev
+        .filter((i) => i.key !== key)
+        .map((i) => (i.mainFromKey === key ? { ...i, mainFromKey: undefined } : i)),
+    );
   }, []);
 
   const patchItem = useCallback((key: string, patch: Partial<QueueItem>) => {
     setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ...patch } : i)));
+  }, []);
+
+  const setDocKind = useCallback((key: string, docKind: DocKind) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.key === key
+          ? docKind === "main"
+            ? { ...i, docKind, mainContract: null, mainFromKey: undefined }
+            : { ...i, docKind }
+          : i,
+      ),
+    );
   }, []);
 
   const uploadOriginal = useCallback(
@@ -190,15 +226,26 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
   );
 
   const process = useCallback(async () => {
-    const queue = items.filter((i) => i.status === "queued" || i.status === "error");
-    if (!queue.length) return;
+    const pending = items.filter((i) => i.status === "queued" || i.status === "error");
+    if (!pending.length) return;
+    // Principais primeiro: um aditivo pode apontar para um principal do mesmo lote.
+    const queue = [
+      ...pending.filter((i) => i.docKind === "main"),
+      ...pending.filter((i) => i.docKind === "amendment"),
+    ];
     setProcessing(true);
     setLinkSummary(null);
-    const createdIds: string[] = [];
+    const mainIds: string[] = [];
+    const createdByKey = new Map<string, string>();
 
     // Sequencial: cada documento consome uma chamada de IA; paralelizar estoura rate limit.
     for (const item of queue) {
-      patchItem(item.key, { status: "processing", message: "Extraindo com IA…" });
+      patchItem(item.key, {
+        status: "processing",
+        message: "Extraindo com IA…",
+        linkMessage: undefined,
+        linkError: false,
+      });
       try {
         let extracted: ExtractedContract;
         if (item.kind === "pdf") {
@@ -220,7 +267,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
         const result = await createFromImport({
           data: { fields, source_file_path: path, imported_from: item.kind },
         });
-        createdIds.push(result.id);
+        createdByKey.set(item.key, result.id);
+        if (item.docKind === "main") mainIds.push(result.id);
         patchItem(item.key, {
           status: "done",
           message: "Rascunho criado",
@@ -228,6 +276,41 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           detectedRole: role,
           title: fields.title ?? item.file.name,
         });
+
+        if (item.docKind === "amendment") {
+          const mainId = item.mainFromKey
+            ? createdByKey.get(item.mainFromKey)
+            : (item.mainContract?.id ?? undefined);
+          if (!mainId) {
+            patchItem(item.key, {
+              linkMessage: "Contrato principal não disponível — vincule manualmente.",
+              linkError: true,
+            });
+          } else {
+            try {
+              patchItem(item.key, { message: "Vinculando aditivo…" });
+              await linkAmendment({
+                data: {
+                  amendmentId: result.id,
+                  mainContractId: mainId,
+                  amendmentNumber: item.amendmentNumber?.trim() || null,
+                  effectiveAt:
+                    item.amendmentEffectiveAt?.trim() || extracted.starts_at || null,
+                },
+              });
+              patchItem(item.key, {
+                message: "Aditivo criado",
+                linkMessage: "Aditivo vinculado ao contrato principal",
+              });
+            } catch (err) {
+              patchItem(item.key, {
+                linkMessage:
+                  err instanceof Error ? err.message : "Falha ao vincular o aditivo.",
+                linkError: true,
+              });
+            }
+          }
+        }
       } catch (err) {
         patchItem(item.key, {
           status: "error",
@@ -236,24 +319,43 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
       }
     }
 
-    if (createdIds.length) {
+    // O pareamento automático compra ↔ prestação só vale entre documentos principais.
+    if (mainIds.length) {
       try {
-        const res = await linkFn({ data: { ids: createdIds } });
+        const res = await linkFn({ data: { ids: mainIds } });
         setLinkSummary({ linked: res.linked.length, pending: res.pending.length });
       } catch {
-        setLinkSummary({ linked: 0, pending: createdIds.length });
+        setLinkSummary({ linked: 0, pending: mainIds.length });
       }
     }
 
     setProcessing(false);
     onImported?.();
     toast.success("Processamento concluído.");
-  }, [items, patchItem, parsePdf, parseText, uploadOriginal, createFromImport, linkFn, onImported]);
+  }, [
+    items,
+    patchItem,
+    parsePdf,
+    parseText,
+    uploadOriginal,
+    createFromImport,
+    linkFn,
+    linkAmendment,
+    onImported,
+  ]);
 
-  const canProcess = useMemo(
-    () => items.some((i) => i.status === "queued" || i.status === "error"),
+  const pendingItems = useMemo(
+    () => items.filter((i) => i.status === "queued" || i.status === "error"),
     [items],
   );
+  const missingMain = useMemo(
+    () =>
+      pendingItems.filter(
+        (i) => i.docKind === "amendment" && !i.mainContract && !i.mainFromKey,
+      ).length,
+    [pendingItems],
+  );
+  const canProcess = pendingItems.length > 0 && missingMain === 0;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -316,13 +418,15 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                   <tr>
                     <th className="p-2 text-left font-medium">Arquivo</th>
                     <th className="p-2 text-left font-medium w-44">Tipo</th>
+                    <th className="p-2 text-left font-medium w-36">Documento</th>
                     <th className="p-2 text-left font-medium w-56">Status</th>
                     <th className="p-2 w-10" />
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((i) => (
-                    <tr key={i.key} className="border-t">
+                    <Fragment key={i.key}>
+                    <tr className="border-t">
                       <td className="p-2">
                         <div className="flex items-center gap-2 min-w-0">
                           <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -349,6 +453,22 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                         </Select>
                       </td>
                       <td className="p-2">
+                        <Select
+                          value={i.docKind}
+                          onValueChange={(v) => setDocKind(i.key, v as DocKind)}
+                          disabled={processing || i.status === "done"}
+                        >
+                          <SelectTrigger aria-label={`Tipo de documento de ${i.file.name}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="main">Principal</SelectItem>
+                            <SelectItem value="amendment">Aditivo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </td>
+
+                      <td className="p-2">
                         {i.status === "queued" && (
                           <span className="text-xs text-muted-foreground">Na fila</span>
                         )}
@@ -369,6 +489,16 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                             <span className="break-words">{i.message}</span>
                           </span>
                         )}
+                        {i.linkMessage ? (
+                          <span
+                            className={`mt-1 text-xs flex items-start gap-1 ${
+                              i.linkError ? "text-destructive" : "text-muted-foreground"
+                            }`}
+                          >
+                            <Link2 className="h-3 w-3 mt-0.5 shrink-0" />
+                            <span className="break-words">{i.linkMessage}</span>
+                          </span>
+                        ) : null}
                       </td>
                       <td className="p-2 text-right">
                         {i.status === "done" && i.contractId ? (
@@ -398,7 +528,113 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                         )}
                       </td>
                     </tr>
+                    {i.docKind === "amendment" && i.status !== "done" ? (
+                      <tr className="bg-muted/20">
+                        <td colSpan={5} className="p-2">
+                          <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-muted-foreground">
+                                Contrato principal
+                              </span>
+                              {i.mainFromKey ? (
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="truncate">
+                                    Neste lote:{" "}
+                                    {items.find((x) => x.key === i.mainFromKey)?.file.name ?? "—"}
+                                  </Badge>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={processing}
+                                    onClick={() => patchItem(i.key, { mainFromKey: undefined })}
+                                  >
+                                    Trocar
+                                  </Button>
+                                </div>
+                              ) : (
+                                <MainContractPicker
+                                  value={i.mainContract}
+                                  onChange={(next) =>
+                                    patchItem(i.key, { mainContract: next, mainFromKey: undefined })
+                                  }
+                                  disabled={processing}
+                                  ariaLabel={`Contrato principal de ${i.file.name}`}
+                                />
+                              )}
+                              {items.some((x) => x.docKind === "main" && x.key !== i.key) &&
+                              !i.mainFromKey ? (
+                                <Select
+                                  value=""
+                                  onValueChange={(v) =>
+                                    patchItem(i.key, { mainFromKey: v, mainContract: null })
+                                  }
+                                  disabled={processing}
+                                >
+                                  <SelectTrigger
+                                    aria-label={`Usar arquivo do lote como principal de ${i.file.name}`}
+                                    className="h-8 text-xs"
+                                  >
+                                    <SelectValue placeholder="Ou usar um arquivo deste lote…" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {items
+                                      .filter((x) => x.docKind === "main" && x.key !== i.key)
+                                      .map((x) => (
+                                        <SelectItem key={x.key} value={x.key}>
+                                          {x.title ?? x.file.name}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : null}
+                              {!i.mainContract && !i.mainFromKey ? (
+                                <span className="text-xs text-destructive">
+                                  Escolha o contrato principal para processar este aditivo.
+                                </span>
+                              ) : null}
+                            </div>
+                            <div className="space-y-1">
+                              <label
+                                className="text-xs font-medium text-muted-foreground"
+                                htmlFor={`amd-num-${i.key}`}
+                              >
+                                Nº do aditivo (opcional)
+                              </label>
+                              <Input
+                                id={`amd-num-${i.key}`}
+                                value={i.amendmentNumber ?? ""}
+                                disabled={processing}
+                                placeholder="Ex.: 1"
+                                onChange={(e) =>
+                                  patchItem(i.key, { amendmentNumber: e.target.value })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label
+                                className="text-xs font-medium text-muted-foreground"
+                                htmlFor={`amd-date-${i.key}`}
+                              >
+                                Vigência (opcional)
+                              </label>
+                              <Input
+                                id={`amd-date-${i.key}`}
+                                type="date"
+                                value={i.amendmentEffectiveAt ?? ""}
+                                disabled={processing}
+                                onChange={(e) =>
+                                  patchItem(i.key, { amendmentEffectiveAt: e.target.value })
+                                }
+                              />
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : null}
+                    </Fragment>
                   ))}
+
                 </tbody>
               </table>
             </div>
@@ -433,7 +669,12 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           </label>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 sm:items-center">
+          {missingMain > 0 && !processing ? (
+            <p className="mr-auto text-xs text-destructive" aria-live="polite">
+              {missingMain} aditivo(s) sem contrato principal selecionado.
+            </p>
+          ) : null}
           <Button variant="ghost" onClick={() => handleClose(false)} disabled={processing}>
             {finished ? "Fechar" : "Cancelar"}
           </Button>
