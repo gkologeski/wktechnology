@@ -66,6 +66,7 @@ function ContractsPage() {
   const list = useServerFn(listContracts);
   const groupings = useServerFn(listContractGroupings);
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
+  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techcontracts.contracts");
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
@@ -73,6 +74,9 @@ function ContractsPage() {
   const [openImport, setOpenImport] = useState(false);
   const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
+  const [nestAmendments, setNestAmendments] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["contracts", { role, status, search }],
