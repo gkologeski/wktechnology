@@ -26,6 +26,10 @@ import {
   ContractsGroupedList,
   type ContractRow,
 } from "@/components/contracts/contracts-grouped-list";
+import { ContractsBulkBar } from "@/components/contracts/contracts-bulk-bar";
+import { useCanDelete } from "@/lib/access-control/use-can-delete";
+import { Checkbox } from "@/components/ui/checkbox";
+
 
 type GroupBy = "none" | "company" | "service" | "job_profile" | "seniority";
 
