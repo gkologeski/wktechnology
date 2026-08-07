@@ -184,11 +184,27 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
   }, []);
 
   const removeItem = useCallback((key: string) => {
-    setItems((prev) => prev.filter((i) => i.key !== key));
+    setItems((prev) =>
+      prev
+        .filter((i) => i.key !== key)
+        .map((i) => (i.mainFromKey === key ? { ...i, mainFromKey: undefined } : i)),
+    );
   }, []);
 
   const patchItem = useCallback((key: string, patch: Partial<QueueItem>) => {
     setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ...patch } : i)));
+  }, []);
+
+  const setDocKind = useCallback((key: string, docKind: DocKind) => {
+    setItems((prev) =>
+      prev.map((i) =>
+        i.key === key
+          ? docKind === "main"
+            ? { ...i, docKind, mainContract: null, mainFromKey: undefined }
+            : { ...i, docKind }
+          : i,
+      ),
+    );
   }, []);
 
   const uploadOriginal = useCallback(
@@ -209,15 +225,26 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
   );
 
   const process = useCallback(async () => {
-    const queue = items.filter((i) => i.status === "queued" || i.status === "error");
-    if (!queue.length) return;
+    const pending = items.filter((i) => i.status === "queued" || i.status === "error");
+    if (!pending.length) return;
+    // Principais primeiro: um aditivo pode apontar para um principal do mesmo lote.
+    const queue = [
+      ...pending.filter((i) => i.docKind === "main"),
+      ...pending.filter((i) => i.docKind === "amendment"),
+    ];
     setProcessing(true);
     setLinkSummary(null);
-    const createdIds: string[] = [];
+    const mainIds: string[] = [];
+    const createdByKey = new Map<string, string>();
 
     // Sequencial: cada documento consome uma chamada de IA; paralelizar estoura rate limit.
     for (const item of queue) {
-      patchItem(item.key, { status: "processing", message: "Extraindo com IA…" });
+      patchItem(item.key, {
+        status: "processing",
+        message: "Extraindo com IA…",
+        linkMessage: undefined,
+        linkError: false,
+      });
       try {
         let extracted: ExtractedContract;
         if (item.kind === "pdf") {
@@ -239,7 +266,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
         const result = await createFromImport({
           data: { fields, source_file_path: path, imported_from: item.kind },
         });
-        createdIds.push(result.id);
+        createdByKey.set(item.key, result.id);
+        if (item.docKind === "main") mainIds.push(result.id);
         patchItem(item.key, {
           status: "done",
           message: "Rascunho criado",
@@ -247,6 +275,41 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           detectedRole: role,
           title: fields.title ?? item.file.name,
         });
+
+        if (item.docKind === "amendment") {
+          const mainId = item.mainFromKey
+            ? createdByKey.get(item.mainFromKey)
+            : (item.mainContract?.id ?? undefined);
+          if (!mainId) {
+            patchItem(item.key, {
+              linkMessage: "Contrato principal não disponível — vincule manualmente.",
+              linkError: true,
+            });
+          } else {
+            try {
+              patchItem(item.key, { message: "Vinculando aditivo…" });
+              await linkAmendment({
+                data: {
+                  amendmentId: result.id,
+                  mainContractId: mainId,
+                  amendmentNumber: item.amendmentNumber?.trim() || null,
+                  effectiveAt:
+                    item.amendmentEffectiveAt?.trim() || extracted.starts_at || null,
+                },
+              });
+              patchItem(item.key, {
+                message: "Aditivo criado",
+                linkMessage: "Aditivo vinculado ao contrato principal",
+              });
+            } catch (err) {
+              patchItem(item.key, {
+                linkMessage:
+                  err instanceof Error ? err.message : "Falha ao vincular o aditivo.",
+                linkError: true,
+              });
+            }
+          }
+        }
       } catch (err) {
         patchItem(item.key, {
           status: "error",
@@ -255,19 +318,30 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
       }
     }
 
-    if (createdIds.length) {
+    // O pareamento automático compra ↔ prestação só vale entre documentos principais.
+    if (mainIds.length) {
       try {
-        const res = await linkFn({ data: { ids: createdIds } });
+        const res = await linkFn({ data: { ids: mainIds } });
         setLinkSummary({ linked: res.linked.length, pending: res.pending.length });
       } catch {
-        setLinkSummary({ linked: 0, pending: createdIds.length });
+        setLinkSummary({ linked: 0, pending: mainIds.length });
       }
     }
 
     setProcessing(false);
     onImported?.();
     toast.success("Processamento concluído.");
-  }, [items, patchItem, parsePdf, parseText, uploadOriginal, createFromImport, linkFn, onImported]);
+  }, [
+    items,
+    patchItem,
+    parsePdf,
+    parseText,
+    uploadOriginal,
+    createFromImport,
+    linkFn,
+    linkAmendment,
+    onImported,
+  ]);
 
   const canProcess = useMemo(
     () => items.some((i) => i.status === "queued" || i.status === "error"),
