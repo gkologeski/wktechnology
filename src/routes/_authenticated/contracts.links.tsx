@@ -95,7 +95,7 @@ function ContractLinksPage() {
         description="Contratos importados em que o par prestação ↔ compra não foi identificado automaticamente."
         actions={
           <Button variant="outline" asChild>
-            <Link to="/contracts">
+            <Link to="/contracts" search={{ groupBy: "none" }}>
               <ArrowLeft className="h-4 w-4 mr-2" /> Contratos
             </Link>
           </Button>
