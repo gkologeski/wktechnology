@@ -51,6 +51,7 @@ type Props = {
 
 type RoleHint = "auto" | "provider" | "client";
 type ItemStatus = "queued" | "processing" | "done" | "error";
+type DocKind = "main" | "amendment";
 
 type QueueItem = {
   key: string;
@@ -62,7 +63,17 @@ type QueueItem = {
   contractId?: string;
   detectedRole?: "provider" | "client";
   title?: string;
+  docKind: DocKind;
+  /** Contrato principal já existente. */
+  mainContract: MainContractOption | null;
+  /** Contrato principal que será criado neste mesmo lote (key do item). */
+  mainFromKey?: string;
+  amendmentNumber?: string;
+  amendmentEffectiveAt?: string;
+  linkMessage?: string;
+  linkError?: boolean;
 };
+
 
 const MAX_PDF_BYTES = 15 * 1024 * 1024;
 const MAX_DOCX_BYTES = 10 * 1024 * 1024;
