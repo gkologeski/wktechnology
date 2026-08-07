@@ -287,7 +287,7 @@ function ContractTableRow({
         </Link>
       </TableCell>
       <TableCell>
-      <TableCell>
+
         <div
           className="flex items-center gap-2"
           style={depth > 0 ? { paddingLeft: depth * 20 } : undefined}
