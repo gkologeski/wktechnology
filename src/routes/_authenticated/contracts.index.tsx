@@ -174,7 +174,8 @@ function ContractsPage() {
   const setFilter = (patch: Partial<ContractSearch>) =>
     navigate({ search: (prev: ContractSearch) => ({ ...prev, ...patch, page: 1 }) });
 
-  const setPage = (page: number) => navigate({ search: (prev: ContractSearch) => ({ ...prev, page }) });
+  const setPage = (page: number) =>
+    navigate({ search: (prev: ContractSearch) => ({ ...prev, page }) });
 
   const assigneeParam = useMemo(() => {
     if (!sp.assignee || sp.assignee === ASSIGNEE_ALL) return undefined;
@@ -189,8 +190,7 @@ function ContractsPage() {
     staleTime: 300_000,
   });
   const legalEntityName = useMemo(
-    () =>
-      (legalEntitiesQuery.data ?? []).find((e) => e.id === sp.legalEntityId)?.name ?? "",
+    () => (legalEntitiesQuery.data ?? []).find((e) => e.id === sp.legalEntityId)?.name ?? "",
     [legalEntitiesQuery.data, sp.legalEntityId],
   );
 
@@ -444,9 +444,7 @@ function ContractsPage() {
                 mode="pick"
                 hydrateById={false}
                 value={{ id: sp.companyId || null, name: sp.companyName }}
-                onChange={(v) =>
-                  setFilter({ companyId: v.id ?? "", companyName: v.name })
-                }
+                onChange={(v) => setFilter({ companyId: v.id ?? "", companyName: v.name })}
                 placeholder="Buscar empresa"
               />
             </div>
@@ -518,7 +516,12 @@ function ContractsPage() {
                   size="sm"
                   variant="secondary"
                   onClick={() =>
-                    setFilter({ endsTo: iso(new Date()), endsFrom: "", startsFrom: "", startsTo: "" })
+                    setFilter({
+                      endsTo: iso(new Date()),
+                      endsFrom: "",
+                      startsFrom: "",
+                      startsTo: "",
+                    })
                   }
                 >
                   Já encerrados
@@ -587,7 +590,9 @@ function ContractsPage() {
           <Select
             value={sp.groupBy}
             onValueChange={(next) =>
-              navigate({ search: (prev: ContractSearch) => ({ ...prev, groupBy: next as GroupBy }) })
+              navigate({
+                search: (prev: ContractSearch) => ({ ...prev, groupBy: next as GroupBy }),
+              })
             }
           >
             <SelectTrigger id="contracts-group-by" className="w-44">
@@ -612,7 +617,6 @@ function ContractsPage() {
             Aninhar vínculos
           </Label>
         </div>
-
       </div>
 
       {activeChips.length > 0 && (
@@ -684,12 +688,7 @@ function ContractsPage() {
 
           {sp.groupBy === "none" ? (
             <div className="rounded-lg border bg-card">
-              <ContractsTable
-                rows={rows}
-                selection={selection}
-                editable
-                nestLinks={nestLinks}
-              />
+              <ContractsTable rows={rows} selection={selection} editable nestLinks={nestLinks} />
             </div>
           ) : (
             <ContractsGroupedList

@@ -54,7 +54,6 @@ export type ContractRow = {
   amendment_of_id?: string | null;
   parent_contract_id?: string | null;
   amendment_number?: string | null;
-
 };
 
 export type ContractGroupings = {
@@ -188,7 +187,9 @@ export function ContractsTable({
   const arranged = useMemo(() => arrangeContractLinks(rows, nestLinks), [rows, nestLinks]);
 
   const ids = useMemo(() => rows.map((r) => r.id), [rows]);
-  const allSelected = selection ? ids.length > 0 && ids.every((id) => selection.selectedIds.has(id)) : false;
+  const allSelected = selection
+    ? ids.length > 0 && ids.every((id) => selection.selectedIds.has(id))
+    : false;
   const someSelected = selection ? ids.some((id) => selection.selectedIds.has(id)) : false;
 
   return (
@@ -226,7 +227,6 @@ export function ContractsTable({
             onChanged={onChanged}
           />
         ))}
-
       </TableBody>
     </Table>
   );
@@ -247,7 +247,6 @@ function ContractTableRow({
   editable: boolean;
   onChanged?: () => void;
 }) {
-
   const qc = useQueryClient();
   const update = useServerFn(updateContract);
   const [saving, setSaving] = useState(false);
@@ -287,7 +286,6 @@ function ContractTableRow({
         </Link>
       </TableCell>
       <TableCell>
-
         <div
           className="flex items-center gap-2"
           style={depth > 0 ? { paddingLeft: depth * 20 } : undefined}
@@ -476,7 +474,8 @@ function buildGroups(
     for (const s of groupings?.services ?? []) {
       if (!s.catalogId || !s.catalogName) continue;
       const list = byContract.get(s.contractId) ?? [];
-      if (!list.some((i) => i.id === s.catalogId)) list.push({ id: s.catalogId, name: s.catalogName });
+      if (!list.some((i) => i.id === s.catalogId))
+        list.push({ id: s.catalogId, name: s.catalogName });
       byContract.set(s.contractId, list);
     }
     for (const row of rows) {
@@ -537,7 +536,6 @@ function buildGroups(
     return a.label.localeCompare(b.label, "pt-BR");
   });
 }
-
 
 export function ContractsGroupedList({
   rows,
