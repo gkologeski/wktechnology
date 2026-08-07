@@ -94,8 +94,9 @@ function ContractLinksPage() {
     <div className="space-y-6">
       <PageHeader
         title="Vinculação de contratos"
-        count={filtered.length}
-        countLabel={filtered.length === 1 ? "pendência" : "pendências"}
+        count={rows.length}
+        countLabel={rows.length === 1 ? "pendência" : "pendências"}
+
         description="Contratos importados em que o par prestação ↔ compra não foi identificado automaticamente."
 
         actions={
