@@ -115,6 +115,36 @@ function ContractsPage() {
     enabled: groupBy !== "none" && contractIds.length > 0,
   });
 
+  const selection = useMemo(
+    () => ({
+      selectedIds,
+      onToggle: (id: string) =>
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return next;
+        }),
+      onToggleMany: (ids: string[], checked: boolean) =>
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          for (const id of ids) {
+            if (checked) next.add(id);
+            else next.delete(id);
+          }
+          return next;
+        }),
+    }),
+    [selectedIds],
+  );
+
+  const selectedRows = useMemo(
+    () => filtered.filter((c) => selectedIds.has(c.id)),
+    [filtered, selectedIds],
+  );
+
+
+
   return (
     <div className="p-6 space-y-5">
       <PageHeader
