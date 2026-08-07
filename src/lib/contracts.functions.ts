@@ -139,6 +139,76 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
+// ============= CONTRATOS DE COMPRA ELEGÍVEIS AO TECHPEOPLE =============
+// Apenas contratos de compra cujo CONTRATANTE é uma entidade legal (CNPJ) do
+// workspace — são os contratos em que compramos mão de obra de prestadores.
+
+export const listOwnContractingPurchaseContracts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({ q: z.string().max(200).optional(), limit: z.number().int().min(1).max(200).optional() })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { loadOwnLegalEntities, matchOwnEntity } = await import(
+      "@/lib/contracts/import-link.server"
+    );
+    const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
+    const ownIds = new Set(ownEntities.map((e) => e.id));
+
+    let query = supabase
+      .from("contracts")
+      .select(
+        "id, number, title, status, total_value, currency, role, contracting_legal_entity_id, metadata, companies:counterparty_company_id(name)",
+      )
+      .eq("role", "client")
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 100);
+    if (data.q && data.q.trim()) {
+      const t = `%${data.q.trim()}%`;
+      query = query.or(`title.ilike.${t},number.ilike.${t}`);
+    }
+    const { data: rows, error } = await query;
+    if (error) throw error;
+
+    return (rows ?? [])
+      .map((r) => {
+        const row = r as unknown as {
+          id: string;
+          number: string | null;
+          title: string;
+          status: string;
+          contracting_legal_entity_id: string | null;
+          metadata: Record<string, unknown> | null;
+          companies?: { name: string | null } | null;
+        };
+        const eligible =
+          (row.contracting_legal_entity_id && ownIds.has(row.contracting_legal_entity_id)) ||
+          row.metadata?.["contracting_is_own_entity"] === true ||
+          Boolean(
+            matchOwnEntity(
+              ownEntities,
+              (row.metadata?.["contracting_cnpj_extracted"] as string | null) ?? null,
+              (row.metadata?.["contracting_name_extracted"] as string | null) ?? null,
+            ),
+          );
+        return eligible
+          ? {
+              id: row.id,
+              number: row.number,
+              title: row.title,
+              status: row.status,
+              company_name: row.companies?.name ?? null,
+            }
+          : null;
+      })
+      .filter((v): v is NonNullable<typeof v> => v !== null);
+  });
+
+
 // ============= LINK / UNLINK PARENT =============
 
 export const linkContractParent = createServerFn({ method: "POST" })

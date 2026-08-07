@@ -82,9 +82,18 @@ export const ExtractedContractSchema = z.object({
     .optional()
     .nullable(),
 
+  /** Número do próprio contrato, quando impresso no documento. */
+  self_contract_number: z.string().max(120).optional().nullable(),
+  /**
+   * Números de outros contratos citados no documento (ex.: um contrato de compra
+   * que referencia o contrato de prestação com o cliente final).
+   */
+  referenced_contract_numbers: z.array(z.string().max(120)).optional().nullable(),
+
   confidence: z.number().min(0).max(1).optional().nullable(),
   warnings: z.array(z.string()).optional().nullable(),
 });
+
 
 export type ExtractedContract = z.infer<typeof ExtractedContractSchema>;
 

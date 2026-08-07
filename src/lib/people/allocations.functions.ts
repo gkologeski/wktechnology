@@ -19,6 +19,8 @@ export type AllocationRow = {
   owner_id: string;
   person_id: string;
   contract_id: string | null;
+  purchase_contract_id: string | null;
+
   project_id: string | null;
   manager_id: string | null;
   role_title: string | null;
@@ -37,8 +39,11 @@ export type AllocationRow = {
   manager_name?: string | null;
   contract_title?: string | null;
   contract_number?: string | null;
+  purchase_contract_title?: string | null;
+  purchase_contract_number?: string | null;
   project_name?: string | null;
 };
+
 
 type MinimalClient = { from: (t: string) => unknown };
 async function resolveWorkspaceId(supabase: MinimalClient, userId: string): Promise<string> {
@@ -64,6 +69,8 @@ const allocationSchema = z.object({
   id: z.string().uuid().nullable().optional(),
   person_id: z.string().uuid(),
   contract_id: z.string().uuid().nullable().optional(),
+  purchase_contract_id: z.string().uuid().nullable().optional(),
+
   project_id: z.string().uuid().nullable().optional(),
   manager_id: z.string().uuid().nullable().optional(),
   role_title: z.string().max(200).nullable().optional(),
@@ -127,25 +134,29 @@ export const listAllocationsByPerson = createServerFn({ method: "POST" })
     const { data: rows, error } = await context.supabase
       .from("people_allocations")
       .select(
-        "*, contracts(id,title,number), projects(id,name), manager:people!people_allocations_manager_id_fkey(id,full_name)",
+        "*, contract:contracts!people_allocations_contract_id_fkey(id,title,number), purchase_contract:contracts!people_allocations_purchase_contract_id_fkey(id,title,number), projects(id,name), manager:people!people_allocations_manager_id_fkey(id,full_name)",
       )
       .eq("person_id", data.person_id)
       .order("starts_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (rows ?? []).map((r) => {
       const row = r as unknown as AllocationRow & {
-        contracts?: { title: string | null; number: string | null } | null;
+        contract?: { title: string | null; number: string | null } | null;
+        purchase_contract?: { title: string | null; number: string | null } | null;
         projects?: { name: string | null } | null;
         manager?: { full_name: string | null } | null;
       };
       return {
         ...row,
-        contract_title: row.contracts?.title ?? null,
-        contract_number: row.contracts?.number ?? null,
+        contract_title: row.contract?.title ?? null,
+        contract_number: row.contract?.number ?? null,
+        purchase_contract_title: row.purchase_contract?.title ?? null,
+        purchase_contract_number: row.purchase_contract?.number ?? null,
         project_name: row.projects?.name ?? null,
         manager_name: row.manager?.full_name ?? null,
       } as AllocationRow;
     });
+
   });
 
 export const listAllocationsByContract = createServerFn({ method: "POST" })
@@ -181,6 +192,8 @@ export const upsertAllocation = createServerFn({ method: "POST" })
     const payload: Record<string, unknown> = {
       person_id: data.person_id,
       contract_id: data.contract_id ?? null,
+      purchase_contract_id: data.purchase_contract_id ?? null,
+
       project_id: data.project_id ?? null,
       manager_id: data.manager_id ?? null,
       role_title: data.role_title ?? null,

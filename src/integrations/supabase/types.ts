@@ -10403,6 +10403,7 @@ export type Database = {
           owner_id: string
           person_id: string
           project_id: string | null
+          purchase_contract_id: string | null
           role_title: string | null
           starts_at: string
           status: Database["public"]["Enums"]["allocation_status"]
@@ -10424,6 +10425,7 @@ export type Database = {
           owner_id?: string
           person_id: string
           project_id?: string | null
+          purchase_contract_id?: string | null
           role_title?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["allocation_status"]
@@ -10445,6 +10447,7 @@ export type Database = {
           owner_id?: string
           person_id?: string
           project_id?: string | null
+          purchase_contract_id?: string | null
           role_title?: string | null
           starts_at?: string
           status?: Database["public"]["Enums"]["allocation_status"]
@@ -10492,6 +10495,13 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocations_purchase_contract_id_fkey"
+            columns: ["purchase_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
             referencedColumns: ["id"]
           },
         ]
