@@ -442,8 +442,45 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
       payload: { amendment_of_id: data.mainContractId },
     });
 
+    // Reaplica o padrão de título (prefixo ADT entra/sai conforme o vínculo).
+    try {
+      const { applyContractTitles } = await import("@/lib/contracts/title.server");
+      await applyContractTitles(supabase as never, workspaceId, [data.amendmentId]);
+    } catch {
+      // título é cosmético: não bloqueia o vínculo
+    }
+
     return row;
   });
+
+/** Aplica o padrão `PREFIXO CONTRATANTE X CONTRATADA` aos contratos informados. */
+export const standardizeContractTitles = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(500),
+        preview: z.boolean().optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+      "techcontracts.contracts.update.workspace",
+    ]);
+
+    const { previewContractTitles, applyContractTitles } = await import(
+      "@/lib/contracts/title.server"
+    );
+    const changes = data.preview
+      ? await previewContractTitles(supabase as never, workspaceId, data.ids)
+      : await applyContractTitles(supabase as never, workspaceId, data.ids);
+    return { changes };
+  });
+
 
 
 

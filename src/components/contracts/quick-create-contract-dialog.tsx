@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,8 @@ import {
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { createContract } from "@/lib/contracts.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { buildContractTitle } from "@/lib/contracts/title";
 
 type Props = {
   open: boolean;
@@ -52,6 +55,35 @@ export function QuickCreateContractDialog({
   const [saving, setSaving] = useState(false);
   const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
   const [pendingCompanyName, setPendingCompanyName] = useState("");
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  // Última sugestão emitida: só substituímos o título se o usuário não digitou o dele.
+  const lastSuggestion = useRef<string | null>(null);
+
+  const ownEntityQuery = useQuery({
+    queryKey: ["own-legal-entity-name"],
+    queryFn: async () => {
+      const { data } = await supabase.from("legal_entities").select("name").limit(1).maybeSingle();
+      return (data?.name as string | undefined) ?? null;
+    },
+    enabled: open,
+    staleTime: 300_000,
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    const suggestion = buildContractTitle({
+      role,
+      contractingName: role === "client" ? (ownEntityQuery.data ?? null) : companyName,
+      counterpartyName: companyName,
+      ownName: ownEntityQuery.data ?? null,
+    });
+    if (!suggestion) return;
+    setTitle((current) => {
+      if (current.trim() && current !== lastSuggestion.current) return current;
+      lastSuggestion.current = suggestion;
+      return suggestion;
+    });
+  }, [open, role, companyName, ownEntityQuery.data]);
 
   useEffect(() => {
     if (open) {
@@ -62,6 +94,8 @@ export function QuickCreateContractDialog({
       setTotalValue("");
       setStartsAt("");
       setEndsAt("");
+      setCompanyName(null);
+      lastSuggestion.current = null;
     }
   }, [open, initialCompanyId, initialDealId, initialRole]);
 
@@ -136,7 +170,10 @@ export function QuickCreateContractDialog({
                 labelFrom={(r) => (r.name as string) ?? ""}
                 hintFrom={(r) => (r.domain as string | null) ?? null}
                 value={companyId}
-                onChange={(id) => setCompanyId(id)}
+                onChange={(id, item) => {
+                  setCompanyId(id);
+                  setCompanyName((item?.label as string | undefined) ?? null);
+                }}
                 placeholder="Selecione a empresa"
                 onCreateNew={(name) => {
                   setPendingCompanyName(name);

@@ -12,6 +12,7 @@ import {
   CreateFromImportSchema,
   type ExtractedContract,
 } from "@/lib/contracts/import-schemas";
+import { buildContractTitle } from "@/lib/contracts/title";
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -266,7 +267,17 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       workspace_id: workspaceId,
       owner_id: userId,
       role,
-      title: f.title?.trim() || "Contrato importado",
+      title:
+        buildContractTitle({
+          role,
+          serviceType: f.service_type,
+          contractingName: f.contracting_name,
+          counterpartyName: f.counterparty_name,
+          ownName: ownEntity?.name ?? null,
+        }) ||
+        f.title?.trim() ||
+        "Contrato importado",
+
       counterparty_company_id: counterpartyCompanyId,
       contracting_legal_entity_id: ownEntity?.id ?? null,
 

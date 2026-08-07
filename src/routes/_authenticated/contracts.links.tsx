@@ -34,6 +34,7 @@ import {
   type PendingLinkRow,
 } from "@/lib/contracts/import.functions";
 import { listContracts, linkContractParent } from "@/lib/contracts.functions";
+import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 
 export const Route = createFileRoute("/_authenticated/contracts/links")({
   head: () => ({
@@ -101,7 +102,7 @@ function ContractLinksPage() {
 
         actions={
           <Button variant="outline" asChild>
-            <Link to="/contracts" search={{ groupBy: "none" }}>
+            <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
               <ArrowLeft className="h-4 w-4 mr-2" /> Contratos
             </Link>
           </Button>

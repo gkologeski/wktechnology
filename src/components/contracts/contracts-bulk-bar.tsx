@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Trash2, X } from "lucide-react";
+import { Loader2, Trash2, Type, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,11 @@ import {
 } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import { updateContract, deleteContract } from "@/lib/contracts.functions";
+import {
+  updateContract,
+  deleteContract,
+  standardizeContractTitles,
+} from "@/lib/contracts.functions";
 import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
 import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import type { ContractRow } from "@/components/contracts/contracts-grouped-list";
@@ -47,6 +51,7 @@ export function ContractsBulkBar({
   const qc = useQueryClient();
   const update = useServerFn(updateContract);
   const remove = useServerFn(deleteContract);
+  const standardizeTitles = useServerFn(standardizeContractTitles);
   const listTeam = useServerFn(listWorkspaceTeam);
   const teamQuery = useQuery({
     queryKey: ["workspace-team", "contracts-bulk"],
@@ -55,15 +60,11 @@ export function ContractsBulkBar({
   });
   const [busy, setBusy] = useState(false);
 
-
   const count = selected.length;
   const blocked = selected.filter((r) => !canDelete(r));
   const deleteAllowed = !canDeleteLoading && blocked.length === 0 && count > 0;
 
-  async function runAll(
-    label: string,
-    fn: (row: ContractRow) => Promise<unknown>,
-  ) {
+  async function runAll(label: string, fn: (row: ContractRow) => Promise<unknown>) {
     setBusy(true);
     let ok = 0;
     const failures: string[] = [];
@@ -134,6 +135,39 @@ export function ContractsBulkBar({
         </SelectContent>
       </Select>
 
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={busy}
+        onClick={async () => {
+          setBusy(true);
+          try {
+            const ids = selected.map((r) => r.id);
+            const { changes } = await standardizeTitles({ data: { ids, preview: true } });
+            if (!changes.length) {
+              toast.info("Nenhum título precisa de ajuste.");
+              return;
+            }
+            const preview = changes
+              .slice(0, 3)
+              .map((c) => `${c.before} → ${c.after}`)
+              .join("\n");
+            const ok = await confirmDialog(
+              `Padronizar ${changes.length} título(s)?\n\n${preview}${changes.length > 3 ? "\n…" : ""}`,
+            );
+            if (!ok) return;
+            const applied = await standardizeTitles({ data: { ids } });
+            await qc.invalidateQueries({ queryKey: ["contracts"] });
+            toast.success(`${applied.changes.length} título(s) padronizado(s).`);
+          } catch (e) {
+            toast.error((e as Error).message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        <Type className="mr-1 h-4 w-4" aria-hidden="true" /> Padronizar títulos
+      </Button>
 
       <Tooltip>
         <TooltipTrigger asChild>
