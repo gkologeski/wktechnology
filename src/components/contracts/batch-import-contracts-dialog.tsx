@@ -42,6 +42,12 @@ import {
   parseContractText,
 } from "@/lib/contracts/import.functions";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
+import { linkContractAmendment } from "@/lib/contracts.functions";
+import {
+  MainContractPicker,
+  type MainContractOption,
+} from "@/components/contracts/main-contract-picker";
+import { Input } from "@/components/ui/input";
 
 type Props = {
   open: boolean;
