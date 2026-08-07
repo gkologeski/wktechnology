@@ -117,6 +117,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);
   const linkFn = useServerFn(linkImportedContracts);
+  const linkAmendment = useServerFn(linkContractAmendment);
   const navigate = useNavigate();
 
   const [items, setItems] = useState<QueueItem[]>([]);
