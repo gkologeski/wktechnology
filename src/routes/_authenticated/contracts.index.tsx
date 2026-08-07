@@ -120,6 +120,15 @@ function ContractsPage() {
             <Button variant="outline" onClick={() => setOpenImport(true)}>
               <Upload className="h-4 w-4 mr-1" /> Importar contrato
             </Button>
+            <Button variant="outline" onClick={() => setOpenBatch(true)}>
+              <Upload className="h-4 w-4 mr-1" /> Importar em lote
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/contracts/links">
+                <Link2 className="h-4 w-4 mr-1" /> Vincular contratos
+              </Link>
+            </Button>
+
             <Button onClick={() => setOpenNew(true)}>
               <Plus className="h-4 w-4 mr-1" /> Novo contrato
             </Button>
