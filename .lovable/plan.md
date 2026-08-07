@@ -36,8 +36,17 @@ Regras da etapa 2:
   1. tenta casar o número citado com um contrato de prestação **do mesmo lote**;
   2. se não achar, procura entre os contratos já existentes no workspace;
   3. quando encontra, grava o vínculo no contrato de compra usando o campo já existente `parent_contract_id`.
-- Quando o número citado não casar com nenhum contrato, o contrato fica sem vínculo e recebe um aviso visível na tela de resultado ("nº citado X não encontrado"), para vínculo manual posterior.
+- Quando o número citado não casar com nenhum contrato, o contrato não é vinculado automaticamente: fica marcado como **pendente de vinculação** e aparece na nova aba manual (abaixo), com o aviso do número citado.
 - A classificação prestação/compra segue o campo `role` já existente (`provider` = prestação, `client` = compra); escolha manual no grid sempre vence a detecção da IA.
+
+## Fase 2b — Aba "Vinculação de contratos" (manual)
+
+- Nova aba/visão em `/contracts` listando os contratos **pendentes de vinculação**: contratos de compra sem `parent_contract_id` e contratos de prestação sem contrato de compra associado.
+- Cada linha mostra número, título, empresa, CNPJ do contratante extraído, número citado no documento (quando houver) e o motivo da pendência ("nº citado não encontrado", "nenhum número citado").
+- Ação por linha: seletor de busca do contrato contraparte (filtrado pelo tipo oposto, com busca por número/título/empresa) e botão para confirmar o vínculo; também é possível marcar como "sem vínculo" para sair da fila.
+- Sugestões automáticas na própria linha quando houver candidatos prováveis (mesma empresa/CNPJ ou período compatível), sempre exigindo confirmação humana.
+- Contadores no cabeçalho e link direto da tela de resultado da importação para essa aba.
+
 
 ## Fase 3 — Contratos de prestação e compra em pessoas
 
