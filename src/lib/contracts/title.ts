@@ -43,7 +43,11 @@ export function normalizePartyName(value: string | null | undefined): string | n
     .toUpperCase();
   if (!name) name = raw.trim().toUpperCase();
   if (name.length > MAX_PARTY_CHARS) {
-    name = name.slice(0, MAX_PARTY_CHARS).replace(/[\s-]+\S*$/, "").trim() || name.slice(0, MAX_PARTY_CHARS);
+    name =
+      name
+        .slice(0, MAX_PARTY_CHARS)
+        .replace(/[\s-]+\S*$/, "")
+        .trim() || name.slice(0, MAX_PARTY_CHARS);
   }
   return name || null;
 }

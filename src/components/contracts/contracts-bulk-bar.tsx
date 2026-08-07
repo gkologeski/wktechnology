@@ -60,15 +60,11 @@ export function ContractsBulkBar({
   });
   const [busy, setBusy] = useState(false);
 
-
   const count = selected.length;
   const blocked = selected.filter((r) => !canDelete(r));
   const deleteAllowed = !canDeleteLoading && blocked.length === 0 && count > 0;
 
-  async function runAll(
-    label: string,
-    fn: (row: ContractRow) => Promise<unknown>,
-  ) {
+  async function runAll(label: string, fn: (row: ContractRow) => Promise<unknown>) {
     setBusy(true);
     let ok = 0;
     const failures: string[] = [];
@@ -138,7 +134,6 @@ export function ContractsBulkBar({
           ))}
         </SelectContent>
       </Select>
-
 
       <Button
         variant="outline"
