@@ -604,14 +604,15 @@ function ContractsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Checkbox
-            id="nest-amendments"
+            id="nest-links"
             checked={nestLinks}
-            onCheckedChange={(v) => setNestAmendments(v === true)}
+            onCheckedChange={(v) => setNestLinks(v === true)}
           />
-          <Label htmlFor="nest-amendments" className="text-sm text-muted-foreground">
-            Aninhar aditivos
+          <Label htmlFor="nest-links" className="text-sm text-muted-foreground">
+            Aninhar vínculos
           </Label>
         </div>
+
       </div>
 
       {activeChips.length > 0 && (
