@@ -14,6 +14,7 @@ export const CORE_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Catálogo de Produtos", url: "/catalog/products", icon: Package },
       { title: "Catálogo de Serviços", url: "/catalog/services", icon: Wrench },
       { title: "Cargos e Perfis", url: "/catalog/job-profiles", icon: BriefcaseBusiness },
+      { title: "Presets de Contratação", url: "/catalog/contracting-presets", icon: Layers },
     ],
   },
 ];
