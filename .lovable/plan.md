@@ -1,43 +1,39 @@
-# Correções: botão de exclusão em Empresas e grid de /contracts
+# Contratos: grid editável, importação sem limite e aditivos
 
-## Parte 1 — Botão "Excluir" habilitado indevidamente (usuário marketing@)
+Três ajustes no módulo de Contratos.
 
-### Situação verificada
-- A política de exclusão de `companies` no banco só permite: `manage.workspace`, `delete.workspace`, ou `delete.own` **quando o registro é do próprio usuário**.
-- As permissões efetivas do usuário marketing@ no workspace ativo são: `view.workspace`, `update.team`, `create.own`, `delete.own`.
-- Esse usuário não é responsável (`owner_id`) por nenhuma das empresas cadastradas.
-- A tela de detalhe (`companies.$id.tsx`) já calcula o `disabled` a partir do hook `useCanDelete`, e por essa regra o botão deveria estar desabilitado.
+## 1. Grid de /contracts com seleção e alteração
 
-Ou seja: a causa exata de o botão aparecer habilitado **ainda não está confirmada** (possibilidades: cache de permissões no cliente, workspace ativo diferente no momento do teste, ou build antiga na URL usada). Confirmar é o primeiro passo.
+Hoje `ContractsTable` só mostra dados e links — não há checkbox nem edição. Vamos alinhar com o padrão já usado na grid de Empresas:
 
-### Passo 1 — Confirmar a causa
-- Adicionar ao painel `/settings/rbac-diagnostics` um bloco "Posso excluir este registro?": informa recurso, registro, workspace ativo, permissões de exclusão recebidas, responsável do registro e decisão final, com a resposta vinda do servidor.
-- Com isso o comportamento do usuário marketing@ é reproduzível e auditável, em vez de inferido.
+- Coluna de seleção (checkbox no cabeçalho + por linha), com contador "N selecionado(s)".
+- Barra de ações em lote para os selecionados: alterar **status**, alterar **responsável** e **excluir** (respeitando as permissões atuais de exclusão; botão desabilitado com tooltip quando não permitido).
+- Edição inline direto na linha para os campos seguros: **status**, **responsável**, **vigência (início/fim)** e **valor total**. Salvamento imediato com feedback (toast) e atualização da lista.
+- A seleção funciona igual na visão plana e nas visões agrupadas (empresa/serviço/cargo/senioridade), compartilhando o mesmo estado.
 
-### Passo 2 — Tornar a decisão autoritativa no servidor
-- Nova server function que responde "pode excluir?" por recurso + registro, aplicando exatamente as mesmas regras do banco (permissões efetivas no workspace ativo + responsável do registro).
-- `useCanDelete` passa a consumir essa resposta como fonte de verdade, mantendo a regra atual apenas como estado inicial enquanto carrega (mantendo o botão desabilitado no carregamento). Isso elimina divergência entre UI e banco por cache ou workspace incorreto.
+Nada de mudança em regras de negócio: as gravações usam a função de atualização de contrato já existente, que continua validando permissão e workspace.
 
-### Passo 3 — Padronizar o botão
-- Criar um componente único de botão de exclusão (ícone/label, `disabled`, `aria-disabled`, tooltip com o motivo) e usá-lo na tela de detalhe de Empresas e nas demais telas de detalhe que hoje repetem esse bloco.
-- Aplicar o mesmo gating nas ações da grid de Empresas: a ação de excluir de cada linha e a de exclusão em lote passam a ficar visíveis mas desabilitadas quando não permitido (hoje a de linha não verifica nada antes de chamar o banco).
+## 2. Importação em massa sem limite de arquivos
 
-Nenhuma política de banco, permissão ou escopo será alterada — a exclusão continua bloqueada pelo banco como hoje.
+- Remover o limite de 20 arquivos por lote no diálogo de Importação em Massa.
+- Manter os limites por arquivo (PDF até 15 MB, DOCX até 10 MB) e processar em fila com concorrência controlada, para não sobrecarregar a IA nem o navegador.
+- Barra de progresso passa a mostrar "X de N" sem teto, com possibilidade de cancelar o restante da fila.
 
-## Parte 2 — Grid de /contracts sem seleção nem alteração
+## 3. Aditivos vinculados ao contrato principal
 
-Hoje `ContractsTable` é somente leitura: apenas links para o detalhe.
+Hoje o campo de vínculo existente (`parent_contract_id`) é usado para o pareamento Prestação/Compra (outsourcing), então aditivo precisa de um vínculo próprio para não misturar os dois conceitos.
 
-Passa a ter, seguindo o padrão já usado na grid de Empresas:
-- Coluna de seleção com checkbox no cabeçalho (selecionar/limpar tudo) e por linha, com contador de selecionados.
-- Barra de ações em lote para os selecionados: alterar status, definir responsável e excluir — cada ação visível sempre, habilitada conforme as permissões de contratos, e com confirmação na exclusão.
-- Edição inline nas colunas de Status e Responsável (as demais permanecem em leitura, com edição completa no detalhe).
-- Ação por linha para abrir o detalhe e excluir, desabilitada com tooltip quando sem permissão.
-- Exclusões e alterações em lote usam os helpers existentes que detectam bloqueio pelo banco, exibindo quantos registros foram realmente afetados (sem falso "sucesso").
-- Estados de carregando/vazio/erro preservados; a visão agrupada (empresa, serviço, cargo, senioridade) recebe a mesma tabela, mantendo seleção entre grupos.
-- Após qualquer alteração, o cache da lista é invalidado para refletir na hora.
+- Novos campos em contratos: tipo de documento (**Principal** ou **Aditivo**), contrato principal do aditivo, número do aditivo e data de vigência do aditivo.
+- Na tela de detalhe do contrato principal: card **Aditivos** listando os aditivos (número, título, vigência, valor, status), com ação para vincular um contrato existente como aditivo ou desvincular.
+- No detalhe de um aditivo: indicação clara do contrato principal, com link.
+- Na grid: badge "Aditivo" e, por padrão, aditivos aparecem agrupados sob o contrato principal (com filtro para exibir todos separadamente).
+- Na Importação em Massa e no vínculo manual (/contracts/links): opção de marcar o documento importado como aditivo e escolher o contrato principal.
 
 ## Detalhes técnicos
-- Arquivos afetados: `src/lib/access-control/use-can-delete.tsx`, nova server function em `src/lib/access-control/`, `src/routes/_authenticated/rbac-diagnostics` (painel), novo `src/components/records/delete-record-button.tsx`, `src/routes/_authenticated/companies.$id.tsx`, `src/routes/_authenticated/companies.tsx`, `src/components/contracts/contracts-grouped-list.tsx`, `src/routes/_authenticated/contracts.index.tsx` e uma server function de atualização em lote em `src/lib/contracts.functions.ts`.
-- Sem migrations, sem mudança de RLS, sem alteração de regra de negócio.
-- Validação: typecheck, lint e build; verificação manual na grid de contratos e na tela de detalhe de empresa.
+
+- Migration em `public.contracts`: `document_kind text not null default 'main' check (document_kind in ('main','amendment'))`, `amendment_of_id uuid references public.contracts(id) on delete set null`, `amendment_number text`, `amendment_effective_at date`, + índice em `amendment_of_id`. Sem alterar RLS/grants existentes.
+- `src/lib/contracts.functions.ts`: estender `updateContract` para os novos campos, adicionar `linkContractAmendment` / `unlinkContractAmendment` e incluir os campos em `listContracts` e no detalhe.
+- `src/components/contracts/contracts-grouped-list.tsx`: props de seleção (`selectedIds`, `onToggle`, `onToggleAll`) e células editáveis; estado de seleção fica em `src/routes/_authenticated/contracts.index.tsx` junto da barra de ações em lote.
+- `src/components/contracts/batch-import-contracts-dialog.tsx`: remover `MAX_FILES` e o aviso associado; fila com concorrência limitada.
+- Novo `src/components/contracts/contract-amendments-panel.tsx` usado em `contracts.$id.tsx`, reaproveitando o padrão de busca de `contract-parent-link.tsx`.
+- Validações: typecheck, lint e build.
