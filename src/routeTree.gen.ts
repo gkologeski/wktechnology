@@ -220,6 +220,7 @@ import { Route as AuthenticatedFinanceBankingRouteImport } from './routes/_authe
 import { Route as AuthenticatedFinanceBankAccountsRouteImport } from './routes/_authenticated/finance.bank-accounts'
 import { Route as AuthenticatedFinanceAuditRouteImport } from './routes/_authenticated/finance.audit'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
+import { Route as AuthenticatedContractsLinksRouteImport } from './routes/_authenticated/contracts.links'
 import { Route as AuthenticatedContractsIdRouteImport } from './routes/_authenticated/contracts.$id'
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
@@ -1560,6 +1561,12 @@ const AuthenticatedDealsIdRoute = AuthenticatedDealsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedDealsRoute,
 } as any)
+const AuthenticatedContractsLinksRoute =
+  AuthenticatedContractsLinksRouteImport.update({
+    id: '/contracts/links',
+    path: '/contracts/links',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedContractsIdRoute =
   AuthenticatedContractsIdRouteImport.update({
     id: '/contracts/$id',
@@ -2510,6 +2517,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
+  '/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -2864,6 +2872,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
+  '/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -3224,6 +3233,7 @@ export interface FileRoutesById {
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contracts/$id': typeof AuthenticatedContractsIdRoute
+  '/_authenticated/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
   '/_authenticated/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -3585,6 +3595,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/contracts/$id'
+    | '/contracts/links'
     | '/deals/$id'
     | '/finance/audit'
     | '/finance/bank-accounts'
@@ -3939,6 +3950,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/contracts/$id'
+    | '/contracts/links'
     | '/deals/$id'
     | '/finance/audit'
     | '/finance/bank-accounts'
@@ -4298,6 +4310,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies/$id'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contracts/$id'
+    | '/_authenticated/contracts/links'
     | '/_authenticated/deals/$id'
     | '/_authenticated/finance/audit'
     | '/_authenticated/finance/bank-accounts'
@@ -6157,6 +6170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDealsIdRouteImport
       parentRoute: typeof AuthenticatedDealsRoute
     }
+    '/_authenticated/contracts/links': {
+      id: '/_authenticated/contracts/links'
+      path: '/contracts/links'
+      fullPath: '/contracts/links'
+      preLoaderRoute: typeof AuthenticatedContractsLinksRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/contracts/$id': {
       id: '/_authenticated/contracts/$id'
       path: '/contracts/$id'
@@ -7676,6 +7696,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCatalogProductsRoute: typeof AuthenticatedCatalogProductsRoute
   AuthenticatedCatalogServicesRoute: typeof AuthenticatedCatalogServicesRoute
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
+  AuthenticatedContractsLinksRoute: typeof AuthenticatedContractsLinksRoute
   AuthenticatedFinanceAuditRoute: typeof AuthenticatedFinanceAuditRoute
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
   AuthenticatedFinanceBankingRoute: typeof AuthenticatedFinanceBankingRouteWithChildren
@@ -7813,6 +7834,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCatalogProductsRoute: AuthenticatedCatalogProductsRoute,
   AuthenticatedCatalogServicesRoute: AuthenticatedCatalogServicesRoute,
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
+  AuthenticatedContractsLinksRoute: AuthenticatedContractsLinksRoute,
   AuthenticatedFinanceAuditRoute: AuthenticatedFinanceAuditRoute,
   AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
   AuthenticatedFinanceBankingRoute:

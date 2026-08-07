@@ -55,9 +55,16 @@ Schema esperado (todos os campos podem ser null):
   "signature_provider": "forsign" | "docusign" | "clicksign" | "manual" | "outros",
   "signature_document_id": string, "signature_operation_id": string,
   "witnesses": [{"name": string, "cpf": string, "role": string}],
+  "self_contract_number": string,
+  "referenced_contract_numbers": [string],
   "confidence": 0..1,
   "warnings": [string]
-}`;
+}
+
+REGRAS ADICIONAIS DE NÚMERO E VÍNCULO:
+- \`self_contract_number\`: o número/identificação do próprio contrato, se impresso no documento (ex.: "Contrato nº 2026/0031").
+- \`referenced_contract_numbers\`: números de OUTROS contratos citados no documento, tipicamente quando um contrato de compra referencia o contrato de prestação firmado com o cliente final. Liste apenas números, sem prosa. Se não houver, use [].`;
+
 
 async function callGeminiExtract(
   userContent: Array<Record<string, unknown>>,
@@ -241,6 +248,19 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     if (f.contracting_name) metadata.contracting_name_extracted = f.contracting_name;
     if (f.contracting_cnpj) metadata.contracting_cnpj_extracted = f.contracting_cnpj;
     if (Array.isArray(f.warnings) && f.warnings.length) metadata.import_warnings = f.warnings;
+    if (f.self_contract_number) metadata.self_contract_number = f.self_contract_number;
+    const referenced = (f.referenced_contract_numbers ?? []).filter(
+      (n) => typeof n === "string" && n.trim().length > 0,
+    );
+    if (referenced.length) metadata.referenced_contract_numbers = referenced;
+
+    // Contratante = entidade legal do workspace? (contratos elegíveis ao TechPeople)
+    const { loadOwnLegalEntities, matchOwnEntity } = await import(
+      "@/lib/contracts/import-link.server"
+    );
+    const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
+    const ownEntity = matchOwnEntity(ownEntities, f.contracting_cnpj, f.contracting_name);
+    if (ownEntity) metadata.contracting_is_own_entity = true;
 
     const insertPayload: Record<string, unknown> = {
       workspace_id: workspaceId,
@@ -248,6 +268,8 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       role,
       title: f.title?.trim() || "Contrato importado",
       counterparty_company_id: counterpartyCompanyId,
+      contracting_legal_entity_id: ownEntity?.id ?? null,
+
       total_value: f.total_value ?? f.monthly_value ?? 0,
       currency: f.currency ?? "BRL",
       starts_at: f.starts_at ?? null,
@@ -324,4 +346,225 @@ export const getContractSourceFileUrl = createServerFn({ method: "POST" })
       fileName,
       kind: (row.imported_from as string | null) ?? null,
     };
+  });
+
+// ============= VÍNCULO AUTOMÁTICO PRESTAÇÃO ↔ COMPRA =============
+// Depois de um lote importado, tenta casar cada contrato de compra com o contrato
+// de prestação citado no documento. Sem casamento, o contrato fica pendente e
+// aparece na aba de vinculação manual.
+
+export const linkImportedContracts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({ ids: z.array(z.string().uuid()).min(1).max(50) })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+      "techcontracts.contracts.create.own",
+    ]);
+
+    const { resolveReferencedContract } = await import("@/lib/contracts/import-link.server");
+
+    const { data: batch, error: batchErr } = await supabase
+      .from("contracts")
+      .select("id, role, number, title, parent_contract_id, metadata")
+      .in("id", data.ids);
+    if (batchErr) throw batchErr;
+
+    // Universo de contratos de prestação do workspace (lote + existentes).
+    const { data: providers, error: provErr } = await supabase
+      .from("contracts")
+      .select("id, number, metadata")
+      .eq("role", "provider")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (provErr) throw provErr;
+
+    const candidates = (providers ?? []).map((p) => {
+      const row = p as { id: string; number: string | null; metadata: Record<string, unknown> | null };
+      return {
+        id: row.id,
+        number: row.number,
+        selfNumber: (row.metadata?.["self_contract_number"] as string | undefined) ?? null,
+      };
+    });
+
+    const linked: Array<{ id: string; parent_id: string; matched_number: string }> = [];
+    const pending: Array<{ id: string; title: string; referenced: string[] }> = [];
+
+    for (const c of batch ?? []) {
+      const row = c as {
+        id: string;
+        role: string;
+        title: string;
+        parent_contract_id: string | null;
+        metadata: Record<string, unknown> | null;
+      };
+      if (row.role !== "client" || row.parent_contract_id) continue;
+      const referenced = Array.isArray(row.metadata?.["referenced_contract_numbers"])
+        ? (row.metadata?.["referenced_contract_numbers"] as string[])
+        : [];
+      const hit = resolveReferencedContract(
+        referenced,
+        candidates.filter((k) => k.id !== row.id),
+      );
+      if (!hit) {
+        pending.push({ id: row.id, title: row.title, referenced });
+        continue;
+      }
+      const { error: upErr } = await supabase
+        .from("contracts")
+        .update({ parent_contract_id: hit.id })
+        .eq("id", row.id);
+      if (upErr) {
+        pending.push({ id: row.id, title: row.title, referenced });
+        continue;
+      }
+      linked.push({ id: row.id, parent_id: hit.id, matched_number: hit.matchedNumber });
+    }
+
+    return { linked, pending };
+  });
+
+// ============= FILA DE VINCULAÇÃO MANUAL =============
+
+export type PendingLinkRow = {
+  id: string;
+  role: "provider" | "client";
+  number: string | null;
+  title: string;
+  status: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  company_name: string | null;
+  contracting_name: string | null;
+  contracting_cnpj: string | null;
+  referenced_numbers: string[];
+  reason: string;
+};
+
+export const listContractsPendingLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        role: z.enum(["provider", "client", "all"]).optional(),
+        search: z.string().max(200).optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+
+    const { data: rows, error } = await supabase
+      .from("contracts")
+      .select(
+        "id, role, number, title, status, starts_at, ends_at, parent_contract_id, metadata, companies:counterparty_company_id(name)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw error;
+
+    const all = (rows ?? []).map((r) => {
+      const row = r as unknown as {
+        id: string;
+        role: "provider" | "client";
+        number: string | null;
+        title: string;
+        status: string;
+        starts_at: string | null;
+        ends_at: string | null;
+        parent_contract_id: string | null;
+        metadata: Record<string, unknown> | null;
+        companies?: { name: string | null } | null;
+      };
+      return row;
+    });
+
+    const parentIds = new Set(
+      all.map((r) => r.parent_contract_id).filter((v): v is string => Boolean(v)),
+    );
+
+    const term = (data.search ?? "").trim().toLowerCase();
+    const roleFilter = data.role && data.role !== "all" ? data.role : null;
+
+    const pending: PendingLinkRow[] = [];
+    for (const row of all) {
+      const dismissed = row.metadata?.["link_dismissed"] === true;
+      if (dismissed) continue;
+      const referenced = Array.isArray(row.metadata?.["referenced_contract_numbers"])
+        ? (row.metadata?.["referenced_contract_numbers"] as string[])
+        : [];
+
+      let reason: string | null = null;
+      if (row.role === "client" && !row.parent_contract_id) {
+        reason = referenced.length
+          ? `Número citado (${referenced.join(", ")}) não encontrado`
+          : "Nenhum número de contrato citado no documento";
+      } else if (row.role === "provider" && !parentIds.has(row.id)) {
+        reason = "Sem contrato de compra vinculado";
+      }
+      if (!reason) continue;
+      if (roleFilter && row.role !== roleFilter) continue;
+      if (
+        term &&
+        !`${row.title} ${row.number ?? ""} ${row.companies?.name ?? ""}`.toLowerCase().includes(term)
+      ) {
+        continue;
+      }
+
+      pending.push({
+        id: row.id,
+        role: row.role,
+        number: row.number,
+        title: row.title,
+        status: row.status,
+        starts_at: row.starts_at,
+        ends_at: row.ends_at,
+        company_name: row.companies?.name ?? null,
+        contracting_name: (row.metadata?.["contracting_name_extracted"] as string | null) ?? null,
+        contracting_cnpj: (row.metadata?.["contracting_cnpj_extracted"] as string | null) ?? null,
+        referenced_numbers: referenced,
+        reason,
+      });
+    }
+    return pending;
+  });
+
+// Remove um contrato da fila de vinculação (declara que não há contrato par).
+export const dismissContractLink = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), dismissed: z.boolean().default(true) }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+    ]);
+
+    const { data: row, error } = await supabase
+      .from("contracts")
+      .select("id, metadata")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!row) throw new Error("Contrato não encontrado.");
+
+    const metadata = {
+      ...((row.metadata as Record<string, unknown> | null) ?? {}),
+      link_dismissed: data.dismissed,
+    };
+    const { error: upErr } = await supabase
+      .from("contracts")
+      .update({ metadata })
+      .eq("id", data.id);
+    if (upErr) throw upErr;
+    return { id: data.id, dismissed: data.dismissed };
   });

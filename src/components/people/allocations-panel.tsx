@@ -39,7 +39,11 @@ import {
   type ContractRoleSuggestion,
 } from "@/lib/people/allocations.functions";
 import { SENIORITY_OPTIONS, SENIORITY_LABEL } from "@/lib/job-profiles-shared";
-import { listContracts } from "@/lib/contracts.functions";
+import {
+  listContracts,
+  listOwnContractingPurchaseContracts,
+} from "@/lib/contracts.functions";
+
 import { listProjects } from "@/lib/projects.functions";
 import { listPeople } from "@/lib/people/people.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -155,11 +159,19 @@ export function AllocationsPanel({
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">
                         {r.contract_title
-                          ? `Contrato: ${r.contract_number ? `${r.contract_number} · ` : ""}${r.contract_title}`
+                          ? `Contrato de prestação: ${r.contract_number ? `${r.contract_number} · ` : ""}${r.contract_title}`
                           : r.project_name
                             ? `Projeto: ${r.project_name}`
                             : "Sem vínculo"}
                       </div>
+                      {r.purchase_contract_title ? (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Contrato de compra:{" "}
+                          {r.purchase_contract_number ? `${r.purchase_contract_number} · ` : ""}
+                          {r.purchase_contract_title}
+                        </div>
+                      ) : null}
+
                       {r.manager_name ? (
                         <div className="text-xs text-muted-foreground mt-1">
                           Gestor: {r.manager_name}
@@ -267,6 +279,10 @@ function AllocationDialog({
 }) {
   const upsertFn = useServerFn(upsertAllocation);
   const [contractId, setContractId] = useState<string | null>(editing?.contract_id ?? null);
+  const [purchaseContractId, setPurchaseContractId] = useState<string | null>(
+    editing?.purchase_contract_id ?? null,
+  );
+
   const [projectId, setProjectId] = useState<string | null>(editing?.project_id ?? null);
   const [managerId, setManagerId] = useState<string | null>(editing?.manager_id ?? null);
   const [roleTitle, setRoleTitle] = useState(editing?.role_title ?? "");
@@ -310,6 +326,8 @@ function AllocationDialog({
           id: editing?.id ?? null,
           person_id: personId,
           contract_id: contractId,
+          purchase_contract_id: purchaseContractId,
+
           project_id: projectId,
           manager_id: managerId,
           role_title: roleTitle || null,
@@ -343,9 +361,20 @@ function AllocationDialog({
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
-            <Label>Contrato</Label>
+            <Label>Contrato de prestação</Label>
             <ContractSelect value={contractId} onChange={setContractId} />
           </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label>Contrato de compra (prestador)</Label>
+            <PurchaseContractSelect
+              value={purchaseContractId}
+              onChange={setPurchaseContractId}
+            />
+            <p className="text-xs text-muted-foreground">
+              Somente contratos de compra em que uma empresa do workspace é a contratante.
+            </p>
+          </div>
+
           <div className="space-y-2 md:col-span-2">
             <Label>Projeto (opcional)</Label>
             <ProjectSelect value={projectId} onChange={setProjectId} />
@@ -519,7 +548,48 @@ function ContractSelect({
   );
 }
 
+function PurchaseContractSelect({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (v: string | null) => void;
+}) {
+  const listFn = useServerFn(listOwnContractingPurchaseContracts);
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["allocations-purchase-contracts"],
+    queryFn: () => listFn({ data: {} }),
+    staleTime: 60_000,
+  });
+  const items = rows as Array<{
+    id: string;
+    number: string | null;
+    title: string;
+    company_name: string | null;
+  }>;
+  return (
+    <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
+      <SelectTrigger>
+        <SelectValue
+          placeholder={isLoading ? "Carregando…" : "Selecionar contrato de compra…"}
+        />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="__none">Sem contrato de compra</SelectItem>
+        {items.map((c) => (
+          <SelectItem key={c.id} value={c.id}>
+            {c.number ? `${c.number} · ` : ""}
+            {c.title}
+            {c.company_name ? ` — ${c.company_name}` : ""}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 function ProjectSelect({
+
   value,
   onChange,
 }: {
