@@ -1,13 +1,30 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FileStack, FileText, Link2, Plus, Search, Upload } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  FileStack,
+  FileText,
+  Filter,
+  Link2,
+  Plus,
+  Search,
+  SearchX,
+  Upload,
+  X,
+} from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -15,12 +32,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { listContracts, listContractGroupings } from "@/lib/contracts.functions";
+import { listContractsPaged, listContractGroupings } from "@/lib/contracts.functions";
+import { countContractsPendingLink } from "@/lib/contracts/import.functions";
+import { listLegalEntities } from "@/lib/legal-entities.functions";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
 import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
 import { BatchImportContractsDialog } from "@/components/contracts/batch-import-contracts-dialog";
 import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
-import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import {
+  AssigneeFilter,
+  ASSIGNEE_ALL,
+  ASSIGNEE_ME,
+  ASSIGNEE_NONE,
+} from "@/components/entity/assignee-filter";
+import { CompanyPicker } from "@/components/ui/company-picker";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import {
   ContractsTable,
   ContractsGroupedList,
@@ -30,18 +56,56 @@ import { ContractsBulkBar } from "@/components/contracts/contracts-bulk-bar";
 import { useCanDelete } from "@/lib/access-control/use-can-delete";
 import { Checkbox } from "@/components/ui/checkbox";
 
-
 type GroupBy = "none" | "company" | "service" | "job_profile" | "seniority";
 
 const GROUP_BY_VALUES: GroupBy[] = ["none", "company", "service", "job_profile", "seniority"];
+const PAGE_SIZES = [25, 50, 100, 200];
+
+type ContractSearch = {
+  groupBy: GroupBy;
+  page: number;
+  pageSize: number;
+  q: string;
+  role: string;
+  status: string;
+  assignee: string;
+  companyId: string;
+  companyName: string;
+  legalEntityId: string;
+  startsFrom: string;
+  startsTo: string;
+  endsFrom: string;
+  endsTo: string;
+};
+
+const str = (v: unknown) => (typeof v === "string" ? v : "");
+const num = (v: unknown, fallback: number) => {
+  const n = Number(v);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback;
+};
 
 export const Route = createFileRoute("/_authenticated/contracts/")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): ContractSearch => {
     const raw = String(search["groupBy"] ?? "none");
     const groupBy: GroupBy = (GROUP_BY_VALUES as string[]).includes(raw)
       ? (raw as GroupBy)
       : "none";
-    return { groupBy };
+    return {
+      groupBy,
+      page: num(search["page"], 1),
+      pageSize: num(search["pageSize"], 50),
+      q: str(search["q"]),
+      role: str(search["role"]),
+      status: str(search["status"]),
+      assignee: str(search["assignee"]),
+      companyId: str(search["companyId"]),
+      companyName: str(search["companyName"]),
+      legalEntityId: str(search["legalEntityId"]),
+      startsFrom: str(search["startsFrom"]),
+      startsTo: str(search["startsTo"]),
+      endsFrom: str(search["endsFrom"]),
+      endsTo: str(search["endsTo"]),
+    };
   },
   head: () => ({
     meta: [
@@ -63,95 +127,223 @@ const STATUS_LABEL: Record<string, string> = {
   terminated: "Rescindido",
 };
 
+const ROLE_LABEL: Record<string, string> = { provider: "Prestação", client: "Compra" };
+
+const iso = (d: Date) => d.toISOString().slice(0, 10);
+const plusDays = (days: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return iso(d);
+};
+
 function ContractsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate({ from: Route.fullPath });
-  const { groupBy } = Route.useSearch();
-  const list = useServerFn(listContracts);
+  const sp = Route.useSearch();
+  const meId = useCurrentUserId();
+  const list = useServerFn(listContractsPaged);
   const groupings = useServerFn(listContractGroupings);
-  const { assignee, setAssignee, filterRows } = useAssigneeFilter();
+  const countPending = useServerFn(countContractsPendingLink);
+  const legalEntitiesFn = useServerFn(listLegalEntities);
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techcontracts.contracts");
-  const [search, setSearch] = useState("");
-  const [role, setRole] = useState<string>("all");
-  const [status, setStatus] = useState<string>("all");
+
+  const [searchDraft, setSearchDraft] = useState(sp.q);
   const [openNew, setOpenNew] = useState(false);
   const [openImport, setOpenImport] = useState(false);
   const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
+  const [openFilters, setOpenFilters] = useState(false);
   const [nestAmendments, setNestAmendments] = useState(true);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedMap, setSelectedMap] = useState<Map<string, ContractRow>>(new Map());
 
+  // Atualiza a busca na URL com debounce, voltando para a página 1.
+  useEffect(() => {
+    if (searchDraft === sp.q) return;
+    const t = setTimeout(() => {
+      navigate({ search: (prev) => ({ ...prev, q: searchDraft, page: 1 }) });
+    }, 350);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchDraft]);
 
-  const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["contracts", { role, status, search }],
-    queryFn: () =>
-      list({
-        data: {
-          role: role === "all" ? undefined : (role as "provider" | "client"),
-          status:
-            status === "all"
-              ? undefined
-              : (status as
-                  | "draft"
-                  | "in_review"
-                  | "in_negotiation"
-                  | "awaiting_signature"
-                  | "active"
-                  | "renewing"
-                  | "ended"
-                  | "terminated"),
-          search: search || undefined,
-        },
-      }),
+  useEffect(() => {
+    setSearchDraft(sp.q);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sp.q]);
+
+  const setFilter = (patch: Partial<ContractSearch>) =>
+    navigate({ search: (prev) => ({ ...prev, ...patch, page: 1 }) });
+
+  const setPage = (page: number) => navigate({ search: (prev) => ({ ...prev, page }) });
+
+  const assigneeParam = useMemo(() => {
+    if (!sp.assignee || sp.assignee === ASSIGNEE_ALL) return undefined;
+    if (sp.assignee === ASSIGNEE_NONE) return "__none__";
+    if (sp.assignee === ASSIGNEE_ME) return meId ?? undefined;
+    return sp.assignee;
+  }, [sp.assignee, meId]);
+
+  const legalEntitiesQuery = useQuery({
+    queryKey: ["legal-entities", "contracts-filter"],
+    queryFn: () => legalEntitiesFn(),
+    staleTime: 300_000,
+  });
+  const legalEntityName = useMemo(
+    () =>
+      (legalEntitiesQuery.data ?? []).find((e) => e.id === sp.legalEntityId)?.name ?? "",
+    [legalEntitiesQuery.data, sp.legalEntityId],
+  );
+
+  const pendingQuery = useQuery({
+    queryKey: ["contracts", "pending-link-count"],
+    queryFn: () => countPending(),
+    staleTime: 60_000,
+  });
+  const pendingCount = pendingQuery.data?.count ?? 0;
+
+  const queryInput = {
+    role: sp.role ? (sp.role as "provider" | "client") : undefined,
+    status: sp.status ? (sp.status as keyof typeof STATUS_LABEL) : undefined,
+    search: sp.q || undefined,
+    companyId: sp.companyId || undefined,
+    legalEntityId: sp.legalEntityId || undefined,
+    legalEntityName: legalEntityName || undefined,
+    assignedTo: assigneeParam,
+    startsFrom: sp.startsFrom || undefined,
+    startsTo: sp.startsTo || undefined,
+    endsFrom: sp.endsFrom || undefined,
+    endsTo: sp.endsTo || undefined,
+    page: sp.page,
+    pageSize: sp.pageSize,
+  };
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["contracts", "paged", queryInput],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    queryFn: () => list({ data: queryInput as any }),
+    placeholderData: (prev) => prev,
   });
 
-  const filtered = useMemo(() => filterRows(rows) as ContractRow[], [rows, filterRows]);
+  const rows = (data?.rows ?? []) as ContractRow[];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / sp.pageSize));
 
-  const contractIds = useMemo(() => filtered.map((c) => c.id), [filtered]);
+  const contractIds = useMemo(() => rows.map((c) => c.id), [rows]);
 
   const groupQuery = useQuery({
     queryKey: ["contracts", "groupings", contractIds],
     queryFn: () => groupings({ data: { contractIds } }),
-    enabled: groupBy !== "none" && contractIds.length > 0,
+    enabled: sp.groupBy !== "none" && contractIds.length > 0,
   });
+
+  const selectedIds = useMemo(() => new Set(selectedMap.keys()), [selectedMap]);
 
   const selection = useMemo(
     () => ({
       selectedIds,
       onToggle: (id: string) =>
-        setSelectedIds((prev) => {
-          const next = new Set(prev);
+        setSelectedMap((prev) => {
+          const next = new Map(prev);
           if (next.has(id)) next.delete(id);
-          else next.add(id);
+          else {
+            const row = rows.find((r) => r.id === id);
+            if (row) next.set(id, row);
+          }
           return next;
         }),
       onToggleMany: (ids: string[], checked: boolean) =>
-        setSelectedIds((prev) => {
-          const next = new Set(prev);
+        setSelectedMap((prev) => {
+          const next = new Map(prev);
           for (const id of ids) {
-            if (checked) next.add(id);
-            else next.delete(id);
+            if (checked) {
+              const row = rows.find((r) => r.id === id);
+              if (row) next.set(id, row);
+            } else next.delete(id);
           }
           return next;
         }),
     }),
-    [selectedIds],
+    [selectedIds, rows],
   );
 
-  const selectedRows = useMemo(
-    () => filtered.filter((c) => selectedIds.has(c.id)),
-    [filtered, selectedIds],
-  );
+  const selectedRows = useMemo(() => Array.from(selectedMap.values()), [selectedMap]);
 
+  const activeChips: { key: string; label: string; clear: () => void }[] = [];
+  if (sp.role)
+    activeChips.push({
+      key: "role",
+      label: `Tipo: ${ROLE_LABEL[sp.role] ?? sp.role}`,
+      clear: () => setFilter({ role: "" }),
+    });
+  if (sp.status)
+    activeChips.push({
+      key: "status",
+      label: `Status: ${STATUS_LABEL[sp.status] ?? sp.status}`,
+      clear: () => setFilter({ status: "" }),
+    });
+  if (sp.companyId)
+    activeChips.push({
+      key: "company",
+      label: `Empresa: ${sp.companyName || "selecionada"}`,
+      clear: () => setFilter({ companyId: "", companyName: "" }),
+    });
+  if (sp.legalEntityId)
+    activeChips.push({
+      key: "legalEntity",
+      label: `Contratante: ${legalEntityName || "selecionado"}`,
+      clear: () => setFilter({ legalEntityId: "" }),
+    });
+  if (sp.startsFrom || sp.startsTo)
+    activeChips.push({
+      key: "starts",
+      label: `Início: ${sp.startsFrom || "…"} → ${sp.startsTo || "…"}`,
+      clear: () => setFilter({ startsFrom: "", startsTo: "" }),
+    });
+  if (sp.endsFrom || sp.endsTo)
+    activeChips.push({
+      key: "ends",
+      label: `Término: ${sp.endsFrom || "…"} → ${sp.endsTo || "…"}`,
+      clear: () => setFilter({ endsFrom: "", endsTo: "" }),
+    });
 
+  const advancedCount =
+    (sp.companyId ? 1 : 0) +
+    (sp.legalEntityId ? 1 : 0) +
+    (sp.startsFrom || sp.startsTo ? 1 : 0) +
+    (sp.endsFrom || sp.endsTo ? 1 : 0);
+
+  const hasFilters =
+    activeChips.length > 0 || Boolean(sp.q) || (sp.assignee && sp.assignee !== ASSIGNEE_ALL);
+
+  const clearAll = () =>
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        q: "",
+        role: "",
+        status: "",
+        assignee: ASSIGNEE_ALL,
+        companyId: "",
+        companyName: "",
+        legalEntityId: "",
+        startsFrom: "",
+        startsTo: "",
+        endsFrom: "",
+        endsTo: "",
+        page: 1,
+      }),
+    });
+
+  const firstIndex = total === 0 ? 0 : (sp.page - 1) * sp.pageSize + 1;
+  const lastIndex = Math.min(sp.page * sp.pageSize, total);
 
   return (
     <div className="p-6 space-y-5">
       <PageHeader
         title="Contratos"
         description="Ciclo de vida de contratos com clientes e fornecedores."
-        count={filtered.length}
-        countLabel={filtered.length === 1 ? "contrato" : "contratos"}
+        count={total}
+        countLabel={total === 1 ? "contrato" : "contratos"}
         actions={
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setOpenTemplate(true)}>
@@ -163,9 +355,22 @@ function ContractsPage() {
             <Button variant="outline" onClick={() => setOpenBatch(true)}>
               <Upload className="h-4 w-4 mr-1" /> Importar em lote
             </Button>
-            <Button variant="outline" asChild>
+            <Button
+              variant="outline"
+              asChild
+              aria-label={
+                pendingCount > 0
+                  ? `Vincular contratos, ${pendingCount} pendentes`
+                  : "Vincular contratos"
+              }
+            >
               <Link to="/contracts/links">
                 <Link2 className="h-4 w-4 mr-1" /> Vincular contratos
+                {pendingCount > 0 && (
+                  <Badge variant="destructive" className="ml-2 px-1.5">
+                    {pendingCount > 99 ? "99+" : pendingCount}
+                  </Badge>
+                )}
               </Link>
             </Button>
 
@@ -181,13 +386,17 @@ function ContractsPage() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por título ou número…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
             className="pl-8"
+            aria-label="Buscar contratos"
           />
         </div>
-        <Select value={role} onValueChange={setRole}>
-          <SelectTrigger className="w-40">
+        <Select
+          value={sp.role || "all"}
+          onValueChange={(v) => setFilter({ role: v === "all" ? "" : v })}
+        >
+          <SelectTrigger className="w-40" aria-label="Tipo">
             <SelectValue placeholder="Tipo" />
           </SelectTrigger>
           <SelectContent>
@@ -196,8 +405,11 @@ function ContractsPage() {
             <SelectItem value="client">Compra</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-52">
+        <Select
+          value={sp.status || "all"}
+          onValueChange={(v) => setFilter({ status: v === "all" ? "" : v })}
+        >
+          <SelectTrigger className="w-52" aria-label="Status">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -209,14 +421,174 @@ function ContractsPage() {
             ))}
           </SelectContent>
         </Select>
-        <AssigneeFilter value={assignee} onChange={setAssignee} />
+        <AssigneeFilter
+          value={sp.assignee || ASSIGNEE_ALL}
+          onChange={(next) => setFilter({ assignee: next })}
+        />
+
+        <Popover open={openFilters} onOpenChange={setOpenFilters}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className="gap-1">
+              <Filter className="h-4 w-4" /> Filtros
+              {advancedCount > 0 && (
+                <Badge variant="secondary" className="ml-1 px-1.5">
+                  {advancedCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-96 space-y-4">
+            <div className="space-y-1.5">
+              <Label>Empresa (contraparte)</Label>
+              <CompanyPicker
+                mode="pick"
+                hydrateById={false}
+                value={{ id: sp.companyId || null, name: sp.companyName }}
+                onChange={(v) =>
+                  setFilter({ companyId: v.id ?? "", companyName: v.name })
+                }
+                placeholder="Buscar empresa"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="filter-legal-entity">Contratante</Label>
+              <Select
+                value={sp.legalEntityId || "all"}
+                onValueChange={(v) => setFilter({ legalEntityId: v === "all" ? "" : v })}
+              >
+                <SelectTrigger id="filter-legal-entity">
+                  <SelectValue placeholder="Todos os contratantes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os contratantes</SelectItem>
+                  {(legalEntitiesQuery.data ?? []).map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Vigência</Label>
+              <div className="flex flex-wrap gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setFilter({ endsFrom: iso(new Date()), endsTo: plusDays(30) })}
+                >
+                  Vencendo em 30 dias
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setFilter({ endsFrom: iso(new Date()), endsTo: plusDays(60) })}
+                >
+                  60 dias
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setFilter({ endsFrom: iso(new Date()), endsTo: plusDays(90) })}
+                >
+                  90 dias
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    setFilter({
+                      startsTo: iso(new Date()),
+                      endsFrom: iso(new Date()),
+                      endsTo: "",
+                      startsFrom: "",
+                    })
+                  }
+                >
+                  Vigentes hoje
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() =>
+                    setFilter({ endsTo: iso(new Date()), endsFrom: "", startsFrom: "", startsTo: "" })
+                  }
+                >
+                  Já encerrados
+                </Button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label htmlFor="starts-from" className="text-xs text-muted-foreground">
+                    Início de
+                  </Label>
+                  <Input
+                    id="starts-from"
+                    type="date"
+                    value={sp.startsFrom}
+                    onChange={(e) => setFilter({ startsFrom: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="starts-to" className="text-xs text-muted-foreground">
+                    Início até
+                  </Label>
+                  <Input
+                    id="starts-to"
+                    type="date"
+                    value={sp.startsTo}
+                    onChange={(e) => setFilter({ startsTo: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="ends-from" className="text-xs text-muted-foreground">
+                    Término de
+                  </Label>
+                  <Input
+                    id="ends-from"
+                    type="date"
+                    value={sp.endsFrom}
+                    onChange={(e) => setFilter({ endsFrom: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="ends-to" className="text-xs text-muted-foreground">
+                    Término até
+                  </Label>
+                  <Input
+                    id="ends-to"
+                    type="date"
+                    value={sp.endsTo}
+                    onChange={(e) => setFilter({ endsTo: e.target.value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button type="button" variant="ghost" size="sm" onClick={clearAll}>
+                Limpar filtros
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
         <div className="flex items-center gap-2">
           <Label htmlFor="contracts-group-by" className="text-sm text-muted-foreground">
             Agrupar por
           </Label>
           <Select
-            value={groupBy}
-            onValueChange={(next) => navigate({ search: { groupBy: next as GroupBy } })}
+            value={sp.groupBy}
+            onValueChange={(next) =>
+              navigate({ search: (prev) => ({ ...prev, groupBy: next as GroupBy }) })
+            }
           >
             <SelectTrigger id="contracts-group-by" className="w-44">
               <SelectValue placeholder="Nenhum" />
@@ -242,20 +614,54 @@ function ContractsPage() {
         </div>
       </div>
 
+      {activeChips.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {activeChips.map((chip) => (
+            <Badge key={chip.key} variant="secondary" className="gap-1 pr-1">
+              {chip.label}
+              <button
+                type="button"
+                aria-label={`Remover filtro ${chip.label}`}
+                onClick={chip.clear}
+                className="rounded p-0.5 hover:bg-background/60"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </Badge>
+          ))}
+          <Button variant="ghost" size="sm" onClick={clearAll}>
+            Limpar filtros
+          </Button>
+        </div>
+      )}
+
       {selectedRows.length > 0 ? (
         <ContractsBulkBar
           selected={selectedRows}
-          onClear={() => setSelectedIds(new Set())}
+          onClear={() => setSelectedMap(new Map())}
           canDelete={(row) => canDeleteRecord(row)}
           canDeleteLoading={deletePermLoading}
         />
       ) : null}
 
       {isLoading ? (
-        <div className="rounded-lg border bg-card p-8 text-center text-sm text-muted-foreground">
-          Carregando…
+        <div className="space-y-2 rounded-lg border bg-card p-4">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : rows.length === 0 && hasFilters ? (
+        <div className="rounded-lg border bg-card p-12 text-center">
+          <SearchX className="mx-auto h-10 w-10 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-medium">Nenhum resultado para os filtros</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Ajuste ou limpe os filtros para ver mais contratos.
+          </p>
+          <Button className="mt-4" variant="outline" onClick={clearAll}>
+            Limpar filtros
+          </Button>
+        </div>
+      ) : rows.length === 0 ? (
         <div className="rounded-lg border bg-card p-12 text-center">
           <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
           <h3 className="mt-4 text-lg font-medium">Nenhum contrato ainda</h3>
@@ -266,28 +672,108 @@ function ContractsPage() {
             <Plus className="h-4 w-4 mr-1" /> Novo contrato
           </Button>
         </div>
-      ) : groupBy === "none" ? (
-        <div className="rounded-lg border bg-card">
-          <ContractsTable
-            rows={filtered}
-            selection={selection}
-            editable
-            nestAmendments={nestAmendments}
-          />
-        </div>
       ) : (
-        <ContractsGroupedList
-          rows={filtered}
-          groupBy={groupBy}
-          groupings={groupQuery.data}
-          isLoading={groupQuery.isLoading}
-          isError={groupQuery.isError}
-          onRetry={() => groupQuery.refetch()}
-          selection={selection}
-          editable
-          nestAmendments={nestAmendments}
-        />
+        <div className="space-y-3">
+          {(sp.groupBy !== "none" || nestAmendments) && total > rows.length && (
+            <p className="text-xs text-muted-foreground">
+              O agrupamento e o aninhamento de aditivos consideram apenas os contratos da página
+              exibida.
+            </p>
+          )}
 
+          {sp.groupBy === "none" ? (
+            <div className="rounded-lg border bg-card">
+              <ContractsTable
+                rows={rows}
+                selection={selection}
+                editable
+                nestAmendments={nestAmendments}
+              />
+            </div>
+          ) : (
+            <ContractsGroupedList
+              rows={rows}
+              groupBy={sp.groupBy}
+              groupings={groupQuery.data}
+              isLoading={groupQuery.isLoading}
+              isError={groupQuery.isError}
+              onRetry={() => groupQuery.refetch()}
+              selection={selection}
+              editable
+              nestAmendments={nestAmendments}
+            />
+          )}
+
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card px-3 py-2">
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              Exibindo {firstIndex}–{lastIndex} de {total} contratos
+              {isFetching ? " · atualizando…" : ""}
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="page-size" className="text-sm text-muted-foreground">
+                  Por página
+                </Label>
+                <Select
+                  value={String(sp.pageSize)}
+                  onValueChange={(v) => setFilter({ pageSize: Number(v) })}
+                >
+                  <SelectTrigger id="page-size" className="h-9 w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAGE_SIZES.map((s) => (
+                      <SelectItem key={s} value={String(s)}>
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Primeira página"
+                  disabled={sp.page <= 1}
+                  onClick={() => setPage(1)}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Página anterior"
+                  disabled={sp.page <= 1}
+                  onClick={() => setPage(sp.page - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2 text-sm">
+                  {sp.page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Próxima página"
+                  disabled={sp.page >= totalPages}
+                  onClick={() => setPage(sp.page + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  aria-label="Última página"
+                  disabled={sp.page >= totalPages}
+                  onClick={() => setPage(totalPages)}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       <QuickCreateContractDialog
