@@ -32,6 +32,7 @@ import { ContractFileViewerDialog } from "@/components/contracts/contract-file-v
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
+import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({ meta: [{ title: "Contrato" }] }),
@@ -144,7 +145,7 @@ function ContractDetail() {
       toast.success("Contrato excluído.");
       qc.removeQueries({ queryKey: ["contract", id] });
       await qc.invalidateQueries({ queryKey: ["contracts"] });
-      navigate({ to: "/contracts", search: { groupBy: "none" } });
+      navigate({ to: "/contracts", search: DEFAULT_CONTRACTS_SEARCH });
 
     } catch (e) {
       toast.error((e as Error).message);
@@ -159,7 +160,7 @@ function ContractDetail() {
       <div className="p-6">
         <p className="text-sm text-muted-foreground">Contrato não encontrado.</p>
         <Button variant="outline" asChild className="mt-4">
-          <Link to="/contracts" search={{ groupBy: "none" }}>
+          <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
             Voltar
           </Link>
         </Button>
@@ -173,7 +174,7 @@ function ContractDetail() {
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-5 min-w-0">
             <Button variant="ghost" size="icon" asChild className="rounded-full">
-              <Link to="/contracts" search={{ groupBy: "none" }}>
+              <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
