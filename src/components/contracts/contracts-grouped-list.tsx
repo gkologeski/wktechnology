@@ -2,7 +2,7 @@
 // empresa contraparte ou por serviço do catálogo associado.
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Building2, ChevronDown, Package } from "lucide-react";
+import { Briefcase, Building2, ChevronDown, Layers, Package } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 
 export type ContractRow = {
   id: string;
@@ -264,7 +265,7 @@ export function ContractsGroupedList({
   onRetry,
 }: {
   rows: ContractRow[];
-  groupBy: "company" | "service";
+  groupBy: ContractGroupBy;
   groupings: ContractGroupings | undefined;
   isLoading?: boolean;
   isError?: boolean;
@@ -310,9 +311,16 @@ export function ContractsGroupedList({
   );
 }
 
-function GroupSection({ group, groupBy }: { group: Group; groupBy: "company" | "service" }) {
+const GROUP_ICON = {
+  company: Building2,
+  service: Package,
+  job_profile: Briefcase,
+  seniority: Layers,
+} as const;
+
+function GroupSection({ group, groupBy }: { group: Group; groupBy: ContractGroupBy }) {
   const [open, setOpen] = useState(true);
-  const Icon = groupBy === "company" ? Building2 : Package;
+  const Icon = GROUP_ICON[groupBy];
   return (
     <Collapsible
       open={open}
@@ -326,6 +334,9 @@ function GroupSection({ group, groupBy }: { group: Group; groupBy: "company" | "
         />
         <Icon aria-hidden="true" className="h-4 w-4 text-muted-foreground shrink-0" />
         <span className="font-medium truncate">{group.label}</span>
+        {group.sublabel ? (
+          <span className="text-sm text-muted-foreground truncate">· {group.sublabel}</span>
+        ) : null}
         <Badge variant="secondary" className="shrink-0">
           {group.rows.length}
         </Badge>
