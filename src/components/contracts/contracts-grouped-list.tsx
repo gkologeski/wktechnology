@@ -52,6 +52,7 @@ export type ContractRow = {
   assigned_to?: string | null;
   document_kind?: string | null;
   amendment_of_id?: string | null;
+  parent_contract_id?: string | null;
   amendment_number?: string | null;
 };
 
@@ -111,34 +112,62 @@ function dateOnly(value: string | null | undefined) {
   return value ? value.slice(0, 10) : "";
 }
 
+export type ArrangedContract = {
+  row: ContractRow;
+  depth: number;
+  linkKind: "amendment" | "purchase" | null;
+};
+
 /**
- * Ordena as linhas colocando cada aditivo imediatamente abaixo do seu contrato
- * principal (quando ele está na lista). Retorna a marcação de indentação.
+ * Ordena as linhas montando a árvore de vínculos: aditivos e contratos de
+ * compra ficam imediatamente abaixo do contrato ao qual estão vinculados
+ * (quando ele está na lista). Retorna profundidade e tipo de vínculo.
  */
-export function arrangeWithAmendments(
-  rows: ContractRow[],
-  nest: boolean,
-): { row: ContractRow; nested: boolean }[] {
-  if (!nest) return rows.map((row) => ({ row, nested: false }));
+export function arrangeContractLinks(rows: ContractRow[], nest: boolean): ArrangedContract[] {
+  if (!nest) return rows.map((row) => ({ row, depth: 0, linkKind: null }));
   const byId = new Map(rows.map((r) => [r.id, r]));
-  const childrenByMain = new Map<string, ContractRow[]>();
+
+  const parentOf = (r: ContractRow): { id: string; kind: "amendment" | "purchase" } | null => {
+    const amendmentId = r.amendment_of_id ?? null;
+    if (amendmentId && amendmentId !== r.id && byId.has(amendmentId)) {
+      return { id: amendmentId, kind: "amendment" };
+    }
+    const parentId = r.parent_contract_id ?? null;
+    if (r.role === "client" && parentId && parentId !== r.id && byId.has(parentId)) {
+      return { id: parentId, kind: "purchase" };
+    }
+    return null;
+  };
+
+  const childrenByParent = new Map<string, ArrangedContract[]>();
   for (const r of rows) {
-    const mainId = r.amendment_of_id ?? null;
-    if (mainId && byId.has(mainId)) {
-      const list = childrenByMain.get(mainId) ?? [];
-      list.push(r);
-      childrenByMain.set(mainId, list);
+    const parent = parentOf(r);
+    if (!parent) continue;
+    const list = childrenByParent.get(parent.id) ?? [];
+    list.push({ row: r, depth: 0, linkKind: parent.kind });
+    childrenByParent.set(parent.id, list);
+  }
+  // aditivos antes dos contratos de compra
+  for (const list of childrenByParent.values()) {
+    list.sort((a, b) => (a.linkKind === b.linkKind ? 0 : a.linkKind === "amendment" ? -1 : 1));
+  }
+
+  const out: ArrangedContract[] = [];
+  const seen = new Set<string>();
+  function push(row: ContractRow, depth: number, linkKind: ArrangedContract["linkKind"]) {
+    if (seen.has(row.id)) return; // guarda contra ciclos
+    seen.add(row.id);
+    out.push({ row, depth, linkKind });
+    for (const child of childrenByParent.get(row.id) ?? []) {
+      push(child.row, depth + 1, child.linkKind);
     }
   }
-  const out: { row: ContractRow; nested: boolean }[] = [];
   for (const r of rows) {
-    const mainId = r.amendment_of_id ?? null;
-    if (mainId && byId.has(mainId)) continue; // entra sob o principal
-    out.push({ row: r, nested: false });
-    for (const child of childrenByMain.get(r.id) ?? []) {
-      out.push({ row: child, nested: true });
-    }
+    if (parentOf(r)) continue; // entra sob o pai
+    push(r, 0, null);
   }
+  // qualquer linha não visitada (ciclo) entra na raiz
+  for (const r of rows) if (!seen.has(r.id)) push(r, 0, null);
   return out;
 }
 
@@ -146,21 +175,21 @@ export function ContractsTable({
   rows,
   selection,
   editable = false,
-  nestAmendments = false,
+  nestLinks = false,
   onChanged,
 }: {
   rows: ContractRow[];
   selection?: ContractsSelection;
   editable?: boolean;
-  nestAmendments?: boolean;
+  nestLinks?: boolean;
   onChanged?: () => void;
 }) {
-  const arranged = useMemo(
-    () => arrangeWithAmendments(rows, nestAmendments),
-    [rows, nestAmendments],
-  );
+  const arranged = useMemo(() => arrangeContractLinks(rows, nestLinks), [rows, nestLinks]);
+
   const ids = useMemo(() => rows.map((r) => r.id), [rows]);
-  const allSelected = selection ? ids.length > 0 && ids.every((id) => selection.selectedIds.has(id)) : false;
+  const allSelected = selection
+    ? ids.length > 0 && ids.every((id) => selection.selectedIds.has(id))
+    : false;
   const someSelected = selection ? ids.some((id) => selection.selectedIds.has(id)) : false;
 
   return (
@@ -187,11 +216,12 @@ export function ContractsTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {arranged.map(({ row: c, nested }) => (
+        {arranged.map(({ row: c, depth, linkKind }) => (
           <ContractTableRow
             key={c.id}
             contract={c}
-            nested={nested}
+            depth={depth}
+            linkKind={linkKind}
             selection={selection}
             editable={editable}
             onChanged={onChanged}
@@ -204,13 +234,15 @@ export function ContractsTable({
 
 function ContractTableRow({
   contract: c,
-  nested,
+  depth,
+  linkKind,
   selection,
   editable,
   onChanged,
 }: {
   contract: ContractRow;
-  nested: boolean;
+  depth: number;
+  linkKind: ArrangedContract["linkKind"];
   selection?: ContractsSelection;
   editable: boolean;
   onChanged?: () => void;
@@ -254,8 +286,11 @@ function ContractTableRow({
         </Link>
       </TableCell>
       <TableCell>
-        <div className={`flex items-center gap-2 ${nested ? "pl-5" : ""}`}>
-          {nested ? (
+        <div
+          className="flex items-center gap-2"
+          style={depth > 0 ? { paddingLeft: depth * 20 } : undefined}
+        >
+          {depth > 0 ? (
             <CornerDownRight
               className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
               aria-hidden="true"
@@ -273,6 +308,12 @@ function ContractTableRow({
               Aditivo{c.amendment_number ? ` ${c.amendment_number}` : ""}
             </Badge>
           ) : null}
+          {linkKind === "purchase" ? (
+            <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
+              Compra
+            </Badge>
+          ) : null}
+
           {c.imported_from ? (
             <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
               Importado
@@ -433,7 +474,8 @@ function buildGroups(
     for (const s of groupings?.services ?? []) {
       if (!s.catalogId || !s.catalogName) continue;
       const list = byContract.get(s.contractId) ?? [];
-      if (!list.some((i) => i.id === s.catalogId)) list.push({ id: s.catalogId, name: s.catalogName });
+      if (!list.some((i) => i.id === s.catalogId))
+        list.push({ id: s.catalogId, name: s.catalogName });
       byContract.set(s.contractId, list);
     }
     for (const row of rows) {
@@ -495,7 +537,6 @@ function buildGroups(
   });
 }
 
-
 export function ContractsGroupedList({
   rows,
   groupBy,
@@ -505,7 +546,7 @@ export function ContractsGroupedList({
   onRetry,
   selection,
   editable = false,
-  nestAmendments = false,
+  nestLinks = false,
 }: {
   rows: ContractRow[];
   groupBy: ContractGroupBy;
@@ -515,7 +556,7 @@ export function ContractsGroupedList({
   onRetry?: () => void;
   selection?: ContractsSelection;
   editable?: boolean;
-  nestAmendments?: boolean;
+  nestLinks?: boolean;
 }) {
   const groups = useMemo(() => buildGroups(rows, groupBy, groupings), [rows, groupBy, groupings]);
 
@@ -557,7 +598,7 @@ export function ContractsGroupedList({
           groupBy={groupBy}
           {...(selection ? { selection } : {})}
           editable={editable}
-          nestAmendments={nestAmendments}
+          nestLinks={nestLinks}
         />
       ))}
     </div>
@@ -576,13 +617,13 @@ function GroupSection({
   groupBy,
   selection,
   editable = false,
-  nestAmendments = false,
+  nestLinks = false,
 }: {
   group: Group;
   groupBy: ContractGroupBy;
   selection?: ContractsSelection;
   editable?: boolean;
-  nestAmendments?: boolean;
+  nestLinks?: boolean;
 }) {
   const [open, setOpen] = useState(true);
   const Icon = GROUP_ICON[groupBy];
@@ -615,7 +656,7 @@ function GroupSection({
             rows={group.rows}
             {...(selection ? { selection } : {})}
             editable={editable}
-            nestAmendments={nestAmendments}
+            nestLinks={nestLinks}
           />
         </div>
       </CollapsibleContent>

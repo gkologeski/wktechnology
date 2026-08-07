@@ -153,7 +153,7 @@ function ContractsPage() {
   const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
   const [openFilters, setOpenFilters] = useState(false);
-  const [nestAmendments, setNestAmendments] = useState(true);
+  const [nestLinks, setNestLinks] = useState(true);
   const [selectedMap, setSelectedMap] = useState<Map<string, ContractRow>>(new Map());
 
   // Atualiza a busca na URL com debounce, voltando para a página 1.
@@ -174,7 +174,8 @@ function ContractsPage() {
   const setFilter = (patch: Partial<ContractSearch>) =>
     navigate({ search: (prev: ContractSearch) => ({ ...prev, ...patch, page: 1 }) });
 
-  const setPage = (page: number) => navigate({ search: (prev: ContractSearch) => ({ ...prev, page }) });
+  const setPage = (page: number) =>
+    navigate({ search: (prev: ContractSearch) => ({ ...prev, page }) });
 
   const assigneeParam = useMemo(() => {
     if (!sp.assignee || sp.assignee === ASSIGNEE_ALL) return undefined;
@@ -189,8 +190,7 @@ function ContractsPage() {
     staleTime: 300_000,
   });
   const legalEntityName = useMemo(
-    () =>
-      (legalEntitiesQuery.data ?? []).find((e) => e.id === sp.legalEntityId)?.name ?? "",
+    () => (legalEntitiesQuery.data ?? []).find((e) => e.id === sp.legalEntityId)?.name ?? "",
     [legalEntitiesQuery.data, sp.legalEntityId],
   );
 
@@ -444,9 +444,7 @@ function ContractsPage() {
                 mode="pick"
                 hydrateById={false}
                 value={{ id: sp.companyId || null, name: sp.companyName }}
-                onChange={(v) =>
-                  setFilter({ companyId: v.id ?? "", companyName: v.name })
-                }
+                onChange={(v) => setFilter({ companyId: v.id ?? "", companyName: v.name })}
                 placeholder="Buscar empresa"
               />
             </div>
@@ -518,7 +516,12 @@ function ContractsPage() {
                   size="sm"
                   variant="secondary"
                   onClick={() =>
-                    setFilter({ endsTo: iso(new Date()), endsFrom: "", startsFrom: "", startsTo: "" })
+                    setFilter({
+                      endsTo: iso(new Date()),
+                      endsFrom: "",
+                      startsFrom: "",
+                      startsTo: "",
+                    })
                   }
                 >
                   Já encerrados
@@ -587,7 +590,9 @@ function ContractsPage() {
           <Select
             value={sp.groupBy}
             onValueChange={(next) =>
-              navigate({ search: (prev: ContractSearch) => ({ ...prev, groupBy: next as GroupBy }) })
+              navigate({
+                search: (prev: ContractSearch) => ({ ...prev, groupBy: next as GroupBy }),
+              })
             }
           >
             <SelectTrigger id="contracts-group-by" className="w-44">
@@ -604,12 +609,12 @@ function ContractsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Checkbox
-            id="nest-amendments"
-            checked={nestAmendments}
-            onCheckedChange={(v) => setNestAmendments(v === true)}
+            id="nest-links"
+            checked={nestLinks}
+            onCheckedChange={(v) => setNestLinks(v === true)}
           />
-          <Label htmlFor="nest-amendments" className="text-sm text-muted-foreground">
-            Aninhar aditivos
+          <Label htmlFor="nest-links" className="text-sm text-muted-foreground">
+            Aninhar vínculos
           </Label>
         </div>
       </div>
@@ -674,7 +679,7 @@ function ContractsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {(sp.groupBy !== "none" || nestAmendments) && total > rows.length && (
+          {(sp.groupBy !== "none" || nestLinks) && total > rows.length && (
             <p className="text-xs text-muted-foreground">
               O agrupamento e o aninhamento de aditivos consideram apenas os contratos da página
               exibida.
@@ -683,12 +688,7 @@ function ContractsPage() {
 
           {sp.groupBy === "none" ? (
             <div className="rounded-lg border bg-card">
-              <ContractsTable
-                rows={rows}
-                selection={selection}
-                editable
-                nestAmendments={nestAmendments}
-              />
+              <ContractsTable rows={rows} selection={selection} editable nestLinks={nestLinks} />
             </div>
           ) : (
             <ContractsGroupedList
@@ -700,7 +700,7 @@ function ContractsPage() {
               onRetry={() => groupQuery.refetch()}
               selection={selection}
               editable
-              nestAmendments={nestAmendments}
+              nestLinks={nestLinks}
             />
           )}
 
