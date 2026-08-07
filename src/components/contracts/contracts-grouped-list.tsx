@@ -287,8 +287,12 @@ function ContractTableRow({
         </Link>
       </TableCell>
       <TableCell>
-        <div className={`flex items-center gap-2 ${nested ? "pl-5" : ""}`}>
-          {nested ? (
+      <TableCell>
+        <div
+          className="flex items-center gap-2"
+          style={depth > 0 ? { paddingLeft: depth * 20 } : undefined}
+        >
+          {depth > 0 ? (
             <CornerDownRight
               className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
               aria-hidden="true"
@@ -306,6 +310,12 @@ function ContractTableRow({
               Aditivo{c.amendment_number ? ` ${c.amendment_number}` : ""}
             </Badge>
           ) : null}
+          {linkKind === "purchase" ? (
+            <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
+              Compra
+            </Badge>
+          ) : null}
+
           {c.imported_from ? (
             <Badge variant="outline" className="h-4 shrink-0 px-1.5 py-0 text-[10px]">
               Importado
