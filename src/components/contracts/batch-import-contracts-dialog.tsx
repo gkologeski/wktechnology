@@ -171,6 +171,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           kind,
           roleHint: "auto",
           status: "queued",
+          docKind: "main",
+          mainContract: null,
         });
       }
       return next;
