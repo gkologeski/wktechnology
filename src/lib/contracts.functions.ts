@@ -434,7 +434,7 @@ export const listContractLinkEvents = createServerFn({ method: "POST" })
     const events = (rows ?? []) as Array<{
       id: string;
       event_type: string;
-      payload: Record<string, unknown> | null;
+      payload: LinkEventPayload | null;
       actor_id: string | null;
       created_at: string;
     }>;
