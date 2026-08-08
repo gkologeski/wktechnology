@@ -112,7 +112,9 @@ export const diagnoseContractRoles = createServerFn({ method: "POST" })
       const matchedByCnpj =
         ownCnpjs.has(digits(meta.contracting_cnpj)) || ownCnpjs.has(digits(meta.counterparty_cnpj));
       const ownName =
-        inferred === "provider" ? (meta.counterparty_name ?? null) : (meta.contracting_name ?? null);
+        inferred === "provider"
+          ? (meta.counterparty_name ?? null)
+          : (meta.contracting_name ?? null);
       conflicts.push({
         id: r.id,
         number: r.number,
@@ -184,7 +186,9 @@ export const recalcContractRoles = createServerFn({ method: "POST" })
       }
 
       const ownName =
-        inferred === "provider" ? (meta.counterparty_name ?? null) : (meta.contracting_name ?? null);
+        inferred === "provider"
+          ? (meta.counterparty_name ?? null)
+          : (meta.contracting_name ?? null);
       const newTitle = data.retitle
         ? buildContractTitle({
             role: inferred,

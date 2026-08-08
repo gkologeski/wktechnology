@@ -22,7 +22,6 @@ const EVENT_LABEL: Record<string, string> = {
 
 const ROLE_LABEL: Record<string, string> = { provider: "Prestação", client: "Compra" };
 
-
 type EventRow = {
   id: string;
   event_type: string;
@@ -44,7 +43,6 @@ type EventRow = {
     } | null;
   };
 };
-
 
 function describe(row: EventRow): string {
   const child = row.payload.child_title ?? "contrato";
@@ -68,7 +66,6 @@ function describe(row: EventRow): string {
       return `${child} · ${parent}`;
   }
 }
-
 
 export function ContractLinksHistoryCard({ contractId }: { contractId: string }) {
   const list = useServerFn(listContractLinkEvents);

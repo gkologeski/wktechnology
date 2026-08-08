@@ -234,7 +234,6 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     const f = data.fields;
     const extractedRole = f.role ?? null;
 
-
     const counterpartyCompanyId = await findCompanyIdByCnpjOrName(
       supabase,
       workspaceId,
@@ -301,7 +300,6 @@ export const createContractFromImport = createServerFn({ method: "POST" })
         }) ||
         f.title?.trim() ||
         "Contrato importado",
-
 
       counterparty_company_id: counterpartyCompanyId,
       contracting_legal_entity_id: ownEntity?.id ?? null,

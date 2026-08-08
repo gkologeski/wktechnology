@@ -50,10 +50,7 @@ export function ContractRolesRecalcDialog({
   });
 
   const conflicts = data?.conflicts ?? [];
-  const ids = useMemo(
-    () => selected ?? new Set(conflicts.map((c) => c.id)),
-    [selected, conflicts],
-  );
+  const ids = useMemo(() => selected ?? new Set(conflicts.map((c) => c.id)), [selected, conflicts]);
 
   const toggle = (id: string) => {
     const next = new Set(ids);
@@ -209,15 +206,7 @@ export function ContractRolesRecalcDialog({
   );
 }
 
-function Metric({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "warning";
-}) {
+function Metric({ label, value, tone }: { label: string; value: number; tone?: "warning" }) {
   return (
     <div className="rounded-lg border p-3">
       <div className="text-xs text-muted-foreground">{label}</div>
