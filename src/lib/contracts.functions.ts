@@ -404,7 +404,17 @@ export const linkContractParent = createServerFn({ method: "POST" })
     return row;
   });
 
+type LinkEventPayload = {
+  parent_contract_id?: string | null;
+  previous_parent_contract_id?: string | null;
+  child_contract_id?: string | null;
+  parent_title?: string | null;
+  child_title?: string | null;
+  amendment_of_id?: string | null;
+};
+
 /** Histórico de aninhamento/desaninhamento (compras e aditivos) de um contrato. */
+
 export const listContractLinkEvents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
