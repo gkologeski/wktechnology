@@ -27,6 +27,11 @@ import {
   ContractAmendmentsPanel,
   type AmendmentRow,
 } from "@/components/contracts/contract-amendments-panel";
+import {
+  MainContractPicker,
+  type MainContractOption,
+} from "@/components/contracts/main-contract-picker";
+import { ContractLinksHistoryCard } from "@/components/contracts/contract-links-history-card";
 
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
@@ -89,6 +94,8 @@ function ContractDetail() {
   const [title, setTitle] = useState("");
   const [role, setRole] = useState<"provider" | "client">("provider");
   const [status, setStatus] = useState<Status>("draft");
+  const [documentKind, setDocumentKind] = useState<"main" | "amendment">("main");
+  const [mainContract, setMainContract] = useState<MainContractOption | null>(null);
   const [totalValue, setTotalValue] = useState<number>(0);
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
@@ -103,6 +110,20 @@ function ContractDetail() {
     setTitle(contract.title ?? "");
     setRole((contract.role as "provider" | "client") ?? "provider");
     setStatus((contract.status as Status) ?? "draft");
+    const kind = (contract as { document_kind?: string }).document_kind === "amendment";
+    setDocumentKind(kind ? "amendment" : "main");
+    const parentAmendment = (contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null;
+    setMainContract(
+      parentAmendment
+        ? {
+            id: parentAmendment.id,
+            number: parentAmendment.number,
+            title: parentAmendment.title,
+            status: parentAmendment.status,
+            role: parentAmendment.role,
+          }
+        : null,
+    );
     setTotalValue(Number(contract.total_value ?? 0));
     setStartsAt(contract.starts_at ? contract.starts_at.slice(0, 10) : "");
     setEndsAt(contract.ends_at ? contract.ends_at.slice(0, 10) : "");
@@ -111,7 +132,24 @@ function ContractDetail() {
     setBodyHtml(contract.body_html ?? "");
   }, [contract]);
 
+  const amendmentMissingParent = documentKind === "amendment" && !mainContract;
+
+  async function changeDocumentKind(next: "main" | "amendment") {
+    if (next === "main" && documentKind === "amendment" && mainContract) {
+      const ok = await confirmDialog(
+        "Mudar para Principal remove o vínculo de aditivo (contrato principal, número e vigência do aditivo). Continuar?",
+      );
+      if (!ok) return;
+      setMainContract(null);
+    }
+    setDocumentKind(next);
+  }
+
   async function save() {
+    if (amendmentMissingParent) {
+      toast.error("Selecione o contrato principal: um aditivo precisa estar vinculado.");
+      return;
+    }
     setSaving(true);
     try {
       await upd({
@@ -121,6 +159,8 @@ function ContractDetail() {
             title: title.trim(),
             role,
             status,
+            document_kind: documentKind,
+            amendment_of_id: documentKind === "amendment" ? (mainContract?.id ?? null) : null,
             total_value: totalValue,
             starts_at: startsAt || null,
             ends_at: endsAt || null,
@@ -130,6 +170,7 @@ function ContractDetail() {
           },
         },
       });
+
       toast.success("Contrato atualizado.");
       qc.invalidateQueries({ queryKey: ["contract", id] });
       qc.invalidateQueries({ queryKey: ["contracts"] });
@@ -208,9 +249,18 @@ function ContractDetail() {
                 <Eye className="h-4 w-4 mr-1" /> Visualizar
               </Button>
             ) : null}
-            <Button onClick={save} disabled={saving}>
+            <Button
+              onClick={save}
+              disabled={saving || amendmentMissingParent}
+              title={
+                amendmentMissingParent
+                  ? "Selecione o contrato principal do aditivo para salvar"
+                  : undefined
+              }
+            >
               <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
             </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -265,6 +315,42 @@ function ContractDetail() {
                 </Select>
               </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="document-kind">Tipo de documento</Label>
+              <Select
+                value={documentKind}
+                onValueChange={(v) => void changeDocumentKind(v as "main" | "amendment")}
+              >
+                <SelectTrigger id="document-kind">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="main">Principal</SelectItem>
+                  <SelectItem value="amendment">Aditivo</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Aditivos aparecem aninhados sob o contrato principal na listagem.
+              </p>
+            </div>
+            {documentKind === "amendment" && (
+              <div className="space-y-2">
+                <Label>
+                  Contrato principal <span className="text-destructive">*</span>
+                </Label>
+                <MainContractPicker
+                  value={mainContract}
+                  onChange={setMainContract}
+                  excludeId={id}
+                  triggerClassName="w-full"
+                />
+                {amendmentMissingParent && (
+                  <p className="text-xs text-destructive" role="alert">
+                    Obrigatório: um aditivo precisa estar vinculado a um contrato principal.
+                  </p>
+                )}
+              </div>
+            )}
             <div className="space-y-2">
               <Label>Valor total</Label>
               <CurrencyInput
@@ -359,6 +445,8 @@ function ContractDetail() {
         }
         canEdit={canUpdateContract}
       />
+
+      <ContractLinksHistoryCard contractId={contract.id} />
 
       <ContractApprovalsPanel contractId={contract.id} />
 

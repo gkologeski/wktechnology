@@ -235,7 +235,9 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
     const { supabase } = context;
     let query = supabase
       .from("contracts")
-      .select("id, number, title, status, total_value, currency, role")
+      .select(
+        "id, number, title, status, total_value, currency, role, starts_at, ends_at, parent_contract_id, companies:counterparty_company_id(name), parent:contracts!contracts_parent_contract_id_fkey(id, title, number)",
+      )
       .eq("role", data.role)
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 20);
@@ -246,7 +248,15 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
     }
     const { data: rows, error } = await query;
     if (error) throw error;
-    return rows ?? [];
+    // `parent` é um embed self-referente: normaliza para objeto único.
+    return (rows ?? []).map((r) => {
+      const parentRaw = (r as { parent?: unknown }).parent;
+      const parent = (Array.isArray(parentRaw) ? parentRaw[0] : parentRaw) as
+        | { id: string; title: string | null; number: string | null }
+        | null
+        | undefined;
+      return { ...r, parent: parent ?? null };
+    });
   });
 
 // ============= CONTRATOS DE COMPRA ELEGÍVEIS AO TECHPEOPLE =============
@@ -335,24 +345,137 @@ export const linkContractParent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+      "techcontracts.contracts.update.workspace",
+    ]);
+
+    if (data.parentId === data.childId) {
+      throw new Error("Um contrato não pode ser aninhado sob si mesmo.");
+    }
+
+    // Estado anterior (para registrar de qual contrato ele foi desaninhado).
+    const { data: before } = await supabase
+      .from("contracts")
+      .select("id, title, number, parent_contract_id")
+      .eq("id", data.childId)
+      .maybeSingle();
+    const previousParentId =
+      (before as { parent_contract_id?: string | null } | null)?.parent_contract_id ?? null;
 
     const { data: row, error } = await supabase
       .from("contracts")
       .update({ parent_contract_id: data.parentId })
       .eq("id", data.childId)
       .select("id, parent_contract_id")
-      .single();
+      .maybeSingle();
     if (error) throw error;
+    if (!row) throw new Error("Você não tem permissão para alterar este vínculo.");
 
-    await (supabase as any).from("contract_events").insert({
-      workspace_id: workspaceId,
-      contract_id: data.childId,
-      actor_id: userId,
-      event_type: data.parentId ? "parent_linked" : "parent_unlinked",
-      payload: { parent_contract_id: data.parentId },
-    });
+    // Título do contrato pai envolvido (o novo, ou o anterior no caso de desaninhar).
+    const otherId = data.parentId ?? previousParentId;
+    let parentLabel: string | null = null;
+    if (otherId) {
+      const { data: parentRow } = await supabase
+        .from("contracts")
+        .select("title, number")
+        .eq("id", otherId)
+        .maybeSingle();
+      const p = parentRow as { title?: string | null; number?: string | null } | null;
+      parentLabel = p?.title ?? p?.number ?? null;
+    }
+    const childLabel =
+      (before as { title?: string | null; number?: string | null } | null)?.title ?? null;
+
+    const eventType = data.parentId ? "parent_linked" : "parent_unlinked";
+    const payload = {
+      parent_contract_id: data.parentId,
+      previous_parent_contract_id: previousParentId,
+      child_contract_id: data.childId,
+      parent_title: parentLabel,
+      child_title: childLabel,
+    };
+
+    // Registra nos dois contratos envolvidos para o histórico ficar visível em ambos.
+    const targets = Array.from(new Set([data.childId, otherId].filter(Boolean))) as string[];
+    await (supabase as any).from("contract_events").insert(
+      targets.map((contractId) => ({
+        workspace_id: workspaceId,
+        contract_id: contractId,
+        actor_id: userId,
+        event_type: eventType,
+        payload,
+      })),
+    );
 
     return row;
+  });
+
+type LinkEventPayload = {
+  parent_contract_id?: string | null;
+  previous_parent_contract_id?: string | null;
+  child_contract_id?: string | null;
+  parent_title?: string | null;
+  child_title?: string | null;
+  amendment_of_id?: string | null;
+};
+
+/** Histórico de aninhamento/desaninhamento (compras e aditivos) de um contrato. */
+
+export const listContractLinkEvents = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        contractId: z.string().uuid(),
+        limit: z.number().int().min(1).max(200).optional(),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: rows, error } = await (supabase as any)
+      .from("contract_events")
+      .select("id, event_type, payload, actor_id, created_at")
+      .eq("contract_id", data.contractId)
+      .in("event_type", [
+        "parent_linked",
+        "parent_unlinked",
+        "amendment_linked",
+        "amendment_unlinked",
+      ])
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 50);
+    if (error) throw new Error(error.message);
+
+    const events = (rows ?? []) as Array<{
+      id: string;
+      event_type: string;
+      payload: LinkEventPayload | null;
+      actor_id: string | null;
+      created_at: string;
+    }>;
+
+    const actorIds = Array.from(
+      new Set(events.map((e) => e.actor_id).filter((v): v is string => Boolean(v))),
+    );
+    const nameById = new Map<string, string>();
+    if (actorIds.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", actorIds);
+      for (const p of profs ?? [])
+        nameById.set(p.id as string, ((p.full_name as string | null) ?? "").trim());
+    }
+
+    return events.map((e) => ({
+      id: e.id,
+      event_type: e.event_type,
+      created_at: e.created_at,
+      actor_name: e.actor_id ? nameById.get(e.actor_id) || "" : "",
+      payload: e.payload ?? {},
+    }));
   });
 
 // ============= ADITIVOS (amendments) =============
@@ -428,6 +551,14 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
           amendment_effective_at: null,
         };
 
+    const { data: previous } = await supabase
+      .from("contracts")
+      .select("id, title, amendment_of_id")
+      .eq("id", data.amendmentId)
+      .maybeSingle();
+    const previousMainId =
+      (previous as { amendment_of_id?: string | null } | null)?.amendment_of_id ?? null;
+
     const { data: row, error } = await supabase
       .from("contracts")
       .update(patch as never)
@@ -437,13 +568,37 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
     if (error) throw error;
     if (!row) throw new Error("Você não tem permissão para alterar este contrato.");
 
-    await (supabase as any).from("contract_events").insert({
-      workspace_id: workspaceId,
-      contract_id: data.amendmentId,
-      actor_id: userId,
-      event_type: data.mainContractId ? "amendment_linked" : "amendment_unlinked",
-      payload: { amendment_of_id: data.mainContractId },
-    });
+    const otherMainId = data.mainContractId ?? previousMainId;
+    let mainLabel: string | null = null;
+    if (otherMainId) {
+      const { data: mainRow } = await supabase
+        .from("contracts")
+        .select("title, number")
+        .eq("id", otherMainId)
+        .maybeSingle();
+      const m = mainRow as { title?: string | null; number?: string | null } | null;
+      mainLabel = m?.title ?? m?.number ?? null;
+    }
+
+    const amendmentPayload = {
+      amendment_of_id: data.mainContractId,
+      previous_parent_contract_id: previousMainId,
+      child_contract_id: data.amendmentId,
+      parent_title: mainLabel,
+      child_title: (previous as { title?: string | null } | null)?.title ?? null,
+    };
+    const amendmentTargets = Array.from(
+      new Set([data.amendmentId, otherMainId].filter(Boolean)),
+    ) as string[];
+    await (supabase as any).from("contract_events").insert(
+      amendmentTargets.map((contractId) => ({
+        workspace_id: workspaceId,
+        contract_id: contractId,
+        actor_id: userId,
+        event_type: data.mainContractId ? "amendment_linked" : "amendment_unlinked",
+        payload: amendmentPayload,
+      })),
+    );
 
     // Reaplica o padrão de título (prefixo ADT entra/sai conforme o vínculo).
     try {
@@ -643,11 +798,14 @@ export const updateContract = createServerFn({ method: "POST" })
     ]);
 
     // Um aditivo precisa, obrigatoriamente, estar vinculado a um contrato principal.
+    // E ao voltar para "Principal", os campos de aditivo são limpos no servidor.
     const patchAny = data.patch as {
       document_kind?: string;
       amendment_of_id?: string | null;
+      amendment_number?: string | null;
+      amendment_effective_at?: string | null;
     };
-    if (patchAny.document_kind === "amendment" || patchAny.amendment_of_id !== undefined) {
+    if (patchAny.document_kind !== undefined || patchAny.amendment_of_id !== undefined) {
       const { data: current } = await supabase
         .from("contracts")
         .select("document_kind, amendment_of_id")
@@ -667,6 +825,11 @@ export const updateContract = createServerFn({ method: "POST" })
       }
       if (nextKind === "amendment" && nextMain === data.id) {
         throw new Error("Um contrato não pode ser aditivo de si mesmo.");
+      }
+      if (nextKind === "main") {
+        patchAny.amendment_of_id = null;
+        patchAny.amendment_number = null;
+        patchAny.amendment_effective_at = null;
       }
     }
 
