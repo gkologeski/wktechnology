@@ -308,6 +308,42 @@ function ContractDetail() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="document-kind">Tipo de documento</Label>
+              <Select
+                value={documentKind}
+                onValueChange={(v) => void changeDocumentKind(v as "main" | "amendment")}
+              >
+                <SelectTrigger id="document-kind">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="main">Principal</SelectItem>
+                  <SelectItem value="amendment">Aditivo</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Aditivos aparecem aninhados sob o contrato principal na listagem.
+              </p>
+            </div>
+            {documentKind === "amendment" && (
+              <div className="space-y-2">
+                <Label>
+                  Contrato principal <span className="text-destructive">*</span>
+                </Label>
+                <MainContractPicker
+                  value={mainContract}
+                  onChange={setMainContract}
+                  excludeId={id}
+                  triggerClassName="w-full"
+                />
+                {amendmentMissingParent && (
+                  <p className="text-xs text-destructive" role="alert">
+                    Obrigatório: um aditivo precisa estar vinculado a um contrato principal.
+                  </p>
+                )}
+              </div>
+            )}
+            <div className="space-y-2">
               <Label>Valor total</Label>
               <CurrencyInput
                 value={totalValue}
@@ -315,6 +351,7 @@ function ContractDetail() {
                 currency={contract.currency ?? "BRL"}
               />
             </div>
+
           </CardContent>
         </Card>
 
