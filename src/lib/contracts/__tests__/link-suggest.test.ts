@@ -68,7 +68,11 @@ describe("isValidSuggestion", () => {
   });
   it("recusa aditivo → principal de papel diferente", () => {
     expect(
-      isValidSuggestion({ pending_id: "a1", target_id: "c1", kind: "amendment" }, amendment, client),
+      isValidSuggestion(
+        { pending_id: "a1", target_id: "c1", kind: "amendment" },
+        amendment,
+        client,
+      ),
     ).toBe(false);
   });
   it("recusa vínculo consigo mesmo e ids inexistentes", () => {

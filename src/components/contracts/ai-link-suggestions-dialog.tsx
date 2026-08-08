@@ -228,11 +228,7 @@ export function AiLinkSuggestionsDialog({
         )}
 
         <DialogFooter className="gap-2">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            disabled={apply.isPending}
-          >
+          <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={apply.isPending}>
             Fechar
           </Button>
           <Button

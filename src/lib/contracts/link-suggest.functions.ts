@@ -140,9 +140,8 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     ]);
 
     const { computePendingLinks } = await import("@/lib/contracts/pending-link");
-    const { loadOwnLegalEntities, resolveReferencedContract } = await import(
-      "@/lib/contracts/import-link.server"
-    );
+    const { loadOwnLegalEntities, resolveReferencedContract } =
+      await import("@/lib/contracts/import-link.server");
 
     const { data: rows, error } = await supabase
       .from("contracts")
@@ -279,7 +278,10 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
       const pendingPayload = remaining
         .map((p) => metaById.get(p.id))
         .filter((c): c is ContractLinkMeta => Boolean(c))
-        .map((c) => ({ ...describe(c), motivo_pendencia: pendingRows.find((p) => p.id === c.id)?.reason ?? null }));
+        .map((c) => ({
+          ...describe(c),
+          motivo_pendencia: pendingRows.find((p) => p.id === c.id)?.reason ?? null,
+        }));
 
       const candidatePayload = allMetas
         .filter((c) => !pendingIds.has(c.id) || c.document_kind !== "amendment")
