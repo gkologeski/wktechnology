@@ -41,6 +41,8 @@ import {
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 import { AiLinkSuggestionsDialog } from "@/components/contracts/ai-link-suggestions-dialog";
 import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-suggestions-history-card";
+import { ContractRolesRecalcDialog } from "@/components/contracts/contract-roles-recalc-dialog";
+
 
 
 export const Route = createFileRoute("/_authenticated/contracts/links")({
