@@ -794,11 +794,14 @@ export const updateContract = createServerFn({ method: "POST" })
     ]);
 
     // Um aditivo precisa, obrigatoriamente, estar vinculado a um contrato principal.
+    // E ao voltar para "Principal", os campos de aditivo são limpos no servidor.
     const patchAny = data.patch as {
       document_kind?: string;
       amendment_of_id?: string | null;
+      amendment_number?: string | null;
+      amendment_effective_at?: string | null;
     };
-    if (patchAny.document_kind === "amendment" || patchAny.amendment_of_id !== undefined) {
+    if (patchAny.document_kind !== undefined || patchAny.amendment_of_id !== undefined) {
       const { data: current } = await supabase
         .from("contracts")
         .select("document_kind, amendment_of_id")
@@ -819,7 +822,13 @@ export const updateContract = createServerFn({ method: "POST" })
       if (nextKind === "amendment" && nextMain === data.id) {
         throw new Error("Um contrato não pode ser aditivo de si mesmo.");
       }
+      if (nextKind === "main") {
+        patchAny.amendment_of_id = null;
+        patchAny.amendment_number = null;
+        patchAny.amendment_effective_at = null;
+      }
     }
+
 
     const { data: row, error } = await supabase
       .from("contracts")
