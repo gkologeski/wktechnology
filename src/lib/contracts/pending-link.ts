@@ -5,6 +5,7 @@
 export type PendingLinkRow = {
   id: string;
   role: "provider" | "client";
+  document_kind: string;
   number: string | null;
   title: string;
   status: string;
