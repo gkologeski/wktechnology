@@ -383,6 +383,7 @@ function LinkPickerDialog({
 }) {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [linkingId, setLinkingId] = useState<string | null>(null);
   const search = useServerFn(listLinkableContracts);
   const link = useServerFn(linkContractParent);
 
@@ -390,13 +391,32 @@ function LinkPickerDialog({
   // client procurando pai: role provider, excludeId = self
   const targetRole: Role = mode === "provider-adds-child" ? "client" : "provider";
 
-  const { data: results = [], isFetching } = useQuery({
+  const {
+    data: results = [],
+    isFetching,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["contracts-linkable", targetRole, q, contractId],
     queryFn: () => search({ data: { role: targetRole, q, excludeId: contractId } }),
     enabled: open,
   });
 
-  async function pick(row: { id: string; title: string }) {
+  async function pick(row: LinkableRow) {
+    // Contrato já aninhado sob outro contrato: mover exige confirmação.
+    if (
+      mode === "provider-adds-child" &&
+      row.parent_contract_id &&
+      row.parent_contract_id !== contractId
+    ) {
+      const label = row.parent?.title ?? row.parent?.number ?? "outro contrato";
+      const ok = await confirmDialog(
+        `Este contrato já está aninhado em “${label}”. Mover o vínculo para este contrato de prestação?`,
+      );
+      if (!ok) return;
+    }
+    setLinkingId(row.id);
     try {
       if (mode === "provider-adds-child") {
         // atualiza o filho apontando para este contrato como pai
@@ -405,27 +425,29 @@ function LinkPickerDialog({
         // este contrato (client) passa a apontar para o selecionado (provider)
         await link({ data: { childId: contractId, parentId: row.id } });
       }
-      toast.success("Vínculo salvo.");
+      toast.success("Contrato aninhado.");
       await qc.invalidateQueries();
       onOpenChange(false);
     } catch (e) {
       toast.error((e as Error).message);
+    } finally {
+      setLinkingId(null);
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>
             {mode === "provider-adds-child"
-              ? "Vincular contrato de compra"
-              : "Vincular contrato de venda"}
+              ? "Aninhar contrato de compra"
+              : "Aninhar sob contrato de venda"}
           </DialogTitle>
           <DialogDescription>
             {mode === "provider-adds-child"
-              ? "Selecione um contrato de compra (client) para associar como execução deste contrato de prestação."
-              : "Selecione o contrato de prestação (provider) do cliente final ao qual este contrato de compra dá suporte."}
+              ? "Selecione um contrato de compra para aninhar sob este contrato de prestação. Ele passa a aparecer indentado na listagem."
+              : "Selecione o contrato de prestação (venda) do cliente final ao qual este contrato de compra dá suporte."}
           </DialogDescription>
         </DialogHeader>
         <div className="relative">
@@ -435,6 +457,7 @@ function LinkPickerDialog({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             className="pl-8 pr-8"
+            aria-label="Buscar contrato"
           />
           {q && (
             <button
@@ -446,26 +469,72 @@ function LinkPickerDialog({
             </button>
           )}
         </div>
-        <div className="max-h-80 overflow-auto border rounded-lg divide-y">
-          {isFetching && <div className="p-3 text-sm text-muted-foreground">Buscando…</div>}
-          {!isFetching && results.length === 0 && (
-            <div className="p-3 text-sm text-muted-foreground">Nenhum contrato encontrado.</div>
+        <div className="max-h-96 overflow-auto border rounded-lg divide-y">
+          {isFetching && (
+            <div className="space-y-2 p-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-10 animate-pulse rounded bg-muted/60" />
+              ))}
+            </div>
           )}
-          {results.map((r) => (
-            <button
-              key={r.id}
-              onClick={() => pick(r)}
-              className="w-full text-left px-3 py-2.5 hover:bg-muted/40 transition"
-            >
-              <div className="text-sm font-medium truncate">{r.title}</div>
-              <div className="text-xs text-muted-foreground font-mono truncate">
-                {r.number ?? "—"} · {STATUS_LABEL[r.status] ?? r.status} ·{" "}
-                {formatCurrency(Number(r.total_value ?? 0), r.currency)}
-              </div>
-            </button>
-          ))}
+          {!isFetching && isError && (
+            <div className="p-4 text-sm text-muted-foreground space-y-2">
+              <p>Não foi possível carregar os contratos: {(error as Error)?.message}</p>
+              <Button size="sm" variant="outline" onClick={() => void refetch()}>
+                Tentar novamente
+              </Button>
+            </div>
+          )}
+          {!isFetching && !isError && results.length === 0 && (
+            <div className="p-4 text-sm text-muted-foreground">
+              Nenhum contrato encontrado com esse termo.
+            </div>
+          )}
+          {!isFetching &&
+            !isError &&
+            (results as LinkableRow[]).map((r) => {
+              const alreadyElsewhere = Boolean(
+                r.parent_contract_id && r.parent_contract_id !== contractId,
+              );
+              const alreadyHere = r.parent_contract_id === contractId;
+              return (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-muted/40 transition"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">{r.title}</div>
+                    <div className="text-xs text-muted-foreground font-mono truncate">
+                      {r.number ?? "—"} · {STATUS_LABEL[r.status] ?? r.status} ·{" "}
+                      {formatCurrency(Number(r.total_value ?? 0), r.currency)}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {r.companies?.name ?? "Empresa não informada"} · {formatPeriod(r)}
+                    </div>
+                    {alreadyElsewhere ? (
+                      <div className="mt-1 text-xs text-amber-600 dark:text-amber-400 truncate">
+                        Já aninhado em “{r.parent?.title ?? r.parent?.number ?? "outro contrato"}”
+                      </div>
+                    ) : null}
+                  </div>
+                  {alreadyHere ? (
+                    <Badge variant="outline">Aninhado aqui</Badge>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant={alreadyElsewhere ? "outline" : "default"}
+                      onClick={() => void pick(r)}
+                      disabled={linkingId !== null}
+                    >
+                      {linkingId === r.id ? "Aninhando…" : alreadyElsewhere ? "Mover" : "Aninhar"}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
         </div>
       </DialogContent>
     </Dialog>
   );
+
 }
