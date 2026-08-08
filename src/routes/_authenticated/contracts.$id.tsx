@@ -250,9 +250,18 @@ function ContractDetail() {
                 <Eye className="h-4 w-4 mr-1" /> Visualizar
               </Button>
             ) : null}
-            <Button onClick={save} disabled={saving}>
+            <Button
+              onClick={save}
+              disabled={saving || amendmentMissingParent}
+              title={
+                amendmentMissingParent
+                  ? "Selecione o contrato principal do aditivo para salvar"
+                  : undefined
+              }
+            >
               <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
             </Button>
+
             <Button
               variant="ghost"
               size="icon"
