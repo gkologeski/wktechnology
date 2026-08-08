@@ -43,8 +43,6 @@ import { AiLinkSuggestionsDialog } from "@/components/contracts/ai-link-suggesti
 import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-suggestions-history-card";
 import { ContractRolesRecalcDialog } from "@/components/contracts/contract-roles-recalc-dialog";
 
-
-
 export const Route = createFileRoute("/_authenticated/contracts/links")({
   head: () => ({
     meta: [
@@ -77,7 +75,6 @@ function ContractLinksPage() {
   const [target, setTarget] = useState<PendingLinkRow | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [rolesOpen, setRolesOpen] = useState(false);
-
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["contracts-pending-link", role],
@@ -125,7 +122,6 @@ function ContractLinksPage() {
             </Button>
           </div>
         }
-
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -219,8 +215,6 @@ function ContractLinksPage() {
 
       <AiLinkSuggestionsHistoryCard />
 
-
-
       {target ? (
         <LinkDialog
           row={target}
@@ -256,7 +250,6 @@ function ContractLinksPage() {
         />
       ) : null}
     </div>
-
   );
 }
 
