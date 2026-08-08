@@ -33,7 +33,11 @@ import {
   listContractsPendingLink,
   type PendingLinkRow,
 } from "@/lib/contracts/import.functions";
-import { listContracts, linkContractParent } from "@/lib/contracts.functions";
+import {
+  listContracts,
+  linkContractParent,
+  linkContractAmendment,
+} from "@/lib/contracts.functions";
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 
 export const Route = createFileRoute("/_authenticated/contracts/links")({
@@ -64,7 +68,7 @@ function ContractLinksPage() {
   const qc = useQueryClient();
 
   const [search, setSearch] = useState("");
-  const [role, setRole] = useState<"all" | "provider" | "client">("all");
+  const [role, setRole] = useState<"all" | "provider" | "client" | "amendment">("all");
   const [target, setTarget] = useState<PendingLinkRow | null>(null);
 
   const { data = [], isLoading } = useQuery({
@@ -133,6 +137,7 @@ function ContractLinksPage() {
               <SelectItem value="all">Todos</SelectItem>
               <SelectItem value="provider">Prestação</SelectItem>
               <SelectItem value="client">Compra</SelectItem>
+              <SelectItem value="amendment">Aditivos</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -166,7 +171,11 @@ function ContractLinksPage() {
                     {r.number ? `${r.number} · ` : ""}
                     {r.title}
                   </Link>
-                  <Badge variant="secondary">{ROLE_LABEL[r.role] ?? r.role}</Badge>
+                  <Badge variant="secondary">
+                    {r.document_kind === "amendment"
+                      ? "Aditivo"
+                      : (ROLE_LABEL[r.role] ?? r.role)}
+                  </Badge>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
                   {r.company_name ? `Contraparte: ${r.company_name}` : "Sem contraparte vinculada"}
@@ -221,10 +230,13 @@ function LinkDialog({
 }) {
   const listFn = useServerFn(listContracts);
   const linkFn = useServerFn(linkContractParent);
+  const linkAmendmentFn = useServerFn(linkContractAmendment);
   const [selected, setSelected] = useState<string | null>(null);
 
+  const isAmendment = row.document_kind === "amendment";
+  // Aditivo escolhe o contrato principal do mesmo tipo (prestação/compra).
   // Compra escolhe um pai de prestação; prestação escolhe o filho de compra.
-  const wantRole = row.role === "client" ? "provider" : "client";
+  const wantRole = isAmendment ? row.role : row.role === "client" ? "provider" : "client";
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["contracts-link-candidates", wantRole],
@@ -233,17 +245,33 @@ function LinkDialog({
   });
 
   const options = (
-    data as Array<{ id: string; number: string | null; title: string; role: string }>
-  ).filter((c) => c.role === wantRole && c.id !== row.id);
+    data as Array<{
+      id: string;
+      number: string | null;
+      title: string;
+      role: string;
+      document_kind?: string | null;
+    }>
+  ).filter(
+    (c) =>
+      c.role === wantRole &&
+      c.id !== row.id &&
+      (!isAmendment || (c.document_kind ?? "main") === "main"),
+  );
 
   const mut = useMutation({
     mutationFn: () => {
+      if (isAmendment) {
+        return linkAmendmentFn({
+          data: { amendmentId: row.id, mainContractId: selected as string },
+        });
+      }
       const childId = row.role === "client" ? row.id : (selected as string);
       const parentId = row.role === "client" ? (selected as string) : row.id;
       return linkFn({ data: { childId, parentId } });
     },
     onSuccess: () => {
-      toast.success("Contratos vinculados.");
+      toast.success(isAmendment ? "Aditivo vinculado." : "Contratos vinculados.");
       onLinked();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -255,9 +283,11 @@ function LinkDialog({
         <DialogHeader>
           <DialogTitle>Vincular contrato</DialogTitle>
           <DialogDescription>
-            {row.role === "client"
-              ? "Escolha o contrato de prestação correspondente a este contrato de compra."
-              : "Escolha o contrato de compra correspondente a este contrato de prestação."}
+            {isAmendment
+              ? "Escolha o contrato principal ao qual este aditivo pertence."
+              : row.role === "client"
+                ? "Escolha o contrato de prestação correspondente a este contrato de compra."
+                : "Escolha o contrato de compra correspondente a este contrato de prestação."}
           </DialogDescription>
         </DialogHeader>
 
@@ -276,7 +306,11 @@ function LinkDialog({
 
           <div className="space-y-1.5">
             <Label htmlFor="link-target">
-              {wantRole === "provider" ? "Contrato de prestação" : "Contrato de compra"}
+              {isAmendment
+                ? "Contrato principal"
+                : wantRole === "provider"
+                  ? "Contrato de prestação"
+                  : "Contrato de compra"}
             </Label>
             <Select value={selected ?? ""} onValueChange={setSelected}>
               <SelectTrigger id="link-target">
