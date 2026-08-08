@@ -74,6 +74,8 @@ function ContractLinksPage() {
   const [role, setRole] = useState<"all" | "provider" | "client" | "amendment">("all");
   const [target, setTarget] = useState<PendingLinkRow | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  const [rolesOpen, setRolesOpen] = useState(false);
+
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["contracts-pending-link", role],
