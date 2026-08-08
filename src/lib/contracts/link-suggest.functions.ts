@@ -211,7 +211,7 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
         JSON.stringify(candidatePayload),
       ].join("\n");
 
-      const { items } = await callAi(prompt);
+      const items = await requestAiLinkSuggestions(prompt);
       aiUsed = true;
       aiSuggestions = items
         .filter((s) => remaining.some((p) => p.id === s.pending_id))
