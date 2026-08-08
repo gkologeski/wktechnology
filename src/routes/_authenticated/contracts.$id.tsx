@@ -27,6 +27,12 @@ import {
   ContractAmendmentsPanel,
   type AmendmentRow,
 } from "@/components/contracts/contract-amendments-panel";
+import {
+  MainContractPicker,
+  type MainContractOption,
+} from "@/components/contracts/main-contract-picker";
+import { ContractLinksHistoryCard } from "@/components/contracts/contract-links-history-card";
+
 
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
