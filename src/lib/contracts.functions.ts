@@ -332,6 +332,15 @@ export const listOwnContractingPurchaseContracts = createServerFn({ method: "POS
 
 // ============= LINK / UNLINK PARENT =============
 
+/** Origem do vínculo quando ele vem de uma sugestão de IA (para auditoria). */
+const aiOriginSchema = z.object({
+  suggestion_id: z.string().uuid().nullable().optional(),
+  confidence: z.enum(["high", "medium", "low"]),
+  reason: z.string().max(500).optional(),
+  source: z.enum(["rule", "ai"]),
+});
+
+
 export const linkContractParent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -339,9 +348,11 @@ export const linkContractParent = createServerFn({ method: "POST" })
       .object({
         childId: z.string().uuid(),
         parentId: z.string().uuid().nullable(),
+        origin: aiOriginSchema.optional().nullable(),
       })
       .parse(input),
   )
+
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -394,7 +405,9 @@ export const linkContractParent = createServerFn({ method: "POST" })
       child_contract_id: data.childId,
       parent_title: parentLabel,
       child_title: childLabel,
+      ai_suggestion: data.origin ?? null,
     };
+
 
     // Registra nos dois contratos envolvidos para o histórico ficar visível em ambos.
     const targets = Array.from(new Set([data.childId, otherId].filter(Boolean))) as string[];
@@ -418,7 +431,14 @@ type LinkEventPayload = {
   parent_title?: string | null;
   child_title?: string | null;
   amendment_of_id?: string | null;
+  ai_suggestion?: {
+    suggestion_id?: string | null;
+    confidence: "high" | "medium" | "low";
+    reason?: string;
+    source: "rule" | "ai";
+  } | null;
 };
+
 
 /** Histórico de aninhamento/desaninhamento (compras e aditivos) de um contrato. */
 
@@ -522,9 +542,11 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
         mainContractId: z.string().uuid().nullable(),
         amendmentNumber: z.string().nullable().optional(),
         effectiveAt: z.string().nullable().optional(),
+        origin: aiOriginSchema.optional().nullable(),
       })
       .parse(input),
   )
+
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -586,7 +608,9 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
       child_contract_id: data.amendmentId,
       parent_title: mainLabel,
       child_title: (previous as { title?: string | null } | null)?.title ?? null,
+      ai_suggestion: data.origin ?? null,
     };
+
     const amendmentTargets = Array.from(
       new Set([data.amendmentId, otherMainId].filter(Boolean)),
     ) as string[];

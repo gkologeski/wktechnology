@@ -7,16 +7,19 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import {
+  buildSuggestionEvidence,
   dedupeSuggestions,
   isOwnParty,
   isValidSuggestion,
-  normalizeEntityName,
   type ContractLinkMeta,
   type LinkConfidence,
+  type LinkEvidence,
   type LinkSuggestion,
 } from "@/lib/contracts/link-suggest";
 
 export type SuggestedLinkRow = LinkSuggestion & {
+  id: string | null;
+  evidence: LinkEvidence;
   pending: { number: string | null; title: string; role: string; document_kind: string };
   target: { number: string | null; title: string; role: string };
 };
@@ -27,7 +30,25 @@ export type SuggestLinksResult = {
   unresolved: number;
   ai_used: boolean;
   notes: string[];
+  run_id: string;
 };
+
+export type SuggestionHistoryRow = {
+  id: string;
+  run_id: string;
+  kind: "parent" | "amendment";
+  confidence: LinkConfidence;
+  reason: string;
+  source: "rule" | "ai";
+  status: string;
+  created_at: string;
+  decided_at: string | null;
+  decided_by_name: string;
+  evidence: LinkEvidence | null;
+  pending: { id: string; number: string | null; title: string; role: string };
+  target: { id: string; number: string | null; title: string; role: string };
+};
+
 
 export const suggestContractLinks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -87,6 +108,8 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     );
 
     const ruleSuggestions: LinkSuggestion[] = [];
+    const referencedByPending = new Map<string, string>();
+
 
     for (const p of pendingRows) {
       const pending = metaById.get(p.id);
@@ -120,7 +143,9 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
         );
         if (hit && hit.id !== pending.id) {
           const isOurs = isOwnParty(own, pending.contracting_cnpj, pending.contracting_name);
+          referencedByPending.set(pending.id, hit.matchedNumber);
           ruleSuggestions.push({
+
             pending_id: pending.id,
             target_id: hit.id,
             kind: "parent",
@@ -228,11 +253,20 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
       isValidSuggestion(s, metaById.get(s.pending_id), metaById.get(s.target_id)),
     );
 
+    const runId = crypto.randomUUID();
+
     const suggestions: SuggestedLinkRow[] = merged.map((s) => {
       const pending = metaById.get(s.pending_id) as ContractLinkMeta;
       const target = metaById.get(s.target_id) as ContractLinkMeta;
       return {
         ...s,
+        id: null,
+        evidence: buildSuggestionEvidence(
+          pending,
+          target,
+          own,
+          referencedByPending.get(s.pending_id) ?? null,
+        ),
         pending: {
           number: pending.number,
           title: pending.title,
@@ -243,11 +277,176 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
       };
     });
 
+    // Histórico: propostas anteriores ainda não decididas passam a "reavaliadas".
+    if (suggestions.length > 0) {
+      const table = (supabase as any).from("contract_link_ai_suggestions");
+      await table
+        .update({ status: "superseded" })
+        .eq("workspace_id", workspaceId)
+        .eq("status", "proposed")
+        .in(
+          "pending_contract_id",
+          suggestions.map((s) => s.pending_id),
+        );
+
+      const { data: inserted, error: insertError } = await (supabase as any)
+        .from("contract_link_ai_suggestions")
+        .insert(
+          suggestions.map((s) => ({
+            workspace_id: workspaceId,
+            run_id: runId,
+            pending_contract_id: s.pending_id,
+            target_contract_id: s.target_id,
+            kind: s.kind,
+            confidence: s.confidence,
+            reason: s.reason,
+            source: s.source,
+            evidence: s.evidence,
+            status: "proposed",
+            created_by: userId,
+          })),
+        )
+        .select("id, pending_contract_id");
+      if (!insertError) {
+        const idByPending = new Map<string, string>(
+          ((inserted ?? []) as Array<{ id: string; pending_contract_id: string }>).map((r) => [
+            r.pending_contract_id,
+            r.id,
+          ]),
+        );
+        for (const s of suggestions) s.id = idByPending.get(s.pending_id) ?? null;
+      }
+    }
+
     return {
       suggestions,
       analyzed: pendingRows.length,
       unresolved: pendingRows.length - suggestions.length,
       ai_used: aiUsed,
       notes,
+      run_id: runId,
     };
   });
+
+// ============= HISTÓRICO DAS SUGESTÕES =============
+
+/** Sugestões registradas: todas do workspace ou apenas as de um contrato. */
+export const listContractLinkSuggestions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        contractId: z.string().uuid().optional(),
+        status: z.enum(["proposed", "applied", "dismissed", "superseded"]).optional(),
+        limit: z.number().int().min(1).max(200).optional(),
+      })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<SuggestionHistoryRow[]> => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+
+    let query = (supabase as any)
+      .from("contract_link_ai_suggestions")
+      .select(
+        "id, run_id, kind, confidence, reason, source, status, evidence, created_at, decided_at, decided_by, pending_contract_id, target_contract_id",
+      )
+      .eq("workspace_id", workspaceId)
+      .order("created_at", { ascending: false })
+      .limit(data.limit ?? 50);
+    if (data.status) query = query.eq("status", data.status);
+    if (data.contractId) {
+      query = query.or(
+        `pending_contract_id.eq.${data.contractId},target_contract_id.eq.${data.contractId}`,
+      );
+    }
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+
+    const items = (rows ?? []) as Array<Record<string, any>>;
+    const contractIds = Array.from(
+      new Set(items.flatMap((r) => [r["pending_contract_id"], r["target_contract_id"]])),
+    ).filter(Boolean) as string[];
+    const actorIds = Array.from(
+      new Set(items.map((r) => r["decided_by"]).filter((v): v is string => Boolean(v))),
+    );
+
+    const contractById = new Map<
+      string,
+      { id: string; number: string | null; title: string; role: string }
+    >();
+    if (contractIds.length) {
+      const { data: cs } = await supabase
+        .from("contracts")
+        .select("id, number, title, role")
+        .in("id", contractIds);
+      for (const c of cs ?? [])
+        contractById.set(c.id as string, {
+          id: c.id as string,
+          number: (c.number as string | null) ?? null,
+          title: (c.title as string) ?? "",
+          role: (c.role as string) ?? "provider",
+        });
+    }
+
+    const nameById = new Map<string, string>();
+    if (actorIds.length) {
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", actorIds);
+      for (const p of profs ?? [])
+        nameById.set(p.id as string, ((p.full_name as string | null) ?? "").trim());
+    }
+
+    const fallback = (id: string) => ({ id, number: null, title: "Contrato", role: "provider" });
+
+    return items.map((r) => ({
+      id: r["id"] as string,
+      run_id: r["run_id"] as string,
+      kind: r["kind"] as "parent" | "amendment",
+      confidence: r["confidence"] as LinkConfidence,
+      reason: (r["reason"] as string) ?? "",
+      source: r["source"] as "rule" | "ai",
+      status: r["status"] as string,
+      created_at: r["created_at"] as string,
+      decided_at: (r["decided_at"] as string | null) ?? null,
+      decided_by_name: r["decided_by"] ? nameById.get(r["decided_by"] as string) || "" : "",
+      evidence: (r["evidence"] as LinkEvidence | null) ?? null,
+      pending:
+        contractById.get(r["pending_contract_id"] as string) ??
+        fallback(r["pending_contract_id"] as string),
+      target:
+        contractById.get(r["target_contract_id"] as string) ??
+        fallback(r["target_contract_id"] as string),
+    }));
+  });
+
+/** Marca uma sugestão como aplicada ou ignorada pelo usuário. */
+export const decideContractLinkSuggestion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["applied", "dismissed"]),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+      "techcontracts.contracts.update.workspace",
+    ]);
+
+    const { error } = await (supabase as any)
+      .from("contract_link_ai_suggestions")
+      .update({ status: data.status, decided_by: userId, decided_at: new Date().toISOString() })
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+

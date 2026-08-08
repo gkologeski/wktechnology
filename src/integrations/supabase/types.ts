@@ -4622,6 +4622,78 @@ export type Database = {
           },
         ]
       }
+      contract_link_ai_suggestions: {
+        Row: {
+          confidence: string
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          evidence: Json
+          id: string
+          kind: string
+          pending_contract_id: string
+          reason: string
+          run_id: string
+          source: string
+          status: string
+          target_contract_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          confidence: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          evidence?: Json
+          id?: string
+          kind: string
+          pending_contract_id: string
+          reason?: string
+          run_id: string
+          source?: string
+          status?: string
+          target_contract_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          evidence?: Json
+          id?: string
+          kind?: string
+          pending_contract_id?: string
+          reason?: string
+          run_id?: string
+          source?: string
+          status?: string
+          target_contract_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_link_ai_suggestions_pending_contract_id_fkey"
+            columns: ["pending_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_link_ai_suggestions_target_contract_id_fkey"
+            columns: ["target_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_template_services: {
         Row: {
           created_at: string

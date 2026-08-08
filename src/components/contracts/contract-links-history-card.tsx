@@ -4,7 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { History } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CONFIDENCE_LABEL } from "@/lib/contracts/link-suggest";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { listContractLinkEvents } from "@/lib/contracts.functions";
 import { formatDateTime } from "@/lib/crm";
@@ -27,8 +30,14 @@ type EventRow = {
     parent_contract_id?: string | null;
     previous_parent_contract_id?: string | null;
     amendment_of_id?: string | null;
+    ai_suggestion?: {
+      confidence?: "high" | "medium" | "low";
+      reason?: string;
+      source?: "rule" | "ai";
+    } | null;
   };
 };
+
 
 function describe(row: EventRow): string {
   const child = row.payload.child_title ?? "contrato";
@@ -92,8 +101,22 @@ export function ContractLinksHistoryCard({ contractId }: { contractId: string })
               <li key={row.id} className="px-3 py-2.5">
                 <div className="text-sm font-medium text-foreground">
                   {EVENT_LABEL[row.event_type] ?? row.event_type}
+                  {row.payload.ai_suggestion ? (
+                    <Badge variant="secondary" className="ml-2 align-middle text-[10px]">
+                      Sugerido pela IA
+                      {row.payload.ai_suggestion.confidence
+                        ? ` · confiança ${CONFIDENCE_LABEL[row.payload.ai_suggestion.confidence]}`
+                        : ""}
+                    </Badge>
+                  ) : null}
                 </div>
                 <div className="text-xs text-muted-foreground">{describe(row)}</div>
+                {row.payload.ai_suggestion?.reason ? (
+                  <div className="text-[11px] text-muted-foreground">
+                    Motivo da IA: {row.payload.ai_suggestion.reason}
+                  </div>
+                ) : null}
+
                 <div className="mt-1 text-[11px] text-muted-foreground">
                   {row.actor_name ? `${row.actor_name} · ` : ""}
                   {formatDateTime(row.created_at)}
