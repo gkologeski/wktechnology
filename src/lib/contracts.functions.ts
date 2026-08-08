@@ -235,7 +235,9 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
     const { supabase } = context;
     let query = supabase
       .from("contracts")
-      .select("id, number, title, status, total_value, currency, role")
+      .select(
+        "id, number, title, status, total_value, currency, role, starts_at, ends_at, parent_contract_id, companies:counterparty_company_id(name), parent:parent_contract_id(id, title, number)",
+      )
       .eq("role", data.role)
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 20);
@@ -248,6 +250,7 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
     if (error) throw error;
     return rows ?? [];
   });
+
 
 // ============= CONTRATOS DE COMPRA ELEGÍVEIS AO TECHPEOPLE =============
 // Apenas contratos de compra cujo CONTRATANTE é uma entidade legal (CNPJ) do
