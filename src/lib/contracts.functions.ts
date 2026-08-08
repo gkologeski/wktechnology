@@ -236,7 +236,7 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
     let query = supabase
       .from("contracts")
       .select(
-        "id, number, title, status, total_value, currency, role, starts_at, ends_at, parent_contract_id, companies:counterparty_company_id(name), parent:parent_contract_id(id, title, number)",
+        "id, number, title, status, total_value, currency, role, starts_at, ends_at, parent_contract_id, companies:counterparty_company_id(name), parent:contracts!contracts_parent_contract_id_fkey(id, title, number)",
       )
       .eq("role", data.role)
       .order("created_at", { ascending: false })
