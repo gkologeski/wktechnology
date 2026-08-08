@@ -65,7 +65,7 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     const pendingRows = computePendingLinks(all, { role: data.role ?? "all" });
     const metaById = new Map<string, ContractLinkMeta>();
     for (const r of rows ?? []) {
-      const m = toMeta(r as Record<string, unknown>);
+      const m = toContractLinkMeta(r as Record<string, unknown>);
       metaById.set(m.id, m);
     }
 
