@@ -257,9 +257,7 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
         | undefined;
       return { ...r, parent: parent ?? null };
     });
-
   });
-
 
 // ============= CONTRATOS DE COMPRA ELEGÍVEIS AO TECHPEOPLE =============
 // Apenas contratos de compra cujo CONTRATANTE é uma entidade legal (CNPJ) do
@@ -480,8 +478,6 @@ export const listContractLinkEvents = createServerFn({ method: "POST" })
     }));
   });
 
-
-
 // ============= ADITIVOS (amendments) =============
 // O vínculo de aditivo é independente de `parent_contract_id`, que já é usado
 // para o pareamento Prestação ↔ Compra (outsourcing).
@@ -603,7 +599,6 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
         payload: amendmentPayload,
       })),
     );
-
 
     // Reaplica o padrão de título (prefixo ADT entra/sai conforme o vínculo).
     try {
@@ -837,7 +832,6 @@ export const updateContract = createServerFn({ method: "POST" })
         patchAny.amendment_effective_at = null;
       }
     }
-
 
     const { data: row, error } = await supabase
       .from("contracts")

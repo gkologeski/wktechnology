@@ -33,7 +33,6 @@ import {
 } from "@/components/contracts/main-contract-picker";
 import { ContractLinksHistoryCard } from "@/components/contracts/contract-links-history-card";
 
-
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -360,7 +359,6 @@ function ContractDetail() {
                 currency={contract.currency ?? "BRL"}
               />
             </div>
-
           </CardContent>
         </Card>
 
@@ -449,7 +447,6 @@ function ContractDetail() {
       />
 
       <ContractLinksHistoryCard contractId={contract.id} />
-
 
       <ContractApprovalsPanel contractId={contract.id} />
 

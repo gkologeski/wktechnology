@@ -384,7 +384,6 @@ type LinkableRow = {
   parent?: { id: string; title: string | null; number: string | null } | null;
 };
 
-
 function LinkPickerDialog({
   open,
   onOpenChange,
@@ -551,5 +550,4 @@ function LinkPickerDialog({
       </DialogContent>
     </Dialog>
   );
-
 }
