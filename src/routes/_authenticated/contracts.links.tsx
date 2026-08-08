@@ -270,7 +270,7 @@ function LinkDialog({
       }
       const childId = row.role === "client" ? row.id : (selected as string);
       const parentId = row.role === "client" ? (selected as string) : row.id;
-      return linkFn({ data: { childId, parentId } });
+      await linkFn({ data: { childId, parentId } });
     },
     onSuccess: () => {
       toast.success(isAmendment ? "Aditivo vinculado." : "Contratos vinculados.");
