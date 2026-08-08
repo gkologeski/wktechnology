@@ -232,7 +232,8 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     ]);
 
     const f = data.fields;
-    const role = f.role ?? "provider";
+    const extractedRole = f.role ?? null;
+
 
     const counterpartyCompanyId = await findCompanyIdByCnpjOrName(
       supabase,
