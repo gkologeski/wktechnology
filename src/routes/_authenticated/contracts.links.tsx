@@ -219,6 +219,18 @@ function ContractLinksPage() {
           }}
         />
       ) : null}
+
+      {aiOpen ? (
+        <AiLinkSuggestionsDialog
+          role={role}
+          onOpenChange={(v) => setAiOpen(v)}
+          onApplied={() => {
+            void qc.invalidateQueries({ queryKey: ["contracts-pending-link"] });
+            void qc.invalidateQueries({ queryKey: ["contracts", "pending-link-count"] });
+            void qc.invalidateQueries({ queryKey: ["contracts"] });
+          }}
+        />
+      ) : null}
     </div>
   );
 }
