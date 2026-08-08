@@ -105,11 +105,16 @@ function ContractLinksPage() {
         countLabel={rows.length === 1 ? "pendência" : "pendências"}
         description="Contratos importados em que o par prestação ↔ compra não foi identificado automaticamente."
         actions={
-          <Button variant="outline" asChild>
-            <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
-              <ArrowLeft className="h-4 w-4 mr-2" /> Contratos
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setAiOpen(true)} disabled={rows.length === 0}>
+              <Sparkles className="h-4 w-4 mr-2" /> Analisar com IA
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
+                <ArrowLeft className="h-4 w-4 mr-2" /> Contratos
+              </Link>
+            </Button>
+          </div>
         }
       />
 
