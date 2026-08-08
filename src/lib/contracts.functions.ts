@@ -546,6 +546,14 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
           amendment_effective_at: null,
         };
 
+    const { data: previous } = await supabase
+      .from("contracts")
+      .select("id, title, amendment_of_id")
+      .eq("id", data.amendmentId)
+      .maybeSingle();
+    const previousMainId =
+      (previous as { amendment_of_id?: string | null } | null)?.amendment_of_id ?? null;
+
     const { data: row, error } = await supabase
       .from("contracts")
       .update(patch as never)
@@ -555,13 +563,38 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
     if (error) throw error;
     if (!row) throw new Error("Você não tem permissão para alterar este contrato.");
 
-    await (supabase as any).from("contract_events").insert({
-      workspace_id: workspaceId,
-      contract_id: data.amendmentId,
-      actor_id: userId,
-      event_type: data.mainContractId ? "amendment_linked" : "amendment_unlinked",
-      payload: { amendment_of_id: data.mainContractId },
-    });
+    const otherMainId = data.mainContractId ?? previousMainId;
+    let mainLabel: string | null = null;
+    if (otherMainId) {
+      const { data: mainRow } = await supabase
+        .from("contracts")
+        .select("title, number")
+        .eq("id", otherMainId)
+        .maybeSingle();
+      const m = mainRow as { title?: string | null; number?: string | null } | null;
+      mainLabel = m?.title ?? m?.number ?? null;
+    }
+
+    const amendmentPayload = {
+      amendment_of_id: data.mainContractId,
+      previous_parent_contract_id: previousMainId,
+      child_contract_id: data.amendmentId,
+      parent_title: mainLabel,
+      child_title: (previous as { title?: string | null } | null)?.title ?? null,
+    };
+    const amendmentTargets = Array.from(
+      new Set([data.amendmentId, otherMainId].filter(Boolean)),
+    ) as string[];
+    await (supabase as any).from("contract_events").insert(
+      amendmentTargets.map((contractId) => ({
+        workspace_id: workspaceId,
+        contract_id: contractId,
+        actor_id: userId,
+        event_type: data.mainContractId ? "amendment_linked" : "amendment_unlinked",
+        payload: amendmentPayload,
+      })),
+    );
+
 
     // Reaplica o padrão de título (prefixo ADT entra/sai conforme o vínculo).
     try {
