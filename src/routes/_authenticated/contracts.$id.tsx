@@ -152,7 +152,6 @@ function ContractDetail() {
       qc.removeQueries({ queryKey: ["contract", id] });
       await qc.invalidateQueries({ queryKey: ["contracts"] });
       navigate({ to: "/contracts", search: DEFAULT_CONTRACTS_SEARCH });
-
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -350,17 +349,16 @@ function ContractDetail() {
       <ContractAmendmentsPanel
         contractId={contract.id}
         documentKind={(contract as { document_kind?: string }).document_kind ?? "main"}
-        amendmentOf={
-          (contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null
-        }
+        amendmentOf={(contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null}
         amendments={(contract as { amendments?: AmendmentRow[] }).amendments ?? []}
-        amendmentNumber={(contract as { amendment_number?: string | null }).amendment_number ?? null}
+        amendmentNumber={
+          (contract as { amendment_number?: string | null }).amendment_number ?? null
+        }
         amendmentEffectiveAt={
           (contract as { amendment_effective_at?: string | null }).amendment_effective_at ?? null
         }
         canEdit={canUpdateContract}
       />
-
 
       <ContractApprovalsPanel contractId={contract.id} />
 

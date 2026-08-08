@@ -66,7 +66,6 @@ REGRAS ADICIONAIS DE NÚMERO E VÍNCULO:
 - \`self_contract_number\`: o número/identificação do próprio contrato, se impresso no documento (ex.: "Contrato nº 2026/0031").
 - \`referenced_contract_numbers\`: números de OUTROS contratos citados no documento, tipicamente quando um contrato de compra referencia o contrato de prestação firmado com o cliente final. Liste apenas números, sem prosa. Se não houver, use [].`;
 
-
 async function callGeminiExtract(
   userContent: Array<Record<string, unknown>>,
 ): Promise<ExtractedContract> {
@@ -256,9 +255,8 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     if (referenced.length) metadata.referenced_contract_numbers = referenced;
 
     // Contratante = entidade legal do workspace? (contratos elegíveis ao TechPeople)
-    const { loadOwnLegalEntities, matchOwnEntity } = await import(
-      "@/lib/contracts/import-link.server"
-    );
+    const { loadOwnLegalEntities, matchOwnEntity } =
+      await import("@/lib/contracts/import-link.server");
     const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
     const ownEntity = matchOwnEntity(ownEntities, f.contracting_cnpj, f.contracting_name);
     if (ownEntity) metadata.contracting_is_own_entity = true;
@@ -368,9 +366,7 @@ export const getContractSourceFileUrl = createServerFn({ method: "POST" })
 export const linkImportedContracts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z
-      .object({ ids: z.array(z.string().uuid()).min(1).max(50) })
-      .parse(input),
+    z.object({ ids: z.array(z.string().uuid()).min(1).max(50) }).parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -398,7 +394,11 @@ export const linkImportedContracts = createServerFn({ method: "POST" })
     if (provErr) throw provErr;
 
     const candidates = (providers ?? []).map((p) => {
-      const row = p as { id: string; number: string | null; metadata: Record<string, unknown> | null };
+      const row = p as {
+        id: string;
+        number: string | null;
+        metadata: Record<string, unknown> | null;
+      };
       return {
         id: row.id,
         number: row.number,
@@ -497,7 +497,6 @@ export const countContractsPendingLink = createServerFn({ method: "POST" })
     );
     return { count: pending.length };
   });
-
 
 // Remove um contrato da fila de vinculação (declara que não há contrato par).
 export const dismissContractLink = createServerFn({ method: "POST" })

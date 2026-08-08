@@ -101,9 +101,7 @@ function ContractLinksPage() {
         title="Vinculação de contratos"
         count={rows.length}
         countLabel={rows.length === 1 ? "pendência" : "pendências"}
-
         description="Contratos importados em que o par prestação ↔ compra não foi identificado automaticamente."
-
         actions={
           <Button variant="outline" asChild>
             <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
@@ -172,9 +170,7 @@ function ContractLinksPage() {
                     {r.title}
                   </Link>
                   <Badge variant="secondary">
-                    {r.document_kind === "amendment"
-                      ? "Aditivo"
-                      : (ROLE_LABEL[r.role] ?? r.role)}
+                    {r.document_kind === "amendment" ? "Aditivo" : (ROLE_LABEL[r.role] ?? r.role)}
                   </Badge>
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">
@@ -316,9 +312,7 @@ function LinkDialog({
             </Label>
             <Select value={selected ?? ""} onValueChange={setSelected}>
               <SelectTrigger id="link-target">
-                <SelectValue
-                  placeholder={isLoading ? "Carregando…" : "Selecionar contrato…"}
-                />
+                <SelectValue placeholder={isLoading ? "Carregando…" : "Selecionar contrato…"} />
               </SelectTrigger>
               <SelectContent>
                 {options.map((c) => (

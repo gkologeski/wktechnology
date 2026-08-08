@@ -131,8 +131,7 @@ function ProviderView({
 }) {
   const [open, setOpen] = useState(false);
   const ordered = useMemo(
-    () =>
-      [...children].sort((a, b) => (a.starts_at ?? "").localeCompare(b.starts_at ?? "")),
+    () => [...children].sort((a, b) => (a.starts_at ?? "").localeCompare(b.starts_at ?? "")),
     [children],
   );
   const totalCost = useMemo(
