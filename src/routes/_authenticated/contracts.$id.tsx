@@ -89,6 +89,8 @@ function ContractDetail() {
   const [title, setTitle] = useState("");
   const [role, setRole] = useState<"provider" | "client">("provider");
   const [status, setStatus] = useState<Status>("draft");
+  const [documentKind, setDocumentKind] = useState<"main" | "amendment">("main");
+  const [mainContract, setMainContract] = useState<MainContractOption | null>(null);
   const [totalValue, setTotalValue] = useState<number>(0);
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
@@ -103,6 +105,20 @@ function ContractDetail() {
     setTitle(contract.title ?? "");
     setRole((contract.role as "provider" | "client") ?? "provider");
     setStatus((contract.status as Status) ?? "draft");
+    const kind = (contract as { document_kind?: string }).document_kind === "amendment";
+    setDocumentKind(kind ? "amendment" : "main");
+    const parentAmendment = (contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null;
+    setMainContract(
+      parentAmendment
+        ? {
+            id: parentAmendment.id,
+            number: parentAmendment.number,
+            title: parentAmendment.title,
+            status: parentAmendment.status,
+            role: parentAmendment.role,
+          }
+        : null,
+    );
     setTotalValue(Number(contract.total_value ?? 0));
     setStartsAt(contract.starts_at ? contract.starts_at.slice(0, 10) : "");
     setEndsAt(contract.ends_at ? contract.ends_at.slice(0, 10) : "");
@@ -111,7 +127,24 @@ function ContractDetail() {
     setBodyHtml(contract.body_html ?? "");
   }, [contract]);
 
+  const amendmentMissingParent = documentKind === "amendment" && !mainContract;
+
+  async function changeDocumentKind(next: "main" | "amendment") {
+    if (next === "main" && documentKind === "amendment" && mainContract) {
+      const ok = await confirmDialog(
+        "Mudar para Principal remove o vínculo de aditivo (contrato principal, número e vigência do aditivo). Continuar?",
+      );
+      if (!ok) return;
+      setMainContract(null);
+    }
+    setDocumentKind(next);
+  }
+
   async function save() {
+    if (amendmentMissingParent) {
+      toast.error("Selecione o contrato principal: um aditivo precisa estar vinculado.");
+      return;
+    }
     setSaving(true);
     try {
       await upd({
@@ -121,6 +154,8 @@ function ContractDetail() {
             title: title.trim(),
             role,
             status,
+            document_kind: documentKind,
+            amendment_of_id: documentKind === "amendment" ? (mainContract?.id ?? null) : null,
             total_value: totalValue,
             starts_at: startsAt || null,
             ends_at: endsAt || null,
@@ -130,6 +165,7 @@ function ContractDetail() {
           },
         },
       });
+
       toast.success("Contrato atualizado.");
       qc.invalidateQueries({ queryKey: ["contract", id] });
       qc.invalidateQueries({ queryKey: ["contracts"] });
