@@ -641,6 +641,35 @@ export const updateContract = createServerFn({ method: "POST" })
       "techcontracts.contracts.update.own",
       "techcontracts.contracts.update.workspace",
     ]);
+
+    // Um aditivo precisa, obrigatoriamente, estar vinculado a um contrato principal.
+    const patchAny = data.patch as {
+      document_kind?: string;
+      amendment_of_id?: string | null;
+    };
+    if (patchAny.document_kind === "amendment" || patchAny.amendment_of_id !== undefined) {
+      const { data: current } = await supabase
+        .from("contracts")
+        .select("document_kind, amendment_of_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      const currentAny = (current ?? {}) as {
+        document_kind?: string;
+        amendment_of_id?: string | null;
+      };
+      const nextKind = patchAny.document_kind ?? currentAny.document_kind ?? "main";
+      const nextMain =
+        patchAny.amendment_of_id !== undefined
+          ? patchAny.amendment_of_id
+          : (currentAny.amendment_of_id ?? null);
+      if (nextKind === "amendment" && !nextMain) {
+        throw new Error("Selecione o contrato principal: um aditivo precisa estar vinculado.");
+      }
+      if (nextKind === "amendment" && nextMain === data.id) {
+        throw new Error("Um contrato não pode ser aditivo de si mesmo.");
+      }
+    }
+
     const { data: row, error } = await supabase
       .from("contracts")
       .update(data.patch)
