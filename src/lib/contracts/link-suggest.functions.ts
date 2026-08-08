@@ -9,8 +9,11 @@ import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import {
   buildSuggestionEvidence,
   dedupeSuggestions,
+  effectiveRole,
+  inferRoleFromParties,
   isOwnParty,
   isValidSuggestion,
+  roleMismatch,
   type ContractLinkMeta,
   type LinkConfidence,
   type LinkEvidence,
@@ -24,14 +27,25 @@ export type SuggestedLinkRow = LinkSuggestion & {
   target: { number: string | null; title: string; role: string };
 };
 
+/** Contrato cujo papel gravado contradiz os CNPJs extraídos do documento. */
+export type RoleConflictRow = {
+  id: string;
+  number: string | null;
+  title: string;
+  stored_role: string;
+  inferred_role: "provider" | "client";
+};
+
 export type SuggestLinksResult = {
   suggestions: SuggestedLinkRow[];
+  role_conflicts: RoleConflictRow[];
   analyzed: number;
   unresolved: number;
   ai_used: boolean;
   notes: string[];
   run_id: string;
 };
+
 
 export type SuggestionHistoryRow = {
   id: string;
@@ -99,8 +113,11 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     const pendingIds = new Set(pendingRows.map((p) => p.id));
     const allMetas = Array.from(metaById.values());
     const mains = allMetas.filter((c) => c.document_kind !== "amendment");
-    const providers = mains.filter((c) => c.role === "provider");
-    const clients = mains.filter((c) => c.role === "client");
+    // O papel usado na análise é o inferido pelos CNPJs próprios (fallback: o gravado).
+    const roleOf = (c: ContractLinkMeta) => effectiveRole(c, own);
+    const providers = mains.filter((c) => roleOf(c) === "provider");
+    const clients = mains.filter((c) => roleOf(c) === "client");
+
     const parentedClientIds = new Set(
       (rows ?? [])
         .map((r) => (r as Record<string, unknown>)["parent_contract_id"] as string | null)
@@ -114,13 +131,14 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     for (const p of pendingRows) {
       const pending = metaById.get(p.id);
       if (!pending) continue;
+      const pendingRole = roleOf(pending);
 
       // 1) Aditivo → contrato principal do mesmo papel e mesma contraparte.
       if (pending.document_kind === "amendment") {
         const key = counterpartyKey(pending);
         if (!key) continue;
         const matches = mains.filter(
-          (c) => c.role === pending.role && counterpartyKey(c) === key && c.id !== pending.id,
+          (c) => roleOf(c) === pendingRole && counterpartyKey(c) === key && c.id !== pending.id,
         );
         if (matches.length === 1) {
           ruleSuggestions.push({
@@ -136,7 +154,8 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
       }
 
       // 2) Compra → prestação pelo número citado no documento.
-      if (pending.role === "client") {
+      if (pendingRole === "client") {
+
         const hit = resolveReferencedContract(
           p.referenced_numbers,
           providers.map((c) => ({ id: c.id, number: c.number, selfNumber: c.self_number })),
@@ -196,7 +215,10 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
         id: c.id,
         numero: c.number,
         titulo: c.title,
-        papel: c.role,
+        papel: roleOf(c),
+        papel_gravado: c.role,
+        papel_divergente_do_documento: roleMismatch(c, own),
+
         tipo_documento: c.document_kind,
         contratante: c.contracting_name,
         contratante_cnpj: c.contracting_cnpj,
@@ -238,7 +260,10 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
       aiUsed = true;
       aiSuggestions = items
         .filter((s) => remaining.some((p) => p.id === s.pending_id))
-        .filter((s) => isValidSuggestion(s, metaById.get(s.pending_id), metaById.get(s.target_id)))
+        .filter((s) =>
+          isValidSuggestion(s, metaById.get(s.pending_id), metaById.get(s.target_id), own),
+        )
+
         .map((s) => ({
           pending_id: s.pending_id,
           target_id: s.target_id,
@@ -250,7 +275,7 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     }
 
     const merged = dedupeSuggestions([...ruleSuggestions, ...aiSuggestions]).filter((s) =>
-      isValidSuggestion(s, metaById.get(s.pending_id), metaById.get(s.target_id)),
+      isValidSuggestion(s, metaById.get(s.pending_id), metaById.get(s.target_id), own),
     );
 
     const runId = crypto.randomUUID();
@@ -258,15 +283,24 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     const suggestions: SuggestedLinkRow[] = merged.map((s) => {
       const pending = metaById.get(s.pending_id) as ContractLinkMeta;
       const target = metaById.get(s.target_id) as ContractLinkMeta;
+      const evidence = buildSuggestionEvidence(
+        pending,
+        target,
+        own,
+        referencedByPending.get(s.pending_id) ?? null,
+      );
+      // Papel gravado divergente dos CNPJs extraídos: a proposta continua visível,
+      // mas com confiança rebaixada e aviso para revisão humana.
+      const confidence: LinkConfidence = evidence.role_conflict ? "low" : s.confidence;
+      const reason = evidence.role_conflict
+        ? `${s.reason} Atenção: o papel gravado divergiu dos CNPJs extraídos — revise o contrato antes de aplicar.`
+        : s.reason;
       return {
         ...s,
+        confidence,
+        reason,
         id: null,
-        evidence: buildSuggestionEvidence(
-          pending,
-          target,
-          own,
-          referencedByPending.get(s.pending_id) ?? null,
-        ),
+        evidence,
         pending: {
           number: pending.number,
           title: pending.title,
@@ -276,6 +310,26 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
         target: { number: target.number, title: target.title, role: target.role },
       };
     });
+
+    // Diagnóstico: contratos cujo papel gravado contradiz os CNPJs extraídos.
+    const roleConflicts: RoleConflictRow[] = allMetas
+      .filter((c) => roleMismatch(c, own))
+      .slice(0, 50)
+      .map((c) => ({
+        id: c.id,
+        number: c.number,
+        title: c.title,
+        stored_role: c.role,
+        inferred_role: inferRoleFromParties(c, own) as "provider" | "client",
+      }));
+    if (roleConflicts.length > 0) {
+      notes.push(
+        `${roleConflicts.length} contrato(s) com papel gravado divergente dos CNPJs extraídos. Revise o papel antes de aplicar os vínculos.`,
+      );
+    }
+
+
+
 
     // Histórico: propostas anteriores ainda não decididas passam a "reavaliadas".
     if (suggestions.length > 0) {
@@ -320,6 +374,8 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
 
     return {
       suggestions,
+      role_conflicts: roleConflicts,
+
       analyzed: pendingRows.length,
       unresolved: pendingRows.length - suggestions.length,
       ai_used: aiUsed,

@@ -2,6 +2,8 @@
 // A IA apenas propõe: o vínculo só é gravado ao aplicar a seleção.
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, ChevronDown, Link2, RefreshCw, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
@@ -31,9 +33,11 @@ import {
 } from "@/lib/contracts/link-suggest.functions";
 import {
   CONFIDENCE_LABEL,
+  ROLE_INFERRED_LABEL,
   type LinkConfidence,
   type LinkEvidenceSide,
 } from "@/lib/contracts/link-suggest";
+
 import { linkContractAmendment, linkContractParent } from "@/lib/contracts.functions";
 import { formatDate } from "@/lib/crm";
 
@@ -55,7 +59,19 @@ function EvidenceSide({ title, side }: { title: string; side: LinkEvidenceSide }
   return (
     <div className="space-y-1 rounded-md border bg-muted/30 p-2">
       <p className="text-xs font-medium text-foreground">{title}</p>
-      <p className="text-[11px] text-muted-foreground">Papel: {side.role_label}</p>
+      <p className="text-[11px] text-muted-foreground">Papel gravado: {side.role_label}</p>
+      {side.role_inferred ? (
+        <p
+          className={
+            side.role_conflict
+              ? "text-[11px] font-medium text-amber-700 dark:text-amber-400"
+              : "text-[11px] text-muted-foreground"
+          }
+        >
+          Papel pelos CNPJs: {ROLE_INFERRED_LABEL[side.role_inferred]}
+          {side.role_conflict ? " — divergente do papel gravado" : ""}
+        </p>
+      ) : null}
       <p className="text-[11px] text-muted-foreground">
         CONTRATANTE: {side.contracting_name ?? "não identificada"} ·{" "}
         {formatCnpj(side.contracting_cnpj)}
@@ -73,6 +89,7 @@ function EvidenceSide({ title, side }: { title: string; side: LinkEvidenceSide }
     </div>
   );
 }
+
 
 export function AiLinkSuggestionsDialog({
   role,
@@ -291,7 +308,26 @@ export function AiLinkSuggestionsDialog({
                       <span className="text-xs text-muted-foreground">
                         {s.source === "rule" ? "Regra determinística" : "Análise por IA"}
                       </span>
+                      {s.evidence?.role_conflict ? (
+                        <Badge
+                          variant="outline"
+                          className="border-amber-500/60 text-amber-700 dark:text-amber-400"
+                        >
+                          <AlertTriangle className="mr-1 h-3 w-3" aria-hidden="true" />
+                          Papel divergente — revisar
+                        </Badge>
+                      ) : null}
                     </div>
+                    {s.evidence?.role_conflict ? (
+                      <Link
+                        to="/contracts/$id"
+                        params={{ id: s.pending_id }}
+                        className="text-xs font-medium text-primary underline-offset-2 hover:underline focus-visible:underline"
+                      >
+                        Abrir contrato para corrigir Papel/Tipo de documento
+                      </Link>
+                    ) : null}
+
                     <p className="text-xs text-muted-foreground">{s.reason}</p>
 
                     {s.evidence ? (
