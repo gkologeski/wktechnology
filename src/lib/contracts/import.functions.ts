@@ -452,7 +452,7 @@ export const listContractsPendingLink = createServerFn({ method: "POST" })
   .inputValidator((input) =>
     z
       .object({
-        role: z.enum(["provider", "client", "all"]).optional(),
+        role: z.enum(["provider", "client", "amendment", "all"]).optional(),
         search: z.string().max(200).optional(),
       })
       .parse(input ?? {}),
@@ -464,7 +464,7 @@ export const listContractsPendingLink = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabase
       .from("contracts")
       .select(
-        "id, role, number, title, status, starts_at, ends_at, parent_contract_id, metadata, companies:counterparty_company_id(name)",
+        "id, role, number, title, status, starts_at, ends_at, parent_contract_id, document_kind, amendment_of_id, metadata, companies:counterparty_company_id(name)",
       )
       .order("created_at", { ascending: false })
       .limit(500);
@@ -485,7 +485,9 @@ export const countContractsPendingLink = createServerFn({ method: "POST" })
 
     const { data: rows, error } = await supabase
       .from("contracts")
-      .select("id, role, number, title, status, starts_at, ends_at, parent_contract_id, metadata")
+      .select(
+        "id, role, number, title, status, starts_at, ends_at, parent_contract_id, document_kind, amendment_of_id, metadata",
+      )
       .order("created_at", { ascending: false })
       .limit(1000);
     if (error) throw error;
