@@ -248,7 +248,16 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
     }
     const { data: rows, error } = await query;
     if (error) throw error;
-    return rows ?? [];
+    // `parent` é um embed self-referente: normaliza para objeto único.
+    return (rows ?? []).map((r) => {
+      const parentRaw = (r as { parent?: unknown }).parent;
+      const parent = (Array.isArray(parentRaw) ? parentRaw[0] : parentRaw) as
+        | { id: string; title: string | null; number: string | null }
+        | null
+        | undefined;
+      return { ...r, parent: parent ?? null };
+    });
+
   });
 
 
