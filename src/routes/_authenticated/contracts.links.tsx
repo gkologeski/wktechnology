@@ -211,6 +211,7 @@ function ContractLinksPage() {
           onLinked={() => {
             setTarget(null);
             void qc.invalidateQueries({ queryKey: ["contracts-pending-link"] });
+            void qc.invalidateQueries({ queryKey: ["contracts", "pending-link-count"] });
             void qc.invalidateQueries({ queryKey: ["contracts"] });
           }}
         />
