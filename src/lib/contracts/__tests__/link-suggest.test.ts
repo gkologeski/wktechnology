@@ -117,3 +117,51 @@ describe("dedupeSuggestions", () => {
     expect(out[0].source).toBe("rule");
   });
 });
+
+describe("coerência de papel", () => {
+  const stored = meta({
+    id: "x1",
+    role: "client", // gravado errado
+    contracting_name: "CITEL",
+    contracting_cnpj: "51.212.892/0001-25",
+    counterparty_name: "WK Technology Ltda",
+    counterparty_cnpj: "12.345.678/0001-90",
+  });
+
+  it("infere prestação quando a nossa empresa é a CONTRATADA", () => {
+    expect(inferRoleFromParties(stored, own)).toBe("provider");
+    expect(roleMismatch(stored, own)).toBe(true);
+    expect(effectiveRole(stored, own)).toBe("provider");
+  });
+
+  it("não infere nada sem empresas do workspace", () => {
+    expect(inferRoleFromParties(stored, [])).toBeNull();
+    expect(roleMismatch(stored, [])).toBe(false);
+    expect(effectiveRole(stored, [])).toBe("client");
+  });
+
+  it("recusa par em que somos CONTRATADA nos dois contratos", () => {
+    const other = meta({
+      id: "x2",
+      role: "provider",
+      contracting_name: "CITEL",
+      contracting_cnpj: "51.212.892/0001-25",
+      counterparty_name: "WK Technology Ltda",
+      counterparty_cnpj: "12.345.678/0001-90",
+    });
+    expect(
+      isValidSuggestion({ pending_id: "x1", target_id: "x2", kind: "parent" }, stored, other, own),
+    ).toBe(false);
+    // sem as entidades próprias, o papel gravado ainda formava par "válido"
+    expect(
+      isValidSuggestion({ pending_id: "x1", target_id: "x2", kind: "parent" }, stored, other),
+    ).toBe(true);
+  });
+
+  it("marca role_conflict nas evidências", () => {
+    const target = meta({ id: "x3", role: "provider" });
+    const ev = buildSuggestionEvidence(stored, target, own);
+    expect(ev.role_conflict).toBe(true);
+    expect(ev.pending.role_inferred).toBe("provider");
+  });
+});
