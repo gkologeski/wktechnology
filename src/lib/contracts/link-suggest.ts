@@ -21,6 +21,26 @@ export type ContractLinkMeta = {
   ends_at: string | null;
 };
 
+/** Evidências mostradas ao usuário para validar uma sugestão antes de aplicar. */
+export type LinkEvidence = {
+  pending: LinkEvidenceSide;
+  target: LinkEvidenceSide;
+  referenced_number: string | null;
+  overlapping_period: boolean | null;
+};
+
+export type LinkEvidenceSide = {
+  role_label: string;
+  contracting_name: string | null;
+  contracting_cnpj: string | null;
+  contracting_is_ours: boolean;
+  counterparty_name: string | null;
+  counterparty_cnpj: string | null;
+  counterparty_is_ours: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+};
+
 export type LinkSuggestion = {
   pending_id: string;
   target_id: string;
@@ -28,6 +48,7 @@ export type LinkSuggestion = {
   confidence: LinkConfidence;
   reason: string;
   source: "rule" | "ai";
+  evidence?: LinkEvidence;
 };
 
 function digits(value: string | null | undefined): string {
@@ -115,3 +136,60 @@ export const CONFIDENCE_LABEL: Record<LinkConfidence, string> = {
   medium: "Média",
   low: "Baixa",
 };
+
+export const SUGGESTION_STATUS_LABEL: Record<string, string> = {
+  proposed: "Proposta",
+  applied: "Aplicada",
+  dismissed: "Ignorada",
+  superseded: "Reavaliada",
+};
+
+const ROLE_SIDE_LABEL: Record<string, string> = {
+  provider: "Prestação (somos a CONTRATADA)",
+  client: "Compra (somos a CONTRATANTE)",
+};
+
+function toEvidenceSide(
+  c: ContractLinkMeta,
+  own: Array<{ cnpjDigits: string; name: string; tradeName: string | null }>,
+): LinkEvidenceSide {
+  return {
+    role_label:
+      c.document_kind === "amendment"
+        ? `Aditivo · ${ROLE_SIDE_LABEL[c.role] ?? c.role}`
+        : (ROLE_SIDE_LABEL[c.role] ?? c.role),
+    contracting_name: c.contracting_name,
+    contracting_cnpj: c.contracting_cnpj,
+    contracting_is_ours: isOwnParty(own, c.contracting_cnpj, c.contracting_name),
+    counterparty_name: c.counterparty_name ?? c.company_name,
+    counterparty_cnpj: c.counterparty_cnpj,
+    counterparty_is_ours: isOwnParty(own, c.counterparty_cnpj, c.counterparty_name),
+    starts_at: c.starts_at,
+    ends_at: c.ends_at,
+  };
+}
+
+/** Vigências se sobrepõem? `null` quando faltam datas para comparar. */
+export function periodsOverlap(a: ContractLinkMeta, b: ContractLinkMeta): boolean | null {
+  const aStart = a.starts_at ? Date.parse(a.starts_at) : null;
+  const bStart = b.starts_at ? Date.parse(b.starts_at) : null;
+  if (aStart === null || bStart === null) return null;
+  const aEnd = a.ends_at ? Date.parse(a.ends_at) : Number.POSITIVE_INFINITY;
+  const bEnd = b.ends_at ? Date.parse(b.ends_at) : Number.POSITIVE_INFINITY;
+  return aStart <= bEnd && bStart <= aEnd;
+}
+
+/** Monta o objeto de evidências (papéis, CNPJs, vigências, número citado). */
+export function buildSuggestionEvidence(
+  pending: ContractLinkMeta,
+  target: ContractLinkMeta,
+  own: Array<{ cnpjDigits: string; name: string; tradeName: string | null }>,
+  referencedNumber: string | null = null,
+): LinkEvidence {
+  return {
+    pending: toEvidenceSide(pending, own),
+    target: toEvidenceSide(target, own),
+    referenced_number: referencedNumber,
+    overlapping_period: periodsOverlap(pending, target),
+  };
+}

@@ -40,6 +40,8 @@ import {
 } from "@/lib/contracts.functions";
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 import { AiLinkSuggestionsDialog } from "@/components/contracts/ai-link-suggestions-dialog";
+import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-suggestions-history-card";
+
 
 export const Route = createFileRoute("/_authenticated/contracts/links")({
   head: () => ({
@@ -206,6 +208,10 @@ function ContractLinksPage() {
           ))}
         </div>
       )}
+
+      <AiLinkSuggestionsHistoryCard />
+
+
 
       {target ? (
         <LinkDialog

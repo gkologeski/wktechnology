@@ -32,6 +32,8 @@ import {
   type MainContractOption,
 } from "@/components/contracts/main-contract-picker";
 import { ContractLinksHistoryCard } from "@/components/contracts/contract-links-history-card";
+import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-suggestions-history-card";
+
 
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
@@ -447,6 +449,9 @@ function ContractDetail() {
       />
 
       <ContractLinksHistoryCard contractId={contract.id} />
+
+      <AiLinkSuggestionsHistoryCard contractId={contract.id} />
+
 
       <ContractApprovalsPanel contractId={contract.id} />
 
