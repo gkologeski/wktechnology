@@ -111,7 +111,10 @@ export const listContractsPaged = createServerFn({ method: "POST" })
     if (data.endsFrom) q = q.gte("ends_at", data.endsFrom);
     if (data.endsTo) q = q.lte("ends_at", data.endsTo);
     if (data.search && data.search.trim()) {
-      const t = `%${data.search.trim().replace(/[,()%]/g, " ").trim()}%`;
+      const t = `%${data.search
+        .trim()
+        .replace(/[,()%]/g, " ")
+        .trim()}%`;
       q = q.or(`title.ilike.${t},number.ilike.${t}`);
     }
     if (data.legalEntityId) {
@@ -129,8 +132,6 @@ export const listContractsPaged = createServerFn({ method: "POST" })
     if (error) throw error;
     return { rows: rows ?? [], total: count ?? 0 };
   });
-
-
 
 export const getContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -168,7 +169,9 @@ export const getContract = createServerFn({ method: "POST" })
     // children (contratos de compra vinculados a este contrato de prestação)
     const { data: children } = await supabase
       .from("contracts")
-      .select("id, number, title, status, total_value, currency, role, counterparty_company_id, starts_at, ends_at")
+      .select(
+        "id, number, title, status, total_value, currency, role, counterparty_company_id, starts_at, ends_at, companies:counterparty_company_id(name)",
+      )
       .eq("parent_contract_id", data.id)
       .order("created_at", { ascending: true });
 
@@ -212,7 +215,6 @@ export const getContract = createServerFn({ method: "POST" })
       amendmentOf,
       amendments: (amendments ?? []) as unknown as AmendmentRow[],
     };
-
   });
 
 // ============= LINKABLE (para o seletor de vínculo) =============
@@ -255,15 +257,17 @@ export const listOwnContractingPurchaseContracts = createServerFn({ method: "POS
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
     z
-      .object({ q: z.string().max(200).optional(), limit: z.number().int().min(1).max(200).optional() })
+      .object({
+        q: z.string().max(200).optional(),
+        limit: z.number().int().min(1).max(200).optional(),
+      })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { loadOwnLegalEntities, matchOwnEntity } = await import(
-      "@/lib/contracts/import-link.server"
-    );
+    const { loadOwnLegalEntities, matchOwnEntity } =
+      await import("@/lib/contracts/import-link.server");
     const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
     const ownIds = new Set(ownEntities.map((e) => e.id));
 
@@ -315,7 +319,6 @@ export const listOwnContractingPurchaseContracts = createServerFn({ method: "POS
       })
       .filter((v): v is NonNullable<typeof v> => v !== null);
   });
-
 
 // ============= LINK / UNLINK PARENT =============
 
@@ -472,18 +475,13 @@ export const standardizeContractTitles = createServerFn({ method: "POST" })
       "techcontracts.contracts.update.workspace",
     ]);
 
-    const { previewContractTitles, applyContractTitles } = await import(
-      "@/lib/contracts/title.server"
-    );
+    const { previewContractTitles, applyContractTitles } =
+      await import("@/lib/contracts/title.server");
     const changes = data.preview
       ? await previewContractTitles(supabase as never, workspaceId, data.ids)
       : await applyContractTitles(supabase as never, workspaceId, data.ids);
     return { changes };
   });
-
-
-
-
 
 // ============= CREATE =============
 
@@ -507,7 +505,9 @@ export const createContract = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, ["techcontracts.contracts.create.own"]);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.create.own",
+    ]);
     const { data: row, error } = await supabase
       .from("contracts")
       .insert({
@@ -545,7 +545,9 @@ export const createContractFromDeal = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, ["techcontracts.contracts.create.own"]);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.create.own",
+    ]);
 
     const { data: deal, error: dErr } = await supabase
       .from("deals")
@@ -639,6 +641,35 @@ export const updateContract = createServerFn({ method: "POST" })
       "techcontracts.contracts.update.own",
       "techcontracts.contracts.update.workspace",
     ]);
+
+    // Um aditivo precisa, obrigatoriamente, estar vinculado a um contrato principal.
+    const patchAny = data.patch as {
+      document_kind?: string;
+      amendment_of_id?: string | null;
+    };
+    if (patchAny.document_kind === "amendment" || patchAny.amendment_of_id !== undefined) {
+      const { data: current } = await supabase
+        .from("contracts")
+        .select("document_kind, amendment_of_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      const currentAny = (current ?? {}) as {
+        document_kind?: string;
+        amendment_of_id?: string | null;
+      };
+      const nextKind = patchAny.document_kind ?? currentAny.document_kind ?? "main";
+      const nextMain =
+        patchAny.amendment_of_id !== undefined
+          ? patchAny.amendment_of_id
+          : (currentAny.amendment_of_id ?? null);
+      if (nextKind === "amendment" && !nextMain) {
+        throw new Error("Selecione o contrato principal: um aditivo precisa estar vinculado.");
+      }
+      if (nextKind === "amendment" && nextMain === data.id) {
+        throw new Error("Um contrato não pode ser aditivo de si mesmo.");
+      }
+    }
+
     const { data: row, error } = await supabase
       .from("contracts")
       .update(data.patch)
@@ -657,7 +688,9 @@ export const deleteContract = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, ["techcontracts.contracts.delete.workspace"]);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.delete.workspace",
+    ]);
     const { data: deleted, error } = await supabase
       .from("contracts")
       .delete()
@@ -669,7 +702,6 @@ export const deleteContract = createServerFn({ method: "POST" })
       throw new Error("Você não tem permissão para excluir este registro.");
     }
     return { ok: true, deleted: deleted.length };
-
   });
 
 // ============= AGRUPAMENTO (empresa / serviço do catálogo) =============
@@ -679,9 +711,7 @@ export const deleteContract = createServerFn({ method: "POST" })
 export const listContractGroupings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z
-      .object({ contractIds: z.array(z.string().uuid()).max(500).optional() })
-      .parse(input ?? {}),
+    z.object({ contractIds: z.array(z.string().uuid()).max(500).optional() }).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;

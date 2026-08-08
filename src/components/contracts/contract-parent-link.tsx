@@ -36,6 +36,7 @@ type ChildRow = {
   counterparty_company_id: string | null;
   starts_at: string | null;
   ends_at: string | null;
+  companies?: { name: string | null } | null;
 };
 
 type ParentRow = {
@@ -55,6 +56,7 @@ interface Props {
   totalValue: number;
   parent: ParentRow | null;
   children: ChildRow[];
+  canEdit?: boolean;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -67,6 +69,17 @@ const STATUS_LABEL: Record<string, string> = {
   ended: "Encerrado",
   terminated: "Rescindido",
 };
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return "—";
+  const d = new Date(`${value.slice(0, 10)}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+}
+
+function formatPeriod(row: { starts_at: string | null; ends_at: string | null }) {
+  if (!row.starts_at && !row.ends_at) return "vigência não informada";
+  return `${formatDate(row.starts_at)} → ${formatDate(row.ends_at)}`;
+}
 
 function useLinkMutations(contractId: string) {
   const qc = useQueryClient();
@@ -86,16 +99,18 @@ export function ContractParentLink({
   totalValue,
   parent,
   children,
+  canEdit = true,
 }: Props) {
   return role === "provider" ? (
     <ProviderView
       contractId={contractId}
       currency={currency}
       totalValue={totalValue}
+      canEdit={canEdit}
       children={children}
     />
   ) : (
-    <ClientView contractId={contractId} parent={parent} />
+    <ClientView contractId={contractId} parent={parent} canEdit={canEdit} />
   );
 }
 
@@ -106,13 +121,19 @@ function ProviderView({
   currency,
   totalValue,
   children,
+  canEdit,
 }: {
   contractId: string;
   currency: string;
   totalValue: number;
   children: ChildRow[];
+  canEdit: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const ordered = useMemo(
+    () => [...children].sort((a, b) => (a.starts_at ?? "").localeCompare(b.starts_at ?? "")),
+    [children],
+  );
   const totalCost = useMemo(
     () => children.reduce((acc, c) => acc + Number(c.total_value ?? 0), 0),
     [children],
@@ -127,15 +148,20 @@ function ProviderView({
         <div>
           <CardTitle className="text-base flex items-center gap-2">
             <Link2 className="h-4 w-4" />
-            Outsourcing — contratos de compra vinculados
+            Contratos de compra aninhados
+            {children.length > 0 ? (
+              <Badge variant="secondary">
+                {children.length} {children.length === 1 ? "aninhado" : "aninhados"}
+              </Badge>
+            ) : null}
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Vincule contratos de compra (fornecedores/desenvolvedores) que executam este contrato de
-            prestação.
+            Contratos de compra (fornecedores/desenvolvedores) que executam este contrato de
+            prestação. Quando aninhados, aparecem indentados sob este contrato na listagem.
           </p>
         </div>
-        <Button size="sm" onClick={() => setOpen(true)}>
-          Vincular contrato de compra
+        <Button size="sm" onClick={() => setOpen(true)} disabled={!canEdit}>
+          Aninhar contrato de compra
         </Button>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -154,12 +180,13 @@ function ProviderView({
         {/* Lista de filhos */}
         {children.length === 0 ? (
           <div className="text-sm text-muted-foreground border border-dashed rounded-lg py-6 text-center">
-            Nenhum contrato de compra vinculado ainda.
+            Nenhum contrato de compra aninhado ainda. Use “Aninhar contrato de compra” para
+            agrupá-los sob este contrato.
           </div>
         ) : (
           <div className="border rounded-lg divide-y">
-            {children.map((c) => (
-              <ChildRowItem key={c.id} row={c} onUnlink={() => {}} />
+            {ordered.map((c) => (
+              <ChildRowItem key={c.id} row={c} canEdit={canEdit} />
             ))}
           </div>
         )}
@@ -201,14 +228,15 @@ function MetricTile({
   );
 }
 
-function ChildRowItem({ row, onUnlink: _onUnlink }: { row: ChildRow; onUnlink: () => void }) {
+function ChildRowItem({ row, canEdit }: { row: ChildRow; canEdit: boolean }) {
   const qc = useQueryClient();
   const link = useServerFn(linkContractParent);
   async function unlink() {
-    if (!(await confirmDialog("Remover o vínculo deste contrato de compra?"))) return;
+    if (!(await confirmDialog("Desaninhar este contrato de compra do contrato de prestação?")))
+      return;
     try {
       await link({ data: { childId: row.id, parentId: null } });
-      toast.success("Vínculo removido.");
+      toast.success("Contrato desaninhado.");
       qc.invalidateQueries();
     } catch (e) {
       toast.error((e as Error).message);
@@ -225,13 +253,24 @@ function ChildRowItem({ row, onUnlink: _onUnlink }: { row: ChildRow; onUnlink: (
           {row.title}
         </Link>
         <div className="text-xs text-muted-foreground font-mono truncate">
-          {row.number ?? "—"} · {STATUS_LABEL[row.status] ?? row.status}
+          {row.number ?? "—"} · {STATUS_LABEL[row.status] ?? row.status} · {formatPeriod(row)}
         </div>
+        {row.companies?.name ? (
+          <div className="text-xs text-muted-foreground truncate">{row.companies.name}</div>
+        ) : null}
       </div>
+      <Badge variant="outline">Aninhado</Badge>
       <div className="text-sm tabular-nums whitespace-nowrap">
         {formatCurrency(Number(row.total_value ?? 0), row.currency)}
       </div>
-      <Button variant="ghost" size="icon" onClick={unlink} aria-label="Remover vínculo">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={unlink}
+        disabled={!canEdit}
+        title={canEdit ? "Desaninhar" : "Você não tem permissão para alterar este vínculo"}
+        aria-label="Desaninhar contrato de compra"
+      >
         <Unlink className="h-4 w-4" />
       </Button>
     </div>
@@ -240,7 +279,15 @@ function ChildRowItem({ row, onUnlink: _onUnlink }: { row: ChildRow; onUnlink: (
 
 // ---------- CLIENT (compra): mostra pai e permite alterar ----------
 
-function ClientView({ contractId, parent }: { contractId: string; parent: ParentRow | null }) {
+function ClientView({
+  contractId,
+  parent,
+  canEdit,
+}: {
+  contractId: string;
+  parent: ParentRow | null;
+  canEdit: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const { setParent } = useLinkMutations(contractId);
 
@@ -267,8 +314,13 @@ function ClientView({ contractId, parent }: { contractId: string; parent: Parent
             final.
           </p>
         </div>
-        <Button size="sm" variant={parent ? "outline" : "default"} onClick={() => setOpen(true)}>
-          {parent ? "Alterar vínculo" : "Vincular contrato de venda"}
+        <Button
+          size="sm"
+          variant={parent ? "outline" : "default"}
+          onClick={() => setOpen(true)}
+          disabled={!canEdit}
+        >
+          {parent ? "Alterar contrato principal" : "Aninhar sob contrato de venda"}
         </Button>
       </CardHeader>
       <CardContent>
@@ -288,13 +340,20 @@ function ClientView({ contractId, parent }: { contractId: string; parent: Parent
               </div>
             </div>
             <Badge variant="outline">Prestação</Badge>
-            <Button variant="ghost" size="icon" onClick={remove} aria-label="Remover vínculo">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={remove}
+              disabled={!canEdit}
+              title={canEdit ? "Desaninhar" : "Você não tem permissão para alterar este vínculo"}
+              aria-label="Desaninhar contrato"
+            >
               <Unlink className="h-4 w-4" />
             </Button>
           </div>
         ) : (
           <div className="text-sm text-muted-foreground border border-dashed rounded-lg py-6 text-center">
-            Não vinculado a nenhum contrato de venda.
+            Não aninhado sob nenhum contrato de venda.
           </div>
         )}
       </CardContent>
