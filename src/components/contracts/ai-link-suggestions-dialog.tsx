@@ -266,6 +266,36 @@ export function AiLinkSuggestionsDialog({
               <p className="text-xs text-amber-700 dark:text-amber-400">{data.notes[0]}</p>
             ) : null}
 
+            {data?.role_conflicts?.length ? (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                  <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                  Contratos com papel divergente dos CNPJs extraídos
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {data.role_conflicts.map((c) => (
+                    <li key={c.id} className="text-[11px] text-muted-foreground">
+                      <Link
+                        to="/contracts/$id"
+                        params={{ id: c.id }}
+                        className="font-medium text-primary underline-offset-2 hover:underline focus-visible:underline"
+                      >
+                        {c.number ? `${c.number} · ` : ""}
+                        {c.title}
+                      </Link>{" "}
+                      — gravado como {ROLE_LABEL[c.stored_role] ?? c.stored_role}, os CNPJs indicam{" "}
+                      {ROLE_LABEL[c.inferred_role]}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Nada é corrigido automaticamente: ajuste o papel no contrato quando necessário.
+                </p>
+              </div>
+            ) : null}
+
+
+
             <div className="rounded-lg border divide-y">
               {suggestions.map((s) => (
                 <div key={s.pending_id} className="flex items-start gap-3 p-3">
