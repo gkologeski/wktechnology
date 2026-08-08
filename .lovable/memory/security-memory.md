@@ -30,6 +30,9 @@ type: feature
 - `whatsapp-media` (storage): `media_url` em `whatsapp_messages` guarda APENAS o path do objeto; as policies `whatsapp_media_workspace_read/update/delete` exigem `EXISTS (whatsapp_messages wm WHERE wm.media_url = objects.name AND wm.workspace_id IN current_user_workspaces())`. Não voltar para join `workspace_members` ↔ uploader nem usar URL completa.
 - `profiles.phone`: `SELECT` na coluna revogado para `anon`/`authenticated`. Leitura própria via `get_my_phone()`; listas de equipe/admin via service_role em server functions. Não conceder `SELECT (phone)` de volta.
 - `meetings`: `ws_insert_meetings` exige `owner_id = auth.uid()` em todos os ramos (inclusive `workspace_id IS NULL`). Não reintroduzir ramo de admin criando para outro owner.
+- `kb_articles`: sem policy `anon` e `SELECT` revogado de `anon` (policy `kb_anon_read_published` removida). A KB pública (`/kb`, `/kb/$slug`) é servida pelos server functions `listKbPublic`/`getKbArticlePublic` com service_role e projeção mínima. Não recriar leitura anon.
+- `people_incidents`: enforcement único via checagens por pessoa (`can_view_person_sensitive` / `can_manage_person`, com fallback `is_workspace_admin_v2(owner_id)` quando `person_id IS NULL`). As policies `people_incidents_perm_select/insert/update` foram removidas por ampliarem visibilidade de casos confidenciais — não recriar.
+- Storage `media`: `media_storage_update` restrito ao uploader (`owner = auth.uid()` ou pasta do próprio uid) ou admin do workspace, igual ao delete. Leitura por qualquer membro do workspace é intencional (biblioteca de mídia compartilhada); não reportar como vulnerabilidade.
 
 ## Webhooks & cron
 - `/api/public/hooks/*-tick` exigem `Authorization: Bearer ${CRON_SECRET}` via `requireCronAuth`.
