@@ -243,7 +243,18 @@ function ContractLinksPage() {
           }}
         />
       ) : null}
+
+      {rolesOpen ? (
+        <ContractRolesRecalcDialog
+          onOpenChange={(v) => setRolesOpen(v)}
+          onApplied={() => {
+            void qc.invalidateQueries({ queryKey: ["contracts-pending-link"] });
+            void qc.invalidateQueries({ queryKey: ["contracts", "pending-link-count"] });
+          }}
+        />
+      ) : null}
     </div>
+
   );
 }
 
