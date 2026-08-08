@@ -45,8 +45,12 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     ]);
 
     const { computePendingLinks } = await import("@/lib/contracts/pending-link");
-    const { loadOwnLegalEntities, resolveReferencedContract } =
-      await import("@/lib/contracts/import-link.server");
+    const { loadOwnLegalEntities, resolveReferencedContract } = await import(
+      "@/lib/contracts/import-link.server"
+    );
+    const { toContractLinkMeta, counterpartyKey, requestAiLinkSuggestions } = await import(
+      "@/lib/contracts/link-suggest.server"
+    );
 
     const { data: rows, error } = await supabase
       .from("contracts")
