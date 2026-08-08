@@ -261,11 +261,12 @@ function LinkDialog({
   );
 
   const mut = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (isAmendment) {
-        return linkAmendmentFn({
+        await linkAmendmentFn({
           data: { amendmentId: row.id, mainContractId: selected as string },
         });
+        return;
       }
       const childId = row.role === "client" ? row.id : (selected as string);
       const parentId = row.role === "client" ? (selected as string) : row.id;
