@@ -32,6 +32,7 @@ import { ContractFileViewerDialog } from "@/components/contracts/contract-file-v
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
@@ -77,6 +78,11 @@ function ContractDetail() {
   });
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techcontracts.contracts");
+  const { canAny } = usePermissions();
+  const canUpdateContract = canAny([
+    "techcontracts.contracts.update.own",
+    "techcontracts.contracts.update.workspace",
+  ]);
   const canDelete =
     !deletePermLoading && canDeleteRecord(contract as Parameters<typeof canDeleteRecord>[0]);
 
@@ -334,6 +340,7 @@ function ContractDetail() {
           (contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] }).parent ??
           null
         }
+        canEdit={canUpdateContract}
         children={
           (contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] })
             .children ?? []
@@ -351,6 +358,7 @@ function ContractDetail() {
         amendmentEffectiveAt={
           (contract as { amendment_effective_at?: string | null }).amendment_effective_at ?? null
         }
+        canEdit={canUpdateContract}
       />
 
 
