@@ -370,6 +370,21 @@ function ClientView({
 
 // ---------- Dialog de seleção ----------
 
+type LinkableRow = {
+  id: string;
+  number: string | null;
+  title: string;
+  status: string;
+  total_value: number | string | null;
+  currency: string;
+  starts_at: string | null;
+  ends_at: string | null;
+  parent_contract_id: string | null;
+  companies?: { name: string | null } | null;
+  parent?: { id: string; title: string | null; number: string | null } | null;
+};
+
+
 function LinkPickerDialog({
   open,
   onOpenChange,
