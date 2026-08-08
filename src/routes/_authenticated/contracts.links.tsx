@@ -39,6 +39,7 @@ import {
   linkContractAmendment,
 } from "@/lib/contracts.functions";
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
+import { AiLinkSuggestionsDialog } from "@/components/contracts/ai-link-suggestions-dialog";
 
 export const Route = createFileRoute("/_authenticated/contracts/links")({
   head: () => ({
