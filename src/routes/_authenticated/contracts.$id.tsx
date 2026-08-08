@@ -448,6 +448,9 @@ function ContractDetail() {
         canEdit={canUpdateContract}
       />
 
+      <ContractLinksHistoryCard contractId={contract.id} />
+
+
       <ContractApprovalsPanel contractId={contract.id} />
 
       <ImportedFieldsCard contract={contract} />
