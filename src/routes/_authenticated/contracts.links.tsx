@@ -111,6 +111,9 @@ function ContractLinksPage() {
             <Button onClick={() => setAiOpen(true)} disabled={rows.length === 0}>
               <Sparkles className="h-4 w-4 mr-2" /> Analisar com IA
             </Button>
+            <Button variant="outline" onClick={() => setRolesOpen(true)}>
+              <ScanSearch className="h-4 w-4 mr-2" /> Recalcular papéis
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
                 <ArrowLeft className="h-4 w-4 mr-2" /> Contratos
@@ -118,6 +121,7 @@ function ContractLinksPage() {
             </Button>
           </div>
         }
+
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
