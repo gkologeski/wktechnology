@@ -1,0 +1,253 @@
+// Sugestão de vínculos entre contratos: camada determinística (números citados,
+// CNPJs próprios do workspace, contraparte de aditivos) + camada de IA para o resto.
+// Nunca grava nada: apenas devolve propostas para revisão humana.
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { assertAnyPermission } from "@/lib/access-control/enforce.server";
+import {
+  dedupeSuggestions,
+  isOwnParty,
+  isValidSuggestion,
+  normalizeEntityName,
+  type ContractLinkMeta,
+  type LinkConfidence,
+  type LinkSuggestion,
+} from "@/lib/contracts/link-suggest";
+
+export type SuggestedLinkRow = LinkSuggestion & {
+  pending: { number: string | null; title: string; role: string; document_kind: string };
+  target: { number: string | null; title: string; role: string };
+};
+
+export type SuggestLinksResult = {
+  suggestions: SuggestedLinkRow[];
+  analyzed: number;
+  unresolved: number;
+  ai_used: boolean;
+  notes: string[];
+};
+
+export const suggestContractLinks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({ role: z.enum(["provider", "client", "amendment", "all"]).optional() })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }): Promise<SuggestLinksResult> => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+      "techcontracts.contracts.update.workspace",
+    ]);
+
+    const { computePendingLinks } = await import("@/lib/contracts/pending-link");
+    const { loadOwnLegalEntities, resolveReferencedContract } =
+      await import("@/lib/contracts/import-link.server");
+    const { toContractLinkMeta, counterpartyKey, requestAiLinkSuggestions } =
+      await import("@/lib/contracts/link-suggest.server");
+
+    const { data: rows, error } = await supabase
+      .from("contracts")
+      .select(
+        "id, role, number, title, status, starts_at, ends_at, parent_contract_id, document_kind, amendment_of_id, metadata, companies:counterparty_company_id(name)",
+      )
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw error;
+
+    const all = (rows ?? []) as unknown as Parameters<typeof computePendingLinks>[0];
+    const pendingRows = computePendingLinks(all, { role: data.role ?? "all" });
+    const metaById = new Map<string, ContractLinkMeta>();
+    for (const r of rows ?? []) {
+      const m = toContractLinkMeta(r as Record<string, unknown>);
+      metaById.set(m.id, m);
+    }
+
+    const own = await loadOwnLegalEntities(supabase, workspaceId);
+    const notes: string[] = [];
+    if (own.length === 0) {
+      notes.push(
+        "Nenhuma empresa (CNPJ) cadastrada no workspace: a IA não pode confirmar quem é a nossa parte.",
+      );
+    }
+
+    const pendingIds = new Set(pendingRows.map((p) => p.id));
+    const allMetas = Array.from(metaById.values());
+    const mains = allMetas.filter((c) => c.document_kind !== "amendment");
+    const providers = mains.filter((c) => c.role === "provider");
+    const clients = mains.filter((c) => c.role === "client");
+    const parentedClientIds = new Set(
+      (rows ?? [])
+        .map((r) => (r as Record<string, unknown>)["parent_contract_id"] as string | null)
+        .filter((v): v is string => Boolean(v)),
+    );
+
+    const ruleSuggestions: LinkSuggestion[] = [];
+
+    for (const p of pendingRows) {
+      const pending = metaById.get(p.id);
+      if (!pending) continue;
+
+      // 1) Aditivo → contrato principal do mesmo papel e mesma contraparte.
+      if (pending.document_kind === "amendment") {
+        const key = counterpartyKey(pending);
+        if (!key) continue;
+        const matches = mains.filter(
+          (c) => c.role === pending.role && counterpartyKey(c) === key && c.id !== pending.id,
+        );
+        if (matches.length === 1) {
+          ruleSuggestions.push({
+            pending_id: pending.id,
+            target_id: matches[0].id,
+            kind: "amendment",
+            confidence: "high",
+            reason: `Aditivo da mesma contraparte do contrato ${matches[0].number ?? matches[0].title}.`,
+            source: "rule",
+          });
+        }
+        continue;
+      }
+
+      // 2) Compra → prestação pelo número citado no documento.
+      if (pending.role === "client") {
+        const hit = resolveReferencedContract(
+          p.referenced_numbers,
+          providers.map((c) => ({ id: c.id, number: c.number, selfNumber: c.self_number })),
+        );
+        if (hit && hit.id !== pending.id) {
+          const isOurs = isOwnParty(own, pending.contracting_cnpj, pending.contracting_name);
+          ruleSuggestions.push({
+            pending_id: pending.id,
+            target_id: hit.id,
+            kind: "parent",
+            confidence: isOurs || own.length === 0 ? "high" : "medium",
+            reason: `Documento cita o contrato ${hit.matchedNumber}${
+              isOurs ? " e a CONTRATANTE é uma empresa do workspace" : ""
+            }.`,
+            source: "rule",
+          });
+        }
+        continue;
+      }
+
+      // 3) Prestação → compra que cita o número deste contrato.
+      const child = clients.find((c) => {
+        if (c.id === pending.id || parentedClientIds.has(c.id)) return false;
+        const refs = (() => {
+          const source = all.find((r) => r.id === c.id);
+          const list = source?.metadata?.["referenced_contract_numbers"];
+          return Array.isArray(list) ? (list as string[]) : [];
+        })();
+        if (!refs.length) return false;
+        const hit = resolveReferencedContract(refs, [
+          { id: pending.id, number: pending.number, selfNumber: pending.self_number },
+        ]);
+        return Boolean(hit);
+      });
+      if (child) {
+        ruleSuggestions.push({
+          pending_id: pending.id,
+          target_id: child.id,
+          kind: "parent",
+          confidence: "high",
+          reason: `O contrato de compra ${child.number ?? child.title} cita o número deste contrato.`,
+          source: "rule",
+        });
+      }
+    }
+
+    const resolvedByRule = new Set(ruleSuggestions.map((s) => s.pending_id));
+    const remaining = pendingRows.filter((p) => !resolvedByRule.has(p.id));
+
+    let aiSuggestions: LinkSuggestion[] = [];
+    let aiUsed = false;
+
+    if (remaining.length > 0) {
+      const describe = (c: ContractLinkMeta) => ({
+        id: c.id,
+        numero: c.number,
+        titulo: c.title,
+        papel: c.role,
+        tipo_documento: c.document_kind,
+        contratante: c.contracting_name,
+        contratante_cnpj: c.contracting_cnpj,
+        contratada_ou_contraparte: c.counterparty_name ?? c.company_name,
+        contraparte_cnpj: c.counterparty_cnpj,
+        vigencia: { inicio: c.starts_at, fim: c.ends_at },
+        nossa_parte_e_contratante: isOwnParty(own, c.contracting_cnpj, c.contracting_name),
+        nossa_parte_e_contratada: isOwnParty(own, c.counterparty_cnpj, c.counterparty_name),
+      });
+
+      const pendingPayload = remaining
+        .map((p) => metaById.get(p.id))
+        .filter((c): c is ContractLinkMeta => Boolean(c))
+        .map((c) => ({
+          ...describe(c),
+          motivo_pendencia: pendingRows.find((p) => p.id === c.id)?.reason ?? null,
+        }));
+
+      const candidatePayload = allMetas
+        .filter((c) => !pendingIds.has(c.id) || c.document_kind !== "amendment")
+        .slice(0, 250)
+        .map(describe);
+
+      const prompt = [
+        `Empresas (CNPJs) do nosso workspace: ${
+          own.length
+            ? own.map((e) => `${e.name}${e.cnpjDigits ? ` (${e.cnpjDigits})` : ""}`).join("; ")
+            : "não informadas"
+        }`,
+        "",
+        "CONTRATOS PENDENTES DE VÍNCULO:",
+        JSON.stringify(pendingPayload),
+        "",
+        "CONTRATOS CANDIDATOS:",
+        JSON.stringify(candidatePayload),
+      ].join("\n");
+
+      const items = await requestAiLinkSuggestions(prompt);
+      aiUsed = true;
+      aiSuggestions = items
+        .filter((s) => remaining.some((p) => p.id === s.pending_id))
+        .filter((s) => isValidSuggestion(s, metaById.get(s.pending_id), metaById.get(s.target_id)))
+        .map((s) => ({
+          pending_id: s.pending_id,
+          target_id: s.target_id,
+          kind: s.kind,
+          confidence: s.confidence as LinkConfidence,
+          reason: s.reason,
+          source: "ai" as const,
+        }));
+    }
+
+    const merged = dedupeSuggestions([...ruleSuggestions, ...aiSuggestions]).filter((s) =>
+      isValidSuggestion(s, metaById.get(s.pending_id), metaById.get(s.target_id)),
+    );
+
+    const suggestions: SuggestedLinkRow[] = merged.map((s) => {
+      const pending = metaById.get(s.pending_id) as ContractLinkMeta;
+      const target = metaById.get(s.target_id) as ContractLinkMeta;
+      return {
+        ...s,
+        pending: {
+          number: pending.number,
+          title: pending.title,
+          role: pending.role,
+          document_kind: pending.document_kind,
+        },
+        target: { number: target.number, title: target.title, role: target.role },
+      };
+    });
+
+    return {
+      suggestions,
+      analyzed: pendingRows.length,
+      unresolved: pendingRows.length - suggestions.length,
+      ai_used: aiUsed,
+      notes,
+    };
+  });

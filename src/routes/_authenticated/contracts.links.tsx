@@ -4,7 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, ArrowLeft, Link2, Search, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Link2, Search, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -39,6 +39,7 @@ import {
   linkContractAmendment,
 } from "@/lib/contracts.functions";
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
+import { AiLinkSuggestionsDialog } from "@/components/contracts/ai-link-suggestions-dialog";
 
 export const Route = createFileRoute("/_authenticated/contracts/links")({
   head: () => ({
@@ -70,6 +71,7 @@ function ContractLinksPage() {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState<"all" | "provider" | "client" | "amendment">("all");
   const [target, setTarget] = useState<PendingLinkRow | null>(null);
+  const [aiOpen, setAiOpen] = useState(false);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["contracts-pending-link", role],
@@ -103,11 +105,16 @@ function ContractLinksPage() {
         countLabel={rows.length === 1 ? "pendência" : "pendências"}
         description="Contratos importados em que o par prestação ↔ compra não foi identificado automaticamente."
         actions={
-          <Button variant="outline" asChild>
-            <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
-              <ArrowLeft className="h-4 w-4 mr-2" /> Contratos
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => setAiOpen(true)} disabled={rows.length === 0}>
+              <Sparkles className="h-4 w-4 mr-2" /> Analisar com IA
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
+                <ArrowLeft className="h-4 w-4 mr-2" /> Contratos
+              </Link>
+            </Button>
+          </div>
         }
       />
 
@@ -206,6 +213,18 @@ function ContractLinksPage() {
           onOpenChange={(v) => !v && setTarget(null)}
           onLinked={() => {
             setTarget(null);
+            void qc.invalidateQueries({ queryKey: ["contracts-pending-link"] });
+            void qc.invalidateQueries({ queryKey: ["contracts", "pending-link-count"] });
+            void qc.invalidateQueries({ queryKey: ["contracts"] });
+          }}
+        />
+      ) : null}
+
+      {aiOpen ? (
+        <AiLinkSuggestionsDialog
+          role={role}
+          onOpenChange={(v) => setAiOpen(v)}
+          onApplied={() => {
             void qc.invalidateQueries({ queryKey: ["contracts-pending-link"] });
             void qc.invalidateQueries({ queryKey: ["contracts", "pending-link-count"] });
             void qc.invalidateQueries({ queryKey: ["contracts"] });
