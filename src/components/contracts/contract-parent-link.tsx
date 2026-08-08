@@ -56,6 +56,7 @@ interface Props {
   totalValue: number;
   parent: ParentRow | null;
   children: ChildRow[];
+  canEdit?: boolean;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -68,6 +69,17 @@ const STATUS_LABEL: Record<string, string> = {
   ended: "Encerrado",
   terminated: "Rescindido",
 };
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return "—";
+  const d = new Date(`${value.slice(0, 10)}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+}
+
+function formatPeriod(row: { starts_at: string | null; ends_at: string | null }) {
+  if (!row.starts_at && !row.ends_at) return "vigência não informada";
+  return `${formatDate(row.starts_at)} → ${formatDate(row.ends_at)}`;
+}
 
 function useLinkMutations(contractId: string) {
   const qc = useQueryClient();
@@ -87,16 +99,18 @@ export function ContractParentLink({
   totalValue,
   parent,
   children,
+  canEdit = true,
 }: Props) {
   return role === "provider" ? (
     <ProviderView
       contractId={contractId}
       currency={currency}
       totalValue={totalValue}
+      canEdit={canEdit}
       children={children}
     />
   ) : (
-    <ClientView contractId={contractId} parent={parent} />
+    <ClientView contractId={contractId} parent={parent} canEdit={canEdit} />
   );
 }
 
@@ -107,11 +121,13 @@ function ProviderView({
   currency,
   totalValue,
   children,
+  canEdit,
 }: {
   contractId: string;
   currency: string;
   totalValue: number;
   children: ChildRow[];
+  canEdit: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ordered = useMemo(
@@ -264,7 +280,15 @@ function ChildRowItem({ row, canEdit }: { row: ChildRow; canEdit: boolean }) {
 
 // ---------- CLIENT (compra): mostra pai e permite alterar ----------
 
-function ClientView({ contractId, parent }: { contractId: string; parent: ParentRow | null }) {
+function ClientView({
+  contractId,
+  parent,
+  canEdit,
+}: {
+  contractId: string;
+  parent: ParentRow | null;
+  canEdit: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const { setParent } = useLinkMutations(contractId);
 
@@ -291,7 +315,12 @@ function ClientView({ contractId, parent }: { contractId: string; parent: Parent
             final.
           </p>
         </div>
-        <Button size="sm" variant={parent ? "outline" : "default"} onClick={() => setOpen(true)}>
+        <Button
+          size="sm"
+          variant={parent ? "outline" : "default"}
+          onClick={() => setOpen(true)}
+          disabled={!canEdit}
+        >
           {parent ? "Alterar contrato principal" : "Aninhar sob contrato de venda"}
         </Button>
       </CardHeader>
@@ -312,7 +341,14 @@ function ClientView({ contractId, parent }: { contractId: string; parent: Parent
               </div>
             </div>
             <Badge variant="outline">Prestação</Badge>
-            <Button variant="ghost" size="icon" onClick={remove} aria-label="Desaninhar contrato">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={remove}
+              disabled={!canEdit}
+              title={canEdit ? "Desaninhar" : "Você não tem permissão para alterar este vínculo"}
+              aria-label="Desaninhar contrato"
+            >
               <Unlink className="h-4 w-4" />
             </Button>
           </div>
