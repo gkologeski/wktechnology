@@ -17,7 +17,11 @@ const EVENT_LABEL: Record<string, string> = {
   parent_unlinked: "Contrato desaninhado",
   amendment_linked: "Aditivo vinculado",
   amendment_unlinked: "Aditivo desvinculado",
+  role_recalculated: "Papel recalculado",
 };
+
+const ROLE_LABEL: Record<string, string> = { provider: "Prestação", client: "Compra" };
+
 
 type EventRow = {
   id: string;
