@@ -168,7 +168,9 @@ export const getContract = createServerFn({ method: "POST" })
     // children (contratos de compra vinculados a este contrato de prestação)
     const { data: children } = await supabase
       .from("contracts")
-      .select("id, number, title, status, total_value, currency, role, counterparty_company_id, starts_at, ends_at")
+      .select(
+        "id, number, title, status, total_value, currency, role, counterparty_company_id, starts_at, ends_at, companies:counterparty_company_id(name)",
+      )
       .eq("parent_contract_id", data.id)
       .order("created_at", { ascending: true });
 
