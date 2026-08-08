@@ -17,7 +17,10 @@ const EVENT_LABEL: Record<string, string> = {
   parent_unlinked: "Contrato desaninhado",
   amendment_linked: "Aditivo vinculado",
   amendment_unlinked: "Aditivo desvinculado",
+  role_recalculated: "Papel recalculado",
 };
+
+const ROLE_LABEL: Record<string, string> = { provider: "Prestação", client: "Compra" };
 
 type EventRow = {
   id: string;
@@ -30,6 +33,9 @@ type EventRow = {
     parent_contract_id?: string | null;
     previous_parent_contract_id?: string | null;
     amendment_of_id?: string | null;
+    from?: string | null;
+    to?: string | null;
+    title_after?: string | null;
     ai_suggestion?: {
       confidence?: "high" | "medium" | "low";
       reason?: string;
@@ -37,7 +43,6 @@ type EventRow = {
     } | null;
   };
 };
-
 
 function describe(row: EventRow): string {
   const child = row.payload.child_title ?? "contrato";
@@ -51,6 +56,12 @@ function describe(row: EventRow): string {
       return `“${child}” passou a ser aditivo de “${parent}”.`;
     case "amendment_unlinked":
       return `“${child}” deixou de ser aditivo de “${parent}”.`;
+    case "role_recalculated": {
+      const from = ROLE_LABEL[row.payload.from ?? ""] ?? row.payload.from ?? "—";
+      const to = ROLE_LABEL[row.payload.to ?? ""] ?? row.payload.to ?? "—";
+      const title = row.payload.title_after ? ` Novo título: “${row.payload.title_after}”.` : "";
+      return `Papel corrigido de ${from} para ${to} com base nas empresas do workspace.${title}`;
+    }
     default:
       return `${child} · ${parent}`;
   }

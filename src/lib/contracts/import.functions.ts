@@ -232,7 +232,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     ]);
 
     const f = data.fields;
-    const role = f.role ?? "provider";
+    const extractedRole = f.role ?? null;
 
     const counterpartyCompanyId = await findCompanyIdByCnpjOrName(
       supabase,
@@ -260,6 +260,30 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
     const ownEntity = matchOwnEntity(ownEntities, f.contracting_cnpj, f.contracting_name);
     if (ownEntity) metadata.contracting_is_own_entity = true;
+    const ownCounterparty = matchOwnEntity(ownEntities, f.counterparty_cnpj, f.counterparty_name);
+
+    // O papel é derivado das nossas empresas: CONTRATADA ⇒ prestação, CONTRATANTE ⇒ compra.
+    // O `role` extraído pela IA só é usado quando não há evidência das partes.
+    const inferredRole: "provider" | "client" | null =
+      Boolean(ownEntity) === Boolean(ownCounterparty)
+        ? null
+        : ownCounterparty
+          ? "provider"
+          : "client";
+    const role: "provider" | "client" = inferredRole ?? extractedRole ?? "provider";
+    metadata.role_source = inferredRole ? "inferred" : "extracted";
+    if (extractedRole) metadata.role_extracted = extractedRole;
+    if (inferredRole && extractedRole && inferredRole !== extractedRole) {
+      const warn =
+        inferredRole === "provider"
+          ? "Papel extraído indicava Compra, mas nossa empresa consta como CONTRATADA: gravado como Prestação."
+          : "Papel extraído indicava Prestação, mas nossa empresa consta como CONTRATANTE: gravado como Compra.";
+      metadata.import_warnings = [
+        ...((metadata.import_warnings as string[] | undefined) ?? []),
+        warn,
+      ];
+    }
+    const ownSideName = (role === "provider" ? ownCounterparty?.name : ownEntity?.name) ?? null;
 
     const insertPayload: Record<string, unknown> = {
       workspace_id: workspaceId,
@@ -271,7 +295,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
           serviceType: f.service_type,
           contractingName: f.contracting_name,
           counterpartyName: f.counterparty_name,
-          ownName: ownEntity?.name ?? null,
+          ownName: ownSideName,
           startsAt: f.starts_at ?? null,
         }) ||
         f.title?.trim() ||

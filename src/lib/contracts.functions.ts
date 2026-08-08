@@ -463,7 +463,9 @@ export const listContractLinkEvents = createServerFn({ method: "POST" })
         "parent_unlinked",
         "amendment_linked",
         "amendment_unlinked",
+        "role_recalculated",
       ])
+
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 50);
     if (error) throw new Error(error.message);

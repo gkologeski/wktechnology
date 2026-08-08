@@ -4,7 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, ArrowLeft, Link2, Search, Sparkles, X } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Link2, ScanSearch, Search, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -41,7 +41,7 @@ import {
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 import { AiLinkSuggestionsDialog } from "@/components/contracts/ai-link-suggestions-dialog";
 import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-suggestions-history-card";
-
+import { ContractRolesRecalcDialog } from "@/components/contracts/contract-roles-recalc-dialog";
 
 export const Route = createFileRoute("/_authenticated/contracts/links")({
   head: () => ({
@@ -74,6 +74,7 @@ function ContractLinksPage() {
   const [role, setRole] = useState<"all" | "provider" | "client" | "amendment">("all");
   const [target, setTarget] = useState<PendingLinkRow | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
+  const [rolesOpen, setRolesOpen] = useState(false);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["contracts-pending-link", role],
@@ -110,6 +111,9 @@ function ContractLinksPage() {
           <div className="flex flex-wrap gap-2">
             <Button onClick={() => setAiOpen(true)} disabled={rows.length === 0}>
               <Sparkles className="h-4 w-4 mr-2" /> Analisar com IA
+            </Button>
+            <Button variant="outline" onClick={() => setRolesOpen(true)}>
+              <ScanSearch className="h-4 w-4 mr-2" /> Recalcular papéis
             </Button>
             <Button variant="outline" asChild>
               <Link to="/contracts" search={DEFAULT_CONTRACTS_SEARCH}>
@@ -211,8 +215,6 @@ function ContractLinksPage() {
 
       <AiLinkSuggestionsHistoryCard />
 
-
-
       {target ? (
         <LinkDialog
           row={target}
@@ -234,6 +236,16 @@ function ContractLinksPage() {
             void qc.invalidateQueries({ queryKey: ["contracts-pending-link"] });
             void qc.invalidateQueries({ queryKey: ["contracts", "pending-link-count"] });
             void qc.invalidateQueries({ queryKey: ["contracts"] });
+          }}
+        />
+      ) : null}
+
+      {rolesOpen ? (
+        <ContractRolesRecalcDialog
+          onOpenChange={(v) => setRolesOpen(v)}
+          onApplied={() => {
+            void qc.invalidateQueries({ queryKey: ["contracts-pending-link"] });
+            void qc.invalidateQueries({ queryKey: ["contracts", "pending-link-count"] });
           }}
         />
       ) : null}
