@@ -80,6 +80,7 @@ export function computePendingLinks(
     pending.push({
       id: row.id,
       role: row.role,
+      document_kind: row.document_kind ?? "main",
       number: row.number,
       title: row.title,
       status: row.status,
