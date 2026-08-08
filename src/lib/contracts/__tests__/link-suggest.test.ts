@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildSuggestionEvidence,
   dedupeSuggestions,
+  effectiveRole,
+  inferRoleFromParties,
   isOwnParty,
   isValidSuggestion,
+  roleMismatch,
   type ContractLinkMeta,
   type LinkSuggestion,
 } from "@/lib/contracts/link-suggest";
+
 
 function meta(over: Partial<ContractLinkMeta> & { id: string }): ContractLinkMeta {
   return {
