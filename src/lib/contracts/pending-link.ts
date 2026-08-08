@@ -26,13 +26,15 @@ export type PendingLinkSource = {
   starts_at: string | null;
   ends_at: string | null;
   parent_contract_id: string | null;
+  document_kind?: string | null;
+  amendment_of_id?: string | null;
   metadata: Record<string, unknown> | null;
   companies?: { name: string | null } | null;
 };
 
 export function computePendingLinks(
   all: PendingLinkSource[],
-  opts: { role?: "provider" | "client" | "all"; search?: string } = {},
+  opts: { role?: "provider" | "client" | "amendment" | "all"; search?: string } = {},
 ): PendingLinkRow[] {
   const parentIds = new Set(
     all.map((r) => r.parent_contract_id).filter((v): v is string => Boolean(v)),
@@ -47,8 +49,14 @@ export function computePendingLinks(
       ? (row.metadata?.["referenced_contract_numbers"] as string[])
       : [];
 
+    const isAmendment = row.document_kind === "amendment";
+
     let reason: string | null = null;
-    if (row.role === "client" && !row.parent_contract_id) {
+    if (isAmendment) {
+      // Aditivo herda o vínculo do contrato principal: a única pendência
+      // possível é não ter contrato principal definido.
+      if (!row.amendment_of_id) reason = "Aditivo sem contrato principal";
+    } else if (row.role === "client" && !row.parent_contract_id) {
       reason = referenced.length
         ? `Número citado (${referenced.join(", ")}) não encontrado`
         : "Nenhum número de contrato citado no documento";
@@ -56,7 +64,11 @@ export function computePendingLinks(
       reason = "Sem contrato de compra vinculado";
     }
     if (!reason) continue;
-    if (roleFilter && row.role !== roleFilter) continue;
+    if (roleFilter === "amendment") {
+      if (!isAmendment) continue;
+    } else if (roleFilter && (isAmendment || row.role !== roleFilter)) {
+      continue;
+    }
     if (
       term &&
       !`${row.title} ${row.number ?? ""} ${row.companies?.name ?? ""}`.toLowerCase().includes(term)
