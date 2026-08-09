@@ -340,7 +340,6 @@ const aiOriginSchema = z.object({
   source: z.enum(["rule", "ai"]),
 });
 
-
 export const linkContractParent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -408,7 +407,6 @@ export const linkContractParent = createServerFn({ method: "POST" })
       ai_suggestion: data.origin ?? null,
     };
 
-
     // Registra nos dois contratos envolvidos para o histórico ficar visível em ambos.
     const targets = Array.from(new Set([data.childId, otherId].filter(Boolean))) as string[];
     await (supabase as any).from("contract_events").insert(
@@ -438,7 +436,6 @@ type LinkEventPayload = {
     source: "rule" | "ai";
   } | null;
 };
-
 
 /** Histórico de aninhamento/desaninhamento (compras e aditivos) de um contrato. */
 
@@ -715,15 +712,13 @@ export const standardizeContractTitlesByStatus = createServerFn({ method: "POST"
     }
     if (!targetIds.length) return { scanned: 0, changes: [] };
 
-    const { previewContractTitles, applyContractTitles } = await import(
-      "@/lib/contracts/title.server"
-    );
+    const { previewContractTitles, applyContractTitles } =
+      await import("@/lib/contracts/title.server");
     const changes = data.preview
       ? await previewContractTitles(supabase as never, workspaceId, targetIds)
       : await applyContractTitles(supabase as never, workspaceId, targetIds);
     return { scanned, changes };
   });
-
 
 // ============= CREATE =============
 

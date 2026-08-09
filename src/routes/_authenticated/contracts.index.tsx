@@ -16,7 +16,6 @@ import {
   SearchX,
   Type,
   Upload,
-
   X,
 } from "lucide-react";
 
@@ -174,7 +173,6 @@ function ContractsPage() {
 
   useEffect(() => {
     setSearchDraft(sp.q);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sp.q]);
 
   const setFilter = (patch: Partial<ContractSearch>) =>
@@ -817,7 +815,6 @@ function ContractsPage() {
       {openStandardize ? (
         <ContractTitlesStandardizeDialog onOpenChange={setOpenStandardize} />
       ) : null}
-
     </div>
   );
 }

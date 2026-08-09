@@ -57,10 +57,7 @@ export function ContractTitlesStandardizeDialog({
   });
 
   const changes = data?.changes ?? [];
-  const ids = useMemo(
-    () => selected ?? new Set(changes.map((c) => c.id)),
-    [selected, changes],
-  );
+  const ids = useMemo(() => selected ?? new Set(changes.map((c) => c.id)), [selected, changes]);
 
   const toggle = (id: string) => {
     const next = new Set(ids);
@@ -104,8 +101,9 @@ export function ContractTitlesStandardizeDialog({
             Padronizar títulos em lote
           </DialogTitle>
           <DialogDescription>
-            Aplica o padrão <span className="font-medium">[PRESTAÇÃO] / [COMPRA] / [ADITIVO N]</span>{" "}
-            com CONTRATANTE X CONTRATADA e o ano da vigência. Revise a prévia abaixo — nada é gravado
+            Aplica o padrão{" "}
+            <span className="font-medium">[PRESTAÇÃO] / [COMPRA] / [ADITIVO N]</span> com
+            CONTRATANTE X CONTRATADA e o ano da vigência. Revise a prévia abaixo — nada é gravado
             sem sua confirmação.
           </DialogDescription>
         </DialogHeader>
