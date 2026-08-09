@@ -626,7 +626,7 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
       })),
     );
 
-    // Reaplica o padrão de título (prefixo ADT entra/sai conforme o vínculo).
+    // Reaplica o padrão de título (prefixo [ADITIVO] entra/sai conforme o vínculo).
     try {
       const { applyContractTitles } = await import("@/lib/contracts/title.server");
       await applyContractTitles(supabase as never, workspaceId, [data.amendmentId]);
