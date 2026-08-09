@@ -91,15 +91,36 @@ export function ContractServices({
         <span className="text-sm text-muted-foreground">
           {rows.length === 0 ? "Nenhum serviço" : `${rows.length} serviço(s)`}
         </span>
-        <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
-          <Link2 aria-hidden="true" className="h-3.5 w-3.5 mr-0.5" /> Associar serviço
-        </Button>
-
+        {canLink ? (
+          <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
+            <Link2 aria-hidden="true" className="h-3.5 w-3.5 mr-0.5" /> Associar serviço
+          </Button>
+        ) : null}
       </div>
+
+      {!canLink ? (
+        <p className="text-xs text-muted-foreground">
+          Serviços são associados ao contrato de prestação de serviços (onde um dos nossos CNPJs é a
+          CONTRATADA). Este contrato de compra apenas é aninhado sob ele.
+          {parentContract ? (
+            <>
+              {" "}
+              <Link
+                to="/contracts/$id"
+                params={{ id: parentContract.id }}
+                className="text-primary hover:underline"
+              >
+                Abrir contrato de prestação
+              </Link>
+            </>
+          ) : null}
+        </p>
+      ) : null}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : rows.length === 0 ? null : (
+
         <div className="space-y-2">
           {rows.map((s: any) => {
             const amount = Number(s.quantity) * Number(s.unit_price);
