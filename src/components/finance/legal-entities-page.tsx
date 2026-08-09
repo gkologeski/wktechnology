@@ -216,8 +216,9 @@ export function LegalEntitiesPage() {
                   </div>
                 </td>
                 <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
-                  {r.cnpj ?? "—"}
+                  {r.cnpj ? formatCnpj(r.cnpj) : "—"}
                 </td>
+
                 <td className="px-4 py-2 text-right tabular-nums">{r.totals.count}</td>
                 <td className="px-4 py-2 text-right tabular-nums text-emerald-600">
                   {fmt(r.totals.receivable)}
