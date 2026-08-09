@@ -52,10 +52,9 @@ export function normalizePartyName(value: string | null | undefined): string | n
 }
 
 function prefixFor(parts: ContractTitleParts): string {
-  if (parts.role === "client") return "CC";
-  const key = (parts.serviceType ?? "").toLowerCase();
-  return SERVICE_PREFIX[key] ?? "CPS";
+  return parts.role === "client" ? COMPRA_PREFIX : PRESTACAO_PREFIX;
 }
+
 
 /** Resolve quem é CONTRATANTE e quem é CONTRATADA a partir dos dados disponíveis. */
 export function resolveContractParties(parts: ContractTitleParts): {
