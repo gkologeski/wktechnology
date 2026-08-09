@@ -19,13 +19,9 @@ export type ContractTitleParts = {
   includeYear?: boolean;
 };
 
-const SERVICE_PREFIX: Record<string, string> = {
-  outsourcing: "CPS",
-  desenvolvimento: "CD",
-  manutencao: "CM",
-  consultoria: "CCO",
-  licenciamento: "CL",
-};
+const PRESTACAO_PREFIX = "[PRESTAÇÃO]";
+const COMPRA_PREFIX = "[COMPRA]";
+
 
 const COMPANY_SUFFIXES =
   /\b(ltda|limitada|s\/?a|sa|s\.a|me|epp|eireli|mei|cia|companhia|sociedade|empresa)\b/gi;
