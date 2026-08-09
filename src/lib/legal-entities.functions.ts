@@ -218,6 +218,12 @@ export const upsertLegalEntity = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    // CNPJ é gravado sempre em dígitos e validado quando informado.
+    const cnpjDigits = onlyDigits(data.cnpj);
+    if (cnpjDigits.length > 0 && !isValidCnpj(cnpjDigits)) {
+      throw new Error("CNPJ inválido");
+    }
+    const cnpj = cnpjDigits.length === 14 ? cnpjDigits : null;
     if (data.id) {
       const { error } = await supabase
         .from("legal_entities")
@@ -225,11 +231,12 @@ export const upsertLegalEntity = createServerFn({ method: "POST" })
           code: data.code ?? null,
           name: data.name,
           trade_name: data.trade_name ?? null,
-          cnpj: data.cnpj ?? null,
+          cnpj,
           ie: data.ie ?? null,
           im: data.im ?? null,
           active: data.active ?? true,
         })
+
         .eq("id", data.id)
         .eq("workspace_id", workspaceId);
       if (error) throw error;
