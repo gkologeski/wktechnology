@@ -292,7 +292,7 @@ function ClientView({
   const { setParent } = useLinkMutations(contractId);
 
   async function remove() {
-    if (!(await confirmDialog("Remover o vínculo com o contrato de venda?"))) return;
+    if (!(await confirmDialog("Desaninhar este contrato de compra do contrato de prestação?"))) return;
     try {
       await setParent(null);
       toast.success("Vínculo removido.");
@@ -307,11 +307,12 @@ function ClientView({
         <div>
           <CardTitle className="text-base flex items-center gap-2">
             <Link2 className="h-4 w-4" />
-            Outsourcing — contrato de venda vinculado
+            Outsourcing — contrato de prestação vinculado
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Este contrato de compra executa parte de um contrato de prestação (venda) para o cliente
-            final.
+            Este contrato de compra (nós somos a CONTRATANTE do profissional) é aninhado sob um
+            contrato de prestação, onde um dos nossos CNPJs é a CONTRATADA. Um contrato de compra não
+            aninha outros contratos de compra, e serviços são associados ao contrato de prestação.
           </p>
         </div>
         <Button
@@ -320,8 +321,9 @@ function ClientView({
           onClick={() => setOpen(true)}
           disabled={!canEdit}
         >
-          {parent ? "Alterar contrato principal" : "Aninhar sob contrato de venda"}
+          {parent ? "Alterar contrato principal" : "Aninhar sob contrato de prestação"}
         </Button>
+
       </CardHeader>
       <CardContent>
         {parent ? (
@@ -353,7 +355,7 @@ function ClientView({
           </div>
         ) : (
           <div className="text-sm text-muted-foreground border border-dashed rounded-lg py-6 text-center">
-            Não aninhado sob nenhum contrato de venda.
+            Não aninhado sob nenhum contrato de prestação.
           </div>
         )}
       </CardContent>
@@ -456,7 +458,7 @@ function LinkPickerDialog({
           <DialogTitle>
             {mode === "provider-adds-child"
               ? "Aninhar contrato de compra"
-              : "Aninhar sob contrato de venda"}
+              : "Aninhar sob contrato de prestação"}
           </DialogTitle>
           <DialogDescription>
             {mode === "provider-adds-child"

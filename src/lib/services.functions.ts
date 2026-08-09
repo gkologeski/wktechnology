@@ -429,6 +429,12 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
       .maybeSingle();
     if (cErr) throw cErr;
     if (!contract) throw new Error("Contrato não encontrado");
+    if (contract.role !== "provider") {
+      throw new Error(
+        "Serviços só podem ser associados a contratos de prestação de serviços (onde um dos nossos CNPJs é a CONTRATADA).",
+      );
+    }
+
 
     const cadence =
       data.type === "recurring"

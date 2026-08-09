@@ -39,15 +39,22 @@ const CADENCE_LABEL: Record<string, string> = {
 export function ContractServices({
   contractId,
   currency = "BRL",
+  canLink = true,
+  parentContract = null,
 }: {
   contractId: string;
   currency?: string;
+  /** Só contratos de prestação (nosso CNPJ como CONTRATADA) podem associar serviços. */
+  canLink?: boolean;
+  /** Contrato de prestação sob o qual este contrato de compra está aninhado. */
+  parentContract?: { id: string; title: string } | null;
 }) {
   const qc = useQueryClient();
   const list = useServerFn(listServices);
   const activate = useServerFn(activateService);
   const [openNew, setOpenNew] = useState(false);
   const [activatingId, setActivatingId] = useState<string | null>(null);
+
 
   const listProfiles = useServerFn(listJobProfileOptions);
 
@@ -84,15 +91,36 @@ export function ContractServices({
         <span className="text-sm text-muted-foreground">
           {rows.length === 0 ? "Nenhum serviço" : `${rows.length} serviço(s)`}
         </span>
-        <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
-          <Link2 aria-hidden="true" className="h-3.5 w-3.5 mr-0.5" /> Associar serviço
-        </Button>
-
+        {canLink ? (
+          <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
+            <Link2 aria-hidden="true" className="h-3.5 w-3.5 mr-0.5" /> Associar serviço
+          </Button>
+        ) : null}
       </div>
+
+      {!canLink ? (
+        <p className="text-xs text-muted-foreground">
+          Serviços são associados ao contrato de prestação de serviços (onde um dos nossos CNPJs é a
+          CONTRATADA). Este contrato de compra apenas é aninhado sob ele.
+          {parentContract ? (
+            <>
+              {" "}
+              <Link
+                to="/contracts/$id"
+                params={{ id: parentContract.id }}
+                className="text-primary hover:underline"
+              >
+                Abrir contrato de prestação
+              </Link>
+            </>
+          ) : null}
+        </p>
+      ) : null}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : rows.length === 0 ? null : (
+
         <div className="space-y-2">
           {rows.map((s: any) => {
             const amount = Number(s.quantity) * Number(s.unit_price);
@@ -155,16 +183,19 @@ export function ContractServices({
         </div>
       )}
 
-      <LinkCatalogServiceDialog
-        open={openNew}
-        onOpenChange={setOpenNew}
-        contractId={contractId}
-        defaultCurrency={currency}
-        onCreated={() => {
-          qc.invalidateQueries({ queryKey: ["contract-services", contractId] });
-          qc.invalidateQueries({ queryKey: ["services"] });
-        }}
-      />
+      {canLink ? (
+        <LinkCatalogServiceDialog
+          open={openNew}
+          onOpenChange={setOpenNew}
+          contractId={contractId}
+          defaultCurrency={currency}
+          onCreated={() => {
+            qc.invalidateQueries({ queryKey: ["contract-services", contractId] });
+            qc.invalidateQueries({ queryKey: ["services"] });
+          }}
+        />
+      ) : null}
+
     </div>
   );
 }

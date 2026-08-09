@@ -414,9 +414,17 @@ function ContractDetail() {
           <CardTitle className="text-base">Serviços</CardTitle>
         </CardHeader>
         <CardContent>
-          <ContractServices contractId={contract.id} currency={contract.currency ?? "BRL"} />
+          <ContractServices
+            contractId={contract.id}
+            currency={contract.currency ?? "BRL"}
+            canLink={role === "provider"}
+            parentContract={
+              (contract as { parent?: { id: string; title: string } | null }).parent ?? null
+            }
+          />
         </CardContent>
       </Card>
+
 
       <ContractParentLink
         contractId={contract.id}
