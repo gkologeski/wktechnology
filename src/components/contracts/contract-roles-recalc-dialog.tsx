@@ -178,7 +178,7 @@ export function ContractRolesRecalcDialog({
                     onCheckedChange={(v) => setRetitle(Boolean(v))}
                     aria-label="Regravar título padronizado"
                   />
-                  Regravar também o título padronizado (CPS/CC)
+                  Regravar também o título padronizado ([PRESTAÇÃO]/[COMPRA])
                 </label>
               </>
             )}
