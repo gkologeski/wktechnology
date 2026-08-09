@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Star, Trash2, Pencil } from "lucide-react";
+import { Plus, Star, Trash2, Pencil, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -18,12 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { LegalEntityCnpjFillDialog } from "@/components/finance/legal-entity-cnpj-fill-dialog";
+import { formatCnpj } from "@/lib/cnpj";
 import {
   listLegalEntitiesSummary,
   upsertLegalEntity,
   setDefaultLegalEntity,
   deleteLegalEntity,
+  getLegalEntity,
 } from "@/lib/legal-entities.functions";
+
 
 type LE = {
   id: string;
