@@ -19,6 +19,7 @@ Um único ponto de montagem (`buildContractTitle`) já é usado por importação
 
 ## Detalhes técnicos
 
-- `src/lib/contracts/title.ts`: substituir `SERVICE_PREFIX` pelos rótulos entre colchetes, `prefixFor` retornar `[COMPRA]` para `role === "client"`, e o bloco de aditivo montar `[ADITIVO N]`/`[ADITIVO]`.
-- `src/lib/contracts/__tests__/title.test.ts`: atualizar as expectativas dos casos de prestação, compra, aditivo, tipo de serviço e sufixo de ano.
+- `src/lib/contracts/title.ts`: remover o mapa `SERVICE_PREFIX`, `prefixFor` retornar `[COMPRA]` para `role === "client"` e `[PRESTAÇÃO]` nos demais casos, e o bloco de aditivo montar `[ADITIVO N]`/`[ADITIVO]`.
+- `src/lib/contracts/__tests__/title.test.ts`: atualizar as expectativas dos casos de prestação, compra, aditivo, tipo de serviço (agora `[PRESTAÇÃO]`) e sufixo de ano.
+
 - Validações: `vitest run` dos testes de título, typecheck, lint e build.
