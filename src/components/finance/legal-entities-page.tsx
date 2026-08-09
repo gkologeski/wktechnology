@@ -47,6 +47,8 @@ export function LegalEntitiesPage() {
   const upsert = useServerFn(upsertLegalEntity);
   const setDefault = useServerFn(setDefaultLegalEntity);
   const del = useServerFn(deleteLegalEntity);
+  const getEntity = useServerFn(getLegalEntity);
+
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["legal-entities"],
