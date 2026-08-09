@@ -56,6 +56,8 @@ export function LegalEntitiesPage() {
   });
 
   const [open, setOpen] = useState(false);
+  const [cnpjFillOpen, setCnpjFillOpen] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState<string | null>(null);
   const [form, setForm] = useState<{
     id?: string;
     code: string;
@@ -72,19 +74,30 @@ export function LegalEntitiesPage() {
     setOpen(true);
   }
 
-  function openEdit(row: LE) {
-    setForm({
-      id: row.id,
-      code: row.code ?? "",
-      name: row.name,
-      trade_name: "",
-      cnpj: row.cnpj ?? "",
-      ie: "",
-      im: "",
-      active: row.active,
-    });
-    setOpen(true);
+  // Carrega a empresa completa: o resumo da grid não traz trade_name/ie/im e
+  // salvar com esses campos vazios apagava os dados.
+  async function openEdit(row: LE) {
+    setLoadingEdit(row.id);
+    try {
+      const full = await getEntity({ data: { id: row.id } });
+      setForm({
+        id: full.id,
+        code: full.code ?? "",
+        name: full.name,
+        trade_name: full.trade_name ?? "",
+        cnpj: formatCnpj(full.cnpj),
+        ie: full.ie ?? "",
+        im: full.im ?? "",
+        active: full.active,
+      });
+      setOpen(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao carregar empresa");
+    } finally {
+      setLoadingEdit(null);
+    }
   }
+
 
   async function submit() {
     if (!form.name.trim()) {
