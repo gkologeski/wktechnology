@@ -297,9 +297,8 @@ export function LegalEntitiesPage() {
                   placeholder="00.000.000/0000-00"
                   inputMode="numeric"
                   onChange={(e) => setForm({ ...form, cnpj: formatCnpj(e.target.value) })}
-
-                  placeholder="00.000.000/0001-00"
                 />
+
               </div>
               <div className="space-y-2">
                 <Label>IE</Label>
