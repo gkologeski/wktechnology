@@ -39,15 +39,22 @@ const CADENCE_LABEL: Record<string, string> = {
 export function ContractServices({
   contractId,
   currency = "BRL",
+  canLink = true,
+  parentContract = null,
 }: {
   contractId: string;
   currency?: string;
+  /** Só contratos de prestação (nosso CNPJ como CONTRATADA) podem associar serviços. */
+  canLink?: boolean;
+  /** Contrato de prestação sob o qual este contrato de compra está aninhado. */
+  parentContract?: { id: string; title: string } | null;
 }) {
   const qc = useQueryClient();
   const list = useServerFn(listServices);
   const activate = useServerFn(activateService);
   const [openNew, setOpenNew] = useState(false);
   const [activatingId, setActivatingId] = useState<string | null>(null);
+
 
   const listProfiles = useServerFn(listJobProfileOptions);
 
