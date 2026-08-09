@@ -158,11 +158,19 @@ export function LegalEntitiesPage() {
         title="Empresas (CNPJs)"
         description="Gerencie os CNPJs (entidades legais) associados a este workspace. Contas, categorias e lançamentos podem ser atribuídos a uma empresa específica."
         actions={
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-1" /> Nova empresa
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setCnpjFillOpen(true)}>
+              <Wand2 className="h-4 w-4 mr-1" /> Preencher CNPJs
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-1" /> Nova empresa
+            </Button>
+          </div>
         }
       />
+
+      {cnpjFillOpen && <LegalEntityCnpjFillDialog onOpenChange={setCnpjFillOpen} />}
+
 
       <div className="rounded-lg border bg-card">
         <table className="w-full text-sm">
