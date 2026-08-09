@@ -90,7 +90,7 @@ export function buildContractTitle(parts: ContractTitleParts): string | null {
   const segments: string[] = [];
   if (parts.documentKind === "amendment") {
     const num = (parts.amendmentNumber ?? "").trim();
-    segments.push(num ? `ADT ${num.toUpperCase()}` : "ADT");
+    segments.push(num ? `[ADITIVO ${num.toUpperCase()}]` : "[ADITIVO]");
   }
   segments.push(prefixFor(parts));
   let title = `${segments.join(" ")} ${contracting} X ${contracted}`;
