@@ -340,7 +340,6 @@ const aiOriginSchema = z.object({
   source: z.enum(["rule", "ai"]),
 });
 
-
 export const linkContractParent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -408,7 +407,6 @@ export const linkContractParent = createServerFn({ method: "POST" })
       ai_suggestion: data.origin ?? null,
     };
 
-
     // Registra nos dois contratos envolvidos para o histórico ficar visível em ambos.
     const targets = Array.from(new Set([data.childId, otherId].filter(Boolean))) as string[];
     await (supabase as any).from("contract_events").insert(
@@ -438,7 +436,6 @@ type LinkEventPayload = {
     source: "rule" | "ai";
   } | null;
 };
-
 
 /** Histórico de aninhamento/desaninhamento (compras e aditivos) de um contrato. */
 
@@ -662,6 +659,65 @@ export const standardizeContractTitles = createServerFn({ method: "POST" })
       ? await previewContractTitles(supabase as never, workspaceId, data.ids)
       : await applyContractTitles(supabase as never, workspaceId, data.ids);
     return { changes };
+  });
+
+const titleStatusEnum = z.enum([
+  "draft",
+  "in_review",
+  "in_negotiation",
+  "awaiting_signature",
+  "active",
+  "renewing",
+  "ended",
+  "terminated",
+]);
+
+/**
+ * Prévia/aplicação do padrão de título em lote, por status (padrão: contratos ativos).
+ * Sem `ids`: seleciona os contratos do workspace nos status informados.
+ */
+export const standardizeContractTitlesByStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({
+        statuses: z.array(titleStatusEnum).min(1).default(["active"]),
+        ids: z.array(z.string().uuid()).max(500).optional(),
+        preview: z.boolean().optional(),
+        limit: z.number().int().min(1).max(500).default(500),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+      "techcontracts.contracts.update.workspace",
+    ]);
+
+    let targetIds = data.ids ?? [];
+    let scanned = targetIds.length;
+    if (!data.ids?.length) {
+      const { data: rows, error } = await (supabase as any)
+        .from("contracts")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .in("status", data.statuses)
+        .order("created_at", { ascending: false })
+        .limit(data.limit);
+      if (error) throw new Error(error.message);
+      targetIds = ((rows ?? []) as { id: string }[]).map((r) => r.id);
+      scanned = targetIds.length;
+    }
+    if (!targetIds.length) return { scanned: 0, changes: [] };
+
+    const { previewContractTitles, applyContractTitles } =
+      await import("@/lib/contracts/title.server");
+    const changes = data.preview
+      ? await previewContractTitles(supabase as never, workspaceId, targetIds)
+      : await applyContractTitles(supabase as never, workspaceId, targetIds);
+    return { scanned, changes };
   });
 
 // ============= CREATE =============
