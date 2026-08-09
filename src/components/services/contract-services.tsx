@@ -183,16 +183,19 @@ export function ContractServices({
         </div>
       )}
 
-      <LinkCatalogServiceDialog
-        open={openNew}
-        onOpenChange={setOpenNew}
-        contractId={contractId}
-        defaultCurrency={currency}
-        onCreated={() => {
-          qc.invalidateQueries({ queryKey: ["contract-services", contractId] });
-          qc.invalidateQueries({ queryKey: ["services"] });
-        }}
-      />
+      {canLink ? (
+        <LinkCatalogServiceDialog
+          open={openNew}
+          onOpenChange={setOpenNew}
+          contractId={contractId}
+          defaultCurrency={currency}
+          onCreated={() => {
+            qc.invalidateQueries({ queryKey: ["contract-services", contractId] });
+            qc.invalidateQueries({ queryKey: ["services"] });
+          }}
+        />
+      ) : null}
+
     </div>
   );
 }
