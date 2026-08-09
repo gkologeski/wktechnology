@@ -292,7 +292,7 @@ function ClientView({
   const { setParent } = useLinkMutations(contractId);
 
   async function remove() {
-    if (!(await confirmDialog("Remover o vínculo com o contrato de venda?"))) return;
+    if (!(await confirmDialog("Desaninhar este contrato de compra do contrato de prestação?"))) return;
     try {
       await setParent(null);
       toast.success("Vínculo removido.");
@@ -355,7 +355,7 @@ function ClientView({
           </div>
         ) : (
           <div className="text-sm text-muted-foreground border border-dashed rounded-lg py-6 text-center">
-            Não aninhado sob nenhum contrato de venda.
+            Não aninhado sob nenhum contrato de prestação.
           </div>
         )}
       </CardContent>
@@ -458,7 +458,7 @@ function LinkPickerDialog({
           <DialogTitle>
             {mode === "provider-adds-child"
               ? "Aninhar contrato de compra"
-              : "Aninhar sob contrato de venda"}
+              : "Aninhar sob contrato de prestação"}
           </DialogTitle>
           <DialogDescription>
             {mode === "provider-adds-child"
