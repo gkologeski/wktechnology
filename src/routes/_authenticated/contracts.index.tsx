@@ -813,6 +813,11 @@ function ContractsPage() {
           if (!next) qc.invalidateQueries({ queryKey: ["contracts"] });
         }}
       />
+
+      {openStandardize ? (
+        <ContractTitlesStandardizeDialog onOpenChange={setOpenStandardize} />
+      ) : null}
+
     </div>
   );
 }
