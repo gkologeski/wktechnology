@@ -238,9 +238,16 @@ export function LegalEntitiesPage() {
                         <Star className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void openEdit(r)}
+                      disabled={loadingEdit === r.id}
+                      aria-label={`Editar ${r.name}`}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
+
                     <Button size="sm" variant="ghost" onClick={() => remove(r)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
