@@ -14,7 +14,9 @@ import {
   Plus,
   Search,
   SearchX,
+  Type,
   Upload,
+
   X,
 } from "lucide-react";
 
@@ -38,6 +40,8 @@ import { listLegalEntities } from "@/lib/legal-entities.functions";
 import { QuickCreateContractDialog } from "@/components/contracts/quick-create-contract-dialog";
 import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
 import { BatchImportContractsDialog } from "@/components/contracts/batch-import-contracts-dialog";
+import { ContractTitlesStandardizeDialog } from "@/components/contracts/contract-titles-standardize-dialog";
+
 import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
 import {
   AssigneeFilter,
@@ -152,6 +156,8 @@ function ContractsPage() {
   const [openImport, setOpenImport] = useState(false);
   const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
+  const [openStandardize, setOpenStandardize] = useState(false);
+
   const [openFilters, setOpenFilters] = useState(false);
   const [nestLinks, setNestLinks] = useState(true);
   const [selectedMap, setSelectedMap] = useState<Map<string, ContractRow>>(new Map());
@@ -355,6 +361,10 @@ function ContractsPage() {
             <Button variant="outline" onClick={() => setOpenBatch(true)}>
               <Upload className="h-4 w-4 mr-1" /> Importar em lote
             </Button>
+            <Button variant="outline" onClick={() => setOpenStandardize(true)}>
+              <Type className="h-4 w-4 mr-1" /> Padronizar títulos
+            </Button>
+
             <Button
               variant="outline"
               asChild
