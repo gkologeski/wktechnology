@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Star, Trash2, Pencil } from "lucide-react";
+import { Plus, Star, Trash2, Pencil, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -18,12 +18,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { LegalEntityCnpjFillDialog } from "@/components/finance/legal-entity-cnpj-fill-dialog";
+import { formatCnpj } from "@/lib/cnpj";
 import {
   listLegalEntitiesSummary,
   upsertLegalEntity,
   setDefaultLegalEntity,
   deleteLegalEntity,
+  getLegalEntity,
 } from "@/lib/legal-entities.functions";
+
 
 type LE = {
   id: string;
@@ -43,6 +47,8 @@ export function LegalEntitiesPage() {
   const upsert = useServerFn(upsertLegalEntity);
   const setDefault = useServerFn(setDefaultLegalEntity);
   const del = useServerFn(deleteLegalEntity);
+  const getEntity = useServerFn(getLegalEntity);
+
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["legal-entities"],
@@ -50,6 +56,8 @@ export function LegalEntitiesPage() {
   });
 
   const [open, setOpen] = useState(false);
+  const [cnpjFillOpen, setCnpjFillOpen] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState<string | null>(null);
   const [form, setForm] = useState<{
     id?: string;
     code: string;
@@ -66,19 +74,30 @@ export function LegalEntitiesPage() {
     setOpen(true);
   }
 
-  function openEdit(row: LE) {
-    setForm({
-      id: row.id,
-      code: row.code ?? "",
-      name: row.name,
-      trade_name: "",
-      cnpj: row.cnpj ?? "",
-      ie: "",
-      im: "",
-      active: row.active,
-    });
-    setOpen(true);
+  // Carrega a empresa completa: o resumo da grid não traz trade_name/ie/im e
+  // salvar com esses campos vazios apagava os dados.
+  async function openEdit(row: LE) {
+    setLoadingEdit(row.id);
+    try {
+      const full = await getEntity({ data: { id: row.id } });
+      setForm({
+        id: full.id,
+        code: full.code ?? "",
+        name: full.name,
+        trade_name: full.trade_name ?? "",
+        cnpj: formatCnpj(full.cnpj),
+        ie: full.ie ?? "",
+        im: full.im ?? "",
+        active: full.active,
+      });
+      setOpen(true);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao carregar empresa");
+    } finally {
+      setLoadingEdit(null);
+    }
   }
+
 
   async function submit() {
     if (!form.name.trim()) {
@@ -139,11 +158,19 @@ export function LegalEntitiesPage() {
         title="Empresas (CNPJs)"
         description="Gerencie os CNPJs (entidades legais) associados a este workspace. Contas, categorias e lançamentos podem ser atribuídos a uma empresa específica."
         actions={
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4 mr-1" /> Nova empresa
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setCnpjFillOpen(true)}>
+              <Wand2 className="h-4 w-4 mr-1" /> Preencher CNPJs
+            </Button>
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4 mr-1" /> Nova empresa
+            </Button>
+          </div>
         }
       />
+
+      {cnpjFillOpen && <LegalEntityCnpjFillDialog onOpenChange={setCnpjFillOpen} />}
+
 
       <div className="rounded-lg border bg-card">
         <table className="w-full text-sm">
@@ -189,8 +216,9 @@ export function LegalEntitiesPage() {
                   </div>
                 </td>
                 <td className="px-4 py-2 font-mono text-xs text-muted-foreground">
-                  {r.cnpj ?? "—"}
+                  {r.cnpj ? formatCnpj(r.cnpj) : "—"}
                 </td>
+
                 <td className="px-4 py-2 text-right tabular-nums">{r.totals.count}</td>
                 <td className="px-4 py-2 text-right tabular-nums text-emerald-600">
                   {fmt(r.totals.receivable)}
@@ -210,9 +238,16 @@ export function LegalEntitiesPage() {
                         <Star className="h-4 w-4" />
                       </Button>
                     )}
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(r)}>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => void openEdit(r)}
+                      disabled={loadingEdit === r.id}
+                      aria-label={`Editar ${r.name}`}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
+
                     <Button size="sm" variant="ghost" onClick={() => remove(r)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -259,9 +294,11 @@ export function LegalEntitiesPage() {
                 <Label>CNPJ</Label>
                 <Input
                   value={form.cnpj}
-                  onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
-                  placeholder="00.000.000/0001-00"
+                  placeholder="00.000.000/0000-00"
+                  inputMode="numeric"
+                  onChange={(e) => setForm({ ...form, cnpj: formatCnpj(e.target.value) })}
                 />
+
               </div>
               <div className="space-y-2">
                 <Label>IE</Label>
