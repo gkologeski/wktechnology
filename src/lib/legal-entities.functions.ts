@@ -249,7 +249,7 @@ export const upsertLegalEntity = createServerFn({ method: "POST" })
         code: data.code ?? null,
         name: data.name,
         trade_name: data.trade_name ?? null,
-        cnpj: data.cnpj ?? null,
+        cnpj,
         ie: data.ie ?? null,
         im: data.im ?? null,
         is_default: data.is_default ?? false,
