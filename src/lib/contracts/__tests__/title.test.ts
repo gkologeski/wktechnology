@@ -19,7 +19,7 @@ describe("normalizePartyName", () => {
 });
 
 describe("buildContractTitle", () => {
-  it("prestação: CPS contratante x contratada", () => {
+  it("prestação: [PRESTAÇÃO] contratante x contratada", () => {
     expect(
       buildContractTitle({
         role: "provider",
@@ -27,20 +27,20 @@ describe("buildContractTitle", () => {
         contractingName: "Gralha Imóveis Ltda",
         ownName: "WK Technology Ltda",
       }),
-    ).toBe("CPS GRALHA IMÓVEIS X WK TECHNOLOGY");
+    ).toBe("[PRESTAÇÃO] GRALHA IMÓVEIS X WK TECHNOLOGY");
   });
 
-  it("compra: prefixo CC", () => {
+  it("compra: prefixo [COMPRA]", () => {
     expect(
       buildContractTitle({
         role: "client",
         ownName: "WK Technology Ltda",
         counterpartyName: "Fornecedor Alpha ME",
       }),
-    ).toBe("CC WK TECHNOLOGY X FORNECEDOR ALPHA");
+    ).toBe("[COMPRA] WK TECHNOLOGY X FORNECEDOR ALPHA");
   });
 
-  it("aditivo recebe prefixo ADT com número", () => {
+  it("aditivo recebe prefixo [ADITIVO] com número", () => {
     expect(
       buildContractTitle({
         role: "provider",
@@ -49,10 +49,10 @@ describe("buildContractTitle", () => {
         contractingName: "Gralha Imóveis",
         ownName: "WK Technology",
       }),
-    ).toBe("ADT 1 CPS GRALHA IMÓVEIS X WK TECHNOLOGY");
+    ).toBe("[ADITIVO 1] [PRESTAÇÃO] GRALHA IMÓVEIS X WK TECHNOLOGY");
   });
 
-  it("usa prefixo por tipo de serviço", () => {
+  it("ignora o tipo de serviço no prefixo", () => {
     expect(
       buildContractTitle({
         role: "provider",
@@ -60,7 +60,7 @@ describe("buildContractTitle", () => {
         contractingName: "Cliente Beta",
         ownName: "WK Technology",
       }),
-    ).toBe("CCO CLIENTE BETA X WK TECHNOLOGY");
+    ).toBe("[PRESTAÇÃO] CLIENTE BETA X WK TECHNOLOGY");
   });
 
   it("acrescenta o ano da vigência por padrão", () => {
@@ -71,7 +71,7 @@ describe("buildContractTitle", () => {
         ownName: "WK Technology",
         startsAt: "2026-03-01",
       }),
-    ).toBe("CPS CLIENTE BETA X WK TECHNOLOGY — 2026");
+    ).toBe("[PRESTAÇÃO] CLIENTE BETA X WK TECHNOLOGY — 2026");
   });
 
   it("omite o ano quando includeYear é false", () => {
@@ -83,8 +83,10 @@ describe("buildContractTitle", () => {
         startsAt: "2026-03-01",
         includeYear: false,
       }),
-    ).toBe("CPS CLIENTE BETA X WK TECHNOLOGY");
+    ).toBe("[PRESTAÇÃO] CLIENTE BETA X WK TECHNOLOGY");
   });
+
+
 
 
   it("retorna null quando falta uma das partes", () => {
