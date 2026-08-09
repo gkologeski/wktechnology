@@ -8,10 +8,8 @@ Trocar os prefixos siglados (`CPS`, `CC`, `CD`, `CM`, `CCO`, `CL`, `ADT`) por r�
 - Compra (nosso CNPJ é CONTRATANTE): `[COMPRA] CONTRATANTE X CONTRATADA — 2026`
 - Aditivo: prefixo próprio na frente, com número quando existir:
   `[ADITIVO 1] [PRESTAÇÃO] GRALHA IMÓVEIS X WK TECHNOLOGY — 2026`
-- Tipos de serviço específicos ganham rótulo em português no lugar da sigla:
-  desenvolvimento → `[DESENVOLVIMENTO]`, manutenção → `[MANUTENÇÃO]`,
-  consultoria → `[CONSULTORIA]`, licenciamento → `[LICENCIAMENTO]`.
-  Sem tipo identificado, cai para `[PRESTAÇÃO]`.
+- O tipo de serviço não influencia mais o prefixo: todo contrato de prestação usa `[PRESTAÇÃO]`, independente de desenvolvimento, manutenção, consultoria ou licenciamento.
+
 
 O resto do padrão não muda: partes em maiúsculas, sem sufixos societários, truncadas em 40 caracteres, sufixo do ano da vigência.
 
@@ -21,6 +19,7 @@ Um único ponto de montagem (`buildContractTitle`) já é usado por importação
 
 ## Detalhes técnicos
 
-- `src/lib/contracts/title.ts`: substituir `SERVICE_PREFIX` pelos rótulos entre colchetes, `prefixFor` retornar `[COMPRA]` para `role === "client"`, e o bloco de aditivo montar `[ADITIVO N]`/`[ADITIVO]`.
-- `src/lib/contracts/__tests__/title.test.ts`: atualizar as expectativas dos casos de prestação, compra, aditivo, tipo de serviço e sufixo de ano.
+- `src/lib/contracts/title.ts`: remover o mapa `SERVICE_PREFIX`, `prefixFor` retornar `[COMPRA]` para `role === "client"` e `[PRESTAÇÃO]` nos demais casos, e o bloco de aditivo montar `[ADITIVO N]`/`[ADITIVO]`.
+- `src/lib/contracts/__tests__/title.test.ts`: atualizar as expectativas dos casos de prestação, compra, aditivo, tipo de serviço (agora `[PRESTAÇÃO]`) e sufixo de ano.
+
 - Validações: `vitest run` dos testes de título, typecheck, lint e build.
