@@ -294,7 +294,10 @@ export function LegalEntitiesPage() {
                 <Label>CNPJ</Label>
                 <Input
                   value={form.cnpj}
-                  onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+                  placeholder="00.000.000/0000-00"
+                  inputMode="numeric"
+                  onChange={(e) => setForm({ ...form, cnpj: formatCnpj(e.target.value) })}
+
                   placeholder="00.000.000/0001-00"
                 />
               </div>
