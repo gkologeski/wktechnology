@@ -42,6 +42,8 @@ import { QuickCreateContractDialog } from "@/components/contracts/quick-create-c
 import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
 import { BatchImportContractsDialog } from "@/components/contracts/batch-import-contracts-dialog";
 import { ContractTitlesStandardizeDialog } from "@/components/contracts/contract-titles-standardize-dialog";
+import { ContractDocKindReviewDialog } from "@/components/contracts/contract-doc-kind-review-dialog";
+
 
 import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
 import {
