@@ -3,7 +3,18 @@ import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Briefcase, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, Briefcase, Sparkles, ChevronsUpDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { splitContractsByPersonMatch } from "@/lib/contracts/title-match";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
