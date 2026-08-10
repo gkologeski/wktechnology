@@ -70,13 +70,16 @@ const statusTone: Record<AllocationStatus, string> = {
 
 export function AllocationsPanel({
   personId,
+  personName,
   canWrite,
   canViewSensitive,
 }: {
   personId: string;
+  personName?: string | null;
   canWrite: boolean;
   canViewSensitive: boolean;
 }) {
+
   const qc = useQueryClient();
   const listFn = useServerFn(listAllocationsByPerson);
   const delFn = useServerFn(deleteAllocation);
