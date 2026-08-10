@@ -40,19 +40,8 @@ import {
 import { sentimentOverview, listSentiments, runSentimentTick } from "@/lib/sentiment.functions";
 import { getEmailEngagementReport } from "@/lib/email-engagement.functions";
 import { getSlaSummary, getSlaOffenders } from "@/lib/sla-reports.functions";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RTooltip,
-  CartesianGrid,
-  Cell,
-  LineChart,
-  Line,
-  Legend,
-} from "recharts";
+import { LazyChart } from "@/components/charts/lazy-chart";
+
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   component: AnalyticsPage,
