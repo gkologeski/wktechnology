@@ -24,12 +24,12 @@ import { NurturingTab } from "@/components/prospecting/nurturing-tab";
 
 import { QuestionnairesTab } from "@/components/prospecting/questionnaires-tab";
 import { CadencesTab } from "@/components/prospecting/cadences-tab";
-import { ScoringPage } from "./settings.scoring";
-import { PlaybooksPage } from "./settings.playbooks";
-import { EnrichmentHistoryPage } from "./settings.enrichment";
-import { ProspectingPage } from "./settings.prospecting";
-import { ScriptsPage } from "./settings.prospecting-scripts";
-import { VoiceAgentPage } from "./settings.voice-agent";
+import { ScoringPage } from "@/components/prospecting/pages/scoring-page";
+import { PlaybooksPage } from "@/components/prospecting/pages/playbooks-page";
+import { EnrichmentHistoryPage } from "@/components/prospecting/pages/enrichment-history-page";
+import { ProspectingPage } from "@/components/prospecting/pages/prospecting-page";
+import { ScriptsPage } from "@/components/prospecting/pages/scripts-page";
+import { VoiceAgentPage } from "@/components/prospecting/pages/voice-agent-page";
 
 const TAB_VALUES = [
   "fila",

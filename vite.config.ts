@@ -11,6 +11,8 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 const require = createRequire(import.meta.url);
 const eventsPolyfillPath = require.resolve("events/events.js");
 
+
+
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
@@ -56,7 +58,24 @@ export default defineConfig({
       // Menos lowering de sintaxe no esbuild/rollup. Os navegadores-alvo já
       // suportam ESNext e o Worker do Cloudflare também.
       target: "esnext",
+      // Sourcemaps de produção custam tempo e memória em um grafo de ~5.3k
+      // módulos e não são consumidos por nada no runtime publicado.
+      sourcemap: false,
+      // Sem polyfill de modulepreload: os navegadores-alvo suportam nativo.
+      modulePreload: { polyfill: false },
+      rollupOptions: {
+        // A sandbox de build tem muitos núcleos; o padrão (20) subutiliza I/O.
+        maxParallelFileOps: 48,
+        treeshake: {
+          // `moduleSideEffects` fica no padrão de propósito: desligar removeria
+          // imports com efeito colateral (CSS, polyfill de `events`).
+          // Estas duas são seguras e cortam bastante análise do Rollup.
+          propertyReadSideEffects: false,
+          tryCatchDeoptimization: false,
+        },
+      },
     },
+
 
     // Garante uma única cópia de React/JSX-runtime no bundle do cliente.
     // Sem dedupe explícito, dependências aninhadas (radix, tiptap, etc.)
