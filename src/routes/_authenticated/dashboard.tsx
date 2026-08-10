@@ -125,20 +125,24 @@ function DashboardPage() {
             <CardDescription>Distribuição financeira do seu funil</CardDescription>
           </CardHeader>
           <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={valueByStage} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="stage" stroke="var(--color-muted-foreground)" fontSize={12} />
-                <YAxis
-                  stroke="var(--color-muted-foreground)"
-                  fontSize={12}
-                  width={72}
-                  tickFormatter={compactBRL}
-                />
-                <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                <Bar dataKey="value" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <LazyChart>
+              {({ ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar }) => (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={valueByStage} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis dataKey="stage" stroke="var(--color-muted-foreground)" fontSize={12} />
+                    <YAxis
+                      stroke="var(--color-muted-foreground)"
+                      fontSize={12}
+                      width={72}
+                      tickFormatter={compactBRL}
+                    />
+                    <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                    <Bar dataKey="value" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </LazyChart>
           </CardContent>
         </Card>
 
@@ -147,21 +151,26 @@ function DashboardPage() {
             <CardTitle className="text-base">Negócios criados (últimos 30 dias)</CardTitle>
           </CardHeader>
           <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={days} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} width={32} allowDecimals={false} />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="count"
-                  stroke="var(--color-primary)"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <LazyChart>
+              {({ ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Line }) => (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={days} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} />
+                    <YAxis stroke="var(--color-muted-foreground)" fontSize={12} width={32} allowDecimals={false} />
+                    <Tooltip />
+                    <Line
+                      type="monotone"
+                      dataKey="count"
+                      stroke="var(--color-primary)"
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </LazyChart>
+
           </CardContent>
         </Card>
       </div>
