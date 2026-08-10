@@ -7,7 +7,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  FileDiff,
   FileStack,
+
   FileText,
   Filter,
   Link2,
