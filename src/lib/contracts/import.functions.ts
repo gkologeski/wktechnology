@@ -331,7 +331,10 @@ export const createContractFromImport = createServerFn({ method: "POST" })
         buildContractTitle({
           role,
           serviceType: f.service_type,
+          documentKind: isAmendment ? "amendment" : "main",
+          amendmentNumber,
           contractingName: f.contracting_name,
+
           counterpartyName: f.counterparty_name,
           ownName: ownSideName,
           startsAt: f.starts_at ?? null,
