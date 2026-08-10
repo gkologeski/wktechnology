@@ -18896,10 +18896,12 @@ export type Database = {
         Args: { _actor: string; _workspace: string }
         Returns: undefined
       }
-      techhire_rbac_gate: {
-        Args: { _perm: string; _user: string }
-        Returns: boolean
-      }
+      techhire_rbac_gate:
+        | {
+            Args: { _owner: string; _perm: string; _user: string }
+            Returns: boolean
+          }
+        | { Args: { _perm: string; _user: string }; Returns: boolean }
       user_can_act: {
         Args: {
           _action: string
