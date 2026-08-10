@@ -160,6 +160,8 @@ function ContractsPage() {
   const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
   const [openStandardize, setOpenStandardize] = useState(false);
+  const [openDocKind, setOpenDocKind] = useState(false);
+
 
   const [openFilters, setOpenFilters] = useState(false);
   const [nestLinks, setNestLinks] = useState(true);
