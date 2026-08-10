@@ -68,7 +68,14 @@ Schema esperado (todos os campos podem ser null):
 
 REGRAS ADICIONAIS DE NÚMERO E VÍNCULO:
 - \`self_contract_number\`: o número/identificação do próprio contrato, se impresso no documento (ex.: "Contrato nº 2026/0031").
-- \`referenced_contract_numbers\`: números de OUTROS contratos citados no documento, tipicamente quando um contrato de compra referencia o contrato de prestação firmado com o cliente final. Liste apenas números, sem prosa. Se não houver, use [].`;
+- \`referenced_contract_numbers\`: números de OUTROS contratos citados no documento, tipicamente quando um contrato de compra referencia o contrato de prestação firmado com o cliente final. Liste apenas números, sem prosa. Se não houver, use [].
+
+REGRAS DE TIPO DE DOCUMENTO:
+- \`document_kind\`: "amendment" quando o documento é um TERMO ADITIVO / ADITIVO / ADENDO / instrumento que altera, prorroga ou repactua um contrato já existente (títulos como "Primeiro Termo Aditivo", "2º Aditivo ao Contrato...", "ADT"). Use "main" quando é o contrato original. Se ambíguo, null.
+- \`amendment_number\`: o número do aditivo em dígitos ("1" para "Primeiro Termo Aditivo", "2" para "2º Aditivo"). Null quando não houver numeração ou não for aditivo.
+- \`amends_contract_number\`: o número/identificação do contrato alterado pelo aditivo, quando citado no documento.
+- Um aditivo normalmente cita o contrato original e sua data de assinatura: nesse caso \`document_kind\` é "amendment", ainda que o contrato original não esteja anexado.`;
+
 
 async function callGeminiExtract(
   userContent: Array<Record<string, unknown>>,
