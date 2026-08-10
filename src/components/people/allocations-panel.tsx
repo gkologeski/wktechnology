@@ -381,7 +381,12 @@ function AllocationDialog({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <Label>Contrato de prestação</Label>
-            <ContractSelect value={contractId} onChange={setContractId} />
+            <ContractSelect
+              value={contractId}
+              onChange={setContractId}
+              personName={personName}
+            />
+
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Contrato de compra (prestador)</Label>
