@@ -403,15 +403,27 @@ export const getContractSourceFileUrl = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw error;
-    if (!row || !row.source_file_path) {
+    if (!row) {
+      throw new Error("Contrato não encontrado ou você não possui acesso a ele.");
+    }
+    if (!row.source_file_path) {
       throw new Error("Arquivo original não disponível para este contrato.");
     }
     const path = row.source_file_path as string;
-    const { data: signed, error: sErr } = await supabase.storage
+    // A consulta acima é feita com a sessão do usuário e mantém a autorização
+    // do contrato sob RLS. Só depois dela o servidor assina o objeto: arquivos
+    // importados pertencem ao uploader, mas devem acompanhar o acesso ao contrato.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error: sErr } = await supabaseAdmin.storage
       .from("contract-imports")
       .createSignedUrl(path, 60 * 10);
     if (sErr || !signed?.signedUrl) {
-      throw new Error(sErr?.message ?? "Falha ao gerar URL do arquivo.");
+      if (sErr?.message.toLowerCase().includes("object not found")) {
+        throw new Error(
+          "O arquivo original deste contrato não foi encontrado. Solicite o reenvio do documento.",
+        );
+      }
+      throw new Error("Não foi possível preparar o arquivo deste contrato. Tente novamente.");
     }
     const fileName = path.split("/").pop() ?? "contrato";
     return {
