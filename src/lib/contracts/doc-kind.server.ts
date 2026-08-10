@@ -41,7 +41,10 @@ export type DocKindDiagnosis = {
 
 export type ApplyDocKindResult = { updated: number; retitled: number; skipped: number };
 
-type Row = Record<string, any>;
+type Row = Record<string, unknown> & {
+  companies?: { name: string | null } | null;
+  legal_entities?: { name: string | null } | null;
+};
 
 function metaString(metadata: unknown, key: string): string | null {
   if (!metadata || typeof metadata !== "object") return null;
@@ -81,9 +84,7 @@ function titlePartsOf(row: Row, documentKind: string, amendmentNumber: string | 
       row["legal_entities"]?.name ??
       null,
     counterpartyName:
-      row["companies"]?.name ??
-      metaString(row["metadata"], "counterparty_name_extracted") ??
-      null,
+      row["companies"]?.name ?? metaString(row["metadata"], "counterparty_name_extracted") ?? null,
     ownName: row["legal_entities"]?.name ?? null,
     startsAt: row["starts_at"],
   };
@@ -183,7 +184,9 @@ export async function applyDocKindCorrections(
     .eq("workspace_id", workspaceId)
     .in("id", ids);
   if (error) throw new Error(error.message);
-  const byId = new Map<string, Row>((data ?? []).map((r) => [(r as Row)["id"] as string, r as Row]));
+  const byId = new Map<string, Row>(
+    (data ?? []).map((r) => [(r as Row)["id"] as string, r as Row]),
+  );
 
   let updated = 0;
   let retitled = 0;

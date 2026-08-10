@@ -18,9 +18,8 @@ export const diagnoseContractDocKinds = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { diagnoseDocKinds, CONTRACT_UPDATE_PERMISSIONS } = await import(
-      "@/lib/contracts/doc-kind.server"
-    );
+    const { diagnoseDocKinds, CONTRACT_UPDATE_PERMISSIONS } =
+      await import("@/lib/contracts/doc-kind.server");
     await assertAnyPermission(supabase, userId, workspaceId, CONTRACT_UPDATE_PERMISSIONS);
     return diagnoseDocKinds(supabase, workspaceId);
   });

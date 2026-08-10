@@ -76,7 +76,6 @@ REGRAS DE TIPO DE DOCUMENTO:
 - \`amends_contract_number\`: o número/identificação do contrato alterado pelo aditivo, quando citado no documento.
 - Um aditivo normalmente cita o contrato original e sua data de assinatura: nesse caso \`document_kind\` é "amendment", ainda que o contrato original não esteja anexado.`;
 
-
 async function callGeminiExtract(
   userContent: Array<Record<string, unknown>>,
 ): Promise<ExtractedContract> {
@@ -321,7 +320,6 @@ export const createContractFromImport = createServerFn({ method: "POST" })
           : "Documento aparenta ser TERMO ADITIVO: revise o tipo de documento e vincule ao contrato principal.",
       ];
     }
-
 
     const insertPayload: Record<string, unknown> = {
       workspace_id: workspaceId,

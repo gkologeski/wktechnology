@@ -9,7 +9,6 @@ import {
   ChevronsRight,
   FileDiff,
   FileStack,
-
   FileText,
   Filter,
   Link2,
@@ -43,7 +42,6 @@ import { ImportContractFileDialog } from "@/components/contracts/import-contract
 import { BatchImportContractsDialog } from "@/components/contracts/batch-import-contracts-dialog";
 import { ContractTitlesStandardizeDialog } from "@/components/contracts/contract-titles-standardize-dialog";
 import { ContractDocKindReviewDialog } from "@/components/contracts/contract-doc-kind-review-dialog";
-
 
 import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
 import {
@@ -161,7 +159,6 @@ function ContractsPage() {
   const [openTemplate, setOpenTemplate] = useState(false);
   const [openStandardize, setOpenStandardize] = useState(false);
   const [openDocKind, setOpenDocKind] = useState(false);
-
 
   const [openFilters, setOpenFilters] = useState(false);
   const [nestLinks, setNestLinks] = useState(true);
@@ -371,7 +368,6 @@ function ContractsPage() {
             <Button variant="outline" onClick={() => setOpenDocKind(true)}>
               <FileDiff className="h-4 w-4 mr-1" /> Revisar tipo de documento
             </Button>
-
 
             <Button
               variant="outline"
@@ -827,7 +823,6 @@ function ContractsPage() {
       ) : null}
 
       {openDocKind ? <ContractDocKindReviewDialog onOpenChange={setOpenDocKind} /> : null}
-
     </div>
   );
 }

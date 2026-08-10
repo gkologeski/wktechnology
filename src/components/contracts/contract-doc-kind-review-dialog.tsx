@@ -122,9 +122,9 @@ export function ContractDocKindReviewDialog({
             Revisar tipo de documento
           </DialogTitle>
           <DialogDescription>
-            Contratos gravados como <span className="font-medium">Principal</span> que aparentam
-            ser <span className="font-medium">termo aditivo</span>. Escolha o contrato principal de
-            cada um — nada é gravado sem sua confirmação.
+            Contratos gravados como <span className="font-medium">Principal</span> que aparentam ser{" "}
+            <span className="font-medium">termo aditivo</span>. Escolha o contrato principal de cada
+            um — nada é gravado sem sua confirmação.
           </DialogDescription>
         </DialogHeader>
 
@@ -144,15 +144,17 @@ export function ContractDocKindReviewDialog({
         ) : suspects.length === 0 ? (
           <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
             Nenhum contrato com sinais de aditivo foi encontrado
-            {data ? ` (${data.total} analisado(s), ${data.amendments} já marcado(s) como aditivo)` : ""}
+            {data
+              ? ` (${data.total} analisado(s), ${data.amendments} já marcado(s) como aditivo)`
+              : ""}
             .
           </div>
         ) : (
           <>
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>
-                {data?.total ?? 0} analisado(s) · {suspects.length} suspeito(s) ·{" "}
-                {ready.length} pronto(s) para aplicar
+                {data?.total ?? 0} analisado(s) · {suspects.length} suspeito(s) · {ready.length}{" "}
+                pronto(s) para aplicar
               </span>
               <div className="flex items-center gap-2">
                 <Button
@@ -202,7 +204,10 @@ export function ContractDocKindReviewDialog({
                             <Select
                               value={c.parentId}
                               onValueChange={(value) =>
-                                setChoices((prev) => ({ ...prev, [s.id]: { ...c, parentId: value } }))
+                                setChoices((prev) => ({
+                                  ...prev,
+                                  [s.id]: { ...c, parentId: value },
+                                }))
                               }
                             >
                               <SelectTrigger aria-label="Contrato principal">
