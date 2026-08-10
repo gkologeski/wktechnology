@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { FormsPage } from "./settings.forms";
+import { FormsPage } from "@/components/forms/forms-page";
 
 // Alias no contexto CRM/TechSales para o mesmo editor de formulários que
 // vive em /settings/forms. Existe para que o item "Captar › Formulários" do
