@@ -33,10 +33,8 @@ import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { deleteRowGuarded } from "@/lib/delete-guard";
-import { ACTIONS_BY_KEY, Attachment, BarAction, CreateAction, EmailMeta, ICONS, LOG_LABEL, LogKind, OrderState, RelatedKey, STORAGE_KEY, TASK_DUE_PRESET_LABELS, TaskDuePreset, TeamMember, actionKey, calendarAttendees, computeDuePreset, loadOrder, openEmailAttachment } from "./activity/timeline-shared";
-import {
-  EmailTimelineItem,
-} from "./activity/email-timeline-item";
+import { ACTIONS_BY_KEY, type Attachment, type BarAction, type CreateAction, type EmailMeta, ICONS, LOG_LABEL, type LogKind, type OrderState, type RelatedKey, STORAGE_KEY, TASK_DUE_PRESET_LABELS, type TaskDuePreset, type TeamMember, actionKey, calendarAttendees, computeDuePreset, loadOrder, openEmailAttachment } from "./activity/timeline-shared";
+import { EmailTimelineItem } from "./activity/email-timeline-item";
 
 // O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
 // usuário abre a ação de ligação pela primeira vez.

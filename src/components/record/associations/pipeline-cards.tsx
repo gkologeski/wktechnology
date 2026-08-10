@@ -9,7 +9,7 @@ import { formatCurrency } from "@/lib/crm";
 import { AddAssociation } from "@/components/record/add-association";
 import { QuickCreateDealDialog, QuickCreateTicketDialog } from "@/components/record/quick-create-dialogs";
 import { usePipelines } from "@/lib/pipelines";
-import { AssocCard, AssocItemActions, AssocLabelAdder, DEAL_SELECT, DealRow, DetailRow, Empty, EntityAvatar, StagePicker, ViewAllFooter, emitTimelineRefresh, formatDealDateLong, sb, useAssociateWithPeriod } from "./primitives";
+import { AssocCard, AssocItemActions, AssocLabelAdder, DEAL_SELECT, type DealRow, DetailRow, Empty, EntityAvatar, StagePicker, ViewAllFooter, emitTimelineRefresh, formatDealDateLong, sb, useAssociateWithPeriod } from "./primitives";
 
 export function DealsCard({
   entity,
