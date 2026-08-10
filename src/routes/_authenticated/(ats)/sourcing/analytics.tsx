@@ -15,16 +15,8 @@ import {
   TrendingUp,
   Users2,
 } from "lucide-react";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { LazyChart } from "@/components/charts/lazy-chart";
+
 import {
   AtsPageHeader,
   AtsSectionHeader,
@@ -291,75 +283,79 @@ function SourcingAnalyticsPage() {
               />
             ) : (
               <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
-                    <defs>
-                      <linearGradient id="g-sent" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="g-replied" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--status-open))" stopOpacity={0.35} />
-                        <stop offset="100%" stopColor="hsl(var(--status-open))" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="g-failed" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      minTickGap={16}
-                    />
-                    <YAxis
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={11}
-                      tickLine={false}
-                      axisLine={false}
-                      allowDecimals={false}
-                      width={32}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: "hsl(var(--popover))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: 8,
-                        fontSize: 12,
-                      }}
-                      labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 500 }}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Area
-                      type="monotone"
-                      dataKey="sent"
-                      name="Enviados"
-                      stroke="hsl(var(--primary))"
-                      fill="url(#g-sent)"
-                      strokeWidth={2}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="replied"
-                      name="Respostas"
-                      stroke="hsl(var(--status-open))"
-                      fill="url(#g-replied)"
-                      strokeWidth={2}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="failed"
-                      name="Falhas"
-                      stroke="hsl(var(--destructive))"
-                      fill="url(#g-failed)"
-                      strokeWidth={2}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
+                <LazyChart>
+                  {({ ResponsiveContainer, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Area }) => (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
+                        <defs>
+                          <linearGradient id="g-sent" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="g-replied" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--status-open))" stopOpacity={0.35} />
+                            <stop offset="100%" stopColor="hsl(var(--status-open))" stopOpacity={0} />
+                          </linearGradient>
+                          <linearGradient id="g-failed" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
+                            <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis
+                          dataKey="label"
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          minTickGap={16}
+                        />
+                        <YAxis
+                          stroke="hsl(var(--muted-foreground))"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          allowDecimals={false}
+                          width={32}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            background: "hsl(var(--popover))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: 8,
+                            fontSize: 12,
+                          }}
+                          labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 500 }}
+                        />
+                        <Legend wrapperStyle={{ fontSize: 12 }} />
+                        <Area
+                          type="monotone"
+                          dataKey="sent"
+                          name="Enviados"
+                          stroke="hsl(var(--primary))"
+                          fill="url(#g-sent)"
+                          strokeWidth={2}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="replied"
+                          name="Respostas"
+                          stroke="hsl(var(--status-open))"
+                          fill="url(#g-replied)"
+                          strokeWidth={2}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="failed"
+                          name="Falhas"
+                          stroke="hsl(var(--destructive))"
+                          fill="url(#g-failed)"
+                          strokeWidth={2}
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  )}
+                </LazyChart>
               </div>
             )}
           </CardContent>
