@@ -36,20 +36,8 @@ import {
 } from "@/lib/dashboards.functions";
 import { listReports, runReport } from "@/lib/reports.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RTooltip,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  CartesianGrid,
-} from "recharts";
+import { LazyChart } from "@/components/charts/lazy-chart";
+
 
 const compactNumber = (v: number) =>
   new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(
@@ -542,53 +530,59 @@ function WidgetCard({
           <p className="text-xs text-muted-foreground">Sem dados.</p>
         ) : (
           <div style={{ width: "100%", height: 220 }}>
-            <ResponsiveContainer>
-              {chartType === "line" ? (
-                <LineChart data={rows}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="key" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
-                  <RTooltip />
-                  <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" />
-                </LineChart>
-              ) : chartType === "pie" ? (
-                <PieChart>
-                  <RTooltip />
-                  <Pie data={rows} dataKey="value" nameKey="key" outerRadius={80}>
-                    {rows.map((_, i) => (
-                      <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-                    ))}
-                  </Pie>
-                </PieChart>
-              ) : chartType === "table" ? (
-                <div className="overflow-auto h-full">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-1">Chave</th>
-                        <th className="text-right py-1">Valor</th>
+            {chartType === "table" ? (
+              <div className="overflow-auto h-full">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-1">Chave</th>
+                      <th className="text-right py-1">Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.slice(0, 20).map((r) => (
+                      <tr key={r.key} className="border-b">
+                        <td className="py-1">{r.key}</td>
+                        <td className="text-right py-1">{r.value}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {rows.slice(0, 20).map((r) => (
-                        <tr key={r.key} className="border-b">
-                          <td className="py-1">{r.key}</td>
-                          <td className="text-right py-1">{r.value}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <BarChart data={rows}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="key" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
-                  <RTooltip />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" />
-                </BarChart>
-              )}
-            </ResponsiveContainer>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <LazyChart>
+                {({ ResponsiveContainer, LineChart, PieChart, BarChart, CartesianGrid, XAxis, YAxis, Tooltip: RTooltip, Line, Pie, Cell, Bar }) => (
+                  <ResponsiveContainer>
+                    {chartType === "line" ? (
+                      <LineChart data={rows}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="key" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
+                        <RTooltip />
+                        <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" />
+                      </LineChart>
+                    ) : chartType === "pie" ? (
+                      <PieChart>
+                        <RTooltip />
+                        <Pie data={rows} dataKey="value" nameKey="key" outerRadius={80}>
+                          {rows.map((_, i) => (
+                            <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    ) : (
+                      <BarChart data={rows}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="key" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
+                        <RTooltip />
+                        <Bar dataKey="value" fill="hsl(var(--primary))" />
+                      </BarChart>
+                    )}
+                  </ResponsiveContainer>
+                )}
+              </LazyChart>
+            )}
           </div>
         )}
       </CardContent>
