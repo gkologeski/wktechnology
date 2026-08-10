@@ -33,6 +33,10 @@ Schema esperado (todos os campos podem ser null):
 {
   "title": string,
   "role": "provider" | "client",
+  "document_kind": "main" | "amendment",
+  "amendment_number": string,
+  "amends_contract_number": string,
+
   "counterparty_name": string, "counterparty_cnpj": string,
   "contracting_name": string, "contracting_cnpj": string,
   "starts_at": "YYYY-MM-DD", "ends_at": "YYYY-MM-DD",
@@ -64,7 +68,13 @@ Schema esperado (todos os campos podem ser null):
 
 REGRAS ADICIONAIS DE NÚMERO E VÍNCULO:
 - \`self_contract_number\`: o número/identificação do próprio contrato, se impresso no documento (ex.: "Contrato nº 2026/0031").
-- \`referenced_contract_numbers\`: números de OUTROS contratos citados no documento, tipicamente quando um contrato de compra referencia o contrato de prestação firmado com o cliente final. Liste apenas números, sem prosa. Se não houver, use [].`;
+- \`referenced_contract_numbers\`: números de OUTROS contratos citados no documento, tipicamente quando um contrato de compra referencia o contrato de prestação firmado com o cliente final. Liste apenas números, sem prosa. Se não houver, use [].
+
+REGRAS DE TIPO DE DOCUMENTO:
+- \`document_kind\`: "amendment" quando o documento é um TERMO ADITIVO / ADITIVO / ADENDO / instrumento que altera, prorroga ou repactua um contrato já existente (títulos como "Primeiro Termo Aditivo", "2º Aditivo ao Contrato...", "ADT"). Use "main" quando é o contrato original. Se ambíguo, null.
+- \`amendment_number\`: o número do aditivo em dígitos ("1" para "Primeiro Termo Aditivo", "2" para "2º Aditivo"). Null quando não houver numeração ou não for aditivo.
+- \`amends_contract_number\`: o número/identificação do contrato alterado pelo aditivo, quando citado no documento.
+- Um aditivo normalmente cita o contrato original e sua data de assinatura: nesse caso \`document_kind\` é "amendment", ainda que o contrato original não esteja anexado.`;
 
 async function callGeminiExtract(
   userContent: Array<Record<string, unknown>>,
@@ -285,6 +295,32 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     }
     const ownSideName = (role === "provider" ? ownCounterparty?.name : ownEntity?.name) ?? null;
 
+    // Tipo de documento detectado pela IA (mais os sinais textuais do título/arquivo).
+    // O vínculo do aditivo ao contrato principal continua sendo passo próprio da
+    // importação, então aqui apenas registramos a evidência e alertamos na revisão.
+    const { detectAmendmentSignals } = await import("@/lib/contracts/doc-kind");
+    const signals = detectAmendmentSignals({
+      title: f.title,
+      warnings: (metadata.import_warnings as string[] | undefined) ?? f.warnings ?? [],
+      selfNumber: f.self_contract_number,
+      fileName: (data.source_file_path ?? "").split("/").pop() ?? null,
+    });
+    const isAmendment = f.document_kind === "amendment" || signals.isAmendment;
+    const amendmentNumber = (f.amendment_number ?? "").trim() || signals.number;
+    if (f.document_kind) metadata.document_kind_extracted = f.document_kind;
+    if (amendmentNumber) metadata.amendment_number_extracted = amendmentNumber;
+    if (f.amends_contract_number) {
+      metadata.amends_contract_number_extracted = f.amends_contract_number;
+    }
+    if (isAmendment) {
+      metadata.import_warnings = [
+        ...((metadata.import_warnings as string[] | undefined) ?? []),
+        amendmentNumber
+          ? `Documento aparenta ser TERMO ADITIVO nº ${amendmentNumber}: revise o tipo de documento e vincule ao contrato principal.`
+          : "Documento aparenta ser TERMO ADITIVO: revise o tipo de documento e vincule ao contrato principal.",
+      ];
+    }
+
     const insertPayload: Record<string, unknown> = {
       workspace_id: workspaceId,
       owner_id: userId,
@@ -293,7 +329,10 @@ export const createContractFromImport = createServerFn({ method: "POST" })
         buildContractTitle({
           role,
           serviceType: f.service_type,
+          documentKind: isAmendment ? "amendment" : "main",
+          amendmentNumber,
           contractingName: f.contracting_name,
+
           counterpartyName: f.counterparty_name,
           ownName: ownSideName,
           startsAt: f.starts_at ?? null,

@@ -30,6 +30,14 @@ export const ExtractedContractSchema = z.object({
   title: z.string().optional().nullable(),
   role: z.enum(["provider", "client"]).optional().nullable(),
 
+  /** Tipo do documento: contrato principal ou termo aditivo. */
+  document_kind: z.enum(["main", "amendment"]).optional().nullable(),
+  /** Número do aditivo ("1", "2", ...), quando o documento é um termo aditivo. */
+  amendment_number: z.string().max(40).optional().nullable(),
+  /** Número/identificação do contrato que o aditivo altera, quando citado. */
+  amends_contract_number: z.string().max(120).optional().nullable(),
+
+
   counterparty_name: z.string().optional().nullable(),
   counterparty_cnpj: z.string().optional().nullable(),
   contracting_name: z.string().optional().nullable(),

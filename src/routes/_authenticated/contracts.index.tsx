@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  FileDiff,
   FileStack,
   FileText,
   Filter,
@@ -40,6 +41,7 @@ import { QuickCreateContractDialog } from "@/components/contracts/quick-create-c
 import { ImportContractFileDialog } from "@/components/contracts/import-contract-file-dialog";
 import { BatchImportContractsDialog } from "@/components/contracts/batch-import-contracts-dialog";
 import { ContractTitlesStandardizeDialog } from "@/components/contracts/contract-titles-standardize-dialog";
+import { ContractDocKindReviewDialog } from "@/components/contracts/contract-doc-kind-review-dialog";
 
 import { ApplyContractTemplateDialog } from "@/components/contracts/apply-contract-template-dialog";
 import {
@@ -156,6 +158,7 @@ function ContractsPage() {
   const [openBatch, setOpenBatch] = useState(false);
   const [openTemplate, setOpenTemplate] = useState(false);
   const [openStandardize, setOpenStandardize] = useState(false);
+  const [openDocKind, setOpenDocKind] = useState(false);
 
   const [openFilters, setOpenFilters] = useState(false);
   const [nestLinks, setNestLinks] = useState(true);
@@ -361,6 +364,9 @@ function ContractsPage() {
             </Button>
             <Button variant="outline" onClick={() => setOpenStandardize(true)}>
               <Type className="h-4 w-4 mr-1" /> Padronizar títulos
+            </Button>
+            <Button variant="outline" onClick={() => setOpenDocKind(true)}>
+              <FileDiff className="h-4 w-4 mr-1" /> Revisar tipo de documento
             </Button>
 
             <Button
@@ -815,6 +821,8 @@ function ContractsPage() {
       {openStandardize ? (
         <ContractTitlesStandardizeDialog onOpenChange={setOpenStandardize} />
       ) : null}
+
+      {openDocKind ? <ContractDocKindReviewDialog onOpenChange={setOpenDocKind} /> : null}
     </div>
   );
 }
