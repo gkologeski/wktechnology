@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  scoreContractForPerson,
   scoreContractTitleForPerson,
   splitContractsByPersonMatch,
 } from "@/lib/contracts/title-match";
@@ -42,5 +43,46 @@ describe("splitContractsByPersonMatch", () => {
     );
     expect(likely.map((c) => c.id)).toEqual(["2", "3"]);
     expect(others.map((c) => c.id)).toEqual(["1"]);
+  });
+});
+
+describe("scoreContractForPerson", () => {
+  const person = {
+    name: "Maria Souza Lima",
+    docs: ["123.456.789-09"],
+    companyNames: ["MSL Serviços Ltda"],
+  };
+
+  it("prioriza CPF/CNPJ igual ao da contraparte", () => {
+    const r = scoreContractForPerson(
+      { title: "[PRESTAÇÃO] ACME X FORNECEDOR", counterpartyDocs: ["12345678909"] },
+      person,
+    );
+    expect(r.score).toBe(100);
+    expect(r.reason).toBe("CPF/CNPJ da contraparte");
+  });
+
+  it("reconhece documento presente no título", () => {
+    const r = scoreContractForPerson({ title: "CPS 123.456.789-09 X ACME" }, person);
+    expect(r.score).toBe(98);
+  });
+
+  it("usa a contraparte quando o título não tem o nome", () => {
+    const r = scoreContractForPerson(
+      { title: "[PRESTAÇÃO] ACME X CONTRATADA", counterpartyName: "MSL Serviços Ltda" },
+      person,
+    );
+    expect(r.score).toBeGreaterThan(60);
+    expect(r.reason).toBe("Contraparte semelhante");
+  });
+
+  it("mantém o fallback pelo título", () => {
+    const r = scoreContractForPerson({ title: "ACME X MARIA SOUZA LIMA" }, person);
+    expect(r.reason).toBe("Nome no título");
+    expect(r.score).toBe(90);
+  });
+
+  it("retorna zero sem qualquer sinal", () => {
+    expect(scoreContractForPerson({ title: "ACME X BETA" }, person).score).toBe(0);
   });
 });
