@@ -40,19 +40,8 @@ import {
 import { sentimentOverview, listSentiments, runSentimentTick } from "@/lib/sentiment.functions";
 import { getEmailEngagementReport } from "@/lib/email-engagement.functions";
 import { getSlaSummary, getSlaOffenders } from "@/lib/sla-reports.functions";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RTooltip,
-  CartesianGrid,
-  Cell,
-  LineChart,
-  Line,
-  Legend,
-} from "recharts";
+import { LazyChart } from "@/components/charts/lazy-chart";
+
 
 export const Route = createFileRoute("/_authenticated/analytics")({
   component: AnalyticsPage,
@@ -269,16 +258,20 @@ function AnalyticsPage() {
               ) : (
                 <>
                   <div style={{ width: "100%", height: 240 }}>
-                    <ResponsiveContainer>
-                      <BarChart data={cohort.rows}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-                        <YAxis tick={{ fontSize: 11 }} width={40} allowDecimals={false} />
-                        <RTooltip />
-                        <Bar dataKey="created" name="Criados" fill="hsl(var(--muted-foreground))" />
-                        <Bar dataKey="won" name="Ganhos" fill="hsl(var(--primary))" />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <LazyChart>
+                      {({ ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip: RTooltip, Bar }) => (
+                        <ResponsiveContainer>
+                          <BarChart data={cohort.rows}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                            <YAxis tick={{ fontSize: 11 }} width={40} allowDecimals={false} />
+                            <RTooltip />
+                            <Bar dataKey="created" name="Criados" fill="hsl(var(--muted-foreground))" />
+                            <Bar dataKey="won" name="Ganhos" fill="hsl(var(--primary))" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </LazyChart>
                   </div>
                   <div className="overflow-auto mt-4">
                     <table className="w-full text-xs">
@@ -465,33 +458,37 @@ function EmailEngagementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: st
             <p className="text-xs text-muted-foreground">Sem envios no período.</p>
           ) : (
             <div style={{ width: "100%", height: 240 }}>
-              <ResponsiveContainer>
-                <LineChart data={data.by_day}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <RTooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="sent"
-                    name="Enviados"
-                    stroke="hsl(var(--muted-foreground))"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="opened"
-                    name="Abertos"
-                    stroke="hsl(var(--primary))"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="clicked"
-                    name="Clicados"
-                    stroke="hsl(var(--destructive))"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <LazyChart>
+                {({ ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip: RTooltip, Legend, Line }) => (
+                  <ResponsiveContainer>
+                    <LineChart data={data.by_day}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <RTooltip />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="sent"
+                        name="Enviados"
+                        stroke="hsl(var(--muted-foreground))"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="opened"
+                        name="Abertos"
+                        stroke="hsl(var(--primary))"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="clicked"
+                        name="Clicados"
+                        stroke="hsl(var(--destructive))"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </LazyChart>
             </div>
           )}
         </CardContent>
