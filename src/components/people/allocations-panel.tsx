@@ -242,6 +242,8 @@ export function AllocationsPanel({
         open={open}
         onOpenChange={setOpen}
         personId={personId}
+        personName={personName}
+
         editing={editing}
         canViewSensitive={canViewSensitive}
         onSaved={() => {
