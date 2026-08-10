@@ -362,6 +362,10 @@ function ContractsPage() {
             <Button variant="outline" onClick={() => setOpenStandardize(true)}>
               <Type className="h-4 w-4 mr-1" /> Padronizar títulos
             </Button>
+            <Button variant="outline" onClick={() => setOpenDocKind(true)}>
+              <FileDiff className="h-4 w-4 mr-1" /> Revisar tipo de documento
+            </Button>
+
 
             <Button
               variant="outline"
