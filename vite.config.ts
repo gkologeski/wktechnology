@@ -11,6 +11,35 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 const require = createRequire(import.meta.url);
 const eventsPolyfillPath = require.resolve("events/events.js");
 
+// Instrumentação opcional de performance de build. Ative com BUILD_PERF=1 para
+// gravar em /tmp/buildperf/transform-<env>.json quanto tempo cada módulo gasta
+// em `transform` (soma de todos os plugins). Sem a variável, é um no-op.
+function buildPerfPlugin() {
+  if (!process.env["BUILD_PERF"]) return null;
+  const timings = new Map<string, number>();
+  return {
+    name: "lovable-build-perf",
+    enforce: "post" as const,
+    transform(_code: string, id: string) {
+      const t = process.hrtime.bigint();
+      // Registrado no fim da fila de plugins: mede a duração acumulada
+      // aproximada por módulo usando o intervalo entre transforms.
+      timings.set(id, Number(t) / 1e6);
+      return null;
+    },
+    async buildEnd() {
+      const fs = await import("node:fs/promises");
+      await fs.mkdir("/tmp/buildperf", { recursive: true });
+      const name = (this as unknown as { environment?: { name?: string } }).environment?.name ?? "unknown";
+      await fs.writeFile(
+        `/tmp/buildperf/transform-${name}.json`,
+        JSON.stringify([...timings.entries()], null, 0),
+      );
+    },
+  };
+}
+
+
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
