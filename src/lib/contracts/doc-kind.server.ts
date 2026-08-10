@@ -41,10 +41,30 @@ export type DocKindDiagnosis = {
 
 export type ApplyDocKindResult = { updated: number; retitled: number; skipped: number };
 
-type Row = Record<string, unknown> & {
-  companies?: { name: string | null } | null;
-  legal_entities?: { name: string | null } | null;
+type Named = { name?: string | null } | { name?: string | null }[] | null | undefined;
+
+type Row = {
+  id: string;
+  number: string | null;
+  title: string | null;
+  role: "provider" | "client" | null;
+  document_kind: string | null;
+  amendment_number: string | null;
+  service_type: string | null;
+  starts_at: string | null;
+  source_file_path: string | null;
+  counterparty_company_id: string | null;
+  contracting_legal_entity_id: string | null;
+  metadata: unknown;
+  companies?: Named;
+  legal_entities?: Named;
 };
+
+function nameOf(value: Named): string | null {
+  if (!value) return null;
+  const first = Array.isArray(value) ? value[0] : value;
+  return first?.name ?? null;
+}
 
 function metaString(metadata: unknown, key: string): string | null {
   if (!metadata || typeof metadata !== "object") return null;
@@ -63,38 +83,33 @@ function fileNameOf(path: unknown): string | null {
 }
 
 function counterpartyKey(row: Row): string | null {
-  const cnpj = (metaString(row["metadata"], "counterparty_cnpj_extracted") ?? "").replace(
-    /\D/g,
-    "",
-  );
+  const cnpj = (metaString(row.metadata, "counterparty_cnpj_extracted") ?? "").replace(/\D/g, "");
   if (cnpj.length === 14) return `cnpj:${cnpj}`;
-  if (row["counterparty_company_id"]) return `company:${row["counterparty_company_id"]}`;
-  const name = metaString(row["metadata"], "counterparty_name_extracted");
+  if (row.counterparty_company_id) return `company:${row.counterparty_company_id}`;
+  const name = metaString(row.metadata, "counterparty_name_extracted");
   return name ? `name:${name.trim().toLowerCase()}` : null;
 }
 
 function titlePartsOf(row: Row, documentKind: string, amendmentNumber: string | null) {
   return {
-    role: row["role"],
-    serviceType: row["service_type"],
+    role: row.role,
+    serviceType: row.service_type,
     documentKind,
     amendmentNumber,
     contractingName:
-      metaString(row["metadata"], "contracting_name_extracted") ??
-      row["legal_entities"]?.name ??
-      null,
+      metaString(row.metadata, "contracting_name_extracted") ?? nameOf(row.legal_entities),
     counterpartyName:
-      row["companies"]?.name ?? metaString(row["metadata"], "counterparty_name_extracted") ?? null,
-    ownName: row["legal_entities"]?.name ?? null,
-    startsAt: row["starts_at"],
+      nameOf(row.companies) ?? metaString(row.metadata, "counterparty_name_extracted"),
+    ownName: nameOf(row.legal_entities),
+    startsAt: row.starts_at,
   };
 }
 
 function labelOf(row: Row): DocKindCandidateParent {
   return {
-    id: row["id"] as string,
-    number: (row["number"] as string | null) ?? null,
-    title: (row["title"] as string | null) ?? "",
+    id: row.id as string,
+    number: row.number,
+    title: row.title ?? "",
   };
 }
 
@@ -111,25 +126,25 @@ export async function diagnoseDocKinds(
     .limit(2000);
   if (error) throw new Error(error.message);
 
-  const rows = (data ?? []) as Row[];
+  const rows = (data ?? []) as unknown as Row[];
   const suspects: DocKindSuspect[] = [];
   const signalsById = new Map<string, ReturnType<typeof detectAmendmentSignals>>();
 
   for (const row of rows) {
     signalsById.set(
-      row["id"] as string,
+      row.id,
       detectAmendmentSignals({
-        title: row["title"],
-        warnings: warningsOf(row["metadata"]),
-        selfNumber: metaString(row["metadata"], "self_contract_number"),
-        fileName: fileNameOf(row["source_file_path"]),
+        title: row.title,
+        warnings: warningsOf(row.metadata),
+        selfNumber: metaString(row.metadata, "self_contract_number"),
+        fileName: fileNameOf(row.source_file_path),
       }),
     );
   }
 
   for (const row of rows) {
-    if (row["document_kind"] === "amendment") continue;
-    const signals = signalsById.get(row["id"] as string);
+    if (row.document_kind === "amendment") continue;
+    const signals = signalsById.getrow.id;
     if (!signals?.isAmendment) continue;
 
     // Candidatos a contrato principal: mesmo papel, mesma contraparte, sem sinal de aditivo.
@@ -137,20 +152,20 @@ export async function diagnoseDocKinds(
     const candidates = rows
       .filter(
         (other) =>
-          other["id"] !== row["id"] &&
-          other["document_kind"] !== "amendment" &&
-          other["role"] === row["role"] &&
-          !signalsById.get(other["id"] as string)?.isAmendment &&
+          other.id !== row.id &&
+          other.document_kind !== "amendment" &&
+          other.role === row.role &&
+          !signalsById.get(other.id)?.isAmendment &&
           (key ? counterpartyKey(other) === key : false),
       )
       .slice(0, 10)
       .map(labelOf);
 
     suspects.push({
-      id: row["id"] as string,
-      number: (row["number"] as string | null) ?? null,
-      title: (row["title"] as string | null) ?? "",
-      role: (row["role"] as "provider" | "client") ?? "provider",
+      id: row.id as string,
+      number: row.number,
+      title: row.title ?? "",
+      role: row.role ?? "provider",
       amendment_number: signals.number,
       reasons: signals.reasons,
       suggested_parent: candidates[0] ?? null,
@@ -184,9 +199,7 @@ export async function applyDocKindCorrections(
     .eq("workspace_id", workspaceId)
     .in("id", ids);
   if (error) throw new Error(error.message);
-  const byId = new Map<string, Row>(
-    (data ?? []).map((r) => [(r as Row)["id"] as string, r as Row]),
-  );
+  const byId = new Map<string, Row>(((data ?? []) as unknown as Row[]).map((r) => [r.id, r]));
 
   let updated = 0;
   let retitled = 0;
@@ -194,7 +207,7 @@ export async function applyDocKindCorrections(
 
   for (const item of items) {
     const row = byId.get(item.id);
-    if (!row || row["document_kind"] === "amendment") {
+    if (!row || row.document_kind === "amendment") {
       skipped += 1;
       continue;
     }
@@ -210,7 +223,7 @@ export async function applyDocKindCorrections(
       document_kind: "amendment",
       amendment_of_id: item.mainContractId,
       amendment_number: amendmentNumber,
-      amendment_effective_at: row["starts_at"] ?? null,
+      amendment_effective_at: row.starts_at ?? null,
     };
     if (newTitle) patch["title"] = newTitle;
 
@@ -235,11 +248,11 @@ export async function applyDocKindCorrections(
       actor_id: userId,
       event_type: "document_kind_corrected",
       payload: {
-        from: row["document_kind"] ?? "main",
+        from: row.document_kind ?? "main",
         to: "amendment",
         main_contract_id: item.mainContractId,
         amendment_number: amendmentNumber,
-        title_before: row["title"] ?? null,
+        title_before: row.title ?? null,
         title_after: newTitle,
         source: "doc-kind-review",
       },
