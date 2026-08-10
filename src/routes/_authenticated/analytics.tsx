@@ -458,33 +458,37 @@ function EmailEngagementTab({ dateFrom, dateTo }: { dateFrom: string; dateTo: st
             <p className="text-xs text-muted-foreground">Sem envios no período.</p>
           ) : (
             <div style={{ width: "100%", height: 240 }}>
-              <ResponsiveContainer>
-                <LineChart data={data.by_day}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <RTooltip />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="sent"
-                    name="Enviados"
-                    stroke="hsl(var(--muted-foreground))"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="opened"
-                    name="Abertos"
-                    stroke="hsl(var(--primary))"
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="clicked"
-                    name="Clicados"
-                    stroke="hsl(var(--destructive))"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <LazyChart>
+                {({ ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip: RTooltip, Legend, Line }) => (
+                  <ResponsiveContainer>
+                    <LineChart data={data.by_day}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} />
+                      <RTooltip />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="sent"
+                        name="Enviados"
+                        stroke="hsl(var(--muted-foreground))"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="opened"
+                        name="Abertos"
+                        stroke="hsl(var(--primary))"
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="clicked"
+                        name="Clicados"
+                        stroke="hsl(var(--destructive))"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
+              </LazyChart>
             </div>
           )}
         </CardContent>
