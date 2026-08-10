@@ -5,17 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { PageHeader } from "@/components/page-header";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  CartesianGrid,
-} from "recharts";
+import { LazyChart } from "@/components/charts/lazy-chart";
+
 import { Briefcase, UserPlus, TrendingUp, DollarSign } from "lucide-react";
 
 const compactBRL = (v: number) =>
