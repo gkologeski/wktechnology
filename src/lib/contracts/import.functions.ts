@@ -296,6 +296,33 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     }
     const ownSideName = (role === "provider" ? ownCounterparty?.name : ownEntity?.name) ?? null;
 
+    // Tipo de documento detectado pela IA (mais os sinais textuais do título/arquivo).
+    // O vínculo do aditivo ao contrato principal continua sendo passo próprio da
+    // importação, então aqui apenas registramos a evidência e alertamos na revisão.
+    const { detectAmendmentSignals } = await import("@/lib/contracts/doc-kind");
+    const signals = detectAmendmentSignals({
+      title: f.title,
+      warnings: (metadata.import_warnings as string[] | undefined) ?? f.warnings ?? [],
+      selfNumber: f.self_contract_number,
+      fileName: (data.source_file_path ?? "").split("/").pop() ?? null,
+    });
+    const isAmendment = f.document_kind === "amendment" || signals.isAmendment;
+    const amendmentNumber = (f.amendment_number ?? "").trim() || signals.number;
+    if (f.document_kind) metadata.document_kind_extracted = f.document_kind;
+    if (amendmentNumber) metadata.amendment_number_extracted = amendmentNumber;
+    if (f.amends_contract_number) {
+      metadata.amends_contract_number_extracted = f.amends_contract_number;
+    }
+    if (isAmendment) {
+      metadata.import_warnings = [
+        ...((metadata.import_warnings as string[] | undefined) ?? []),
+        amendmentNumber
+          ? `Documento aparenta ser TERMO ADITIVO nº ${amendmentNumber}: revise o tipo de documento e vincule ao contrato principal.`
+          : "Documento aparenta ser TERMO ADITIVO: revise o tipo de documento e vincule ao contrato principal.",
+      ];
+    }
+
+
     const insertPayload: Record<string, unknown> = {
       workspace_id: workspaceId,
       owner_id: userId,
