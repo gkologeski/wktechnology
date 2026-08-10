@@ -144,7 +144,7 @@ export async function diagnoseDocKinds(
 
   for (const row of rows) {
     if (row.document_kind === "amendment") continue;
-    const signals = signalsById.getrow.id;
+    const signals = signalsById.get(row.id);
     if (!signals?.isAmendment) continue;
 
     // Candidatos a contrato principal: mesmo papel, mesma contraparte, sem sinal de aditivo.
