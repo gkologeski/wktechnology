@@ -520,33 +520,92 @@ function AllocationDialog({
 function ContractSelect({
   value,
   onChange,
+  personName,
 }: {
   value: string | null;
   onChange: (v: string | null) => void;
+  personName?: string | null;
 }) {
   const listFn = useServerFn(listContracts);
-  const { data: rows = [] } = useQuery({
-    queryKey: ["allocations-contracts"],
-    queryFn: () => listFn({ data: {} }),
+  const [open, setOpen] = useState(false);
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["allocations-contracts", "provider"],
+    queryFn: () => listFn({ data: { role: "provider" } }),
     staleTime: 60_000,
   });
+  const items = rows as Array<{ id: string; number: string | null; title: string }>;
+  const label = (c: { number: string | null; title: string }) =>
+    `${c.number ? `${c.number} · ` : ""}${c.title}`;
+  const { likely, others } = splitContractsByPersonMatch(items, personName, (c) => c.title);
+  const selected = items.find((c) => c.id === value) ?? null;
+
+  const renderItem = (c: { id: string; number: string | null; title: string }) => (
+    <CommandItem
+      key={c.id}
+      value={`${c.number ?? ""} ${c.title}`}
+      onSelect={() => {
+        onChange(c.id);
+        setOpen(false);
+      }}
+    >
+      <span className="truncate">{label(c)}</span>
+    </CommandItem>
+  );
+
   return (
-    <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
-      <SelectTrigger>
-        <SelectValue placeholder="Selecionar contrato…" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__none">Sem contrato</SelectItem>
-        {(rows as Array<{ id: string; number: string | null; title: string }>).map((c) => (
-          <SelectItem key={c.id} value={c.id}>
-            {c.number ? `${c.number} · ` : ""}
-            {c.title}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className="truncate">
+            {selected
+              ? label(selected)
+              : isLoading
+                ? "Carregando…"
+                : "Selecionar contrato de prestação…"}
+          </span>
+          <ChevronsUpDown aria-hidden="true" className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[min(28rem,90vw)] p-0">
+        <Command>
+          <CommandInput placeholder="Buscar por número ou título…" />
+          <CommandList>
+            <CommandEmpty>Nenhum contrato de prestação encontrado.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value="sem contrato"
+                onSelect={() => {
+                  onChange(null);
+                  setOpen(false);
+                }}
+              >
+                Sem contrato
+              </CommandItem>
+            </CommandGroup>
+            {likely.length > 0 ? (
+              <CommandGroup heading="Prováveis para esta pessoa">
+                {likely.map(renderItem)}
+              </CommandGroup>
+            ) : null}
+            {others.length > 0 ? (
+              <CommandGroup
+                heading={likely.length > 0 ? "Outros contratos de prestação" : "Contratos de prestação"}
+              >
+                {others.map(renderItem)}
+              </CommandGroup>
+            ) : null}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
+
 
 function PurchaseContractSelect({
   value,
