@@ -576,9 +576,11 @@ function PersonForm({
         <TabsContent value="allocations" className="pt-4">
           <AllocationsPanel
             personId={p.id}
+            personName={p.full_name}
             canWrite={canWrite}
             canViewSensitive={canViewSensitive}
           />
+
         </TabsContent>
 
         <TabsContent value="timesheet" className="pt-4">
