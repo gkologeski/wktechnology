@@ -282,6 +282,7 @@ function AllocationDialog({
   open,
   onOpenChange,
   personId,
+  personName,
   editing,
   canViewSensitive,
   onSaved,
@@ -289,10 +290,12 @@ function AllocationDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   personId: string;
+  personName?: string | null;
   editing: AllocationRow | null;
   canViewSensitive: boolean;
   onSaved: () => void;
 }) {
+
   const upsertFn = useServerFn(upsertAllocation);
   const [contractId, setContractId] = useState<string | null>(editing?.contract_id ?? null);
   const [purchaseContractId, setPurchaseContractId] = useState<string | null>(
