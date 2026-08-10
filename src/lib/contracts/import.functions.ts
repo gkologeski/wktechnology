@@ -33,6 +33,10 @@ Schema esperado (todos os campos podem ser null):
 {
   "title": string,
   "role": "provider" | "client",
+  "document_kind": "main" | "amendment",
+  "amendment_number": string,
+  "amends_contract_number": string,
+
   "counterparty_name": string, "counterparty_cnpj": string,
   "contracting_name": string, "contracting_cnpj": string,
   "starts_at": "YYYY-MM-DD", "ends_at": "YYYY-MM-DD",
