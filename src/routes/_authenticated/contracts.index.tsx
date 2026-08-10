@@ -825,6 +825,9 @@ function ContractsPage() {
       {openStandardize ? (
         <ContractTitlesStandardizeDialog onOpenChange={setOpenStandardize} />
       ) : null}
+
+      {openDocKind ? <ContractDocKindReviewDialog onOpenChange={setOpenDocKind} /> : null}
+
     </div>
   );
 }
