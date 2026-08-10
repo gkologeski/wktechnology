@@ -1,36 +1,45 @@
-# Sabrina não vê contratos em TechContracts — diagnóstico e correção
+# Corrigir acesso de Sabrina aos arquivos do TechContracts
 
-## Diagnóstico (confirmado por consulta ao banco)
+## Diagnóstico confirmado
 
-- `sabrina@wktechnology.com.br` é **membro** (role `member`) do workspace `184b…3f5d`, que é exatamente o workspace dos 14 contratos existentes.
-- As policies de leitura da tabela `contracts` **não são o bloqueio**: existe uma policy permissiva por participação no workspace, e os privilégios de leitura da API estão presentes.
-- O bloqueio está no **RBAC de aplicação**: o único cargo atribuído a ela é o cargo de sistema **"Read-Only"**, e esse cargo tem **30 permissões, todas de TechSales / TechHire / sistema — nenhuma de `techcontracts.*`**.
-- A rota `/contracts` é gatada pelo recurso `techcontracts.contracts` (mapa de recursos de menu), então sem `techcontracts.contracts.view.*` o item de menu e a tela ficam indisponíveis para ela.
-- Efeito colateral do mesmo problema: "Read-Only" também não tem nenhuma chave de **TechContracts, TechPeople, TechFinance, TechProjects e TechServices** — qualquer usuário nesse cargo fica sem esses módulos.
+- Sabrina e Guilherme pertencem ao mesmo workspace ativo com papel `admin`.
+- Sabrina possui **Workspace Admin** e o conjunto extra **Super Admin**; ambos têm exatamente **1.648 permissões efetivas**, incluindo as 31 permissões de TechContracts e `techcontracts.contracts.view.workspace`.
+- A tabela `contracts` permite leitura aos membros do workspace e Sabrina já pode consultar os registros. Portanto, papéis, permissões efetivas e RLS dos contratos não são o bloqueio.
+- Os PDFs ficam no bucket privado `contract-imports`. A policy atual de leitura exige `storage.objects.owner = auth.uid()`.
+- Os arquivos existentes foram enviados por Guilherme e permanecem com Guilherme como proprietário. Ao solicitar a URL com a sessão de Sabrina, o armazenamento oculta o objeto e retorna **“Object not found”**.
+- “Super Admin” é um conjunto de permissões do workspace; ele não altera a propriedade física dos arquivos. Guilherme também é administrador de plataforma, mas o acesso atual funciona porque ele é o proprietário dos uploads analisados.
 
-Observação sobre a imagem enviada: o "Object not found" ao abrir o PDF do contrato é um problema **diferente** (arquivo ausente no storage) e não está incluído neste plano.
+## Implementação
 
-## Correção proposta
+### 1. Autorizar o contrato antes de liberar o arquivo
 
-### 1. Ajuste imediato para a Sabrina (sem código)
-Em `/settings/permissions`, atribuir a ela um cargo que inclua leitura de contratos, ou criar um cargo customizado com:
-- `techcontracts.contracts.view.workspace`
-- `techcontracts.contract_templates.view.workspace` (opcional, para ver modelos)
-- `techcontracts.esign.view.workspace` (opcional)
+- Manter `getContractSourceFileUrl` autenticada.
+- Consultar o contrato com o cliente da própria sessão, preservando RLS e isolamento por workspace.
+- Só continuar quando o contrato e seu `source_file_path` forem visíveis para o usuário.
 
-### 2. Completar o cargo de sistema "Read-Only" (migração)
-Adicionar em `permission_set_items` do cargo Read-Only as chaves de **visualização** que hoje faltam, mantendo o cargo estritamente somente-leitura:
-- TechContracts: `contracts.view.workspace`, `contract_templates.view.workspace`, `approvals.view.workspace`, `esign.view.workspace`
-- Equivalentes de `view.workspace` já existentes no catálogo de permissões para TechFinance, TechProjects, TechPeople e TechServices
+### 2. Assinar o arquivo no servidor após a autorização
 
-Nenhuma chave de create/update/delete/export é adicionada. A migração é idempotente (`ON CONFLICT DO NOTHING`).
+- Depois da leitura autorizada do contrato, gerar a URL temporária com o cliente privilegiado somente no servidor.
+- Carregar esse cliente dinamicamente dentro do handler para preservar a fronteira servidor/cliente.
+- Não ampliar o bucket para acesso público e não criar uma policy genérica de leitura entre usuários.
+- Preservar validade curta da URL assinada e não retornar caminhos de arquivos de outros contratos.
 
-### 3. Validação
-- Reconsultar as permissões efetivas da Sabrina e confirmar `techcontracts.contracts.view.workspace`.
-- Login como ela (ou simulação) e verificar: menu TechContracts visível, `/contracts` lista os 14 contratos, botões de criar/editar/excluir permanecem desabilitados.
+### 3. Melhorar o erro de arquivo realmente ausente
 
-## Detalhes técnicos
+- Diferenciar “sem acesso ao contrato” de “contrato sem arquivo” e “objeto não encontrado no armazenamento”.
+- Exibir mensagem acionável no visualizador quando o registro aponta para um arquivo que não existe mais, sem expor detalhes internos.
 
-- Cargo: `permission_sets` id `00000000-0000-0000-0000-0000000000a9` (`is_system = true`); há trigger `guard_system_permission_set` protegendo rename/delete — inserir itens continua permitido.
-- Gate de rota: `src/lib/menu-resources.ts` → `"/contracts": ["techcontracts.contracts"]`.
-- Nenhuma alteração em RLS, grants ou lógica de negócio de contratos.
+### 4. Validar o fluxo completo
+
+- Confirmar que Sabrina continua vendo a mesma listagem de contratos permitida pelo workspace.
+- Abrir como Sabrina um PDF existente enviado por Guilherme e validar visualização e download.
+- Validar que um usuário externo ao workspace não consegue obter a URL pelo ID do contrato.
+- Validar um contrato sem arquivo e um caminho órfão.
+- Executar os testes e verificações disponíveis relacionados ao módulo.
+
+## Escopo e segurança
+
+- Alteração restrita ao acesso aos arquivos originais de TechContracts.
+- Sem mudança nos papéis de Sabrina, catálogo de permissões, RLS da tabela `contracts` ou visibilidade de outros módulos.
+- Sem tornar documentos públicos e sem conceder leitura ampla no armazenamento.
+- A autorização continua sendo definida pelo acesso ao registro do contrato no backend; a assinatura privilegiada ocorre somente depois dessa confirmação.
