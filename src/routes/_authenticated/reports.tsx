@@ -34,20 +34,8 @@ import {
   runReport,
   toggleReportFavorite,
 } from "@/lib/reports.functions";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as RTooltip,
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  CartesianGrid,
-} from "recharts";
+import { LazyChart } from "@/components/charts/lazy-chart";
+
 
 const compactNumber = (v: number) =>
   new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(
@@ -536,60 +524,72 @@ function ChartRender({
   if (type === "pie") {
     return (
       <div className="h-[380px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              data={truncated}
-              dataKey="value"
-              nameKey="key"
-              cx="50%"
-              cy="50%"
-              outerRadius={120}
-              label
-            >
-              {truncated.map((_, i) => (
-                <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-              ))}
-            </Pie>
-            <RTooltip />
-          </PieChart>
-        </ResponsiveContainer>
+        <LazyChart>
+          {({ ResponsiveContainer, PieChart, Pie, Cell, Tooltip: RTooltip }) => (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={truncated}
+                  dataKey="value"
+                  nameKey="key"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={120}
+                  label
+                >
+                  {truncated.map((_, i) => (
+                    <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                  ))}
+                </Pie>
+                <RTooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </LazyChart>
       </div>
     );
   }
   if (type === "line") {
     return (
       <div className="h-[380px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={truncated}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-            <XAxis dataKey="key" tick={{ fontSize: 11 }} />
-            <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
-            <RTooltip />
-            <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} />
-          </LineChart>
-        </ResponsiveContainer>
+        <LazyChart>
+          {({ ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip: RTooltip, Line }) => (
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={truncated}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="key" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
+                <RTooltip />
+                <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </LazyChart>
       </div>
     );
   }
   return (
     <div className="h-[380px]">
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={truncated}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-          <XAxis
-            dataKey="key"
-            tick={{ fontSize: 11 }}
-            interval={0}
-            angle={-25}
-            textAnchor="end"
-            height={60}
-          />
-          <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
-          <RTooltip />
-          <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+      <LazyChart>
+        {({ ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip: RTooltip, Bar }) => (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={truncated}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis
+                dataKey="key"
+                tick={{ fontSize: 11 }}
+                interval={0}
+                angle={-25}
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
+              <RTooltip />
+              <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </LazyChart>
     </div>
   );
 }
