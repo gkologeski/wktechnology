@@ -76,3 +76,111 @@ export function splitContractsByPersonMatch<T>(
   const others = scored.filter((s) => s.score === 0).map((s) => s.item);
   return { likely, others };
 }
+
+// ===================== Ranqueamento por documento/contraparte =====================
+// Além do título, o seletor de contratos de prestação usa o CPF/CNPJ da pessoa
+// e o nome/documento da contraparte do contrato para ranquear os mais relevantes.
+
+export type PersonMatchInput = {
+  /** Nome completo da pessoa. */
+  name?: string | null;
+  /** CPF/CNPJ (qualquer formatação) da pessoa/PJ dela. */
+  docs?: Array<string | null | undefined>;
+  /** Razão social / nome fantasia da PJ da pessoa. */
+  companyNames?: Array<string | null | undefined>;
+};
+
+export type ContractMatchInput = {
+  title?: string | null;
+  /** Nome da contraparte (empresa vinculada ou extraída do documento). */
+  counterpartyName?: string | null;
+  /** CNPJ/CPF da contraparte. */
+  counterpartyDocs?: Array<string | null | undefined>;
+};
+
+export type ContractMatchResult = { score: number; reason: string | null };
+
+/** Só dígitos; retorna null quando não houver documento utilizável. */
+export function docDigits(value: string | null | undefined): string | null {
+  const digits = (value ?? "").replace(/\D+/g, "");
+  return digits.length >= 11 ? digits : null;
+}
+
+function normalizedDocs(values: Array<string | null | undefined> | undefined): string[] {
+  const out = new Set<string>();
+  for (const v of values ?? []) {
+    const d = docDigits(v);
+    if (d) out.add(d);
+  }
+  return [...out];
+}
+
+/** Score de nome (0..100) reaproveitando a heurística de tokens do título. */
+function scoreName(haystack: string | null | undefined, personName: string | null | undefined) {
+  return scoreContractTitleForPerson(haystack, personName);
+}
+
+/**
+ * Pontuação combinada (0..100) do contrato para a pessoa:
+ *  - documento (CPF/CNPJ) da pessoa igual ao da contraparte, ou presente no título → 100;
+ *  - nome da contraparte igual/parecido com o nome da pessoa (ou da PJ dela) → até 95;
+ *  - nome da pessoa presente no título → heurística existente (até 100 → limitado a 90).
+ */
+export function scoreContractForPerson(
+  contract: ContractMatchInput,
+  person: PersonMatchInput,
+): ContractMatchResult {
+  const personDocs = normalizedDocs(person.docs);
+  const contractDocs = normalizedDocs(contract.counterpartyDocs);
+  const titleDigits = (contract.title ?? "").replace(/\D+/g, "");
+
+  for (const d of personDocs) {
+    if (contractDocs.includes(d)) return { score: 100, reason: "CPF/CNPJ da contraparte" };
+  }
+  for (const d of personDocs) {
+    if (d.length >= 11 && titleDigits.includes(d)) {
+      return { score: 98, reason: "CPF/CNPJ no título" };
+    }
+  }
+
+  const names = [person.name, ...(person.companyNames ?? [])].filter(
+    (n): n is string => typeof n === "string" && n.trim().length > 0,
+  );
+
+  let best: ContractMatchResult = { score: 0, reason: null };
+  for (const name of names) {
+    const counterparty = scoreName(contract.counterpartyName, name);
+    if (counterparty > 0) {
+      const score = Math.min(95, 60 + Math.round(counterparty * 0.35));
+      if (score > best.score) best = { score, reason: "Contraparte semelhante" };
+    }
+    const title = scoreName(contract.title, name);
+    if (title > 0) {
+      const score = Math.min(90, title);
+      if (score > best.score) best = { score, reason: "Nome no título" };
+    }
+  }
+  return best;
+}
+
+/** Divide em prováveis (com motivo) e o restante, usando nome + documentos. */
+export function splitContractsForPerson<T>(
+  items: T[],
+  person: PersonMatchInput,
+  toMatchInput: (item: T) => ContractMatchInput,
+): {
+  likely: Array<{ item: T; score: number; reason: string | null }>;
+  others: T[];
+} {
+  const scored = items.map((item, index) => ({
+    item,
+    index,
+    ...scoreContractForPerson(toMatchInput(item), person),
+  }));
+  const likely = scored
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .map(({ item, score, reason }) => ({ item, score, reason }));
+  const others = scored.filter((s) => s.score === 0).map((s) => s.item);
+  return { likely, others };
+}

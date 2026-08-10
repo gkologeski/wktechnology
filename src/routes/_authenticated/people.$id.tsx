@@ -577,6 +577,14 @@ function PersonForm({
           <AllocationsPanel
             personId={p.id}
             personName={p.full_name}
+            personDocs={[
+              p.cnpj,
+              (p.personal_doc as Record<string, unknown> | null)?.["cpf"] as
+                | string
+                | null
+                | undefined,
+            ]}
+            personCompanyNames={[p.legal_entity_name, p.trade_name]}
             canWrite={canWrite}
             canViewSensitive={canViewSensitive}
           />

@@ -13,7 +13,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { splitContractsByPersonMatch } from "@/lib/contracts/title-match";
+import { splitContractsForPerson } from "@/lib/contracts/title-match";
+import type { PersonMatchInput } from "@/lib/contracts/title-match";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,11 +68,15 @@ const statusTone: Record<AllocationStatus, string> = {
 export function AllocationsPanel({
   personId,
   personName,
+  personDocs,
+  personCompanyNames,
   canWrite,
   canViewSensitive,
 }: {
   personId: string;
   personName?: string | null;
+  personDocs?: Array<string | null | undefined>;
+  personCompanyNames?: Array<string | null | undefined>;
   canWrite: boolean;
   canViewSensitive: boolean;
 }) {
@@ -238,6 +243,8 @@ export function AllocationsPanel({
         onOpenChange={setOpen}
         personId={personId}
         personName={personName}
+        personDocs={personDocs}
+        personCompanyNames={personCompanyNames}
         editing={editing}
         canViewSensitive={canViewSensitive}
         onSaved={() => {
@@ -277,6 +284,8 @@ function AllocationDialog({
   onOpenChange,
   personId,
   personName,
+  personDocs,
+  personCompanyNames,
   editing,
   canViewSensitive,
   onSaved,
@@ -285,6 +294,8 @@ function AllocationDialog({
   onOpenChange: (v: boolean) => void;
   personId: string;
   personName?: string | null;
+  personDocs?: Array<string | null | undefined>;
+  personCompanyNames?: Array<string | null | undefined>;
   editing: AllocationRow | null;
   canViewSensitive: boolean;
   onSaved: () => void;
@@ -374,7 +385,11 @@ function AllocationDialog({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <Label>Contrato de prestação</Label>
-            <ContractSelect value={contractId} onChange={setContractId} personName={personName} />
+            <ContractSelect
+              value={contractId}
+              onChange={setContractId}
+              person={{ name: personName, docs: personDocs, companyNames: personCompanyNames }}
+            />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Contrato de compra (prestador)</Label>
@@ -529,11 +544,11 @@ function AllocationDialog({
 function ContractSelect({
   value,
   onChange,
-  personName,
+  person,
 }: {
   value: string | null;
   onChange: (v: string | null) => void;
-  personName?: string | null;
+  person: PersonMatchInput;
 }) {
   const listFn = useServerFn(listContracts);
   const [open, setOpen] = useState(false);
@@ -542,13 +557,27 @@ function ContractSelect({
     queryFn: () => listFn({ data: { role: "provider" } }),
     staleTime: 60_000,
   });
-  const items = rows as Array<{ id: string; number: string | null; title: string }>;
+  type ContractOption = {
+    id: string;
+    number: string | null;
+    title: string;
+    metadata?: Record<string, unknown> | null;
+  };
+  const items = rows as ContractOption[];
   const label = (c: { number: string | null; title: string }) =>
     `${c.number ? `${c.number} · ` : ""}${c.title}`;
-  const { likely, others } = splitContractsByPersonMatch(items, personName, (c) => c.title);
+  const matchInput = (c: ContractOption) => {
+    const meta = (c.metadata ?? {}) as Record<string, unknown>;
+    return {
+      title: c.title,
+      counterpartyName: (meta["counterparty_name_extracted"] as string | null) ?? null,
+      counterpartyDocs: [meta["counterparty_cnpj_extracted"] as string | null],
+    };
+  };
+  const { likely, others } = splitContractsForPerson(items, person, matchInput);
   const selected = items.find((c) => c.id === value) ?? null;
 
-  const renderItem = (c: { id: string; number: string | null; title: string }) => (
+  const renderItem = (c: ContractOption, reason?: string | null) => (
     <CommandItem
       key={c.id}
       value={`${c.number ?? ""} ${c.title}`}
@@ -557,7 +586,10 @@ function ContractSelect({
         setOpen(false);
       }}
     >
-      <span className="truncate">{label(c)}</span>
+      <span className="min-w-0 flex-1 truncate">{label(c)}</span>
+      {reason ? (
+        <span className="ml-2 shrink-0 text-xs text-muted-foreground">{reason}</span>
+      ) : null}
     </CommandItem>
   );
 
@@ -598,7 +630,7 @@ function ContractSelect({
             </CommandGroup>
             {likely.length > 0 ? (
               <CommandGroup heading="Prováveis para esta pessoa">
-                {likely.map(renderItem)}
+                {likely.map((m) => renderItem(m.item, m.reason))}
               </CommandGroup>
             ) : null}
             {others.length > 0 ? (
@@ -607,7 +639,7 @@ function ContractSelect({
                   likely.length > 0 ? "Outros contratos de prestação" : "Contratos de prestação"
                 }
               >
-                {others.map(renderItem)}
+                {others.map((c) => renderItem(c))}
               </CommandGroup>
             ) : null}
           </CommandList>
