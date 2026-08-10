@@ -33,6 +33,9 @@ type: feature
 - `kb_articles`: sem policy `anon` e `SELECT` revogado de `anon` (policy `kb_anon_read_published` removida). A KB pública (`/kb`, `/kb/$slug`) é servida pelos server functions `listKbPublic`/`getKbArticlePublic` com service_role e projeção mínima. Não recriar leitura anon.
 - `people_incidents`: enforcement único via checagens por pessoa (`can_view_person_sensitive` / `can_manage_person`, com fallback `is_workspace_admin_v2(owner_id)` quando `person_id IS NULL`). As policies `people_incidents_perm_select/insert/update` foram removidas por ampliarem visibilidade de casos confidenciais — não recriar.
 - Storage `media`: `media_storage_update` restrito ao uploader (`owner = auth.uid()` ou pasta do próprio uid) ou admin do workspace, igual ao delete. Leitura por qualquer membro do workspace é intencional (biblioteca de mídia compartilhada); não reportar como vulnerabilidade.
+- `ats_talent_pool_members`: escrita (INSERT/UPDATE/DELETE) apenas via `owner_id = auth.uid()`, `can_write_owner(owner_id, auth.uid())` ou `is_workspace_admin_of`. As policies `*_workspace_insert/update/delete` (membership pura) foram removidas — não recriar. SELECT workspace-wide é intencional.
+- TechHire RBAC: policies usam `techhire_rbac_gate(auth.uid(), owner_id, '<perm>')`, que resolve o workspace do próprio registro e chama `user_has_permission(user, workspace_id, perm)`. Não usar a variante de 2 argumentos (`user_has_permission(user, perm)`) em policies ligadas a linhas — ela agrega permissões de todos os workspaces do usuário.
+
 
 ## Webhooks & cron
 - `/api/public/hooks/*-tick` exigem `Authorization: Bearer ${CRON_SECRET}` via `requireCronAuth`.
