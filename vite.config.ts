@@ -111,6 +111,32 @@ export default defineConfig({
         "react/jsx-runtime",
         "react/jsx-dev-runtime",
         "scheduler",
+        // Fase 3 (HMR): dependências de UI presentes em quase toda tela.
+        // Pré-bundlá-las no cold start evita a descoberta tardia ("new
+        // dependencies optimized → reloading") a cada rota nova, que é o
+        // que hoje deixa a edição lenta. Nenhuma delas é TanStack, então
+        // não interfere nas exclusões que evitam React duplicado.
+        "lucide-react",
+        "date-fns",
+        "cmdk",
+        "clsx",
+        "tailwind-merge",
+        "class-variance-authority",
+        "zod",
+        "sonner",
+        "react-hook-form",
+        "@hookform/resolvers/zod",
+        "@supabase/supabase-js",
+        "@radix-ui/react-dialog",
+        "@radix-ui/react-dropdown-menu",
+        "@radix-ui/react-popover",
+        "@radix-ui/react-select",
+        "@radix-ui/react-tabs",
+        "@radix-ui/react-tooltip",
+        "@radix-ui/react-checkbox",
+        "@radix-ui/react-label",
+        "@radix-ui/react-scroll-area",
+        "@radix-ui/react-slot",
       ],
       // Exclude @twilio/voice-sdk from esbuild pre-bundling so Vite/Rollup
       // resolves its `node:events` imports through our `polyfill-node-events`
