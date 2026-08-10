@@ -3,7 +3,17 @@ import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Briefcase, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, Briefcase, Sparkles, ChevronsUpDown } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { splitContractsByPersonMatch } from "@/lib/contracts/title-match";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,10 +49,7 @@ import {
   type ContractRoleSuggestion,
 } from "@/lib/people/allocations.functions";
 import { SENIORITY_OPTIONS, SENIORITY_LABEL } from "@/lib/job-profiles-shared";
-import {
-  listContracts,
-  listOwnContractingPurchaseContracts,
-} from "@/lib/contracts.functions";
+import { listContracts, listOwnContractingPurchaseContracts } from "@/lib/contracts.functions";
 
 import { listProjects } from "@/lib/projects.functions";
 import { listPeople } from "@/lib/people/people.functions";
@@ -59,10 +66,12 @@ const statusTone: Record<AllocationStatus, string> = {
 
 export function AllocationsPanel({
   personId,
+  personName,
   canWrite,
   canViewSensitive,
 }: {
   personId: string;
+  personName?: string | null;
   canWrite: boolean;
   canViewSensitive: boolean;
 }) {
@@ -228,6 +237,7 @@ export function AllocationsPanel({
         open={open}
         onOpenChange={setOpen}
         personId={personId}
+        personName={personName}
         editing={editing}
         canViewSensitive={canViewSensitive}
         onSaved={() => {
@@ -266,6 +276,7 @@ function AllocationDialog({
   open,
   onOpenChange,
   personId,
+  personName,
   editing,
   canViewSensitive,
   onSaved,
@@ -273,6 +284,7 @@ function AllocationDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   personId: string;
+  personName?: string | null;
   editing: AllocationRow | null;
   canViewSensitive: boolean;
   onSaved: () => void;
@@ -362,14 +374,11 @@ function AllocationDialog({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <Label>Contrato de prestação</Label>
-            <ContractSelect value={contractId} onChange={setContractId} />
+            <ContractSelect value={contractId} onChange={setContractId} personName={personName} />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Contrato de compra (prestador)</Label>
-            <PurchaseContractSelect
-              value={purchaseContractId}
-              onChange={setPurchaseContractId}
-            />
+            <PurchaseContractSelect value={purchaseContractId} onChange={setPurchaseContractId} />
             <p className="text-xs text-muted-foreground">
               Somente contratos de compra em que uma empresa do workspace é a contratante.
             </p>
@@ -520,31 +529,91 @@ function AllocationDialog({
 function ContractSelect({
   value,
   onChange,
+  personName,
 }: {
   value: string | null;
   onChange: (v: string | null) => void;
+  personName?: string | null;
 }) {
   const listFn = useServerFn(listContracts);
-  const { data: rows = [] } = useQuery({
-    queryKey: ["allocations-contracts"],
-    queryFn: () => listFn({ data: {} }),
+  const [open, setOpen] = useState(false);
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ["allocations-contracts", "provider"],
+    queryFn: () => listFn({ data: { role: "provider" } }),
     staleTime: 60_000,
   });
+  const items = rows as Array<{ id: string; number: string | null; title: string }>;
+  const label = (c: { number: string | null; title: string }) =>
+    `${c.number ? `${c.number} · ` : ""}${c.title}`;
+  const { likely, others } = splitContractsByPersonMatch(items, personName, (c) => c.title);
+  const selected = items.find((c) => c.id === value) ?? null;
+
+  const renderItem = (c: { id: string; number: string | null; title: string }) => (
+    <CommandItem
+      key={c.id}
+      value={`${c.number ?? ""} ${c.title}`}
+      onSelect={() => {
+        onChange(c.id);
+        setOpen(false);
+      }}
+    >
+      <span className="truncate">{label(c)}</span>
+    </CommandItem>
+  );
+
   return (
-    <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
-      <SelectTrigger>
-        <SelectValue placeholder="Selecionar contrato…" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="__none">Sem contrato</SelectItem>
-        {(rows as Array<{ id: string; number: string | null; title: string }>).map((c) => (
-          <SelectItem key={c.id} value={c.id}>
-            {c.number ? `${c.number} · ` : ""}
-            {c.title}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className="truncate">
+            {selected
+              ? label(selected)
+              : isLoading
+                ? "Carregando…"
+                : "Selecionar contrato de prestação…"}
+          </span>
+          <ChevronsUpDown aria-hidden="true" className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[min(28rem,90vw)] p-0">
+        <Command>
+          <CommandInput placeholder="Buscar por número ou título…" />
+          <CommandList>
+            <CommandEmpty>Nenhum contrato de prestação encontrado.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem
+                value="sem contrato"
+                onSelect={() => {
+                  onChange(null);
+                  setOpen(false);
+                }}
+              >
+                Sem contrato
+              </CommandItem>
+            </CommandGroup>
+            {likely.length > 0 ? (
+              <CommandGroup heading="Prováveis para esta pessoa">
+                {likely.map(renderItem)}
+              </CommandGroup>
+            ) : null}
+            {others.length > 0 ? (
+              <CommandGroup
+                heading={
+                  likely.length > 0 ? "Outros contratos de prestação" : "Contratos de prestação"
+                }
+              >
+                {others.map(renderItem)}
+              </CommandGroup>
+            ) : null}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -570,9 +639,7 @@ function PurchaseContractSelect({
   return (
     <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
       <SelectTrigger>
-        <SelectValue
-          placeholder={isLoading ? "Carregando…" : "Selecionar contrato de compra…"}
-        />
+        <SelectValue placeholder={isLoading ? "Carregando…" : "Selecionar contrato de compra…"} />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="__none">Sem contrato de compra</SelectItem>
@@ -589,7 +656,6 @@ function PurchaseContractSelect({
 }
 
 function ProjectSelect({
-
   value,
   onChange,
 }: {
