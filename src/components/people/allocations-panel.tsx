@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/command";
 import { splitContractsByPersonMatch } from "@/lib/contracts/title-match";
 
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,10 +49,7 @@ import {
   type ContractRoleSuggestion,
 } from "@/lib/people/allocations.functions";
 import { SENIORITY_OPTIONS, SENIORITY_LABEL } from "@/lib/job-profiles-shared";
-import {
-  listContracts,
-  listOwnContractingPurchaseContracts,
-} from "@/lib/contracts.functions";
+import { listContracts, listOwnContractingPurchaseContracts } from "@/lib/contracts.functions";
 
 import { listProjects } from "@/lib/projects.functions";
 import { listPeople } from "@/lib/people/people.functions";
@@ -79,7 +75,6 @@ export function AllocationsPanel({
   canWrite: boolean;
   canViewSensitive: boolean;
 }) {
-
   const qc = useQueryClient();
   const listFn = useServerFn(listAllocationsByPerson);
   const delFn = useServerFn(deleteAllocation);
@@ -243,7 +238,6 @@ export function AllocationsPanel({
         onOpenChange={setOpen}
         personId={personId}
         personName={personName}
-
         editing={editing}
         canViewSensitive={canViewSensitive}
         onSaved={() => {
@@ -295,7 +289,6 @@ function AllocationDialog({
   canViewSensitive: boolean;
   onSaved: () => void;
 }) {
-
   const upsertFn = useServerFn(upsertAllocation);
   const [contractId, setContractId] = useState<string | null>(editing?.contract_id ?? null);
   const [purchaseContractId, setPurchaseContractId] = useState<string | null>(
@@ -381,19 +374,11 @@ function AllocationDialog({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 md:col-span-2">
             <Label>Contrato de prestação</Label>
-            <ContractSelect
-              value={contractId}
-              onChange={setContractId}
-              personName={personName}
-            />
-
+            <ContractSelect value={contractId} onChange={setContractId} personName={personName} />
           </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Contrato de compra (prestador)</Label>
-            <PurchaseContractSelect
-              value={purchaseContractId}
-              onChange={setPurchaseContractId}
-            />
+            <PurchaseContractSelect value={purchaseContractId} onChange={setPurchaseContractId} />
             <p className="text-xs text-muted-foreground">
               Somente contratos de compra em que uma empresa do workspace é a contratante.
             </p>
@@ -618,7 +603,9 @@ function ContractSelect({
             ) : null}
             {others.length > 0 ? (
               <CommandGroup
-                heading={likely.length > 0 ? "Outros contratos de prestação" : "Contratos de prestação"}
+                heading={
+                  likely.length > 0 ? "Outros contratos de prestação" : "Contratos de prestação"
+                }
               >
                 {others.map(renderItem)}
               </CommandGroup>
@@ -629,7 +616,6 @@ function ContractSelect({
     </Popover>
   );
 }
-
 
 function PurchaseContractSelect({
   value,
@@ -653,9 +639,7 @@ function PurchaseContractSelect({
   return (
     <Select value={value ?? "__none"} onValueChange={(v) => onChange(v === "__none" ? null : v)}>
       <SelectTrigger>
-        <SelectValue
-          placeholder={isLoading ? "Carregando…" : "Selecionar contrato de compra…"}
-        />
+        <SelectValue placeholder={isLoading ? "Carregando…" : "Selecionar contrato de compra…"} />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="__none">Sem contrato de compra</SelectItem>
@@ -672,7 +656,6 @@ function PurchaseContractSelect({
 }
 
 function ProjectSelect({
-
   value,
   onChange,
 }: {

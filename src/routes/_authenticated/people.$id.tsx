@@ -580,7 +580,6 @@ function PersonForm({
             canWrite={canWrite}
             canViewSensitive={canViewSensitive}
           />
-
         </TabsContent>
 
         <TabsContent value="timesheet" className="pt-4">

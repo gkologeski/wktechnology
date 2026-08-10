@@ -35,7 +35,11 @@ describe("splitContractsByPersonMatch", () => {
       { id: "2", title: "[PRESTAÇÃO] ACME X MARIA SOUZA LIMA" },
       { id: "3", title: "[PRESTAÇÃO] ACME X MARIA SOUZA" },
     ];
-    const { likely, others } = splitContractsByPersonMatch(items, "Maria Souza Lima", (c) => c.title);
+    const { likely, others } = splitContractsByPersonMatch(
+      items,
+      "Maria Souza Lima",
+      (c) => c.title,
+    );
     expect(likely.map((c) => c.id)).toEqual(["2", "3"]);
     expect(others.map((c) => c.id)).toEqual(["1"]);
   });
