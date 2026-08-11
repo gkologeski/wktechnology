@@ -419,7 +419,6 @@ export const linkContractParent = createServerFn({ method: "POST" })
       }
     }
 
-
     const { data: row, error } = await supabase
       .from("contracts")
       .update({ parent_contract_id: data.parentId })
@@ -625,7 +624,6 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
         throw new Error("O aditivo deve ter o mesmo papel do contrato principal.");
       }
     }
-
 
     const patch = data.mainContractId
       ? {

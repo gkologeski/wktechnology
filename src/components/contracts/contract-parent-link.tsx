@@ -293,7 +293,8 @@ function ClientView({
   const { setParent } = useLinkMutations(contractId);
 
   async function remove() {
-    if (!(await confirmDialog("Desaninhar este contrato de compra do contrato de prestação?"))) return;
+    if (!(await confirmDialog("Desaninhar este contrato de compra do contrato de prestação?")))
+      return;
     try {
       await setParent(null);
       toast.success("Vínculo removido.");
@@ -325,7 +326,6 @@ function ClientView({
         >
           {parent ? "Alterar contrato principal" : "Aninhar sob contrato de prestação"}
         </Button>
-
       </CardHeader>
       <CardContent>
         {parent ? (

@@ -34,7 +34,6 @@ import {
 import { ContractLinksHistoryCard } from "@/components/contracts/contract-links-history-card";
 import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-suggestions-history-card";
 
-
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -425,7 +424,6 @@ function ContractDetail() {
         </CardContent>
       </Card>
 
-
       <ContractParentLink
         contractId={contract.id}
         role={role}
@@ -460,7 +458,6 @@ function ContractDetail() {
       <ContractLinksHistoryCard contractId={contract.id} />
 
       <AiLinkSuggestionsHistoryCard contractId={contract.id} />
-
 
       <ContractApprovalsPanel contractId={contract.id} />
 
