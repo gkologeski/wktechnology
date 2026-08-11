@@ -894,7 +894,7 @@ function LeadsHubspotView() {
           <Separator />
           <div className="flex-1 overflow-y-auto px-3 py-2">
             <FilterGroup title="Status do lead" defaultOpen>
-              {LEAD_STATUSES.map((s) => {
+              {stages.map((s) => {
                 const checked = filters.status.includes(s.value);
                 return (
                   <label
