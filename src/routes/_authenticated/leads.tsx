@@ -915,9 +915,11 @@ function LeadsHubspotView() {
                     <span
                       className={cn(
                         "h-1.5 w-1.5 rounded-full",
-                        STATUS_TONE[s.value]?.dot ?? "bg-muted-foreground",
+                        s.color ? undefined : (STATUS_TONE[s.value]?.dot ?? "bg-muted-foreground"),
                       )}
+                      style={s.color ? { backgroundColor: s.color } : undefined}
                     />
+
                     <span>{s.label}</span>
                   </label>
                 );
