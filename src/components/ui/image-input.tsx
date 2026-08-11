@@ -169,7 +169,6 @@ export function ImageInput({
         <div className="h-16 w-16 shrink-0 rounded-md border border-border bg-muted/40 overflow-hidden flex items-center justify-center text-muted-foreground">
           {previewUrl &&
           (kind === "image" || /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(previewUrl)) ? (
-            // eslint-disable-next-line @next/next/no-img-element
             <img src={previewUrl} alt="" className="h-full w-full object-contain" />
           ) : hasValue ? (
             <FolderOpen className="h-5 w-5" />
@@ -387,7 +386,6 @@ function Library({ onPick, kind }: { onPick: (row: MediaRow) => void; kind: "ima
               title={r.filename}
             >
               {isImageMime(r.mime) ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img src={r.url} alt={r.filename} className="h-full w-full object-cover" />
               ) : (
                 <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground p-2">
