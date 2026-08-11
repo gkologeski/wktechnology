@@ -527,9 +527,16 @@ function LeadsHubspotView() {
       },
       {
         key: "status",
-        label: "Status do lead",
-        render: (lead) => <StatusPill status={lead.status} />,
+        label: "Etapa do lead",
+        render: (lead) => {
+          const v = resolveLeadStageValue(
+            lead as unknown as { stage_id?: string | null; status?: string | null },
+            stages,
+          );
+          return <StagePill stage={findLeadStage(stages, v)} value={v} />;
+        },
       },
+
       {
         key: "score",
         label: "Score",
