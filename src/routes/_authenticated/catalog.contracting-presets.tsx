@@ -139,6 +139,7 @@ function ContractingPresetsPage() {
   const create = useServerFn(createContractingPreset);
   const update = useServerFn(updateContractingPreset);
   const remove = useServerFn(deleteContractingPreset);
+  const dup = useServerFn(duplicateContractingPreset);
   const listCatalog = useServerFn(listCatalogServiceOptions);
   const listProfiles = useServerFn(listJobProfileOptions);
 
