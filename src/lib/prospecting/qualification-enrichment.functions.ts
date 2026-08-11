@@ -42,25 +42,29 @@ const CONTACT_KEYS = [
   "company_name",
 ] as const;
 
+export type SuggestionValue = string | number | boolean | null;
+export type SuggestionMap = Record<string, SuggestionValue>;
+
 export type EnrichmentSuggestions = {
   domain: string | null;
   domainSource: string | null;
   fetchedAt: string;
   cached: boolean;
   found: boolean;
-  lead: Record<string, unknown>;
-  companies: Record<string, unknown>;
-  contacts: Record<string, unknown>;
+  lead: SuggestionMap;
+  companies: SuggestionMap;
+  contacts: SuggestionMap;
 };
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
-function pick(source: Record<string, unknown> | null, keys: readonly string[]) {
-  const out: Record<string, unknown> = {};
+function pick(source: Record<string, unknown> | null, keys: readonly string[]): SuggestionMap {
+  const out: SuggestionMap = {};
   if (!source) return out;
   for (const k of keys) {
     const v = source[k];
-    if (v !== null && v !== undefined && v !== "") out[k] = v;
+    if (v === null || v === undefined || v === "") continue;
+    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") out[k] = v;
   }
   return out;
 }
