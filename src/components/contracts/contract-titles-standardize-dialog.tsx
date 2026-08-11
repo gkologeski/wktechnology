@@ -153,61 +153,111 @@ export function ContractTitlesStandardizeDialog({
                 Tentar novamente
               </Button>
             </div>
-          ) : changes.length === 0 ? (
-            <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
-              Nenhum título precisa de ajuste nos status selecionados
-              {data ? ` (${data.scanned} contrato(s) analisado(s))` : ""}.
-            </div>
           ) : (
             <>
-              <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
                 <span>
-                  {data?.scanned ?? 0} analisado(s) · {changes.length} com alteração
+                  {data?.scanned ?? 0} analisado(s) · {changes.length} com alteração ·{" "}
+                  {unchanged.length} já padronizado(s) · {skipped.length} sem cálculo
                 </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setSelected(new Set(changes.map((c) => c.id)))}
-                  >
-                    Selecionar todos
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-                    Limpar
-                  </Button>
-                </div>
+                {changes.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSelected(new Set(changes.map((c) => c.id)))}
+                    >
+                      Selecionar todos
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+                      Limpar
+                    </Button>
+                  </div>
+                ) : null}
               </div>
 
-              <ScrollArea className="max-h-[45vh] rounded-lg border">
-                <ul className="divide-y">
-                  {changes.map((c) => (
-                    <li key={c.id} className="flex items-start gap-3 p-3">
-                      <Checkbox
-                        checked={ids.has(c.id)}
-                        onCheckedChange={() => toggle(c.id)}
-                        aria-label={`Selecionar ${c.before || c.after}`}
-                        className="mt-0.5"
-                      />
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant="outline" className="text-[10px]">
-                            Antes
-                          </Badge>
-                          <span className="truncate line-through">{c.before || "—"}</span>
+              {changes.length === 0 ? (
+                <div className="rounded-lg border border-dashed py-8 text-center text-sm text-muted-foreground">
+                  Nenhum título precisa de ajuste nos status selecionados.
+                </div>
+              ) : (
+                <ScrollArea className="h-[40vh] rounded-lg border">
+                  <ul className="divide-y">
+                    {changes.map((c) => (
+                      <li key={c.id} className="flex items-start gap-3 p-3">
+                        <Checkbox
+                          checked={ids.has(c.id)}
+                          onCheckedChange={() => toggle(c.id)}
+                          aria-label={`Selecionar ${c.before || c.after}`}
+                          className="mt-0.5"
+                        />
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline" className="text-[10px]">
+                              Antes
+                            </Badge>
+                            <span className="truncate line-through">{c.before || "—"}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Badge variant="secondary" className="text-[10px]">
+                              Depois
+                            </Badge>
+                            <span className="truncate font-medium">{c.after}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Badge variant="secondary" className="text-[10px]">
-                            Depois
-                          </Badge>
-                          <span className="truncate font-medium">{c.after}</span>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </ScrollArea>
+                      </li>
+                    ))}
+                  </ul>
+                </ScrollArea>
+              )}
+
+              {skipped.length > 0 ? (
+                <details className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-foreground">
+                    Não foi possível calcular ({skipped.length})
+                  </summary>
+                  <ul className="mt-2 space-y-2">
+                    {skipped.map((s) => (
+                      <li key={s.id} className="space-y-0.5 text-xs">
+                        <Link
+                          to="/contracts/$id"
+                          params={{ id: s.id }}
+                          className="block truncate font-medium text-primary hover:underline focus-visible:underline"
+                        >
+                          {s.title || "(sem título)"}
+                        </Link>
+                        <span className="text-muted-foreground">
+                          {SKIP_REASON_LABEL[s.reason] ?? s.reason}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
+
+              {unchanged.length > 0 ? (
+                <details className="rounded-lg border p-3">
+                  <summary className="cursor-pointer text-sm font-medium text-foreground">
+                    Já padronizados ({unchanged.length})
+                  </summary>
+                  <ul className="mt-2 space-y-1">
+                    {unchanged.map((u) => (
+                      <li key={u.id} className="truncate text-xs">
+                        <Link
+                          to="/contracts/$id"
+                          params={{ id: u.id }}
+                          className="text-muted-foreground hover:underline focus-visible:underline"
+                        >
+                          {u.title || "(sem título)"}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
             </>
           )}
+
         </div>
 
         <DialogFooter>
