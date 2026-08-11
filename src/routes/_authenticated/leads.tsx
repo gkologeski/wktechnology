@@ -375,6 +375,59 @@ function LeadsHubspotView() {
     return q;
   };
 
+  /** IDs dos leads do filtro/ordenação atuais (usado por "Iniciar fila" e "Modo Prospecção"). */
+  const fetchFilteredLeadIds = async (limit: number) => {
+    let q = supabase.from("leads").select("id");
+    q = applyFilters(q);
+    q = q.order(sortKey, { ascending: sortDir === "asc" }).limit(limit);
+    const { data, error } = await q;
+    if (error) throw error;
+    return (data ?? []).map((r) => r.id as string);
+  };
+
+  /**
+   * Carrega os leads na fila manual reutilizável "Modo Prospecção (rápida)" e
+   * abre a tela de execução da Suíte de Prospecção.
+   */
+  const startProspectingMode = async (ids: string[]) => {
+    if (!ids.length) {
+      toast.error("Nenhum lead para prospectar.");
+      return;
+    }
+    setProspectingBusy(true);
+    try {
+      const queues = await listProspectingQueues();
+      const existing = (queues ?? []).find(
+        (q) =>
+          q.name === PROSPECTING_MODE_QUEUE_NAME &&
+          q.entity === "lead" &&
+          q.kind === "manual" &&
+          (!user?.id || q.owner_id === user.id),
+      );
+      const saved = await upsertProspectingQueue({
+        data: {
+          ...(existing ? { id: existing.id } : {}),
+          name: PROSPECTING_MODE_QUEUE_NAME,
+          entity: "lead" as const,
+          kind: "manual" as const,
+          item_ids: ids,
+          is_shared: false,
+        },
+      });
+      await qc.invalidateQueries({ queryKey: ["prospecting"] });
+      navigate({
+        to: "/prospecting/queues/$queueId/play",
+        params: { queueId: saved.id },
+      });
+    } catch (e) {
+      toast.error((e as Error).message || "Não foi possível abrir o Modo Prospecção.");
+    } finally {
+      setProspectingBusy(false);
+    }
+  };
+
+
+
   const { data: result, isLoading } = useQuery({
     queryKey: [
       "leads",
