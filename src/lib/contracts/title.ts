@@ -13,11 +13,17 @@ export type ContractTitleParts = {
   counterpartyName?: string | null;
   /** Nome da nossa entidade legal (quando identificada). */
   ownName?: string | null;
+  /** Nomes das nossas entidades legais do workspace (para identificar qual lado é nosso). */
+  ownNames?: (string | null | undefined)[] | null;
   /** Início da vigência (ISO) — usado para o sufixo do ano. */
   startsAt?: string | null;
   /** Sufixo com o ano da vigência. Ativo por padrão; passe `false` para omitir. */
   includeYear?: boolean;
 };
+
+/** Motivo pelo qual não foi possível calcular o título padronizado. */
+export type TitleSkipReason = "missing_parties" | "same_parties";
+
 
 const PRESTACAO_PREFIX = "[PRESTAÇÃO]";
 const COMPRA_PREFIX = "[COMPRA]";
