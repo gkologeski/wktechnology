@@ -41,7 +41,6 @@ async function renewOne(url: string): Promise<string | null> {
   return data?.signedUrl ?? null;
 }
 
-
 function asThemeObject(value: unknown): { assets?: Record<string, string> | null } | null {
   if (value && typeof value === "object" && !Array.isArray(value)) {
     return value as { assets?: Record<string, string> | null };

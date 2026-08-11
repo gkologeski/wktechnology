@@ -5,13 +5,7 @@
 // pela prévia ao vivo e pela aplicação em runtime (`src/lib/branding.tsx`),
 // evitando divergência entre as três camadas.
 
-export type BrandTokenGroupId =
-  | "brand"
-  | "surfaces"
-  | "text"
-  | "structure"
-  | "status"
-  | "stages";
+export type BrandTokenGroupId = "brand" | "surfaces" | "text" | "structure" | "status" | "stages";
 
 export type BrandToken = {
   /** Nome da variável CSS, sem os dois hífens iniciais. */

@@ -82,7 +82,6 @@ export function ControlsPanel({ form, set }: Props) {
           aspectHint="square"
           folder="branding"
         />
-
       </Section>
 
       <Section title="Sistema de cores">

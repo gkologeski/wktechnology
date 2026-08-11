@@ -201,7 +201,6 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
                 folder="branding"
               />
             </div>
-
           </TabsContent>
 
           <TabsContent value="theme" className="mt-4">

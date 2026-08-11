@@ -23,11 +23,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  createMediaUploadUrl,
-  registerMediaAsset,
-  listMediaAssets,
-} from "@/lib/media.functions";
+import { createMediaUploadUrl, registerMediaAsset, listMediaAssets } from "@/lib/media.functions";
 
 const DEFAULT_MAX_BYTES = 20 * 1024 * 1024;
 
@@ -163,7 +159,7 @@ export function ImageInput({
   );
 
   const hasValue = !!value;
-  const previewUrl = hasValue ? value! : (inheritedValue || "");
+  const previewUrl = hasValue ? value! : inheritedValue || "";
 
   return (
     <div className="space-y-2">
@@ -171,7 +167,8 @@ export function ImageInput({
 
       <div className="flex items-start gap-3">
         <div className="h-16 w-16 shrink-0 rounded-md border border-border bg-muted/40 overflow-hidden flex items-center justify-center text-muted-foreground">
-          {previewUrl && (kind === "image" || /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(previewUrl)) ? (
+          {previewUrl &&
+          (kind === "image" || /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(previewUrl)) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={previewUrl} alt="" className="h-full w-full object-contain" />
           ) : hasValue ? (
@@ -252,7 +249,9 @@ export function ImageInput({
                           <div className="text-sm font-medium">Clique ou arraste um arquivo</div>
                           <div className="text-xs text-muted-foreground mt-1">
                             Até {Math.round((maxBytes / (1024 * 1024)) * 10) / 10} MB.{" "}
-                            {kind === "image" ? "PNG, JPG, WEBP, SVG, GIF." : "Imagens, PDF, Office."}
+                            {kind === "image"
+                              ? "PNG, JPG, WEBP, SVG, GIF."
+                              : "Imagens, PDF, Office."}
                           </div>
                         </>
                       )}
