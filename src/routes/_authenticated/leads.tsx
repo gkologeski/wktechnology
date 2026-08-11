@@ -1357,22 +1357,27 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const tone = STATUS_TONE[status] ?? STATUS_TONE.new;
-  const label = LEAD_STATUSES.find((s) => s.value === status)?.label ?? status;
+function StagePill({ stage, value }: { stage?: LeadStage; value: string }) {
+  const tone = STATUS_TONE[value] ?? STATUS_TONE[stage?.type === "won" ? "qualified" : "new"];
+  const label = stage?.label ?? value;
+  const color = stage?.color;
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium",
-        tone.bg,
-        tone.text,
+        color ? "bg-muted text-foreground" : tone.bg,
+        color ? undefined : tone.text,
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+      <span
+        className={cn("h-1.5 w-1.5 rounded-full", color ? undefined : tone.dot)}
+        style={color ? { backgroundColor: color } : undefined}
+      />
       {label}
     </span>
   );
 }
+
 
 function ScoreCell({ score }: { score: number }) {
   const clamped = Math.max(0, Math.min(100, score));
