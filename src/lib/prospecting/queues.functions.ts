@@ -17,7 +17,6 @@ import {
   asKeys,
 } from "@/lib/prospecting/permission-keys";
 
-
 const EntityEnum = z.enum(["lead", "contact"]);
 const KindEnum = z.enum(["dynamic", "manual"]);
 
@@ -55,8 +54,6 @@ export const listQueues = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return data ?? [];
   });
-
-
 
 export const upsertQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -114,7 +111,6 @@ export const upsertQueue = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { id: row.id };
   });
-
 
 export const addToQueue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -228,11 +224,7 @@ export const deleteQueue = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUEUE_DELETE));
-    const { error } = await context.supabase
-
-      .from("prospecting_queues")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("prospecting_queues").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -250,7 +242,7 @@ export const countQueueItems = createServerFn({ method: "POST" })
     if (!queue) return { total: 0 };
 
     if ((queue as { kind?: string }).kind === "manual") {
-      const ids = (((queue as { item_ids?: string[] }).item_ids) ?? []) as string[];
+      const ids = ((queue as { item_ids?: string[] }).item_ids ?? []) as string[];
       return { total: ids.length };
     }
 
@@ -280,7 +272,9 @@ export const countQueueItems = createServerFn({ method: "POST" })
       const s = `%${filters.search.trim()}%`;
       query =
         queue.entity === "lead"
-          ? query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s},company_name.ilike.${s}`)
+          ? query.or(
+              `first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s},company_name.ilike.${s}`,
+            )
           : query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`);
     }
     if (typeof filters.updated_after === "string") {
@@ -328,13 +322,19 @@ export const listQueueItems = createServerFn({ method: "POST" })
         { count: "exact" },
       );
 
-    if ((queue as { kind?: string }).kind === "manual") {
-      const ids = (((queue as { item_ids?: string[] }).item_ids) ?? []) as string[];
-      if (ids.length === 0) return { items: [], total: 0, entity: queue.entity };
-      query = query.in("id", ids);
-      if (queue.entity === "lead") {
-        query = query.not("status", "in", "(nurturing,qualified,disqualified)");
+    // Fila manual: pagina os IDs em memória e envia apenas os da página atual.
+    // Mandar todos os IDs em `in(...)` estoura o tamanho da URL do PostgREST
+    // em filas grandes (o fetch falha antes de chegar ao banco).
+    const manualIds =
+      (queue as { kind?: string }).kind === "manual"
+        ? (((queue as { item_ids?: string[] }).item_ids ?? []) as string[])
+        : null;
+    if (manualIds) {
+      const pageIds = manualIds.slice(data.offset, data.offset + data.limit);
+      if (pageIds.length === 0) {
+        return { items: [], total: manualIds.length, entity: queue.entity };
       }
+      query = query.in("id", pageIds);
     } else {
       if (Array.isArray(filters.status) && filters.status.length > 0) {
         query = query.in("status", filters.status as string[]);
@@ -358,7 +358,9 @@ export const listQueueItems = createServerFn({ method: "POST" })
         const s = `%${filters.search.trim()}%`;
         query =
           queue.entity === "lead"
-            ? query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s},company_name.ilike.${s}`)
+            ? query.or(
+                `first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s},company_name.ilike.${s}`,
+              )
             : query.or(`first_name.ilike.${s},last_name.ilike.${s},email.ilike.${s}`);
       }
       if (typeof filters.updated_after === "string") {
@@ -368,9 +370,15 @@ export const listQueueItems = createServerFn({ method: "POST" })
     const sortField = sort.field ?? "updated_at";
     const sortDir = sort.dir ?? "desc";
     query = query.order(sortField, { ascending: sortDir === "asc" });
-    query = query.range(data.offset, data.offset + data.limit - 1);
+    if (!manualIds) {
+      query = query.range(data.offset, data.offset + data.limit - 1);
+    }
 
     const { data: rows, error, count } = await query;
     if (error) throw new Error(error.message);
-    return { items: rows ?? [], total: count ?? 0, entity: queue.entity };
+    return {
+      items: rows ?? [],
+      total: manualIds ? manualIds.length : (count ?? 0),
+      entity: queue.entity,
+    };
   });
