@@ -47,6 +47,7 @@ import {
   useQualificationEntityFields,
 } from "@/components/prospecting/qualification-entity-fields";
 import { QualificationFieldLayoutDialog } from "@/components/prospecting/qualification-field-layout-dialog";
+import { useLeadStages } from "@/lib/leads/stages";
 
 type Entity = "lead";
 
