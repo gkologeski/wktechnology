@@ -26,7 +26,13 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
 
-import { LEAD_STATUSES } from "@/lib/crm";
+import {
+  useLeadStages,
+  resolveLeadStageValue,
+  deriveLeadStatus,
+  findLeadStage,
+} from "@/lib/leads/stages";
+
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
