@@ -6,7 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
-import { Layers, Pencil, Plus, Trash2 } from "lucide-react";
+import { Copy, Layers, Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +38,7 @@ import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 import {
   createContractingPreset,
   deleteContractingPreset,
+  duplicateContractingPreset,
   listContractingPresets,
   updateContractingPreset,
 } from "@/lib/contracting-presets.functions";
@@ -138,6 +139,7 @@ function ContractingPresetsPage() {
   const create = useServerFn(createContractingPreset);
   const update = useServerFn(updateContractingPreset);
   const remove = useServerFn(deleteContractingPreset);
+  const dup = useServerFn(duplicateContractingPreset);
   const listCatalog = useServerFn(listCatalogServiceOptions);
   const listProfiles = useServerFn(listJobProfileOptions);
 
@@ -290,6 +292,17 @@ function ContractingPresetsPage() {
     }
   }
 
+  async function duplicate(r: Preset) {
+    try {
+      await dup({ data: { id: r.id } });
+      toast.success("Preset duplicado.");
+      await qc.invalidateQueries({ queryKey: ["contracting_presets"] });
+      await qc.invalidateQueries({ queryKey: ["contracting-preset-options"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-4">
       <div className="flex items-center gap-3">
@@ -343,9 +356,7 @@ function ContractingPresetsPage() {
         <CardContent>
           {isError ? (
             <div className="py-10 text-center">
-              <p className="text-sm text-muted-foreground">
-                Não foi possível carregar os presets.
-              </p>
+              <p className="text-sm text-muted-foreground">Não foi possível carregar os presets.</p>
               <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
                 Tentar novamente
               </Button>
@@ -434,6 +445,14 @@ function ContractingPresetsPage() {
                       aria-label={`Editar ${r.name}`}
                     >
                       <Pencil aria-hidden="true" className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => duplicate(r)}
+                      aria-label={`Duplicar ${r.name}`}
+                    >
+                      <Copy aria-hidden="true" className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"
@@ -550,10 +569,7 @@ function ContractingPresetsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="cp-unit">Unidade</Label>
-                <Select
-                  value={draft.unit}
-                  onValueChange={(v) => setDraft({ ...draft, unit: v })}
-                >
+                <Select value={draft.unit} onValueChange={(v) => setDraft({ ...draft, unit: v })}>
                   <SelectTrigger id="cp-unit">
                     <SelectValue placeholder="Selecionar" />
                   </SelectTrigger>
