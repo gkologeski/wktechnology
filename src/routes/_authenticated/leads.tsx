@@ -6,11 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Can, usePermissions } from "@/lib/access-control/use-permissions";
 import { useServerFn } from "@tanstack/react-start";
 import { listQueues, upsertQueue } from "@/lib/prospecting/queues.functions";
-import {
-  QUEUE_CREATE,
-  QUEUE_UPDATE,
-  QUEUE_VIEW,
-} from "@/lib/prospecting/permission-keys";
+import { QUEUE_CREATE, QUEUE_UPDATE, QUEUE_VIEW } from "@/lib/prospecting/permission-keys";
 
 /** Fila manual reutilizável usada pelo atalho "Modo Prospecção" a partir de /leads. */
 const PROSPECTING_MODE_QUEUE_NAME = "Modo Prospecção (rápida)";
@@ -85,7 +81,6 @@ import {
   ChevronDown,
   Headphones,
   Play,
-
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
@@ -206,8 +201,7 @@ function LeadsHubspotView() {
   const { can } = useMyTools();
   const { canAny: canAnyPermission } = usePermissions();
   const canProspectingMode =
-    canAnyPermission([...QUEUE_VIEW]) &&
-    canAnyPermission([...QUEUE_CREATE, ...QUEUE_UPDATE]);
+    canAnyPermission([...QUEUE_VIEW]) && canAnyPermission([...QUEUE_CREATE, ...QUEUE_UPDATE]);
   const listProspectingQueues = useServerFn(listQueues);
   const upsertProspectingQueue = useServerFn(upsertQueue);
   const [prospectingBusy, setProspectingBusy] = useState(false);
@@ -439,8 +433,6 @@ function LeadsHubspotView() {
       setProspectingBusy(false);
     }
   };
-
-
 
   const { data: result, isLoading } = useQuery({
     queryKey: [
