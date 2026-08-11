@@ -602,6 +602,28 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
       throw new Error("Um contrato não pode ser aditivo de si mesmo.");
     }
 
+    // Aditivo sempre pertence a um contrato principal do MESMO papel.
+    if (data.mainContractId) {
+      const [{ data: amendmentRow }, { data: mainCheck }] = await Promise.all([
+        supabase.from("contracts").select("id, role").eq("id", data.amendmentId).maybeSingle(),
+        supabase
+          .from("contracts")
+          .select("id, role, document_kind")
+          .eq("id", data.mainContractId)
+          .maybeSingle(),
+      ]);
+      const m = mainCheck as { role?: string | null; document_kind?: string | null } | null;
+      const a = amendmentRow as { role?: string | null } | null;
+      if (!m) throw new Error("Contrato principal não encontrado.");
+      if (m.document_kind === "amendment") {
+        throw new Error("Um aditivo não pode ser o contrato principal de outro aditivo.");
+      }
+      if (a && m.role && a.role !== m.role) {
+        throw new Error("O aditivo deve ter o mesmo papel do contrato principal.");
+      }
+    }
+
+
     const patch = data.mainContractId
       ? {
           document_kind: "amendment",
