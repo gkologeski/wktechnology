@@ -331,14 +331,18 @@ export const listQueueItems = createServerFn({ method: "POST" })
       if (ids.length === 0) return { items: [], total: 0, entity: queue.entity };
       const pageIds = ids.slice(data.offset, data.offset + data.limit);
       if (pageIds.length === 0) return { items: [], total: ids.length, entity: queue.entity };
-      const { data: rows, error } = await context.supabase
+      const { data: rows, error } = (await context.supabase
         .from(table)
         .select(selectCols)
-        .in("id", pageIds);
+        .in("id", pageIds)) as unknown as {
+        data: Array<Record<string, unknown> & { id: string }> | null;
+        error: { message: string } | null;
+      };
       if (error) throw new Error(error.message);
-      const byId = new Map((rows ?? []).map((r) => [(r as { id: string }).id, r]));
+      const byId = new Map((rows ?? []).map((r) => [r.id, r]));
       const ordered = pageIds.map((id) => byId.get(id)).filter(Boolean);
       return { items: ordered, total: ids.length, entity: queue.entity };
+
     }
 
     let query = context.supabase.from(table).select(selectCols, { count: "exact" });
