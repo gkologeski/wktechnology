@@ -237,6 +237,26 @@ function LeadDetail() {
         onCreated={() => void load()}
       />
 
+      <Dialog open={qualifyOpen} onOpenChange={setQualifyOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Qualificar lead</DialogTitle>
+            <DialogDescription>
+              Preencha o questionário de qualificação para mover o lead para a etapa Qualificado.
+            </DialogDescription>
+          </DialogHeader>
+          <QualificationPanel
+            entity="lead"
+            entityId={lead.id}
+            onDecided={() => {
+              setQualifyOpen(false);
+              void load();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
+
       <AlertDialog open={confirmDelete} onOpenChange={(v) => !busy && setConfirmDelete(v)}>
         <AlertDialogContent>
           <AlertDialogHeader>
