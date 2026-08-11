@@ -239,6 +239,9 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
         "id, number, title, status, total_value, currency, role, starts_at, ends_at, parent_contract_id, companies:counterparty_company_id(name), parent:contracts!parent_contract_id(id, title, number)",
       )
       .eq("role", data.role)
+      // Aditivos não participam do aninhamento prestação/compra.
+      .or("document_kind.eq.main,document_kind.is.null")
+
       .order("created_at", { ascending: false })
       .limit(data.limit ?? 20);
     if (data.excludeId) query = query.neq("id", data.excludeId);
