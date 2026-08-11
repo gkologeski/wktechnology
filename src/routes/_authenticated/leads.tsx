@@ -83,7 +83,9 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ArrowRightLeft,
   ChevronDown,
+  Headphones,
   Play,
+
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
