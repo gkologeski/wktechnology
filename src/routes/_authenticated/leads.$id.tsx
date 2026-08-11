@@ -151,19 +151,19 @@ function LeadDetail() {
         </div>
       </div>
       <StageTracker
-        stages={LEAD_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
-        current={lead.status}
-        onChange={setStatus}
+        stages={stages.map((s) => ({ value: s.value, label: s.label }))}
+        current={currentStageValue}
+        onChange={setStage}
+        disabled={stagesLoading}
         activeClassName={
-          lead.status === "contacted"
-            ? "bg-black text-white"
-            : lead.status === "qualified"
-              ? "bg-green-600 text-white"
-              : lead.status === "disqualified"
-                ? "bg-red-600 text-white"
-                : undefined
+          currentStage?.type === "won"
+            ? "bg-green-600 text-white"
+            : currentStage?.type === "lost"
+              ? "bg-red-600 text-white"
+              : "bg-slate-700 text-white"
         }
       />
+
     </div>
   );
 
