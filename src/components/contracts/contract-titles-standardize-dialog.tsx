@@ -61,11 +61,16 @@ export function ContractTitlesStandardizeDialog({
       run({ data: { statuses: statuses as never, preview: true } }) as Promise<{
         scanned: number;
         changes: Change[];
+        unchanged?: Unchanged[];
+        skipped?: Skipped[];
       }>,
   });
 
   const changes = data?.changes ?? [];
+  const unchanged = data?.unchanged ?? [];
+  const skipped = data?.skipped ?? [];
   const ids = useMemo(() => selected ?? new Set(changes.map((c) => c.id)), [selected, changes]);
+
 
   const toggle = (id: string) => {
     const next = new Set(ids);
