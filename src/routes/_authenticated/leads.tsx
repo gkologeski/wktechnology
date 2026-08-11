@@ -190,7 +190,15 @@ function LeadsPage() {
 function LeadsHubspotView() {
   const { user } = useAuth();
   const { can } = useMyTools();
+  const { canAny: canAnyPermission } = usePermissions();
+  const canProspectingMode =
+    canAnyPermission([...QUEUE_VIEW]) &&
+    canAnyPermission([...QUEUE_CREATE, ...QUEUE_UPDATE]);
+  const listProspectingQueues = useServerFn(listQueues);
+  const upsertProspectingQueue = useServerFn(upsertQueue);
+  const [prospectingBusy, setProspectingBusy] = useState(false);
   const { nameFor, initialsFor } = useWorkspaceMembers();
+
   const hsOwners = useHubspotOwners().data ?? { list: [], byId: new Map() };
 
   const qc = useQueryClient();
