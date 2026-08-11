@@ -38,6 +38,7 @@ import { SENIORITY_LABEL, SENIORITY_OPTIONS } from "@/lib/job-profiles-shared";
 import {
   createContractingPreset,
   deleteContractingPreset,
+  duplicateContractingPreset,
   listContractingPresets,
   updateContractingPreset,
 } from "@/lib/contracting-presets.functions";
