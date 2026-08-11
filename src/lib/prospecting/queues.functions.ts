@@ -318,36 +318,31 @@ export const listQueueItems = createServerFn({ method: "POST" })
     const table = queue.entity === "lead" ? "leads" : "contacts";
     const filters = (queue.filters ?? {}) as Record<string, unknown>;
     const sort = (queue.sort ?? {}) as { field?: string; dir?: "asc" | "desc" };
-    const selectCols =
-      queue.entity === "lead"
-        ? "id, first_name, last_name, email, phone, company_name, status, source, score, updated_at, owner_id, assigned_to:assigned_user_id"
-        : "id, first_name, last_name, email, phone, company_id, lifecycle_stage:lifecyclestage, updated_at, owner_id, assigned_to:assigned_user_id";
 
-    // Fila manual: pagina os IDs em memória e consulta apenas a página atual.
-    // Enviar todos os IDs em `in(...)` estoura o tamanho da URL do PostgREST
-    // (falha como "fetch failed") em filas grandes.
-    if ((queue as { kind?: string }).kind === "manual") {
-      const ids = (((queue as { item_ids?: string[] }).item_ids) ?? []) as string[];
-      if (ids.length === 0) return { items: [], total: 0, entity: queue.entity };
-      const pageIds = ids.slice(data.offset, data.offset + data.limit);
-      if (pageIds.length === 0) return { items: [], total: ids.length, entity: queue.entity };
-      const { data: rows, error } = (await context.supabase
-        .from(table)
-        .select(selectCols)
-        .in("id", pageIds)) as unknown as {
-        data: Array<Record<string, unknown> & { id: string }> | null;
-        error: { message: string } | null;
-      };
-      if (error) throw new Error(error.message);
-      const byId = new Map((rows ?? []).map((r) => [r.id, r]));
-      const ordered = pageIds.map((id) => byId.get(id)).filter(Boolean);
-      return { items: ordered, total: ids.length, entity: queue.entity };
+    let query = context.supabase
+      .from(table)
+      .select(
+        queue.entity === "lead"
+          ? "id, first_name, last_name, email, phone, company_name, status, source, score, updated_at, owner_id, assigned_to:assigned_user_id"
+          : "id, first_name, last_name, email, phone, company_id, lifecycle_stage:lifecyclestage, updated_at, owner_id, assigned_to:assigned_user_id",
+        { count: "exact" },
+      );
 
-    }
+    // Fila manual: pagina os IDs em memória e envia apenas os da página atual.
+    // Mandar todos os IDs em `in(...)` estoura o tamanho da URL do PostgREST
+    // em filas grandes (o fetch falha antes de chegar ao banco).
+    const manualIds =
+      (queue as { kind?: string }).kind === "manual"
+        ? ((((queue as { item_ids?: string[] }).item_ids) ?? []) as string[])
+        : null;
+    if (manualIds) {
+      const pageIds = manualIds.slice(data.offset, data.offset + data.limit);
+      if (pageIds.length === 0) {
+        return { items: [], total: manualIds.length, entity: queue.entity };
+      }
+      query = query.in("id", pageIds);
+    } else {
 
-    let query = context.supabase.from(table).select(selectCols, { count: "exact" });
-
-    {
 
       if (Array.isArray(filters.status) && filters.status.length > 0) {
         query = query.in("status", filters.status as string[]);
