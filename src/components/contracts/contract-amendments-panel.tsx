@@ -63,6 +63,7 @@ function formatDate(value: string | null | undefined) {
 export function ContractAmendmentsPanel({
   contractId,
   documentKind,
+  contractRole,
   amendmentOf,
   amendments,
   amendmentNumber,
@@ -71,6 +72,8 @@ export function ContractAmendmentsPanel({
 }: {
   contractId: string;
   documentKind: string;
+  /** Papel do contrato atual: o aditivo deve ter o mesmo papel do principal. */
+  contractRole?: "provider" | "client";
   amendmentOf: AmendmentRow | null;
   amendments: AmendmentRow[];
   amendmentNumber: string | null;
@@ -110,8 +113,10 @@ export function ContractAmendmentsPanel({
           </CardTitle>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAmendment
-              ? "Este documento é um aditivo vinculado a um contrato principal."
-              : "Vincule aditivos (termos aditivos) a este contrato principal."}
+              ? "Este documento é um aditivo vinculado a um contrato principal do mesmo papel."
+              : contractRole === "client"
+                ? "Um contrato de compra só aninha aditivos (termos aditivos) — ele próprio fica aninhado sob um contrato de prestação."
+                : "Vincule aditivos (termos aditivos) a este contrato principal."}
           </p>
         </div>
         {canEdit ? (
@@ -211,6 +216,7 @@ export function ContractAmendmentsPanel({
         onOpenChange={setOpen}
         mode={isAmendment ? "set-main" : "add-amendment"}
         contractId={contractId}
+        contractRole={contractRole}
         saving={saving}
         onSubmit={async ({ targetId, mainId, number, effectiveAt }) => {
           setSaving(true);
@@ -242,6 +248,7 @@ function LinkAmendmentDialog({
   onOpenChange,
   mode,
   contractId,
+  contractRole,
   saving,
   onSubmit,
 }: {
@@ -249,6 +256,7 @@ function LinkAmendmentDialog({
   onOpenChange: (next: boolean) => void;
   mode: "set-main" | "add-amendment";
   contractId: string;
+  contractRole?: "provider" | "client";
   saving: boolean;
   onSubmit: (input: {
     targetId: string;
@@ -282,6 +290,7 @@ function LinkAmendmentDialog({
               value={selected}
               onChange={setSelected}
               excludeId={contractId}
+              role={contractRole}
               placeholder="Buscar contrato…"
             />
           </div>

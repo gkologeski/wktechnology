@@ -23,6 +23,7 @@ export function MainContractPicker({
   value,
   onChange,
   excludeId,
+  role,
   disabled = false,
   placeholder = "Buscar contrato principal…",
   triggerClassName,
@@ -31,6 +32,8 @@ export function MainContractPicker({
   value: MainContractOption | null;
   onChange: (next: MainContractOption | null) => void;
   excludeId?: string;
+  /** Restringe a busca ao papel informado (aditivo herda o papel do principal). */
+  role?: "provider" | "client";
   disabled?: boolean;
   placeholder?: string;
   triggerClassName?: string;
@@ -41,9 +44,16 @@ export function MainContractPicker({
   const search = useServerFn(searchMainContracts);
 
   const { data: rows = [], isFetching } = useQuery({
-    queryKey: ["contracts", "main-search", q, excludeId ?? null],
+    queryKey: ["contracts", "main-search", q, excludeId ?? null, role ?? null],
     queryFn: () =>
-      search({ data: { q: q || undefined, ...(excludeId ? { excludeId } : {}), limit: 20 } }),
+      search({
+        data: {
+          q: q || undefined,
+          ...(excludeId ? { excludeId } : {}),
+          ...(role ? { role } : {}),
+          limit: 20,
+        },
+      }),
     enabled: open,
     staleTime: 15_000,
   });

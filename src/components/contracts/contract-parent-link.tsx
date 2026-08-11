@@ -157,7 +157,8 @@ function ProviderView({
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
             Contratos de compra (fornecedores/desenvolvedores) que executam este contrato de
-            prestação. Quando aninhados, aparecem indentados sob este contrato na listagem.
+            prestação. Quando aninhados, aparecem indentados sob este contrato na listagem. Termos
+            aditivos deste contrato são vinculados no card “Aditivos”.
           </p>
         </div>
         <Button size="sm" onClick={() => setOpen(true)} disabled={!canEdit}>
@@ -292,7 +293,8 @@ function ClientView({
   const { setParent } = useLinkMutations(contractId);
 
   async function remove() {
-    if (!(await confirmDialog("Desaninhar este contrato de compra do contrato de prestação?"))) return;
+    if (!(await confirmDialog("Desaninhar este contrato de compra do contrato de prestação?")))
+      return;
     try {
       await setParent(null);
       toast.success("Vínculo removido.");
@@ -311,8 +313,9 @@ function ClientView({
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
             Este contrato de compra (nós somos a CONTRATANTE do profissional) é aninhado sob um
-            contrato de prestação, onde um dos nossos CNPJs é a CONTRATADA. Um contrato de compra não
-            aninha outros contratos de compra, e serviços são associados ao contrato de prestação.
+            contrato de prestação, onde um dos nossos CNPJs é a CONTRATADA. Um contrato de compra só
+            aninha aditivos (card “Aditivos”): nunca outro contrato de compra nem um contrato de
+            prestação. Serviços são associados ao contrato de prestação.
           </p>
         </div>
         <Button
@@ -323,7 +326,6 @@ function ClientView({
         >
           {parent ? "Alterar contrato principal" : "Aninhar sob contrato de prestação"}
         </Button>
-
       </CardHeader>
       <CardContent>
         {parent ? (
