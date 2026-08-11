@@ -136,6 +136,10 @@ function LeadDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setCreateDealOpen(true)}>
+            Criar negócio
+          </Button>
+
           <Button
             variant="ghost"
             size="icon"
