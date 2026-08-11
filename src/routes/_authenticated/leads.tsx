@@ -225,7 +225,6 @@ function LeadsHubspotView() {
   const savedViews = useSavedViews("leads");
   const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
 
-
   const applySavedView = (sv: { id: string; filters: unknown }) => {
     const f = sv.filters as {
       kind?: string;
@@ -1392,7 +1391,6 @@ function StagePill({ stage, value }: { stage?: LeadStage; value: string }) {
     </span>
   );
 }
-
 
 function ScoreCell({ score }: { score: number }) {
   const clamped = Math.max(0, Math.min(100, score));

@@ -180,7 +180,6 @@ function LeadDetail() {
               : "bg-slate-700 text-white"
         }
       />
-
     </div>
   );
 
