@@ -6,7 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { LEAD_STATUSES } from "@/lib/crm";
+import {
+  useLeadStages,
+  resolveLeadStageValue,
+  deriveLeadStatus,
+  findLeadStage,
+  type LeadStage,
+} from "@/lib/leads/stages";
+
 import type { Lead } from "@/lib/db-types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -212,6 +219,9 @@ function LeadsHubspotView() {
   } | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
 
+  const { stages } = useLeadStages();
+  const stagesKey = stages.map((s) => s.value).join(",");
+
   const savedViews = useSavedViews("leads");
   const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
 
@@ -302,8 +312,16 @@ function LeadsHubspotView() {
       const since = new Date(Date.now() - 7 * 86_400_000).toISOString();
       q = q.gte("created_at", since);
     }
-    if (filters.status.length > 0)
-      q = q.in("status", filters.status as ("new" | "contacted" | "qualified" | "disqualified")[]);
+    if (filters.status.length > 0) {
+      const stageVals = filters.status;
+      const derived = Array.from(
+        new Set(stageVals.map((v) => deriveLeadStatus(findLeadStage(stages, v)))),
+      );
+      q = q.or(
+        `stage_id.in.(${stageVals.join(",")}),and(stage_id.is.null,status.in.(${derived.join(",")}))`,
+      );
+    }
+
     if (filters.source.length > 0) q = q.in("source", filters.source);
     if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
     if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
@@ -361,14 +379,16 @@ function LeadsHubspotView() {
       page,
       pageSize,
       user?.id,
+      stagesKey,
     ],
     queryFn: async () => {
       let q = supabase
         .from("leads")
         .select(
-          "id, first_name, last_name, email, phone, company_name, source, label, score, status, owner_id, assigned_user_id, hubspot_owner_id, created_at, updated_at, custom_fields",
+          "id, first_name, last_name, email, phone, company_name, source, label, score, status, stage_id, pipeline_id, owner_id, assigned_user_id, hubspot_owner_id, created_at, updated_at, custom_fields",
           { count: "exact" },
         );
+
       q = applyFilters(q);
       q = q.order(sortKey, { ascending: sortDir === "asc" });
       q = q.range(page * pageSize, page * pageSize + pageSize - 1);
@@ -512,9 +532,16 @@ function LeadsHubspotView() {
       },
       {
         key: "status",
-        label: "Status do lead",
-        render: (lead) => <StatusPill status={lead.status} />,
+        label: "Etapa do lead",
+        render: (lead) => {
+          const v = resolveLeadStageValue(
+            lead as unknown as { stage_id?: string | null; status?: string | null },
+            stages,
+          );
+          return <StagePill stage={findLeadStage(stages, v)} value={v} />;
+        },
       },
+
       {
         key: "score",
         label: "Score",
@@ -878,8 +905,8 @@ function LeadsHubspotView() {
           </div>
           <Separator />
           <div className="flex-1 overflow-y-auto px-3 py-2">
-            <FilterGroup title="Status do lead" defaultOpen>
-              {LEAD_STATUSES.map((s) => {
+            <FilterGroup title="Etapa do lead" defaultOpen>
+              {stages.map((s) => {
                 const checked = filters.status.includes(s.value);
                 return (
                   <label
@@ -900,9 +927,11 @@ function LeadsHubspotView() {
                     <span
                       className={cn(
                         "h-1.5 w-1.5 rounded-full",
-                        STATUS_TONE[s.value]?.dot ?? "bg-muted-foreground",
+                        s.color ? undefined : (STATUS_TONE[s.value]?.dot ?? "bg-muted-foreground"),
                       )}
+                      style={s.color ? { backgroundColor: s.color } : undefined}
                     />
+
                     <span>{s.label}</span>
                   </label>
                 );
@@ -1342,18 +1371,22 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
   );
 }
 
-function StatusPill({ status }: { status: string }) {
-  const tone = STATUS_TONE[status] ?? STATUS_TONE.new;
-  const label = LEAD_STATUSES.find((s) => s.value === status)?.label ?? status;
+function StagePill({ stage, value }: { stage?: LeadStage; value: string }) {
+  const tone = STATUS_TONE[value] ?? STATUS_TONE[stage?.type === "won" ? "qualified" : "new"];
+  const label = stage?.label ?? value;
+  const color = stage?.color;
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium",
-        tone.bg,
-        tone.text,
+        color ? "bg-muted text-foreground" : tone.bg,
+        color ? undefined : tone.text,
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", tone.dot)} />
+      <span
+        className={cn("h-1.5 w-1.5 rounded-full", color ? undefined : tone.dot)}
+        style={color ? { backgroundColor: color } : undefined}
+      />
       {label}
     </span>
   );

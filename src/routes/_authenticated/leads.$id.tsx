@@ -26,7 +26,13 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
 
-import { LEAD_STATUSES } from "@/lib/crm";
+import {
+  useLeadStages,
+  resolveLeadStageValue,
+  deriveLeadStatus,
+  findLeadStage,
+} from "@/lib/leads/stages";
+
 import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -62,21 +68,34 @@ function LeadDetail() {
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.leads");
   const canDelete = !deletePermLoading && canDeleteRecord(lead);
+  const { stages, pipelineId, isLoading: stagesLoading } = useLeadStages();
 
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
-  const setStatus = async (v: string) => {
-    if (v === "qualified" && lead.status !== "qualified") {
-      setCreateDealOpen(true);
+  const currentStageValue = resolveLeadStageValue(
+    lead as unknown as { stage_id?: string | null; status?: string | null },
+    stages,
+  );
+  const currentStage = findLeadStage(stages, currentStageValue);
+
+  const setStage = async (v: string) => {
+    if (v === currentStageValue) return;
+    const stage = findLeadStage(stages, v);
+    const { error } = await supabase
+      .from("leads")
+      .update({
+        stage_id: v,
+        ...(pipelineId ? { pipeline_id: pipelineId } : {}),
+        status: deriveLeadStatus(stage),
+      } as never)
+      .eq("id", lead.id);
+    if (error) {
+      toast.error(error.message);
       return;
     }
-
-    await supabase
-      .from("leads")
-      .update({ status: v as any })
-      .eq("id", lead.id);
     void load();
   };
+
   const doDelete = async () => {
     if (!canDelete) {
       toast.error(DELETE_NOT_ALLOWED_TITLE);
@@ -130,6 +149,10 @@ function LeadDetail() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setCreateDealOpen(true)}>
+            Criar negócio
+          </Button>
+
           <Button
             variant="ghost"
             size="icon"
@@ -145,17 +168,16 @@ function LeadDetail() {
         </div>
       </div>
       <StageTracker
-        stages={LEAD_STATUSES.map((s) => ({ value: s.value, label: s.label }))}
-        current={lead.status}
-        onChange={setStatus}
+        stages={stages.map((s) => ({ value: s.value, label: s.label }))}
+        current={currentStageValue}
+        onChange={setStage}
+        disabled={stagesLoading}
         activeClassName={
-          lead.status === "contacted"
-            ? "bg-black text-white"
-            : lead.status === "qualified"
-              ? "bg-green-600 text-white"
-              : lead.status === "disqualified"
-                ? "bg-red-600 text-white"
-                : undefined
+          currentStage?.type === "won"
+            ? "bg-green-600 text-white"
+            : currentStage?.type === "lost"
+              ? "bg-red-600 text-white"
+              : "bg-slate-700 text-white"
         }
       />
     </div>
