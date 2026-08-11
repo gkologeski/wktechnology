@@ -68,21 +68,34 @@ function LeadDetail() {
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.leads");
   const canDelete = !deletePermLoading && canDeleteRecord(lead);
+  const { stages, pipelineId, isLoading: stagesLoading } = useLeadStages();
 
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
-  const setStatus = async (v: string) => {
-    if (v === "qualified" && lead.status !== "qualified") {
-      setCreateDealOpen(true);
+  const currentStageValue = resolveLeadStageValue(
+    lead as unknown as { stage_id?: string | null; status?: string | null },
+    stages,
+  );
+  const currentStage = findLeadStage(stages, currentStageValue);
+
+  const setStage = async (v: string) => {
+    if (v === currentStageValue) return;
+    const stage = findLeadStage(stages, v);
+    const { error } = await supabase
+      .from("leads")
+      .update({
+        stage_id: v,
+        ...(pipelineId ? { pipeline_id: pipelineId } : {}),
+        status: deriveLeadStatus(stage),
+      } as never)
+      .eq("id", lead.id);
+    if (error) {
+      toast.error(error.message);
       return;
     }
-
-    await supabase
-      .from("leads")
-      .update({ status: v as any })
-      .eq("id", lead.id);
     void load();
   };
+
   const doDelete = async () => {
     if (!canDelete) {
       toast.error(DELETE_NOT_ALLOWED_TITLE);
