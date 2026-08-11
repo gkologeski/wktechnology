@@ -22,6 +22,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { standardizeContractTitlesByStatus } from "@/lib/contracts.functions";
 
 type Change = { id: string; before: string; after: string };
+type Unchanged = { id: string; title: string };
+type Skipped = { id: string; title: string; reason: string };
+
+const SKIP_REASON_LABEL: Record<string, string> = {
+  missing_parties: "Faltam as partes do contrato (CONTRATANTE/CONTRATADA)",
+  same_parties: "CONTRATANTE e CONTRATADA ficaram iguais — revise o papel e as partes",
+};
+
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "active", label: "Ativo" },
