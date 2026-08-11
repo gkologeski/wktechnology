@@ -219,8 +219,12 @@ function LeadsHubspotView() {
   } | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
 
+  const { stages } = useLeadStages();
+  const stagesKey = stages.map((s) => s.value).join(",");
+
   const savedViews = useSavedViews("leads");
   const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
+
 
   const applySavedView = (sv: { id: string; filters: unknown }) => {
     const f = sv.filters as {
