@@ -94,6 +94,22 @@ export class ApolloNotConfiguredError extends Error {
   }
 }
 
+/** Créditos do Apollo esgotados — enriquecimento indisponível, não é bug. */
+export class ApolloCreditsError extends Error {
+  constructor() {
+    super("Créditos do Apollo.io esgotados. Atualize o plano para voltar a enriquecer.");
+    this.name = "ApolloCreditsError";
+  }
+}
+
+/** Chave sem permissão para o endpoint (ex.: people search exige master key). */
+export class ApolloAccessError extends Error {
+  constructor(detail: string) {
+    super(`A chave do Apollo.io não tem acesso a este endpoint. ${detail}`.trim());
+    this.name = "ApolloAccessError";
+  }
+}
+
 async function apolloFetch<T>(
   path: string,
   init: { method: "GET" | "POST"; query?: Record<string, string>; body?: unknown },
@@ -126,6 +142,12 @@ async function apolloFetch<T>(
   });
   const text = await res.text();
   if (!res.ok) {
+    if (res.status === 422 && /insufficient credits/i.test(text)) {
+      throw new ApolloCreditsError();
+    }
+    if (res.status === 401 || res.status === 403) {
+      throw new ApolloAccessError(text.slice(0, 200));
+    }
     throw new Error(`Apollo erro [${res.status}]: ${text.slice(0, 300)}`);
   }
   try {
@@ -254,11 +276,17 @@ export type ApolloCascadeResult = {
   domainSource: "website" | "email" | "company_search" | null;
   person: ApolloPersonData | null;
   company: ApolloCompanyData | null;
+  /** Falhas parciais do provedor (créditos, permissão, indisponibilidade). */
+  warnings: string[];
 };
 
 /**
  * Cascata completa: resolve o domínio, enriquece a empresa e depois a pessoa.
- * Erros de rede/provedor sobem para o chamador; ausências retornam null.
+ *
+ * Cada etapa é tolerante a falhas: erros do provedor (créditos esgotados,
+ * permissão da chave, indisponibilidade) viram avisos, para que o
+ * enriquecimento parcial ainda seja aproveitado e a qualificação não quebre.
+ * Apenas a ausência de conexão (`ApolloNotConfiguredError`) sobe.
  */
 export async function runApolloCascade(input: {
   first_name?: string | null;
@@ -269,6 +297,20 @@ export async function runApolloCascade(input: {
   website?: string | null;
   domain?: string | null;
 }): Promise<ApolloCascadeResult> {
+  const warnings: string[] = [];
+
+  async function step<T>(label: string, fn: () => Promise<T>): Promise<T | null> {
+    try {
+      return await fn();
+    } catch (e) {
+      if (e instanceof ApolloNotConfiguredError) throw e;
+      const message = e instanceof Error ? e.message : String(e);
+      if (!warnings.includes(message)) warnings.push(message);
+      console.warn(`[apollo] ${label} falhou: ${message}`);
+      return null;
+    }
+  }
+
   let domain = normalizeDomain(input.domain) ?? normalizeDomain(input.website);
   let domainSource: ApolloCascadeResult["domainSource"] = domain ? "website" : null;
 
@@ -280,7 +322,9 @@ export async function runApolloCascade(input: {
     }
   }
   if (!domain && input.company_name) {
-    const found = await apolloFindDomainByName(input.company_name);
+    const found = await step("busca de domínio por nome", () =>
+      apolloFindDomainByName(input.company_name!),
+    );
     if (found) {
       domain = found;
       domainSource = "company_search";
@@ -288,16 +332,20 @@ export async function runApolloCascade(input: {
   }
 
   let company: ApolloCompanyData | null = null;
-  if (domain) company = await apolloOrganizationEnrich(domain);
+  if (domain) {
+    company = await step("enriquecimento da empresa", () => apolloOrganizationEnrich(domain!));
+  }
 
-  const matched = await apolloPeopleMatch({
-    first_name: input.first_name,
-    last_name: input.last_name,
-    email: input.email,
-    linkedin_url: input.linkedin_url,
-    domain,
-    company_name: input.company_name,
-  });
+  const matched = await step("enriquecimento da pessoa", () =>
+    apolloPeopleMatch({
+      first_name: input.first_name,
+      last_name: input.last_name,
+      email: input.email,
+      linkedin_url: input.linkedin_url,
+      domain,
+      company_name: input.company_name,
+    }),
+  );
 
   if (!company && matched?.company) company = matched.company;
   if (!domain && company?.domain) {
@@ -305,5 +353,5 @@ export async function runApolloCascade(input: {
     domainSource = "company_search";
   }
 
-  return { domain, domainSource, person: matched?.person ?? null, company };
+  return { domain, domainSource, person: matched?.person ?? null, company, warnings };
 }
