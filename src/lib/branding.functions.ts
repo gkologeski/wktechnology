@@ -35,6 +35,18 @@ export const getBranding = createServerFn({ method: "GET" })
     return { branding: data, workspace_id: workspaceId };
   });
 
+const themeSchema = z
+  .object({
+    light: z.record(z.string(), z.string()).optional(),
+    dark: z.record(z.string(), z.string()).optional(),
+    icons: z
+      .object({ stroke: z.number().min(1).max(3).optional(), size: z.number().min(12).max(24).optional() })
+      .optional(),
+    assets: z.record(z.string(), z.string()).optional(),
+  })
+  .nullable()
+  .optional();
+
 export const saveBranding = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -51,6 +63,7 @@ export const saveBranding = createServerFn({ method: "POST" })
       density?: string | null;
       heading_font?: string | null;
       body_font?: string | null;
+      theme?: unknown;
     }) =>
       z
         .object({
@@ -66,6 +79,7 @@ export const saveBranding = createServerFn({ method: "POST" })
           density: z.enum(["compact", "cozy", "comfortable"]).nullable().optional(),
           heading_font: z.string().max(80).nullable().optional(),
           body_font: z.string().max(80).nullable().optional(),
+          theme: themeSchema,
         })
         .parse(d),
   )
@@ -83,3 +97,4 @@ export const saveBranding = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+

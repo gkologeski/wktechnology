@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Sun, Moon, Search, Plus, Bell } from "lucide-react";
+import { Sun, Moon, Search, Plus, Bell, Inbox } from "lucide-react";
 import { readableForeground } from "@/lib/color-utils";
+import { defaultThemeColors, type BrandTheme } from "@/lib/branding/tokens";
 
 export type PreviewSettings = {
   primary: string;
@@ -11,29 +12,57 @@ export type PreviewSettings = {
   density: "compact" | "cozy" | "comfortable";
   logoUrl: string;
   brandName: string;
+  theme?: BrandTheme;
 };
 
 export function LivePreview({ settings }: { settings: PreviewSettings }) {
   const [dark, setDark] = useState(false);
-  const { primary, accent, radius, headingFont, bodyFont, brandName, logoUrl } = settings;
-  const primaryFg = readableForeground(primary);
-  const accentFg = readableForeground(accent);
+  const { radius, headingFont, bodyFont, brandName, logoUrl, theme } = settings;
+
+  const defaults = defaultThemeColors(dark ? "dark" : "light");
+  const overrides = (dark ? theme?.dark : theme?.light) ?? {};
+  const c = (key: string, fallback?: string) => overrides[key] ?? fallback ?? defaults[key];
+
+  const primary = c("primary", dark ? undefined : settings.primary);
+  const accent = c("accent", dark ? undefined : settings.accent);
+  const primaryFg = c("primary-foreground") || readableForeground(primary);
+  const accentFg = c("accent-foreground") || readableForeground(accent);
+
+  const bg = c("background");
+  const surface = c("card");
+  const surface2 = c("surface-3");
+  const text = c("foreground");
+  const muted = c("muted-foreground");
+  const border = c("border");
+  const sidebar = c("sidebar");
+  const sidebarFg = c("sidebar-foreground");
+
+  const iconStroke = theme?.icons?.stroke ?? 2;
+  const iconSize = theme?.icons?.size ?? 16;
+  const logo = (dark ? theme?.assets?.logo_dark : theme?.assets?.logo_light) || logoUrl;
 
   const pad =
     settings.density === "compact" ? "p-3" : settings.density === "comfortable" ? "p-6" : "p-4";
 
-  const bg = dark ? "#0b1220" : "#ffffff";
-  const surface = dark ? "#111a2e" : "#ffffff";
-  const surface2 = dark ? "#0e1626" : "#f8fafc";
-  const text = dark ? "#e5e7eb" : "#0f172a";
-  const muted = dark ? "#94a3b8" : "#64748b";
-  const border = dark ? "#1f2a44" : "#e2e8f0";
+  const stages = [
+    { label: "Aplicado", color: c("hs-stage-1") },
+    { label: "Triagem", color: c("hs-stage-2") },
+    { label: "Proposta", color: c("hs-stage-4") },
+    { label: "Ganho", color: c("hs-stage-won") },
+    { label: "Perdido", color: c("hs-stage-lost") },
+  ];
+  const statuses = [
+    { label: "Sucesso", color: c("success") },
+    { label: "Aviso", color: c("warning") },
+    { label: "Erro", color: c("destructive") },
+    { label: "Info", color: c("dei-accent") },
+  ];
 
   return (
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2 px-3 py-1.5 bg-card rounded-full shadow-sm border">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
             Visualização em tempo real
           </span>
@@ -41,6 +70,8 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
         <div className="flex items-center gap-1 bg-card p-1 rounded-lg border">
           <button
             type="button"
+            aria-label="Prévia no tema claro"
+            aria-pressed={!dark}
             onClick={() => setDark(false)}
             className={`p-1.5 rounded ${!dark ? "bg-foreground text-background" : "text-muted-foreground"}`}
           >
@@ -48,6 +79,8 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
           </button>
           <button
             type="button"
+            aria-label="Prévia no tema escuro"
+            aria-pressed={dark}
             onClick={() => setDark(true)}
             className={`p-1.5 rounded ${dark ? "bg-foreground text-background" : "text-muted-foreground"}`}
           >
@@ -58,7 +91,14 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
 
       <div
         className="flex-1 rounded-xl border shadow-2xl overflow-hidden flex flex-col"
-        style={{ background: bg, color: text, fontFamily: bodyFont, borderColor: border }}
+        style={{
+          background: bg,
+          color: text,
+          fontFamily: bodyFont,
+          borderColor: border,
+          ["--icon-stroke" as string]: String(iconStroke),
+          ["--icon-size" as string]: `${iconSize}px`,
+        }}
       >
         {/* Top bar */}
         <div
@@ -66,8 +106,8 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
           style={{ borderColor: border, background: surface }}
         >
           <div className="flex items-center gap-3">
-            {logoUrl ? (
-              <img src={logoUrl} alt="" className="h-6 w-6 rounded object-contain" />
+            {logo ? (
+              <img src={logo} alt="" className="h-6 w-6 rounded object-contain" />
             ) : (
               <div className="h-6 w-6 rounded" style={{ background: primary }} />
             )}
@@ -78,27 +118,32 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
               {brandName || "Sua marca"}
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <Search className="h-4 w-4" style={{ color: muted }} />
-            <Bell className="h-4 w-4" style={{ color: muted }} />
-            <div className="h-7 w-7 rounded-full" style={{ background: accent }} />
+          <div className="flex items-center gap-3" style={{ color: muted }}>
+            <Search style={{ width: iconSize, height: iconSize, strokeWidth: iconStroke }} />
+            <Bell style={{ width: iconSize, height: iconSize, strokeWidth: iconStroke }} />
+            <span
+              className="h-6 w-6 rounded-full text-[10px] font-bold flex items-center justify-center"
+              style={{ background: primary, color: primaryFg }}
+            >
+              WK
+            </span>
           </div>
         </div>
 
         <div className="flex-1 flex min-h-0">
           {/* Sidebar */}
           <aside
-            className="w-44 border-r p-3 space-y-1 hidden sm:block"
-            style={{ borderColor: border, background: surface2 }}
+            className="w-36 border-r p-2 space-y-1 shrink-0"
+            style={{ borderColor: border, background: sidebar }}
           >
-            {["Painel", "Funil", "Contatos", "Empresas", "Tarefas"].map((item, i) => (
+            {["Painel", "Negócios", "Contatos", "Contratos"].map((item, i) => (
               <div
                 key={item}
-                className="px-3 py-2 text-xs font-medium flex items-center gap-2"
+                className="flex items-center gap-2 px-2 py-1.5 text-[11px] font-medium"
                 style={{
                   borderRadius: radius,
-                  background: i === 0 ? `${primary}1a` : "transparent",
-                  color: i === 0 ? primary : muted,
+                  background: i === 0 ? accent : "transparent",
+                  color: i === 0 ? accentFg : sidebarFg,
                 }}
               >
                 <span
@@ -121,7 +166,8 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
                 className="px-3 py-2 text-xs font-semibold inline-flex items-center gap-1.5 shadow-sm transition-transform active:scale-95"
                 style={{ background: primary, color: primaryFg, borderRadius: radius }}
               >
-                <Plus className="h-3.5 w-3.5" /> Novo lead
+                <Plus style={{ width: iconSize, height: iconSize, strokeWidth: iconStroke }} /> Novo
+                lead
               </button>
             </div>
 
@@ -145,8 +191,8 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
                   label: "Tarefas",
                   value: "38",
                   badge: "Hoje",
-                  badgeBg: `${primary}26`,
-                  badgeFg: primary,
+                  badgeBg: surface2,
+                  badgeFg: text,
                 },
               ].map((card) => (
                 <div
@@ -176,6 +222,119 @@ export function LivePreview({ settings }: { settings: PreviewSettings }) {
               ))}
             </div>
 
+            {/* Tabela */}
+            <div
+              className="border overflow-hidden"
+              style={{ borderRadius: radius, background: surface, borderColor: border }}
+            >
+              <div
+                className="px-3 py-2 text-[10px] font-bold uppercase tracking-wider border-b"
+                style={{ color: muted, borderColor: border, background: surface2 }}
+              >
+                Negócios recentes
+              </div>
+              {["Acme — R$ 24k", "Globex — R$ 12k", "Umbrella — R$ 8k"].map((row, i) => (
+                <div
+                  key={row}
+                  className="px-3 py-2 text-xs flex items-center justify-between border-b last:border-b-0"
+                  style={{ borderColor: border, color: text }}
+                >
+                  <span>{row}</span>
+                  <span
+                    className="px-1.5 py-0.5 text-[10px] font-bold"
+                    style={{
+                      borderRadius: radius,
+                      background: stages[i]?.color,
+                      color: readableForeground(stages[i]?.color ?? primary),
+                    }}
+                  >
+                    {stages[i]?.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Badges */}
+            <div
+              className="border p-3 space-y-3"
+              style={{ borderRadius: radius, background: surface, borderColor: border }}
+            >
+              <div
+                className="text-[10px] font-bold uppercase tracking-wider"
+                style={{ color: muted }}
+              >
+                Status e etapas
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[...statuses, ...stages].map((s) => (
+                  <span
+                    key={s.label}
+                    className="px-2 py-0.5 text-[10px] font-bold"
+                    style={{
+                      borderRadius: radius,
+                      background: s.color,
+                      color: readableForeground(s.color),
+                    }}
+                  >
+                    {s.label}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Formulário + estado vazio */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div
+                className="border p-3 space-y-2"
+                style={{ borderRadius: radius, background: surface, borderColor: border }}
+              >
+                <div
+                  className="text-[10px] font-bold uppercase tracking-wider"
+                  style={{ color: muted }}
+                >
+                  Formulário
+                </div>
+                <label className="block text-[10px] font-semibold" style={{ color: text }}>
+                  Nome da empresa
+                </label>
+                <div
+                  className="h-8 px-2 flex items-center text-[11px] border"
+                  style={{ borderRadius: radius, borderColor: c("input"), color: muted }}
+                >
+                  Acme Ltda.
+                </div>
+                <button
+                  type="button"
+                  className="w-full py-1.5 text-[11px] font-semibold"
+                  style={{ background: primary, color: primaryFg, borderRadius: radius }}
+                >
+                  Salvar
+                </button>
+              </div>
+
+              <div
+                className="border p-3 flex flex-col items-center justify-center text-center gap-2"
+                style={{ borderRadius: radius, background: surface, borderColor: border }}
+              >
+                {theme?.assets?.empty_illustration ? (
+                  <img
+                    src={theme.assets.empty_illustration}
+                    alt=""
+                    className="h-12 object-contain"
+                  />
+                ) : (
+                  <Inbox style={{ width: 28, height: 28, strokeWidth: iconStroke, color: muted }} />
+                )}
+                <div className="text-[11px] font-bold" style={{ color: text }}>
+                  Nenhum registro
+                </div>
+                <div className="text-[10px]" style={{ color: muted }}>
+                  Crie o primeiro para começar.
+                </div>
+              </div>
+            </div>
+
+            {/* Tipografia */}
             <div
               className="border p-3 space-y-2"
               style={{ borderRadius: radius, background: surface, borderColor: border }}
