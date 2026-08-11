@@ -445,6 +445,7 @@ function ContractDetail() {
       <ContractAmendmentsPanel
         contractId={contract.id}
         documentKind={(contract as { document_kind?: string }).document_kind ?? "main"}
+        contractRole={role}
         amendmentOf={(contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null}
         amendments={(contract as { amendments?: AmendmentRow[] }).amendments ?? []}
         amendmentNumber={
