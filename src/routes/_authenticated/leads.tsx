@@ -3,7 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Can } from "@/lib/access-control/use-permissions";
+import { Can, usePermissions } from "@/lib/access-control/use-permissions";
+import { useServerFn } from "@tanstack/react-start";
+import { listQueues, upsertQueue } from "@/lib/prospecting/queues.functions";
+import { QUEUE_CREATE, QUEUE_UPDATE, QUEUE_VIEW } from "@/lib/prospecting/permission-keys";
+
+/** Fila manual reutilizável usada pelo atalho "Modo Prospecção" a partir de /leads. */
+const PROSPECTING_MODE_QUEUE_NAME = "Modo Prospecção (rápida)";
+const PROSPECTING_MODE_LIMIT = 500;
+
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import {
@@ -71,6 +79,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   ArrowRightLeft,
   ChevronDown,
+  Headphones,
   Play,
   ChevronLeft,
   ChevronRight,
@@ -190,7 +199,14 @@ function LeadsPage() {
 function LeadsHubspotView() {
   const { user } = useAuth();
   const { can } = useMyTools();
+  const { canAny: canAnyPermission } = usePermissions();
+  const canProspectingMode =
+    canAnyPermission([...QUEUE_VIEW]) && canAnyPermission([...QUEUE_CREATE, ...QUEUE_UPDATE]);
+  const listProspectingQueues = useServerFn(listQueues);
+  const upsertProspectingQueue = useServerFn(upsertQueue);
+  const [prospectingBusy, setProspectingBusy] = useState(false);
   const { nameFor, initialsFor } = useWorkspaceMembers();
+
   const hsOwners = useHubspotOwners().data ?? { list: [], byId: new Map() };
 
   const qc = useQueryClient();
@@ -365,6 +381,57 @@ function LeadsHubspotView() {
       );
     }
     return q;
+  };
+
+  /** IDs dos leads do filtro/ordenação atuais (usado por "Iniciar fila" e "Modo Prospecção"). */
+  const fetchFilteredLeadIds = async (limit: number) => {
+    let q = supabase.from("leads").select("id");
+    q = applyFilters(q);
+    q = q.order(sortKey, { ascending: sortDir === "asc" }).limit(limit);
+    const { data, error } = await q;
+    if (error) throw error;
+    return (data ?? []).map((r) => r.id as string);
+  };
+
+  /**
+   * Carrega os leads na fila manual reutilizável "Modo Prospecção (rápida)" e
+   * abre a tela de execução da Suíte de Prospecção.
+   */
+  const startProspectingMode = async (ids: string[]) => {
+    if (!ids.length) {
+      toast.error("Nenhum lead para prospectar.");
+      return;
+    }
+    setProspectingBusy(true);
+    try {
+      const queues = await listProspectingQueues();
+      const existing = (queues ?? []).find(
+        (q) =>
+          q.name === PROSPECTING_MODE_QUEUE_NAME &&
+          q.entity === "lead" &&
+          q.kind === "manual" &&
+          (!user?.id || q.owner_id === user.id),
+      );
+      const saved = await upsertProspectingQueue({
+        data: {
+          ...(existing ? { id: existing.id } : {}),
+          name: PROSPECTING_MODE_QUEUE_NAME,
+          entity: "lead" as const,
+          kind: "manual" as const,
+          item_ids: ids,
+          is_shared: false,
+        },
+      });
+      await qc.invalidateQueries({ queryKey: ["prospecting"] });
+      navigate({
+        to: "/prospecting/queues/$queueId/play",
+        params: { queueId: saved.id },
+      });
+    } catch (e) {
+      toast.error((e as Error).message || "Não foi possível abrir o Modo Prospecção.");
+    } finally {
+      setProspectingBusy(false);
+    }
   };
 
   const { data: result, isLoading } = useQuery({
@@ -795,12 +862,7 @@ function LeadsHubspotView() {
             size="sm"
             onClick={async () => {
               try {
-                let q = supabase.from("leads").select("id");
-                q = applyFilters(q);
-                q = q.order(sortKey, { ascending: sortDir === "asc" }).limit(5000);
-                const { data, error } = await q;
-                if (error) throw error;
-                const ids = (data ?? []).map((r) => r.id as string);
+                const ids = await fetchFilteredLeadIds(5000);
                 if (!ids.length) return toast.error("Nenhum lead para percorrer.");
                 startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
                 toast.success(`Fila iniciada com ${ids.length} lead(s)`);
@@ -814,6 +876,26 @@ function LeadsHubspotView() {
           >
             <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
           </Button>
+          {canProspectingMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  const ids = await fetchFilteredLeadIds(PROSPECTING_MODE_LIMIT);
+                  await startProspectingMode(ids);
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+              disabled={isLoading || total === 0 || prospectingBusy}
+              title="Trabalhar os leads do filtro atual na tela de Prospecção (questionário, qualificação e timeline)"
+            >
+              <Headphones className="mr-1.5 h-4 w-4" />
+              {prospectingBusy ? "Preparando…" : "Modo Prospecção"}
+            </Button>
+          )}
+
           <Can permission="techsales.leads.create.own">
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="mr-1.5 h-4 w-4" /> Criar lead
@@ -1058,6 +1140,24 @@ function LeadsHubspotView() {
                 >
                   <Play className="mr-1 h-3.5 w-3.5" /> Iniciar fila
                 </Button>
+                {canProspectingMode && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7"
+                    disabled={prospectingBusy}
+                    onClick={() =>
+                      void startProspectingMode(
+                        Array.from(selectedIds).slice(0, PROSPECTING_MODE_LIMIT),
+                      )
+                    }
+                    title="Trabalhar os leads selecionados na tela de Prospecção"
+                  >
+                    <Headphones className="mr-1 h-3.5 w-3.5" />
+                    {prospectingBusy ? "Preparando…" : "Modo Prospecção"}
+                  </Button>
+                )}
+
                 <Button
                   variant="ghost"
                   size="sm"
