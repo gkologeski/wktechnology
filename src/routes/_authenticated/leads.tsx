@@ -795,12 +795,7 @@ function LeadsHubspotView() {
             size="sm"
             onClick={async () => {
               try {
-                let q = supabase.from("leads").select("id");
-                q = applyFilters(q);
-                q = q.order(sortKey, { ascending: sortDir === "asc" }).limit(5000);
-                const { data, error } = await q;
-                if (error) throw error;
-                const ids = (data ?? []).map((r) => r.id as string);
+                const ids = await fetchFilteredLeadIds(5000);
                 if (!ids.length) return toast.error("Nenhum lead para percorrer.");
                 startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
                 toast.success(`Fila iniciada com ${ids.length} lead(s)`);
@@ -814,6 +809,26 @@ function LeadsHubspotView() {
           >
             <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
           </Button>
+          {canProspectingMode && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                try {
+                  const ids = await fetchFilteredLeadIds(PROSPECTING_MODE_LIMIT);
+                  await startProspectingMode(ids);
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+              disabled={isLoading || total === 0 || prospectingBusy}
+              title="Trabalhar os leads do filtro atual na tela de Prospecção (questionário, qualificação e timeline)"
+            >
+              <Headphones className="mr-1.5 h-4 w-4" />
+              {prospectingBusy ? "Preparando…" : "Modo Prospecção"}
+            </Button>
+          )}
+
           <Can permission="techsales.leads.create.own">
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="mr-1.5 h-4 w-4" /> Criar lead
