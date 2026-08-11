@@ -356,9 +356,7 @@ function ContractingPresetsPage() {
         <CardContent>
           {isError ? (
             <div className="py-10 text-center">
-              <p className="text-sm text-muted-foreground">
-                Não foi possível carregar os presets.
-              </p>
+              <p className="text-sm text-muted-foreground">Não foi possível carregar os presets.</p>
               <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
                 Tentar novamente
               </Button>
@@ -571,10 +569,7 @@ function ContractingPresetsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="cp-unit">Unidade</Label>
-                <Select
-                  value={draft.unit}
-                  onValueChange={(v) => setDraft({ ...draft, unit: v })}
-                >
+                <Select value={draft.unit} onValueChange={(v) => setDraft({ ...draft, unit: v })}>
                   <SelectTrigger id="cp-unit">
                     <SelectValue placeholder="Selecionar" />
                   </SelectTrigger>

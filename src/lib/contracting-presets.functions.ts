@@ -10,10 +10,7 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import { SENIORITY_VALUES } from "@/lib/job-profiles.functions";
 
-const VIEW = [
-  "techsales.catalog.services.view.workspace",
-  "techsales.catalog.services.view.own",
-];
+const VIEW = ["techsales.catalog.services.view.workspace", "techsales.catalog.services.view.own"];
 const CREATE = [
   "techsales.catalog.services.create.own",
   "techsales.catalog.services.create.workspace",
