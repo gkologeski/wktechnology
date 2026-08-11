@@ -32,7 +32,6 @@ const SKIP_REASON_LABEL: Record<string, string> = {
   same_parties: "CONTRATANTE e CONTRATADA ficaram iguais — revise o papel e as partes",
 };
 
-
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "active", label: "Ativo" },
   { value: "renewing", label: "Renovando" },
@@ -72,7 +71,6 @@ export function ContractTitlesStandardizeDialog({
   const unchanged = data?.unchanged ?? [];
   const skipped = data?.skipped ?? [];
   const ids = useMemo(() => selected ?? new Set(changes.map((c) => c.id)), [selected, changes]);
-
 
   const toggle = (id: string) => {
     const next = new Set(ids);
@@ -259,7 +257,6 @@ export function ContractTitlesStandardizeDialog({
               ) : null}
             </>
           )}
-
         </div>
 
         <DialogFooter>

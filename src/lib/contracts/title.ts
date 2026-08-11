@@ -24,10 +24,8 @@ export type ContractTitleParts = {
 /** Motivo pelo qual não foi possível calcular o título padronizado. */
 export type TitleSkipReason = "missing_parties" | "same_parties";
 
-
 const PRESTACAO_PREFIX = "[PRESTAÇÃO]";
 const COMPRA_PREFIX = "[COMPRA]";
-
 
 const COMPANY_SUFFIXES =
   /\b(ltda|limitada|s\/?a|sa|s\.a|me|epp|eireli|mei|cia|companhia|sociedade|empresa)\b/gi;
@@ -60,7 +58,6 @@ export function normalizePartyName(value: string | null | undefined): string | n
 function prefixFor(parts: ContractTitleParts): string {
   return parts.role === "client" ? COMPRA_PREFIX : PRESTACAO_PREFIX;
 }
-
 
 /** Dois nomes normalizados representam a mesma parte? (contenção tolera sufixos/truncamento) */
 function namesMatch(a: string | null, b: string | null): boolean {
@@ -152,4 +149,3 @@ export function buildContractTitleResult(
 export function buildContractTitle(parts: ContractTitleParts): string | null {
   return buildContractTitleResult(parts).title;
 }
-

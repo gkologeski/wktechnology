@@ -26,9 +26,7 @@ function metaString(metadata: unknown, key: string): string | null {
 
 function contractingNameOf(row: Record<string, any>): string | null {
   return (
-    metaString(row["metadata"], "contracting_name_extracted") ??
-    row["legal_entities"]?.name ??
-    null
+    metaString(row["metadata"], "contracting_name_extracted") ?? row["legal_entities"]?.name ?? null
   );
 }
 
