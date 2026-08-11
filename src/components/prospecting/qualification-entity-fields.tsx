@@ -5,7 +5,7 @@
  * editáveis: as alterações são gravadas no registro da respectiva entidade
  * ao salvar rascunho ou concluir a qualificação.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -90,6 +90,11 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
   });
 
   const [values, setValues] = useState<Values>(EMPTY_VALUES);
+  // Espelho síncrono dos valores, usado pelo preenchimento automático.
+  const valuesRef = useRef<Values>(EMPTY_VALUES);
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
 
   // Sincroniza os valores editáveis quando os registros carregam.
   useEffect(() => {
@@ -118,14 +123,15 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
    * marcando-os com o selo de origem. Campos já preenchidos ficam como
    * sugestão para o usuário aplicar manualmente.
    */
-  const applySuggestions = useCallback((suggestions: EntitySuggestions) => {
-    const filled: string[] = [];
-    setValues((prev) => {
+  const applySuggestions = useCallback(
+    (suggestions: EntitySuggestions) => {
+      const current = valuesRef.current;
       const next: Values = {
-        leads: { ...prev.leads },
-        companies: { ...prev.companies },
-        contacts: { ...prev.contacts },
+        leads: { ...current.leads },
+        companies: { ...current.companies },
+        contacts: { ...current.contacts },
       };
+      const filled: string[] = [];
       for (const b of blocks) {
         const sugg = suggestions[b.entity];
         if (!sugg || !data?.[b.entity]) continue;
@@ -137,17 +143,18 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
           filled.push(`${b.entity}.${f.key}`);
         }
       }
-      return next;
-    });
-    if (filled.length > 0) {
+      if (filled.length === 0) return 0;
+      valuesRef.current = next;
+      setValues(next);
       setAutofilled((prev) => {
-        const next = { ...prev };
-        for (const k of filled) next[k] = true;
-        return next;
+        const merged = { ...prev };
+        for (const k of filled) merged[k] = true;
+        return merged;
       });
-    }
-    return filled.length;
-  }, [blocks, data]);
+      return filled.length;
+    },
+    [blocks, data],
+  );
 
   const missingRequired = useMemo(() => {
     const missing: string[] = [];
