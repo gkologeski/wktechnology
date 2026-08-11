@@ -367,11 +367,55 @@ export const linkContractParent = createServerFn({ method: "POST" })
     // Estado anterior (para registrar de qual contrato ele foi desaninhado).
     const { data: before } = await supabase
       .from("contracts")
-      .select("id, title, number, parent_contract_id")
+      .select("id, title, number, parent_contract_id, role, document_kind")
       .eq("id", data.childId)
       .maybeSingle();
     const previousParentId =
       (before as { parent_contract_id?: string | null } | null)?.parent_contract_id ?? null;
+
+    // Regra de aninhamento: só contrato de compra sob contrato de prestação,
+    // em um único nível, e nunca envolvendo aditivos.
+    if (data.parentId) {
+      const child = before as { role?: string | null; document_kind?: string | null } | null;
+      if (child?.document_kind === "amendment") {
+        throw new Error(
+          "Aditivos não participam do aninhamento prestação/compra; use o vínculo de aditivo.",
+        );
+      }
+      if (child && child.role !== "client") {
+        throw new Error(
+          "Apenas contratos de compra podem ser aninhados sob um contrato de prestação.",
+        );
+      }
+
+      const { data: parentCheck } = await supabase
+        .from("contracts")
+        .select("id, role, document_kind, parent_contract_id")
+        .eq("id", data.parentId)
+        .maybeSingle();
+      const p = parentCheck as {
+        role?: string | null;
+        document_kind?: string | null;
+        parent_contract_id?: string | null;
+      } | null;
+      if (!p) throw new Error("Contrato de prestação não encontrado.");
+      if (p.document_kind === "amendment") {
+        throw new Error(
+          "Aditivos não participam do aninhamento prestação/compra; use o vínculo de aditivo.",
+        );
+      }
+      if (p.role !== "provider") {
+        throw new Error(
+          "Somente contratos de prestação podem receber contratos de compra aninhados.",
+        );
+      }
+      if (p.parent_contract_id) {
+        throw new Error(
+          "O aninhamento é de um único nível: este contrato já está aninhado sob outro contrato.",
+        );
+      }
+    }
+
 
     const { data: row, error } = await supabase
       .from("contracts")
