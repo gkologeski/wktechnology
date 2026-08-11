@@ -2,6 +2,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageInput } from "@/components/ui/image-input";
+import { LOGO_MIMES, FAVICON_MIMES, MAX_LOGO_BYTES } from "@/lib/branding/asset-rules";
+
 import { ColorControl } from "./color-control";
 import { PalettePresets } from "./palette-presets";
 
@@ -64,15 +66,23 @@ export function ControlsPanel({ form, set }: Props) {
           label="Logo"
           value={form.logo_url}
           onChange={(v) => set("logo_url", v ?? "")}
-          helperText="PNG ou SVG, máx. 20 MB."
+          helperText="PNG, JPG, WEBP, SVG ou AVIF, até 2 MB."
+          maxBytes={MAX_LOGO_BYTES}
+          allowedMimes={LOGO_MIMES}
+          folder="branding"
         />
         <ImageInput
           label="Favicon"
           value={form.favicon_url}
           onChange={(v) => set("favicon_url", v ?? "")}
           accept="image/png,image/x-icon,image/svg+xml,image/vnd.microsoft.icon"
-          helperText="ICO, PNG ou SVG (32x32 recomendado)."
+          helperText="ICO, PNG ou SVG quadrado (32x32 recomendado), até 2 MB."
+          maxBytes={MAX_LOGO_BYTES}
+          allowedMimes={FAVICON_MIMES}
+          aspectHint="square"
+          folder="branding"
         />
+
       </Section>
 
       <Section title="Sistema de cores">

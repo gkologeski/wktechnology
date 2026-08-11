@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ImageInput } from "@/components/ui/image-input";
+import { LOGO_MIMES, FAVICON_MIMES } from "@/lib/branding/asset-rules";
+
 import { getModuleBranding, saveModuleBranding } from "@/lib/modules/module-branding.functions";
 import { getBranding } from "@/lib/branding.functions";
 import { MODULES, type ModuleId } from "@/lib/modules/registry";
@@ -176,23 +179,29 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
               </div>
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor={`mb-logo-${moduleId}`}>Logotipo (URL)</Label>
-              <Input
-                id={`mb-logo-${moduleId}`}
-                placeholder="https://…/logo.svg"
+              <ImageInput
+                label="Logotipo"
+                helperText="PNG, JPG, WEBP, SVG ou AVIF, até 2 MB."
                 value={form.logo_url}
-                onChange={(e) => set("logo_url", e.target.value)}
+                onChange={(v) => set("logo_url", v ?? "")}
+                maxBytes={2 * 1024 * 1024}
+                allowedMimes={LOGO_MIMES}
+                folder="branding"
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor={`mb-favicon-${moduleId}`}>Favicon (URL)</Label>
-              <Input
-                id={`mb-favicon-${moduleId}`}
-                placeholder="https://…/favicon.png"
+              <ImageInput
+                label="Favicon"
+                helperText="PNG, SVG ou ICO quadrado, até 2 MB."
                 value={form.favicon_url}
-                onChange={(e) => set("favicon_url", e.target.value)}
+                onChange={(v) => set("favicon_url", v ?? "")}
+                maxBytes={2 * 1024 * 1024}
+                allowedMimes={FAVICON_MIMES}
+                aspectHint="square"
+                folder="branding"
               />
             </div>
+
           </TabsContent>
 
           <TabsContent value="theme" className="mt-4">

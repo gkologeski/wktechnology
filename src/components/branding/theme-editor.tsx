@@ -13,6 +13,12 @@ import {
   type BrandTheme,
 } from "@/lib/branding/tokens";
 import { contrastIssues, deriveDarkFromLight } from "@/lib/branding/derive";
+import {
+  LOGO_MIMES,
+  FAVICON_MIMES,
+  MAX_LOGO_BYTES,
+  MAX_ILLUSTRATION_BYTES,
+} from "@/lib/branding/asset-rules";
 
 type Props = {
   theme: BrandTheme;
@@ -21,15 +27,49 @@ type Props = {
   inherited?: BrandTheme | null;
 };
 
-const ASSET_FIELDS: Array<{ key: keyof NonNullable<BrandTheme["assets"]>; label: string; helper: string }> = [
-  { key: "logo_light", label: "Logo (tema claro)", helper: "PNG ou SVG horizontal." },
-  { key: "logo_dark", label: "Logo (tema escuro)", helper: "Versão para fundos escuros." },
-  { key: "logo_mark", label: "Símbolo reduzido", helper: "Usado na barra lateral recolhida." },
-  { key: "login_image", label: "Arte da tela de login", helper: "Imagem das telas públicas." },
+const ASSET_FIELDS: Array<{
+  key: keyof NonNullable<BrandTheme["assets"]>;
+  label: string;
+  helper: string;
+  maxBytes: number;
+  allowedMimes: string[];
+  aspectHint?: "square" | "wide";
+}> = [
+  {
+    key: "logo_light",
+    label: "Logo (tema claro)",
+    helper: "PNG, JPG, WEBP, SVG ou AVIF horizontal, até 2 MB.",
+    maxBytes: MAX_LOGO_BYTES,
+    allowedMimes: LOGO_MIMES,
+  },
+  {
+    key: "logo_dark",
+    label: "Logo (tema escuro)",
+    helper: "Versão para fundos escuros, até 2 MB.",
+    maxBytes: MAX_LOGO_BYTES,
+    allowedMimes: LOGO_MIMES,
+  },
+  {
+    key: "logo_mark",
+    label: "Símbolo reduzido",
+    helper: "Usado na barra lateral recolhida. Prefira formato quadrado.",
+    maxBytes: MAX_LOGO_BYTES,
+    allowedMimes: FAVICON_MIMES.concat(LOGO_MIMES),
+    aspectHint: "wide",
+  },
+  {
+    key: "login_image",
+    label: "Arte da tela de login",
+    helper: "Imagem das telas públicas, até 5 MB.",
+    maxBytes: MAX_ILLUSTRATION_BYTES,
+    allowedMimes: LOGO_MIMES,
+  },
   {
     key: "empty_illustration",
     label: "Ilustração de estado vazio",
-    helper: "Exibida quando não há registros.",
+    helper: "Exibida quando não há registros, até 5 MB.",
+    maxBytes: MAX_ILLUSTRATION_BYTES,
+    allowedMimes: LOGO_MIMES,
   },
 ];
 
@@ -74,6 +114,7 @@ export function ThemeEditor({ theme, onChange, inherited }: Props) {
 
   const icons = { ...DEFAULT_ICONS, ...(inherited?.icons ?? {}), ...(theme.icons ?? {}) };
   const assets = { ...(theme.assets ?? {}) };
+  const inheritedAssets: Record<string, string> = { ...(inherited?.assets ?? {}) };
 
   return (
     <div className="space-y-6">
@@ -231,6 +272,20 @@ export function ThemeEditor({ theme, onChange, inherited }: Props) {
             label={field.label}
             helperText={field.helper}
             value={assets[field.key] ?? ""}
+            maxBytes={field.maxBytes}
+            allowedMimes={field.allowedMimes}
+            aspectHint={field.aspectHint}
+            folder="branding"
+            inheritedValue={inheritedAssets[field.key] ?? null}
+            onResetInherit={
+              inheritedAssets[field.key] && assets[field.key]
+                ? () => {
+                    const nextAssets = { ...(theme.assets ?? {}) };
+                    delete nextAssets[field.key];
+                    onChange({ ...theme, assets: nextAssets });
+                  }
+                : undefined
+            }
             onChange={(url) =>
               onChange({ ...theme, assets: { ...theme.assets, [field.key]: url ?? "" } })
             }

@@ -32,8 +32,21 @@ export const getBranding = createServerFn({ method: "GET" })
       .select("*")
       .eq("workspace_id", workspaceId)
       .maybeSingle();
-    return { branding: data, workspace_id: workspaceId };
+
+    // Renova URLs assinadas de assets próximas do vencimento.
+    const { refreshBrandingAssets } = await import("@/lib/branding/assets.server");
+    const { row, patch } = await refreshBrandingAssets(data);
+    if (patch) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin
+        .from("workspace_branding")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update(patch as any)
+        .eq("workspace_id", workspaceId);
+    }
+    return { branding: row, workspace_id: workspaceId };
   });
+
 
 const themeSchema = z
   .object({

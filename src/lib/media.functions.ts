@@ -64,14 +64,16 @@ const ALLOWED_MIMES = [
 
 export const createMediaUploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { filename: string; mime?: string; size_bytes?: number }) =>
-    z
-      .object({
-        filename: z.string().min(1).max(200),
-        mime: z.string().max(120).optional(),
-        size_bytes: z.number().int().nonnegative().max(20 * 1024 * 1024).optional(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: { filename: string; mime?: string; size_bytes?: number; folder?: "branding" }) =>
+      z
+        .object({
+          filename: z.string().min(1).max(200),
+          mime: z.string().max(120).optional(),
+          size_bytes: z.number().int().nonnegative().max(20 * 1024 * 1024).optional(),
+          folder: z.enum(["branding"]).optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const userId = context.userId;
@@ -84,7 +86,8 @@ export const createMediaUploadUrl = createServerFn({ method: "POST" })
     const yyyy = now.getUTCFullYear();
     const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
     const uid = crypto.randomUUID();
-    const path = `${workspaceId}/${yyyy}/${mm}/${uid}-${safeName}`;
+    const prefix = data.folder ? `${workspaceId}/${data.folder}` : workspaceId;
+    const path = `${prefix}/${yyyy}/${mm}/${uid}-${safeName}`;
 
     const { data: signed, error } = await supabaseAdmin.storage
       .from(BUCKET)
