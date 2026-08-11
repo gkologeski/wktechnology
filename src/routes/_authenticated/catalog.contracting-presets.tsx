@@ -292,6 +292,17 @@ function ContractingPresetsPage() {
     }
   }
 
+  async function duplicate(r: Preset) {
+    try {
+      await dup({ data: { id: r.id } });
+      toast.success("Preset duplicado.");
+      await qc.invalidateQueries({ queryKey: ["contracting_presets"] });
+      await qc.invalidateQueries({ queryKey: ["contracting-preset-options"] });
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-4">
       <div className="flex items-center gap-3">
