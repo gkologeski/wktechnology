@@ -722,11 +722,14 @@ export const standardizeContractTitles = createServerFn({ method: "POST" })
 
     const { previewContractTitles, applyContractTitles } =
       await import("@/lib/contracts/title.server");
-    const changes = data.preview
-      ? await previewContractTitles(supabase as never, workspaceId, data.ids)
-      : await applyContractTitles(supabase as never, workspaceId, data.ids);
-    return { changes };
+    if (data.preview) {
+      const preview = await previewContractTitles(supabase as never, workspaceId, data.ids);
+      return preview;
+    }
+    const changes = await applyContractTitles(supabase as never, workspaceId, data.ids);
+    return { changes, unchanged: [], skipped: [] };
   });
+
 
 const titleStatusEnum = z.enum([
   "draft",
@@ -777,15 +780,18 @@ export const standardizeContractTitlesByStatus = createServerFn({ method: "POST"
       targetIds = ((rows ?? []) as { id: string }[]).map((r) => r.id);
       scanned = targetIds.length;
     }
-    if (!targetIds.length) return { scanned: 0, changes: [] };
+    if (!targetIds.length) return { scanned: 0, changes: [], unchanged: [], skipped: [] };
 
     const { previewContractTitles, applyContractTitles } =
       await import("@/lib/contracts/title.server");
-    const changes = data.preview
-      ? await previewContractTitles(supabase as never, workspaceId, targetIds)
-      : await applyContractTitles(supabase as never, workspaceId, targetIds);
-    return { scanned, changes };
+    if (data.preview) {
+      const preview = await previewContractTitles(supabase as never, workspaceId, targetIds);
+      return { scanned, ...preview };
+    }
+    const changes = await applyContractTitles(supabase as never, workspaceId, targetIds);
+    return { scanned, changes, unchanged: [], skipped: [] };
   });
+
 
 // ============= CREATE =============
 

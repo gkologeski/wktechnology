@@ -13,15 +13,19 @@ export type ContractTitleParts = {
   counterpartyName?: string | null;
   /** Nome da nossa entidade legal (quando identificada). */
   ownName?: string | null;
+  /** Nomes das nossas entidades legais do workspace (para identificar qual lado é nosso). */
+  ownNames?: (string | null | undefined)[] | null;
   /** Início da vigência (ISO) — usado para o sufixo do ano. */
   startsAt?: string | null;
   /** Sufixo com o ano da vigência. Ativo por padrão; passe `false` para omitir. */
   includeYear?: boolean;
 };
 
+/** Motivo pelo qual não foi possível calcular o título padronizado. */
+export type TitleSkipReason = "missing_parties" | "same_parties";
+
 const PRESTACAO_PREFIX = "[PRESTAÇÃO]";
 const COMPRA_PREFIX = "[COMPRA]";
-
 
 const COMPANY_SUFFIXES =
   /\b(ltda|limitada|s\/?a|sa|s\.a|me|epp|eireli|mei|cia|companhia|sociedade|empresa)\b/gi;
@@ -55,6 +59,22 @@ function prefixFor(parts: ContractTitleParts): string {
   return parts.role === "client" ? COMPRA_PREFIX : PRESTACAO_PREFIX;
 }
 
+/** Dois nomes normalizados representam a mesma parte? (contenção tolera sufixos/truncamento) */
+function namesMatch(a: string | null, b: string | null): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return a.startsWith(b) || b.startsWith(a);
+}
+
+function ownNamesOf(parts: ContractTitleParts): string[] {
+  const list = [...(parts.ownNames ?? []), parts.ownName];
+  const out: string[] = [];
+  for (const raw of list) {
+    const n = normalizePartyName(raw);
+    if (n && !out.includes(n)) out.push(n);
+  }
+  return out;
+}
 
 /** Resolve quem é CONTRATANTE e quem é CONTRATADA a partir dos dados disponíveis. */
 export function resolveContractParties(parts: ContractTitleParts): {
@@ -64,6 +84,24 @@ export function resolveContractParties(parts: ContractTitleParts): {
   const contractingRaw = parts.contractingName?.trim() || null;
   const counterparty = parts.counterpartyName?.trim() || null;
   const own = parts.ownName?.trim() || null;
+
+  // Preferência: identificar qual lado é nosso pelas entidades legais conhecidas.
+  const ownList = ownNamesOf(parts);
+  if (ownList.length) {
+    const candidates = [
+      normalizePartyName(contractingRaw),
+      normalizePartyName(counterparty),
+      normalizePartyName(own),
+    ].filter((n): n is string => Boolean(n));
+    const isOwn = (n: string) => ownList.some((o) => namesMatch(n, o));
+    const ours = candidates.find(isOwn) ?? null;
+    const other = candidates.find((n) => !isOwn(n)) ?? null;
+    if (ours && other && ours !== other) {
+      return parts.role === "client"
+        ? { contracting: ours, contracted: other }
+        : { contracting: other, contracted: ours };
+    }
+  }
 
   if (parts.role === "client") {
     // Somos a CONTRATANTE; a contraparte é a CONTRATADA.
@@ -80,12 +118,14 @@ export function resolveContractParties(parts: ContractTitleParts): {
 }
 
 /**
- * Monta o título padronizado. Retorna `null` quando as partes não são
- * suficientes — nesse caso o chamador deve manter o título original.
+ * Monta o título padronizado e, quando não é possível, o motivo.
  */
-export function buildContractTitle(parts: ContractTitleParts): string | null {
+export function buildContractTitleResult(
+  parts: ContractTitleParts,
+): { title: string; reason: null } | { title: null; reason: TitleSkipReason } {
   const { contracting, contracted } = resolveContractParties(parts);
-  if (!contracting || !contracted || contracting === contracted) return null;
+  if (!contracting || !contracted) return { title: null, reason: "missing_parties" };
+  if (contracting === contracted) return { title: null, reason: "same_parties" };
 
   const segments: string[] = [];
   if (parts.documentKind === "amendment") {
@@ -99,5 +139,13 @@ export function buildContractTitle(parts: ContractTitleParts): string | null {
     const year = (parts.startsAt ?? "").slice(0, 4);
     if (/^\d{4}$/.test(year)) title = `${title} — ${year}`;
   }
-  return title;
+  return { title, reason: null };
+}
+
+/**
+ * Monta o título padronizado. Retorna `null` quando as partes não são
+ * suficientes — nesse caso o chamador deve manter o título original.
+ */
+export function buildContractTitle(parts: ContractTitleParts): string | null {
+  return buildContractTitleResult(parts).title;
 }
