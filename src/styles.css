@@ -290,7 +290,16 @@
   }
   :root[data-density="compact"] { --density-scale: 0.875; }
   :root[data-density="comfortable"] { --density-scale: 1.05; }
+
+  /* Ícones (white-label): espessura e tamanho base configuráveis */
+  :root { --icon-stroke: 2; --icon-size: 16px; }
+  svg.lucide { stroke-width: var(--icon-stroke); }
+  svg.lucide:not([class*="h-"]):not([class*="size-"]):not([width]) {
+    width: var(--icon-size);
+    height: var(--icon-size);
+  }
 }
+
 
 /* react-phone-number-input — theme bridge */
 .phone-input-wrapper .PhoneInputCountry {

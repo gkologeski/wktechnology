@@ -1,0 +1,2 @@
+ALTER TABLE public.workspace_branding ADD COLUMN IF NOT EXISTS theme jsonb NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE public.module_branding ADD COLUMN IF NOT EXISTS theme jsonb NOT NULL DEFAULT '{}'::jsonb;

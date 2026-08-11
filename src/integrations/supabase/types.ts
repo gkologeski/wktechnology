@@ -9909,6 +9909,7 @@ export type Database = {
           primary_color: string | null
           product_name: string | null
           secondary_color: string | null
+          theme: Json
           updated_at: string
           workspace_id: string
         }
@@ -9922,6 +9923,7 @@ export type Database = {
           primary_color?: string | null
           product_name?: string | null
           secondary_color?: string | null
+          theme?: Json
           updated_at?: string
           workspace_id: string
         }
@@ -9935,6 +9937,7 @@ export type Database = {
           primary_color?: string | null
           product_name?: string | null
           secondary_color?: string | null
+          theme?: Json
           updated_at?: string
           workspace_id?: string
         }
@@ -18113,6 +18116,7 @@ export type Database = {
           primary_color: string | null
           radius: string | null
           support_email: string | null
+          theme: Json
           updated_at: string
           workspace_id: string
         }
@@ -18131,6 +18135,7 @@ export type Database = {
           primary_color?: string | null
           radius?: string | null
           support_email?: string | null
+          theme?: Json
           updated_at?: string
           workspace_id?: string
         }
@@ -18149,6 +18154,7 @@ export type Database = {
           primary_color?: string | null
           radius?: string | null
           support_email?: string | null
+          theme?: Json
           updated_at?: string
           workspace_id?: string
         }
