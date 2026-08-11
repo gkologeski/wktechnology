@@ -5,7 +5,7 @@
  * editáveis: as alterações são gravadas no registro da respectiva entidade
  * ao salvar rascunho ou concluir a qualificação.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -118,7 +118,7 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
    * marcando-os com o selo de origem. Campos já preenchidos ficam como
    * sugestão para o usuário aplicar manualmente.
    */
-  const applySuggestions = (suggestions: EntitySuggestions) => {
+  const applySuggestions = useCallback((suggestions: EntitySuggestions) => {
     const filled: string[] = [];
     setValues((prev) => {
       const next: Values = {
@@ -147,7 +147,7 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
       });
     }
     return filled.length;
-  };
+  }, [blocks, data]);
 
   const missingRequired = useMemo(() => {
     const missing: string[] = [];
