@@ -6,7 +6,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
-import { LEAD_STATUSES } from "@/lib/crm";
+import {
+  useLeadStages,
+  resolveLeadStageValue,
+  deriveLeadStatus,
+  findLeadStage,
+  type LeadStage,
+} from "@/lib/leads/stages";
+
 import type { Lead } from "@/lib/db-types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
