@@ -118,6 +118,53 @@ export const deleteQuestionnaire = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/**
+ * Salva apenas o layout de campos de entidades exibidos na qualificação
+ * (blocos antes/depois das perguntas) — configurável por questionário.
+ */
+export const saveQuestionnaireFieldLayout = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        field_layout: z.array(
+          z.object({
+            id: z.string().min(1).max(80),
+            entity: z.enum(["leads", "companies", "contacts"]),
+            position: z.enum(["before", "after"]),
+            title: z.string().min(1).max(120),
+            fields: z
+              .array(
+                z.object({
+                  key: z.string().min(1).max(120),
+                  label: z.string().min(1).max(200),
+                  type: z.enum(["text", "number", "date", "select", "boolean"]),
+                  required: z.boolean().optional(),
+                  options: z
+                    .array(z.object({ value: z.string(), label: z.string() }))
+                    .max(200)
+                    .optional(),
+                }),
+              )
+              .max(60),
+          }),
+        ).max(12),
+      })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_UPDATE));
+    const { error } = await context.supabase
+      .from("prospecting_questionnaires")
+      .update({ field_layout: data.field_layout } as never)
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+
 export const upsertQuestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>

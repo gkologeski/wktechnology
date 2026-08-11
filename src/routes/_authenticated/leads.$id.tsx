@@ -16,6 +16,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { QualificationPanel } from "@/components/prospecting/qualification-panel";
 import { StageTracker } from "@/components/stage-tracker";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
@@ -48,6 +56,7 @@ function LeadDetail() {
   const { user: _user } = useAuth();
   const qc = useQueryClient();
   const [createDealOpen, setCreateDealOpen] = useState(false);
+  const [qualifyOpen, setQualifyOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -81,6 +90,11 @@ function LeadDetail() {
   const setStage = async (v: string) => {
     if (v === currentStageValue) return;
     const stage = findLeadStage(stages, v);
+    // Etapa "Qualificado" exige preenchimento do questionário de qualificação.
+    if (stage && (stage.value === "qualified" || stage.type === "won")) {
+      setQualifyOpen(true);
+      return;
+    }
     const { error } = await supabase
       .from("leads")
       .update({
@@ -95,6 +109,7 @@ function LeadDetail() {
     }
     void load();
   };
+
 
   const doDelete = async () => {
     if (!canDelete) {
@@ -229,6 +244,26 @@ function LeadDetail() {
         lead={lead}
         onCreated={() => void load()}
       />
+
+      <Dialog open={qualifyOpen} onOpenChange={setQualifyOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Qualificar lead</DialogTitle>
+            <DialogDescription>
+              Preencha o questionário de qualificação para mover o lead para a etapa Qualificado.
+            </DialogDescription>
+          </DialogHeader>
+          <QualificationPanel
+            entity="lead"
+            entityId={lead.id}
+            onDecided={() => {
+              setQualifyOpen(false);
+              void load();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
 
       <AlertDialog open={confirmDelete} onOpenChange={(v) => !busy && setConfirmDelete(v)}>
         <AlertDialogContent>
