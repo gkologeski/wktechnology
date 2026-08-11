@@ -1,7 +1,15 @@
 // Controle reutilizável de imagem/arquivo: aceita URL, upload local ou seleção da biblioteca.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Image as ImageIcon, Link2, Upload, Loader2, Trash2, FolderOpen } from "lucide-react";
+import {
+  Image as ImageIcon,
+  Link2,
+  Upload,
+  Loader2,
+  Trash2,
+  FolderOpen,
+  RotateCcw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,13 +23,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  createMediaUploadUrl,
-  registerMediaAsset,
-  listMediaAssets,
-} from "@/lib/media.functions";
+import { createMediaUploadUrl, registerMediaAsset, listMediaAssets } from "@/lib/media.functions";
 
-const MAX_BYTES = 20 * 1024 * 1024;
+const DEFAULT_MAX_BYTES = 20 * 1024 * 1024;
 
 type Props = {
   value: string | null | undefined;
@@ -32,6 +36,18 @@ type Props = {
   kind?: "image" | "file";
   helperText?: string;
   buttonLabel?: string;
+  /** Limite de tamanho do arquivo em bytes (padrão 20 MB). */
+  maxBytes?: number;
+  /** MIME types permitidos; quando omitido, aceita o que o backend permitir. */
+  allowedMimes?: string[];
+  /** Aviso não bloqueante de proporção: "square" ou "wide". */
+  aspectHint?: "square" | "wide";
+  /** Subpasta lógica no storage (ex.: "branding"). */
+  folder?: "branding";
+  /** Valor herdado exibido quando não há valor próprio. */
+  inheritedValue?: string | null;
+  /** Habilita o botão "Voltar a herdar". */
+  onResetInherit?: () => void;
 };
 
 type MediaRow = {
@@ -55,6 +71,12 @@ export function ImageInput({
   kind = "image",
   helperText,
   buttonLabel,
+  maxBytes = DEFAULT_MAX_BYTES,
+  allowedMimes,
+  aspectHint,
+  folder,
+  inheritedValue,
+  onResetInherit,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"upload" | "url" | "library">("upload");
@@ -72,14 +94,19 @@ export function ImageInput({
 
   const handleFile = useCallback(
     async (file: File) => {
-      if (file.size > MAX_BYTES) {
-        toast.error(`Arquivo acima do limite de 20 MB.`);
+      if (file.size > maxBytes) {
+        const mb = Math.round((maxBytes / (1024 * 1024)) * 10) / 10;
+        toast.error(`Arquivo acima do limite de ${mb} MB.`);
+        return;
+      }
+      if (allowedMimes && file.type && !allowedMimes.includes(file.type.toLowerCase())) {
+        toast.error("Formato não permitido para este campo.");
         return;
       }
       setUploading(true);
       try {
         const init = await createUpload({
-          data: { filename: file.name, mime: file.type, size_bytes: file.size },
+          data: { filename: file.name, mime: file.type, size_bytes: file.size, folder },
         });
         const { error } = await supabase.storage
           .from(init.bucket)
@@ -96,6 +123,13 @@ export function ImageInput({
             const dims = await readImageDims(file);
             width = dims.width;
             height = dims.height;
+            const ratio = dims.width / dims.height;
+            if (aspectHint === "square" && (ratio < 0.9 || ratio > 1.1)) {
+              toast.warning("Imagem não é quadrada — pode ser cortada neste uso.");
+            }
+            if (aspectHint === "wide" && ratio > 2.5) {
+              toast.warning("Imagem muito larga para um símbolo reduzido.");
+            }
           } catch {
             // ignore
           }
@@ -121,10 +155,11 @@ export function ImageInput({
         setUploading(false);
       }
     },
-    [createUpload, registerAsset, onChange],
+    [createUpload, registerAsset, onChange, maxBytes, allowedMimes, aspectHint, folder],
   );
 
   const hasValue = !!value;
+  const previewUrl = hasValue ? value! : inheritedValue || "";
 
   return (
     <div className="space-y-2">
@@ -132,9 +167,9 @@ export function ImageInput({
 
       <div className="flex items-start gap-3">
         <div className="h-16 w-16 shrink-0 rounded-md border border-border bg-muted/40 overflow-hidden flex items-center justify-center text-muted-foreground">
-          {hasValue && (kind === "image" || /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(value!)) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={value!} alt="" className="h-full w-full object-cover" />
+          {previewUrl &&
+          (kind === "image" || /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(previewUrl)) ? (
+            <img src={previewUrl} alt="" className="h-full w-full object-contain" />
           ) : hasValue ? (
             <FolderOpen className="h-5 w-5" />
           ) : (
@@ -146,6 +181,10 @@ export function ImageInput({
           {hasValue ? (
             <div className="text-xs truncate text-muted-foreground" title={value!}>
               {value}
+            </div>
+          ) : inheritedValue ? (
+            <div className="text-xs text-muted-foreground truncate" title={inheritedValue}>
+              Herdado do workspace
             </div>
           ) : (
             <div className="text-xs text-muted-foreground">Nenhum arquivo selecionado.</div>
@@ -208,7 +247,10 @@ export function ImageInput({
                           <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                           <div className="text-sm font-medium">Clique ou arraste um arquivo</div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            Até 20 MB. {kind === "image" ? "PNG, JPG, WEBP, SVG, GIF." : "Imagens, PDF, Office."}
+                            Até {Math.round((maxBytes / (1024 * 1024)) * 10) / 10} MB.{" "}
+                            {kind === "image"
+                              ? "PNG, JPG, WEBP, SVG, GIF."
+                              : "Imagens, PDF, Office."}
                           </div>
                         </>
                       )}
@@ -268,6 +310,13 @@ export function ImageInput({
                 ) : null}
               </DialogContent>
             </Dialog>
+
+            {hasValue && onResetInherit ? (
+              <Button type="button" size="sm" variant="ghost" onClick={onResetInherit}>
+                <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                Voltar a herdar
+              </Button>
+            ) : null}
 
             {hasValue ? (
               <Button
@@ -337,7 +386,6 @@ function Library({ onPick, kind }: { onPick: (row: MediaRow) => void; kind: "ima
               title={r.filename}
             >
               {isImageMime(r.mime) ? (
-                // eslint-disable-next-line @next/next/no-img-element
                 <img src={r.url} alt={r.filename} className="h-full w-full object-cover" />
               ) : (
                 <div className="h-full w-full flex flex-col items-center justify-center text-muted-foreground p-2">

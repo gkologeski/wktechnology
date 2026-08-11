@@ -31,13 +31,14 @@ function slugifyFilename(name: string) {
   const dot = name.lastIndexOf(".");
   const base = (dot > 0 ? name.slice(0, dot) : name) || "arquivo";
   const ext = dot > 0 ? name.slice(dot).toLowerCase() : "";
-  const safeBase = base
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9._-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^[-.]+|[-.]+$/g, "")
-    .slice(0, 60) || "arquivo";
+  const safeBase =
+    base
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9._-]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^[-.]+|[-.]+$/g, "")
+      .slice(0, 60) || "arquivo";
   return `${safeBase}${ext}`;
 }
 
@@ -64,14 +65,21 @@ const ALLOWED_MIMES = [
 
 export const createMediaUploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { filename: string; mime?: string; size_bytes?: number }) =>
-    z
-      .object({
-        filename: z.string().min(1).max(200),
-        mime: z.string().max(120).optional(),
-        size_bytes: z.number().int().nonnegative().max(20 * 1024 * 1024).optional(),
-      })
-      .parse(d),
+  .inputValidator(
+    (d: { filename: string; mime?: string; size_bytes?: number; folder?: "branding" }) =>
+      z
+        .object({
+          filename: z.string().min(1).max(200),
+          mime: z.string().max(120).optional(),
+          size_bytes: z
+            .number()
+            .int()
+            .nonnegative()
+            .max(20 * 1024 * 1024)
+            .optional(),
+          folder: z.enum(["branding"]).optional(),
+        })
+        .parse(d),
   )
   .handler(async ({ data, context }) => {
     const userId = context.userId;
@@ -84,7 +92,8 @@ export const createMediaUploadUrl = createServerFn({ method: "POST" })
     const yyyy = now.getUTCFullYear();
     const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
     const uid = crypto.randomUUID();
-    const path = `${workspaceId}/${yyyy}/${mm}/${uid}-${safeName}`;
+    const prefix = data.folder ? `${workspaceId}/${data.folder}` : workspaceId;
+    const path = `${prefix}/${yyyy}/${mm}/${uid}-${safeName}`;
 
     const { data: signed, error } = await supabaseAdmin.storage
       .from(BUCKET)
@@ -240,7 +249,6 @@ export const listMediaAssets = createServerFn({ method: "POST" })
         return r;
       }),
     );
-
 
     return { rows: refreshed, total: count ?? refreshed.length };
   });

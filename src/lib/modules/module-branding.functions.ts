@@ -29,9 +29,7 @@ const MODULE_IDS = ["crm", "ats", "contracts", "projects", "finance", "people"] 
 
 export const getModuleBranding = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { moduleId: string }) =>
-    z.object({ moduleId: z.enum(MODULE_IDS) }).parse(d),
-  )
+  .inputValidator((d: { moduleId: string }) => z.object({ moduleId: z.enum(MODULE_IDS) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
@@ -41,7 +39,20 @@ export const getModuleBranding = createServerFn({ method: "GET" })
       .eq("workspace_id", workspaceId)
       .eq("module_id", data.moduleId)
       .maybeSingle();
-    return { branding: row, workspace_id: workspaceId, module_id: data.moduleId };
+
+    // Renova URLs assinadas de assets próximas do vencimento.
+    const { refreshBrandingAssets } = await import("@/lib/branding/assets.server");
+    const { row: fresh, patch } = await refreshBrandingAssets(row);
+    if (patch) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin
+        .from("module_branding")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update(patch as any)
+        .eq("workspace_id", workspaceId)
+        .eq("module_id", data.moduleId);
+    }
+    return { branding: fresh, workspace_id: workspaceId, module_id: data.moduleId };
   });
 
 const moduleThemeSchema = z

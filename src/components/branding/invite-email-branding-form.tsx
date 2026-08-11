@@ -8,10 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import {
-  getInviteSettings,
-  saveInviteSettings,
-} from "@/lib/workspace-invite-settings.functions";
+import { getInviteSettings, saveInviteSettings } from "@/lib/workspace-invite-settings.functions";
 
 type Settings = {
   subject: string | null;
