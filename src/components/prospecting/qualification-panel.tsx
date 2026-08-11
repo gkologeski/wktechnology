@@ -456,6 +456,14 @@ export function QualificationPanel({
               <Badge variant="outline" className="text-muted-foreground" title={(enrichment.error as Error).message}>
                 Enriquecimento indisponível
               </Badge>
+            ) : enrichment.data && !enrichment.data.found && enrichment.data.warnings.length > 0 ? (
+              <Badge
+                variant="outline"
+                className="text-muted-foreground"
+                title={enrichment.data.warnings.join(" · ")}
+              >
+                {enrichment.data.warnings[0]}
+              </Badge>
             ) : enrichment.data?.found ? (
               <Badge variant="secondary" className="gap-1" title={enrichment.data.domain ? `Domínio: ${enrichment.data.domain}` : undefined}>
                 <Sparkles className="h-3 w-3" aria-hidden="true" />

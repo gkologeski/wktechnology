@@ -51,6 +51,8 @@ export type EnrichmentSuggestions = {
   fetchedAt: string;
   cached: boolean;
   found: boolean;
+  /** Falhas parciais do provedor (ex.: créditos esgotados). */
+  warnings: string[];
   lead: SuggestionMap;
   companies: SuggestionMap;
   contacts: SuggestionMap;
@@ -147,6 +149,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
       fetchedAt: new Date().toISOString(),
       cached: false,
       found: !!result.person || Object.keys(companySuggestions).length > 0,
+      warnings: result.warnings,
       lead: {
         ...pick(personSuggestions, LEAD_KEYS),
         ...(result.company?.name ? { company_name: result.company.name } : {}),
@@ -159,7 +162,9 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
       },
     };
 
-    await supabase
+    // Só cacheia resultados úteis — falhas de provedor devem poder ser reprocessadas.
+    if (payload.found) {
+      await supabase
       .from("leads")
       .update({
         custom_fields: {
@@ -168,6 +173,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
         } as never,
       })
       .eq("id", data.leadId);
+    }
 
     return payload;
   });
