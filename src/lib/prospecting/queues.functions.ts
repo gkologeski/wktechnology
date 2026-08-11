@@ -376,9 +376,16 @@ export const listQueueItems = createServerFn({ method: "POST" })
     const sortField = sort.field ?? "updated_at";
     const sortDir = sort.dir ?? "desc";
     query = query.order(sortField, { ascending: sortDir === "asc" });
-    query = query.range(data.offset, data.offset + data.limit - 1);
+    if (!manualIds) {
+      query = query.range(data.offset, data.offset + data.limit - 1);
+    }
 
     const { data: rows, error, count } = await query;
     if (error) throw new Error(error.message);
-    return { items: rows ?? [], total: count ?? 0, entity: queue.entity };
+    return {
+      items: rows ?? [],
+      total: manualIds ? manualIds.length : (count ?? 0),
+      entity: queue.entity,
+    };
   });
+
