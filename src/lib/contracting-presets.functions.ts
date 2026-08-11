@@ -184,6 +184,48 @@ export const deleteContractingPreset = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const duplicateContractingPreset = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, VIEW);
+    await assertAnyPermission(supabase, userId, workspaceId, CREATE);
+
+    const { data: src, error } = await supabase
+      .from("contracting_presets")
+      .select(SELECT)
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!src) throw new Error("Preset não encontrado.");
+
+    const { data: row, error: iErr } = await supabase
+      .from("contracting_presets")
+      .insert({
+        workspace_id: workspaceId,
+        owner_id: userId,
+        name: `${src.name} (cópia)`,
+        code: src.code ? `${src.code}-copia` : null,
+        description: src.description,
+        service_catalog_id: src.service_catalog_id,
+        job_profile_id: src.job_profile_id,
+        seniority: src.seniority,
+        competencies: src.competencies ?? [],
+        unit: src.unit || "mes",
+        default_unit_price: src.default_unit_price ?? 0,
+        default_unit_cost: src.default_unit_cost ?? 0,
+        currency: (src.currency || "BRL").toUpperCase(),
+        notes: src.notes,
+        active: true,
+      })
+      .select(SELECT)
+      .single();
+    if (iErr) throw iErr;
+    return row;
+  });
+
 // Opções para o seletor de preset dentro do contrato (apenas presets ativos).
 export const listContractingPresetOptions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
