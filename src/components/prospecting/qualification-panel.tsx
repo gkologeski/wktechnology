@@ -1,14 +1,16 @@
 /**
  * Painel de qualificação — renderiza um questionário ativo para um lead,
  * calcula score em tempo real e permite decisão manual final do SDR:
- * qualificar (abre criação de negócio), desqualificar (motivo obrigatório)
- * ou enviar para nutrição.
+ * qualificar, desqualificar (motivo obrigatório) ou enviar para nutrição.
+ *
+ * Também exibe blocos de campos de entidades (Lead/Empresa/Contato)
+ * configuráveis por questionário, antes ou depois das perguntas.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, X, Clock } from "lucide-react";
+import { Check, X, Clock, Settings2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,8 +34,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CreateDealFromLeadDialog } from "@/components/leads/create-deal-from-lead-dialog";
-import type { Lead } from "@/lib/db-types";
 import { listQuestionnaires, getQuestionnaire } from "@/lib/prospecting/questionnaires.functions";
 import {
   saveQualification,
@@ -41,6 +41,12 @@ import {
   nurtureLead,
 } from "@/lib/prospecting/qualifications.functions";
 import { getDealLossReasons } from "@/lib/deal-loss-reasons.functions";
+import { parseFieldLayout } from "@/lib/prospecting/field-layout";
+import {
+  QualificationEntityBlocks,
+  useQualificationEntityFields,
+} from "@/components/prospecting/qualification-entity-fields";
+import { QualificationFieldLayoutDialog } from "@/components/prospecting/qualification-field-layout-dialog";
 
 type Entity = "lead";
 
@@ -64,6 +70,7 @@ export function QualificationPanel({
   const nurtureFn = useServerFn(nurtureLead);
   const listLossReasons = useServerFn(getDealLossReasons);
   const qc = useQueryClient();
+
 
 
   const { data: questionnaires } = useQuery({
@@ -147,44 +154,29 @@ export function QualificationPanel({
     return missing;
   }, [qData, answers]);
 
-  const qualificationSummary = useMemo(() => {
-    if (!qData) return "";
-    const esc = (s: string) =>
-      s
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-    const items: string[] = [];
-    for (const q of qData.questions) {
-      const raw = answers[q.id];
-      if (raw == null || raw === "" || (Array.isArray(raw) && raw.length === 0)) continue;
-      let formatted: string;
-      if (q.type === "boolean") formatted = raw === true ? "Sim" : "Não";
-      else if (q.type === "multi" && Array.isArray(raw)) formatted = raw.join(", ");
-      else formatted = String(raw);
-      const label = q.label ?? "";
-      const sepIdx = label.indexOf(" - ");
-      let li: string;
-      if (sepIdx > 0) {
-        const prefix = label.slice(0, sepIdx).trim();
-        const rest = label.slice(sepIdx + 3).trim();
-        li = `<strong>${esc(prefix)}:</strong> ${esc(rest)}: ${esc(formatted)}`;
-      } else {
-        li = `<strong>${esc(label)}:</strong> ${esc(formatted)}`;
-      }
-      items.push(`<li>${li}</li>`);
-    }
-    const header = `<p><strong>${esc(
-      `Qualificação — ${qData.questionnaire.name} (score ${score}/${threshold})`,
-    )}</strong></p>`;
-    if (items.length === 0) return header;
-    return `${header}<ol>${items.join("")}</ol>`;
-  }, [qData, answers, score, threshold]);
+  // ---------- Campos de entidades configurados por questionário ----------
+  const fieldLayout = useMemo(
+    () =>
+      parseFieldLayout(
+        (qData?.questionnaire as { field_layout?: unknown } | undefined)?.field_layout,
+      ),
+    [qData],
+  );
+  const blocksBefore = fieldLayout.filter((b) => b.position === "before");
+  const blocksAfter = fieldLayout.filter((b) => b.position === "after");
+  const entityFields = useQualificationEntityFields(entityId, fieldLayout);
+  const [layoutOpen, setLayoutOpen] = useState(false);
 
+  const { stages } = useLeadStages();
+  const qualifiedStage = useMemo(
+    () => stages.find((s) => s.value === "qualified") ?? stages.find((s) => s.type === "won"),
+    [stages],
+  );
 
   const saveDraft = useMutation({
-    mutationFn: () =>
-      save({
+    mutationFn: async () => {
+      await entityFields.saveAll();
+      return save({
         data: {
           id: existingForActive?.id,
           questionnaire_id: activeId!,
@@ -192,66 +184,62 @@ export function QualificationPanel({
           entity_id: entityId,
           answers,
         },
-      }),
+      });
+    },
     onSuccess: () => {
       toast.success("Qualificação salva.");
       qc.invalidateQueries({
         queryKey: ["prospecting", "qualifications", entity, entityId],
       });
+      qc.invalidateQueries({ queryKey: ["qualification-entity-records", entityId] });
     },
     onError: (e) => toast.error((e as Error).message),
   });
 
-  // ---------- Qualificar → abre CreateDealFromLeadDialog ----------
-  const [dealDialogOpen, setDealDialogOpen] = useState(false);
-  const [leadRecord, setLeadRecord] = useState<Lead | null>(null);
-  const [loadingLead, setLoadingLead] = useState(false);
+  // ---------- Qualificar → registra a qualificação e conclui a etapa ----------
+  const [qualifying, setQualifying] = useState(false);
 
-  async function openQualifyDialog() {
-    setLoadingLead(true);
+  async function confirmQualify() {
+    if (!activeId) return;
+    setQualifying(true);
     try {
-      const { data, error } = await supabase
+      // 1) grava os campos de entidade editados nos blocos configurados
+      await entityFields.saveAll();
+      // 2) registra a qualificação (respostas + score + observações)
+      await save({
+        data: {
+          id: existingForActive?.id,
+          questionnaire_id: activeId,
+          entity,
+          entity_id: entityId,
+          answers,
+          decision: "qualified",
+          decision_reason: reason || null,
+        },
+      });
+      // 3) move o lead para a etapa de qualificado do funil
+      const patch: Record<string, unknown> = { status: "qualified" };
+      if (qualifiedStage) patch.stage_id = qualifiedStage.value;
+      const { error: leadErr } = await supabase
         .from("leads")
-        .select("*")
-        .eq("id", entityId)
-        .maybeSingle();
-      if (error) throw new Error(error.message);
-      if (!data) throw new Error("Lead não encontrado.");
-      setLeadRecord(data as unknown as Lead);
-      setDealDialogOpen(true);
+        .update(patch as never)
+        .eq("id", entityId);
+      if (leadErr) throw new Error(leadErr.message);
+
+      toast.success("Lead qualificado.");
+      qc.invalidateQueries({
+        queryKey: ["prospecting", "qualifications", entity, entityId],
+      });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", entityId] });
+      onDecided?.("qualified");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
-      setLoadingLead(false);
+      setQualifying(false);
     }
   }
 
-  async function onDealCreated() {
-    // Registra a qualificação (score + respostas) atrelada ao questionário ativo
-    if (activeId) {
-      try {
-        await save({
-          data: {
-            id: existingForActive?.id,
-            questionnaire_id: activeId,
-            entity,
-            entity_id: entityId,
-            answers,
-            decision: "qualified",
-            decision_reason: reason || null,
-          },
-        });
-      } catch (e) {
-        // não bloqueia — o negócio já foi criado
-        console.warn("saveQualification failed", e);
-      }
-    }
-    qc.invalidateQueries({
-      queryKey: ["prospecting", "qualifications", entity, entityId],
-    });
-    qc.invalidateQueries({ queryKey: ["leads"] });
-    onDecided?.("qualified");
-  }
 
   // ---------- Desqualificar → modal com motivo obrigatório ----------
   const [disqualifyOpen, setDisqualifyOpen] = useState(false);
@@ -356,8 +344,14 @@ export function QualificationPanel({
     );
   }
 
-  const busy =
-    saveDraft.isPending || loadingLead || disqualifying || nurturing;
+  const busy = saveDraft.isPending || qualifying || disqualifying || nurturing;
+  const missingEntityFields = entityFields.missingRequired;
+  const blockedReason =
+    missingRequired.length > 0
+      ? `Responda os campos obrigatórios: ${missingRequired.join("; ")}`
+      : missingEntityFields.length > 0
+        ? `Preencha os campos obrigatórios: ${missingEntityFields.join("; ")}`
+        : undefined;
 
   return (
     <>
@@ -395,9 +389,27 @@ export function QualificationPanel({
                 </SelectContent>
               </Select>
             )}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!activeId}
+              onClick={() => setLayoutOpen(true)}
+              title="Configurar quais campos aparecem antes ou depois das perguntas"
+            >
+              <Settings2 className="w-4 h-4 mr-1" /> Configurar campos
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          <QualificationEntityBlocks
+            blocks={blocksBefore}
+            records={entityFields.records}
+            values={entityFields.values}
+            onChange={entityFields.setValue}
+            disabled={busy}
+            isLoading={entityFields.isLoading}
+          />
+
           {qData ? (
             qData.questions.length === 0 ? (
               <p className="text-sm text-muted-foreground">
@@ -418,6 +430,15 @@ export function QualificationPanel({
           ) : (
             <p className="text-sm text-muted-foreground">Carregando...</p>
           )}
+
+          <QualificationEntityBlocks
+            blocks={blocksAfter}
+            records={entityFields.records}
+            values={entityFields.values}
+            onChange={entityFields.setValue}
+            disabled={busy}
+            isLoading={entityFields.isLoading}
+          />
 
           <div className="border-t pt-4 space-y-3">
             <div className="space-y-1">
@@ -441,15 +462,11 @@ export function QualificationPanel({
               <Button
                 size="sm"
                 className="bg-emerald-600 hover:bg-emerald-700"
-                disabled={busy || !activeId || missingRequired.length > 0}
-                title={
-                  missingRequired.length > 0
-                    ? `Responda os campos obrigatórios: ${missingRequired.join("; ")}`
-                    : undefined
-                }
-                onClick={openQualifyDialog}
+                disabled={busy || !activeId || !!blockedReason}
+                title={blockedReason}
+                onClick={() => void confirmQualify()}
               >
-                <Check className="w-4 h-4 mr-1" /> Qualificar
+                <Check className="w-4 h-4 mr-1" /> {qualifying ? "Qualificando..." : "Qualificar"}
               </Button>
               <Button
                 size="sm"
@@ -478,21 +495,15 @@ export function QualificationPanel({
         </CardContent>
       </Card>
 
-      {/* Qualificar: modal padrão do CRM que cria negócio a partir do lead */}
-      {leadRecord ? (
-        <CreateDealFromLeadDialog
-          open={dealDialogOpen}
-          onOpenChange={(v) => {
-            setDealDialogOpen(v);
-            if (!v) setLeadRecord(null);
-          }}
-          lead={leadRecord}
-          initialDescription={qualificationSummary}
-          onCreated={() => {
-            void onDealCreated();
-          }}
+      {activeId ? (
+        <QualificationFieldLayoutDialog
+          open={layoutOpen}
+          onOpenChange={setLayoutOpen}
+          questionnaireId={activeId}
+          blocks={fieldLayout}
         />
       ) : null}
+
 
       {/* Desqualificar: motivo obrigatório */}
       <Dialog open={disqualifyOpen} onOpenChange={setDisqualifyOpen}>

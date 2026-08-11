@@ -13613,6 +13613,7 @@ export type Database = {
           created_at: string
           description: string | null
           enabled: boolean
+          field_layout: Json
           framework: string
           id: string
           is_template: boolean
@@ -13628,6 +13629,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           enabled?: boolean
+          field_layout?: Json
           framework?: string
           id?: string
           is_template?: boolean
@@ -13643,6 +13645,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           enabled?: boolean
+          field_layout?: Json
           framework?: string
           id?: string
           is_template?: boolean
