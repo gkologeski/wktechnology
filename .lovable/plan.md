@@ -29,6 +29,7 @@ Melhorias sugeridas incluídas:
 - Campos **vazios** são preenchidos automaticamente com o valor sugerido e marcados com um selo "Apollo".
 - Campos **já preenchidos** nunca são sobrescritos: aparece uma sugestão ao lado com ação "Usar".
 - Nada é gravado no banco pelo enriquecimento em si: os valores entram no formulário e só persistem ao salvar rascunho ou concluir a qualificação (regra atual mantida).
+- Ao salvar o Lead (rascunho ou conclusão da qualificação), todos os campos enriquecidos são gravados de uma vez: os do Lead no registro do lead, os da Empresa no registro da empresa vinculada e os do Contato no contato vinculado — mesmo que o campo não esteja visível em nenhum bloco configurado. Campos já preenchidos continuam intactos (só vazios recebem o valor do Apollo, ou o valor que o usuário aceitou com "Usar"). Se a empresa/contato ainda não existir no lead, o vínculo não é criado automaticamente e esses dados ficam apenas no lead + histórico do enriquecimento.
 - Estados tratados: sem integração configurada (aviso curto, sem erro), sem resultado ("Nenhum dado encontrado no Apollo"), erro/limite de crédito (mensagem com o status do provedor e botão de tentar novamente). A qualificação continua funcionando normalmente em todos os casos.
 
 ## Detalhes técnicos
