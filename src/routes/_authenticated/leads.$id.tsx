@@ -48,6 +48,7 @@ function LeadDetail() {
   const { user: _user } = useAuth();
   const qc = useQueryClient();
   const [createDealOpen, setCreateDealOpen] = useState(false);
+  const [qualifyOpen, setQualifyOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
