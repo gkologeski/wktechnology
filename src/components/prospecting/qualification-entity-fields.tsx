@@ -5,13 +5,16 @@
  * editáveis: as alterações são gravadas no registro da respectiva entidade
  * ao salvar rascunho ou concluir a qualificação.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -31,6 +34,9 @@ type Records = Record<QualificationFieldEntity, Row>;
 type Values = Record<QualificationFieldEntity, Record<string, unknown>>;
 
 const EMPTY_VALUES: Values = { leads: {}, companies: {}, contacts: {} };
+
+/** Sugestões de enriquecimento por entidade/coluna (ex.: Apollo.io). */
+export type EntitySuggestions = Partial<Record<QualificationFieldEntity, Record<string, unknown>>>;
 
 function isEmpty(v: unknown) {
   return v == null || (typeof v === "string" && v.trim() === "");
@@ -84,6 +90,11 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
   });
 
   const [values, setValues] = useState<Values>(EMPTY_VALUES);
+  // Espelho síncrono dos valores, usado pelo preenchimento automático.
+  const valuesRef = useRef<Values>(EMPTY_VALUES);
+  useEffect(() => {
+    valuesRef.current = values;
+  }, [values]);
 
   // Sincroniza os valores editáveis quando os registros carregam.
   useEffect(() => {
@@ -99,9 +110,51 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
     setValues(next);
   }, [data, blocks]);
 
+  // Campos preenchidos automaticamente pelo enriquecimento (para exibir o selo).
+  const [autofilled, setAutofilled] = useState<Record<string, boolean>>({});
+
   const setValue = (entity: QualificationFieldEntity, key: string, value: unknown) => {
     setValues((prev) => ({ ...prev, [entity]: { ...prev[entity], [key]: value } }));
+    setAutofilled((prev) => ({ ...prev, [`${entity}.${key}`]: false }));
   };
+
+  /**
+   * Preenche automaticamente apenas os campos configurados que estão vazios,
+   * marcando-os com o selo de origem. Campos já preenchidos ficam como
+   * sugestão para o usuário aplicar manualmente.
+   */
+  const applySuggestions = useCallback(
+    (suggestions: EntitySuggestions) => {
+      const current = valuesRef.current;
+      const next: Values = {
+        leads: { ...current.leads },
+        companies: { ...current.companies },
+        contacts: { ...current.contacts },
+      };
+      const filled: string[] = [];
+      for (const b of blocks) {
+        const sugg = suggestions[b.entity];
+        if (!sugg || !data?.[b.entity]) continue;
+        for (const f of b.fields) {
+          const value = sugg[f.key];
+          if (value === null || value === undefined || value === "") continue;
+          if (!isEmpty(next[b.entity][f.key])) continue;
+          next[b.entity][f.key] = value;
+          filled.push(`${b.entity}.${f.key}`);
+        }
+      }
+      if (filled.length === 0) return 0;
+      valuesRef.current = next;
+      setValues(next);
+      setAutofilled((prev) => {
+        const merged = { ...prev };
+        for (const k of filled) merged[k] = true;
+        return merged;
+      });
+      return filled.length;
+    },
+    [blocks, data],
+  );
 
   const missingRequired = useMemo(() => {
     const missing: string[] = [];
@@ -143,6 +196,8 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
     values,
     setValue,
     saveAll,
+    applySuggestions,
+    autofilled,
     missingRequired,
     isLoading: needsLead && isLoading,
     error: error as Error | null,
@@ -156,6 +211,8 @@ export function QualificationEntityBlocks({
   onChange,
   disabled,
   isLoading,
+  suggestions,
+  autofilled,
 }: {
   blocks: QualificationFieldBlock[];
   records: Records | null;
@@ -163,6 +220,8 @@ export function QualificationEntityBlocks({
   onChange: (entity: QualificationFieldEntity, key: string, value: unknown) => void;
   disabled?: boolean;
   isLoading?: boolean;
+  suggestions?: EntitySuggestions;
+  autofilled?: Record<string, boolean>;
 }) {
   const visible = blocks.filter((b) => b.fields.length > 0);
   if (visible.length === 0) return null;
@@ -205,6 +264,8 @@ export function QualificationEntityBlocks({
                     field={f}
                     value={values[b.entity]?.[f.key]}
                     disabled={disabled}
+                    suggestion={suggestions?.[b.entity]?.[f.key]}
+                    autofilled={autofilled?.[`${b.entity}.${f.key}`] === true}
                     onChange={(v) => onChange(b.entity, f.key, v)}
                   />
                 ))}
@@ -222,19 +283,53 @@ function EntityFieldInput({
   value,
   onChange,
   disabled,
+  suggestion,
+  autofilled,
 }: {
   field: QualificationField;
   value: unknown;
   onChange: (v: unknown) => void;
   disabled?: boolean;
+  suggestion?: unknown;
+  autofilled?: boolean;
 }) {
   const id = `qf-${field.key}`;
   const label = (
-    <Label htmlFor={id} className="text-xs">
-      {field.label}
-      {field.required ? <span className="text-destructive ml-1">*</span> : null}
+    <Label htmlFor={id} className="flex items-center gap-1.5 text-xs">
+      <span>
+        {field.label}
+        {field.required ? <span className="text-destructive ml-1">*</span> : null}
+      </span>
+      {autofilled ? (
+        <Badge variant="secondary" className="h-4 gap-1 px-1.5 text-[10px] font-medium">
+          <Sparkles className="h-2.5 w-2.5" aria-hidden="true" />
+          Apollo
+        </Badge>
+      ) : null}
     </Label>
   );
+
+  const showSuggestion =
+    !autofilled &&
+    suggestion !== null &&
+    suggestion !== undefined &&
+    suggestion !== "" &&
+    String(suggestion) !== String(value ?? "");
+
+  const suggestionHint = showSuggestion ? (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      disabled={disabled}
+      onClick={() => onChange(suggestion)}
+      className="h-6 justify-start gap-1 px-1 text-[11px] text-muted-foreground hover:text-foreground"
+      title={`Aplicar sugestão do Apollo.io: ${String(suggestion)}`}
+    >
+      <Sparkles className="h-3 w-3" aria-hidden="true" />
+      <span className="truncate">Apollo: {String(suggestion)}</span>
+    </Button>
+  ) : null;
 
   if (field.type === "boolean") {
     return (
@@ -249,6 +344,7 @@ function EntityFieldInput({
           />
           <span className="text-sm">Sim</span>
         </div>
+        {suggestionHint}
       </div>
     );
   }
@@ -273,6 +369,7 @@ function EntityFieldInput({
             ))}
           </SelectContent>
         </Select>
+        {suggestionHint}
       </div>
     );
   }
@@ -299,6 +396,7 @@ function EntityFieldInput({
           )
         }
       />
+      {suggestionHint}
     </div>
   );
 }

@@ -1,0 +1,309 @@
+/**
+ * Enriquecimento Apollo.io em cascata (server-only).
+ *
+ * Estratégia:
+ *  1) descobrir o domínio da empresa (site, e-mail corporativo ou busca por nome);
+ *  2) enriquecer a empresa pelo domínio (dado mais confiável);
+ *  3) enriquecer a pessoa por LinkedIn / e-mail / nome + domínio.
+ *
+ * As chamadas passam pelo connector gateway da Lovable quando há
+ * LOVABLE_API_KEY (padrão do projeto); sem ela, caem para a API direta.
+ */
+
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
+const APOLLO_BASE = "https://api.apollo.io";
+
+const FREE_EMAIL_DOMAINS = new Set([
+  "gmail.com",
+  "hotmail.com",
+  "outlook.com",
+  "live.com",
+  "yahoo.com",
+  "yahoo.com.br",
+  "icloud.com",
+  "bol.com.br",
+  "uol.com.br",
+  "terra.com.br",
+  "me.com",
+  "protonmail.com",
+  "aol.com",
+]);
+
+export type ApolloCompanyData = {
+  name?: string | null;
+  domain?: string | null;
+  website?: string | null;
+  industry?: string | null;
+  size?: string | null;
+  phone?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  linkedin_company_page?: string | null;
+  annualrevenue?: number | null;
+  description?: string | null;
+};
+
+export type ApolloPersonData = {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  mobile_phone?: string | null;
+  job_title?: string | null;
+  linkedin_url?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+};
+
+type ApolloOrg = {
+  name?: string | null;
+  primary_domain?: string | null;
+  website_url?: string | null;
+  industry?: string | null;
+  estimated_num_employees?: number | null;
+  phone?: string | null;
+  primary_phone?: { number?: string | null } | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  linkedin_url?: string | null;
+  annual_revenue?: number | null;
+  short_description?: string | null;
+  seo_description?: string | null;
+};
+
+type ApolloPerson = {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  title?: string | null;
+  linkedin_url?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  phone_numbers?: { sanitized_number?: string; raw_number?: string; type?: string }[];
+  organization?: ApolloOrg | null;
+};
+
+export class ApolloNotConfiguredError extends Error {
+  constructor() {
+    super("Apollo.io não conectado. Conecte o Apollo em Configurações → Conectores.");
+    this.name = "ApolloNotConfiguredError";
+  }
+}
+
+async function apolloFetch<T>(
+  path: string,
+  init: { method: "GET" | "POST"; query?: Record<string, string>; body?: unknown },
+): Promise<T> {
+  const connectionKey = process.env.APOLLO_API_KEY;
+  if (!connectionKey) throw new ApolloNotConfiguredError();
+  const lovableKey = process.env.LOVABLE_API_KEY;
+
+  const base = lovableKey ? GATEWAY_URL : APOLLO_BASE;
+  const url = new URL(`${base}${path}`);
+  for (const [k, v] of Object.entries(init.query ?? {})) {
+    if (v) url.searchParams.append(k, v);
+  }
+
+  const headers: Record<string, string> = { accept: "application/json" };
+  if (lovableKey) {
+    headers.Authorization = `Bearer ${lovableKey}`;
+    headers["X-Connection-Api-Key"] = connectionKey;
+  } else {
+    headers["X-Api-Key"] = connectionKey;
+  }
+  if (init.method === "POST") headers["Content-Type"] = "application/json";
+
+  const res = await fetch(url, {
+    method: init.method,
+    headers,
+    ...(init.method === "POST" && init.body !== undefined
+      ? { body: JSON.stringify(init.body) }
+      : {}),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`Apollo erro [${res.status}]: ${text.slice(0, 300)}`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return {} as T;
+  }
+}
+
+/** Extrai o host de uma URL/valor livre; retorna null se não parecer domínio. */
+export function normalizeDomain(raw?: string | null): string | null {
+  if (!raw) return null;
+  let v = String(raw).trim().toLowerCase();
+  if (!v) return null;
+  v = v.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  v = v.split("/")[0]!.split("?")[0]!.split("#")[0]!;
+  if (!v.includes(".") || v.includes(" ")) return null;
+  return v;
+}
+
+/** Domínio de um e-mail corporativo (ignora provedores gratuitos). */
+export function domainFromEmail(email?: string | null): string | null {
+  const at = String(email ?? "").split("@")[1];
+  const d = normalizeDomain(at);
+  if (!d || FREE_EMAIL_DOMAINS.has(d)) return null;
+  return d;
+}
+
+function mapOrg(org?: ApolloOrg | null): ApolloCompanyData | null {
+  if (!org) return null;
+  return {
+    name: org.name ?? null,
+    domain: normalizeDomain(org.primary_domain ?? org.website_url ?? null),
+    website: org.website_url ?? (org.primary_domain ? `https://${org.primary_domain}` : null),
+    industry: org.industry ?? null,
+    size: org.estimated_num_employees ? String(org.estimated_num_employees) : null,
+    phone: org.primary_phone?.number ?? org.phone ?? null,
+    city: org.city ?? null,
+    state: org.state ?? null,
+    country: org.country ?? null,
+    linkedin_company_page: org.linkedin_url ?? null,
+    annualrevenue: typeof org.annual_revenue === "number" ? org.annual_revenue : null,
+    description: org.short_description ?? org.seo_description ?? null,
+  };
+}
+
+/** Busca o domínio da empresa pelo nome (Apollo company search). */
+export async function apolloFindDomainByName(companyName: string): Promise<string | null> {
+  const data = await apolloFetch<{ organizations?: ApolloOrg[]; accounts?: ApolloOrg[] }>(
+    "/api/v1/mixed_companies/search",
+    { method: "POST", query: { q_organization_name: companyName, per_page: "5", page: "1" } },
+  );
+  const list = [...(data.organizations ?? []), ...(data.accounts ?? [])];
+  for (const org of list) {
+    const d = normalizeDomain(org.primary_domain ?? org.website_url ?? null);
+    if (d) return d;
+  }
+  return null;
+}
+
+/** Enriquecimento da empresa pelo domínio. */
+export async function apolloOrganizationEnrich(domain: string): Promise<ApolloCompanyData | null> {
+  const data = await apolloFetch<{ organization?: ApolloOrg }>("/api/v1/organizations/enrich", {
+    method: "GET",
+    query: { domain },
+  });
+  return mapOrg(data.organization);
+}
+
+/** Enriquecimento da pessoa: LinkedIn > e-mail > nome + domínio > nome + empresa. */
+export async function apolloPeopleMatch(input: {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  linkedin_url?: string | null;
+  domain?: string | null;
+  company_name?: string | null;
+}): Promise<{ person: ApolloPersonData; company: ApolloCompanyData | null } | null> {
+  const params: Record<string, unknown> = {
+    reveal_personal_emails: true,
+    reveal_phone_number: false,
+  };
+  if (input.linkedin_url) params.linkedin_url = input.linkedin_url;
+  else if (input.email) params.email = input.email;
+  else if (input.first_name && (input.domain || input.company_name)) {
+    params.first_name = input.first_name;
+    if (input.last_name) params.last_name = input.last_name;
+    if (input.domain) params.domain = input.domain;
+    if (input.company_name) params.organization_name = input.company_name;
+  } else {
+    return null;
+  }
+
+  const data = await apolloFetch<{ person?: ApolloPerson }>("/api/v1/people/match", {
+    method: "POST",
+    body: params,
+  });
+  const p = data.person;
+  if (!p) return null;
+
+  const phones = p.phone_numbers ?? [];
+  const work = phones.find((n) => n.type !== "mobile");
+  const mobile = phones.find((n) => n.type === "mobile");
+  const num = (n?: { sanitized_number?: string; raw_number?: string }) =>
+    n?.sanitized_number ?? n?.raw_number ?? null;
+
+  return {
+    person: {
+      first_name: p.first_name ?? null,
+      last_name: p.last_name ?? null,
+      email: p.email ?? null,
+      phone: num(work) ?? num(phones[0]),
+      mobile_phone: num(mobile),
+      job_title: p.title ?? null,
+      linkedin_url: p.linkedin_url ?? null,
+      city: p.city ?? null,
+      state: p.state ?? null,
+      country: p.country ?? null,
+    },
+    company: mapOrg(p.organization),
+  };
+}
+
+export type ApolloCascadeResult = {
+  domain: string | null;
+  domainSource: "website" | "email" | "company_search" | null;
+  person: ApolloPersonData | null;
+  company: ApolloCompanyData | null;
+};
+
+/**
+ * Cascata completa: resolve o domínio, enriquece a empresa e depois a pessoa.
+ * Erros de rede/provedor sobem para o chamador; ausências retornam null.
+ */
+export async function runApolloCascade(input: {
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  linkedin_url?: string | null;
+  company_name?: string | null;
+  website?: string | null;
+  domain?: string | null;
+}): Promise<ApolloCascadeResult> {
+  let domain = normalizeDomain(input.domain) ?? normalizeDomain(input.website);
+  let domainSource: ApolloCascadeResult["domainSource"] = domain ? "website" : null;
+
+  if (!domain) {
+    const fromEmail = domainFromEmail(input.email);
+    if (fromEmail) {
+      domain = fromEmail;
+      domainSource = "email";
+    }
+  }
+  if (!domain && input.company_name) {
+    const found = await apolloFindDomainByName(input.company_name);
+    if (found) {
+      domain = found;
+      domainSource = "company_search";
+    }
+  }
+
+  let company: ApolloCompanyData | null = null;
+  if (domain) company = await apolloOrganizationEnrich(domain);
+
+  const matched = await apolloPeopleMatch({
+    first_name: input.first_name,
+    last_name: input.last_name,
+    email: input.email,
+    linkedin_url: input.linkedin_url,
+    domain,
+    company_name: input.company_name,
+  });
+
+  if (!company && matched?.company) company = matched.company;
+  if (!domain && company?.domain) {
+    domain = company.domain;
+    domainSource = "company_search";
+  }
+
+  return { domain, domainSource, person: matched?.person ?? null, company };
+}
