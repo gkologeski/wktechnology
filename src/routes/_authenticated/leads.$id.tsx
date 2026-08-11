@@ -81,6 +81,11 @@ function LeadDetail() {
   const setStage = async (v: string) => {
     if (v === currentStageValue) return;
     const stage = findLeadStage(stages, v);
+    // Etapa "Qualificado" exige preenchimento do questionário de qualificação.
+    if (stage && (stage.value === "qualified" || stage.type === "won")) {
+      setQualifyOpen(true);
+      return;
+    }
     const { error } = await supabase
       .from("leads")
       .update({
@@ -95,6 +100,7 @@ function LeadDetail() {
     }
     void load();
   };
+
 
   const doDelete = async () => {
     if (!canDelete) {
