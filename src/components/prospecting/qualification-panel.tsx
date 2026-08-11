@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, X, Clock, Settings2 } from "lucide-react";
+import { Check, X, Clock, Settings2, Sparkles, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +47,10 @@ import {
   useQualificationEntityFields,
 } from "@/components/prospecting/qualification-entity-fields";
 import { QualificationFieldLayoutDialog } from "@/components/prospecting/qualification-field-layout-dialog";
+import {
+  enrichLeadForQualification,
+  applyQualificationEnrichment,
+} from "@/lib/prospecting/qualification-enrichment.functions";
 import { useLeadStages } from "@/lib/leads/stages";
 
 type Entity = "lead";
@@ -168,6 +172,55 @@ export function QualificationPanel({
   const entityFields = useQualificationEntityFields(entityId, fieldLayout);
   const [layoutOpen, setLayoutOpen] = useState(false);
 
+  // ---------- Enriquecimento Apollo.io (domínio → empresa → pessoa) ----------
+  const enrichFn = useServerFn(enrichLeadForQualification);
+  const applyEnrichFn = useServerFn(applyQualificationEnrichment);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const enrichment = useQuery({
+    queryKey: ["qualification-enrichment", entityId, refreshKey],
+    queryFn: () => enrichFn({ data: { leadId: entityId, force: refreshKey > 0 } }),
+    enabled: !!entityId,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const suggestions = useMemo(
+    () =>
+      enrichment.data
+        ? {
+            leads: enrichment.data.lead,
+            companies: enrichment.data.companies,
+            contacts: enrichment.data.contacts,
+          }
+        : undefined,
+    [enrichment.data],
+  );
+
+  // Preenche automaticamente os campos vazios quando as sugestões chegam.
+  const applySuggestions = entityFields.applySuggestions;
+  useEffect(() => {
+    if (!suggestions || entityFields.isLoading || !entityFields.records) return;
+    applySuggestions(suggestions);
+  }, [suggestions, entityFields.isLoading, entityFields.records, applySuggestions]);
+
+  /** Persiste no banco todos os campos enriquecidos (lead, empresa e contato). */
+  async function persistEnrichment() {
+    if (!enrichment.data?.found) return;
+    try {
+      await applyEnrichFn({
+        data: {
+          leadId: entityId,
+          lead: enrichment.data.lead,
+          companies: enrichment.data.companies,
+          contacts: enrichment.data.contacts,
+        },
+      });
+    } catch (e) {
+      // Enriquecimento é complementar: não bloqueia a qualificação.
+      console.error("Falha ao aplicar enriquecimento", e);
+    }
+  }
+
   const { stages } = useLeadStages();
   const qualifiedStage = useMemo(
     () => stages.find((s) => s.value === "qualified") ?? stages.find((s) => s.type === "won"),
@@ -177,6 +230,7 @@ export function QualificationPanel({
   const saveDraft = useMutation({
     mutationFn: async () => {
       await entityFields.saveAll();
+      await persistEnrichment();
       return save({
         data: {
           id: existingForActive?.id,
@@ -206,6 +260,8 @@ export function QualificationPanel({
     try {
       // 1) grava os campos de entidade editados nos blocos configurados
       await entityFields.saveAll();
+      // 1.1) persiste os campos enriquecidos (lead, empresa e contato)
+      await persistEnrichment();
       // 2) registra a qualificação (respostas + score + observações)
       await save({
         data: {
@@ -233,6 +289,7 @@ export function QualificationPanel({
       });
       qc.invalidateQueries({ queryKey: ["leads"] });
       qc.invalidateQueries({ queryKey: ["lead", entityId] });
+      qc.invalidateQueries({ queryKey: ["qualification-entity-records", entityId] });
       onDecided?.("qualified");
     } catch (e) {
       toast.error((e as Error).message);
@@ -390,6 +447,31 @@ export function QualificationPanel({
                 </SelectContent>
               </Select>
             )}
+            {enrichment.isFetching ? (
+              <Badge variant="secondary" className="gap-1">
+                <Sparkles className="h-3 w-3 animate-pulse" aria-hidden="true" />
+                Enriquecendo...
+              </Badge>
+            ) : enrichment.error ? (
+              <Badge variant="outline" className="text-muted-foreground" title={(enrichment.error as Error).message}>
+                Enriquecimento indisponível
+              </Badge>
+            ) : enrichment.data?.found ? (
+              <Badge variant="secondary" className="gap-1" title={enrichment.data.domain ? `Domínio: ${enrichment.data.domain}` : undefined}>
+                <Sparkles className="h-3 w-3" aria-hidden="true" />
+                Apollo {enrichment.data.domain ? `· ${enrichment.data.domain}` : ""}
+              </Badge>
+            ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={enrichment.isFetching}
+              onClick={() => setRefreshKey((k) => k + 1)}
+              title="Reenriquecer com o Apollo.io (ignora o cache)"
+            >
+              <RefreshCw className={`w-4 h-4 mr-1 ${enrichment.isFetching ? "animate-spin" : ""}`} />
+              Enriquecer
+            </Button>
             <Button
               size="sm"
               variant="outline"
@@ -409,6 +491,8 @@ export function QualificationPanel({
             onChange={entityFields.setValue}
             disabled={busy}
             isLoading={entityFields.isLoading}
+            suggestions={suggestions}
+            autofilled={entityFields.autofilled}
           />
 
           {qData ? (
@@ -439,6 +523,8 @@ export function QualificationPanel({
             onChange={entityFields.setValue}
             disabled={busy}
             isLoading={entityFields.isLoading}
+            suggestions={suggestions}
+            autofilled={entityFields.autofilled}
           />
 
           <div className="border-t pt-4 space-y-3">
