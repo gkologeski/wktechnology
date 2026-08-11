@@ -451,6 +451,14 @@ function ContractingPresetsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      onClick={() => duplicate(r)}
+                      aria-label={`Duplicar ${r.name}`}
+                    >
+                      <Copy aria-hidden="true" className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => destroy(r)}
                       aria-label={`Excluir ${r.name}`}
                     >
