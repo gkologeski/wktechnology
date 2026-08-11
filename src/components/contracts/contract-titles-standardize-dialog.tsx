@@ -2,6 +2,8 @@
 // Componente de apresentação: consome apenas a server function de padronização,
 // que continua validando permissão, escopo e workspace no backend.
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Type } from "lucide-react";
