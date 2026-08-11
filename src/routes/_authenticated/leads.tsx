@@ -3,7 +3,19 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Can } from "@/lib/access-control/use-permissions";
+import { Can, usePermissions } from "@/lib/access-control/use-permissions";
+import { useServerFn } from "@tanstack/react-start";
+import { listQueues, upsertQueue } from "@/lib/prospecting/queues.functions";
+import {
+  QUEUE_CREATE,
+  QUEUE_UPDATE,
+  QUEUE_VIEW,
+} from "@/lib/prospecting/permission-keys";
+
+/** Fila manual reutilizável usada pelo atalho "Modo Prospecção" a partir de /leads. */
+const PROSPECTING_MODE_QUEUE_NAME = "Modo Prospecção (rápida)";
+const PROSPECTING_MODE_LIMIT = 500;
+
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import {
