@@ -1073,6 +1073,24 @@ function LeadsHubspotView() {
                 >
                   <Play className="mr-1 h-3.5 w-3.5" /> Iniciar fila
                 </Button>
+                {canProspectingMode && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7"
+                    disabled={prospectingBusy}
+                    onClick={() =>
+                      void startProspectingMode(
+                        Array.from(selectedIds).slice(0, PROSPECTING_MODE_LIMIT),
+                      )
+                    }
+                    title="Trabalhar os leads selecionados na tela de Prospecção"
+                  >
+                    <Headphones className="mr-1 h-3.5 w-3.5" />
+                    {prospectingBusy ? "Preparando…" : "Modo Prospecção"}
+                  </Button>
+                )}
+
                 <Button
                   variant="ghost"
                   size="sm"
