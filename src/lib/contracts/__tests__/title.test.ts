@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildContractTitle, normalizePartyName } from "@/lib/contracts/title";
+import { buildContractTitle, buildContractTitleResult, normalizePartyName } from "@/lib/contracts/title";
 
 describe("normalizePartyName", () => {
   it("remove sufixos societários e normaliza", () => {
@@ -92,5 +92,52 @@ describe("buildContractTitle", () => {
   it("retorna null quando falta uma das partes", () => {
     expect(buildContractTitle({ role: "provider", contractingName: "Cliente Beta" })).toBeNull();
     expect(buildContractTitle({ role: "client" })).toBeNull();
+  });
+});
+
+describe("buildContractTitle com entidades legais do workspace", () => {
+  const ownNames = ["GM Kologeski & Cia Ltda ME", "WK Technology", "CW Kologeski Ltda"];
+
+  it("corrige lados invertidos usando os nomes próprios (prestação)", () => {
+    expect(
+      buildContractTitle({
+        role: "provider",
+        contractingName: "GM KOLOGESKI & CIA LTDA",
+        counterpartyName: "ICT SOLUÇÕES INTELIGENTES LTDA",
+        ownName: "GM Kologeski & Cia Ltda ME",
+        ownNames,
+        startsAt: "2026-02-09",
+      }),
+    ).toBe("[PRESTAÇÃO] ICT SOLUÇÕES INTELIGENTES X GM KOLOGESKI — 2026");
+  });
+
+  it("mantém nosso lado como CONTRATANTE em contratos de compra", () => {
+    expect(
+      buildContractTitle({
+        role: "client",
+        contractingName: "ALEX MONTEIRO DE CASTRO SILVA",
+        counterpartyName: "WK Technology",
+        ownNames,
+      }),
+    ).toBe("[COMPRA] WK TECHNOLOGY X ALEX MONTEIRO DE CASTRO SILVA");
+  });
+});
+
+describe("buildContractTitleResult", () => {
+  it("informa quando faltam partes", () => {
+    expect(buildContractTitleResult({ role: "client" })).toEqual({
+      title: null,
+      reason: "missing_parties",
+    });
+  });
+
+  it("informa quando as partes ficam iguais", () => {
+    expect(
+      buildContractTitleResult({
+        role: "provider",
+        contractingName: "WK Technology Ltda",
+        ownName: "WK Technology",
+      }),
+    ).toEqual({ title: null, reason: "same_parties" });
   });
 });
