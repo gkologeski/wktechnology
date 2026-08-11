@@ -111,9 +111,14 @@ export async function previewContractTitles(
     if (!result.title && parent) result = build(parent);
 
     if (!result.title) {
-      skipped.push({ id: row["id"], title: row["title"] ?? "", reason: result.reason });
+      skipped.push({
+        id: row["id"],
+        title: row["title"] ?? "",
+        reason: result.reason ?? "missing_parties",
+      });
       continue;
     }
+
     if (result.title === row["title"]) {
       unchanged.push({ id: row["id"], title: row["title"] ?? "" });
       continue;
