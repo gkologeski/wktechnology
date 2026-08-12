@@ -63,6 +63,19 @@ import { useLeadStages } from "@/lib/leads/stages";
 
 type Entity = "lead";
 
+const ICP_LABEL: Record<string, string> = {
+  high: "Alto",
+  medium: "Médio",
+  low: "Baixo",
+  unknown: "Sem critérios",
+};
+const ICP_BADGE: Record<string, "default" | "secondary" | "outline"> = {
+  high: "default",
+  medium: "secondary",
+  low: "outline",
+  unknown: "outline",
+};
+
 export function QualificationPanel({
   entity,
   entityId,
