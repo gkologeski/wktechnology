@@ -120,8 +120,14 @@ export const importHubspotLeads = createServerFn({ method: "POST" })
           status: "new" as const,
           external_ids: { hubspot_lead: r.id } as never,
         }));
-        const { error } = await supabase.from("leads").insert(insertRows);
+        const { data: inserted, error } = await supabase
+          .from("leads")
+          .insert(insertRows)
+          .select("id");
         if (error) throw new Error(`Erro ao salvar leads: ${error.message}`);
+        // Garante empresa e contato vinculados a cada lead importado
+        const { ensureLeadRelationsSafe } = await import("@/lib/leads/lead-relations");
+        for (const l of inserted ?? []) await ensureLeadRelationsSafe(supabase, l.id);
         imported += rows.length;
       }
 

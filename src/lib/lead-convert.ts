@@ -15,11 +15,11 @@ export type ConvertResult = {
  * Throws on first error so the caller can surface it via toast.
  */
 export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertResult> {
-  let companyId: string | null = null;
-  let reusedCompany = false;
+  let companyId: string | null = lead.company_id ?? null;
+  let reusedCompany = !!lead.company_id;
 
   const rawName = (lead.company_name ?? "").trim();
-  if (rawName) {
+  if (!companyId && rawName) {
     const { data: existing, error: findErr } = await supabase
       .from("companies")
       .select("id")
@@ -44,20 +44,33 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
     }
   }
 
-  const { data: contact, error: cte } = await supabase
-    .from("contacts")
-    .insert({
-      owner_id: ownerId,
-      workspace_id: lead.workspace_id,
-      first_name: lead.first_name,
-      last_name: lead.last_name,
-      email: lead.email,
-      phone: lead.phone,
-      company_id: companyId,
-    })
-    .select("id")
-    .single();
-  if (cte) throw new Error(cte.message);
+  // Reaproveita o contato já vinculado ao lead, quando existir.
+  let contact: { id: string } | null = null;
+  if (lead.converted_contact_id) {
+    const { data: existingContact } = await supabase
+      .from("contacts")
+      .select("id")
+      .eq("id", lead.converted_contact_id)
+      .maybeSingle();
+    contact = existingContact ?? null;
+  }
+  if (!contact) {
+    const { data: created, error: cte } = await supabase
+      .from("contacts")
+      .insert({
+        owner_id: ownerId,
+        workspace_id: lead.workspace_id,
+        first_name: lead.first_name,
+        last_name: lead.last_name,
+        email: lead.email,
+        phone: lead.phone,
+        company_id: companyId,
+      })
+      .select("id")
+      .single();
+    if (cte) throw new Error(cte.message);
+    contact = created;
+  }
 
   const dealName = `Negócio - ${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim();
   const { data: deal, error: de } = await supabase

@@ -765,6 +765,12 @@ async function runAction(
           .select("id")
           .single();
         if (error) throw new Error(error.message);
+        // Garante empresa e contato vinculados ao lead
+        const { ensureLeadRelationsSafe } = await import("@/lib/leads/lead-relations");
+        await ensureLeadRelationsSafe(
+          supabase as unknown as Parameters<typeof ensureLeadRelationsSafe>[0],
+          data.id as string,
+        );
         return { at, ok: true, action: "create_lead", detail: { id: data.id, first_name: first } };
       }
       case "create_contact": {

@@ -291,6 +291,9 @@ export const agentCreateLead = createServerFn({ method: "POST" })
       .select("id, first_name, last_name")
       .single();
     if (error) throw new Error(error.message);
+    // Garante empresa e contato vinculados ao lead
+    const { ensureLeadRelationsSafe } = await import("@/lib/leads/lead-relations");
+    await ensureLeadRelationsSafe(context.supabase, row.id);
     return {
       id: row.id,
       url: `/leads/${row.id}`,

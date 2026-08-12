@@ -1,5 +1,6 @@
 // Server-only booking availability + creation engine.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 
 const WEEKDAY_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"] as const;
 type WeekdayKey = (typeof WEEKDAY_KEYS)[number];
@@ -352,6 +353,8 @@ export async function createPublicBooking(input: {
         .select("id")
         .single();
       leadId = created?.id ?? null;
+      // Garante empresa e contato vinculados ao lead
+      if (leadId) await ensureLeadRelationsSafe(supabaseAdmin, leadId);
     }
   }
 

@@ -7,6 +7,7 @@ import { z } from "zod";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
@@ -93,6 +94,8 @@ async function createEntity(
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    // Garante empresa e contato vinculados ao lead
+    await ensureLeadRelationsSafe(supabase, data!.id as string);
     return data!.id as string;
   }
   if (entityType === "company") {

@@ -1212,14 +1212,26 @@ const _legacyStartHubspotImport_unused = createServerFn({ method: "POST" })
               if (error) stepFail++;
               else stepOk++;
             } else {
-              const { error } = await supabase.from("leads").insert({
-                owner_id: userId,
-                workspace_id: workspaceId,
-                ...leadData,
-                external_ids: { hubspot_lead: c.id, hs_pipeline_stage: hsStatus || null } as never,
-              });
+              const { data: insertedLead, error } = await supabase
+                .from("leads")
+                .insert({
+                  owner_id: userId,
+                  workspace_id: workspaceId,
+                  ...leadData,
+                  external_ids: {
+                    hubspot_lead: c.id,
+                    hs_pipeline_stage: hsStatus || null,
+                  } as never,
+                })
+                .select("id")
+                .single();
               if (error) stepFail++;
-              else stepOk++;
+              else {
+                stepOk++;
+                // Garante empresa e contato vinculados ao lead importado
+                const { ensureLeadRelationsSafe } = await import("@/lib/leads/lead-relations");
+                await ensureLeadRelationsSafe(supabase, insertedLead.id);
+              }
             }
             await bumpProgress(step, stepOk, stepFail, all.length);
           }
