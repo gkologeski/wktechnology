@@ -76,8 +76,6 @@ export function QualificationPanel({
   const listLossReasons = useServerFn(getDealLossReasons);
   const qc = useQueryClient();
 
-
-
   const { data: questionnaires } = useQuery({
     queryKey: ["prospecting", "questionnaires"],
     queryFn: () => listQ(),
@@ -99,9 +97,7 @@ export function QualificationPanel({
     queryFn: () => listExisting({ data: { entity, entity_id: entityId } }),
   });
 
-  const existingForActive = existing?.find(
-    (e) => e.questionnaire_id === activeId,
-  );
+  const existingForActive = existing?.find((e) => e.questionnaire_id === activeId);
 
   const [answers, setAnswers] = useState<Record<string, unknown>>(
     (existingForActive?.answers as Record<string, unknown>) ?? {},
@@ -199,9 +195,9 @@ export function QualificationPanel({
   // Preenche automaticamente os campos vazios quando as sugestões chegam.
   const applySuggestions = entityFields.applySuggestions;
   useEffect(() => {
-    if (!suggestions || entityFields.isLoading || !entityFields.records) return;
+    if (!suggestions || entityFields.isLoading) return;
     applySuggestions(suggestions);
-  }, [suggestions, entityFields.isLoading, entityFields.records, applySuggestions]);
+  }, [suggestions, entityFields.isLoading, applySuggestions]);
 
   /** Persiste no banco todos os campos enriquecidos (lead, empresa e contato). */
   async function persistEnrichment() {
@@ -298,7 +294,6 @@ export function QualificationPanel({
     }
   }
 
-
   // ---------- Desqualificar → modal com motivo obrigatório ----------
   const [disqualifyOpen, setDisqualifyOpen] = useState(false);
   const [reasonValue, setReasonValue] = useState<string>("");
@@ -318,9 +313,7 @@ export function QualificationPanel({
     }
     setDisqualifying(true);
     try {
-      const combined = reasonNote.trim()
-        ? `${reasonValue} — ${reasonNote.trim()}`
-        : reasonValue;
+      const combined = reasonNote.trim() ? `${reasonValue} — ${reasonNote.trim()}` : reasonValue;
       // 1) atualiza status do lead
       const { error: leadErr } = await supabase
         .from("leads")
@@ -391,7 +384,6 @@ export function QualificationPanel({
     }
   }
 
-
   if (!enabled.length) {
     return (
       <Card>
@@ -453,7 +445,11 @@ export function QualificationPanel({
                 Enriquecendo...
               </Badge>
             ) : enrichment.error ? (
-              <Badge variant="outline" className="text-muted-foreground" title={(enrichment.error as Error).message}>
+              <Badge
+                variant="outline"
+                className="text-muted-foreground"
+                title={(enrichment.error as Error).message}
+              >
                 Enriquecimento indisponível
               </Badge>
             ) : enrichment.data && !enrichment.data.found && enrichment.data.warnings.length > 0 ? (
@@ -465,7 +461,11 @@ export function QualificationPanel({
                 {enrichment.data.warnings[0]}
               </Badge>
             ) : enrichment.data?.found ? (
-              <Badge variant="secondary" className="gap-1" title={enrichment.data.domain ? `Domínio: ${enrichment.data.domain}` : undefined}>
+              <Badge
+                variant="secondary"
+                className="gap-1"
+                title={enrichment.data.domain ? `Domínio: ${enrichment.data.domain}` : undefined}
+              >
                 <Sparkles className="h-3 w-3" aria-hidden="true" />
                 Apollo {enrichment.data.domain ? `· ${enrichment.data.domain}` : ""}
               </Badge>
@@ -486,7 +486,9 @@ export function QualificationPanel({
               onClick={() => setRefreshKey((k) => k + 1)}
               title="Reenriquecer com o Apollo.io (ignora o cache)"
             >
-              <RefreshCw className={`w-4 h-4 mr-1 ${enrichment.isFetching ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`w-4 h-4 mr-1 ${enrichment.isFetching ? "animate-spin" : ""}`}
+              />
               Enriquecer
             </Button>
             <Button
@@ -572,12 +574,7 @@ export function QualificationPanel({
               >
                 <Check className="w-4 h-4 mr-1" /> {qualifying ? "Qualificando..." : "Qualificar"}
               </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={busy}
-                onClick={sendToNurturing}
-              >
+              <Button size="sm" variant="outline" disabled={busy} onClick={sendToNurturing}>
                 <Clock className="w-4 h-4 mr-1" /> Enviar para nutrição
               </Button>
               <Button
@@ -607,7 +604,6 @@ export function QualificationPanel({
           blocks={fieldLayout}
         />
       ) : null}
-
 
       {/* Desqualificar: motivo obrigatório */}
       <Dialog open={disqualifyOpen} onOpenChange={setDisqualifyOpen}>
@@ -712,10 +708,7 @@ function QuestionInput({
         />
       ) : question.type === "boolean" ? (
         <div className="flex items-center gap-2">
-          <Checkbox
-            checked={value === true}
-            onCheckedChange={(v) => onChange(v === true)}
-          />
+          <Checkbox checked={value === true} onCheckedChange={(v) => onChange(v === true)} />
           <span className="text-sm">Sim</span>
         </div>
       ) : question.type === "single" ? (

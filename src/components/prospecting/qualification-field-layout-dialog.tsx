@@ -139,8 +139,8 @@ export function QualificationFieldLayoutDialog({
                     >
                       <span className="block truncate">{b.title}</span>
                       <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">
-                        {entityLabel(b.entity)} ·{" "}
-                        {b.position === "before" ? "antes" : "depois"} · {b.fields.length} campo(s)
+                        {entityLabel(b.entity)} · {b.position === "before" ? "antes" : "depois"} ·{" "}
+                        {b.fields.length} campo(s)
                       </span>
                     </button>
                   </li>
@@ -161,9 +161,19 @@ export function QualificationFieldLayoutDialog({
                     <Label className="text-xs">Entidade</Label>
                     <Select
                       value={active.entity}
-                      onValueChange={(v) =>
-                        updateActive({ entity: v as QualificationFieldEntity, fields: [] })
-                      }
+                      onValueChange={(v) => {
+                        const entity = v as QualificationFieldEntity;
+                        const wasDefaultTitle = QUALIFICATION_FIELD_ENTITIES.some(
+                          (e) => active.title.trim() === `Dados do ${e.label}`,
+                        );
+                        updateActive({
+                          entity,
+                          fields: [],
+                          ...(wasDefaultTitle || !active.title.trim()
+                            ? { title: `Dados do ${entityLabel(entity)}` }
+                            : {}),
+                        });
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -280,10 +290,7 @@ function FieldPicker({
     return q ? all.filter((f) => f.label.toLowerCase().includes(q)) : all;
   }, [data, search]);
 
-  const selectedByKey = useMemo(
-    () => new Map(block.fields.map((f) => [f.key, f])),
-    [block.fields],
-  );
+  const selectedByKey = useMemo(() => new Map(block.fields.map((f) => [f.key, f])), [block.fields]);
 
   if (isLoading) {
     return (

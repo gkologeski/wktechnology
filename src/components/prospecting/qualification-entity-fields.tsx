@@ -97,14 +97,15 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
   }, [values]);
 
   // Sincroniza os valores editáveis quando os registros carregam.
+  // Blocos de entidades ainda sem registro vinculado começam vazios e
+  // permanecem editáveis: o registro é criado e vinculado ao salvar.
   useEffect(() => {
     if (!data) return;
     const next: Values = { leads: {}, companies: {}, contacts: {} };
     for (const b of blocks) {
       const row = data[b.entity];
-      if (!row) continue;
       for (const f of b.fields) {
-        next[b.entity][f.key] = row[f.key] ?? null;
+        next[b.entity][f.key] = row ? (row[f.key] ?? null) : null;
       }
     }
     setValues(next);
@@ -134,7 +135,7 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
       const filled: string[] = [];
       for (const b of blocks) {
         const sugg = suggestions[b.entity];
-        if (!sugg || !data?.[b.entity]) continue;
+        if (!sugg) continue;
         for (const f of b.fields) {
           const value = sugg[f.key];
           if (value === null || value === undefined || value === "") continue;
@@ -153,24 +154,100 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
       });
       return filled.length;
     },
-    [blocks, data],
+    [blocks],
   );
 
   const missingRequired = useMemo(() => {
     const missing: string[] = [];
     for (const b of blocks) {
-      if (!data?.[b.entity]) continue;
       for (const f of b.fields) {
         if (!f.required) continue;
         if (isEmpty(values[b.entity]?.[f.key])) missing.push(f.label);
       }
     }
     return missing;
-  }, [blocks, values, data]);
+  }, [blocks, values]);
 
-  /** Persiste apenas os campos alterados em cada entidade. */
+  /**
+   * Persiste os campos alterados em cada entidade. Quando o bloco é de
+   * Empresa/Contato e o lead ainda não tem o vínculo, o registro é criado a
+   * partir dos dados do lead + campos preenchidos e vinculado ao lead.
+   */
   const saveAll = async () => {
     if (!data) return;
+    const lead = data.leads;
+    const used = new Set<QualificationFieldEntity>(
+      blocks.filter((b) => b.fields.length > 0).map((b) => b.entity),
+    );
+    const base = {
+      owner_id: lead?.["owner_id"] ?? null,
+      assigned_to: lead?.["assigned_to"] ?? null,
+      workspace_id: lead?.["workspace_id"] ?? null,
+    } as Record<string, unknown>;
+    const withBase = (payload: Record<string, unknown>) => {
+      const out = { ...payload };
+      for (const [k, v] of Object.entries(base)) if (v != null) out[k] = v;
+      return out;
+    };
+
+    const clean = (entity: QualificationFieldEntity) => {
+      const out: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(values[entity] ?? {})) {
+        if (isEmpty(value)) continue;
+        out[key] = value;
+      }
+      return out;
+    };
+
+    const leadPatch: Record<string, unknown> = {};
+
+    // --- Empresa: cria e vincula quando o lead ainda não tem company_id ---
+    let companyId = (lead?.["company_id"] as string | null) ?? null;
+    if (used.has("companies") && !data.companies) {
+      const vals = clean("companies");
+      const name =
+        (vals["name"] as string | undefined) ?? (lead?.["company_name"] as string | undefined);
+      if (name) {
+        const { data: created, error: insErr } = await supabase
+          .from("companies")
+          .insert(withBase({ ...vals, name }) as never)
+          .select("id")
+          .single();
+        if (insErr) throw new Error(insErr.message);
+        companyId = (created as { id: string }).id;
+        leadPatch["company_id"] = companyId;
+      }
+    }
+
+    // --- Contato: cria e vincula quando o lead ainda não tem contato ---
+    if (used.has("contacts") && !data.contacts) {
+      const vals = clean("contacts");
+      const firstName =
+        (vals["first_name"] as string | undefined) ??
+        (lead?.["first_name"] as string | undefined) ??
+        null;
+      const hasSignal = Object.keys(vals).length > 0 || !!lead?.["email"] || !!lead?.["phone"];
+      if (firstName && hasSignal) {
+        const payload: Record<string, unknown> = {
+          first_name: firstName,
+          last_name: lead?.["last_name"] ?? null,
+          email: lead?.["email"] ?? null,
+          phone: lead?.["phone"] ?? null,
+          job_title: lead?.["job_title"] ?? null,
+          ...(companyId ? { company_id: companyId } : {}),
+          ...vals,
+        };
+        const { data: created, error: insErr } = await supabase
+          .from("contacts")
+          .insert(withBase(payload) as never)
+          .select("id")
+          .single();
+        if (insErr) throw new Error(insErr.message);
+        leadPatch["converted_contact_id"] = (created as { id: string }).id;
+      }
+    }
+
+    // --- Atualiza os registros já existentes ---
     for (const entity of ["leads", "companies", "contacts"] as QualificationFieldEntity[]) {
       const row = data[entity];
       if (!row) continue;
@@ -188,6 +265,15 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
         .update(patch as never)
         .eq("id", id);
       if (upErr) throw new Error(upErr.message);
+    }
+
+    // --- Vincula os registros recém-criados ao lead ---
+    if (Object.keys(leadPatch).length > 0) {
+      const { error: linkErr } = await supabase
+        .from("leads")
+        .update(leadPatch as never)
+        .eq("id", leadId);
+      if (linkErr) throw new Error(linkErr.message);
     }
   };
 
@@ -249,28 +335,29 @@ export function QualificationEntityBlocks({
             key={b.id}
             className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-3"
           >
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {b.title}
-            </h3>
-            {!row ? (
-              <p className="text-xs text-muted-foreground">
-                Nenhum registro de {entityLabel(b.entity).toLowerCase()} vinculado a este lead.
-              </p>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {b.fields.map((f) => (
-                  <EntityFieldInput
-                    key={`${b.entity}.${f.key}`}
-                    field={f}
-                    value={values[b.entity]?.[f.key]}
-                    disabled={disabled}
-                    suggestion={suggestions?.[b.entity]?.[f.key]}
-                    autofilled={autofilled?.[`${b.entity}.${f.key}`] === true}
-                    onChange={(v) => onChange(b.entity, f.key, v)}
-                  />
-                ))}
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {b.title}
+              </h3>
+              {!row && b.entity !== "leads" ? (
+                <Badge variant="outline" className="h-4 px-1.5 text-[10px] font-medium">
+                  {entityLabel(b.entity)} será criado(a) e vinculado(a) ao salvar
+                </Badge>
+              ) : null}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {b.fields.map((f) => (
+                <EntityFieldInput
+                  key={`${b.entity}.${f.key}`}
+                  field={f}
+                  value={values[b.entity]?.[f.key]}
+                  disabled={disabled}
+                  suggestion={suggestions?.[b.entity]?.[f.key]}
+                  autofilled={autofilled?.[`${b.entity}.${f.key}`] === true}
+                  onChange={(v) => onChange(b.entity, f.key, v)}
+                />
+              ))}
+            </div>
           </section>
         );
       })}
