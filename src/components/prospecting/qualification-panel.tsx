@@ -36,6 +36,14 @@ import {
 } from "@/components/ui/select";
 import { listQuestionnaires, getQuestionnaire } from "@/lib/prospecting/questionnaires.functions";
 import {
+  computeQualificationScore,
+  computeQualificationMaxScore,
+  scorePercent,
+  type ScoreQuestion,
+} from "@/lib/prospecting/score";
+import { getLeadIcpFit } from "@/lib/scoring/icp.functions";
+import { Progress } from "@/components/ui/progress";
+import {
   saveQualification,
   listQualificationsForEntity,
   nurtureLead,
