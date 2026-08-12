@@ -691,6 +691,8 @@ function QuestionRow({
     options: unknown;
     weight: number;
     required: boolean;
+    text_points?: number | null;
+    text_min_chars?: number | null;
   };
   onDeleted: () => void;
   onSaved: () => void;
@@ -702,6 +704,8 @@ function QuestionRow({
   const [label, setLabel] = useState(question.label);
   const [weight, setWeight] = useState(question.weight);
   const [required, setRequired] = useState(question.required);
+  const [textPoints, setTextPoints] = useState(Number(question.text_points ?? 0));
+  const [textMinChars, setTextMinChars] = useState(Number(question.text_min_chars ?? 10));
   const [options, setOptions] = useState<{ label: string; points: number }[]>(
     Array.isArray(question.options)
       ? (question.options as { label: string; points: number }[])
@@ -709,6 +713,8 @@ function QuestionRow({
   );
 
   const supportsOptions = question.type === "single" || question.type === "multi";
+  // Perguntas abertas (texto/número) podem pontuar por preenchimento.
+  const supportsTextPoints = question.type === "text" || question.type === "number";
 
   const save = useMutation({
     mutationFn: () =>
@@ -722,6 +728,8 @@ function QuestionRow({
           options: supportsOptions ? options : [],
           weight,
           required,
+          text_points: supportsTextPoints ? textPoints : 0,
+          text_min_chars: textMinChars,
         },
       }),
     onSuccess: () => {
