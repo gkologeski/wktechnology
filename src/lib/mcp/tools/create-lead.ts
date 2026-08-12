@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser, unauthenticated, resolveWorkspaceId } from "../supabase";
+import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 
 export default defineTool({
   name: "create_lead",
@@ -38,6 +39,8 @@ export default defineTool({
       .select("id,first_name,last_name,email,phone,company_name,status,created_at")
       .single();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+    // Garante empresa e contato vinculados ao lead
+    await ensureLeadRelationsSafe(supabase, data.id);
     return {
       content: [{ type: "text", text: JSON.stringify(data, null, 2) }],
       structuredContent: { lead: data },

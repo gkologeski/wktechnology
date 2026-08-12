@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -124,6 +125,9 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             .single();
           if (lerr) return Response.json({ error: lerr.message }, { status: 500, headers: cors });
           leadId = lead.id;
+          // Garante empresa e contato vinculados ao lead
+          const rel = await ensureLeadRelationsSafe(supabaseAdmin, lead.id);
+          contactId = rel?.contactId ?? null;
         } else {
           const { data: contact, error: cerr } = await supabaseAdmin
             .from("contacts")

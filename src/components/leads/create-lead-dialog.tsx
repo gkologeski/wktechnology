@@ -29,6 +29,7 @@ import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-
 import { SourceCombobox } from "@/components/leads/source-combobox";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { ensureLeadSource } from "@/lib/lead-sources";
+import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
@@ -159,6 +160,8 @@ export function CreateLeadDialog({
         .select("id")
         .single();
       if (error) throw error;
+      // Garante empresa e contato vinculados ao lead recém-criado
+      await ensureLeadRelationsSafe(supabase, data!.id);
       // Persiste fonte nova no catálogo
       if (form.source.trim()) {
         await ensureLeadSource(user.id, form.source.trim());

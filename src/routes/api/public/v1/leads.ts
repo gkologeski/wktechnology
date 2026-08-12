@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
+import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 
 const CreateLead = z.object({
   first_name: z.string().min(1).max(120),
@@ -56,6 +57,8 @@ export const Route = createFileRoute("/api/public/v1/leads")({
           )
           .single();
         if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+        // Garante empresa e contato vinculados ao lead
+        await ensureLeadRelationsSafe(supabaseAdmin, data.id);
         return Response.json({ data });
       },
     },

@@ -593,5 +593,8 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
       .from("prospecting_results")
       .update({ imported_lead_id: lead.id, imported_at: new Date().toISOString() })
       .eq("id", r.id);
+    // Garante empresa e contato vinculados ao lead
+    const { ensureLeadRelationsSafe } = await import("@/lib/leads/lead-relations");
+    await ensureLeadRelationsSafe(context.supabase, lead.id as string);
     return { id: lead.id, already: false };
   });
