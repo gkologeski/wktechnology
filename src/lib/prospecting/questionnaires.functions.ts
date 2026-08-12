@@ -275,7 +275,7 @@ export const duplicateQuestionnaire = createServerFn({ method: "POST" })
 
     const { data: qs, error: qsErr } = await context.supabase
       .from("prospecting_questions")
-      .select("position, label, help_text, type, options, weight, required")
+      .select("position, label, help_text, type, options, weight, required, text_points, text_min_chars")
       .eq("questionnaire_id", data.id)
       .order("position", { ascending: true });
     if (qsErr) throw new Error(qsErr.message);
@@ -307,6 +307,8 @@ export const duplicateQuestionnaire = createServerFn({ method: "POST" })
         type: q.type,
         options: q.options,
         weight: q.weight,
+        text_points: q.text_points,
+        text_min_chars: q.text_min_chars,
         required: q.required,
       }));
       const { error: qInsErr } = await context.supabase
