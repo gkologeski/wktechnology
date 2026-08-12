@@ -131,6 +131,15 @@ export function QualificationPanel({
     setReason("");
   }, [existingForActive?.id, activeId]);
 
+  // Fit de ICP do lead (critérios configurados em Prospecção → Scoring).
+  const icpFitFn = useServerFn(getLeadIcpFit);
+  const icpFit = useQuery({
+    queryKey: ["scoring", "icp-fit", entityId],
+    queryFn: () => icpFitFn({ data: { lead_id: entityId } }),
+    enabled: entity === "lead" && !!entityId,
+    staleTime: 60_000,
+  });
+
   const score = useMemo(
     () => (qData ? computeQualificationScore(qData.questions as ScoreQuestion[], answers) : 0),
     [answers, qData],
