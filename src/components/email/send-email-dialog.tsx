@@ -64,6 +64,8 @@ type Props = {
   contactName?: string;
   tokenContext?: TokenContext;
   trigger?: ReactNode;
+  /** Exibe o pin de rascunho salvo sobre o gatilho. Padrão: ligado. */
+  draftIndicator?: boolean;
   onSent?: (threadId: string) => void;
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
