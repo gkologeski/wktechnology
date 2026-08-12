@@ -35,7 +35,33 @@ const NOT_MONEY = new Set([
   "response_rate",
   "utilization_rate",
   "churn_rate",
+  // Contadores e placares que terminam em radicais monetários.
+  "total_score",
+  "total_cycles",
+  "total_count",
+  "total_sent",
+  "total_items",
 ]);
+
+/**
+ * Radicais monetários usados quando a chave não tem separador
+ * (ex.: `annualrevenue`, `dealamount`, `hs_arr` vindos do HubSpot).
+ */
+const MONEY_ROOTS = [
+  "revenue",
+  "amount",
+  "value",
+  "price",
+  "cost",
+  "fee",
+  "salary",
+  "budget",
+  "mrr",
+  "arr",
+  "acv",
+  "tcv",
+];
+
 
 /** Nomes exatos considerados monetários. */
 const MONEY_EXACT = new Set([
