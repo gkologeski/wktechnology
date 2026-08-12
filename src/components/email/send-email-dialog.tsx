@@ -466,7 +466,45 @@ export function SendEmailDialog({
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="sm:justify-between">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" disabled={draft.status === "idle"}>
+                <Trash2 className="mr-2 h-4 w-4" /> Descartar rascunho
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Descartar rascunho?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  O conteúdo redigido e os anexos deste rascunho serão removidos.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    await draft.discard();
+                    for (const a of attachments) {
+                      await supabase.storage
+                        .from("email-attachments")
+                        .remove([a.path])
+                        .catch(() => {});
+                    }
+                    setSubject("");
+                    setBody("");
+                    setCc("");
+                    setAttachments([]);
+                    signatureApplied.current = false;
+                    toast.success("Rascunho descartado");
+                  }}
+                >
+                  Descartar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           <Button
             onClick={() => {
               const split = (s: string) =>
