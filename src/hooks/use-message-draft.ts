@@ -82,8 +82,10 @@ export function useMessageDraft(options: {
           setSavedAt(draft.updated_at);
           setRestored(true);
           setStatus("saved");
+          setExists(true);
         } else {
           setStatus("idle");
+          setExists(false);
         }
       })
       .catch(() => {
