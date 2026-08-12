@@ -226,8 +226,7 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
         (vals["first_name"] as string | undefined) ??
         (lead?.["first_name"] as string | undefined) ??
         null;
-      const hasSignal =
-        Object.keys(vals).length > 0 || !!lead?.["email"] || !!lead?.["phone"];
+      const hasSignal = Object.keys(vals).length > 0 || !!lead?.["email"] || !!lead?.["phone"];
       if (firstName && hasSignal) {
         const payload: Record<string, unknown> = {
           first_name: firstName,
