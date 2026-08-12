@@ -814,6 +814,44 @@ function QuestionRow({
             </div>
           </div>
 
+          {supportsTextPoints ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs" htmlFor={`tp-${question.id}`}>
+                  Pontos ao responder
+                </Label>
+                <Input
+                  id={`tp-${question.id}`}
+                  type="number"
+                  min={0}
+                  max={1000}
+                  value={textPoints}
+                  onChange={(e) => setTextPoints(Math.max(0, Number(e.target.value) || 0))}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  0 = pergunta aberta não pontua.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs" htmlFor={`tmc-${question.id}`}>
+                  Mínimo de caracteres
+                </Label>
+                <Input
+                  id={`tmc-${question.id}`}
+                  type="number"
+                  min={1}
+                  max={2000}
+                  value={textMinChars}
+                  onChange={(e) => setTextMinChars(Math.max(1, Number(e.target.value) || 1))}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Respostas mais curtas não pontuam.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+
           {supportsOptions ? (
             <div className="space-y-2">
               <Label className="text-xs">Opções (rótulo + pontos)</Label>
