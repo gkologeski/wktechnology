@@ -95,8 +95,6 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
     if (dcErr && !/duplicate key/i.test(dcErr.message)) throw new Error(dcErr.message);
   }
 
-
-
   const { error: ue } = await supabase
     .from("leads")
     .update({
