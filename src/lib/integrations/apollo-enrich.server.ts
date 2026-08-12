@@ -198,8 +198,15 @@ function mapOrg(org?: ApolloOrg | null): ApolloCompanyData | null {
 export async function apolloFindDomainByName(companyName: string): Promise<string | null> {
   const data = await apolloFetch<{ organizations?: ApolloOrg[]; accounts?: ApolloOrg[] }>(
     "/api/v1/mixed_companies/search",
-    { method: "POST", query: { q_organization_name: companyName, per_page: "5", page: "1" } },
+    {
+      method: "POST",
+      // O endpoint aceita os filtros na query string, mas alguns ambientes só
+      // consideram o corpo — enviamos nos dois para não falhar em silêncio.
+      query: { q_organization_name: companyName, per_page: "5", page: "1" },
+      body: { q_organization_name: companyName, per_page: 5, page: 1 },
+    },
   );
+
   const list = [...(data.organizations ?? []), ...(data.accounts ?? [])];
   for (const org of list) {
     const d = normalizeDomain(org.primary_domain ?? org.website_url ?? null);
