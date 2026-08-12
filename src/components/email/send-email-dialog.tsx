@@ -89,6 +89,30 @@ export function SendEmailDialog({
   const [fileCenterOpen, setFileCenterOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Rascunho automático: salva o que está sendo redigido e restaura ao reabrir.
+  const draft = useMessageDraft({
+    scope: { channel: "email", threadId, leadId, dealId, contactId, companyId, to: defaultTo },
+    enabled: open,
+    value: {
+      to_addr: to,
+      cc,
+      subject,
+      body_html: body,
+      body_text: htmlToPlain(body),
+      attachments,
+    },
+    onRestore: (d) => {
+      setTo(d.to_addr || defaultTo);
+      setCc(d.cc);
+      setSubject(d.subject);
+      setBody(d.body_html);
+      setAttachments(d.attachments);
+      signatureApplied.current = true;
+    },
+  });
+
+
+
   const MAX_TOTAL = 25 * 1024 * 1024;
   const MAX_FILES = 10;
 
