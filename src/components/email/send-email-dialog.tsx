@@ -35,6 +35,8 @@ import { TokenPills } from "@/components/ui/token-pills";
 import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
+import { useMessageDraft } from "@/hooks/use-message-draft";
+import { MessageDraftStatus } from "@/components/message-draft-status";
 
 type Props = {
   defaultTo?: string;
