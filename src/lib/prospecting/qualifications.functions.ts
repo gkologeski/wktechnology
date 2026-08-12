@@ -90,7 +90,7 @@ export const saveQualification = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { data: qs, error: qsErr } = await context.supabase
       .from("prospecting_questions")
-      .select("id, type, weight, options")
+      .select(QUESTION_COLUMNS)
       .eq("questionnaire_id", data.questionnaire_id);
     if (qsErr) throw new Error(qsErr.message);
     const score = computeScore((qs ?? []) as Question[], data.answers);
@@ -187,7 +187,7 @@ export const nurtureLead = createServerFn({ method: "POST" })
     if (data.questionnaire_id) {
       const { data: qs, error: qsErr } = await context.supabase
         .from("prospecting_questions")
-        .select("id, type, weight, options")
+        .select(QUESTION_COLUMNS)
         .eq("questionnaire_id", data.questionnaire_id);
       if (qsErr) throw new Error(qsErr.message);
       const score = computeScore((qs ?? []) as Question[], data.answers);
