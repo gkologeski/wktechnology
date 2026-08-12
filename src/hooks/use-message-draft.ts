@@ -1,6 +1,7 @@
 // Autosave de rascunho de mensagem no servidor, com debounce e restauração.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   getMessageDraft,
   saveMessageDraft,
@@ -8,6 +9,7 @@ import {
   type MessageDraftAttachment,
 } from "@/lib/message-drafts.functions";
 import { draftContext, draftScopeKey, type DraftScopeInput } from "@/lib/message-drafts/scope";
+import { messageDraftExistsKey } from "@/hooks/use-has-message-draft";
 
 export type DraftValue = {
   to_addr?: string;
