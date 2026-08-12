@@ -32,7 +32,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 type FieldOpt = {
   name: string;
   label: string;
-  type?: "text" | "number" | "date" | "select" | "boolean";
+  type?: "text" | "number" | "currency" | "date" | "select" | "boolean";
   options?: { value: string; label: string }[];
 };
 

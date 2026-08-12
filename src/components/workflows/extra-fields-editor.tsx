@@ -96,6 +96,7 @@ const LONG_TEXT_FIELDS = new Set(["description", "notes", "body", "summary", "co
 function coerceValue(field: EntityFieldDef, raw: unknown): unknown {
   if (raw === "" || raw === null || raw === undefined) return null;
   switch (field.type) {
+    case "currency":
     case "number": {
       if (typeof raw === "number") return raw;
       const n = Number(raw);
@@ -226,7 +227,7 @@ function FieldInput({
     );
   }
 
-  if (field.type === "number") {
+  if (field.type === "number" || field.type === "currency") {
     const isInteger =
       /(_days|_months|_count|_number|_seconds|_min|_ms|quantity|sort_order|view_count|installment_total|payment_day|version)$/.test(
         field.name,
@@ -694,7 +695,7 @@ export function ExtraFieldsEditor({
     if (f.required && !filled) return "Campo obrigatório.";
     if (!filled) return null;
     if (isToken(v)) return null;
-    if (f.type === "number") {
+    if (f.type === "number" || f.type === "currency") {
       const n = typeof v === "number" ? v : Number(v);
       if (!Number.isFinite(n)) return "Valor deve ser numérico.";
     }

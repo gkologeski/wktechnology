@@ -10,7 +10,8 @@ import type { MessageToken } from "@/lib/message-tokens-catalog";
 export type TokenFieldOpt = {
   name: string;
   label: string;
-  type?: "text" | "number" | "date" | "select" | "boolean";
+  type?: "text" | "number" | "currency" | "date" | "select" | "boolean";
+
   ref?: string;
   system?: boolean;
 };
