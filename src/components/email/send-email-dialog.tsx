@@ -84,6 +84,7 @@ export function SendEmailDialog({
   tokenContext,
   trigger,
   onSent,
+  draftIndicator = true,
   open: openProp,
   onOpenChange,
 }: Props) {
