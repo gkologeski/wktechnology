@@ -223,6 +223,7 @@ function UnifiedInboxPage() {
     onSuccess: () => {
       toast.success("Enviado!");
       setDraft("");
+      messageDraft.clearAfterSend();
     },
     onError: (e: Error) => toast.error(e.message),
   });
