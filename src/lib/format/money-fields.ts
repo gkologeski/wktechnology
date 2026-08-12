@@ -35,7 +35,33 @@ const NOT_MONEY = new Set([
   "response_rate",
   "utilization_rate",
   "churn_rate",
+  // Contadores e placares que terminam em radicais monetários.
+  "total_score",
+  "total_cycles",
+  "total_count",
+  "total_sent",
+  "total_items",
 ]);
+
+/**
+ * Radicais monetários usados quando a chave não tem separador
+ * (ex.: `annualrevenue`, `dealamount`, `hs_arr` vindos do HubSpot).
+ */
+const MONEY_ROOTS = [
+  "revenue",
+  "amount",
+  "value",
+  "price",
+  "cost",
+  "fee",
+  "salary",
+  "budget",
+  "mrr",
+  "arr",
+  "acv",
+  "tcv",
+];
+
 
 /** Nomes exatos considerados monetários. */
 const MONEY_EXACT = new Set([
@@ -91,7 +117,12 @@ export function isMoneyField(key: string): boolean {
   if (MONEY_EXACT.has(k)) return true;
   if (MONEY_SUFFIXES.some((s) => k.endsWith(s))) return true;
   if (MONEY_PREFIXES.some((p) => k.startsWith(p))) return true;
+  // Chaves colapsadas (sem separador), ex.: annualrevenue, dealamount, hs_arr.
+  const collapsed = k.replace(/[_-]/g, "");
+  if (collapsed !== k && MONEY_ROOTS.some((r) => collapsed.endsWith(r))) return true;
+  if (MONEY_ROOTS.some((r) => k.endsWith(r) && k.length > r.length && !k.includes("_"))) return true;
   return false;
+
 }
 
 /** Extrai o código de moeda do próprio registro, com fallback BRL. */

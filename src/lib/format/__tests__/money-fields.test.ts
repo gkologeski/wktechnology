@@ -14,6 +14,11 @@ describe("isMoneyField", () => {
       "hourly_rate",
       "mrr",
       "estimated_cost",
+      "annualrevenue",
+      "hs_arr",
+      "hs_acv",
+      "dealamount",
+      "totalrevenue",
     ]) {
       expect(isMoneyField(k), k).toBe(true);
     }
@@ -34,11 +39,14 @@ describe("isMoneyField", () => {
       "win_rate",
       "exchange_rate",
       "first_name",
+      "total_score",
+      "total_cycles",
     ]) {
       expect(isMoneyField(k), k).toBe(false);
     }
   });
 });
+
 
 describe("formatMoney", () => {
   it("formata em BRL por padrão", () => {
