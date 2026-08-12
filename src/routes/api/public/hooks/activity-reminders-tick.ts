@@ -1,13 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireCronAuth } from "@/lib/cron-auth.server";
-import { runCronWithLogging } from "@/lib/cron-observability.server";
+import { runCronWithLogging, logCronRejection } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/activity-reminders-tick")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
-        if (unauth) return unauth;
+        if (unauth) {
+          await logCronRejection("activity-reminders-tick");
+          return unauth;
+        }
         const run = await runCronWithLogging("activity-reminders-tick", async () => {
           const { tickActivityReminders } = await import("@/lib/activity-reminders.server");
           const r = await tickActivityReminders(200);
