@@ -28,6 +28,8 @@ import { CalendarRange, Filter, Loader2 } from "lucide-react";
 import { DateFilter } from "@/components/date-filter";
 import { DATE_PRESET_LABELS, getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
+import { MessageDraftPin } from "@/components/message-draft-pin";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
@@ -98,6 +100,18 @@ export function ActivityTimeline({
     contactId?: string;
     name?: string;
   }>({});
+
+  // Pin de rascunho no ícone de e-mail da barra de ações.
+  const hasEmailDraft = useHasMessageDraft({
+    scope: {
+      channel: "email",
+      contactId: target.contactId,
+      leadId: relatedKey === "related_lead_id" ? relatedId : undefined,
+      dealId: relatedKey === "related_deal_id" ? relatedId : undefined,
+      companyId: relatedKey === "related_company_id" ? relatedId : undefined,
+      to: target.email ?? "",
+    },
+  });
 
   // Ordem reorganizável das ações (persistida em localStorage)
   const [order, setOrder] = useState<OrderState>(() => loadOrder());
@@ -791,15 +805,17 @@ export function ActivityTimeline({
           a.kind === "create" && a.disabled ? "opacity-50 cursor-not-allowed" : ""
         } ${isDragging ? "opacity-40" : ""}`}
       >
-        <span
-          className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
-            active
-              ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
-              : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
-          }`}
-        >
-          {a.icon}
-        </span>
+        <MessageDraftPin show={a.kind === "create" && a.value === "email" && hasEmailDraft}>
+          <span
+            className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
+              active
+                ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
+                : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
+            }`}
+          >
+            {a.icon}
+          </span>
+        </MessageDraftPin>
         <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight line-clamp-2">
           {a.label}
         </span>

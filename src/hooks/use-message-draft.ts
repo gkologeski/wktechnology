@@ -1,6 +1,7 @@
 // Autosave de rascunho de mensagem no servidor, com debounce e restauração.
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   getMessageDraft,
   saveMessageDraft,
@@ -8,6 +9,7 @@ import {
   type MessageDraftAttachment,
 } from "@/lib/message-drafts.functions";
 import { draftContext, draftScopeKey, type DraftScopeInput } from "@/lib/message-drafts/scope";
+import { messageDraftExistsKey } from "@/hooks/use-has-message-draft";
 
 export type DraftValue = {
   to_addr?: string;
@@ -35,6 +37,13 @@ export function useMessageDraft(options: {
   const load = useServerFn(getMessageDraft);
   const save = useServerFn(saveMessageDraft);
   const remove = useServerFn(deleteMessageDraft);
+  const qc = useQueryClient();
+  const setExists = useCallback(
+    (exists: boolean) => {
+      qc.setQueryData(messageDraftExistsKey(channel, scopeKey), exists);
+    },
+    [qc, channel, scopeKey],
+  );
 
   const [status, setStatus] = useState<DraftStatus>("idle");
   const [savedAt, setSavedAt] = useState<string | null>(null);
@@ -73,8 +82,10 @@ export function useMessageDraft(options: {
           setSavedAt(draft.updated_at);
           setRestored(true);
           setStatus("saved");
+          setExists(true);
         } else {
           setStatus("idle");
+          setExists(false);
         }
       })
       .catch(() => {
@@ -116,6 +127,7 @@ export function useMessageDraft(options: {
         .then((res) => {
           setStatus(res.saved ? "saved" : "idle");
           setSavedAt(res.updated_at ?? null);
+          setExists(res.saved);
         })
         .catch(() => setStatus("idle"));
     }, DEBOUNCE_MS);
@@ -141,8 +153,9 @@ export function useMessageDraft(options: {
     setStatus("idle");
     setSavedAt(null);
     setRestored(false);
+    setExists(false);
     await remove({ data: { channel, scope_key: scopeKey } }).catch(() => {});
-  }, [remove, channel, scopeKey]);
+  }, [remove, channel, scopeKey, setExists]);
 
   const clearAfterSend = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -151,8 +164,9 @@ export function useMessageDraft(options: {
     setStatus("idle");
     setSavedAt(null);
     setRestored(false);
+    setExists(false);
     void remove({ data: { channel, scope_key: scopeKey } }).catch(() => {});
-  }, [remove, channel, scopeKey]);
+  }, [remove, channel, scopeKey, setExists]);
 
   return { status, savedAt, restored, discard, clearAfterSend };
 }

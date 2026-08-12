@@ -47,7 +47,9 @@ import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 import { useMessageDraft } from "@/hooks/use-message-draft";
+import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
+import { MessageDraftPin } from "@/components/message-draft-pin";
 
 type Props = {
   defaultTo?: string;
@@ -62,6 +64,8 @@ type Props = {
   contactName?: string;
   tokenContext?: TokenContext;
   trigger?: ReactNode;
+  /** Exibe o pin de rascunho salvo sobre o gatilho. Padrão: ligado. */
+  draftIndicator?: boolean;
   onSent?: (threadId: string) => void;
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
@@ -80,6 +84,7 @@ export function SendEmailDialog({
   tokenContext,
   trigger,
   onSent,
+  draftIndicator = true,
   open: openProp,
   onOpenChange,
 }: Props) {
@@ -120,6 +125,12 @@ export function SendEmailDialog({
       setAttachments(d.attachments);
       signatureApplied.current = true;
     },
+  });
+
+  // Pin no gatilho quando existe rascunho salvo para esta composição.
+  const hasDraft = useHasMessageDraft({
+    scope: { channel: "email", threadId, leadId, dealId, contactId, companyId, to: defaultTo },
+    enabled: draftIndicator,
   });
 
   const MAX_TOTAL = 25 * 1024 * 1024;
@@ -305,13 +316,17 @@ export function SendEmailDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger !== undefined ? (
-        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <MessageDraftPin show={draftIndicator && hasDraft}>
+          <DialogTrigger asChild>{trigger}</DialogTrigger>
+        </MessageDraftPin>
       ) : openProp === undefined ? (
-        <DialogTrigger asChild>
-          <Button size="sm" variant="outline">
-            <Mail className="mr-2 h-4 w-4" /> Email
-          </Button>
-        </DialogTrigger>
+        <MessageDraftPin show={draftIndicator && hasDraft}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline">
+              <Mail className="mr-2 h-4 w-4" /> Email
+            </Button>
+          </DialogTrigger>
+        </MessageDraftPin>
       ) : null}
 
       <DialogContent className="max-w-2xl">
@@ -505,6 +520,7 @@ export function SendEmailDialog({
                     setAttachments([]);
                     signatureApplied.current = false;
                     toast.success("Rascunho descartado");
+                    setOpen(false);
                   }}
                 >
                   Descartar
