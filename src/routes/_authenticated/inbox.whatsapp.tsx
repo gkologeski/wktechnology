@@ -475,9 +475,29 @@ function WhatsAppInbox() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  Ctrl/Cmd + Enter para enviar · anexe imagem, áudio, vídeo ou PDF (até 16MB)
-                </p>
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[10px] text-muted-foreground">
+                    Ctrl/Cmd + Enter para enviar · anexe imagem, áudio, vídeo ou PDF (até 16MB)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <MessageDraftStatus
+                      status={messageDraft.status}
+                      savedAt={messageDraft.savedAt}
+                    />
+                    {messageDraft.status !== "idle" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          await messageDraft.discard();
+                          setDraft("");
+                        }}
+                      >
+                        Descartar rascunho
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             </>
           )}
