@@ -27,7 +27,27 @@ const SaveSchema = KeySchema.extend({
   context: z.record(z.string(), z.string()).optional().default({}),
 });
 
+const ExistsSchema = z.object({
+  channel: Channel,
+  scope_keys: z.array(z.string().min(1).max(300)).min(1).max(50),
+});
+
 export type MessageDraftAttachment = z.infer<typeof AttachmentSchema>;
+
+export const hasMessageDrafts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ExistsSchema.parse(d))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { data: rows, error } = await supabase
+      .from("message_drafts")
+      .select("scope_key")
+      .eq("owner_id", userId)
+      .eq("channel", data.channel)
+      .in("scope_key", data.scope_keys);
+    if (error) throw new Error(error.message);
+    return { scope_keys: (rows ?? []).map((r) => r.scope_key as string) };
+  });
 
 export const getMessageDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
