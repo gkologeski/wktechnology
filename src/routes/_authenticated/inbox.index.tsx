@@ -367,6 +367,21 @@ function UnifiedInboxPage() {
                     current.channel === "email" ? "Escreva sua resposta…" : "Mensagem do WhatsApp…"
                   }
                 />
+                <div className="flex items-center justify-between gap-2">
+                  <MessageDraftStatus status={messageDraft.status} savedAt={messageDraft.savedAt} />
+                  {messageDraft.status !== "idle" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        await messageDraft.discard();
+                        setDraft("");
+                      }}
+                    >
+                      Descartar rascunho
+                    </Button>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 justify-between">
                   <div className="flex items-center gap-1">
                     <Button asChild size="sm" variant="ghost">
