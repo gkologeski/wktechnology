@@ -343,7 +343,7 @@ function EntityFieldInput({
 }) {
   const id = `qf-${field.key}`;
   const label = (
-    <Label htmlFor={id} className="flex items-center gap-1.5 text-xs">
+    <Label htmlFor={id} className="flex items-center gap-1.5 text-[11px] leading-tight">
       <span>
         {field.label}
         {field.required ? <span className="text-destructive ml-1">*</span> : null}
@@ -364,6 +364,8 @@ function EntityFieldInput({
     suggestion !== "" &&
     String(suggestion) !== String(value ?? "");
 
+  const suggestionLabel = translateFieldValue(field.key, suggestion) || String(suggestion);
+
   const suggestionHint = showSuggestion ? (
     <Button
       type="button"
@@ -371,18 +373,17 @@ function EntityFieldInput({
       size="sm"
       disabled={disabled}
       onClick={() => onChange(suggestion)}
-      className="h-6 justify-start gap-1 px-1 text-[11px] text-muted-foreground hover:text-foreground"
-      title={`Aplicar sugestão do Apollo.io: ${String(suggestion)}`}
+      className="h-5 justify-start gap-1 px-1 text-[11px] text-muted-foreground hover:text-foreground"
+      title={`Aplicar sugestão do Apollo.io: ${suggestionLabel}`}
     >
       <Sparkles className="h-3 w-3" aria-hidden="true" />
-      <span className="truncate">Apollo: {String(suggestion)}</span>
+      <span className="truncate">Apollo: {suggestionLabel}</span>
     </Button>
   ) : null;
 
   if (field.type === "boolean") {
     return (
-      <div className="space-y-1.5">
-        {label}
+      <div className="space-y-1">
         <div className="flex items-center gap-2">
           <Checkbox
             id={id}
@@ -390,7 +391,7 @@ function EntityFieldInput({
             disabled={disabled}
             onCheckedChange={(v) => onChange(v === true)}
           />
-          <span className="text-sm">Sim</span>
+          {label}
         </div>
         {suggestionHint}
       </div>
@@ -399,20 +400,20 @@ function EntityFieldInput({
 
   if (field.type === "select" && field.options?.length) {
     return (
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {label}
         <Select
           value={typeof value === "string" ? value : ""}
           onValueChange={onChange}
           disabled={disabled}
         >
-          <SelectTrigger id={id}>
+          <SelectTrigger id={id} className="h-8 text-sm">
             <SelectValue placeholder="Selecione" />
           </SelectTrigger>
           <SelectContent>
             {field.options.map((o) => (
               <SelectItem key={o.value} value={o.value}>
-                {o.label}
+                {translateFieldValue(field.key, o.label ?? o.value) || o.label || o.value}
               </SelectItem>
             ))}
           </SelectContent>
@@ -430,12 +431,12 @@ function EntityFieldInput({
     const numeric =
       value === null || value === undefined || value === "" ? null : Number(value as string);
     return (
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {label}
         <CurrencyInput
           id={id}
           disabled={disabled}
-          className="text-right"
+          className="h-8 text-right text-sm"
           value={numeric !== null && Number.isFinite(numeric) ? numeric : null}
           onValueChange={(n) => onChange(n)}
         />
@@ -446,7 +447,7 @@ function EntityFieldInput({
             size="sm"
             disabled={disabled}
             onClick={() => onChange(suggestion)}
-            className="h-6 justify-start gap-1 px-1 text-[11px] text-muted-foreground hover:text-foreground"
+            className="h-5 justify-start gap-1 px-1 text-[11px] text-muted-foreground hover:text-foreground"
             title={`Aplicar sugestão do Apollo.io: ${formatMoney(suggestion) ?? String(suggestion)}`}
           >
             <Sparkles className="h-3 w-3" aria-hidden="true" />
@@ -462,12 +463,13 @@ function EntityFieldInput({
     field.type === "date" && typeof value === "string" ? value.slice(0, 10) : (value ?? "");
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1">
       {label}
       <Input
         id={id}
         type={inputType}
         disabled={disabled}
+        className="h-8 text-sm"
         value={raw as string | number}
         onChange={(e) =>
           onChange(
@@ -483,4 +485,5 @@ function EntityFieldInput({
     </div>
   );
 }
+
 
