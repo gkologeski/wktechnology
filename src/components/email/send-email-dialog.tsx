@@ -276,6 +276,7 @@ export function SendEmailDialog({
       }),
     onSuccess: (res) => {
       toast.success("Email enviado");
+      draft.clearAfterSend();
       setOpen(false);
       setSubject("");
       setBody("");
