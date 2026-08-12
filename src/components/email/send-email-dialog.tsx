@@ -305,13 +305,17 @@ export function SendEmailDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger !== undefined ? (
-        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <MessageDraftPin show={draftIndicator && hasDraft}>
+          <DialogTrigger asChild>{trigger}</DialogTrigger>
+        </MessageDraftPin>
       ) : openProp === undefined ? (
-        <DialogTrigger asChild>
-          <Button size="sm" variant="outline">
-            <Mail className="mr-2 h-4 w-4" /> Email
-          </Button>
-        </DialogTrigger>
+        <MessageDraftPin show={draftIndicator && hasDraft}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline">
+              <Mail className="mr-2 h-4 w-4" /> Email
+            </Button>
+          </DialogTrigger>
+        </MessageDraftPin>
       ) : null}
 
       <DialogContent className="max-w-2xl">
