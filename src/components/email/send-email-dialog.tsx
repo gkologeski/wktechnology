@@ -127,6 +127,12 @@ export function SendEmailDialog({
     },
   });
 
+  // Pin no gatilho quando existe rascunho salvo para esta composição.
+  const hasDraft = useHasMessageDraft({
+    scope: { channel: "email", threadId, leadId, dealId, contactId, companyId, to: defaultTo },
+    enabled: draftIndicator,
+  });
+
   const MAX_TOTAL = 25 * 1024 * 1024;
   const MAX_FILES = 10;
 
