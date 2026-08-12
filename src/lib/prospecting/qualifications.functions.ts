@@ -112,12 +112,27 @@ export const saveQualification = createServerFn({ method: "POST" })
         : {}),
     } as never;
 
+    const decided = data.decision && data.decision !== "pending";
+    // Qualificado/agendado somam o score; desqualificado/nutrição zeram a parcela.
+    const contribution =
+      data.decision === "qualified" || data.decision === "scheduled" ? score : 0;
+
     if (data.id) {
       const { error } = await context.supabase
         .from("prospecting_qualifications")
         .update(patch)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
+      if (decided) {
+        await pushQualificationScore(context.supabase, {
+          userId: context.userId,
+          entity: data.entity,
+          entityId: data.entity_id,
+          questionnaireId: data.questionnaire_id,
+          points: contribution,
+          reason: "Qualificação",
+        });
+      }
       return { id: data.id, score };
     }
     const { data: row, error } = await context.supabase
@@ -126,6 +141,16 @@ export const saveQualification = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
+    if (decided) {
+      await pushQualificationScore(context.supabase, {
+        userId: context.userId,
+        entity: data.entity,
+        entityId: data.entity_id,
+        questionnaireId: data.questionnaire_id,
+        points: contribution,
+        reason: "Qualificação",
+      });
+    }
     return { id: row.id, score };
   });
 
