@@ -469,7 +469,16 @@ export function QualificationPanel({
                 <Sparkles className="h-3 w-3" aria-hidden="true" />
                 Apollo {enrichment.data.domain ? `· ${enrichment.data.domain}` : ""}
               </Badge>
+            ) : enrichment.data ? (
+              <Badge
+                variant="outline"
+                className="text-muted-foreground"
+                title="Informe o site da empresa, um e-mail corporativo ou o LinkedIn do contato para melhorar o enriquecimento."
+              >
+                Nenhum dado novo encontrado
+              </Badge>
             ) : null}
+
             <Button
               size="sm"
               variant="outline"
