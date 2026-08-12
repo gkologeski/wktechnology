@@ -138,6 +138,7 @@ function WhatsAppInbox() {
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
       setDraft("");
+      messageDraft.clearAfterSend();
       setPendingMedia(null);
       setSelected(res.conversationId);
       qc.invalidateQueries({ queryKey: ["wa"] });
