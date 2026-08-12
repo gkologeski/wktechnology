@@ -8,48 +8,52 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { applyScoreContribution } from "@/lib/scoring/icp.server";
+import {
+  computeQualificationScore,
+  type ScoreQuestion as Question,
+} from "@/lib/prospecting/score";
 
 const EntityEnum = z.enum(["lead", "contact"]);
 const DecisionEnum = z.enum(["pending", "qualified", "disqualified", "nurture", "scheduled"]);
 
-type Option = { label: string; points: number };
-type Question = {
-  id: string;
-  type: string;
-  weight: number;
-  options: Option[] | null;
-};
+const QUESTION_COLUMNS = "id, type, weight, options, text_points, text_min_chars";
 
-function computeScore(questions: Question[], answers: Record<string, unknown>): number {
-  let total = 0;
-  for (const q of questions) {
-    const raw = answers[q.id];
-    if (raw == null) continue;
-    const weight = q.weight ?? 1;
-    if (q.type === "number") {
-      const n = Number(raw);
-      if (Number.isFinite(n)) total += n * weight;
-      continue;
-    }
-    if (q.type === "boolean") {
-      if (raw === true || raw === "true") total += 10 * weight;
-      continue;
-    }
-    const opts = Array.isArray(q.options) ? q.options : [];
-    if (q.type === "single") {
-      const opt = opts.find((o) => o.label === raw);
-      if (opt) total += (opt.points ?? 0) * weight;
-      continue;
-    }
-    if (q.type === "multi" && Array.isArray(raw)) {
-      for (const label of raw) {
-        const opt = opts.find((o) => o.label === label);
-        if (opt) total += (opt.points ?? 0) * weight;
-      }
-    }
-    // text: sem pontuação
+const computeScore = computeQualificationScore;
+
+const ENTITY_TABLE = { lead: "leads", contact: "contacts" } as const;
+
+/**
+ * Lança o score da qualificação como parcela do score do registro.
+ * Idempotente por questionário: reeditar ajusta em vez de somar de novo.
+ */
+async function pushQualificationScore(
+  supabase: Parameters<typeof applyScoreContribution>[0],
+  args: {
+    userId: string;
+    entity: "lead" | "contact";
+    entityId: string;
+    questionnaireId: string;
+    points: number;
+    reason: string;
+  },
+): Promise<void> {
+  try {
+    const workspaceId = await getActiveWorkspaceId(supabase, args.userId);
+    await applyScoreContribution(supabase, {
+      ownerId: args.userId,
+      workspaceId,
+      entity: ENTITY_TABLE[args.entity],
+      entityId: args.entityId,
+      source: "qualification",
+      sourceKey: args.questionnaireId,
+      points: args.points,
+      reason: args.reason,
+    });
+  } catch (e) {
+    console.error("[qualification] score contribution", e);
   }
-  return total;
 }
 
 export const listQualificationsForEntity = createServerFn({ method: "POST" })

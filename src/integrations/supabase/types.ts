@@ -8317,6 +8317,51 @@ export type Database = {
           },
         ]
       }
+      icp_criteria: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          entity: string
+          field: string
+          id: string
+          name: string
+          op: string
+          owner_id: string
+          points: number
+          updated_at: string
+          value: Json | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          entity?: string
+          field: string
+          id?: string
+          name: string
+          op?: string
+          owner_id: string
+          points?: number
+          updated_at?: string
+          value?: Json | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          entity?: string
+          field?: string
+          id?: string
+          name?: string
+          op?: string
+          owner_id?: string
+          points?: number
+          updated_at?: string
+          value?: Json | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       integrations: {
         Row: {
           config: Json
@@ -13669,6 +13714,8 @@ export type Database = {
           position: number
           questionnaire_id: string
           required: boolean
+          text_min_chars: number
+          text_points: number
           type: string
           updated_at: string
           weight: number
@@ -13683,6 +13730,8 @@ export type Database = {
           position?: number
           questionnaire_id: string
           required?: boolean
+          text_min_chars?: number
+          text_points?: number
           type: string
           updated_at?: string
           weight?: number
@@ -13697,6 +13746,8 @@ export type Database = {
           position?: number
           questionnaire_id?: string
           required?: boolean
+          text_min_chars?: number
+          text_points?: number
           type?: string
           updated_at?: string
           weight?: number
@@ -14688,6 +14739,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      score_contributions: {
+        Row: {
+          created_at: string
+          entity: string
+          entity_id: string
+          id: string
+          owner_id: string
+          points: number
+          reason: string | null
+          source: string
+          source_key: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity: string
+          entity_id: string
+          id?: string
+          owner_id: string
+          points?: number
+          reason?: string | null
+          source: string
+          source_key?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          entity?: string
+          entity_id?: string
+          id?: string
+          owner_id?: string
+          points?: number
+          reason?: string | null
+          source?: string
+          source_key?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
       }
       score_events: {
         Row: {

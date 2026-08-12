@@ -26,7 +26,11 @@ function getField(obj: AnyRow | null | undefined, path: string): unknown {
   }, obj);
 }
 
-function evalCondition(c: Condition, after: AnyRow | null, before: AnyRow | null): boolean {
+export function evalScoringCondition(
+  c: Condition,
+  after: AnyRow | null,
+  before: AnyRow | null,
+): boolean {
   if (!c?.field || !c?.op) return false;
   const v = getField(after, c.field);
   switch (c.op) {
@@ -132,7 +136,7 @@ export async function tickScoring(
       const ruleEntity = ENTITY_TO_RULE[evEntity];
       const matching = (rules ?? []).filter((r) => r.entity === ruleEntity);
       for (const rule of matching) {
-        const ok = evalCondition(
+        const ok = evalScoringCondition(
           (rule.condition as Condition) ?? {},
           (ev.after as AnyRow) ?? null,
           (ev.before as AnyRow) ?? null,
@@ -247,7 +251,7 @@ export async function runScoringFullScan(
       for (const row of rows as AnyRow[]) {
         result.scanned += 1;
         lastId = (row.id as string) ?? lastId;
-        if (!evalCondition(condition, row, null)) continue;
+        if (!evalScoringCondition(condition, row, null)) continue;
 
         const { error: insErr } = await supabase
           .from("score_events")
