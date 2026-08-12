@@ -408,17 +408,44 @@ export function QualificationPanel({
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-right">
+            <div className="text-right min-w-[168px]">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Score</p>
               <p
-                className={`text-lg font-semibold ${
+                className={`text-lg font-semibold leading-tight ${
                   passesAuto ? "text-emerald-600" : "text-foreground"
                 }`}
               >
                 {score}
-                <span className="text-xs text-muted-foreground ml-1">/ corte {threshold}</span>
+                {maxInfo.max > 0 ? (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    de {maxInfo.max}
+                    {percent != null ? ` (${percent}%)` : ""}
+                  </span>
+                ) : null}
+              </p>
+              {maxInfo.max > 0 ? (
+                <Progress
+                  value={percent ?? 0}
+                  className="h-1.5 mt-1"
+                  aria-label={`Score ${score} de ${maxInfo.max}`}
+                />
+              ) : null}
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Corte {threshold}
+                {maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
               </p>
             </div>
+            {icpFit.data && icpFit.data.criteriaCount > 0 ? (
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Fit ICP
+                </p>
+                <Badge variant={ICP_BADGE[icpFit.data.level]} className="mt-0.5">
+                  {ICP_LABEL[icpFit.data.level]}
+                  {icpFit.data.percent != null ? ` · ${icpFit.data.percent}%` : ""}
+                </Badge>
+              </div>
+            ) : null}
             {preselectedQuestionnaireId ? null : (
               <Select value={activeId ?? ""} onValueChange={setSelectedId}>
                 <SelectTrigger className="w-[200px]">
