@@ -520,6 +520,7 @@ export function SendEmailDialog({
                     setAttachments([]);
                     signatureApplied.current = false;
                     toast.success("Rascunho descartado");
+                    setOpen(false);
                   }}
                 >
                   Descartar
