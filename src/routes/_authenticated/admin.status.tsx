@@ -116,6 +116,7 @@ function AdminStatusPage() {
                   <TableHead>Job</TableHead>
                   <TableHead>Schedule</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Endpoint</TableHead>
                   <TableHead>Última execução</TableHead>
                   <TableHead>Duração</TableHead>
                 </TableRow>
@@ -124,11 +125,13 @@ function AdminStatusPage() {
                 {(data?.cronJobs ?? []).map((c) => {
                   const late = (c.late_minutes ?? 0) > 60;
                   const failed = !!(c.status && c.status !== "succeeded");
-                  const rowClass = failed
-                    ? "bg-destructive/10 hover:bg-destructive/15"
-                    : late
-                      ? "bg-warning/10 hover:bg-warning/15"
-                      : "bg-success/5 hover:bg-success/10";
+                  const unhealthy = Boolean(c.endpoint_unhealthy);
+                  const rowClass =
+                    failed || unhealthy
+                      ? "bg-destructive/10 hover:bg-destructive/15"
+                      : late
+                        ? "bg-warning/10 hover:bg-warning/15"
+                        : "bg-success/5 hover:bg-success/10";
                   const badgeClass = failed
                     ? "bg-destructive text-destructive-foreground hover:bg-destructive"
                     : late
@@ -142,6 +145,22 @@ function AdminStatusPage() {
                         <Badge className={badgeClass}>{c.status ?? "—"}</Badge>
                       </TableCell>
                       <TableCell>
+                        {c.app_last_status == null ? (
+                          <span className="text-xs text-muted-foreground">sem registro</span>
+                        ) : unhealthy ? (
+                          <Badge
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive"
+                            title={c.app_last_error ?? "A aplicação não respondeu à chamada agendada."}
+                          >
+                            não respondeu
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-success text-success-foreground hover:bg-success">
+                            ok
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
                         {c.last_start
                           ? formatDistanceToNow(new Date(c.last_start), {
                               addSuffix: true,
@@ -153,6 +172,7 @@ function AdminStatusPage() {
                     </TableRow>
                   );
                 })}
+
               </TableBody>
             </Table>
           )}

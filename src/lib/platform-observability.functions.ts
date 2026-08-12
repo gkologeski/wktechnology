@@ -39,11 +39,49 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
       duration_ms: number | null;
     }>;
     const now = Date.now();
+
+    // Saúde real do endpoint da aplicação: o agendador pode marcar "succeeded"
+    // mesmo quando a chamada HTTP é recusada (401). Cruzamos com cron_run_logs.
+    const since = new Date(now - 24 * 60 * 60 * 1000).toISOString();
+    const { data: appRuns } = await (supabaseAdmin as any)
+      .from("cron_run_logs")
+      .select("job_name, started_at, status, error")
+      .gte("started_at", since)
+      .order("started_at", { ascending: false })
+      .limit(500);
+
+    const norm = (n: string) => n.replace(/-tick$/, "");
+    const appByJob = new Map<string, { started_at: string; status: string; error: string | null }>();
+    for (const r of (appRuns ?? []) as Array<{
+      job_name: string;
+      started_at: string;
+      status: string;
+      error: string | null;
+    }>) {
+      const key = norm(r.job_name);
+      if (!appByJob.has(key)) appByJob.set(key, r);
+    }
+
     const cronJobs = crons.map((c) => {
       const lastStartMs = c.last_start ? new Date(c.last_start).getTime() : 0;
       const lateMin = lastStartMs ? Math.round((now - lastStartMs) / 60000) : null;
-      return { ...c, late_minutes: lateMin };
+      const app = appByJob.get(norm(c.jobname));
+      // Agendador rodou nas últimas 2h, mas a aplicação não registrou execução:
+      // sinal de chamada recusada (credencial) ou endpoint indisponível.
+      const schedulerRecent = lastStartMs > 0 && now - lastStartMs < 2 * 60 * 60 * 1000;
+      const appRecent = app ? now - new Date(app.started_at).getTime() < 2 * 60 * 60 * 1000 : false;
+      return {
+        ...c,
+        late_minutes: lateMin,
+        app_last_run: app?.started_at ?? null,
+        app_last_status: app?.status ?? null,
+        app_last_error: app?.error ?? null,
+        endpoint_unhealthy: Boolean(
+          (schedulerRecent && app && !appRecent) || (app && app.status === "error" && appRecent),
+        ),
+      };
     });
+
 
     // Integrações: contagens simples
     const [emailAcc, waba, twilio, twoFa] = await Promise.all([

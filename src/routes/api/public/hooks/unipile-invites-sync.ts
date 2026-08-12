@@ -3,14 +3,17 @@ import { createFileRoute } from "@tanstack/react-router";
 import { requireCronAuth } from "@/lib/cron-auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { loadAccountCtx, listSentInvitations } from "@/lib/unipile/client.server";
-import { runCronWithLogging } from "@/lib/cron-observability.server";
+import { runCronWithLogging, logCronRejection } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/unipile-invites-sync")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
-        if (unauth) return unauth;
+        if (unauth) {
+          await logCronRejection("unipile-invites-sync");
+          return unauth;
+        }
         const run = await runCronWithLogging("unipile-invites-sync", async () => {
           const cutoff = new Date(Date.now() - 30 * 86400_000).toISOString();
           const { data: pending } = await supabaseAdmin

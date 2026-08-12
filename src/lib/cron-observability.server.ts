@@ -77,3 +77,24 @@ export async function runCronWithLogging<T extends Record<string, unknown>>(
     return { status: "error", duration_ms: durationMs, metrics: {}, error: message };
   }
 }
+
+/**
+ * Registra em cron_run_logs uma tentativa de execução recusada por credencial
+ * inválida (401). Sem isso, um job agendado com segredo errado falha
+ * silenciosamente: o agendador marca "succeeded" e a aplicação nunca roda.
+ */
+export async function logCronRejection(jobName: string, reason = "Unauthorized (401)") {
+  try {
+    const now = new Date().toISOString();
+    await (supabaseAdmin as any).from("cron_run_logs").insert({
+      job_name: jobName,
+      started_at: now,
+      finished_at: now,
+      duration_ms: 0,
+      status: "error",
+      error: reason,
+    });
+  } catch (e) {
+    console.warn(`[cron:${jobName}] failed to log rejection`, e);
+  }
+}
