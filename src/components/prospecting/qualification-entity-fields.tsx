@@ -10,6 +10,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureLeadRelations, type LeadRelationsInput } from "@/lib/leads/lead-relations";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
+import { formatMoney, isMoneyField } from "@/lib/format/money-fields";
+
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -419,6 +422,41 @@ function EntityFieldInput({
     );
   }
 
+  // Campos monetários: usa o input com máscara BRL. Blocos salvos antes do tipo
+  // "currency" existir continuam como "number" — a convenção de nome cobre esses.
+  const isMoney = field.type === "currency" || (field.type === "number" && isMoneyField(field.key));
+
+  if (isMoney) {
+    const numeric =
+      value === null || value === undefined || value === "" ? null : Number(value as string);
+    return (
+      <div className="space-y-1.5">
+        {label}
+        <CurrencyInput
+          id={id}
+          disabled={disabled}
+          className="text-right"
+          value={numeric !== null && Number.isFinite(numeric) ? numeric : null}
+          onValueChange={(n) => onChange(n)}
+        />
+        {showSuggestion ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={disabled}
+            onClick={() => onChange(suggestion)}
+            className="h-6 justify-start gap-1 px-1 text-[11px] text-muted-foreground hover:text-foreground"
+            title={`Aplicar sugestão do Apollo.io: ${formatMoney(suggestion) ?? String(suggestion)}`}
+          >
+            <Sparkles className="h-3 w-3" aria-hidden="true" />
+            <span className="truncate">Apollo: {formatMoney(suggestion) ?? String(suggestion)}</span>
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+
   const inputType = field.type === "number" ? "number" : field.type === "date" ? "date" : "text";
   const raw =
     field.type === "date" && typeof value === "string" ? value.slice(0, 10) : (value ?? "");
@@ -445,3 +483,4 @@ function EntityFieldInput({
     </div>
   );
 }
+

@@ -17,7 +17,7 @@ export type QualificationFieldEntity = (typeof QUALIFICATION_FIELD_ENTITIES)[num
 
 export type QualificationFieldPosition = "before" | "after";
 
-export type QualificationFieldType = "text" | "number" | "date" | "select" | "boolean";
+export type QualificationFieldType = "text" | "number" | "currency" | "date" | "select" | "boolean";
 
 export type QualificationField = {
   key: string;
@@ -36,7 +36,7 @@ export type QualificationFieldBlock = {
 };
 
 const ENTITY_VALUES = new Set<string>(QUALIFICATION_FIELD_ENTITIES.map((e) => e.value));
-const TYPES = new Set<string>(["text", "number", "date", "select", "boolean"]);
+const TYPES = new Set<string>(["text", "number", "currency", "date", "select", "boolean"]);
 
 export function entityLabel(entity: QualificationFieldEntity): string {
   return QUALIFICATION_FIELD_ENTITIES.find((e) => e.value === entity)?.label ?? entity;
