@@ -199,9 +199,9 @@ export function QualificationPanel({
   // Preenche automaticamente os campos vazios quando as sugestões chegam.
   const applySuggestions = entityFields.applySuggestions;
   useEffect(() => {
-    if (!suggestions || entityFields.isLoading || !entityFields.records) return;
+    if (!suggestions || entityFields.isLoading) return;
     applySuggestions(suggestions);
-  }, [suggestions, entityFields.isLoading, entityFields.records, applySuggestions]);
+  }, [suggestions, entityFields.isLoading, applySuggestions]);
 
   /** Persiste no banco todos os campos enriquecidos (lead, empresa e contato). */
   async function persistEnrichment() {
