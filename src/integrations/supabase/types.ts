@@ -9787,6 +9787,54 @@ export type Database = {
           },
         ]
       }
+      message_drafts: {
+        Row: {
+          attachments: Json
+          body_html: string | null
+          body_text: string | null
+          cc: string | null
+          channel: string
+          context: Json
+          created_at: string
+          id: string
+          owner_id: string
+          scope_key: string
+          subject: string | null
+          to_addr: string | null
+          updated_at: string
+        }
+        Insert: {
+          attachments?: Json
+          body_html?: string | null
+          body_text?: string | null
+          cc?: string | null
+          channel: string
+          context?: Json
+          created_at?: string
+          id?: string
+          owner_id: string
+          scope_key: string
+          subject?: string | null
+          to_addr?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attachments?: Json
+          body_html?: string | null
+          body_text?: string | null
+          cc?: string | null
+          channel?: string
+          context?: Json
+          created_at?: string
+          id?: string
+          owner_id?: string
+          scope_key?: string
+          subject?: string | null
+          to_addr?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       message_sentiments: {
         Row: {
           analyzed_at: string
