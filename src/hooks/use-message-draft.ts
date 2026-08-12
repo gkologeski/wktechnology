@@ -125,6 +125,7 @@ export function useMessageDraft(options: {
         .then((res) => {
           setStatus(res.saved ? "saved" : "idle");
           setSavedAt(res.updated_at ?? null);
+          setExists(res.saved);
         })
         .catch(() => setStatus("idle"));
     }, DEBOUNCE_MS);
