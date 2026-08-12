@@ -36,6 +36,7 @@ import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
 import { DateFilter } from "@/components/date-filter";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { translateFieldValue } from "@/lib/i18n/hubspot-values";
 
 import {
   CheckboxFilter,
@@ -296,7 +297,7 @@ function CompaniesHubspotView() {
         key: "industry",
         label: "Setor",
         className: "text-muted-foreground",
-        render: (c) => c.industry ?? "—",
+        render: (c) => translateFieldValue("industry", c.industry) || "—",
       },
       {
         key: "size",
@@ -558,7 +559,7 @@ function CompaniesHubspotView() {
               (facets?.industry ?? []).map((s) => (
                 <CheckboxFilter
                   key={s.value}
-                  label={s.value}
+                  label={translateFieldValue("industry", s.value) || s.value}
                   count={s.count}
                   checked={filters.industry.includes(s.value)}
                   onChange={(v) =>

@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { deleteRowGuarded } from "@/lib/delete-guard";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { translateFieldValue } from "@/lib/i18n/hubspot-values";
 
 export const Route = createFileRoute("/_authenticated/companies/$id")({
   component: CompanyDetail,
@@ -109,7 +110,7 @@ function CompanyDetail() {
           <p className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap mt-0.5">
             {company.industry && (
               <Badge variant="outline" className="rounded-full">
-                {company.industry}
+                {translateFieldValue("industry", company.industry)}
               </Badge>
             )}
             {company.city && (
