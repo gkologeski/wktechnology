@@ -84,17 +84,6 @@ export function ActivityTimeline({
 
   // Action dialogs open state
   const [openAction, setOpenAction] = useState<CreateAction | null>(null);
-  // Pin de rascunho no ícone de e-mail da barra de ações.
-  const hasEmailDraft = useHasMessageDraft({
-    scope: {
-      channel: "email",
-      contactId: target.contactId,
-      leadId: relatedKey === "related_lead_id" ? relatedId : undefined,
-      dealId: relatedKey === "related_deal_id" ? relatedId : undefined,
-      companyId: relatedKey === "related_company_id" ? relatedId : undefined,
-      to: target.email ?? "",
-    },
-  });
   // Mantém o discador montado após a primeira abertura (preserva chamada em
   // andamento ao fechar o modal), mas evita baixar o SDK de voz antes disso.
   const [dialerMounted, setDialerMounted] = useState(false);
@@ -109,6 +98,18 @@ export function ActivityTimeline({
     contactId?: string;
     name?: string;
   }>({});
+
+  // Pin de rascunho no ícone de e-mail da barra de ações.
+  const hasEmailDraft = useHasMessageDraft({
+    scope: {
+      channel: "email",
+      contactId: target.contactId,
+      leadId: relatedKey === "related_lead_id" ? relatedId : undefined,
+      dealId: relatedKey === "related_deal_id" ? relatedId : undefined,
+      companyId: relatedKey === "related_company_id" ? relatedId : undefined,
+      to: target.email ?? "",
+    },
+  });
 
   // Ordem reorganizável das ações (persistida em localStorage)
   const [order, setOrder] = useState<OrderState>(() => loadOrder());
