@@ -151,8 +151,9 @@ export function useMessageDraft(options: {
     setStatus("idle");
     setSavedAt(null);
     setRestored(false);
+    setExists(false);
     await remove({ data: { channel, scope_key: scopeKey } }).catch(() => {});
-  }, [remove, channel, scopeKey]);
+  }, [remove, channel, scopeKey, setExists]);
 
   const clearAfterSend = useCallback(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -161,8 +162,9 @@ export function useMessageDraft(options: {
     setStatus("idle");
     setSavedAt(null);
     setRestored(false);
+    setExists(false);
     void remove({ data: { channel, scope_key: scopeKey } }).catch(() => {});
-  }, [remove, channel, scopeKey]);
+  }, [remove, channel, scopeKey, setExists]);
 
   return { status, savedAt, restored, discard, clearAfterSend };
 }
