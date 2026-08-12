@@ -12,6 +12,8 @@ import { ensureLeadRelations, type LeadRelationsInput } from "@/lib/leads/lead-r
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { formatMoney, isMoneyField } from "@/lib/format/money-fields";
+import { translateFieldValue } from "@/lib/i18n/hubspot-values";
+
 
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
