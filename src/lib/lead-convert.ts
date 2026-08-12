@@ -104,6 +104,7 @@ export async function convertLead(lead: Lead, ownerId: string): Promise<ConvertR
       converted_at: new Date().toISOString(),
       converted_contact_id: contact?.id,
       converted_deal_id: deal?.id,
+      ...(companyId ? { company_id: companyId } : {}),
     })
     .eq("id", lead.id);
   if (ue) throw new Error(ue.message);
