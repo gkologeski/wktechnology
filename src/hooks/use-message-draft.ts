@@ -37,6 +37,13 @@ export function useMessageDraft(options: {
   const load = useServerFn(getMessageDraft);
   const save = useServerFn(saveMessageDraft);
   const remove = useServerFn(deleteMessageDraft);
+  const qc = useQueryClient();
+  const setExists = useCallback(
+    (exists: boolean) => {
+      qc.setQueryData(messageDraftExistsKey(channel, scopeKey), exists);
+    },
+    [qc, channel, scopeKey],
+  );
 
   const [status, setStatus] = useState<DraftStatus>("idle");
   const [savedAt, setSavedAt] = useState<string | null>(null);
