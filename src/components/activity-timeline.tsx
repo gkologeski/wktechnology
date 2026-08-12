@@ -28,6 +28,8 @@ import { CalendarRange, Filter, Loader2 } from "lucide-react";
 import { DateFilter } from "@/components/date-filter";
 import { DATE_PRESET_LABELS, getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
+import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
+import { MessageDraftPin } from "@/components/message-draft-pin";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
 import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
