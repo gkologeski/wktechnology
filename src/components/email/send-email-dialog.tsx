@@ -46,6 +46,8 @@ type Props = {
   leadId?: string;
   dealId?: string;
   companyId?: string;
+  /** Thread de e-mail quando a composição é uma resposta (usada na chave do rascunho). */
+  threadId?: string;
   contactName?: string;
   tokenContext?: TokenContext;
   trigger?: ReactNode;
