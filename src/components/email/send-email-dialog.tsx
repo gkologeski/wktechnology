@@ -122,8 +122,6 @@ export function SendEmailDialog({
     },
   });
 
-
-
   const MAX_TOTAL = 25 * 1024 * 1024;
   const MAX_FILES = 10;
 
@@ -231,7 +229,6 @@ export function SendEmailDialog({
     signatureApplied.current = true;
     setBody((prev) => `${prev ?? ""}<br/><br/>${sig}`);
   }, [open, account]);
-
 
   const ctx = useMemo<TokenContext>(
     () => ({

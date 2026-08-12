@@ -214,8 +214,6 @@ function WhatsAppInbox() {
     onRestore: (d) => setDraft(d.body_text),
   });
 
-
-
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
