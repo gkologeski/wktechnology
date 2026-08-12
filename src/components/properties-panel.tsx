@@ -39,6 +39,8 @@ import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { formatDateOnly, formatDateTime } from "@/lib/crm";
 import { formatMoney, isMoneyField, resolveCurrency } from "@/lib/format/money-fields";
+import { translateFieldValue } from "@/lib/i18n/hubspot-values";
+
 import { CurrencyInput } from "@/components/ui/currency-input";
 
 import { OwnerField } from "@/components/entity/owner-field";

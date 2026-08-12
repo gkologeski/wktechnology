@@ -68,15 +68,16 @@ export const Route = createFileRoute("/_authenticated/contacts")({
 });
 
 const LIFECYCLE_STAGES = [
-  { value: "subscriber", label: "Subscriber", tone: "slate" as const },
+  { value: "subscriber", label: "Assinante", tone: "slate" as const },
   { value: "lead", label: "Lead", tone: "sky" as const },
   { value: "marketingqualifiedlead", label: "MQL", tone: "violet" as const },
   { value: "salesqualifiedlead", label: "SQL", tone: "indigo" as const },
-  { value: "opportunity", label: "Opportunity", tone: "amber" as const },
-  { value: "customer", label: "Customer", tone: "emerald" as const },
-  { value: "evangelist", label: "Evangelist", tone: "fuchsia" as const },
-  { value: "other", label: "Other", tone: "slate" as const },
+  { value: "opportunity", label: "Oportunidade", tone: "amber" as const },
+  { value: "customer", label: "Cliente", tone: "emerald" as const },
+  { value: "evangelist", label: "Evangelizador", tone: "fuchsia" as const },
+  { value: "other", label: "Outro", tone: "slate" as const },
 ];
+
 
 type ViewId = "all" | "mine" | "unassigned" | "new_week";
 const VIEWS = [
