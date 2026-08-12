@@ -39,6 +39,11 @@ type: feature
 - Storage `media`: `media_storage_update` restrito ao uploader (`owner = auth.uid()` ou pasta do próprio uid) ou admin do workspace, igual ao delete. Leitura por qualquer membro do workspace é intencional (biblioteca de mídia compartilhada); não reportar como vulnerabilidade.
 - `ats_talent_pool_members`: escrita (INSERT/UPDATE/DELETE) apenas via `owner_id = auth.uid()`, `can_write_owner(owner_id, auth.uid())` ou `is_workspace_admin_of`. As policies `*_workspace_insert/update/delete` (membership pura) foram removidas — não recriar. SELECT workspace-wide é intencional.
 - TechHire RBAC: policies usam `techhire_rbac_gate(auth.uid(), owner_id, '<perm>')`, que resolve o workspace do próprio registro e chama `user_has_permission(user, workspace_id, perm)`. Não usar a variante de 2 argumentos (`user_has_permission(user, perm)`) em policies ligadas a linhas — ela agrega permissões de todos os workspaces do usuário.
+- `app_settings`: policy RESTRICTIVE `app_settings_deny_all` (false/false) para `anon`/`authenticated` é intencional (fail-closed). Toda leitura/escrita é feita por service_role em rotas de cron (`prospecting-dial-tick`) e server functions, que fazem bypass de RLS. Não reportar como vulnerabilidade nem adicionar policies para clientes.
+- `ats_stage_emails`: conjunto único por operação (`ats_stage_emails_select/insert/update/delete`) = `owner_id = auth.uid() OR is_workspace_admin_of(owner_id, auth.uid()) OR can_write_owner(owner_id, auth.uid())`. Policies duplicadas `own ats_stage_emails select/write` e `*_admin_*`/`*_team_*` foram removidas — não recriar.
+- `financial_entries`: `ws_financial_entries_select` = membership do workspace **e** (admin `is_workspace_admin_v2` OR `finance.read` OR (`owner_id`/`assigned_to` = auth.uid() **e** `techfinance.entries.create.own` ainda vigente)). Criador sem permissão financeira ativa não lê mais lançamentos antigos — não voltar para `owner_id = auth.uid()` puro.
+- `ats_hunting_captures`: policies explícitas por operação, estritamente por usuário (`owner_id = auth.uid()`; INSERT exige também `captured_by IS NULL OR captured_by = auth.uid()`). `owner_id` é sempre um `auth.users.id` (nunca `workspaces.id`), então não há exposição cross-user do `raw_payload`. Não criar leitura workspace-wide nessa tabela.
+
 
 
 ## Webhooks & cron
