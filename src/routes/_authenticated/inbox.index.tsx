@@ -172,6 +172,27 @@ function UnifiedInboxPage() {
 
   const current = items.find((i) => i.id === selected) ?? null;
 
+  // Rascunho automático da resposta inline, por conversa selecionada.
+  const messageDraft = useMessageDraft({
+    scope:
+      current?.channel === "whatsapp"
+        ? {
+            channel: "whatsapp",
+            conversationId: current.id,
+            contactId: current.contactId,
+            to: current.replyTo,
+          }
+        : {
+            channel: "email",
+            threadId: current?.id ?? null,
+            contactId: current?.contactId ?? null,
+            to: current?.replyTo ?? null,
+          },
+    enabled: !!current,
+    value: { body_text: draft, subject: current?.subject ?? "" },
+    onRestore: (d) => setDraft(d.body_text),
+  });
+
   const reply = useMutation({
     mutationFn: async () => {
       if (!current) throw new Error("Selecione um item.");
