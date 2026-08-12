@@ -308,7 +308,10 @@ export function SendEmailDialog({
 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Novo email</DialogTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <DialogTitle>Novo email</DialogTitle>
+            <MessageDraftStatus status={draft.status} savedAt={draft.savedAt} />
+          </div>
           <DialogDescription>
             {contactName ? `Para ${contactName}` : "Enviar email via Gmail"}
             {account ? ` · de ${account.email}` : ""}
