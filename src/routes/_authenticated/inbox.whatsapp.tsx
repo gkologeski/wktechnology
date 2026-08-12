@@ -198,6 +198,21 @@ function WhatsAppInbox() {
     [conversations, allConversations, selected],
   );
 
+  // Rascunho automático da mensagem em digitação por conversa.
+  const messageDraft = useMessageDraft({
+    scope: {
+      channel: "whatsapp",
+      conversationId: selected,
+      contactId: current?.contact_id ?? null,
+      to: current?.contact_phone ?? null,
+    },
+    enabled: !!selected,
+    value: { body_text: draft },
+    onRestore: (d) => setDraft(d.body_text),
+  });
+
+
+
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
