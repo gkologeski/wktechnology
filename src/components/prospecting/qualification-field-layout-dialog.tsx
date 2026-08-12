@@ -161,9 +161,19 @@ export function QualificationFieldLayoutDialog({
                     <Label className="text-xs">Entidade</Label>
                     <Select
                       value={active.entity}
-                      onValueChange={(v) =>
-                        updateActive({ entity: v as QualificationFieldEntity, fields: [] })
-                      }
+                      onValueChange={(v) => {
+                        const entity = v as QualificationFieldEntity;
+                        const wasDefaultTitle = QUALIFICATION_FIELD_ENTITIES.some(
+                          (e) => active.title.trim() === `Dados do ${e.label}`,
+                        );
+                        updateActive({
+                          entity,
+                          fields: [],
+                          ...(wasDefaultTitle || !active.title.trim()
+                            ? { title: `Dados do ${entityLabel(entity)}` }
+                            : {}),
+                        });
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue />
