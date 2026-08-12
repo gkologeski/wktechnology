@@ -343,16 +343,31 @@ export async function runApolloCascade(input: {
     company = await step("enriquecimento da empresa", () => apolloOrganizationEnrich(domain!));
   }
 
-  const matched = await step("enriquecimento da pessoa", () =>
-    apolloPeopleMatch({
-      first_name: input.first_name,
-      last_name: input.last_name,
-      email: input.email,
-      linkedin_url: input.linkedin_url,
-      domain,
-      company_name: input.company_name,
-    }),
-  );
+  // `people/match` consome crédito mesmo quando devolve apenas o eco da
+  // entrada. Só chamamos quando há sinal com chance real de acerto:
+  // LinkedIn, e-mail corporativo ou nome + domínio resolvido.
+  const corporateEmail = !!domainFromEmail(input.email);
+  const hasSignal =
+    !!input.linkedin_url || corporateEmail || (!!input.first_name && !!domain);
+
+  let matched: Awaited<ReturnType<typeof apolloPeopleMatch>> | null = null;
+  if (hasSignal) {
+    matched = await step("enriquecimento da pessoa", () =>
+      apolloPeopleMatch({
+        first_name: input.first_name,
+        last_name: input.last_name,
+        email: corporateEmail ? input.email : null,
+        linkedin_url: input.linkedin_url,
+        domain,
+        company_name: input.company_name,
+      }),
+    );
+  } else {
+    warnings.push(
+      "Sem dados suficientes para enriquecer: informe o site da empresa, um e-mail corporativo ou o LinkedIn do contato.",
+    );
+  }
+
 
   if (!company && matched?.company) company = matched.company;
   if (!domain && company?.domain) {
