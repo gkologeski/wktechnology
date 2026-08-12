@@ -791,15 +791,17 @@ export function ActivityTimeline({
           a.kind === "create" && a.disabled ? "opacity-50 cursor-not-allowed" : ""
         } ${isDragging ? "opacity-40" : ""}`}
       >
-        <span
-          className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
-            active
-              ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
-              : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
-          }`}
-        >
-          {a.icon}
-        </span>
+        <MessageDraftPin show={a.kind === "create" && a.value === "email" && hasEmailDraft}>
+          <span
+            className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
+              active
+                ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/30"
+                : "bg-muted/60 border-border/60 text-foreground/80 group-hover:bg-muted group-hover:border-primary/40 group-hover:text-primary"
+            }`}
+          >
+            {a.icon}
+          </span>
+        </MessageDraftPin>
         <span className="text-[11px] font-medium text-foreground/80 text-center leading-tight line-clamp-2">
           {a.label}
         </span>
