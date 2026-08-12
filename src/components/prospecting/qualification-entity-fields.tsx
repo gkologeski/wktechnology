@@ -179,17 +179,6 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
     const used = new Set<QualificationFieldEntity>(
       blocks.filter((b) => b.fields.length > 0).map((b) => b.entity),
     );
-    const base = {
-      owner_id: lead?.["owner_id"] ?? null,
-      assigned_to: lead?.["assigned_to"] ?? null,
-      workspace_id: lead?.["workspace_id"] ?? null,
-    } as Record<string, unknown>;
-    const withBase = (payload: Record<string, unknown>) => {
-      const out = { ...payload };
-      for (const [k, v] of Object.entries(base)) if (v != null) out[k] = v;
-      return out;
-    };
-
     const clean = (entity: QualificationFieldEntity) => {
       const out: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(values[entity] ?? {})) {
@@ -199,81 +188,49 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
       return out;
     };
 
-    const leadPatch: Record<string, unknown> = {};
-
-    // --- Empresa: cria e vincula quando o lead ainda não tem company_id ---
+    // --- Empresa/Contato: cria e vincula pela regra única de vínculo do lead ---
     let companyId = (lead?.["company_id"] as string | null) ?? null;
-    if (used.has("companies") && !data.companies) {
-      const vals = clean("companies");
-      const name =
-        (vals["name"] as string | undefined) ?? (lead?.["company_name"] as string | undefined);
-      if (name) {
-        const { data: created, error: insErr } = await supabase
-          .from("companies")
-          .insert(withBase({ ...vals, name }) as never)
-          .select("id")
-          .single();
-        if (insErr) throw new Error(insErr.message);
-        companyId = (created as { id: string }).id;
-        leadPatch["company_id"] = companyId;
-      }
+    let contactId = (lead?.["converted_contact_id"] as string | null) ?? null;
+    const needsCompany = used.has("companies") && !data.companies;
+    const needsContact = used.has("contacts") && !data.contacts;
+    if (lead && (needsCompany || needsContact)) {
+      const companyVals = clean("companies");
+      const contactVals = clean("contacts");
+      const rel = await ensureLeadRelations(supabase, {
+        ...(lead as LeadRelationsInput),
+        company_name:
+          (companyVals["name"] as string | undefined) ??
+          (lead["company_name"] as string | null | undefined) ??
+          null,
+        first_name:
+          (contactVals["first_name"] as string | undefined) ??
+          (lead["first_name"] as string | null | undefined) ??
+          null,
+      });
+      companyId = rel.companyId ?? companyId;
+      contactId = rel.contactId ?? contactId;
     }
 
-    // --- Contato: cria e vincula quando o lead ainda não tem contato ---
-    if (used.has("contacts") && !data.contacts) {
-      const vals = clean("contacts");
-      const firstName =
-        (vals["first_name"] as string | undefined) ??
-        (lead?.["first_name"] as string | undefined) ??
-        null;
-      const hasSignal = Object.keys(vals).length > 0 || !!lead?.["email"] || !!lead?.["phone"];
-      if (firstName && hasSignal) {
-        const payload: Record<string, unknown> = {
-          first_name: firstName,
-          last_name: lead?.["last_name"] ?? null,
-          email: lead?.["email"] ?? null,
-          phone: lead?.["phone"] ?? null,
-          job_title: lead?.["job_title"] ?? null,
-          ...(companyId ? { company_id: companyId } : {}),
-          ...vals,
-        };
-        const { data: created, error: insErr } = await supabase
-          .from("contacts")
-          .insert(withBase(payload) as never)
-          .select("id")
-          .single();
-        if (insErr) throw new Error(insErr.message);
-        leadPatch["converted_contact_id"] = (created as { id: string }).id;
-      }
-    }
-
-    // --- Atualiza os registros já existentes ---
-    for (const entity of ["leads", "companies", "contacts"] as QualificationFieldEntity[]) {
-      const row = data[entity];
-      if (!row) continue;
+    // --- Atualiza os registros (existentes ou recém-criados) ---
+    const targets: { entity: QualificationFieldEntity; id: string | null; row: Row }[] = [
+      { entity: "leads", id: (lead?.["id"] as string | undefined) ?? leadId, row: data.leads },
+      { entity: "companies", id: companyId, row: data.companies },
+      { entity: "contacts", id: contactId, row: data.contacts },
+    ];
+    for (const { entity, id, row } of targets) {
+      if (!id) continue;
       const patch: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(values[entity] ?? {})) {
-        const current = row[key] ?? null;
+        const current = row?.[key] ?? null;
         const next = value === "" ? null : value;
         if (JSON.stringify(current ?? null) !== JSON.stringify(next ?? null)) patch[key] = next;
       }
       if (Object.keys(patch).length === 0) continue;
-      const id = row["id"] as string | undefined;
-      if (!id) continue;
       const { error: upErr } = await supabase
         .from(entity)
         .update(patch as never)
         .eq("id", id);
       if (upErr) throw new Error(upErr.message);
-    }
-
-    // --- Vincula os registros recém-criados ao lead ---
-    if (Object.keys(leadPatch).length > 0) {
-      const { error: linkErr } = await supabase
-        .from("leads")
-        .update(leadPatch as never)
-        .eq("id", leadId);
-      if (linkErr) throw new Error(linkErr.message);
     }
   };
 
