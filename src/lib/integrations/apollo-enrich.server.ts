@@ -198,8 +198,15 @@ function mapOrg(org?: ApolloOrg | null): ApolloCompanyData | null {
 export async function apolloFindDomainByName(companyName: string): Promise<string | null> {
   const data = await apolloFetch<{ organizations?: ApolloOrg[]; accounts?: ApolloOrg[] }>(
     "/api/v1/mixed_companies/search",
-    { method: "POST", query: { q_organization_name: companyName, per_page: "5", page: "1" } },
+    {
+      method: "POST",
+      // O endpoint aceita os filtros na query string, mas alguns ambientes só
+      // consideram o corpo — enviamos nos dois para não falhar em silêncio.
+      query: { q_organization_name: companyName, per_page: "5", page: "1" },
+      body: { q_organization_name: companyName, per_page: 5, page: 1 },
+    },
   );
+
   const list = [...(data.organizations ?? []), ...(data.accounts ?? [])];
   for (const org of list) {
     const d = normalizeDomain(org.primary_domain ?? org.website_url ?? null);
@@ -336,16 +343,31 @@ export async function runApolloCascade(input: {
     company = await step("enriquecimento da empresa", () => apolloOrganizationEnrich(domain!));
   }
 
-  const matched = await step("enriquecimento da pessoa", () =>
-    apolloPeopleMatch({
-      first_name: input.first_name,
-      last_name: input.last_name,
-      email: input.email,
-      linkedin_url: input.linkedin_url,
-      domain,
-      company_name: input.company_name,
-    }),
-  );
+  // `people/match` consome crédito mesmo quando devolve apenas o eco da
+  // entrada. Só chamamos quando há sinal com chance real de acerto:
+  // LinkedIn, e-mail corporativo ou nome + domínio resolvido.
+  const corporateEmail = !!domainFromEmail(input.email);
+  const hasSignal =
+    !!input.linkedin_url || corporateEmail || (!!input.first_name && !!domain);
+
+  let matched: Awaited<ReturnType<typeof apolloPeopleMatch>> | null = null;
+  if (hasSignal) {
+    matched = await step("enriquecimento da pessoa", () =>
+      apolloPeopleMatch({
+        first_name: input.first_name,
+        last_name: input.last_name,
+        email: corporateEmail ? input.email : null,
+        linkedin_url: input.linkedin_url,
+        domain,
+        company_name: input.company_name,
+      }),
+    );
+  } else {
+    warnings.push(
+      "Sem dados suficientes para enriquecer: informe o site da empresa, um e-mail corporativo ou o LinkedIn do contato.",
+    );
+  }
+
 
   if (!company && matched?.company) company = matched.company;
   if (!domain && company?.domain) {

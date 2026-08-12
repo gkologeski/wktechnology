@@ -103,27 +103,33 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     let companyName = lead.company_name ?? null;
     let website: string | null = null;
     let domain: string | null = null;
+    let companyRow: Record<string, unknown> | null = null;
     if (lead.company_id) {
       const { data: company } = await supabase
         .from("companies")
-        .select("name, website, domain")
+        .select("*")
         .eq("id", lead.company_id)
         .maybeSingle();
       if (company) {
-        companyName = companyName ?? company.name ?? null;
-        website = company.website ?? null;
-        domain = company.domain ?? null;
+        companyRow = company as unknown as Record<string, unknown>;
+        companyName = companyName ?? (companyRow.name as string | null) ?? null;
+        website = (companyRow.website as string | null) ?? null;
+        domain = (companyRow.domain as string | null) ?? null;
       }
     }
 
     let linkedin: string | null = null;
+    let contactRow: Record<string, unknown> | null = null;
     if (lead.converted_contact_id) {
       const { data: contact } = await supabase
         .from("contacts")
-        .select("linkedin_url")
+        .select("*")
         .eq("id", lead.converted_contact_id)
         .maybeSingle();
-      linkedin = contact?.linkedin_url ?? null;
+      if (contact) {
+        contactRow = contact as unknown as Record<string, unknown>;
+        linkedin = (contactRow.linkedin_url as string | null) ?? null;
+      }
     }
 
     const { runApolloCascade } = await import("@/lib/integrations/apollo-enrich.server");
@@ -143,40 +149,70 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     );
     const personSuggestions = result.person as Record<string, unknown> | null;
 
+    /** Remove sugestões que apenas repetem o que já existe no registro. */
+    function onlyNew(map: SuggestionMap, row: Record<string, unknown> | null): SuggestionMap {
+      if (!row) return map;
+      const out: SuggestionMap = {};
+      for (const [k, v] of Object.entries(map)) {
+        const current = row[k];
+        const same =
+          current !== null &&
+          current !== undefined &&
+          String(current).trim().toLowerCase() === String(v).trim().toLowerCase();
+        if (!same) out[k] = v;
+      }
+      return out;
+    }
+
+    const leadSuggestions = onlyNew(
+      {
+        ...pick(personSuggestions, LEAD_KEYS),
+        ...(result.company?.name ? { company_name: result.company.name } : {}),
+      },
+      lead as unknown as Record<string, unknown>,
+    );
+    const contactSuggestions = onlyNew(
+      {
+        ...pick(personSuggestions, CONTACT_KEYS),
+        ...(result.company?.name ? { company_name: result.company.name } : {}),
+        ...(result.company?.website ? { website: result.company.website } : {}),
+      },
+      contactRow,
+    );
+    const companyNew = onlyNew(companySuggestions, companyRow);
+
     const payload: EnrichmentSuggestions = {
       domain: result.domain,
       domainSource: result.domainSource,
       fetchedAt: new Date().toISOString(),
       cached: false,
-      found: !!result.person || Object.keys(companySuggestions).length > 0,
+      found:
+        Object.keys(leadSuggestions).length > 0 ||
+        Object.keys(contactSuggestions).length > 0 ||
+        Object.keys(companyNew).length > 0,
       warnings: result.warnings,
-      lead: {
-        ...pick(personSuggestions, LEAD_KEYS),
-        ...(result.company?.name ? { company_name: result.company.name } : {}),
-      },
-      companies: companySuggestions,
-      contacts: {
-        ...pick(personSuggestions, CONTACT_KEYS),
-        ...(result.company?.name ? { company_name: result.company.name } : {}),
-        ...(result.company?.website ? { website: result.company.website } : {}),
-      },
+      lead: leadSuggestions,
+      companies: companyNew,
+      contacts: contactSuggestions,
     };
 
-    // Só cacheia resultados úteis — falhas de provedor devem poder ser reprocessadas.
+    // Só cacheia quando houve ganho real — sem isso, uma nova tentativa
+    // (após preencher o site da empresa, por ex.) ficaria bloqueada 30 dias.
     if (payload.found) {
       await supabase
-      .from("leads")
-      .update({
-        custom_fields: {
-          ...custom,
-          apollo_enrichment: { fetched_at: payload.fetchedAt, payload },
-        } as never,
-      })
-      .eq("id", data.leadId);
+        .from("leads")
+        .update({
+          custom_fields: {
+            ...custom,
+            apollo_enrichment: { fetched_at: payload.fetchedAt, payload },
+          } as never,
+        })
+        .eq("id", data.leadId);
     }
 
     return payload;
   });
+
 
 const ValuesSchema = z.record(z.string(), z.unknown()).optional();
 
