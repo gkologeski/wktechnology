@@ -47,7 +47,9 @@ import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 import { useMessageDraft } from "@/hooks/use-message-draft";
+import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
 import { MessageDraftStatus } from "@/components/message-draft-status";
+import { MessageDraftPin } from "@/components/message-draft-pin";
 
 type Props = {
   defaultTo?: string;
