@@ -275,12 +275,11 @@ export function QualificationEntityBlocks({
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         {visible.map((b) => (
-          <div key={b.id} className="space-y-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-9 w-full" />
-            <Skeleton className="h-9 w-full" />
+          <div key={b.id} className="space-y-1">
+            <Skeleton className="h-3 w-40" />
+            <Skeleton className="h-8 w-full" />
           </div>
         ))}
       </div>
@@ -288,16 +287,16 @@ export function QualificationEntityBlocks({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-2">
       {visible.map((b) => {
         const row = records?.[b.entity] ?? null;
         return (
           <section
             key={b.id}
-            className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-3"
+            className="rounded-lg border border-border/60 bg-muted/30 p-2 space-y-1.5"
           >
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-1.5">
+              <h3 className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {b.title}
               </h3>
               {!row && b.entity !== "leads" ? (
@@ -306,7 +305,7 @@ export function QualificationEntityBlocks({
                 </Badge>
               ) : null}
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-x-3 gap-y-1.5 sm:grid-cols-2">
               {b.fields.map((f) => (
                 <EntityFieldInput
                   key={`${b.entity}.${f.key}`}
@@ -319,6 +318,7 @@ export function QualificationEntityBlocks({
                 />
               ))}
             </div>
+
           </section>
         );
       })}
