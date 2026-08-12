@@ -76,6 +76,7 @@ import { useSavedViews } from "@/lib/saved-views";
 import { TablePagination } from "@/components/table-pagination";
 import { startFocusQueue } from "@/lib/focus-queue";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { translateFieldValue } from "@/lib/i18n/hubspot-values";
 import {
   ArrowRightLeft,
   ChevronDown,
@@ -691,7 +692,7 @@ function LeadsHubspotView() {
         key: "source",
         label: "Origem",
         className: "text-muted-foreground",
-        render: (lead) => lead.source ?? "—",
+        render: (lead) => translateFieldValue("source", lead.source) || "—",
       },
       {
         key: "label",
@@ -1055,7 +1056,7 @@ function LeadsHubspotView() {
                           }))
                         }
                       />
-                      <span className="flex-1 truncate">{s.value}</span>
+                      <span className="flex-1 truncate">{translateFieldValue("source", s.value) || s.value}</span>
                       <span className="text-xs text-muted-foreground">{s.count}</span>
                     </label>
                   );
