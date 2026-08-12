@@ -1,7 +1,18 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mail, Send, FileText, Paperclip, X, Loader2, FolderOpen } from "lucide-react";
+import { Mail, Send, FileText, Paperclip, X, Loader2, FolderOpen, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { sendGmailEmail } from "@/lib/email-send.functions";
@@ -35,6 +46,8 @@ import { TokenPills } from "@/components/ui/token-pills";
 import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
+import { useMessageDraft } from "@/hooks/use-message-draft";
+import { MessageDraftStatus } from "@/components/message-draft-status";
 
 type Props = {
   defaultTo?: string;
@@ -44,6 +57,8 @@ type Props = {
   leadId?: string;
   dealId?: string;
   companyId?: string;
+  /** Thread de e-mail quando a composição é uma resposta (usada na chave do rascunho). */
+  threadId?: string;
   contactName?: string;
   tokenContext?: TokenContext;
   trigger?: ReactNode;
@@ -60,6 +75,7 @@ export function SendEmailDialog({
   leadId,
   dealId,
   companyId,
+  threadId,
   contactName,
   tokenContext,
   trigger,
@@ -83,6 +99,28 @@ export function SendEmailDialog({
   const [uploading, setUploading] = useState(false);
   const [fileCenterOpen, setFileCenterOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Rascunho automático: salva o que está sendo redigido e restaura ao reabrir.
+  const draft = useMessageDraft({
+    scope: { channel: "email", threadId, leadId, dealId, contactId, companyId, to: defaultTo },
+    enabled: open,
+    value: {
+      to_addr: to,
+      cc,
+      subject,
+      body_html: body,
+      body_text: htmlToPlain(body),
+      attachments,
+    },
+    onRestore: (d) => {
+      setTo(d.to_addr || defaultTo);
+      setCc(d.cc);
+      setSubject(d.subject);
+      setBody(d.body_html);
+      setAttachments(d.attachments);
+      signatureApplied.current = true;
+    },
+  });
 
   const MAX_TOTAL = 25 * 1024 * 1024;
   const MAX_FILES = 10;
@@ -192,7 +230,6 @@ export function SendEmailDialog({
     setBody((prev) => `${prev ?? ""}<br/><br/>${sig}`);
   }, [open, account]);
 
-
   const ctx = useMemo<TokenContext>(
     () => ({
       first_name: tokenContext?.first_name ?? contactName?.split(" ")[0] ?? "",
@@ -247,6 +284,7 @@ export function SendEmailDialog({
       }),
     onSuccess: (res) => {
       toast.success("Email enviado");
+      draft.clearAfterSend();
       setOpen(false);
       setSubject("");
       setBody("");
@@ -278,7 +316,10 @@ export function SendEmailDialog({
 
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Novo email</DialogTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <DialogTitle>Novo email</DialogTitle>
+            <MessageDraftStatus status={draft.status} savedAt={draft.savedAt} />
+          </div>
           <DialogDescription>
             {contactName ? `Para ${contactName}` : "Enviar email via Gmail"}
             {account ? ` · de ${account.email}` : ""}
@@ -433,7 +474,45 @@ export function SendEmailDialog({
           </div>
         )}
 
-        <DialogFooter>
+        <DialogFooter className="sm:justify-between">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" disabled={draft.status === "idle"}>
+                <Trash2 className="mr-2 h-4 w-4" /> Descartar rascunho
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Descartar rascunho?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  O conteúdo redigido e os anexos deste rascunho serão removidos.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    await draft.discard();
+                    for (const a of attachments) {
+                      await supabase.storage
+                        .from("email-attachments")
+                        .remove([a.path])
+                        .catch(() => {});
+                    }
+                    setSubject("");
+                    setBody("");
+                    setCc("");
+                    setAttachments([]);
+                    signatureApplied.current = false;
+                    toast.success("Rascunho descartado");
+                  }}
+                >
+                  Descartar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           <Button
             onClick={() => {
               const split = (s: string) =>

@@ -17,6 +17,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { uploadWhatsAppMedia } from "@/lib/whatsapp-media";
 import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
+import { useMessageDraft } from "@/hooks/use-message-draft";
+import { MessageDraftStatus } from "@/components/message-draft-status";
 import {
   listWhatsAppConversations,
   listWhatsAppMessages,
@@ -136,6 +138,7 @@ function WhatsAppInbox() {
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
       setDraft("");
+      messageDraft.clearAfterSend();
       setPendingMedia(null);
       setSelected(res.conversationId);
       qc.invalidateQueries({ queryKey: ["wa"] });
@@ -197,6 +200,19 @@ function WhatsAppInbox() {
       allConversations.find((c) => c.id === selected),
     [conversations, allConversations, selected],
   );
+
+  // Rascunho automático da mensagem em digitação por conversa.
+  const messageDraft = useMessageDraft({
+    scope: {
+      channel: "whatsapp",
+      conversationId: selected,
+      contactId: current?.contact_id ?? null,
+      to: current?.contact_phone ?? null,
+    },
+    enabled: !!selected,
+    value: { body_text: draft },
+    onRestore: (d) => setDraft(d.body_text),
+  });
 
   const bottomRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -457,9 +473,29 @@ function WhatsAppInbox() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="mt-1 text-[10px] text-muted-foreground">
-                  Ctrl/Cmd + Enter para enviar · anexe imagem, áudio, vídeo ou PDF (até 16MB)
-                </p>
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[10px] text-muted-foreground">
+                    Ctrl/Cmd + Enter para enviar · anexe imagem, áudio, vídeo ou PDF (até 16MB)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <MessageDraftStatus
+                      status={messageDraft.status}
+                      savedAt={messageDraft.savedAt}
+                    />
+                    {messageDraft.status !== "idle" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={async () => {
+                          await messageDraft.discard();
+                          setDraft("");
+                        }}
+                      >
+                        Descartar rascunho
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
             </>
           )}

@@ -23,6 +23,8 @@ import { sendGmailEmail } from "@/lib/email-send.functions";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
 import { smartCompose } from "@/lib/ai-compose.functions";
 import { toast } from "sonner";
+import { useMessageDraft } from "@/hooks/use-message-draft";
+import { MessageDraftStatus } from "@/components/message-draft-status";
 
 export const Route = createFileRoute("/_authenticated/inbox/")({
   component: UnifiedInboxPage,
@@ -170,6 +172,27 @@ function UnifiedInboxPage() {
 
   const current = items.find((i) => i.id === selected) ?? null;
 
+  // Rascunho automático da resposta inline, por conversa selecionada.
+  const messageDraft = useMessageDraft({
+    scope:
+      current?.channel === "whatsapp"
+        ? {
+            channel: "whatsapp",
+            conversationId: current.id,
+            contactId: current.contactId,
+            to: current.replyTo,
+          }
+        : {
+            channel: "email",
+            threadId: current?.id ?? null,
+            contactId: current?.contactId ?? null,
+            to: current?.replyTo ?? null,
+          },
+    enabled: !!current,
+    value: { body_text: draft, subject: current?.subject ?? "" },
+    onRestore: (d) => setDraft(d.body_text),
+  });
+
   const reply = useMutation({
     mutationFn: async () => {
       if (!current) throw new Error("Selecione um item.");
@@ -200,6 +223,7 @@ function UnifiedInboxPage() {
     onSuccess: () => {
       toast.success("Enviado!");
       setDraft("");
+      messageDraft.clearAfterSend();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -343,6 +367,21 @@ function UnifiedInboxPage() {
                     current.channel === "email" ? "Escreva sua resposta…" : "Mensagem do WhatsApp…"
                   }
                 />
+                <div className="flex items-center justify-between gap-2">
+                  <MessageDraftStatus status={messageDraft.status} savedAt={messageDraft.savedAt} />
+                  {messageDraft.status !== "idle" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={async () => {
+                        await messageDraft.discard();
+                        setDraft("");
+                      }}
+                    >
+                      Descartar rascunho
+                    </Button>
+                  )}
+                </div>
                 <div className="flex items-center gap-2 justify-between">
                   <div className="flex items-center gap-1">
                     <Button asChild size="sm" variant="ghost">
