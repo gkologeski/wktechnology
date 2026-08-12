@@ -457,14 +457,24 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             {(() => {
               const v = row[p.key];
               if (p.options && v != null && v !== "") {
-                return p.options.find((o) => o.value === String(v))?.label ?? String(v);
+                const optLabel = p.options.find((o) => o.value === String(v))?.label;
+                return translateFieldValue(p.key, optLabel ?? v) || String(v);
               }
               if (p.type === "tel" && v) return formatBrPhone(String(v));
               if (p.type === "cep" && v) return formatCep(String(v));
               if (p.type === "cnpj" && v) return formatCNPJ(String(v));
               const displayType = p.type ?? inferDisplayType(p.key);
+              if (
+                (displayType === undefined || displayType === "text") &&
+                v != null &&
+                v !== ""
+              ) {
+                const translated = translateFieldValue(p.key, v);
+                if (translated) return translated;
+              }
               return formatDisplayValue(displayType, v, row as Record<string, unknown>);
             })()}
+
           </span>
 
 
