@@ -37,7 +37,10 @@ import {
 import { toE164, isEmail, isCNPJ, formatCNPJ, stripCNPJ } from "@/lib/validators";
 import { CompanyPicker, type CompanyPickerValue } from "@/components/ui/company-picker";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
-import { formatCurrency, formatDateOnly, formatDateTime } from "@/lib/crm";
+import { formatDateOnly, formatDateTime } from "@/lib/crm";
+import { formatMoney, isMoneyField, resolveCurrency } from "@/lib/format/money-fields";
+import { CurrencyInput } from "@/components/ui/currency-input";
+
 import { OwnerField } from "@/components/entity/owner-field";
 
 // E.164-compliant chars only: digits, leading +, plus visual separators.
@@ -118,9 +121,8 @@ export type PropDef = {
 // Heurísticas para auto-detectar tipo de exibição quando o caller não definir.
 function inferDisplayType(key: string): PropDef["type"] | undefined {
   const k = key.toLowerCase();
-  if (k === "value" || k === "amount" || k.endsWith("_amount") || k.endsWith("_value"))
-    return "currency";
   if (k === "currency" || k === "moeda") return undefined;
+  if (isMoneyField(k)) return "currency";
   if (k.endsWith("_at") || k === "created_at" || k === "updated_at" || k.endsWith("_datetime"))
     return "datetime";
   if (k.endsWith("_date") || k === "due_date" || k === "expected_close_date") return "date";
@@ -134,16 +136,14 @@ function formatDisplayValue(
 ): string {
   if (raw === null || raw === undefined || raw === "") return "—";
   if (type === "currency") {
-    const n = typeof raw === "number" ? raw : Number(raw);
-    if (!Number.isFinite(n)) return String(raw);
-    const cur = (row.currency as string | undefined) || "BRL";
-    return formatCurrency(n, cur);
+    return formatMoney(raw, resolveCurrency(row)) ?? String(raw);
   }
   if (type === "date") return formatDateOnly(String(raw));
   if (type === "datetime") return formatDateTime(String(raw));
   if (type === "number" && typeof raw === "number") return raw.toLocaleString("pt-BR");
   return String(raw);
 }
+
 
 type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
 
@@ -312,8 +312,13 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     }
   };
 
-  const renderField = (p: PropDef) => (
+  const renderField = (raw0: PropDef) => {
+    // Resolve o tipo de exibição uma única vez (inclui a heurística de moeda),
+    // para que leitura e edição usem o mesmo tratamento.
+    const p: PropDef = { ...raw0, type: raw0.type ?? inferDisplayType(raw0.key) };
+    return (
     <div key={p.key} className="group">
+
       <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
         {p.label}
       </label>
@@ -369,19 +374,37 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               </Button>
             </div>
           </div>
+        ) : p.type === "currency" ? (
+          <div className="flex gap-1">
+            <CurrencyInput
+              autoFocus
+              aria-label={p.label}
+              currency={resolveCurrency(row)}
+              value={value === "" ? null : value}
+              onValueChange={(n) => setValue(n === null ? "" : String(n))}
+              onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+              className="h-8 text-right"
+            />
+            <Button size="sm" className="h-8" onClick={() => save(p.key)}>
+              OK
+            </Button>
+            <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>
+              Cancelar
+            </Button>
+          </div>
         ) : (
+
           <div className="flex gap-1">
             <Input
               autoFocus
               type={
                 p.type === "cep" || p.type === "cnpj"
                   ? "text"
-                  : p.type === "currency"
-                    ? "number"
-                    : p.type === "datetime"
-                      ? "datetime-local"
-                      : (p.type ?? "text")
+                  : p.type === "datetime"
+                    ? "datetime-local"
+                    : (p.type ?? "text")
               }
+
               inputMode={
                 p.type === "tel"
                   ? "tel"
@@ -423,8 +446,14 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         )
       ) : (
         <div className="flex items-start justify-between gap-2 min-w-0">
-          <span className="text-sm text-foreground break-words min-w-0 flex-1">
-
+          <span
+            className="text-sm text-foreground break-words min-w-0 flex-1"
+            title={(() => {
+              const dt = p.type ?? inferDisplayType(p.key);
+              if (dt !== "currency") return undefined;
+              return formatMoney(row[p.key], resolveCurrency(row as Record<string, unknown>)) ?? undefined;
+            })()}
+          >
             {(() => {
               const v = row[p.key];
               if (p.options && v != null && v !== "") {
@@ -438,6 +467,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
             })()}
           </span>
 
+
           <Button
             variant="ghost"
             size="icon"
@@ -448,8 +478,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               setValue(
                 p.type === "cnpj"
                   ? formatCNPJ(raw)
-                  : formatBrPhone(raw) || raw,
+                  : p.type === "currency"
+                    ? raw
+                    : formatBrPhone(raw) || raw,
               );
+
             }}
           >
             <Pencil className="h-3 w-3" />
@@ -457,7 +490,9 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
         </div>
       )}
     </div>
-  );
+    );
+  };
+
 
   const hasOwner = Object.prototype.hasOwnProperty.call(row, "owner_id");
   return (

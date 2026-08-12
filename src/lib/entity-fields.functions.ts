@@ -5,6 +5,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { REF_COLUMNS, type RefKind } from "./entity-fields-refs";
+import { isMoneyField } from "./format/money-fields";
+
 import {
   CONTRACT_FIELD_LABELS,
   CONTRACT_FIELD_OPTIONS,
@@ -12,7 +14,7 @@ import {
   CONTRACT_SYSTEM_FIELDS,
 } from "./contracts/workflow-field-meta";
 
-export type EntityFieldType = "text" | "number" | "date" | "select" | "boolean";
+export type EntityFieldType = "text" | "number" | "currency" | "date" | "select" | "boolean";
 
 export type EntityFieldDef = {
   name: string;
@@ -648,7 +650,11 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
     const fields: EntityFieldDef[] = [];
     for (const r of allRows) {
       if (HIDDEN.has(r.column_name) || isSyncColumn(r.column_name)) continue;
-      const type = inferType(r.data_type);
+      const inferred = inferType(r.data_type);
+      // Colunas numéricas com nome de dinheiro viram "currency" (formatação BRL).
+      const type: EntityFieldType =
+        inferred === "number" && isMoneyField(r.column_name) ? "currency" : inferred;
+
       const def: EntityFieldDef = {
         name: r.column_name,
         label: toLabel(r.column_name, data.entity),

@@ -5,7 +5,7 @@ import { conditionsSummary } from "@/lib/workflows/conditions";
 export type FieldOpt = {
   name: string;
   label: string;
-  type?: "text" | "number" | "date" | "select" | "boolean";
+  type?: "text" | "number" | "currency" | "date" | "select" | "boolean";
   options?: { value: string; label: string }[];
   /** Campo de referência: usa seletor com busca por nome (grava o ID). */
   ref?: "user" | "company" | "contact" | "pipeline";
