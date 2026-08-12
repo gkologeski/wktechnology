@@ -141,6 +141,7 @@ function EmailInbox() {
                   </div>
                 </div>
                 <SendEmailDialog
+                  threadId={current.thread.id}
                   defaultTo={lastMsg?.from_email ?? ""}
                   trigger={
                     <Button size="sm" variant="outline">
