@@ -23,6 +23,8 @@ import { sendGmailEmail } from "@/lib/email-send.functions";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
 import { smartCompose } from "@/lib/ai-compose.functions";
 import { toast } from "sonner";
+import { useMessageDraft } from "@/hooks/use-message-draft";
+import { MessageDraftStatus } from "@/components/message-draft-status";
 
 export const Route = createFileRoute("/_authenticated/inbox/")({
   component: UnifiedInboxPage,
