@@ -110,32 +110,18 @@ export function QualificationPanel({
     setReason("");
   }, [existingForActive?.id, activeId]);
 
-  const score = useMemo(() => {
-    if (!qData) return 0;
-    let total = 0;
-    for (const q of qData.questions) {
-      const raw = answers[q.id];
-      if (raw == null) continue;
-      const opts = Array.isArray(q.options)
-        ? (q.options as { label: string; points: number }[])
-        : [];
-      if (q.type === "number") {
-        const n = Number(raw);
-        if (Number.isFinite(n)) total += n * (q.weight ?? 1);
-      } else if (q.type === "boolean") {
-        if (raw === true) total += 10 * (q.weight ?? 1);
-      } else if (q.type === "single") {
-        const opt = opts.find((o) => o.label === raw);
-        if (opt) total += (opt.points ?? 0) * (q.weight ?? 1);
-      } else if (q.type === "multi" && Array.isArray(raw)) {
-        for (const label of raw) {
-          const opt = opts.find((o) => o.label === label);
-          if (opt) total += (opt.points ?? 0) * (q.weight ?? 1);
-        }
-      }
-    }
-    return total;
-  }, [answers, qData]);
+  const score = useMemo(
+    () => (qData ? computeQualificationScore(qData.questions as ScoreQuestion[], answers) : 0),
+    [answers, qData],
+  );
+  const maxInfo = useMemo(
+    () =>
+      qData
+        ? computeQualificationMaxScore(qData.questions as ScoreQuestion[])
+        : { max: 0, hasOpenEnded: false },
+    [qData],
+  );
+  const percent = scorePercent(score, maxInfo.max);
 
   const threshold = qData?.questionnaire.pass_threshold ?? 0;
   const passesAuto = score >= threshold;
