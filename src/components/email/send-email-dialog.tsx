@@ -64,6 +64,7 @@ export function SendEmailDialog({
   leadId,
   dealId,
   companyId,
+  threadId,
   contactName,
   tokenContext,
   trigger,
