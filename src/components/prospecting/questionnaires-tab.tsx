@@ -691,6 +691,8 @@ function QuestionRow({
     options: unknown;
     weight: number;
     required: boolean;
+    text_points?: number | null;
+    text_min_chars?: number | null;
   };
   onDeleted: () => void;
   onSaved: () => void;
@@ -702,6 +704,8 @@ function QuestionRow({
   const [label, setLabel] = useState(question.label);
   const [weight, setWeight] = useState(question.weight);
   const [required, setRequired] = useState(question.required);
+  const [textPoints, setTextPoints] = useState(Number(question.text_points ?? 0));
+  const [textMinChars, setTextMinChars] = useState(Number(question.text_min_chars ?? 10));
   const [options, setOptions] = useState<{ label: string; points: number }[]>(
     Array.isArray(question.options)
       ? (question.options as { label: string; points: number }[])
@@ -709,6 +713,8 @@ function QuestionRow({
   );
 
   const supportsOptions = question.type === "single" || question.type === "multi";
+  // Perguntas abertas (texto/número) podem pontuar por preenchimento.
+  const supportsTextPoints = question.type === "text" || question.type === "number";
 
   const save = useMutation({
     mutationFn: () =>
@@ -722,6 +728,8 @@ function QuestionRow({
           options: supportsOptions ? options : [],
           weight,
           required,
+          text_points: supportsTextPoints ? textPoints : 0,
+          text_min_chars: textMinChars,
         },
       }),
     onSuccess: () => {
@@ -805,6 +813,44 @@ function QuestionRow({
               <Switch checked={required} onCheckedChange={setRequired} />
             </div>
           </div>
+
+          {supportsTextPoints ? (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs" htmlFor={`tp-${question.id}`}>
+                  Pontos ao responder
+                </Label>
+                <Input
+                  id={`tp-${question.id}`}
+                  type="number"
+                  min={0}
+                  max={1000}
+                  value={textPoints}
+                  onChange={(e) => setTextPoints(Math.max(0, Number(e.target.value) || 0))}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  0 = pergunta aberta não pontua.
+                </p>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs" htmlFor={`tmc-${question.id}`}>
+                  Mínimo de caracteres
+                </Label>
+                <Input
+                  id={`tmc-${question.id}`}
+                  type="number"
+                  min={1}
+                  max={2000}
+                  value={textMinChars}
+                  onChange={(e) => setTextMinChars(Math.max(1, Number(e.target.value) || 1))}
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Respostas mais curtas não pontuam.
+                </p>
+              </div>
+            </div>
+          ) : null}
+
 
           {supportsOptions ? (
             <div className="space-y-2">

@@ -28,6 +28,7 @@ import {
 } from "@/lib/scoring.functions";
 import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { IcpCriteriaSection } from "@/components/prospecting/icp-criteria-section";
 
 type FieldOpt = {
   name: string;
@@ -194,6 +195,7 @@ export function ScoringPage() {
 
   return (
     <div className="space-y-4">
+      <IcpCriteriaSection />
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold">Lead Scoring</h2>

@@ -36,6 +36,14 @@ import {
 } from "@/components/ui/select";
 import { listQuestionnaires, getQuestionnaire } from "@/lib/prospecting/questionnaires.functions";
 import {
+  computeQualificationScore,
+  computeQualificationMaxScore,
+  scorePercent,
+  type ScoreQuestion,
+} from "@/lib/prospecting/score";
+import { getLeadIcpFit } from "@/lib/scoring/icp.functions";
+import { Progress } from "@/components/ui/progress";
+import {
   saveQualification,
   listQualificationsForEntity,
   nurtureLead,
@@ -54,6 +62,19 @@ import {
 import { useLeadStages } from "@/lib/leads/stages";
 
 type Entity = "lead";
+
+const ICP_LABEL: Record<string, string> = {
+  high: "Alto",
+  medium: "Médio",
+  low: "Baixo",
+  unknown: "Sem critérios",
+};
+const ICP_BADGE: Record<string, "default" | "secondary" | "outline"> = {
+  high: "default",
+  medium: "secondary",
+  low: "outline",
+  unknown: "outline",
+};
 
 export function QualificationPanel({
   entity,
@@ -110,32 +131,27 @@ export function QualificationPanel({
     setReason("");
   }, [existingForActive?.id, activeId]);
 
-  const score = useMemo(() => {
-    if (!qData) return 0;
-    let total = 0;
-    for (const q of qData.questions) {
-      const raw = answers[q.id];
-      if (raw == null) continue;
-      const opts = Array.isArray(q.options)
-        ? (q.options as { label: string; points: number }[])
-        : [];
-      if (q.type === "number") {
-        const n = Number(raw);
-        if (Number.isFinite(n)) total += n * (q.weight ?? 1);
-      } else if (q.type === "boolean") {
-        if (raw === true) total += 10 * (q.weight ?? 1);
-      } else if (q.type === "single") {
-        const opt = opts.find((o) => o.label === raw);
-        if (opt) total += (opt.points ?? 0) * (q.weight ?? 1);
-      } else if (q.type === "multi" && Array.isArray(raw)) {
-        for (const label of raw) {
-          const opt = opts.find((o) => o.label === label);
-          if (opt) total += (opt.points ?? 0) * (q.weight ?? 1);
-        }
-      }
-    }
-    return total;
-  }, [answers, qData]);
+  // Fit de ICP do lead (critérios configurados em Prospecção → Scoring).
+  const icpFitFn = useServerFn(getLeadIcpFit);
+  const icpFit = useQuery({
+    queryKey: ["scoring", "icp-fit", entityId],
+    queryFn: () => icpFitFn({ data: { lead_id: entityId } }),
+    enabled: entity === "lead" && !!entityId,
+    staleTime: 60_000,
+  });
+
+  const score = useMemo(
+    () => (qData ? computeQualificationScore(qData.questions as ScoreQuestion[], answers) : 0),
+    [answers, qData],
+  );
+  const maxInfo = useMemo(
+    () =>
+      qData
+        ? computeQualificationMaxScore(qData.questions as ScoreQuestion[])
+        : { max: 0, hasOpenEnded: false },
+    [qData],
+  );
+  const percent = scorePercent(score, maxInfo.max);
 
   const threshold = qData?.questionnaire.pass_threshold ?? 0;
   const passesAuto = score >= threshold;
@@ -414,17 +430,44 @@ export function QualificationPanel({
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <div className="text-right">
+            <div className="text-right min-w-[168px]">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Score</p>
               <p
-                className={`text-lg font-semibold ${
+                className={`text-lg font-semibold leading-tight ${
                   passesAuto ? "text-emerald-600" : "text-foreground"
                 }`}
               >
                 {score}
-                <span className="text-xs text-muted-foreground ml-1">/ corte {threshold}</span>
+                {maxInfo.max > 0 ? (
+                  <span className="text-xs text-muted-foreground ml-1">
+                    de {maxInfo.max}
+                    {percent != null ? ` (${percent}%)` : ""}
+                  </span>
+                ) : null}
+              </p>
+              {maxInfo.max > 0 ? (
+                <Progress
+                  value={percent ?? 0}
+                  className="h-1.5 mt-1"
+                  aria-label={`Score ${score} de ${maxInfo.max}`}
+                />
+              ) : null}
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Corte {threshold}
+                {maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
               </p>
             </div>
+            {icpFit.data && icpFit.data.criteriaCount > 0 ? (
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Fit ICP
+                </p>
+                <Badge variant={ICP_BADGE[icpFit.data.level]} className="mt-0.5">
+                  {ICP_LABEL[icpFit.data.level]}
+                  {icpFit.data.percent != null ? ` · ${icpFit.data.percent}%` : ""}
+                </Badge>
+              </div>
+            ) : null}
             {preselectedQuestionnaireId ? null : (
               <Select value={activeId ?? ""} onValueChange={setSelectedId}>
                 <SelectTrigger className="w-[200px]">

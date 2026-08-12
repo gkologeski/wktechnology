@@ -179,6 +179,9 @@ export const upsertQuestion = createServerFn({ method: "POST" })
         options: z.array(OptionSchema).default([]),
         weight: z.number().int().min(1).max(100).default(1),
         required: z.boolean().default(false),
+        // Perguntas abertas podem pontuar quando respondidas com conteúdo mínimo.
+        text_points: z.number().int().min(0).max(1000).default(0),
+        text_min_chars: z.number().int().min(1).max(2000).default(10),
       })
       .parse(i),
   )
@@ -196,6 +199,8 @@ export const upsertQuestion = createServerFn({ method: "POST" })
       options: data.options,
       weight: data.weight,
       required: data.required,
+      text_points: data.text_points,
+      text_min_chars: data.text_min_chars,
     } as never;
     const { data: row, error } = await context.supabase
       .from("prospecting_questions")
@@ -270,7 +275,7 @@ export const duplicateQuestionnaire = createServerFn({ method: "POST" })
 
     const { data: qs, error: qsErr } = await context.supabase
       .from("prospecting_questions")
-      .select("position, label, help_text, type, options, weight, required")
+      .select("position, label, help_text, type, options, weight, required, text_points, text_min_chars")
       .eq("questionnaire_id", data.id)
       .order("position", { ascending: true });
     if (qsErr) throw new Error(qsErr.message);
@@ -302,6 +307,8 @@ export const duplicateQuestionnaire = createServerFn({ method: "POST" })
         type: q.type,
         options: q.options,
         weight: q.weight,
+        text_points: q.text_points,
+        text_min_chars: q.text_min_chars,
         required: q.required,
       }));
       const { error: qInsErr } = await context.supabase
