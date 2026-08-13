@@ -156,9 +156,23 @@ export const getSurveyForm = createServerFn({ method: "POST" })
     };
     return {
       source: data.source,
+      kind: "sales",
       id: q.id,
       name: q.name,
       description: q.description ?? null,
+      pass_threshold: (q.pass_threshold as number | null) ?? null,
+      scoring: (rows ?? []).map(
+        (r) =>
+          ({
+            id: r.id,
+            type: r.type,
+            weight: Number(r.weight ?? 1),
+            options: (r.options ?? null) as Json,
+            text_points: (r.text_points as number | null) ?? null,
+            text_min_chars: (r.text_min_chars as number | null) ?? null,
+          }) satisfies SalesScoreQuestion,
+      ),
+
       questions: (rows ?? []).map(
         (r) =>
           ({
