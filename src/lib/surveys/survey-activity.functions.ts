@@ -110,6 +110,7 @@ export const getSurveyForm = createServerFn({ method: "POST" })
         name: tpl.name,
         description: tpl.description ?? null,
         pass_threshold: null as number | null,
+        field_layout: null as Json,
         scoring: [] as SalesScoreQuestion[],
 
 
@@ -132,7 +133,7 @@ export const getSurveyForm = createServerFn({ method: "POST" })
     const [{ data: q }, { data: rows, error }] = await Promise.all([
       context.supabase
         .from("prospecting_questionnaires")
-        .select("id, name, description, framework, pass_threshold")
+        .select("id, name, description, framework, pass_threshold, field_layout")
         .eq("id", data.source_id)
         .maybeSingle(),
       context.supabase
@@ -161,6 +162,7 @@ export const getSurveyForm = createServerFn({ method: "POST" })
       name: q.name,
       description: q.description ?? null,
       pass_threshold: (q.pass_threshold as number | null) ?? null,
+      field_layout: (q.field_layout ?? null) as Json,
       scoring: (rows ?? []).map(
         (r) =>
           ({
