@@ -43,6 +43,16 @@ function AdminStatusPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const backfillMut = useMutation({
+    mutationFn: () => backfill(),
+    onSuccess: (r: { total: number; created: number; existing: number; failed: number }) => {
+      toast.success(
+        `Backfill concluído: ${r.created} criada(s), ${r.existing} já existia(m), ${r.failed} falha(s) de ${r.total}.`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   if (loading) return <div className="p-6">Carregando…</div>;
   if (!isPlatformAdmin) return <div className="p-6">Acesso restrito a super-admins.</div>;
