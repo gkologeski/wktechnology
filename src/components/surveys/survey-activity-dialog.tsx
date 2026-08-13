@@ -36,6 +36,14 @@ import {
 import type { RelatedKey } from "@/components/activity/timeline-shared";
 import type { SurveyKindTab } from "@/components/surveys/survey-type-picker-dialog";
 import { parseFieldLayout } from "@/lib/prospecting/field-layout";
+import { Progress } from "@/components/ui/progress";
+import {
+  computeQualificationScore,
+  computeQualificationMaxScore,
+  scorePercent,
+  type ScoreQuestion,
+} from "@/lib/prospecting/score";
+import { QualificationQuestionInput } from "@/components/prospecting/qualification-question-input";
 import {
   QualificationEntityBlocks,
   useQualificationEntityFields,
@@ -118,6 +126,26 @@ export function SurveyActivityDialog({
     () => questions.filter((q) => q.required && !isAnswered(answers[q.id])).map((q) => q.id),
     [questions, answers],
   );
+
+  // Pesquisas de vendas usam o renderizador e o score da qualificação.
+  const isSalesForm = selection?.source === "prospecting_questionnaire";
+  const scoreQuestions = useMemo(
+    () => (isSalesForm ? (form.data?.questions ?? []) : []) as unknown as ScoreQuestion[],
+    [isSalesForm, form.data],
+  );
+  const score = useMemo(
+    () => (isSalesForm ? computeQualificationScore(scoreQuestions, answers) : 0),
+    [isSalesForm, scoreQuestions, answers],
+  );
+  const maxInfo = useMemo(
+    () =>
+      isSalesForm
+        ? computeQualificationMaxScore(scoreQuestions)
+        : { max: 0, hasOpenEnded: false },
+    [isSalesForm, scoreQuestions],
+  );
+  const percent = scorePercent(score, maxInfo.max);
+  const threshold = form.data?.pass_threshold ?? null;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -305,6 +333,37 @@ export function SurveyActivityDialog({
                       {questions.length} {questions.length === 1 ? "pergunta" : "perguntas"}
                     </Badge>
                   </div>
+                  {isSalesForm && maxInfo.max > 0 && (
+                    <div className="rounded-md border border-border/60 bg-muted/30 p-2">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          Score
+                        </p>
+                        <p
+                          className={
+                            threshold != null && score >= threshold
+                              ? "text-sm font-semibold text-emerald-600"
+                              : "text-sm font-semibold text-foreground"
+                          }
+                        >
+                          {score}
+                          <span className="ml-1 text-xs font-normal text-muted-foreground">
+                            de {maxInfo.max}
+                            {percent != null ? ` (${percent}%)` : ""}
+                          </span>
+                        </p>
+                      </div>
+                      <Progress
+                        value={percent ?? 0}
+                        className="mt-1 h-1.5"
+                        aria-label={`Score ${score} de ${maxInfo.max}`}
+                      />
+                      <p className="mt-0.5 text-[10px] text-muted-foreground">
+                        {threshold != null ? `Corte ${threshold}` : "Sem corte definido"}
+                        {maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
+                      </p>
+                    </div>
+                  )}
                   <div className="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
                     {isSalesLead && blocksBefore.length > 0 && (
                       <QualificationEntityBlocks
@@ -316,15 +375,32 @@ export function SurveyActivityDialog({
                         autofilled={entityFields.autofilled}
                       />
                     )}
-                    {questions.map((q) => (
-                      <SurveyField
-                        key={q.id}
-                        question={q}
-                        value={answers[q.id]}
-                        invalid={showErrors && missing.includes(q.id)}
-                        onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
-                      />
-                    ))}
+                    {questions.map((q) =>
+                      isSalesForm ? (
+                        <QualificationQuestionInput
+                          key={q.id}
+                          question={{
+                            id: q.id,
+                            label: q.label,
+                            type: q.type,
+                            options: q.options,
+                            required: q.required,
+                            help_text: q.help_text,
+                          }}
+                          value={answers[q.id]}
+                          invalid={showErrors && missing.includes(q.id)}
+                          onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+                        />
+                      ) : (
+                        <SurveyField
+                          key={q.id}
+                          question={q}
+                          value={answers[q.id]}
+                          invalid={showErrors && missing.includes(q.id)}
+                          onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
+                        />
+                      ),
+                    )}
                     {isSalesLead && blocksAfter.length > 0 && (
                       <QualificationEntityBlocks
                         blocks={blocksAfter}
