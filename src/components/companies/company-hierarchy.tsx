@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { Building2, ChevronRight, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 
 type MiniCompany = { id: string; name: string; domain: string | null };
 
@@ -61,11 +63,14 @@ export function CompanyHierarchy({
   });
 
   const setParent = async (newParent: string | null) => {
-    const { error } = await supabase
+    const { data: affected, error } = await supabase
       .from("companies")
       .update({ parent_company_id: newParent })
-      .eq("id", companyId);
+      .eq("id", companyId)
+      .select("id");
     if (error) return toast.error(error.message);
+    if (deniedIfUnaffected(affected)) return;
+
     toast.success(newParent ? "Matriz vinculada" : "Vínculo removido");
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["company-parent", companyId] }),

@@ -10,6 +10,8 @@ import { CreateContactDialog } from "@/components/contacts/create-contact-dialog
 import { usePipelines } from "@/lib/pipelines";
 import { useLeadStages, resolveLeadStageValue, findLeadStage } from "@/lib/leads/stages";
 import { AssocCard, AssocItemActions, DetailRow, Empty, EntityAvatar, ViewAllFooter, formatDealDateLong } from "./primitives";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 
 /* ───────────── Lead → Contact / Deal cards (read-only, from conversion) ───────────── */
 
@@ -53,28 +55,33 @@ export function LeadContactsCard({ entityId }: { entityId: string }) {
   }, [entityId, tick]);
 
   const linkContact = async (contactId: string) => {
-    const { error } = await supabase
+    const { data: affected, error } = await supabase
       .from("leads")
       .update({ converted_contact_id: contactId })
-      .eq("id", entityId);
+      .eq("id", entityId)
+      .select("id");
     if (error) {
       toast.error(error.message || "Falha ao vincular contato");
       return;
     }
+    if (deniedIfUnaffected(affected)) return;
     toast.success("Contato vinculado");
     setTick((t) => t + 1);
   };
 
   const unlinkContact = async () => {
-    const { error } = await supabase
+    const { data: affected, error } = await supabase
       .from("leads")
       .update({ converted_contact_id: null })
-      .eq("id", entityId);
+      .eq("id", entityId)
+      .select("id");
     if (error) {
       toast.error(error.message || "Falha ao remover vínculo");
       return;
     }
+    if (deniedIfUnaffected(affected)) return;
     toast.success("Contato removido");
+
     setTick((t) => t + 1);
   };
 

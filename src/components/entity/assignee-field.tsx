@@ -3,6 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { UserCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { assertAffected } from "@/lib/access-control/rls-denied";
+import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
@@ -75,16 +78,20 @@ export function AssigneeField({
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { data: affected, error } = await (supabase as any)
         .from(table)
         .update({ [column]: next })
-        .eq("id", rowId);
+        .eq("id", rowId)
+        .select("id");
       if (error) throw error;
+      assertAffected(affected as unknown[] | null);
       setCurrent(next);
       onChanged?.(next);
       toast.success("Responsável atualizado");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível atualizar o responsável");
+      if (!handlePermissionError(e))
+        toast.error(e instanceof Error ? e.message : "Não foi possível atualizar o responsável");
+
     } finally {
       setSaving(false);
     }

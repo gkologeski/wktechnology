@@ -10,6 +10,8 @@ import { ContactPickerPopover } from "@/components/ui/contact-picker";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
 import { QuickCreateCompanyDialog, QuickCreateDealDialog } from "@/components/record/quick-create-dialogs";
 import { AssocCard, AssocItemActions, AssocLabelAdder, DetailRow, Empty, EntityAvatar, ViewAllFooter, emitTimelineRefresh, sb, useAssociateWithPeriod } from "./primitives";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 
 /* ───────────── Company card (entity = contact|deal) ───────────── */
 
@@ -75,8 +77,14 @@ export function CompanyCard({
         if (name) patch.company_name = name;
       }
     }
-    const { error } = await sb.from(tableFor(entity)).update(patch).eq("id", entityId);
+    const { data: affected, error } = await sb
+      .from(tableFor(entity))
+      .update(patch)
+      .eq("id", entityId)
+      .select("id");
     if (error) return toast.error(error.message);
+    if (deniedIfUnaffected(affected)) return;
+
     toast.success("Empresa vinculada");
     emitTimelineRefresh();
     setCurrentId(id);
@@ -91,11 +99,14 @@ export function CompanyCard({
   });
 
   const unlink = async () => {
-    const { error } = await sb
+    const { data: affected, error } = await sb
       .from(tableFor(entity))
       .update({ company_id: null })
-      .eq("id", entityId);
+      .eq("id", entityId)
+      .select("id");
     if (error) return toast.error(error.message);
+    if (deniedIfUnaffected(affected)) return;
+
     toast.success("Empresa desvinculada");
     emitTimelineRefresh();
     setCurrentId(null);
@@ -227,11 +238,14 @@ export function ContactsCard({ entity, entityId }: { entity: "company" | "deal";
 
   const associate = async (contactId: string) => {
     if (entity === "company") {
-      const { error } = await sb
+      const { data: affected, error } = await sb
         .from("contacts")
         .update({ company_id: entityId })
-        .eq("id", contactId);
+        .eq("id", contactId)
+        .select("id");
       if (error) return toast.error(error.message);
+      if (deniedIfUnaffected(affected)) return;
+
     } else {
       const { error } = await sb
         .from("deal_contacts")

@@ -28,6 +28,8 @@ import { useRelatedIds } from "@/hooks/use-related-ids";
 import { usePipelines } from "@/lib/pipelines";
 import type { Lead } from "@/lib/db-types";
 import { useToastCreated } from "@/lib/toast-nav";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 
 export function CreateDealFromLeadDialog({
   open,
@@ -235,7 +237,7 @@ export function CreateDealFromLeadDialog({
       }
 
       // mark lead qualified (e vincula a empresa resolvida quando o lead ainda não tem)
-      await supabase
+      const { data: leadAffected } = await supabase
         .from("leads")
         .update({
           status: "qualified",
@@ -244,7 +246,12 @@ export function CreateDealFromLeadDialog({
           converted_deal_id: deal!.id,
           ...(resolvedCompanyId && !lead.company_id ? { company_id: resolvedCompanyId } : {}),
         })
-        .eq("id", lead.id);
+        .eq("id", lead.id)
+        .select("id");
+      // Negócio já criado: se o RLS bloqueou a atualização do lead, avisa sem
+      // reverter a criação.
+      deniedIfUnaffected(leadAffected, "atualizar o lead");
+
 
 
       toastCreated("Negócio criado e lead qualificado", "Ir para o negócio", (nav) =>

@@ -67,6 +67,8 @@ import { RichHtmlEditor } from "@/components/rich-html-editor";
 import { EmailInput } from "@/components/ui/email-input";
 import { isEmail } from "@/lib/validators";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 
 type Field = {
   name: string;
@@ -312,8 +314,13 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const remove = async (id: string) => {
     if (!(await confirmDialog("Excluir este registro?"))) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).delete().eq("id", id);
+    const { data: affected, error } = await (supabase as any)
+      .from(table)
+      .delete()
+      .eq("id", id)
+      .select("id");
     if (error) return toast.error(error.message);
+    if (deniedIfUnaffected(affected)) return;
     toast.success("Removido");
     qc.invalidateQueries({ queryKey: [table] });
   };
@@ -321,12 +328,23 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).delete().in("id", ids);
+    const { data: affected, error } = await (supabase as any)
+      .from(table)
+      .delete()
+      .in("id", ids)
+      .select("id");
     if (error) return toast.error(error.message);
-    toast.success(`${ids.length} excluído(s)`);
+    if (deniedIfUnaffected(affected)) return;
+    const removed = (affected as unknown[]).length;
+    if (removed < ids.length) {
+      toast.warning(`${removed} de ${ids.length} excluído(s). Verifique suas permissões.`);
+    } else {
+      toast.success(`${ids.length} excluído(s)`);
+    }
     clearSel();
     qc.invalidateQueries({ queryKey: [table] });
   };
+
 
   const exportCsv = (rowsToExport?: T[]) => {
     const out = rowsToExport ?? filtered;
