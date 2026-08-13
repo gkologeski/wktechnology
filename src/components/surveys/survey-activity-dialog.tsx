@@ -297,7 +297,9 @@ export function SurveyActivityDialog({
                 <p className="text-sm text-muted-foreground">Escolha o tipo primeiro.</p>
               ) : options.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nenhuma pesquisa ativa deste tipo. Crie uma em Pesquisas.
+                  {canCreateSurvey
+                    ? "Nenhuma pesquisa ativa deste tipo. Crie uma em Pesquisas."
+                    : "Nenhuma pesquisa ativa deste tipo disponível para você. Peça ao administrador do workspace para ativar uma pesquisa ou liberar seu acesso."}
                 </p>
               ) : (
                 <Select
