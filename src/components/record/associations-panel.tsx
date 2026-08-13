@@ -11,6 +11,9 @@ const LeadContactsCard = lazy(() =>
 const LeadDealsCard = lazy(() =>
   import("./associations/lead-cards").then((m) => ({ default: m.LeadDealsCard })),
 );
+const RecordLeadsCard = lazy(() =>
+  import("./associations/lead-cards").then((m) => ({ default: m.RecordLeadsCard })),
+);
 const SingleContactCard = lazy(() =>
   import("./associations/company-cards").then((m) => ({ default: m.SingleContactCard })),
 );
@@ -63,6 +66,11 @@ export function AssociationsPanel({ entity, entityId, companyId, contactId, deal
       )}
       {(entity === "contact" || entity === "company") && (
         <DealsCard entity={entity} entityId={entityId} companyId={companyId} />
+      )}
+      {(entity === "contact" || entity === "company") && (
+        <LazyCard>
+          <RecordLeadsCard entity={entity} entityId={entityId} />
+        </LazyCard>
       )}
       {entity === "lead" && (
         <LazyCard>

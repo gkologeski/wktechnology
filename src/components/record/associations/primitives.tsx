@@ -115,6 +115,7 @@ export type AssocLinkTarget =
   | { to: "/companies/$id"; params: { id: string } }
   | { to: "/contacts/$id"; params: { id: string } }
   | { to: "/deals/$id"; params: { id: string } }
+  | { to: "/leads/$id"; params: { id: string } }
   | { to: "/tickets/$id"; params: { id: string } };
 
 export function AssocItemActions({

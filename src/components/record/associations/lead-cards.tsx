@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Briefcase } from "lucide-react";
+import { User, Briefcase, UserSearch } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
 import { ContactPickerPopover } from "@/components/ui/contact-picker";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
 import { usePipelines } from "@/lib/pipelines";
+import { useLeadStages, resolveLeadStageValue, findLeadStage } from "@/lib/leads/stages";
 import { AssocCard, AssocItemActions, DetailRow, Empty, EntityAvatar, ViewAllFooter, formatDealDateLong } from "./primitives";
 
 /* ───────────── Lead → Contact / Deal cards (read-only, from conversion) ───────────── */
@@ -249,6 +250,104 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
             })}
           </ul>
           <ViewAllFooter href="/deals" label="Exibir todos os Negócios associados" />
+        </>
+      )}
+    </AssocCard>
+  );
+}
+
+/* ───────────── Contact/Company → Leads card (read-only) ───────────── */
+
+type LeadRow = {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string | null;
+  company_name: string | null;
+  stage_id: string | null;
+  status: string | null;
+};
+
+/**
+ * Leads associados a um contato (via `converted_contact_id`) ou a uma empresa
+ * (via `company_id`). Somente leitura — o vínculo é gerenciado no próprio lead.
+ */
+export function RecordLeadsCard({
+  entity,
+  entityId,
+}: {
+  entity: "contact" | "company";
+  entityId: string;
+}) {
+  const [rows, setRows] = useState<LeadRow[]>([]);
+  const [tick, setTick] = useState(0);
+  useRefreshCallback(() => setTick((t) => t + 1));
+  const { stages } = useLeadStages();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const col = entity === "contact" ? "converted_contact_id" : "company_id";
+      const { data } = await supabase
+        .from("leads")
+        .select("id, first_name, last_name, email, company_name, stage_id, status")
+        .eq(col, entityId)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (!cancelled) setRows(((data as LeadRow[] | null) ?? []) as LeadRow[]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [entity, entityId, tick]);
+
+  return (
+    <AssocCard icon={<UserSearch className="w-4 h-4" />} title="Leads" count={rows.length}>
+      {rows.length === 0 ? (
+        <Empty label="Nenhum lead vinculado." />
+      ) : (
+        <>
+          <ul className="space-y-2">
+            {rows.map((l) => {
+              const fullName = `${l.first_name ?? ""} ${l.last_name ?? ""}`.trim() || "Sem nome";
+              const initials = ((l.first_name?.[0] ?? "?") + (l.last_name?.[0] ?? "")).toUpperCase();
+              const stageValue = resolveLeadStageValue(l, stages);
+              const stageLabel = findLeadStage(stages, stageValue)?.label ?? stageValue;
+              return (
+                <li
+                  key={l.id}
+                  className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <EntityAvatar initials={initials} tone="primary" />
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        to="/leads/$id"
+                        params={{ id: l.id }}
+                        className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
+                      >
+                        {fullName}
+                      </Link>
+                      <div className="mt-2 space-y-1">
+                        <DetailRow label="Etapa" value={stageLabel} />
+                        <DetailRow
+                          label="E-mail"
+                          value={l.email}
+                          href={l.email ? `mailto:${l.email}` : undefined}
+                          copyable
+                        />
+                        {entity === "contact" && (
+                          <DetailRow label="Empresa" value={l.company_name} />
+                        )}
+                      </div>
+                    </div>
+                    <AssocItemActions link={{ to: "/leads/$id", params: { id: l.id } }} />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <ViewAllFooter href="/leads" label="Exibir todos os Leads associados" />
         </>
       )}
     </AssocCard>
