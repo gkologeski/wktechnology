@@ -205,68 +205,73 @@ export function SurveyActivityDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="survey-source" className="text-xs font-medium">
-              Pesquisa
-            </Label>
-            {available.isLoading ? (
-              <Skeleton className="h-9 w-full" />
-            ) : available.isError ? (
-              <p className="text-sm text-destructive" role="alert">
-                Não foi possível carregar as pesquisas.{" "}
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="h-auto p-0"
-                  onClick={() => void available.refetch()}
-                >
-                  Tentar novamente
-                </Button>
-              </p>
-            ) : !hasOptions ? (
-              <p className="text-sm text-muted-foreground">
-                Nenhuma pesquisa ativa encontrada. Crie um modelo em Pesquisas ou um questionário em
-                Prospecção.
-              </p>
-            ) : (
-              <Select
-                value={selection ? encode(selection) : ""}
-                onValueChange={(v) => setSelection(decode(v))}
-              >
-                <SelectTrigger id="survey-source">
-                  <SelectValue placeholder="Selecione a pesquisa…" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="survey-kind" className="text-xs font-medium">
+                Tipo de pesquisa
+              </Label>
+              <Select value={kind} onValueChange={(v) => setKind(v as SurveyKindTab)}>
+                <SelectTrigger id="survey-kind">
+                  <SelectValue placeholder="Selecione o tipo…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {templates.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel>Modelos de pesquisa</SelectLabel>
-                      {templates.map((t) => (
-                        <SelectItem
-                          key={t.id}
-                          value={encode({ source: "survey_template", id: t.id })}
-                        >
-                          {t.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  )}
-                  {questionnaires.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel>Questionários de qualificação</SelectLabel>
-                      {questionnaires.map((q) => (
-                        <SelectItem
-                          key={q.id}
-                          value={encode({ source: "prospecting_questionnaire", id: q.id })}
-                        >
-                          {q.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  )}
+                  <SelectItem value="csat">CSAT</SelectItem>
+                  <SelectItem value="nps">NPS</SelectItem>
+                  <SelectItem value="vendas">Vendas</SelectItem>
+                  <SelectItem value="livre">Livre</SelectItem>
                 </SelectContent>
               </Select>
-            )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="survey-source" className="text-xs font-medium">
+                Pesquisa
+              </Label>
+              {available.isLoading ? (
+                <Skeleton className="h-9 w-full" />
+              ) : available.isError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  Não foi possível carregar as pesquisas.{" "}
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0"
+                    onClick={() => void available.refetch()}
+                  >
+                    Tentar novamente
+                  </Button>
+                </p>
+              ) : !kind ? (
+                <p className="text-sm text-muted-foreground">Escolha o tipo primeiro.</p>
+              ) : options.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma pesquisa ativa deste tipo. Crie uma em Pesquisas.
+                </p>
+              ) : (
+                <Select
+                  value={selection ? encode(selection) : ""}
+                  onValueChange={(v) => setSelection(decode(v))}
+                >
+                  <SelectTrigger id="survey-source">
+                    <SelectValue placeholder="Selecione a pesquisa…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groups.map(([group, items]) => (
+                      <SelectGroup key={group}>
+                        <SelectLabel>{group}</SelectLabel>
+                        {items.map((o) => (
+                          <SelectItem key={o.selection.id} value={encode(o.selection)}>
+                            {o.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
+
 
           {selection && (
             <div className="space-y-3 rounded-lg border border-border/60 p-3">
