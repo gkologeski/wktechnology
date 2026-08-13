@@ -232,11 +232,14 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
         if (JSON.stringify(current ?? null) !== JSON.stringify(next ?? null)) patch[key] = next;
       }
       if (Object.keys(patch).length === 0) continue;
-      const { error: upErr } = await supabase
+      const { data: affected, error: upErr } = await supabase
         .from(entity)
         .update(patch as never)
-        .eq("id", id);
+        .eq("id", id)
+        .select("id");
       if (upErr) throw new Error(upErr.message);
+      assertAffected(affected, entity === "leads" ? "leads.update" : `${entity}.update`);
+
     }
   };
 
