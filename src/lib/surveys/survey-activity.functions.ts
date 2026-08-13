@@ -39,6 +39,17 @@ export type SurveyFormQuestion = {
   position: number;
 };
 
+/** Dados de pontuação das perguntas de um questionário de vendas. */
+export type SalesScoreQuestion = {
+  id: string;
+  type: string;
+  weight: number;
+  options: Json;
+  text_points: number | null;
+  text_min_chars: number | null;
+};
+
+
 /** Pesquisas disponíveis para responder, agrupadas por tipo. */
 export const listAvailableSurveys = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
