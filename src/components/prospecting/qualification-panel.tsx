@@ -61,6 +61,9 @@ import {
   applyQualificationEnrichment,
 } from "@/lib/prospecting/qualification-enrichment.functions";
 import { useLeadStages } from "@/lib/leads/stages";
+import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
+import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
+
 
 type Entity = "lead";
 
