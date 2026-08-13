@@ -125,13 +125,14 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" /> Resumo IA
+      <CardHeader className="flex flex-col gap-2 space-y-0 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <CardTitle className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+          <Sparkles className="h-4 w-4 shrink-0 text-primary" />{" "}
+          <span className="truncate">Resumo IA</span>
         </CardTitle>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
           <Select value={kind} onValueChange={(v) => setKind(v as Kind)}>
-            <SelectTrigger className="h-8 w-[150px] text-xs">
+            <SelectTrigger className="h-8 w-full min-w-0 text-xs sm:w-[150px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -146,9 +147,10 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
             </SelectContent>
           </Select>
           <Select value={String(windowDays)} onValueChange={(v) => setWindowDays(Number(v))}>
-            <SelectTrigger className="h-8 w-[100px] text-xs">
+            <SelectTrigger className="h-8 w-full min-w-0 text-xs sm:w-[100px]">
               <SelectValue />
             </SelectTrigger>
+
             <SelectContent>
               <SelectItem value="7">7 dias</SelectItem>
               <SelectItem value="30">30 dias</SelectItem>

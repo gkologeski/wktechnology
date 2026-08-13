@@ -56,7 +56,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
         <Button
           variant="outline"
           size="sm"
-          className={cn("h-9 gap-2 justify-between min-w-[140px]", className)}
+          className={cn("h-9 min-w-0 shrink gap-2 justify-between sm:min-w-[140px]", className)}
         >
           <span className="flex items-center gap-2 min-w-0">
             {isWorkspaceContext ? <Home className="h-4 w-4 shrink-0" /> : <LayoutGrid className="h-4 w-4 shrink-0" />}

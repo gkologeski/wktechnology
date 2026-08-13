@@ -276,7 +276,7 @@ function ServiceCatalogPage() {
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-medium">{s.name}</span>
+                      <span className="min-w-0 break-words font-medium">{s.name}</span>
                       {s.code && (
                         <Badge variant="outline" className="font-mono text-xs">
                           {s.code}

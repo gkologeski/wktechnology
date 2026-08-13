@@ -147,14 +147,14 @@ export function ViewsTabs<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="flex items-center gap-1 border-b px-1">
+    <div className="flex items-center gap-1 overflow-x-auto overflow-y-hidden border-b px-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {views.map((v) => (
         <button
           key={v.id}
           type="button"
           onClick={() => onChange(v.id)}
           className={cn(
-            "relative px-3 py-2 text-sm font-medium transition-colors",
+            "relative shrink-0 whitespace-nowrap px-3 py-2 text-sm font-medium transition-colors",
             active === v.id ? "text-primary" : "text-muted-foreground hover:text-foreground",
           )}
         >
@@ -164,7 +164,7 @@ export function ViewsTabs<T extends string>({
           )}
         </button>
       ))}
-      <Button variant="ghost" size="sm" className="ml-2 text-muted-foreground" disabled>
+      <Button variant="ghost" size="sm" className="ml-2 shrink-0 text-muted-foreground" disabled>
         <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar visualização
       </Button>
     </div>
