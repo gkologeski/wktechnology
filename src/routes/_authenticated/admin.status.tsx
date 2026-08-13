@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPlatformStatus } from "@/lib/platform-observability.functions";
 import { rescheduleLovableCron } from "@/lib/admin-cron.functions";
+import { backfillQualificationActivities } from "@/lib/prospecting/qualifications-backfill.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ function AdminStatusPage() {
   const { isPlatformAdmin, loading } = useIsPlatformAdmin();
   const fn = useServerFn(getPlatformStatus);
   const reschedule = useServerFn(rescheduleLovableCron);
+  const backfill = useServerFn(backfillQualificationActivities);
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ["platform-status"],
