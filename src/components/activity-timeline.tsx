@@ -90,6 +90,12 @@ import {
   openEmailAttachment,
 } from "./activity/timeline-shared";
 import { EmailTimelineItem } from "./activity/email-timeline-item";
+import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
+import {
+  SurveyTimelineCard,
+  type SurveyResponseSummary,
+} from "@/components/surveys/survey-timeline-card";
+import { getActivitySurveyResponses } from "@/lib/surveys/survey-activity.functions";
 
 // O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
 // usuário abre a ação de ligação pela primeira vez.
@@ -109,6 +115,8 @@ export function ActivityTimeline({
   // Metadados enriquecidos de e-mails (corpo, anexos, aberturas, cliques),
   // indexados pelo id da atividade correspondente.
   const [emailMeta, setEmailMeta] = useState<Map<string, EmailMeta>>(new Map());
+  // Respostas de pesquisas, indexadas pelo id da atividade do tipo "survey".
+  const [surveyMeta, setSurveyMeta] = useState<Map<string, SurveyResponseSummary>>(new Map());
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
