@@ -9,6 +9,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureLeadRelations, type LeadRelationsInput } from "@/lib/leads/lead-relations";
+import { assertAffected } from "@/lib/access-control/rls-denied";
+
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { formatMoney, isMoneyField } from "@/lib/format/money-fields";
