@@ -290,11 +290,14 @@ export function QualificationPanel({
       // 3) move o lead para a etapa de qualificado do funil
       const patch: Record<string, unknown> = { status: "qualified" };
       if (qualifiedStage) patch.stage_id = qualifiedStage.value;
-      const { error: leadErr } = await supabase
+      const { data: updated, error: leadErr } = await supabase
         .from("leads")
         .update(patch as never)
-        .eq("id", entityId);
+        .eq("id", entityId)
+        .select("id");
       if (leadErr) throw new Error(leadErr.message);
+      if (!updated || updated.length === 0) throw new PermissionDeniedError();
+
 
       toast.success("Lead qualificado.");
       qc.invalidateQueries({
