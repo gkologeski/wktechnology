@@ -306,6 +306,16 @@ export function SurveyActivityDialog({
                     </Badge>
                   </div>
                   <div className="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
+                    {isSalesLead && blocksBefore.length > 0 && (
+                      <QualificationEntityBlocks
+                        blocks={blocksBefore}
+                        records={entityFields.records}
+                        values={entityFields.values}
+                        onChange={entityFields.setValue}
+                        isLoading={entityFields.isLoading}
+                        autofilled={entityFields.autofilled}
+                      />
+                    )}
                     {questions.map((q) => (
                       <SurveyField
                         key={q.id}
@@ -315,6 +325,16 @@ export function SurveyActivityDialog({
                         onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
                       />
                     ))}
+                    {isSalesLead && blocksAfter.length > 0 && (
+                      <QualificationEntityBlocks
+                        blocks={blocksAfter}
+                        records={entityFields.records}
+                        values={entityFields.values}
+                        onChange={entityFields.setValue}
+                        isLoading={entityFields.isLoading}
+                        autofilled={entityFields.autofilled}
+                      />
+                    )}
                   </div>
                 </>
               )}
