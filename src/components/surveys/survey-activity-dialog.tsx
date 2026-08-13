@@ -45,6 +45,8 @@ import {
 } from "@/lib/prospecting/score";
 import { QualificationQuestionInput } from "@/components/prospecting/qualification-question-input";
 import { getLeadIcpFit } from "@/lib/scoring/icp.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { QUESTIONNAIRES_CREATE, asKeys } from "@/lib/prospecting/permission-keys";
 import {
   QualificationEntityBlocks,
   useQualificationEntityFields,
