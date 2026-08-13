@@ -8,6 +8,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Json } from "@/integrations/supabase/types";
 import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import {
   computeQualificationMaxScore,
@@ -32,8 +33,8 @@ export type SurveyFormQuestion = {
   label: string;
   help_text: string | null;
   type: string;
-  options: unknown;
-  settings: unknown;
+  options: Json;
+  settings: Json;
   required: boolean;
   position: number;
 };
@@ -94,8 +95,8 @@ export const getSurveyForm = createServerFn({ method: "POST" })
               label: r.label,
               help_text: r.help_text ?? null,
               type: r.type,
-              options: r.options,
-              settings: r.settings,
+              options: (r.options ?? null) as Json,
+              settings: (r.settings ?? null) as Json,
               required: !!r.required,
               position: r.position ?? 0,
             }) satisfies SurveyFormQuestion,
@@ -138,8 +139,8 @@ export const getSurveyForm = createServerFn({ method: "POST" })
             label: r.label,
             help_text: r.help_text ?? null,
             type: typeMap[r.type] ?? "short_text",
-            options: r.options,
-            settings: {},
+            options: (r.options ?? null) as Json,
+            settings: {} as Json,
             required: !!r.required,
             position: r.position ?? 0,
           }) satisfies SurveyFormQuestion,
@@ -295,8 +296,8 @@ export const getActivitySurveyResponses = createServerFn({ method: "POST" })
         label: String(r.label),
         help_text: (r.help_text as string | null) ?? null,
         type: String(r.type),
-        options: r.options,
-        settings: r.settings,
+        options: (r.options ?? null) as Json,
+        settings: (r.settings ?? null) as Json,
         required: false,
         position: Number(r.position ?? 0),
       });
@@ -318,8 +319,8 @@ export const getActivitySurveyResponses = createServerFn({ method: "POST" })
         label: String(r.label),
         help_text: (r.help_text as string | null) ?? null,
         type: typeMap[String(r.type)] ?? "short_text",
-        options: r.options,
-        settings: {},
+        options: (r.options ?? null) as Json,
+        settings: {} as Json,
         required: false,
         position: Number(r.position ?? 0),
       });
