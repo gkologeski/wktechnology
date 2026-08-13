@@ -486,11 +486,37 @@ export function QualificationPanel({
               Preencha as respostas e defina a decisão final.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right min-w-[168px]">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Score</p>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <div className="text-right min-w-[200px]">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Nota do lead
+              </p>
+              <p className="text-lg font-semibold leading-tight text-foreground">
+                {unified.total}
+                <span className="text-xs text-muted-foreground ml-1">
+                  de {LEAD_SCORE_MAX} ({unified.percent}%)
+                </span>
+              </p>
+              <Progress
+                value={unified.percent}
+                className="h-1.5 mt-1"
+                aria-label={`Nota do lead ${unified.total} de ${LEAD_SCORE_MAX}`}
+              />
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Questionário {unified.questionnairePoints}/{QUESTIONNAIRE_MAX_POINTS} · ICP{" "}
+                {unified.icpPoints}/{ICP_MAX_POINTS}
+                {unified.icpUnavailable ? " (sem critérios)" : ""}
+              </p>
+              <div className="mt-1 flex justify-end">
+                <LeadScoreBadge total={unified.total} />
+              </div>
+            </div>
+            <div className="text-right min-w-[150px]">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Questionário
+              </p>
               <p
-                className={`text-lg font-semibold leading-tight ${
+                className={`text-sm font-semibold leading-tight ${
                   passesAuto ? "text-emerald-600" : "text-foreground"
                 }`}
               >
@@ -502,13 +528,6 @@ export function QualificationPanel({
                   </span>
                 ) : null}
               </p>
-              {maxInfo.max > 0 ? (
-                <Progress
-                  value={percent ?? 0}
-                  className="h-1.5 mt-1"
-                  aria-label={`Score ${score} de ${maxInfo.max}`}
-                />
-              ) : null}
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 Corte {threshold}
                 {maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
