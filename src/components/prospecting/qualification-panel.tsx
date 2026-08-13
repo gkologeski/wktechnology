@@ -55,6 +55,7 @@ import {
   useQualificationEntityFields,
 } from "@/components/prospecting/qualification-entity-fields";
 import { QualificationFieldLayoutDialog } from "@/components/prospecting/qualification-field-layout-dialog";
+import { QualificationQuestionInput } from "@/components/prospecting/qualification-question-input";
 import {
   enrichLeadForQualification,
   applyQualificationEnrichment,
@@ -565,7 +566,7 @@ export function QualificationPanel({
             ) : (
               <div className="space-y-4">
                 {qData.questions.map((q) => (
-                  <QuestionInput
+                  <QualificationQuestionInput
                     key={q.id}
                     question={q}
                     value={answers[q.id]}
@@ -705,92 +706,5 @@ export function QualificationPanel({
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-function QuestionInput({
-  question,
-  value,
-  onChange,
-}: {
-  question: {
-    id: string;
-    label: string;
-    type: string;
-    options: unknown;
-    required: boolean;
-    help_text: string | null;
-  };
-  value: unknown;
-  onChange: (v: unknown) => void;
-}) {
-  const opts = Array.isArray(question.options)
-    ? (question.options as { label: string; points: number }[])
-    : [];
-
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-sm">
-        {question.label}
-        {question.required ? <span className="text-destructive ml-1">*</span> : null}
-      </Label>
-      {question.help_text ? (
-        <p className="text-xs text-muted-foreground">{question.help_text}</p>
-      ) : null}
-      {question.type === "text" ? (
-        <Textarea
-          value={(value as string) ?? ""}
-          onChange={(e) => onChange(e.target.value)}
-          rows={2}
-        />
-      ) : question.type === "number" ? (
-        <Input
-          type="number"
-          value={(value as number) ?? ""}
-          onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
-        />
-      ) : question.type === "boolean" ? (
-        <div className="flex items-center gap-2">
-          <Checkbox checked={value === true} onCheckedChange={(v) => onChange(v === true)} />
-          <span className="text-sm">Sim</span>
-        </div>
-      ) : question.type === "single" ? (
-        <Select value={(value as string) ?? ""} onValueChange={onChange}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione" />
-          </SelectTrigger>
-          <SelectContent>
-            {opts.map((o) => (
-              <SelectItem key={o.label} value={o.label}>
-                {o.label}{" "}
-                <span className="text-xs text-muted-foreground ml-1">({o.points} pts)</span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : question.type === "multi" ? (
-        <div className="space-y-1">
-          {opts.map((o) => {
-            const arr = Array.isArray(value) ? (value as string[]) : [];
-            const checked = arr.includes(o.label);
-            return (
-              <label key={o.label} className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={checked}
-                  onCheckedChange={(v) => {
-                    if (v) onChange([...arr, o.label]);
-                    else onChange(arr.filter((x) => x !== o.label));
-                  }}
-                />
-                <span>
-                  {o.label}{" "}
-                  <span className="text-xs text-muted-foreground ml-1">({o.points} pts)</span>
-                </span>
-              </label>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
   );
 }
