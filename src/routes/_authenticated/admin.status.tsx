@@ -93,6 +93,26 @@ function AdminStatusPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>Manutenção</CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => backfillMut.mutate()}
+            disabled={backfillMut.isPending}
+          >
+            {backfillMut.isPending
+              ? "Executando…"
+              : "Backfill de qualificações na timeline"}
+          </Button>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          Cria a atividade "Pesquisa" na timeline para qualificações concluídas antes do
+          registro automático. A ação é idempotente: executar de novo não duplica registros.
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Cron Jobs</CardTitle>
           <Button
             size="sm"
@@ -102,6 +122,7 @@ function AdminStatusPage() {
             {rescheduleMut.isPending ? "Reagendando…" : "Reagendar crons"}
           </Button>
         </CardHeader>
+
         <CardContent>
           {error ? (
             <p className="text-sm text-destructive">

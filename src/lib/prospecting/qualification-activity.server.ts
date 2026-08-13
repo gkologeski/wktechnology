@@ -35,9 +35,14 @@ export async function logQualificationActivity(
     score: number;
     decision: Exclude<Decision, "pending">;
     decisionReason?: string | null;
+    /** Data histórica da atividade (backfill). Padrão: agora. */
+    occurredAt?: string | null;
+    /** Vínculos adicionais (contato/empresa do lead). */
+    links?: { contactId?: string | null; companyId?: string | null };
   },
-): Promise<void> {
+): Promise<{ created: boolean; skipped: boolean }> {
   try {
+
     const relatedKey = args.entity === "lead" ? "related_lead_id" : "related_contact_id";
 
     const { data: q } = await supabase
@@ -82,6 +87,7 @@ export async function logQualificationActivity(
       activityId = ((matches as { activity_id: string }[] | null) ?? [])[0]?.activity_id ?? null;
     }
 
+    let created = false;
     if (activityId) {
       await supabase.from("activities").update({ subject, body } as never).eq("id", activityId);
     } else {
@@ -95,14 +101,21 @@ export async function logQualificationActivity(
           body,
           completed: true,
           [relatedKey]: args.entityId,
+          ...(args.workspaceId ? { workspace_id: args.workspaceId } : {}),
+          ...(args.occurredAt ? { created_at: args.occurredAt } : {}),
+          ...(args.links?.contactId && args.entity !== "contact"
+            ? { related_contact_id: args.links.contactId }
+            : {}),
+          ...(args.links?.companyId ? { related_company_id: args.links.companyId } : {}),
         } as never)
         .select("id")
         .single();
       if (error) throw new Error(error.message);
       activityId = (inserted as { id: string }).id;
+      created = true;
     }
 
-    if (!args.workspaceId) return;
+    if (!args.workspaceId) return { created, skipped: false };
     await supabase.from("activity_survey_responses").upsert(
       {
         activity_id: activityId,
@@ -115,12 +128,15 @@ export async function logQualificationActivity(
         score: args.score,
         max_score: maxScore,
         responded_by: args.userId,
-        responded_at: new Date().toISOString(),
+        responded_at: args.occurredAt ?? new Date().toISOString(),
       } as never,
       { onConflict: "activity_id" },
     );
+    return { created, skipped: false };
   } catch (e) {
     // A timeline é acessória: não bloqueia o salvamento da qualificação.
     console.error("[qualification] timeline activity", e);
+    return { created: false, skipped: true };
   }
 }
+
