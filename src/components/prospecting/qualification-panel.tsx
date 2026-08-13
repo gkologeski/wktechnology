@@ -166,6 +166,18 @@ export function QualificationPanel({
   );
   const percent = scorePercent(score, maxInfo.max);
 
+  // Nota unificada do lead (0–85): questionário (até 50) + ICP (até 35).
+  const unified = useMemo(
+    () =>
+      computeUnifiedLeadScore({
+        questionnaireScore: score,
+        questionnaireMax: maxInfo.max,
+        icpScore: icpFit.data?.points ?? 0,
+        icpMax: icpFit.data?.max ?? 0,
+      }),
+    [score, maxInfo.max, icpFit.data?.points, icpFit.data?.max],
+  );
+
   const threshold = qData?.questionnaire.pass_threshold ?? 0;
   const passesAuto = score >= threshold;
 
