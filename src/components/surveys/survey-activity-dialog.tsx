@@ -106,6 +106,9 @@ export function SurveyActivityDialog({
     enabled: open,
   });
 
+  const { canAny } = usePermissions();
+  const canCreateSurvey = canAny(asKeys(QUESTIONNAIRES_CREATE));
+
   const form = useQuery({
     queryKey: ["survey-activity", "form", selection?.source, selection?.id],
     queryFn: () => formFn({ data: { source: selection!.source, source_id: selection!.id } }),
