@@ -90,8 +90,9 @@ function LeadDetail() {
   const setStage = async (v: string) => {
     if (v === currentStageValue) return;
     const stage = findLeadStage(stages, v);
-    // Etapa "Qualificado" exige preenchimento do questionário de qualificação.
-    if (stage && (stage.value === "qualified" || stage.type === "won")) {
+    // Apenas a etapa de qualificação exige o questionário. Outras etapas de
+    // ganho (ex.: "Oportunidade") são gravadas direto, sem abrir o modal.
+    if (stage && stage.value === "qualified") {
       setQualifyOpen(true);
       return;
     }

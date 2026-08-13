@@ -10,6 +10,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { applyScoreContribution } from "@/lib/scoring/icp.server";
+import { logQualificationActivity } from "@/lib/prospecting/qualification-activity.server";
 import {
   computeQualificationScore,
   type ScoreQuestion as Question,
@@ -117,31 +118,8 @@ export const saveQualification = createServerFn({ method: "POST" })
     const contribution =
       data.decision === "qualified" || data.decision === "scheduled" ? score : 0;
 
-    if (data.id) {
-      const { error } = await context.supabase
-        .from("prospecting_qualifications")
-        .update(patch)
-        .eq("id", data.id);
-      if (error) throw new Error(error.message);
-      if (decided) {
-        await pushQualificationScore(context.supabase, {
-          userId: context.userId,
-          entity: data.entity,
-          entityId: data.entity_id,
-          questionnaireId: data.questionnaire_id,
-          points: contribution,
-          reason: "Qualificação",
-        });
-      }
-      return { id: data.id, score };
-    }
-    const { data: row, error } = await context.supabase
-      .from("prospecting_qualifications")
-      .insert(patch)
-      .select("id")
-      .single();
-    if (error) throw new Error(error.message);
-    if (decided) {
+    const afterDecision = async () => {
+      if (!decided) return;
       await pushQualificationScore(context.supabase, {
         userId: context.userId,
         entity: data.entity,
@@ -150,7 +128,42 @@ export const saveQualification = createServerFn({ method: "POST" })
         points: contribution,
         reason: "Qualificação",
       });
+      let workspaceId: string | null = null;
+      try {
+        workspaceId = await getActiveWorkspaceId(context.supabase, context.userId);
+      } catch {
+        workspaceId = null;
+      }
+      await logQualificationActivity(context.supabase, {
+        userId: context.userId,
+        workspaceId,
+        entity: data.entity,
+        entityId: data.entity_id,
+        questionnaireId: data.questionnaire_id,
+        questions: (qs ?? []) as Question[],
+        answers: data.answers,
+        score,
+        decision: data.decision as "qualified" | "disqualified" | "nurture" | "scheduled",
+        decisionReason: data.decision_reason ?? null,
+      });
+    };
+
+    if (data.id) {
+      const { error } = await context.supabase
+        .from("prospecting_qualifications")
+        .update(patch)
+        .eq("id", data.id);
+      if (error) throw new Error(error.message);
+      await afterDecision();
+      return { id: data.id, score };
     }
+    const { data: row, error } = await context.supabase
+      .from("prospecting_qualifications")
+      .insert(patch)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    await afterDecision();
     return { id: row.id, score };
   });
 
