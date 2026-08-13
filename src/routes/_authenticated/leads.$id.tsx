@@ -45,6 +45,8 @@ import type { Lead } from "@/lib/db-types";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   component: LeadDetail,
@@ -96,18 +98,21 @@ function LeadDetail() {
       setQualifyOpen(true);
       return;
     }
-    const { error } = await supabase
+    const { data: affected, error } = await supabase
       .from("leads")
       .update({
         stage_id: v,
         ...(pipelineId ? { pipeline_id: pipelineId } : {}),
         status: deriveLeadStatus(stage),
       } as never)
-      .eq("id", lead.id);
+      .eq("id", lead.id)
+      .select("id");
     if (error) {
       toast.error(error.message);
       return;
     }
+    if (deniedIfUnaffected(affected)) return;
+
     void load();
   };
 

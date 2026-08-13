@@ -62,6 +62,8 @@ import {
 import { formatDateTime } from "@/lib/crm";
 import { exportRowsToCsv } from "@/lib/csv-export";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
@@ -430,8 +432,13 @@ function ContactsHubspotView() {
 
   const removeOne = async (id: string) => {
     if (!(await confirmDialog("Excluir este contato?"))) return;
-    const { error } = await supabase.from("contacts").delete().eq("id", id);
+    const { data: affected, error } = await supabase
+      .from("contacts")
+      .delete()
+      .eq("id", id)
+      .select("id");
     if (error) return toast.error(error.message);
+    if (deniedIfUnaffected(affected)) return;
     toast.success("Removido");
     qc.invalidateQueries({ queryKey: ["contacts"] });
   };
@@ -439,9 +446,19 @@ function ContactsHubspotView() {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
     if (!(await confirmDialog(`Excluir ${ids.length} contato(s)?`))) return;
-    const { error } = await supabase.from("contacts").delete().in("id", ids);
+    const { data: affected, error } = await supabase
+      .from("contacts")
+      .delete()
+      .in("id", ids)
+      .select("id");
     if (error) return toast.error(error.message);
-    toast.success(`${ids.length} excluído(s)`);
+    if (deniedIfUnaffected(affected)) return;
+    if (affected.length < ids.length) {
+      toast.warning(`${affected.length} de ${ids.length} excluído(s). Verifique suas permissões.`);
+    } else {
+      toast.success(`${ids.length} excluído(s)`);
+    }
+
     clearSelection();
     qc.invalidateQueries({ queryKey: ["contacts"] });
   };

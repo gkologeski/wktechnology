@@ -12,6 +12,9 @@ import {
 } from "@/components/ui/select";
 import { UserCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { assertAffected } from "@/lib/access-control/rls-denied";
+import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
+
 
 /**
  * Campo Proprietário reutilizável para telas de detalhe de qualquer entidade
@@ -77,16 +80,20 @@ export function OwnerField({
     setSaving(true);
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase as any)
+      const { data: affected, error } = await (supabase as any)
         .from(table)
         .update({ owner_id: nv })
-        .eq("id", rowId);
+        .eq("id", rowId)
+        .select("id");
       if (error) throw error;
+      assertAffected(affected as unknown[] | null);
       setCurrent(nv);
       onChanged?.(nv);
       toast.success("Proprietário atualizado");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível atualizar");
+      if (!handlePermissionError(e))
+        toast.error(e instanceof Error ? e.message : "Não foi possível atualizar");
+
     } finally {
       setSaving(false);
     }

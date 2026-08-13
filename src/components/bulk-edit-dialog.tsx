@@ -14,6 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 import { isEmail } from "@/lib/validators";
 
 export type BulkField = {
@@ -65,10 +67,21 @@ export function BulkEditDialog({
     }
     setBusy(true);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).update(payload).in("id", ids);
+    const { data: affected, error } = await (supabase as any)
+      .from(table)
+      .update(payload)
+      .in("id", ids)
+      .select("id");
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(`${ids.length} registro(s) atualizado(s)`);
+    if (deniedIfUnaffected(affected)) return;
+    const changed = (affected as unknown[]).length;
+    if (changed < ids.length) {
+      toast.warning(`${changed} de ${ids.length} atualizado(s). Verifique suas permissões.`);
+    } else {
+      toast.success(`${ids.length} registro(s) atualizado(s)`);
+    }
+
     setOpen(false);
     onDone();
   };

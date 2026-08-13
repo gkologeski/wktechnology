@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -198,11 +200,17 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     // também grava o vínculo estruturado.
     if (field === "company_name") patch.company_id = companyId;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).update(patch).eq("id", row.id);
+    const { data: affected, error } = await (supabase as any)
+      .from(table)
+      .update(patch)
+      .eq("id", row.id)
+      .select("id");
     if (error) {
       toast.error(error.message);
       return;
     }
+    if (deniedIfUnaffected(affected)) return;
+
     toast.success("Empresa vinculada");
     setValue(name);
     setEditing(null);
@@ -800,15 +808,17 @@ function CompanyFieldAll({
     const toSave = val.name.trim() || null;
     if (toSave === (initial || null)) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { data: affected, error } = await (supabase as any)
       .from(table)
       .update({ [field]: toSave })
-      .eq("id", rowId);
+      .eq("id", rowId)
+      .select("id");
     if (error) toast.error(error.message);
-    else {
+    else if (!deniedIfUnaffected(affected)) {
       toast.success("Atualizado");
       onSaved?.();
     }
+
   };
   return (
     <div onBlur={save}>
