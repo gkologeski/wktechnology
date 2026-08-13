@@ -339,11 +339,14 @@ export function QualificationPanel({
     try {
       const combined = reasonNote.trim() ? `${reasonValue} — ${reasonNote.trim()}` : reasonValue;
       // 1) atualiza status do lead
-      const { error: leadErr } = await supabase
+      const { data: updatedLead, error: leadErr } = await supabase
         .from("leads")
         .update({ status: "disqualified" })
-        .eq("id", entityId);
+        .eq("id", entityId)
+        .select("id");
       if (leadErr) throw new Error(leadErr.message);
+      if (!updatedLead || updatedLead.length === 0) throw new PermissionDeniedError();
+
       // 2) grava a qualificação com decision + motivo (obrigatório)
       if (activeId) {
         await save({
