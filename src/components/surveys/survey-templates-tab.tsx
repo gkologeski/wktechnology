@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { CrudSettings } from "@/components/crud-settings";
+import { Button } from "@/components/ui/button";
+import { ListChecks } from "lucide-react";
+import { SurveyQuestionsDialog } from "@/components/surveys/survey-questions-dialog";
 
 export function SurveyTemplatesTab() {
   const [ctx, setCtx] = useState<{ userId: string; workspaceId: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [questionsFor, setQuestionsFor] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -42,7 +46,8 @@ export function SurveyTemplatesTab() {
   if (!ctx) return <p className="text-sm text-muted-foreground">Carregando…</p>;
 
   return (
-    <CrudSettings
+    <>
+    <CrudSettings<{ id: string; name: string }>
       table="survey_templates"
       title="Modelos de pesquisa"
       description="Configure perguntas, canais e disparo automático de CSAT/NPS."
@@ -81,6 +86,16 @@ export function SurveyTemplatesTab() {
         { name: "is_active", label: "Ativo", type: "switch" },
         { name: "is_default", label: "Padrão", type: "switch" },
       ]}
+      rowActions={(row) => (
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 gap-1.5 text-xs"
+          onClick={() => setQuestionsFor({ id: row.id, name: row.name })}
+        >
+          <ListChecks className="h-3.5 w-3.5" aria-hidden /> Perguntas
+        </Button>
+      )}
       columns={[
         { key: "name", label: "Nome" },
         { key: "kind", label: "Tipo" },
@@ -92,5 +107,11 @@ export function SurveyTemplatesTab() {
         },
       ]}
     />
+    <SurveyQuestionsDialog
+      open={!!questionsFor}
+      onOpenChange={(v) => !v && setQuestionsFor(null)}
+      template={questionsFor}
+    />
+    </>
   );
 }
