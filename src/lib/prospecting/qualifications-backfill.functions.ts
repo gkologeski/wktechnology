@@ -38,7 +38,7 @@ export const backfillQualificationActivities = createServerFn({ method: "POST" }
 
     const { data: admin, error: adminErr } = await supabaseAdmin
       .from("platform_admins")
-      .select("user_id")
+      .select(sel("user_id"))
       .eq("user_id", context.userId)
       .maybeSingle();
     if (adminErr) throw new Error(adminErr.message);
@@ -47,7 +47,9 @@ export const backfillQualificationActivities = createServerFn({ method: "POST" }
     const { data: quals, error } = await supabaseAdmin
       .from("prospecting_qualifications")
       .select(
-        "id, owner_id, questionnaire_id, entity, entity_id, answers, score, decision, decision_reason, qualified_at, created_at",
+        sel(
+          "id, owner_id, questionnaire_id, entity, entity_id, answers, score, decision, decision_reason, qualified_at, created_at",
+        ),
       )
       .neq("decision", "pending")
       .order("created_at", { ascending: true });
@@ -65,7 +67,7 @@ export const backfillQualificationActivities = createServerFn({ method: "POST" }
         if (!questions) {
           const { data: qs } = await supabaseAdmin
             .from("prospecting_questions")
-            .select(QUESTION_COLUMNS)
+            .select(sel(QUESTION_COLUMNS))
             .eq("questionnaire_id", q.questionnaire_id);
           questions = (qs ?? []) as unknown[];
           questionsCache.set(q.questionnaire_id, questions);
@@ -78,7 +80,7 @@ export const backfillQualificationActivities = createServerFn({ method: "POST" }
         if (q.entity === "lead") {
           const { data: lead } = await supabaseAdmin
             .from("leads")
-            .select("workspace_id, company_id, converted_contact_id")
+            .select(sel("workspace_id, company_id, converted_contact_id"))
             .eq("id", q.entity_id)
             .maybeSingle();
           const l = lead as {
@@ -92,7 +94,7 @@ export const backfillQualificationActivities = createServerFn({ method: "POST" }
         } else {
           const { data: contact } = await supabaseAdmin
             .from("contacts")
-            .select("workspace_id, company_id")
+            .select(sel("workspace_id, company_id"))
             .eq("id", q.entity_id)
             .maybeSingle();
           const c = contact as { workspace_id?: string | null; company_id?: string | null } | null;
