@@ -311,7 +311,8 @@ export function QualificationPanel({
       qc.invalidateQueries({ queryKey: ["qualification-entity-records", entityId] });
       onDecided?.("qualified");
     } catch (e) {
-      toast.error((e as Error).message);
+      if (!handlePermissionError(e)) toast.error((e as Error).message);
+
     } finally {
       setQualifying(false);
     }
