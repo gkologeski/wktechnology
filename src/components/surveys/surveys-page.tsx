@@ -146,29 +146,49 @@ export function SurveysPage() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between gap-3">
           <div>
-            <CardTitle>Pesquisas pós-resolução</CardTitle>
+            <CardTitle>Pesquisas</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Geradas automaticamente quando um ticket é resolvido ou fechado. Envie o link ao
-              cliente ou crie uma pesquisa avulsa.
+              Modelos de CSAT e NPS (com disparo automático em tickets), questionários de vendas e
+              formulários livres. Todas podem ser respondidas na timeline das entidades.
             </p>
           </div>
-          <Button size="sm" onClick={() => setNewOpen(true)}>
+          <Button size="sm" onClick={() => setTypePickerOpen(true)}>
             <Plus className="h-4 w-4 mr-1" /> Nova pesquisa
           </Button>
         </CardHeader>
         <CardContent>
-          <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as SurveyKindTab)}>
             <TabsList>
               <TabsTrigger value="csat">CSAT</TabsTrigger>
               <TabsTrigger value="nps">NPS</TabsTrigger>
-              <TabsTrigger value="templates">Modelos</TabsTrigger>
+              <TabsTrigger value="vendas">Vendas</TabsTrigger>
+              <TabsTrigger value="livre">Livre</TabsTrigger>
             </TabsList>
-            <TabsContent value="templates" className="mt-4">
-              <SurveyTemplatesTab />
+            <TabsContent value="csat" className="mt-4">
+              <SurveyTemplatesTab kind="csat" />
+            </TabsContent>
+            <TabsContent value="nps" className="mt-4">
+              <SurveyTemplatesTab kind="nps" />
+            </TabsContent>
+            <TabsContent value="vendas" className="mt-4">
+              <QuestionnairesTab />
+            </TabsContent>
+            <TabsContent value="livre" className="mt-4">
+              <SurveyTemplatesTab kind="form" />
             </TabsContent>
           </Tabs>
 
-          {tab !== "templates" && (
+          {isResults && (
+            <div className="mt-6 flex items-center justify-between gap-3">
+              <p className="text-sm font-medium">Respostas recebidas</p>
+              <Button variant="outline" size="sm" onClick={() => setNewOpen(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Enviar para um ticket
+              </Button>
+            </div>
+          )}
+
+          {isResults && (
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
               <Stat label="Convites" value={String(stats.total)} />
               <Stat label="Respondidas" value={String(stats.answered)} />
