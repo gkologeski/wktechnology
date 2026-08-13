@@ -155,8 +155,7 @@ export const saveQualification = createServerFn({ method: "POST" })
 
     const decided = data.decision && data.decision !== "pending";
     // Qualificado/agendado somam o score; desqualificado/nutrição zeram a parcela.
-    const contribution =
-      data.decision === "qualified" || data.decision === "scheduled" ? score : 0;
+    const contribution = data.decision === "qualified" || data.decision === "scheduled" ? score : 0;
 
     const afterDecision = async () => {
       if (!decided) return;
