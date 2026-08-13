@@ -1,7 +1,11 @@
 // Selo da faixa de perfil do lead (Fora / Parcial / Dentro do ICP).
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { leadScoreBand, leadScoreBandLabel, type LeadScoreBand } from "@/lib/prospecting/lead-score";
+import {
+  leadScoreBand,
+  leadScoreBandLabel,
+  type LeadScoreBand,
+} from "@/lib/prospecting/lead-score";
 
 const BAND_CLASS: Record<LeadScoreBand, string> = {
   out: "border-destructive/40 text-destructive",

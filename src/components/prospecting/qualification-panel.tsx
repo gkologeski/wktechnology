@@ -74,7 +74,6 @@ import { useLeadStages } from "@/lib/leads/stages";
 import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
 
-
 type Entity = "lead";
 
 const ICP_LABEL: Record<string, string> = {
@@ -329,7 +328,6 @@ export function QualificationPanel({
       if (leadErr) throw new Error(leadErr.message);
       if (!updated || updated.length === 0) throw new PermissionDeniedError();
 
-
       toast.success("Lead qualificado.");
       qc.invalidateQueries({
         queryKey: ["prospecting", "qualifications", entity, entityId],
@@ -340,7 +338,6 @@ export function QualificationPanel({
       onDecided?.("qualified");
     } catch (e) {
       if (!handlePermissionError(e)) toast.error((e as Error).message);
-
     } finally {
       setQualifying(false);
     }
@@ -400,7 +397,6 @@ export function QualificationPanel({
       onDecided?.("disqualified");
     } catch (e) {
       if (!handlePermissionError(e)) toast.error((e as Error).message);
-
     } finally {
       setDisqualifying(false);
     }
@@ -458,8 +454,8 @@ export function QualificationPanel({
           ) : (
             <>
               Nenhum questionário de qualificação disponível para você. Peça ao administrador do
-              workspace para ativar um questionário em{" "}
-              <strong>Prospecção → Questionários</strong> ou liberar seu acesso.
+              workspace para ativar um questionário em <strong>Prospecção → Questionários</strong>{" "}
+              ou liberar seu acesso.
             </>
           )}
         </CardContent>
@@ -535,9 +531,7 @@ export function QualificationPanel({
             </div>
             {icpFit.data && icpFit.data.criteriaCount > 0 ? (
               <div className="text-right">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Fit ICP
-                </p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Fit ICP</p>
                 <Badge variant={ICP_BADGE[icpFit.data.level]} className="mt-0.5">
                   {ICP_LABEL[icpFit.data.level]}
                   {icpFit.data.percent != null ? ` · ${icpFit.data.percent}%` : ""}

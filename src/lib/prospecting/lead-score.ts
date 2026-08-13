@@ -16,11 +16,12 @@ export const LEAD_SCORE_MAX = QUESTIONNAIRE_MAX_POINTS + ICP_MAX_POINTS; // 85
 
 export type LeadScoreBand = "out" | "partial" | "ideal";
 
-export const LEAD_SCORE_BANDS: { band: LeadScoreBand; min: number; max: number; label: string }[] = [
-  { band: "out", min: 0, max: 39, label: "Fora do ICP" },
-  { band: "partial", min: 40, max: 59, label: "Parcialmente no ICP" },
-  { band: "ideal", min: 60, max: LEAD_SCORE_MAX, label: "Dentro do ICP" },
-];
+export const LEAD_SCORE_BANDS: { band: LeadScoreBand; min: number; max: number; label: string }[] =
+  [
+    { band: "out", min: 0, max: 39, label: "Fora do ICP" },
+    { band: "partial", min: 40, max: 59, label: "Parcialmente no ICP" },
+    { band: "ideal", min: 60, max: LEAD_SCORE_MAX, label: "Dentro do ICP" },
+  ];
 
 export function leadScoreBand(total: number): LeadScoreBand {
   if (total >= 60) return "ideal";
