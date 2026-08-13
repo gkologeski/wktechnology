@@ -94,9 +94,15 @@ export const getSurveyForm = createServerFn({ method: "POST" })
       if (!tpl) throw new Error("Modelo de pesquisa não encontrado.");
       return {
         source: data.source,
+        kind: (tpl.kind ?? "form") as string,
         id: tpl.id,
         name: tpl.name,
         description: tpl.description ?? null,
+        sales: null as null | {
+          pass_threshold: number;
+          questions: Array<Record<string, unknown>>;
+        },
+
         questions: (rows ?? []).map(
           (r) =>
             ({
