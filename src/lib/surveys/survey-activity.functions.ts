@@ -98,10 +98,9 @@ export const getSurveyForm = createServerFn({ method: "POST" })
         id: tpl.id,
         name: tpl.name,
         description: tpl.description ?? null,
-        sales: null as null | {
-          pass_threshold: number;
-          questions: Array<Record<string, unknown>>;
-        },
+        pass_threshold: null as number | null,
+        scoring: [] as SalesScoreQuestion[],
+
 
         questions: (rows ?? []).map(
           (r) =>
