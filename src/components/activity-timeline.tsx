@@ -113,6 +113,11 @@ export function ActivityTimeline({
     },
   });
 
+  // Pin de rascunho no ícone de WhatsApp da barra de ações.
+  const hasWhatsAppDraft = useHasMessageDraft({
+    scope: { channel: "whatsapp", contactId: target.contactId, to: target.phone ?? "" },
+  });
+
   // Ordem reorganizável das ações (persistida em localStorage)
   const [order, setOrder] = useState<OrderState>(() => loadOrder());
   const [dragKey, setDragKey] = useState<string | null>(null);
@@ -805,7 +810,12 @@ export function ActivityTimeline({
           a.kind === "create" && a.disabled ? "opacity-50 cursor-not-allowed" : ""
         } ${isDragging ? "opacity-40" : ""}`}
       >
-        <MessageDraftPin show={a.kind === "create" && a.value === "email" && hasEmailDraft}>
+        <MessageDraftPin
+          show={
+            a.kind === "create" &&
+            ((a.value === "email" && hasEmailDraft) || (a.value === "whatsapp" && hasWhatsAppDraft))
+          }
+        >
           <span
             className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
               active
