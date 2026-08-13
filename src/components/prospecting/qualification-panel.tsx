@@ -35,6 +35,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { listQuestionnaires, getQuestionnaire } from "@/lib/prospecting/questionnaires.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { Skeleton } from "@/components/ui/skeleton";
+import { QUESTIONNAIRES_CREATE, asKeys } from "@/lib/prospecting/permission-keys";
 import {
   computeQualificationScore,
   computeQualificationMaxScore,
@@ -101,10 +104,16 @@ export function QualificationPanel({
   const listLossReasons = useServerFn(getDealLossReasons);
   const qc = useQueryClient();
 
-  const { data: questionnaires } = useQuery({
+  const {
+    data: questionnaires,
+    isLoading: loadingQuestionnaires,
+    isError: questionnairesError,
+  } = useQuery({
     queryKey: ["prospecting", "questionnaires"],
     queryFn: () => listQ(),
   });
+  const { canAny } = usePermissions();
+  const canCreateQuestionnaire = canAny(asKeys(QUESTIONNAIRES_CREATE));
 
   const enabled = (questionnaires ?? []).filter((q) => q.enabled);
   const [selectedId, setSelectedId] = useState<string | null>(preselectedQuestionnaireId ?? null);
@@ -415,8 +424,25 @@ export function QualificationPanel({
   if (!enabled.length) {
     return (
       <Card>
-        <CardContent className="pt-6 text-sm text-muted-foreground">
-          Nenhum questionário ativo. Crie um em <strong>Prospecção → Questionários</strong>.
+        <CardContent className="pt-6 text-sm text-muted-foreground" aria-live="polite">
+          {loadingQuestionnaires ? (
+            <Skeleton className="h-5 w-64" />
+          ) : questionnairesError ? (
+            <>
+              Não foi possível carregar os questionários de qualificação. Tente novamente em
+              instantes.
+            </>
+          ) : canCreateQuestionnaire ? (
+            <>
+              Nenhum questionário ativo. Crie um em <strong>Prospecção → Questionários</strong>.
+            </>
+          ) : (
+            <>
+              Nenhum questionário de qualificação disponível para você. Peça ao administrador do
+              workspace para ativar um questionário em{" "}
+              <strong>Prospecção → Questionários</strong> ou liberar seu acesso.
+            </>
+          )}
         </CardContent>
       </Card>
     );

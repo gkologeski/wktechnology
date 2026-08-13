@@ -45,6 +45,8 @@ import {
 } from "@/lib/prospecting/score";
 import { QualificationQuestionInput } from "@/components/prospecting/qualification-question-input";
 import { getLeadIcpFit } from "@/lib/scoring/icp.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { QUESTIONNAIRES_CREATE, asKeys } from "@/lib/prospecting/permission-keys";
 import {
   QualificationEntityBlocks,
   useQualificationEntityFields,
@@ -105,6 +107,9 @@ export function SurveyActivityDialog({
     queryFn: () => listFn(),
     enabled: open,
   });
+
+  const { canAny } = usePermissions();
+  const canCreateSurvey = canAny(asKeys(QUESTIONNAIRES_CREATE));
 
   const form = useQuery({
     queryKey: ["survey-activity", "form", selection?.source, selection?.id],
@@ -297,7 +302,9 @@ export function SurveyActivityDialog({
                 <p className="text-sm text-muted-foreground">Escolha o tipo primeiro.</p>
               ) : options.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Nenhuma pesquisa ativa deste tipo. Crie uma em Pesquisas.
+                  {canCreateSurvey
+                    ? "Nenhuma pesquisa ativa deste tipo. Crie uma em Pesquisas."
+                    : "Nenhuma pesquisa ativa deste tipo disponível para você. Peça ao administrador do workspace para ativar uma pesquisa ou liberar seu acesso."}
                 </p>
               ) : (
                 <Select
