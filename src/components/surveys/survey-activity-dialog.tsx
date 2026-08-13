@@ -36,6 +36,14 @@ import {
 import type { RelatedKey } from "@/components/activity/timeline-shared";
 import type { SurveyKindTab } from "@/components/surveys/survey-type-picker-dialog";
 import { parseFieldLayout } from "@/lib/prospecting/field-layout";
+import { Progress } from "@/components/ui/progress";
+import {
+  computeQualificationScore,
+  computeQualificationMaxScore,
+  scorePercent,
+  type ScoreQuestion,
+} from "@/lib/prospecting/score";
+import { QualificationQuestionInput } from "@/components/prospecting/qualification-question-input";
 import {
   QualificationEntityBlocks,
   useQualificationEntityFields,
