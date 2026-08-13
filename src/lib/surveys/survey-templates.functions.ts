@@ -9,7 +9,10 @@ const QuestionSchema = z.object({
   label: z.string().min(1).max(300),
   help_text: z.string().max(500).optional().nullable(),
   type: z.string().min(2).max(40),
-  options: z.array(z.object({ label: z.string().min(1).max(200) })).max(30).default([]),
+  options: z
+    .array(z.object({ label: z.string().min(1).max(200) }))
+    .max(30)
+    .default([]),
   settings: z
     .object({
       min: z.number().optional().nullable(),
@@ -87,9 +90,7 @@ export const saveSurveyTemplateQuestions = createServerFn({ method: "POST" })
           .eq("id", q.id);
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await supabase
-          .from("survey_template_questions")
-          .insert(base as never);
+        const { error } = await supabase.from("survey_template_questions").insert(base as never);
         if (error) throw new Error(error.message);
       }
     }

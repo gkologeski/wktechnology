@@ -112,7 +112,9 @@ export const getSurveyForm = createServerFn({ method: "POST" })
         .maybeSingle(),
       context.supabase
         .from("prospecting_questions")
-        .select("id, label, help_text, type, options, required, position, weight, text_points, text_min_chars")
+        .select(
+          "id, label, help_text, type, options, required, position, weight, text_points, text_min_chars",
+        )
         .eq("questionnaire_id", data.source_id)
         .order("position", { ascending: true }),
     ]);

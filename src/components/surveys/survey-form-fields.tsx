@@ -94,10 +94,7 @@ export function SurveyField({
       }
       case "dropdown":
         return (
-          <Select
-            value={typeof value === "string" ? value : ""}
-            onValueChange={(v) => onChange(v)}
-          >
+          <Select value={typeof value === "string" ? value : ""} onValueChange={(v) => onChange(v)}>
             <SelectTrigger id={fieldId}>
               <SelectValue placeholder="Selecione…" />
             </SelectTrigger>
@@ -136,8 +133,12 @@ export function SurveyField({
               })}
             </div>
             <div className="flex justify-between text-[11px] text-muted-foreground">
-              <span>{settings.min_label ?? (question.type === "nps" ? "Não recomendaria" : "")}</span>
-              <span>{settings.max_label ?? (question.type === "nps" ? "Recomendaria muito" : "")}</span>
+              <span>
+                {settings.min_label ?? (question.type === "nps" ? "Não recomendaria" : "")}
+              </span>
+              <span>
+                {settings.max_label ?? (question.type === "nps" ? "Recomendaria muito" : "")}
+              </span>
             </div>
             {question.type === "nps" && current != null && (
               <p className="text-[11px] text-muted-foreground capitalize">{npsBand(current)}</p>

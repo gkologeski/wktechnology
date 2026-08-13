@@ -472,9 +472,7 @@ export function ActivityTimeline({
       .then((rows) => {
         if (cancelled) return;
         setSurveyMeta(
-          new Map(
-            (rows as SurveyResponseSummary[]).map((r) => [r.activity_id, r] as const),
-          ),
+          new Map((rows as SurveyResponseSummary[]).map((r) => [r.activity_id, r] as const)),
         );
       })
       .catch(() => undefined);
@@ -482,7 +480,6 @@ export function ActivityTimeline({
       cancelled = true;
     };
   }, [items]);
-
 
   // Re-sincroniza silenciosamente quando a janela volta a focar ou um modal fecha
   useRefreshCallback(() => {

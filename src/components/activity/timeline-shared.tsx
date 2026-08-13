@@ -2,7 +2,24 @@ import { type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { type ActivityType } from "@/lib/crm";
 import { toast } from "sonner";
-import { StickyNote, ListTodo, Phone, Mail, CalendarDays, MessageSquare, MessageCircle, Linkedin, Inbox, ClipboardList, Workflow, FileText, FileSpreadsheet, Image as ImageIcon, Archive, File as FileIcon } from "lucide-react";
+import {
+  StickyNote,
+  ListTodo,
+  Phone,
+  Mail,
+  CalendarDays,
+  MessageSquare,
+  MessageCircle,
+  Linkedin,
+  Inbox,
+  ClipboardList,
+  Workflow,
+  FileText,
+  FileSpreadsheet,
+  Image as ImageIcon,
+  Archive,
+  File as FileIcon,
+} from "lucide-react";
 
 export type EmailMeta = {
   direction: "inbound" | "outbound" | null;
@@ -63,17 +80,34 @@ export type RelatedKey =
   | "related_deal_id"
   | "related_ticket_id";
 
-export type Attachment = { path: string; name: string; size: number; type: string; bucket?: string };
+export type Attachment = {
+  path: string;
+  name: string;
+  size: number;
+  type: string;
+  bucket?: string;
+};
 
 export type TeamMember = { id: string; name: string };
 
-export type CalendarAttendee = { email?: string; displayName?: string; organizer?: boolean; self?: boolean };
+export type CalendarAttendee = {
+  email?: string;
+  displayName?: string;
+  organizer?: boolean;
+  self?: boolean;
+};
 
 export function normalizeTimelineEmail(email: string | null | undefined) {
   return (email ?? "").trim().toLowerCase();
 }
 
-export type TaskDuePreset = "custom" | "today" | "tomorrow" | "next_week" | "next_month" | "in_3_months";
+export type TaskDuePreset =
+  | "custom"
+  | "today"
+  | "tomorrow"
+  | "next_week"
+  | "next_month"
+  | "in_3_months";
 
 export const TASK_DUE_PRESET_LABELS: Record<TaskDuePreset, string> = {
   custom: "Personalizada",
@@ -110,7 +144,7 @@ export function computeDuePreset(preset: TaskDuePreset, baseIso: string | null):
   }
   if (preset === "next_week") {
     const day = target.getDay(); // 0=Sun..6=Sat
-    const daysUntilNextMonday = day === 1 ? 7 : ((8 - day) % 7) || 7;
+    const daysUntilNextMonday = day === 1 ? 7 : (8 - day) % 7 || 7;
     target.setDate(target.getDate() + daysUntilNextMonday);
     return target.toISOString();
   }
@@ -161,7 +195,8 @@ export function calendarEventTargetsEmails(
     if (attendeeEmails.has(email) && isExternalTarget(email)) return true;
   }
 
-  const relatedContactId = typeof event.related_contact_id === "string" ? event.related_contact_id : null;
+  const relatedContactId =
+    typeof event.related_contact_id === "string" ? event.related_contact_id : null;
   const relatedEmail = relatedContactId ? contactEmailById.get(relatedContactId) : null;
   return (
     !!relatedContactId &&
@@ -308,7 +343,10 @@ export function loadOrder(): OrderState {
 export function initialsFromEmail(name: string | null, email: string | null): string {
   const src = (name || email || "?").trim();
   if (!src) return "?";
-  const parts = src.replace(/@.*$/, "").split(/[.\s_-]+/).filter(Boolean);
+  const parts = src
+    .replace(/@.*$/, "")
+    .split(/[.\s_-]+/)
+    .filter(Boolean);
   if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
   return src.slice(0, 2).toUpperCase();
 }
@@ -331,10 +369,26 @@ export function escapeHtmlText(s: string): string {
 export function attachmentIcon(filename: string, contentType?: string) {
   const ext = filename.toLowerCase().split(".").pop() ?? "";
   const ct = (contentType ?? "").toLowerCase();
-  if (ct.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext)) return ImageIcon;
+  if (ct.startsWith("image/") || ["png", "jpg", "jpeg", "gif", "webp", "svg"].includes(ext))
+    return ImageIcon;
   if (ct === "application/pdf" || ext === "pdf") return FileText;
-  if (["xls", "xlsx", "csv", "ods"].includes(ext) || ct.includes("spreadsheet") || ct.includes("excel")) return FileSpreadsheet;
-  if (["zip", "rar", "7z", "tar", "gz"].includes(ext) || ct.includes("zip") || ct.includes("compressed")) return Archive;
-  if (["doc", "docx", "txt", "rtf", "odt"].includes(ext) || ct.includes("word") || ct.startsWith("text/")) return FileText;
+  if (
+    ["xls", "xlsx", "csv", "ods"].includes(ext) ||
+    ct.includes("spreadsheet") ||
+    ct.includes("excel")
+  )
+    return FileSpreadsheet;
+  if (
+    ["zip", "rar", "7z", "tar", "gz"].includes(ext) ||
+    ct.includes("zip") ||
+    ct.includes("compressed")
+  )
+    return Archive;
+  if (
+    ["doc", "docx", "txt", "rtf", "odt"].includes(ext) ||
+    ct.includes("word") ||
+    ct.startsWith("text/")
+  )
+    return FileText;
   return FileIcon;
 }

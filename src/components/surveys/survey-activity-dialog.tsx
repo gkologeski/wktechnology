@@ -160,7 +160,12 @@ export function SurveyActivityDialog({
             ) : available.isError ? (
               <p className="text-sm text-destructive" role="alert">
                 Não foi possível carregar as pesquisas.{" "}
-                <Button variant="link" size="sm" className="h-auto p-0" onClick={() => void available.refetch()}>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0"
+                  onClick={() => void available.refetch()}
+                >
                   Tentar novamente
                 </Button>
               </p>
@@ -220,7 +225,12 @@ export function SurveyActivityDialog({
               ) : form.isError ? (
                 <p className="text-sm text-destructive" role="alert">
                   Erro ao carregar o formulário.{" "}
-                  <Button variant="link" size="sm" className="h-auto p-0" onClick={() => void form.refetch()}>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0"
+                    onClick={() => void form.refetch()}
+                  >
                     Tentar novamente
                   </Button>
                 </p>

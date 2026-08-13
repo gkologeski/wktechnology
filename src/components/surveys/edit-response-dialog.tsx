@@ -52,13 +52,15 @@ export function EditResponseDialog({
     try {
       const patch: Record<string, unknown> = { score: n, comment: comment.trim() || null };
       if (n !== null && !survey.responded_at) patch.responded_at = new Date().toISOString();
-      const { error } = await (supabase as unknown as {
-        from: (t: string) => {
-          update: (v: unknown) => {
-            eq: (c: string, v: string) => Promise<{ error: { message: string } | null }>;
+      const { error } = await (
+        supabase as unknown as {
+          from: (t: string) => {
+            update: (v: unknown) => {
+              eq: (c: string, v: string) => Promise<{ error: { message: string } | null }>;
+            };
           };
-        };
-      })
+        }
+      )
         .from("survey_responses")
         .update(patch)
         .eq("id", survey.id);

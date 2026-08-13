@@ -52,14 +52,16 @@ function toDraft(row: Record<string, unknown>): Draft {
     type: String(row.type ?? "short_text"),
     options: opts
       .map((o) =>
-        typeof o === "string" ? o : o && typeof o === "object" && "label" in o ? String((o as { label: unknown }).label) : "",
+        typeof o === "string"
+          ? o
+          : o && typeof o === "object" && "label" in o
+            ? String((o as { label: unknown }).label)
+            : "",
       )
       .filter(Boolean)
       .join("\n"),
     settings:
-      row.settings && typeof row.settings === "object"
-        ? (row.settings as SurveyFieldSettings)
-        : {},
+      row.settings && typeof row.settings === "object" ? (row.settings as SurveyFieldSettings) : {},
     required: !!row.required,
   };
 }
@@ -91,7 +93,8 @@ export function SurveyQuestionsDialog({
   const save = useMutation({
     mutationFn: async () => {
       if (!template) throw new Error("Modelo inválido.");
-      if (drafts.some((d) => !d.label.trim())) throw new Error("Todas as perguntas precisam de um enunciado.");
+      if (drafts.some((d) => !d.label.trim()))
+        throw new Error("Todas as perguntas precisam de um enunciado.");
       return saveFn({
         data: {
           survey_template_id: template.id,
@@ -150,7 +153,12 @@ export function SurveyQuestionsDialog({
         ) : query.isError ? (
           <p className="text-sm text-destructive" role="alert">
             Erro ao carregar perguntas.{" "}
-            <Button variant="link" size="sm" className="h-auto p-0" onClick={() => void query.refetch()}>
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0"
+              onClick={() => void query.refetch()}
+            >
               Tentar novamente
             </Button>
           </p>
@@ -162,7 +170,10 @@ export function SurveyQuestionsDialog({
               </p>
             )}
             {drafts.map((d, i) => (
-              <div key={d.id ?? `new-${i}`} className="space-y-2 rounded-lg border border-border/60 p-3">
+              <div
+                key={d.id ?? `new-${i}`}
+                className="space-y-2 rounded-lg border border-border/60 p-3"
+              >
                 <div className="flex items-start gap-2">
                   <div className="flex-1 space-y-1.5">
                     <Label className="text-xs" htmlFor={`q-label-${i}`}>
