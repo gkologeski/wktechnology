@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPlatformStatus } from "@/lib/platform-observability.functions";
 import { rescheduleLovableCron } from "@/lib/admin-cron.functions";
+import { backfillQualificationActivities } from "@/lib/prospecting/qualifications-backfill.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ function AdminStatusPage() {
   const { isPlatformAdmin, loading } = useIsPlatformAdmin();
   const fn = useServerFn(getPlatformStatus);
   const reschedule = useServerFn(rescheduleLovableCron);
+  const backfill = useServerFn(backfillQualificationActivities);
   const qc = useQueryClient();
   const { data, isLoading, error } = useQuery({
     queryKey: ["platform-status"],
@@ -43,6 +45,16 @@ function AdminStatusPage() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const backfillMut = useMutation({
+    mutationFn: () => backfill(),
+    onSuccess: (r: { total: number; created: number; existing: number; failed: number }) => {
+      toast.success(
+        `Backfill concluído: ${r.created} criada(s), ${r.existing} já existia(m), ${r.failed} falha(s) de ${r.total}.`,
+      );
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
 
   if (loading) return <div className="p-6">Carregando…</div>;
   if (!isPlatformAdmin) return <div className="p-6">Acesso restrito a super-admins.</div>;
@@ -93,6 +105,26 @@ function AdminStatusPage() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <CardTitle>Manutenção</CardTitle>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => backfillMut.mutate()}
+            disabled={backfillMut.isPending}
+          >
+            {backfillMut.isPending
+              ? "Executando…"
+              : "Backfill de qualificações na timeline"}
+          </Button>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          Cria a atividade "Pesquisa" na timeline para qualificações concluídas antes do
+          registro automático. A ação é idempotente: executar de novo não duplica registros.
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>Cron Jobs</CardTitle>
           <Button
             size="sm"
@@ -102,6 +134,7 @@ function AdminStatusPage() {
             {rescheduleMut.isPending ? "Reagendando…" : "Reagendar crons"}
           </Button>
         </CardHeader>
+
         <CardContent>
           {error ? (
             <p className="text-sm text-destructive">
