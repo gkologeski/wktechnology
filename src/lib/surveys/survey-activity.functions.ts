@@ -39,7 +39,7 @@ export type SurveyFormQuestion = {
   position: number;
 };
 
-/** Pesquisas disponíveis para responder, agrupadas por origem. */
+/** Pesquisas disponíveis para responder, agrupadas por tipo. */
 export const listAvailableSurveys = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -50,16 +50,25 @@ export const listAvailableSurveys = createServerFn({ method: "GET" })
         .order("name", { ascending: true }),
       context.supabase
         .from("prospecting_questionnaires")
-        .select("id, name, description, framework, enabled, updated_at")
+        .select("id, name, description, framework, enabled, is_template, updated_at")
         .order("name", { ascending: true }),
     ]);
     if (templates.error) throw new Error(templates.error.message);
     if (questionnaires.error) throw new Error(questionnaires.error.message);
+    const active = (templates.data ?? []).filter((t) => t.is_active !== false);
+    const sales = (questionnaires.data ?? []).filter((q) => q.enabled !== false);
     return {
-      templates: (templates.data ?? []).filter((t) => t.is_active !== false),
-      questionnaires: (questionnaires.data ?? []).filter((q) => q.enabled !== false),
+      /** Compatibilidade: todos os modelos de pesquisa ativos. */
+      templates: active,
+      questionnaires: sales,
+      csat: active.filter((t) => t.kind === "csat"),
+      nps: active.filter((t) => t.kind === "nps"),
+      free: active.filter((t) => t.kind === "form"),
+      salesModels: sales.filter((q) => q.is_template === true),
+      salesQuestionnaires: sales.filter((q) => q.is_template !== true),
     };
   });
+
 
 /** Perguntas do formulário de uma pesquisa. */
 export const getSurveyForm = createServerFn({ method: "POST" })
