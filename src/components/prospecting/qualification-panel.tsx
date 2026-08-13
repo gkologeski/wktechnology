@@ -475,7 +475,7 @@ export function QualificationPanel({
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardHeader className="flex flex-row items-start justify-between space-y-0">
           <div>
             <CardTitle className="text-base">Qualificação</CardTitle>
             <p className="text-xs text-muted-foreground mt-1">
@@ -483,61 +483,6 @@ export function QualificationPanel({
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-3">
-            <div className="text-right min-w-[200px]">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                Nota do lead
-              </p>
-              <p className="text-lg font-semibold leading-tight text-foreground">
-                {unified.total}
-                <span className="text-xs text-muted-foreground ml-1">
-                  de {LEAD_SCORE_MAX} ({unified.percent}%)
-                </span>
-              </p>
-              <Progress
-                value={unified.percent}
-                className="h-1.5 mt-1"
-                aria-label={`Nota do lead ${unified.total} de ${LEAD_SCORE_MAX}`}
-              />
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Questionário {unified.questionnairePoints}/{QUESTIONNAIRE_MAX_POINTS} · ICP{" "}
-                {unified.icpPoints}/{ICP_MAX_POINTS}
-                {unified.icpUnavailable ? " (sem critérios)" : ""}
-              </p>
-              <div className="mt-1 flex justify-end">
-                <LeadScoreBadge total={unified.total} />
-              </div>
-            </div>
-            <div className="text-right min-w-[150px]">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                Questionário
-              </p>
-              <p
-                className={`text-sm font-semibold leading-tight ${
-                  passesAuto ? "text-emerald-600" : "text-foreground"
-                }`}
-              >
-                {score}
-                {maxInfo.max > 0 ? (
-                  <span className="text-xs text-muted-foreground ml-1">
-                    de {maxInfo.max}
-                    {percent != null ? ` (${percent}%)` : ""}
-                  </span>
-                ) : null}
-              </p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
-                Corte {threshold}
-                {maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
-              </p>
-            </div>
-            {icpFit.data && icpFit.data.criteriaCount > 0 ? (
-              <div className="text-right">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Fit ICP</p>
-                <Badge variant={ICP_BADGE[icpFit.data.level]} className="mt-0.5">
-                  {ICP_LABEL[icpFit.data.level]}
-                  {icpFit.data.percent != null ? ` · ${icpFit.data.percent}%` : ""}
-                </Badge>
-              </div>
-            ) : null}
             {preselectedQuestionnaireId ? null : (
               <Select value={activeId ?? ""} onValueChange={setSelectedId}>
                 <SelectTrigger className="w-[200px]">
@@ -669,6 +614,67 @@ export function QualificationPanel({
                 placeholder="Anotações da conversa, próximos passos, etc."
               />
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Nota do lead
+                </p>
+                <p className="text-lg font-semibold leading-tight text-foreground">
+                  {unified.total}
+                  <span className="text-xs text-muted-foreground ml-1">
+                    de {LEAD_SCORE_MAX} ({unified.percent}%)
+                  </span>
+                </p>
+                <Progress
+                  value={unified.percent}
+                  className="h-1.5 mt-1"
+                  aria-label={`Nota do lead ${unified.total} de ${LEAD_SCORE_MAX}`}
+                />
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Questionário {unified.questionnairePoints}/{QUESTIONNAIRE_MAX_POINTS} · ICP{" "}
+                  {unified.icpPoints}/{ICP_MAX_POINTS}
+                  {unified.icpUnavailable ? " (sem critérios)" : ""}
+                </p>
+                <div className="mt-1 flex justify-start">
+                  <LeadScoreBadge total={unified.total} />
+                </div>
+              </div>
+              <div className="min-w-[150px]">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Questionário
+                </p>
+                <p
+                  className={`text-sm font-semibold leading-tight ${
+                    passesAuto ? "text-emerald-600" : "text-foreground"
+                  }`}
+                >
+                  {score}
+                  {maxInfo.max > 0 ? (
+                    <span className="text-xs text-muted-foreground ml-1">
+                      de {maxInfo.max}
+                      {percent != null ? ` (${percent}%)` : ""}
+                    </span>
+                  ) : null}
+                </p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  Corte {threshold}
+                  {maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
+                </p>
+              </div>
+              {icpFit.data && icpFit.data.criteriaCount > 0 ? (
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Fit ICP
+                  </p>
+                  <Badge variant={ICP_BADGE[icpFit.data.level]} className="mt-0.5">
+                    {ICP_LABEL[icpFit.data.level]}
+                    {icpFit.data.percent != null ? ` · ${icpFit.data.percent}%` : ""}
+                  </Badge>
+                </div>
+              ) : null}
+            </div>
+
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
