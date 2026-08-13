@@ -21,6 +21,11 @@ import {
 import { NewSurveyDialog } from "@/components/surveys/new-survey-dialog";
 import { EditResponseDialog } from "@/components/surveys/edit-response-dialog";
 import { SurveyTemplatesTab } from "@/components/surveys/survey-templates-tab";
+import {
+  SurveyTypePickerDialog,
+  type SurveyKindTab,
+} from "@/components/surveys/survey-type-picker-dialog";
+import { QuestionnairesTab } from "@/components/prospecting/questionnaires-tab";
 
 type Survey = {
   id: string;
@@ -135,6 +140,8 @@ export function SurveysPage() {
       .sort((a, b) => b.answered - a.answered);
   }, [filtered, ticketAgents, agentNames]);
 
+  const isResults = tab === "csat" || tab === "nps";
+
   function copyLink(token: string) {
     const url = `${getPublicAppUrl()}/survey/${token}`;
     navigator.clipboard.writeText(url);
@@ -206,7 +213,7 @@ export function SurveysPage() {
         </CardContent>
       </Card>
 
-      {tab !== "templates" && perAgent.length > 0 && (
+      {isResults && perAgent.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Por responsável</CardTitle>
@@ -236,7 +243,7 @@ export function SurveysPage() {
         </Card>
       )}
 
-      {tab !== "templates" && (
+      {isResults && (
         <Card>
           <CardContent className="p-0">
             <Table>
@@ -322,6 +329,11 @@ export function SurveysPage() {
         </Card>
       )}
 
+      <SurveyTypePickerDialog
+        open={typePickerOpen}
+        onOpenChange={setTypePickerOpen}
+        onSelect={(kind) => setTab(kind)}
+      />
       <NewSurveyDialog
         open={newOpen}
         onOpenChange={setNewOpen}
