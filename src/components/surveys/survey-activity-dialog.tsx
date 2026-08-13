@@ -182,7 +182,7 @@ export function SurveyActivityDialog({
   }, [options]);
 
   // Campos de entidades (só para pesquisas de vendas em leads).
-  const isSalesLead = kind === "vendas" && relatedKey === "lead_id";
+  const isSalesLead = kind === "vendas" && relatedKey === "related_lead_id";
   const fieldLayout = useMemo(
     () => (isSalesLead ? parseFieldLayout(form.data?.field_layout ?? null) : []),
     [isSalesLead, form.data],
