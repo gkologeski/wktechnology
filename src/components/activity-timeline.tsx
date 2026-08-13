@@ -1268,6 +1268,14 @@ export function ActivityTimeline({
         />
       )}
 
+      <SurveyActivityDialog
+        open={openAction === "survey"}
+        onOpenChange={(v) => !v && setOpenAction(null)}
+        relatedKey={relatedKey}
+        relatedId={relatedId}
+        onSaved={() => void load()}
+      />
+
       {/* Timeline rail */}
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border/60" />
@@ -1388,6 +1396,11 @@ export function ActivityTimeline({
                         })()}
                     </div>
                   </div>
+                  {a.type === "survey" &&
+                    (() => {
+                      const resp = surveyMeta.get(a.id);
+                      return resp ? <SurveyTimelineCard response={resp} /> : null;
+                    })()}
                   {a.type === "meeting" &&
                     (() => {
                       const meta = ((a as unknown as { attachments?: unknown }).attachments ??
