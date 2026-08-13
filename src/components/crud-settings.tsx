@@ -31,6 +31,7 @@ export function CrudSettings<T extends { id: string }>({
   columns,
   defaults,
   extraInsert,
+  rowActions,
 }: {
   table: string;
   title: string;
@@ -39,6 +40,8 @@ export function CrudSettings<T extends { id: string }>({
   columns: { key: string; label: string; render?: (r: T) => ReactNode }[];
   defaults?: Record<string, unknown>;
   extraInsert?: Record<string, unknown>;
+  /** Ações extras por linha (ex.: editar perguntas). */
+  rowActions?: (row: T) => ReactNode;
 }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<T | "new" | null>(null);
@@ -144,9 +147,19 @@ export function CrudSettings<T extends { id: string }>({
                 </div>
               ))}
             </div>
+            {rowActions && (
+              <div
+                className="flex items-center gap-1"
+                onClick={(e) => e.stopPropagation()}
+                role="presentation"
+              >
+                {rowActions(r)}
+              </div>
+            )}
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Excluir"
               onClick={(e) => {
                 e.stopPropagation();
                 remove(r.id);

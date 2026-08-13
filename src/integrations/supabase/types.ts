@@ -483,6 +483,65 @@ export type Database = {
           },
         ]
       }
+      activity_survey_responses: {
+        Row: {
+          activity_id: string
+          answers: Json
+          created_at: string
+          id: string
+          max_score: number | null
+          owner_id: string
+          responded_at: string
+          responded_by: string | null
+          score: number | null
+          source: string
+          source_id: string
+          source_name: string | null
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          activity_id: string
+          answers?: Json
+          created_at?: string
+          id?: string
+          max_score?: number | null
+          owner_id: string
+          responded_at?: string
+          responded_by?: string | null
+          score?: number | null
+          source: string
+          source_id: string
+          source_name?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          activity_id?: string
+          answers?: Json
+          created_at?: string
+          id?: string
+          max_score?: number | null
+          owner_id?: string
+          responded_at?: string
+          responded_by?: string | null
+          score?: number | null
+          source?: string
+          source_id?: string
+          source_name?: string | null
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_survey_responses_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: true
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ads_accounts: {
         Row: {
           access_token: string | null
@@ -16099,11 +16158,68 @@ export type Database = {
           },
         ]
       }
+      survey_template_questions: {
+        Row: {
+          created_at: string
+          help_text: string | null
+          id: string
+          label: string
+          options: Json
+          owner_id: string
+          position: number
+          required: boolean
+          settings: Json
+          survey_template_id: string
+          type: string
+          updated_at: string
+          workspace_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          help_text?: string | null
+          id?: string
+          label: string
+          options?: Json
+          owner_id: string
+          position?: number
+          required?: boolean
+          settings?: Json
+          survey_template_id: string
+          type?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          help_text?: string | null
+          id?: string
+          label?: string
+          options?: Json
+          owner_id?: string
+          position?: number
+          required?: boolean
+          settings?: Json
+          survey_template_id?: string
+          type?: string
+          updated_at?: string
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_template_questions_survey_template_id_fkey"
+            columns: ["survey_template_id"]
+            isOneToOne: false
+            referencedRelation: "survey_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_templates: {
         Row: {
           channel: string
           created_at: string
           delay_minutes: number
+          description: string | null
           id: string
           invite_body: string | null
           invite_subject: string | null
@@ -16113,6 +16229,7 @@ export type Database = {
           name: string
           owner_id: string
           question: string
+          scope: string
           trigger_event: string
           updated_at: string
           workspace_id: string
@@ -16121,6 +16238,7 @@ export type Database = {
           channel?: string
           created_at?: string
           delay_minutes?: number
+          description?: string | null
           id?: string
           invite_body?: string | null
           invite_subject?: string | null
@@ -16130,6 +16248,7 @@ export type Database = {
           name: string
           owner_id: string
           question: string
+          scope?: string
           trigger_event?: string
           updated_at?: string
           workspace_id: string
@@ -16138,6 +16257,7 @@ export type Database = {
           channel?: string
           created_at?: string
           delay_minutes?: number
+          description?: string | null
           id?: string
           invite_body?: string | null
           invite_subject?: string | null
@@ -16147,6 +16267,7 @@ export type Database = {
           name?: string
           owner_id?: string
           question?: string
+          scope?: string
           trigger_event?: string
           updated_at?: string
           workspace_id?: string
@@ -19121,6 +19242,7 @@ export type Database = {
         | "sms"
         | "postal_mail"
         | "linkedin_message"
+        | "survey"
       allocation_status: "active" | "paused" | "ended"
       app_role: "admin" | "manager" | "member"
       billing_interval: "week" | "month" | "quarter" | "year"
@@ -19417,6 +19539,7 @@ export const Constants = {
         "sms",
         "postal_mail",
         "linkedin_message",
+        "survey",
       ],
       allocation_status: ["active", "paused", "ended"],
       app_role: ["admin", "manager", "member"],

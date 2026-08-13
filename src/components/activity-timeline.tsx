@@ -90,6 +90,12 @@ import {
   openEmailAttachment,
 } from "./activity/timeline-shared";
 import { EmailTimelineItem } from "./activity/email-timeline-item";
+import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
+import {
+  SurveyTimelineCard,
+  type SurveyResponseSummary,
+} from "@/components/surveys/survey-timeline-card";
+import { getActivitySurveyResponses } from "@/lib/surveys/survey-activity.functions";
 
 // O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
 // usuário abre a ação de ligação pela primeira vez.
@@ -109,6 +115,8 @@ export function ActivityTimeline({
   // Metadados enriquecidos de e-mails (corpo, anexos, aberturas, cliques),
   // indexados pelo id da atividade correspondente.
   const [emailMeta, setEmailMeta] = useState<Map<string, EmailMeta>>(new Map());
+  // Respostas de pesquisas, indexadas pelo id da atividade do tipo "survey".
+  const [surveyMeta, setSurveyMeta] = useState<Map<string, SurveyResponseSummary>>(new Map());
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -451,6 +459,27 @@ export function ActivityTimeline({
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
+
+  // Carrega as respostas das atividades do tipo "pesquisa" exibidas na timeline.
+  useEffect(() => {
+    const ids = items.filter((a) => a.type === "survey").map((a) => a.id);
+    if (ids.length === 0) {
+      setSurveyMeta((prev) => (prev.size === 0 ? prev : new Map()));
+      return;
+    }
+    let cancelled = false;
+    void getActivitySurveyResponses({ data: { activity_ids: ids } })
+      .then((rows) => {
+        if (cancelled) return;
+        setSurveyMeta(
+          new Map((rows as SurveyResponseSummary[]).map((r) => [r.activity_id, r] as const)),
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
 
   // Re-sincroniza silenciosamente quando a janela volta a focar ou um modal fecha
   useRefreshCallback(() => {
@@ -1236,6 +1265,14 @@ export function ActivityTimeline({
         />
       )}
 
+      <SurveyActivityDialog
+        open={openAction === "survey"}
+        onOpenChange={(v) => !v && setOpenAction(null)}
+        relatedKey={relatedKey}
+        relatedId={relatedId}
+        onSaved={() => void load()}
+      />
+
       {/* Timeline rail */}
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-border/60" />
@@ -1356,6 +1393,11 @@ export function ActivityTimeline({
                         })()}
                     </div>
                   </div>
+                  {a.type === "survey" &&
+                    (() => {
+                      const resp = surveyMeta.get(a.id);
+                      return resp ? <SurveyTimelineCard response={resp} /> : null;
+                    })()}
                   {a.type === "meeting" &&
                     (() => {
                       const meta = ((a as unknown as { attachments?: unknown }).attachments ??

@@ -28,6 +28,7 @@ export const ACTIVITY_TYPES = [
   { value: "postal_mail", label: "Correio Postal" },
   { value: "linkedin_message", label: "LinkedIn" },
   { value: "whatsapp", label: "WhatsApp" },
+  { value: "survey", label: "Pesquisa" },
 ] as const;
 
 export type ActivityType = (typeof ACTIVITY_TYPES)[number]["value"];

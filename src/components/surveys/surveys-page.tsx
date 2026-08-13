@@ -173,16 +173,11 @@ export function SurveysPage() {
               {tab === "nps" ? (
                 <Stat label="NPS" value={stats.nps !== null ? `${stats.nps}` : "—"} />
               ) : (
-                <Stat
-                  label="Média (0–5)"
-                  value={stats.avg !== null ? stats.avg.toFixed(2) : "—"}
-                />
+                <Stat label="Média (0–5)" value={stats.avg !== null ? stats.avg.toFixed(2) : "—"} />
               )}
               <Stat
                 label="Taxa de resposta"
-                value={
-                  stats.total ? `${Math.round((stats.answered / stats.total) * 100)}%` : "—"
-                }
+                value={stats.total ? `${Math.round((stats.answered / stats.total) * 100)}%` : "—"}
               />
             </div>
           )}
@@ -275,9 +270,7 @@ export function SurveysPage() {
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
-                    <TableCell className="max-w-md truncate text-sm">
-                      {s.comment ?? "—"}
-                    </TableCell>
+                    <TableCell className="max-w-md truncate text-sm">{s.comment ?? "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {s.responded_at ? formatDateTime(s.responded_at) : "—"}
                     </TableCell>
