@@ -423,8 +423,25 @@ export function QualificationPanel({
   if (!enabled.length) {
     return (
       <Card>
-        <CardContent className="pt-6 text-sm text-muted-foreground">
-          Nenhum questionário ativo. Crie um em <strong>Prospecção → Questionários</strong>.
+        <CardContent className="pt-6 text-sm text-muted-foreground" aria-live="polite">
+          {loadingQuestionnaires ? (
+            <Skeleton className="h-5 w-64" />
+          ) : questionnairesError ? (
+            <>
+              Não foi possível carregar os questionários de qualificação. Tente novamente em
+              instantes.
+            </>
+          ) : canCreateQuestionnaire ? (
+            <>
+              Nenhum questionário ativo. Crie um em <strong>Prospecção → Questionários</strong>.
+            </>
+          ) : (
+            <>
+              Nenhum questionário de qualificação disponível para você. Peça ao administrador do
+              workspace para ativar um questionário em{" "}
+              <strong>Prospecção → Questionários</strong> ou liberar seu acesso.
+            </>
+          )}
         </CardContent>
       </Card>
     );
