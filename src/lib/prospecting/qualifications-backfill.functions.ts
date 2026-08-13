@@ -9,6 +9,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+/** Evita o parsing das strings de select no nível de tipos (typecheck lento). */
+const sel = (s: string): string => s;
+
 const QUESTION_COLUMNS = "id, type, weight, options, text_points, text_min_chars";
 
 type QualRow = {
