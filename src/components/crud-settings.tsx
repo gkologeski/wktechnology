@@ -32,6 +32,7 @@ export function CrudSettings<T extends { id: string }>({
   defaults,
   extraInsert,
   rowActions,
+  filter,
 }: {
   table: string;
   title: string;
@@ -42,23 +43,27 @@ export function CrudSettings<T extends { id: string }>({
   extraInsert?: Record<string, unknown>;
   /** Ações extras por linha (ex.: editar perguntas). */
   rowActions?: (row: T) => ReactNode;
+  /** Filtro de igualdade aplicado na listagem e replicado no insert. */
+  filter?: Record<string, string | number | boolean>;
 }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<T | "new" | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>({});
 
+  const filterKey = JSON.stringify(filter ?? {});
+
   const { data: rows = [] } = useQuery<T[]>({
-    queryKey: qk.crudList(table),
+    queryKey: [...qk.crudList(table), filterKey],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from(table)
-        .select("*")
-        .order("created_at", { ascending: false });
+      let q = (supabase as any).from(table).select("*");
+      for (const [k, v] of Object.entries(filter ?? {})) q = q.eq(k, v);
+      const { data, error } = await q.order("created_at", { ascending: false });
       if (error) throw error;
       return (data as T[]) ?? [];
     },
   });
+
 
   const invalidate = () => qc.invalidateQueries({ queryKey: qk.crudList(table) });
 
@@ -83,7 +88,7 @@ export function CrudSettings<T extends { id: string }>({
   };
 
   const save = async () => {
-    const payload: Record<string, unknown> = { ...(extraInsert ?? {}) };
+    const payload: Record<string, unknown> = { ...(extraInsert ?? {}), ...(filter ?? {}) };
     for (const f of fields) {
       let v = form[f.name];
       if (f.type === "json") {
