@@ -15,7 +15,7 @@ export function PageHeader({
 }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
-      <div>
+      <div className="min-w-0">
         <h1 className="text-3xl font-semibold tracking-tight text-primary">{title}</h1>
         {typeof count === "number" ? (
           <p className="text-sm text-muted-foreground mt-1 tabular-nums">
@@ -25,7 +25,11 @@ export function PageHeader({
           <p className="text-sm text-muted-foreground mt-1">{description}</p>
         ) : null}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto sm:justify-end [&>div]:flex-wrap">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }

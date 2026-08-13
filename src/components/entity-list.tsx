@@ -670,7 +670,7 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           </div>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
           {hasSelection && (
             <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
               {ids.length} selecionado{ids.length === 1 ? "" : "s"}

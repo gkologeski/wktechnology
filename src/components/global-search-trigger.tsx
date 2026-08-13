@@ -13,7 +13,7 @@ export function GlobalSearchTrigger() {
         type="button"
         onClick={openSearch}
         aria-label="Buscar ou perguntar"
-        className="hidden md:flex items-center gap-2 h-9 w-[360px] max-w-[40vw] px-3 rounded-md border bg-muted/40 hover:bg-muted text-sm text-muted-foreground transition-colors"
+        className="hidden lg:flex min-w-0 items-center gap-2 h-9 w-[360px] max-w-[32vw] px-3 rounded-md border bg-muted/40 hover:bg-muted text-sm text-muted-foreground transition-colors"
       >
         <Search className="h-4 w-4 shrink-0" />
         <span className="flex-1 text-left">Buscar ou perguntar</span>
@@ -26,7 +26,7 @@ export function GlobalSearchTrigger() {
         size="icon"
         onClick={openSearch}
         aria-label="Buscar"
-        className="md:hidden"
+        className="shrink-0 lg:hidden"
       >
         <Search className="h-4 w-4" />
       </Button>

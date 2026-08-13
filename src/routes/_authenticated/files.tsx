@@ -244,13 +244,13 @@ function FilesPage() {
   return (
     <div className="p-6 space-y-6 max-w-6xl mx-auto">
       <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold">Arquivos</h1>
           <p className="text-sm text-muted-foreground">
             Espaço pessoal com 100 MB. Gere links públicos para compartilhar.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" onClick={() => setNewFolderOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Nova pasta
           </Button>
