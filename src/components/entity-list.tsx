@@ -1099,9 +1099,14 @@ function EntityDialog<T extends { id: string }>({
       }
       payload.owner_id = user.id;
       let error;
+      let affected: unknown[] | null = null;
       if (editing) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ({ error } = await (supabase as any).from(table).update(payload).eq("id", editing.id));
+        ({ data: affected, error } = await (supabase as any)
+          .from(table)
+          .update(payload)
+          .eq("id", editing.id)
+          .select("id"));
       } else {
         delete payload.id;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1111,6 +1116,8 @@ function EntityDialog<T extends { id: string }>({
         toast.error(error.message);
         return;
       }
+      if (editing && deniedIfUnaffected(affected)) return;
+
       toast.success("Salvo");
       setOpen(false);
       onSaved();
