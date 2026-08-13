@@ -45,6 +45,13 @@ import {
   type ScoreQuestion,
 } from "@/lib/prospecting/score";
 import { getLeadIcpFit } from "@/lib/scoring/icp.functions";
+import {
+  computeUnifiedLeadScore,
+  LEAD_SCORE_MAX,
+  QUESTIONNAIRE_MAX_POINTS,
+  ICP_MAX_POINTS,
+} from "@/lib/prospecting/lead-score";
+import { LeadScoreBadge } from "@/components/prospecting/lead-score-badge";
 import { Progress } from "@/components/ui/progress";
 import {
   saveQualification,
