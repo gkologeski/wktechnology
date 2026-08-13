@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/select";
 import { listQuestionnaires, getQuestionnaire } from "@/lib/prospecting/questionnaires.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { Skeleton } from "@/components/ui/skeleton";
 import { QUESTIONNAIRES_CREATE, asKeys } from "@/lib/prospecting/permission-keys";
 import {
   computeQualificationScore,
