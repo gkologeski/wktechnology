@@ -101,10 +101,16 @@ export function QualificationPanel({
   const listLossReasons = useServerFn(getDealLossReasons);
   const qc = useQueryClient();
 
-  const { data: questionnaires } = useQuery({
+  const {
+    data: questionnaires,
+    isLoading: loadingQuestionnaires,
+    isError: questionnairesError,
+  } = useQuery({
     queryKey: ["prospecting", "questionnaires"],
     queryFn: () => listQ(),
   });
+  const { canAny } = usePermissions();
+  const canCreateQuestionnaire = canAny(asKeys(QUESTIONNAIRES_CREATE));
 
   const enabled = (questionnaires ?? []).filter((q) => q.enabled);
   const [selectedId, setSelectedId] = useState<string | null>(preselectedQuestionnaireId ?? null);
