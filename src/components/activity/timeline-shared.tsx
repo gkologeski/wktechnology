@@ -53,6 +53,7 @@ export const ICONS: Record<ActivityType, ReactNode> = {
   postal_mail: <Inbox className="h-4 w-4" />,
   linkedin_message: <Linkedin className="h-4 w-4" />,
   whatsapp: <MessageCircle className="h-4 w-4" />,
+  survey: <ClipboardList className="h-4 w-4" />,
 };
 
 export type RelatedKey =
@@ -183,9 +184,17 @@ export const LOG_LABEL: Record<LogKind, string> = {
   sms: "Registrar SMS",
   linkedin_message: "Registrar LinkedIn",
   postal_mail: "Registrar correio",
+  survey: "Pesquisa",
 };
 
-export type CreateAction = "meeting" | "email" | "call" | "whatsapp" | "sequence" | "linkedin";
+export type CreateAction =
+  | "meeting"
+  | "email"
+  | "call"
+  | "whatsapp"
+  | "sequence"
+  | "linkedin"
+  | "survey";
 
 export type BarAction =
   | { kind: "log"; value: LogKind; label: string; icon: ReactNode }
@@ -256,6 +265,12 @@ export const ALL_ACTIONS: BarAction[] = [
     value: "postal_mail",
     label: "Registrar correio postal",
     icon: <Inbox className="h-5 w-5" />,
+  },
+  {
+    kind: "create",
+    value: "survey",
+    label: "Pesquisa",
+    icon: <ClipboardList className="h-5 w-5" />,
   },
 ];
 
