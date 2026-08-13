@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { type ActivityType } from "@/lib/crm";
 import { toast } from "sonner";
-import { StickyNote, ListTodo, Phone, Mail, CalendarDays, MessageSquare, MessageCircle, Linkedin, Inbox, Workflow, FileText, FileSpreadsheet, Image as ImageIcon, Archive, File as FileIcon } from "lucide-react";
+import { StickyNote, ListTodo, Phone, Mail, CalendarDays, MessageSquare, MessageCircle, Linkedin, Inbox, ClipboardList, Workflow, FileText, FileSpreadsheet, Image as ImageIcon, Archive, File as FileIcon } from "lucide-react";
 
 export type EmailMeta = {
   direction: "inbound" | "outbound" | null;
