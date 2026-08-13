@@ -34,6 +34,12 @@ import {
   type SurveySourceKind,
 } from "@/lib/surveys/survey-activity.functions";
 import type { RelatedKey } from "@/components/activity/timeline-shared";
+import type { SurveyKindTab } from "@/components/surveys/survey-type-picker-dialog";
+import { parseFieldLayout } from "@/lib/prospecting/field-layout";
+import {
+  QualificationEntityBlocks,
+  useQualificationEntityFields,
+} from "@/components/prospecting/qualification-entity-fields";
 
 type Selection = { source: SurveySourceKind; id: string };
 
@@ -66,6 +72,7 @@ export function SurveyActivityDialog({
   const formFn = useServerFn(getSurveyForm);
   const saveFn = useServerFn(saveSurveyActivity);
 
+  const [kind, setKind] = useState<SurveyKindTab | "">("");
   const [selection, setSelection] = useState<Selection | null>(null);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [notes, setNotes] = useState("");
@@ -85,6 +92,7 @@ export function SurveyActivityDialog({
 
   useEffect(() => {
     if (!open) {
+      setKind("");
       setSelection(null);
       setAnswers({});
       setNotes("");
@@ -96,6 +104,10 @@ export function SurveyActivityDialog({
     setAnswers({});
     setShowErrors(false);
   }, [selection?.id]);
+
+  useEffect(() => {
+    setSelection(null);
+  }, [kind]);
 
   const questions = useMemo<SurveyQuestion[]>(
     () => (form.data?.questions ?? []) as SurveyQuestion[],
@@ -110,6 +122,7 @@ export function SurveyActivityDialog({
   const save = useMutation({
     mutationFn: async () => {
       if (!selection) throw new Error("Selecione uma pesquisa.");
+      if (isSalesLead && fieldLayout.length > 0) await entityFields.saveAll();
       return saveFn({
         data: {
           source: selection.source,
@@ -133,9 +146,50 @@ export function SurveyActivityDialog({
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao registrar pesquisa."),
   });
 
-  const templates = available.data?.templates ?? [];
-  const questionnaires = available.data?.questionnaires ?? [];
-  const hasOptions = templates.length > 0 || questionnaires.length > 0;
+  // Opções da pesquisa conforme o tipo escolhido.
+  const options = useMemo<
+    Array<{ selection: Selection; name: string; group: string }>
+  >(() => {
+    const d = available.data;
+    if (!d) return [];
+    const tpl = (rows: Array<{ id: string; name: string }>, group: string) =>
+      rows.map((r) => ({
+        selection: { source: "survey_template" as SurveySourceKind, id: r.id },
+        name: r.name,
+        group,
+      }));
+    const qst = (rows: Array<{ id: string; name: string }>, group: string) =>
+      rows.map((r) => ({
+        selection: { source: "prospecting_questionnaire" as SurveySourceKind, id: r.id },
+        name: r.name,
+        group,
+      }));
+    if (kind === "csat") return tpl(d.csat, "CSAT");
+    if (kind === "nps") return tpl(d.nps, "NPS");
+    if (kind === "livre") return tpl(d.free, "Formulários livres");
+    if (kind === "vendas")
+      return [
+        ...qst(d.salesModels, "Modelos de qualificação"),
+        ...qst(d.salesQuestionnaires, "Questionários"),
+      ];
+    return [];
+  }, [available.data, kind]);
+
+  const groups = useMemo(() => {
+    const map = new Map<string, typeof options>();
+    for (const o of options) map.set(o.group, [...(map.get(o.group) ?? []), o]);
+    return [...map.entries()];
+  }, [options]);
+
+  // Campos de entidades (só para pesquisas de vendas em leads).
+  const isSalesLead = kind === "vendas" && relatedKey === "lead_id";
+  const fieldLayout = useMemo(
+    () => (isSalesLead ? parseFieldLayout(form.data?.field_layout ?? null) : []),
+    [isSalesLead, form.data],
+  );
+  const entityFields = useQualificationEntityFields(isSalesLead ? relatedId : "", fieldLayout);
+  const blocksBefore = fieldLayout.filter((b) => b.position === "before");
+  const blocksAfter = fieldLayout.filter((b) => b.position === "after");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
