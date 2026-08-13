@@ -61,6 +61,9 @@ import {
   applyQualificationEnrichment,
 } from "@/lib/prospecting/qualification-enrichment.functions";
 import { useLeadStages } from "@/lib/leads/stages";
+import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
+import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
+
 
 type Entity = "lead";
 
@@ -290,11 +293,14 @@ export function QualificationPanel({
       // 3) move o lead para a etapa de qualificado do funil
       const patch: Record<string, unknown> = { status: "qualified" };
       if (qualifiedStage) patch.stage_id = qualifiedStage.value;
-      const { error: leadErr } = await supabase
+      const { data: updated, error: leadErr } = await supabase
         .from("leads")
         .update(patch as never)
-        .eq("id", entityId);
+        .eq("id", entityId)
+        .select("id");
       if (leadErr) throw new Error(leadErr.message);
+      if (!updated || updated.length === 0) throw new PermissionDeniedError();
+
 
       toast.success("Lead qualificado.");
       qc.invalidateQueries({
@@ -305,7 +311,8 @@ export function QualificationPanel({
       qc.invalidateQueries({ queryKey: ["qualification-entity-records", entityId] });
       onDecided?.("qualified");
     } catch (e) {
-      toast.error((e as Error).message);
+      if (!handlePermissionError(e)) toast.error((e as Error).message);
+
     } finally {
       setQualifying(false);
     }
@@ -332,11 +339,14 @@ export function QualificationPanel({
     try {
       const combined = reasonNote.trim() ? `${reasonValue} — ${reasonNote.trim()}` : reasonValue;
       // 1) atualiza status do lead
-      const { error: leadErr } = await supabase
+      const { data: updatedLead, error: leadErr } = await supabase
         .from("leads")
         .update({ status: "disqualified" })
-        .eq("id", entityId);
+        .eq("id", entityId)
+        .select("id");
       if (leadErr) throw new Error(leadErr.message);
+      if (!updatedLead || updatedLead.length === 0) throw new PermissionDeniedError();
+
       // 2) grava a qualificação com decision + motivo (obrigatório)
       if (activeId) {
         await save({
@@ -361,7 +371,8 @@ export function QualificationPanel({
       setReasonNote("");
       onDecided?.("disqualified");
     } catch (e) {
-      toast.error((e as Error).message);
+      if (!handlePermissionError(e)) toast.error((e as Error).message);
+
     } finally {
       setDisqualifying(false);
     }
