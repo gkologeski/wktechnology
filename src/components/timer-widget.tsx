@@ -52,6 +52,11 @@ export function TimerWidget() {
     queryFn: () => getRunning(),
     refetchInterval: 30_000,
     staleTime: 15_000,
+    // Widget acessório: uma falha transitória não deve propagar para o
+    // error boundary da página (tela em branco). Tenta de novo e segue vazio.
+    retry: 2,
+    retryDelay: (attempt) => Math.min(2_000 * 2 ** attempt, 10_000),
+    throwOnError: false,
   });
 
   const [tick, setTick] = useState(0);
