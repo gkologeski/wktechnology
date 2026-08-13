@@ -460,6 +460,30 @@ export function ActivityTimeline({
     void load(); /* eslint-disable-next-line */
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
 
+  // Carrega as respostas das atividades do tipo "pesquisa" exibidas na timeline.
+  useEffect(() => {
+    const ids = items.filter((a) => a.type === "survey").map((a) => a.id);
+    if (ids.length === 0) {
+      setSurveyMeta((prev) => (prev.size === 0 ? prev : new Map()));
+      return;
+    }
+    let cancelled = false;
+    void getActivitySurveyResponses({ data: { activity_ids: ids } })
+      .then((rows) => {
+        if (cancelled) return;
+        setSurveyMeta(
+          new Map(
+            (rows as SurveyResponseSummary[]).map((r) => [r.activity_id, r] as const),
+          ),
+        );
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [items]);
+
+
   // Re-sincroniza silenciosamente quando a janela volta a focar ou um modal fecha
   useRefreshCallback(() => {
     void load({ silent: true });
