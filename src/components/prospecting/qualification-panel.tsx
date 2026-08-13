@@ -371,7 +371,8 @@ export function QualificationPanel({
       setReasonNote("");
       onDecided?.("disqualified");
     } catch (e) {
-      toast.error((e as Error).message);
+      if (!handlePermissionError(e)) toast.error((e as Error).message);
+
     } finally {
       setDisqualifying(false);
     }
