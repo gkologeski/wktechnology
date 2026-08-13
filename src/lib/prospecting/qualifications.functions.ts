@@ -9,12 +9,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
-import { applyScoreContribution } from "@/lib/scoring/icp.server";
+import { applyScoreContribution, getLeadIcpFit } from "@/lib/scoring/icp.server";
 import { logQualificationActivity } from "@/lib/prospecting/qualification-activity.server";
 import {
   computeQualificationScore,
+  computeQualificationMaxScore,
   type ScoreQuestion as Question,
 } from "@/lib/prospecting/score";
+import { computeUnifiedLeadScore } from "@/lib/prospecting/lead-score";
 
 const EntityEnum = z.enum(["lead", "contact"]);
 const DecisionEnum = z.enum(["pending", "qualified", "disqualified", "nurture", "scheduled"]);
@@ -57,6 +59,35 @@ async function pushQualificationScore(
   }
 }
 
+/**
+ * Compõe a nota unificada (0-85) do registro: questionário normalizado (até 50)
+ * somado à aderência ao ICP normalizada (até 35). Falhas no ICP não bloqueiam
+ * o salvamento — a parcela apenas fica zerada.
+ */
+async function buildUnifiedScore(
+  supabase: Parameters<typeof getLeadIcpFit>[0],
+  args: { entity: "lead" | "contact"; entityId: string; questions: Question[]; score: number },
+) {
+  const { max } = computeQualificationMaxScore(args.questions);
+  let icpScore = 0;
+  let icpMax = 0;
+  if (args.entity === "lead") {
+    try {
+      const fit = await getLeadIcpFit(supabase, args.entityId);
+      icpScore = Number(fit.points ?? 0);
+      icpMax = Number(fit.max ?? 0);
+    } catch (e) {
+      console.error("[qualification] icp fit", e);
+    }
+  }
+  return computeUnifiedLeadScore({
+    questionnaireScore: args.score,
+    questionnaireMax: max,
+    icpScore,
+    icpMax,
+  });
+}
+
 export const listQualificationsForEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
@@ -95,6 +126,12 @@ export const saveQualification = createServerFn({ method: "POST" })
       .eq("questionnaire_id", data.questionnaire_id);
     if (qsErr) throw new Error(qsErr.message);
     const score = computeScore((qs ?? []) as Question[], data.answers);
+    const unified = await buildUnifiedScore(context.supabase, {
+      entity: data.entity,
+      entityId: data.entity_id,
+      questions: (qs ?? []) as Question[],
+      score,
+    });
 
     const patch = {
       owner_id: context.userId,
@@ -103,6 +140,9 @@ export const saveQualification = createServerFn({ method: "POST" })
       entity_id: data.entity_id,
       answers: data.answers,
       score,
+      questionnaire_points: unified.questionnairePoints,
+      icp_points: unified.icpPoints,
+      total_score: unified.total,
       ...(data.decision
         ? {
             decision: data.decision,
@@ -115,8 +155,7 @@ export const saveQualification = createServerFn({ method: "POST" })
 
     const decided = data.decision && data.decision !== "pending";
     // Qualificado/agendado somam o score; desqualificado/nutrição zeram a parcela.
-    const contribution =
-      data.decision === "qualified" || data.decision === "scheduled" ? score : 0;
+    const contribution = data.decision === "qualified" || data.decision === "scheduled" ? score : 0;
 
     const afterDecision = async () => {
       if (!decided) return;
@@ -155,7 +194,7 @@ export const saveQualification = createServerFn({ method: "POST" })
         .eq("id", data.id);
       if (error) throw new Error(error.message);
       await afterDecision();
-      return { id: data.id, score };
+      return { id: data.id, score, unified };
     }
     const { data: row, error } = await context.supabase
       .from("prospecting_qualifications")
@@ -164,7 +203,7 @@ export const saveQualification = createServerFn({ method: "POST" })
       .single();
     if (error) throw new Error(error.message);
     await afterDecision();
-    return { id: row.id, score };
+    return { id: row.id, score, unified };
   });
 
 export const setDecision = createServerFn({ method: "POST" })

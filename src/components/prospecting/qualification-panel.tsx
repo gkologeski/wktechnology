@@ -45,6 +45,13 @@ import {
   type ScoreQuestion,
 } from "@/lib/prospecting/score";
 import { getLeadIcpFit } from "@/lib/scoring/icp.functions";
+import {
+  computeUnifiedLeadScore,
+  LEAD_SCORE_MAX,
+  QUESTIONNAIRE_MAX_POINTS,
+  ICP_MAX_POINTS,
+} from "@/lib/prospecting/lead-score";
+import { LeadScoreBadge } from "@/components/prospecting/lead-score-badge";
 import { Progress } from "@/components/ui/progress";
 import {
   saveQualification,
@@ -66,7 +73,6 @@ import {
 import { useLeadStages } from "@/lib/leads/stages";
 import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
-
 
 type Entity = "lead";
 
@@ -165,6 +171,18 @@ export function QualificationPanel({
     [qData],
   );
   const percent = scorePercent(score, maxInfo.max);
+
+  // Nota unificada do lead (0–85): questionário (até 50) + ICP (até 35).
+  const unified = useMemo(
+    () =>
+      computeUnifiedLeadScore({
+        questionnaireScore: score,
+        questionnaireMax: maxInfo.max,
+        icpScore: icpFit.data?.points ?? 0,
+        icpMax: icpFit.data?.max ?? 0,
+      }),
+    [score, maxInfo.max, icpFit.data?.points, icpFit.data?.max],
+  );
 
   const threshold = qData?.questionnaire.pass_threshold ?? 0;
   const passesAuto = score >= threshold;
@@ -310,7 +328,6 @@ export function QualificationPanel({
       if (leadErr) throw new Error(leadErr.message);
       if (!updated || updated.length === 0) throw new PermissionDeniedError();
 
-
       toast.success("Lead qualificado.");
       qc.invalidateQueries({
         queryKey: ["prospecting", "qualifications", entity, entityId],
@@ -321,7 +338,6 @@ export function QualificationPanel({
       onDecided?.("qualified");
     } catch (e) {
       if (!handlePermissionError(e)) toast.error((e as Error).message);
-
     } finally {
       setQualifying(false);
     }
@@ -381,7 +397,6 @@ export function QualificationPanel({
       onDecided?.("disqualified");
     } catch (e) {
       if (!handlePermissionError(e)) toast.error((e as Error).message);
-
     } finally {
       setDisqualifying(false);
     }
@@ -439,8 +454,8 @@ export function QualificationPanel({
           ) : (
             <>
               Nenhum questionário de qualificação disponível para você. Peça ao administrador do
-              workspace para ativar um questionário em{" "}
-              <strong>Prospecção → Questionários</strong> ou liberar seu acesso.
+              workspace para ativar um questionário em <strong>Prospecção → Questionários</strong>{" "}
+              ou liberar seu acesso.
             </>
           )}
         </CardContent>
@@ -467,11 +482,37 @@ export function QualificationPanel({
               Preencha as respostas e defina a decisão final.
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right min-w-[168px]">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Score</p>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <div className="text-right min-w-[200px]">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Nota do lead
+              </p>
+              <p className="text-lg font-semibold leading-tight text-foreground">
+                {unified.total}
+                <span className="text-xs text-muted-foreground ml-1">
+                  de {LEAD_SCORE_MAX} ({unified.percent}%)
+                </span>
+              </p>
+              <Progress
+                value={unified.percent}
+                className="h-1.5 mt-1"
+                aria-label={`Nota do lead ${unified.total} de ${LEAD_SCORE_MAX}`}
+              />
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Questionário {unified.questionnairePoints}/{QUESTIONNAIRE_MAX_POINTS} · ICP{" "}
+                {unified.icpPoints}/{ICP_MAX_POINTS}
+                {unified.icpUnavailable ? " (sem critérios)" : ""}
+              </p>
+              <div className="mt-1 flex justify-end">
+                <LeadScoreBadge total={unified.total} />
+              </div>
+            </div>
+            <div className="text-right min-w-[150px]">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Questionário
+              </p>
               <p
-                className={`text-lg font-semibold leading-tight ${
+                className={`text-sm font-semibold leading-tight ${
                   passesAuto ? "text-emerald-600" : "text-foreground"
                 }`}
               >
@@ -483,13 +524,6 @@ export function QualificationPanel({
                   </span>
                 ) : null}
               </p>
-              {maxInfo.max > 0 ? (
-                <Progress
-                  value={percent ?? 0}
-                  className="h-1.5 mt-1"
-                  aria-label={`Score ${score} de ${maxInfo.max}`}
-                />
-              ) : null}
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 Corte {threshold}
                 {maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
@@ -497,9 +531,7 @@ export function QualificationPanel({
             </div>
             {icpFit.data && icpFit.data.criteriaCount > 0 ? (
               <div className="text-right">
-                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                  Fit ICP
-                </p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Fit ICP</p>
                 <Badge variant={ICP_BADGE[icpFit.data.level]} className="mt-0.5">
                   {ICP_LABEL[icpFit.data.level]}
                   {icpFit.data.percent != null ? ` · ${icpFit.data.percent}%` : ""}
