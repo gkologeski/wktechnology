@@ -13711,12 +13711,15 @@ export type Database = {
           decision_reason: string | null
           entity: string
           entity_id: string
+          icp_points: number | null
           id: string
           owner_id: string
           qualified_at: string | null
           qualified_by: string | null
           questionnaire_id: string
+          questionnaire_points: number | null
           score: number
+          total_score: number | null
           updated_at: string
         }
         Insert: {
@@ -13726,12 +13729,15 @@ export type Database = {
           decision_reason?: string | null
           entity: string
           entity_id: string
+          icp_points?: number | null
           id?: string
           owner_id: string
           qualified_at?: string | null
           qualified_by?: string | null
           questionnaire_id: string
+          questionnaire_points?: number | null
           score?: number
+          total_score?: number | null
           updated_at?: string
         }
         Update: {
@@ -13741,12 +13747,15 @@ export type Database = {
           decision_reason?: string | null
           entity?: string
           entity_id?: string
+          icp_points?: number | null
           id?: string
           owner_id?: string
           qualified_at?: string | null
           qualified_by?: string | null
           questionnaire_id?: string
+          questionnaire_points?: number | null
           score?: number
+          total_score?: number | null
           updated_at?: string
         }
         Relationships: [
