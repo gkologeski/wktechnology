@@ -267,8 +267,14 @@ export function ContactsCard({ entity, entityId }: { entity: "company" | "deal";
 
   const unlink = async (contactId: string) => {
     if (entity === "company") {
-      const { error } = await sb.from("contacts").update({ company_id: null }).eq("id", contactId);
+      const { data: affected, error } = await sb
+        .from("contacts")
+        .update({ company_id: null })
+        .eq("id", contactId)
+        .select("id");
       if (error) return toast.error(error.message);
+      if (deniedIfUnaffected(affected)) return;
+
     } else {
       // Remove vínculo many-to-many
       const { error } = await sb
