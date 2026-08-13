@@ -34,6 +34,12 @@ import {
   type SurveySourceKind,
 } from "@/lib/surveys/survey-activity.functions";
 import type { RelatedKey } from "@/components/activity/timeline-shared";
+import type { SurveyKindTab } from "@/components/surveys/survey-type-picker-dialog";
+import { parseFieldLayout } from "@/lib/prospecting/field-layout";
+import {
+  QualificationEntityBlocks,
+  useQualificationEntityFields,
+} from "@/components/prospecting/qualification-entity-fields";
 
 type Selection = { source: SurveySourceKind; id: string };
 
@@ -66,6 +72,7 @@ export function SurveyActivityDialog({
   const formFn = useServerFn(getSurveyForm);
   const saveFn = useServerFn(saveSurveyActivity);
 
+  const [kind, setKind] = useState<SurveyKindTab | "">("");
   const [selection, setSelection] = useState<Selection | null>(null);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [notes, setNotes] = useState("");
@@ -85,6 +92,7 @@ export function SurveyActivityDialog({
 
   useEffect(() => {
     if (!open) {
+      setKind("");
       setSelection(null);
       setAnswers({});
       setNotes("");
@@ -96,6 +104,10 @@ export function SurveyActivityDialog({
     setAnswers({});
     setShowErrors(false);
   }, [selection?.id]);
+
+  useEffect(() => {
+    setSelection(null);
+  }, [kind]);
 
   const questions = useMemo<SurveyQuestion[]>(
     () => (form.data?.questions ?? []) as SurveyQuestion[],
@@ -110,6 +122,7 @@ export function SurveyActivityDialog({
   const save = useMutation({
     mutationFn: async () => {
       if (!selection) throw new Error("Selecione uma pesquisa.");
+      if (isSalesLead && fieldLayout.length > 0) await entityFields.saveAll();
       return saveFn({
         data: {
           source: selection.source,
@@ -133,9 +146,50 @@ export function SurveyActivityDialog({
     onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao registrar pesquisa."),
   });
 
-  const templates = available.data?.templates ?? [];
-  const questionnaires = available.data?.questionnaires ?? [];
-  const hasOptions = templates.length > 0 || questionnaires.length > 0;
+  // Opções da pesquisa conforme o tipo escolhido.
+  const options = useMemo<
+    Array<{ selection: Selection; name: string; group: string }>
+  >(() => {
+    const d = available.data;
+    if (!d) return [];
+    const tpl = (rows: Array<{ id: string; name: string }>, group: string) =>
+      rows.map((r) => ({
+        selection: { source: "survey_template" as SurveySourceKind, id: r.id },
+        name: r.name,
+        group,
+      }));
+    const qst = (rows: Array<{ id: string; name: string }>, group: string) =>
+      rows.map((r) => ({
+        selection: { source: "prospecting_questionnaire" as SurveySourceKind, id: r.id },
+        name: r.name,
+        group,
+      }));
+    if (kind === "csat") return tpl(d.csat, "CSAT");
+    if (kind === "nps") return tpl(d.nps, "NPS");
+    if (kind === "livre") return tpl(d.free, "Formulários livres");
+    if (kind === "vendas")
+      return [
+        ...qst(d.salesModels, "Modelos de qualificação"),
+        ...qst(d.salesQuestionnaires, "Questionários"),
+      ];
+    return [];
+  }, [available.data, kind]);
+
+  const groups = useMemo(() => {
+    const map = new Map<string, typeof options>();
+    for (const o of options) map.set(o.group, [...(map.get(o.group) ?? []), o]);
+    return [...map.entries()];
+  }, [options]);
+
+  // Campos de entidades (só para pesquisas de vendas em leads).
+  const isSalesLead = kind === "vendas" && relatedKey === "related_lead_id";
+  const fieldLayout = useMemo(
+    () => (isSalesLead ? parseFieldLayout(form.data?.field_layout ?? null) : []),
+    [isSalesLead, form.data],
+  );
+  const entityFields = useQualificationEntityFields(isSalesLead ? relatedId : "", fieldLayout);
+  const blocksBefore = fieldLayout.filter((b) => b.position === "before");
+  const blocksAfter = fieldLayout.filter((b) => b.position === "after");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,68 +205,73 @@ export function SurveyActivityDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="survey-source" className="text-xs font-medium">
-              Pesquisa
-            </Label>
-            {available.isLoading ? (
-              <Skeleton className="h-9 w-full" />
-            ) : available.isError ? (
-              <p className="text-sm text-destructive" role="alert">
-                Não foi possível carregar as pesquisas.{" "}
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="h-auto p-0"
-                  onClick={() => void available.refetch()}
-                >
-                  Tentar novamente
-                </Button>
-              </p>
-            ) : !hasOptions ? (
-              <p className="text-sm text-muted-foreground">
-                Nenhuma pesquisa ativa encontrada. Crie um modelo em Pesquisas ou um questionário em
-                Prospecção.
-              </p>
-            ) : (
-              <Select
-                value={selection ? encode(selection) : ""}
-                onValueChange={(v) => setSelection(decode(v))}
-              >
-                <SelectTrigger id="survey-source">
-                  <SelectValue placeholder="Selecione a pesquisa…" />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="survey-kind" className="text-xs font-medium">
+                Tipo de pesquisa
+              </Label>
+              <Select value={kind} onValueChange={(v) => setKind(v as SurveyKindTab)}>
+                <SelectTrigger id="survey-kind">
+                  <SelectValue placeholder="Selecione o tipo…" />
                 </SelectTrigger>
                 <SelectContent>
-                  {templates.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel>Modelos de pesquisa</SelectLabel>
-                      {templates.map((t) => (
-                        <SelectItem
-                          key={t.id}
-                          value={encode({ source: "survey_template", id: t.id })}
-                        >
-                          {t.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  )}
-                  {questionnaires.length > 0 && (
-                    <SelectGroup>
-                      <SelectLabel>Questionários de qualificação</SelectLabel>
-                      {questionnaires.map((q) => (
-                        <SelectItem
-                          key={q.id}
-                          value={encode({ source: "prospecting_questionnaire", id: q.id })}
-                        >
-                          {q.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  )}
+                  <SelectItem value="csat">CSAT</SelectItem>
+                  <SelectItem value="nps">NPS</SelectItem>
+                  <SelectItem value="vendas">Vendas</SelectItem>
+                  <SelectItem value="livre">Livre</SelectItem>
                 </SelectContent>
               </Select>
-            )}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="survey-source" className="text-xs font-medium">
+                Pesquisa
+              </Label>
+              {available.isLoading ? (
+                <Skeleton className="h-9 w-full" />
+              ) : available.isError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  Não foi possível carregar as pesquisas.{" "}
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0"
+                    onClick={() => void available.refetch()}
+                  >
+                    Tentar novamente
+                  </Button>
+                </p>
+              ) : !kind ? (
+                <p className="text-sm text-muted-foreground">Escolha o tipo primeiro.</p>
+              ) : options.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Nenhuma pesquisa ativa deste tipo. Crie uma em Pesquisas.
+                </p>
+              ) : (
+                <Select
+                  value={selection ? encode(selection) : ""}
+                  onValueChange={(v) => setSelection(decode(v))}
+                >
+                  <SelectTrigger id="survey-source">
+                    <SelectValue placeholder="Selecione a pesquisa…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groups.map(([group, items]) => (
+                      <SelectGroup key={group}>
+                        <SelectLabel>{group}</SelectLabel>
+                        {items.map((o) => (
+                          <SelectItem key={o.selection.id} value={encode(o.selection)}>
+                            {o.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
           </div>
+
 
           {selection && (
             <div className="space-y-3 rounded-lg border border-border/60 p-3">
@@ -247,6 +306,16 @@ export function SurveyActivityDialog({
                     </Badge>
                   </div>
                   <div className="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
+                    {isSalesLead && blocksBefore.length > 0 && (
+                      <QualificationEntityBlocks
+                        blocks={blocksBefore}
+                        records={entityFields.records}
+                        values={entityFields.values}
+                        onChange={entityFields.setValue}
+                        isLoading={entityFields.isLoading}
+                        autofilled={entityFields.autofilled}
+                      />
+                    )}
                     {questions.map((q) => (
                       <SurveyField
                         key={q.id}
@@ -256,6 +325,16 @@ export function SurveyActivityDialog({
                         onChange={(v) => setAnswers((prev) => ({ ...prev, [q.id]: v }))}
                       />
                     ))}
+                    {isSalesLead && blocksAfter.length > 0 && (
+                      <QualificationEntityBlocks
+                        blocks={blocksAfter}
+                        records={entityFields.records}
+                        values={entityFields.values}
+                        onChange={entityFields.setValue}
+                        isLoading={entityFields.isLoading}
+                        autofilled={entityFields.autofilled}
+                      />
+                    )}
                   </div>
                 </>
               )}

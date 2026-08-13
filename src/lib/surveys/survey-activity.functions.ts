@@ -39,7 +39,18 @@ export type SurveyFormQuestion = {
   position: number;
 };
 
-/** Pesquisas disponíveis para responder, agrupadas por origem. */
+/** Dados de pontuação das perguntas de um questionário de vendas. */
+export type SalesScoreQuestion = {
+  id: string;
+  type: string;
+  weight: number;
+  options: Json;
+  text_points: number | null;
+  text_min_chars: number | null;
+};
+
+
+/** Pesquisas disponíveis para responder, agrupadas por tipo. */
 export const listAvailableSurveys = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -50,16 +61,25 @@ export const listAvailableSurveys = createServerFn({ method: "GET" })
         .order("name", { ascending: true }),
       context.supabase
         .from("prospecting_questionnaires")
-        .select("id, name, description, framework, enabled, updated_at")
+        .select("id, name, description, framework, enabled, is_template, updated_at")
         .order("name", { ascending: true }),
     ]);
     if (templates.error) throw new Error(templates.error.message);
     if (questionnaires.error) throw new Error(questionnaires.error.message);
+    const active = (templates.data ?? []).filter((t) => t.is_active !== false);
+    const sales = (questionnaires.data ?? []).filter((q) => q.enabled !== false);
     return {
-      templates: (templates.data ?? []).filter((t) => t.is_active !== false),
-      questionnaires: (questionnaires.data ?? []).filter((q) => q.enabled !== false),
+      /** Compatibilidade: todos os modelos de pesquisa ativos. */
+      templates: active,
+      questionnaires: sales,
+      csat: active.filter((t) => t.kind === "csat"),
+      nps: active.filter((t) => t.kind === "nps"),
+      free: active.filter((t) => t.kind === "form"),
+      salesModels: sales.filter((q) => q.is_template === true),
+      salesQuestionnaires: sales.filter((q) => q.is_template !== true),
     };
   });
+
 
 /** Perguntas do formulário de uma pesquisa. */
 export const getSurveyForm = createServerFn({ method: "POST" })
@@ -85,9 +105,15 @@ export const getSurveyForm = createServerFn({ method: "POST" })
       if (!tpl) throw new Error("Modelo de pesquisa não encontrado.");
       return {
         source: data.source,
+        kind: (tpl.kind ?? "form") as string,
         id: tpl.id,
         name: tpl.name,
         description: tpl.description ?? null,
+        pass_threshold: null as number | null,
+        field_layout: null as Json,
+        scoring: [] as SalesScoreQuestion[],
+
+
         questions: (rows ?? []).map(
           (r) =>
             ({
@@ -107,7 +133,7 @@ export const getSurveyForm = createServerFn({ method: "POST" })
     const [{ data: q }, { data: rows, error }] = await Promise.all([
       context.supabase
         .from("prospecting_questionnaires")
-        .select("id, name, description, framework, pass_threshold")
+        .select("id, name, description, framework, pass_threshold, field_layout")
         .eq("id", data.source_id)
         .maybeSingle(),
       context.supabase
@@ -131,9 +157,24 @@ export const getSurveyForm = createServerFn({ method: "POST" })
     };
     return {
       source: data.source,
+      kind: "sales",
       id: q.id,
       name: q.name,
       description: q.description ?? null,
+      pass_threshold: (q.pass_threshold as number | null) ?? null,
+      field_layout: (q.field_layout ?? null) as Json,
+      scoring: (rows ?? []).map(
+        (r) =>
+          ({
+            id: r.id,
+            type: r.type,
+            weight: Number(r.weight ?? 1),
+            options: (r.options ?? null) as Json,
+            text_points: (r.text_points as number | null) ?? null,
+            text_min_chars: (r.text_min_chars as number | null) ?? null,
+          }) satisfies SalesScoreQuestion,
+      ),
+
       questions: (rows ?? []).map(
         (r) =>
           ({

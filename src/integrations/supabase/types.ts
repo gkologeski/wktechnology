@@ -16228,7 +16228,7 @@ export type Database = {
           kind: string
           name: string
           owner_id: string
-          question: string
+          question: string | null
           scope: string
           trigger_event: string
           updated_at: string
@@ -16247,7 +16247,7 @@ export type Database = {
           kind?: string
           name: string
           owner_id: string
-          question: string
+          question?: string | null
           scope?: string
           trigger_event?: string
           updated_at?: string
@@ -16266,7 +16266,7 @@ export type Database = {
           kind?: string
           name?: string
           owner_id?: string
-          question?: string
+          question?: string | null
           scope?: string
           trigger_event?: string
           updated_at?: string
