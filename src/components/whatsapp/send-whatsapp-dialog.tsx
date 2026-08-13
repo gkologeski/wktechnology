@@ -37,6 +37,22 @@ import { WHATSAPP_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
 import { renderTokens, type TokenContext } from "@/lib/message-tokens";
 import { useAuth } from "@/lib/auth";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
+import { useMessageDraft } from "@/hooks/use-message-draft";
+import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
+import { MessageDraftStatus } from "@/components/message-draft-status";
+import { MessageDraftPin } from "@/components/message-draft-pin";
 
 type Props = {
   defaultTo?: string;
@@ -48,6 +64,8 @@ type Props = {
   onSent?: (conversationId: string) => void;
   open?: boolean;
   onOpenChange?: (v: boolean) => void;
+  /** Exibe o pin de rascunho salvo sobre o gatilho. */
+  draftIndicator?: boolean;
 };
 
 export function SendWhatsAppDialog({
@@ -59,6 +77,7 @@ export function SendWhatsAppDialog({
   onSent,
   open: openProp,
   onOpenChange,
+  draftIndicator = true,
 }: Props) {
   const [openState, setOpenState] = useState(false);
   const open = openProp ?? openState;
@@ -133,6 +152,21 @@ export function SendWhatsAppDialog({
     }
   }
 
+  // Rascunho automático da mensagem livre (salva e restaura ao reabrir).
+  const draftScope = { channel: "whatsapp" as const, contactId, to: defaultTo };
+  const draft = useMessageDraft({
+    scope: draftScope,
+    enabled: open,
+    value: { to_addr: to, body_text: body },
+    onRestore: (d) => {
+      setTo(d.to_addr || defaultTo);
+      setBody(d.body_text || d.body_html);
+    },
+  });
+
+  // Pin no gatilho quando existe rascunho salvo para esta composição.
+  const hasDraft = useHasMessageDraft({ scope: draftScope, enabled: draftIndicator });
+
   const listTpl = useServerFn(listWhatsAppTemplates);
   const sendFn = useServerFn(sendWhatsAppMessage);
   const tplQ = useQuery({ queryKey: ["wa", "templates"], queryFn: () => listTpl(), enabled: open });
@@ -176,6 +210,7 @@ export function SendWhatsAppDialog({
     },
     onSuccess: (res) => {
       toast.success("Mensagem enviada");
+      draft.clearAfterSend();
       setOpen(false);
       setBody("");
       setTemplateName("");
@@ -189,18 +224,25 @@ export function SendWhatsAppDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       {trigger !== undefined ? (
-        <DialogTrigger asChild>{trigger}</DialogTrigger>
+        <MessageDraftPin show={draftIndicator && hasDraft}>
+          <DialogTrigger asChild>{trigger}</DialogTrigger>
+        </MessageDraftPin>
       ) : openProp === undefined ? (
-        <DialogTrigger asChild>
-          <Button size="sm" variant="outline">
-            <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
-          </Button>
-        </DialogTrigger>
+        <MessageDraftPin show={draftIndicator && hasDraft}>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="outline">
+              <MessageCircle className="mr-2 h-4 w-4" /> WhatsApp
+            </Button>
+          </DialogTrigger>
+        </MessageDraftPin>
       ) : null}
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Enviar WhatsApp</DialogTitle>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <DialogTitle>Enviar WhatsApp</DialogTitle>
+            <MessageDraftStatus status={draft.status} savedAt={draft.savedAt} />
+          </div>
           <DialogDescription>
             {contactName ? `Para ${contactName}` : "Envie uma mensagem via Twilio"}
           </DialogDescription>
@@ -363,7 +405,39 @@ export function SendWhatsAppDialog({
             </p>
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="sm:justify-between">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="sm" disabled={draft.status === "idle"}>
+                <Trash2 className="mr-2 h-4 w-4" /> Descartar rascunho
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Descartar rascunho?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  O conteúdo redigido neste rascunho será removido.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    await draft.discard();
+                    setBody("");
+                    setTemplateName("");
+                    setVars([]);
+                    setMedia(null);
+                    toast.success("Rascunho descartado");
+                    setOpen(false);
+                  }}
+                >
+                  Descartar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           <Button
             onClick={() => sendMut.mutate()}
             disabled={

@@ -13,20 +13,53 @@ import type { Activity } from "@/lib/db-types";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
-import { signMeetingRecording, generateMeetingSummary, summarizeCalendarEventRecording } from "@/lib/meetings.functions";
+import {
+  signMeetingRecording,
+  generateMeetingSummary,
+  summarizeCalendarEventRecording,
+} from "@/lib/meetings.functions";
 import { notifyActivityEvent } from "@/lib/notifications.functions";
 import { AttachmentPreview } from "@/components/timeline/attachment-preview";
 import { ActivityComments } from "@/components/timeline/activity-comments";
 import { maybeConvertWhatsAppPaste } from "@/lib/whatsapp-paste";
-import { Mail, CalendarDays, Trash2, Paperclip, X, Pencil, Check, Send, MoreHorizontal, Lock, Sparkles, Link as LinkIcon, Users, User, Video, Zap, FolderOpen } from "lucide-react";
+import {
+  Mail,
+  CalendarDays,
+  Trash2,
+  Paperclip,
+  X,
+  Pencil,
+  Check,
+  Send,
+  MoreHorizontal,
+  Lock,
+  Sparkles,
+  Link as LinkIcon,
+  Users,
+  User,
+  Video,
+  Zap,
+  FolderOpen,
+} from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { CalendarRange, Filter, Loader2 } from "lucide-react";
 import { DateFilter } from "@/components/date-filter";
-import { DATE_PRESET_LABELS, getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
+import {
+  DATE_PRESET_LABELS,
+  getDateRange,
+  type CustomRange,
+  type DatePreset,
+} from "@/lib/date-presets";
 import { SendEmailDialog } from "@/components/email/send-email-dialog";
 import { useHasMessageDraft } from "@/hooks/use-has-message-draft";
 import { MessageDraftPin } from "@/components/message-draft-pin";
@@ -35,7 +68,27 @@ import { MeetingDialog } from "@/components/meetings/meeting-dialog";
 import { StartVideoButton } from "@/components/meetings/start-video-button";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { deleteRowGuarded } from "@/lib/delete-guard";
-import { ACTIONS_BY_KEY, type Attachment, type BarAction, type CreateAction, type EmailMeta, ICONS, LOG_LABEL, type LogKind, type OrderState, type RelatedKey, STORAGE_KEY, TASK_DUE_PRESET_LABELS, type TaskDuePreset, type TeamMember, actionKey, calendarAttendees, computeDuePreset, loadOrder, openEmailAttachment } from "./activity/timeline-shared";
+import {
+  ACTIONS_BY_KEY,
+  type Attachment,
+  type BarAction,
+  type CreateAction,
+  type EmailMeta,
+  ICONS,
+  LOG_LABEL,
+  type LogKind,
+  type OrderState,
+  type RelatedKey,
+  STORAGE_KEY,
+  TASK_DUE_PRESET_LABELS,
+  type TaskDuePreset,
+  type TeamMember,
+  actionKey,
+  calendarAttendees,
+  computeDuePreset,
+  loadOrder,
+  openEmailAttachment,
+} from "./activity/timeline-shared";
 import { EmailTimelineItem } from "./activity/email-timeline-item";
 
 // O discador carrega o SDK de voz da Twilio; só baixamos esse código quando o
@@ -56,7 +109,7 @@ export function ActivityTimeline({
   // Metadados enriquecidos de e-mails (corpo, anexos, aberturas, cliques),
   // indexados pelo id da atividade correspondente.
   const [emailMeta, setEmailMeta] = useState<Map<string, EmailMeta>>(new Map());
-  
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -113,6 +166,11 @@ export function ActivityTimeline({
     },
   });
 
+  // Pin de rascunho no ícone de WhatsApp da barra de ações.
+  const hasWhatsAppDraft = useHasMessageDraft({
+    scope: { channel: "whatsapp", contactId: target.contactId, to: target.phone ?? "" },
+  });
+
   // Ordem reorganizável das ações (persistida em localStorage)
   const [order, setOrder] = useState<OrderState>(() => loadOrder());
   const [dragKey, setDragKey] = useState<string | null>(null);
@@ -147,14 +205,14 @@ export function ActivityTimeline({
     if (opts?.silent) setRefreshing(true);
     const { data, error } = await supabase.from("activities").select("*").eq(relatedKey, relatedId);
 
-
     if (error) toast.error(error.message);
     let baseRows = ((data as Activity[]) ?? []).slice();
     const emailMessageIds = [
       ...new Set(
         baseRows
           .map((row) => {
-            const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+            const ext = ((row as unknown as { external_ids?: Record<string, unknown> })
+              .external_ids ?? {}) as Record<string, unknown>;
             return typeof ext.email_message_id === "string" ? ext.email_message_id : null;
           })
           .filter(Boolean) as string[],
@@ -192,10 +250,13 @@ export function ActivityTimeline({
         has_attachments: boolean | null;
         attachments: unknown;
       };
-      const messageById = new Map(
-        ((messages ?? []) as MsgRow[]).map((m) => [m.id, m]),
-      );
-      type EvRow = { message_id: string; event_type: string; url: string | null; occurred_at: string };
+      const messageById = new Map(((messages ?? []) as MsgRow[]).map((m) => [m.id, m]));
+      type EvRow = {
+        message_id: string;
+        event_type: string;
+        url: string | null;
+        occurred_at: string;
+      };
       const lastOpen = new Map<string, string>();
       const lastClick = new Map<string, { at: string; url: string | null }>();
       for (const e of (events ?? []) as EvRow[]) {
@@ -207,7 +268,8 @@ export function ActivityTimeline({
       }
       baseRows = baseRows.map((row) => {
         if (row.type !== "email") return row;
-        const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+        const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ??
+          {}) as Record<string, unknown>;
         const messageId = typeof ext.email_message_id === "string" ? ext.email_message_id : null;
         const message = messageId ? messageById.get(messageId) : null;
         if (!message) return row;
@@ -221,7 +283,10 @@ export function ActivityTimeline({
           size: typeof a.size === "number" ? a.size : undefined,
         }));
         const click = lastClick.get(message.id);
-        const dir = message.direction === "inbound" || message.direction === "outbound" ? message.direction : null;
+        const dir =
+          message.direction === "inbound" || message.direction === "outbound"
+            ? message.direction
+            : null;
         nextEmailMeta.set(row.id, {
           direction: dir,
           from_email: message.from_email,
@@ -272,13 +337,12 @@ export function ActivityTimeline({
       const calRows = ((tl ?? []) as Array<{ id: string; source: string }>).filter(
         (r) => r.source === "calendar_event",
       );
-      const calIdsFromRpc = calRows
-        .map((r) => r.id.replace(/^cal_/, ""))
-        .filter(Boolean);
+      const calIdsFromRpc = calRows.map((r) => r.id.replace(/^cal_/, "")).filter(Boolean);
       const existingCalIds = new Set(
         baseRows
           .map((row) => {
-            const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+            const ext = ((row as unknown as { external_ids?: Record<string, unknown> })
+              .external_ids ?? {}) as Record<string, unknown>;
             return typeof ext.calendar_event_id === "string" ? ext.calendar_event_id : null;
           })
           .filter(Boolean) as string[],
@@ -300,8 +364,10 @@ export function ActivityTimeline({
         }
         // Enrich real activities that already exist in baseRows with recording_url fallback.
         for (const row of baseRows) {
-          const ext = ((row as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
-          const cid = typeof ext.calendar_event_id === "string" ? (ext.calendar_event_id as string) : null;
+          const ext = ((row as unknown as { external_ids?: Record<string, unknown> })
+            .external_ids ?? {}) as Record<string, unknown>;
+          const cid =
+            typeof ext.calendar_event_id === "string" ? (ext.calendar_event_id as string) : null;
           if (!cid) continue;
           const ev = eventsById.get(cid);
           if (!ev) continue;
@@ -354,17 +420,12 @@ export function ActivityTimeline({
             } as unknown as Activity;
           });
       }
-
     } catch (e) {
       console.error("[timeline] mirrored events load", e);
     }
 
     // Apply the date-range filter to direct activity rows as well.
-    const { start: filtStart, end: filtEnd } = getDateRange(
-      datePreset,
-      new Date(),
-      dateCustom,
-    );
+    const { start: filtStart, end: filtEnd } = getDateRange(datePreset, new Date(), dateCustom);
     const inRange = (iso: string | null | undefined) => {
       if (!iso) return !filtStart && !filtEnd;
       const t = new Date(iso).getTime();
@@ -387,7 +448,6 @@ export function ActivityTimeline({
     setRefreshing(false);
   };
 
-
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
@@ -396,7 +456,6 @@ export function ActivityTimeline({
   useRefreshCallback(() => {
     void load({ silent: true });
   });
-
 
   // Recarrega quando uma associação é criada/removida em outro componente
   useEffect(() => {
@@ -414,8 +473,6 @@ export function ActivityTimeline({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
-
-
 
   // Resolve email/phone/contact from parent entity for the "Criar" actions
   useEffect(() => {
@@ -529,13 +586,14 @@ export function ActivityTimeline({
     if (!user || pendingFiles.length === 0) return [];
     const out: Attachment[] = [];
     for (const file of pendingFiles) {
-      const safeName = file.name
-        .normalize("NFKD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-zA-Z0-9._-]+/g, "_")
-        .replace(/_+/g, "_")
-        .replace(/^_+|_+$/g, "")
-        .slice(-120) || "file";
+      const safeName =
+        file.name
+          .normalize("NFKD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9._-]+/g, "_")
+          .replace(/_+/g, "_")
+          .replace(/^_+|_+$/g, "")
+          .slice(-120) || "file";
       const path = `${user.id}/${crypto.randomUUID()}-${safeName}`;
       const { error } = await supabase.storage
         .from("notes-attachments")
@@ -652,10 +710,11 @@ export function ActivityTimeline({
     const existing = (a as unknown as { attachments?: Attachment[] }).attachments ?? [];
     setEditingAttachments(existing);
     setEditingNewFiles([]);
-    setEditingAssigneeId(a.type === "task" ? ((a as unknown as { owner_id?: string | null }).owner_id ?? null) : null);
+    setEditingAssigneeId(
+      a.type === "task" ? ((a as unknown as { owner_id?: string | null }).owner_id ?? null) : null,
+    );
     setEditingDueDate(a.type === "task" ? (a.due_date ?? null) : null);
   };
-
 
   const uploadEditingFiles = async (): Promise<Attachment[]> => {
     if (!user || editingNewFiles.length === 0) return [];
@@ -707,15 +766,16 @@ export function ActivityTimeline({
     window.dispatchEvent(new CustomEvent("activities:changed"));
   };
 
-
   const signMeetingRec = useServerFn(signMeetingRecording);
   const summarizeMeetingFn = useServerFn(generateMeetingSummary);
   const summarizeCalEventFn = useServerFn(summarizeCalendarEventRecording);
   const onSummarizeMeeting = async (activityId: string) => {
     const a = items.find((i) => i.id === activityId);
-    const ext = ((a as unknown as { external_ids?: Record<string, unknown> } | undefined)?.external_ids ?? {}) as Record<string, unknown>;
+    const ext = ((a as unknown as { external_ids?: Record<string, unknown> } | undefined)
+      ?.external_ids ?? {}) as Record<string, unknown>;
     const meetingId = typeof ext.meeting_id === "string" ? (ext.meeting_id as string) : null;
-    const calendarEventId = typeof ext.calendar_event_id === "string" ? (ext.calendar_event_id as string) : null;
+    const calendarEventId =
+      typeof ext.calendar_event_id === "string" ? (ext.calendar_event_id as string) : null;
     try {
       if (meetingId) {
         toast.message("Gerando resumo com IA…");
@@ -805,7 +865,12 @@ export function ActivityTimeline({
           a.kind === "create" && a.disabled ? "opacity-50 cursor-not-allowed" : ""
         } ${isDragging ? "opacity-40" : ""}`}
       >
-        <MessageDraftPin show={a.kind === "create" && a.value === "email" && hasEmailDraft}>
+        <MessageDraftPin
+          show={
+            a.kind === "create" &&
+            ((a.value === "email" && hasEmailDraft) || (a.value === "whatsapp" && hasWhatsAppDraft))
+          }
+        >
           <span
             className={`flex items-center justify-center h-12 w-12 rounded-full border transition-all ${
               active
@@ -964,8 +1029,6 @@ export function ActivityTimeline({
             );
           })()}
         </div>
-
-
 
         {/* Inline composer (only when a "log" action is selected) */}
         {composerOpen && (
@@ -1234,14 +1297,15 @@ export function ActivityTimeline({
           </PopoverContent>
         </Popover>
         {refreshing && !loading && (
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground ml-1" aria-live="polite">
+          <span
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground ml-1"
+            aria-live="polite"
+          >
             <Loader2 className="h-3 w-3 animate-spin" />
             Atualizando…
           </span>
         )}
       </div>
-
-
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
@@ -1277,158 +1341,163 @@ export function ActivityTimeline({
                       <span className="text-xs text-muted-foreground">
                         {formatDateTime(a.hs_createdate ?? a.created_at)}
                       </span>
-                      {a.due_date && a.type !== "meeting" && (() => {
-                        const isOverdue =
-                          !a.completed &&
-                          new Date(a.due_date).getTime() < Date.now();
-                        return (
-                          <span
-                            className={`text-xs ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}
-                          >
-                            Vence {formatDateTime(a.due_date)}
-                          </span>
-                        );
-                      })()}
+                      {a.due_date &&
+                        a.type !== "meeting" &&
+                        (() => {
+                          const isOverdue =
+                            !a.completed && new Date(a.due_date).getTime() < Date.now();
+                          return (
+                            <span
+                              className={`text-xs ${isOverdue ? "text-destructive font-medium" : "text-muted-foreground"}`}
+                            >
+                              Vence {formatDateTime(a.due_date)}
+                            </span>
+                          );
+                        })()}
                     </div>
                   </div>
-                  {a.type === "meeting" && (() => {
-                    const meta = ((a as unknown as { attachments?: unknown }).attachments ?? {}) as {
-                      attendees?: Array<{ email: string; name?: string; contact_id?: string }>;
-                      end_at?: string;
-                      meet_link?: string;
-                      calendar_html_link?: string;
-                      recording_url?: string;
-                    };
-                    const ext = ((a as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
-                    const loc = (a as unknown as { meeting_location?: string }).meeting_location;
-                    // Prefer Google Calendar event link (htmlLink). Fall back to meet/Jitsi link.
-                    const calendarLink =
-                      meta.calendar_html_link ||
-                      (typeof ext.gcal_html_link === "string" ? (ext.gcal_html_link as string) : null);
-                    const joinLink = meta.meet_link || (loc && /^https?:\/\//i.test(loc) ? loc : null);
-                    const accessLink = calendarLink || joinLink;
-                    const recordingUrl = meta.recording_url || (typeof ext.recording_url === "string" ? (ext.recording_url as string) : null);
-                    const startD = a.due_date ? new Date(a.due_date) : null;
-                    const endD = meta.end_at ? new Date(meta.end_at) : null;
-                    const sameDay =
-                      startD && endD && startD.toDateString() === endD.toDateString();
-                    const timeFmt = (d: Date) =>
-                      d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-                    const hasMeetingMeta =
-                      !!startD ||
-                      !!joinLink ||
-                      !!loc ||
-                      (meta.attendees && meta.attendees.length > 0) ||
-                      !!accessLink ||
-                      !!recordingUrl;
-                    if (!hasMeetingMeta) return null;
-                    return (
-                      <div className="mt-2 space-y-2 rounded-lg border border-border/50 bg-muted/30 p-3 text-xs">
-
-                        {startD && (
-                          <div className="flex items-start gap-2">
-                            <CalendarDays className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-                            <div>
-                              <div className="font-medium text-foreground">
-                                {formatDateTime(startD.toISOString())}
+                  {a.type === "meeting" &&
+                    (() => {
+                      const meta = ((a as unknown as { attachments?: unknown }).attachments ??
+                        {}) as {
+                        attendees?: Array<{ email: string; name?: string; contact_id?: string }>;
+                        end_at?: string;
+                        meet_link?: string;
+                        calendar_html_link?: string;
+                        recording_url?: string;
+                      };
+                      const ext = ((a as unknown as { external_ids?: Record<string, unknown> })
+                        .external_ids ?? {}) as Record<string, unknown>;
+                      const loc = (a as unknown as { meeting_location?: string }).meeting_location;
+                      // Prefer Google Calendar event link (htmlLink). Fall back to meet/Jitsi link.
+                      const calendarLink =
+                        meta.calendar_html_link ||
+                        (typeof ext.gcal_html_link === "string"
+                          ? (ext.gcal_html_link as string)
+                          : null);
+                      const joinLink =
+                        meta.meet_link || (loc && /^https?:\/\//i.test(loc) ? loc : null);
+                      const accessLink = calendarLink || joinLink;
+                      const recordingUrl =
+                        meta.recording_url ||
+                        (typeof ext.recording_url === "string"
+                          ? (ext.recording_url as string)
+                          : null);
+                      const startD = a.due_date ? new Date(a.due_date) : null;
+                      const endD = meta.end_at ? new Date(meta.end_at) : null;
+                      const sameDay =
+                        startD && endD && startD.toDateString() === endD.toDateString();
+                      const timeFmt = (d: Date) =>
+                        d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+                      const hasMeetingMeta =
+                        !!startD ||
+                        !!joinLink ||
+                        !!loc ||
+                        (meta.attendees && meta.attendees.length > 0) ||
+                        !!accessLink ||
+                        !!recordingUrl;
+                      if (!hasMeetingMeta) return null;
+                      return (
+                        <div className="mt-2 space-y-2 rounded-lg border border-border/50 bg-muted/30 p-3 text-xs">
+                          {startD && (
+                            <div className="flex items-start gap-2">
+                              <CalendarDays className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+                              <div>
+                                <div className="font-medium text-foreground">
+                                  {formatDateTime(startD.toISOString())}
+                                  {endD && (
+                                    <span className="text-muted-foreground">
+                                      {sameDay
+                                        ? ` – ${timeFmt(endD)}`
+                                        : ` – ${formatDateTime(endD.toISOString())}`}
+                                    </span>
+                                  )}
+                                </div>
                                 {endD && (
-                                  <span className="text-muted-foreground">
-                                    {sameDay
-                                      ? ` – ${timeFmt(endD)}`
-                                      : ` – ${formatDateTime(endD.toISOString())}`}
-                                  </span>
+                                  <div className="text-[11px] text-muted-foreground">
+                                    Duração:{" "}
+                                    {Math.max(
+                                      1,
+                                      Math.round((endD.getTime() - startD.getTime()) / 60000),
+                                    )}{" "}
+                                    min
+                                  </div>
                                 )}
                               </div>
-                              {endD && (
-                                <div className="text-[11px] text-muted-foreground">
-                                  Duração:{" "}
-                                  {Math.max(
-                                    1,
-                                    Math.round((endD.getTime() - startD.getTime()) / 60000),
-                                  )}{" "}
-                                  min
-                                </div>
-                              )}
                             </div>
-                          </div>
-                        )}
-                        {(joinLink || loc) && (
-                          <div className="flex items-start gap-2">
-                            <LinkIcon className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-                            <div className="min-w-0 flex-1">
-                              {joinLink ? (
-                                <a
-                                  href={joinLink}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="text-primary hover:underline break-all"
-                                >
-                                  {joinLink}
-                                </a>
-                              ) : (
-                                <span className="break-all">{loc}</span>
-                              )}
+                          )}
+                          {(joinLink || loc) && (
+                            <div className="flex items-start gap-2">
+                              <LinkIcon className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+                              <div className="min-w-0 flex-1">
+                                {joinLink ? (
+                                  <a
+                                    href={joinLink}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-primary hover:underline break-all"
+                                  >
+                                    {joinLink}
+                                  </a>
+                                ) : (
+                                  <span className="break-all">{loc}</span>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        {meta.attendees && meta.attendees.length > 0 && (
-                          <div className="flex items-start gap-2">
-                            <Users className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
-                            <div className="flex flex-wrap gap-1">
-                              {meta.attendees.map((p, i) => (
-                                <Badge key={i} variant="secondary" className="text-[10px] gap-1">
-                                  {p.contact_id ? (
-                                    <User className="h-2.5 w-2.5" />
-                                  ) : (
-                                    <Mail className="h-2.5 w-2.5" />
-                                  )}
-                                  {p.name ? `${p.name} <${p.email}>` : p.email}
-                                </Badge>
-                              ))}
+                          )}
+                          {meta.attendees && meta.attendees.length > 0 && (
+                            <div className="flex items-start gap-2">
+                              <Users className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+                              <div className="flex flex-wrap gap-1">
+                                {meta.attendees.map((p, i) => (
+                                  <Badge key={i} variant="secondary" className="text-[10px] gap-1">
+                                    {p.contact_id ? (
+                                      <User className="h-2.5 w-2.5" />
+                                    ) : (
+                                      <Mail className="h-2.5 w-2.5" />
+                                    )}
+                                    {p.name ? `${p.name} <${p.email}>` : p.email}
+                                  </Badge>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        )}
-                        {(accessLink || recordingUrl) && (
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {accessLink && (
-                              <Button
-                                asChild
-                                size="sm"
-                                variant="outline"
-                                className="h-7 text-xs"
-                              >
-                                <a href={accessLink} target="_blank" rel="noreferrer">
-                                  Acessar reunião
-                                </a>
-                              </Button>
-                            )}
-                            {recordingUrl && (
-                              <>
-                                <Button
-                                  asChild
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-7 text-xs"
-                                >
-                                  <a href={recordingUrl} target="_blank" rel="noreferrer">
-                                    Ver gravação
+                          )}
+                          {(accessLink || recordingUrl) && (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {accessLink && (
+                                <Button asChild size="sm" variant="outline" className="h-7 text-xs">
+                                  <a href={accessLink} target="_blank" rel="noreferrer">
+                                    Acessar reunião
                                   </a>
                                 </Button>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="h-7 text-xs"
-                                  onClick={() => onSummarizeMeeting?.(a.id)}
-                                >
-                                  Resumir reunião
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
+                              )}
+                              {recordingUrl && (
+                                <>
+                                  <Button
+                                    asChild
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs"
+                                  >
+                                    <a href={recordingUrl} target="_blank" rel="noreferrer">
+                                      Ver gravação
+                                    </a>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    className="h-7 text-xs"
+                                    onClick={() => onSummarizeMeeting?.(a.id)}
+                                  >
+                                    Resumir reunião
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   {editingId === a.id ? (
                     <div className="mt-2 space-y-2">
                       <RichHtmlEditor
@@ -1483,11 +1552,7 @@ export function ActivityTimeline({
                                     </span>
                                   </Button>
                                 </PopoverTrigger>
-                                <PopoverContent
-                                  className="w-auto p-0"
-                                  align="end"
-                                  sideOffset={8}
-                                >
+                                <PopoverContent className="w-auto p-0" align="end" sideOffset={8}>
                                   <Calendar
                                     mode="single"
                                     selected={editingDueDate ? new Date(editingDueDate) : undefined}
@@ -1611,36 +1676,43 @@ export function ActivityTimeline({
                       <HtmlContent html={a.body} className="text-sm text-foreground/90 mt-1" />
                     )
                   )}
-                  {a.type === "call" && a.body && /Tipo de Chamada\s*:/i.test(a.body) && (() => {
-                    const text = a.body.replace(/<[^>]+>/g, "\n");
-                    const pick = (re: RegExp) => {
-                      const m = text.match(re);
-                      return m?.[1]?.trim() ?? null;
-                    };
-                    const direction = pick(/Tipo de Chamada\s*:\s*([A-Z]+)/i);
-                    const from = pick(/De\s*:\s*([+\d\s()-]+?)(?:\s+para|$)/i);
-                    const to = pick(/para\s+([+\d\s()-]+)/i);
-                    const status = pick(/Status\s*:\s*([A-Z_]+)/i);
-                    return (
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                        {direction && (
-                          <Badge variant="outline" className="text-[10px] capitalize">
-                            {direction.toLowerCase() === "outbound" ? "Saída" : direction.toLowerCase() === "inbound" ? "Entrada" : direction.toLowerCase()}
-                          </Badge>
-                        )}
-                        {from && to && (
-                          <span className="text-muted-foreground tabular-nums">
-                            {from} → {to}
-                          </span>
-                        )}
-                        {status && (
-                          <Badge variant="secondary" className="text-[10px] capitalize">
-                            {status.toLowerCase().replace(/_/g, " ")}
-                          </Badge>
-                        )}
-                      </div>
-                    );
-                  })()}
+                  {a.type === "call" &&
+                    a.body &&
+                    /Tipo de Chamada\s*:/i.test(a.body) &&
+                    (() => {
+                      const text = a.body.replace(/<[^>]+>/g, "\n");
+                      const pick = (re: RegExp) => {
+                        const m = text.match(re);
+                        return m?.[1]?.trim() ?? null;
+                      };
+                      const direction = pick(/Tipo de Chamada\s*:\s*([A-Z]+)/i);
+                      const from = pick(/De\s*:\s*([+\d\s()-]+?)(?:\s+para|$)/i);
+                      const to = pick(/para\s+([+\d\s()-]+)/i);
+                      const status = pick(/Status\s*:\s*([A-Z_]+)/i);
+                      return (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                          {direction && (
+                            <Badge variant="outline" className="text-[10px] capitalize">
+                              {direction.toLowerCase() === "outbound"
+                                ? "Saída"
+                                : direction.toLowerCase() === "inbound"
+                                  ? "Entrada"
+                                  : direction.toLowerCase()}
+                            </Badge>
+                          )}
+                          {from && to && (
+                            <span className="text-muted-foreground tabular-nums">
+                              {from} → {to}
+                            </span>
+                          )}
+                          {status && (
+                            <Badge variant="secondary" className="text-[10px] capitalize">
+                              {status.toLowerCase().replace(/_/g, " ")}
+                            </Badge>
+                          )}
+                        </div>
+                      );
+                    })()}
                   {a.type === "call" && (a.duration_ms || a.disposition) && (
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
                       {a.disposition && (
@@ -1656,46 +1728,49 @@ export function ActivityTimeline({
                       )}
                     </div>
                   )}
-                  {a.type === "call" && (() => {
-                    const url =
-                      a.recording_url ||
-                      (a.body?.match(/https?:\/\/[^\s<"']+\.(?:mp3|wav|ogg|m4a)/i)?.[0] ?? null) ||
-                      (a.body?.match(/https?:\/\/api\.twilio\.com\/[^\s<"']+/i)?.[0] ?? null);
-                    if (!url) return null;
-                    return (
-                      <div className="mt-3 space-y-1">
-                        <audio controls preload="none" src={url} className="w-full h-10" />
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
-                        >
-                          <LinkIcon className="h-3 w-3" /> Abrir gravação
-                        </a>
+                  {a.type === "call" &&
+                    (() => {
+                      const url =
+                        a.recording_url ||
+                        (a.body?.match(/https?:\/\/[^\s<"']+\.(?:mp3|wav|ogg|m4a)/i)?.[0] ??
+                          null) ||
+                        (a.body?.match(/https?:\/\/api\.twilio\.com\/[^\s<"']+/i)?.[0] ?? null);
+                      if (!url) return null;
+                      return (
+                        <div className="mt-3 space-y-1">
+                          <audio controls preload="none" src={url} className="w-full h-10" />
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[11px] text-primary hover:underline inline-flex items-center gap-1"
+                          >
+                            <LinkIcon className="h-3 w-3" /> Abrir gravação
+                          </a>
+                        </div>
+                      );
+                    })()}
+
+                  {a.type === "email" &&
+                    !emailMeta.has(a.id) &&
+                    (a.email_direction || a.email_status) && (
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                        {a.email_direction && (
+                          <Badge variant="outline" className="text-[10px] capitalize">
+                            {a.email_direction === "inbound"
+                              ? "recebido"
+                              : a.email_direction === "outbound"
+                                ? "enviado"
+                                : a.email_direction}
+                          </Badge>
+                        )}
+                        {a.email_status && (
+                          <Badge variant="secondary" className="text-[10px] capitalize">
+                            {a.email_status}
+                          </Badge>
+                        )}
                       </div>
-                    );
-                  })()}
-
-
-                  {a.type === "email" && !emailMeta.has(a.id) && (a.email_direction || a.email_status) && (
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
-                      {a.email_direction && (
-                        <Badge variant="outline" className="text-[10px] capitalize">
-                          {a.email_direction === "inbound"
-                            ? "recebido"
-                            : a.email_direction === "outbound"
-                              ? "enviado"
-                              : a.email_direction}
-                        </Badge>
-                      )}
-                      {a.email_status && (
-                        <Badge variant="secondary" className="text-[10px] capitalize">
-                          {a.email_status}
-                        </Badge>
-                      )}
-                    </div>
-                  )}
+                    )}
                   {/* Mentions render inline within the body HTML; no duplicate chip below. */}
                   {editingId !== a.id && atts.length > 0 && (
                     <div className="mt-3 flex flex-col gap-2">
@@ -1712,7 +1787,8 @@ export function ActivityTimeline({
                     </div>
                   )}
                   {(() => {
-                    const ext = ((a as unknown as { external_ids?: Record<string, unknown> }).external_ids ?? {}) as Record<string, unknown>;
+                    const ext = ((a as unknown as { external_ids?: Record<string, unknown> })
+                      .external_ids ?? {}) as Record<string, unknown>;
                     const src = typeof ext.source === "string" ? (ext.source as string) : null;
                     const isCalSynced = a.id.startsWith("cal_");
                     const callKeys = ["twilio_call_sid", "vapi_call_id", "twilio_sid"];
@@ -1762,7 +1838,9 @@ export function ActivityTimeline({
 
                   <ActivityComments
                     activityId={a.id}
-                    workspaceId={(a as unknown as { workspace_id?: string }).workspace_id ?? currentWorkspaceId}
+                    workspaceId={
+                      (a as unknown as { workspace_id?: string }).workspace_id ?? currentWorkspaceId
+                    }
                     team={team}
                   />
                 </div>
