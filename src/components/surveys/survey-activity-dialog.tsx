@@ -44,12 +44,26 @@ import {
   type ScoreQuestion,
 } from "@/lib/prospecting/score";
 import { QualificationQuestionInput } from "@/components/prospecting/qualification-question-input";
+import { getLeadIcpFit } from "@/lib/scoring/icp.functions";
 import {
   QualificationEntityBlocks,
   useQualificationEntityFields,
 } from "@/components/prospecting/qualification-entity-fields";
 
 type Selection = { source: SurveySourceKind; id: string };
+
+const ICP_LABEL: Record<string, string> = {
+  high: "Alto",
+  medium: "Médio",
+  low: "Baixo",
+  unknown: "Sem critérios",
+};
+const ICP_BADGE: Record<string, "default" | "secondary" | "outline"> = {
+  high: "default",
+  medium: "secondary",
+  low: "outline",
+  unknown: "outline",
+};
 
 function encode(s: Selection) {
   return `${s.source}:${s.id}`;
@@ -146,6 +160,16 @@ export function SurveyActivityDialog({
   );
   const percent = scorePercent(score, maxInfo.max);
   const threshold = form.data?.pass_threshold ?? null;
+
+  // Fit de ICP do lead (critérios de Prospecção → Scoring).
+  const icpFitFn = useServerFn(getLeadIcpFit);
+  const isLead = relatedKey === "related_lead_id";
+  const icpFit = useQuery({
+    queryKey: ["scoring", "icp-fit", relatedId],
+    queryFn: () => icpFitFn({ data: { lead_id: relatedId } }),
+    enabled: open && isLead && isSalesForm && !!relatedId,
+    staleTime: 60_000,
+  });
 
   const save = useMutation({
     mutationFn: async () => {
@@ -362,6 +386,20 @@ export function SurveyActivityDialog({
                         {threshold != null ? `Corte ${threshold}` : "Sem corte definido"}
                         {maxInfo.hasOpenEnded ? " · há perguntas sem teto" : ""}
                       </p>
+                      {isLead && icpFit.data && icpFit.data.criteriaCount > 0 ? (
+                        <div className="mt-2 flex items-center justify-between gap-2 border-t border-border/60 pt-2">
+                          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                            Fit ICP
+                          </p>
+                          <Badge
+                            variant={ICP_BADGE[icpFit.data.level] ?? "outline"}
+                            className="text-[10px]"
+                          >
+                            {ICP_LABEL[icpFit.data.level] ?? icpFit.data.level}
+                            {icpFit.data.percent != null ? ` · ${icpFit.data.percent}%` : ""}
+                          </Badge>
+                        </div>
+                      ) : null}
                     </div>
                   )}
                   <div className="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
