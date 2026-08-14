@@ -444,6 +444,8 @@ export function QualificationPanel({
           reason: reason || null,
           queue_id: queueId ?? null,
           qualification_id: existingForActive?.id ?? null,
+          stage_id: nurtureStage?.value ?? null,
+          pipeline_id: nurtureStage && pipelineId ? pipelineId : null,
         },
       });
       if (res.enrolled && res.cadence_name) {
