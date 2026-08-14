@@ -40,8 +40,13 @@ export type ApolloCompanyData = {
   state?: string | null;
   country?: string | null;
   linkedin_company_page?: string | null;
+  facebook_company_page?: string | null;
+  twitterhandle?: string | null;
   annualrevenue?: number | null;
   description?: string | null;
+  address?: string | null;
+  cep?: string | null;
+  timezone?: string | null;
 };
 
 export type ApolloPersonData = {
@@ -52,9 +57,12 @@ export type ApolloPersonData = {
   mobile_phone?: string | null;
   job_title?: string | null;
   linkedin_url?: string | null;
+  twitter_handle?: string | null;
   city?: string | null;
   state?: string | null;
   country?: string | null;
+  address?: string | null;
+  cep?: string | null;
 };
 
 type ApolloOrg = {
@@ -69,9 +77,15 @@ type ApolloOrg = {
   state?: string | null;
   country?: string | null;
   linkedin_url?: string | null;
+  facebook_url?: string | null;
+  twitter_url?: string | null;
   annual_revenue?: number | null;
   short_description?: string | null;
   seo_description?: string | null;
+  street_address?: string | null;
+  raw_address?: string | null;
+  postal_code?: string | null;
+  timezone?: string | null;
 };
 
 type ApolloPerson = {
@@ -80,9 +94,13 @@ type ApolloPerson = {
   email?: string | null;
   title?: string | null;
   linkedin_url?: string | null;
+  twitter_url?: string | null;
   city?: string | null;
   state?: string | null;
   country?: string | null;
+  present_raw_address?: string | null;
+  street_address?: string | null;
+  postal_code?: string | null;
   phone_numbers?: { sanitized_number?: string; raw_number?: string; type?: string }[];
   organization?: ApolloOrg | null;
 };
@@ -176,6 +194,13 @@ export function domainFromEmail(email?: string | null): string | null {
   return d;
 }
 
+/** Extrai o @handle de uma URL de rede social (ex.: twitter.com/acme → acme). */
+function handleFromUrl(raw?: string | null): string | null {
+  if (!raw) return null;
+  const m = String(raw).trim().replace(/\/+$/, "").split("/").pop();
+  return m ? m.replace(/^@/, "") : null;
+}
+
 function mapOrg(org?: ApolloOrg | null): ApolloCompanyData | null {
   if (!org) return null;
   return {
@@ -189,8 +214,13 @@ function mapOrg(org?: ApolloOrg | null): ApolloCompanyData | null {
     state: org.state ?? null,
     country: org.country ?? null,
     linkedin_company_page: org.linkedin_url ?? null,
+    facebook_company_page: org.facebook_url ?? null,
+    twitterhandle: handleFromUrl(org.twitter_url),
     annualrevenue: typeof org.annual_revenue === "number" ? org.annual_revenue : null,
     description: org.short_description ?? org.seo_description ?? null,
+    address: org.street_address ?? org.raw_address ?? null,
+    cep: org.postal_code ?? null,
+    timezone: org.timezone ?? null,
   };
 }
 
@@ -270,9 +300,12 @@ export async function apolloPeopleMatch(input: {
       mobile_phone: num(mobile),
       job_title: p.title ?? null,
       linkedin_url: p.linkedin_url ?? null,
+      twitter_handle: handleFromUrl(p.twitter_url),
       city: p.city ?? null,
       state: p.state ?? null,
       country: p.country ?? null,
+      address: p.street_address ?? p.present_raw_address ?? null,
+      cep: p.postal_code ?? null,
     },
     company: mapOrg(p.organization),
   };
@@ -347,8 +380,7 @@ export async function runApolloCascade(input: {
   // entrada. Só chamamos quando há sinal com chance real de acerto:
   // LinkedIn, e-mail corporativo ou nome + domínio resolvido.
   const corporateEmail = !!domainFromEmail(input.email);
-  const hasSignal =
-    !!input.linkedin_url || corporateEmail || (!!input.first_name && !!domain);
+  const hasSignal = !!input.linkedin_url || corporateEmail || (!!input.first_name && !!domain);
 
   let matched: Awaited<ReturnType<typeof apolloPeopleMatch>> | null = null;
   if (hasSignal) {
@@ -367,7 +399,6 @@ export async function runApolloCascade(input: {
       "Sem dados suficientes para enriquecer: informe o site da empresa, um e-mail corporativo ou o LinkedIn do contato.",
     );
   }
-
 
   if (!company && matched?.company) company = matched.company;
   if (!domain && company?.domain) {

@@ -16,7 +16,6 @@ import { CurrencyInput } from "@/components/ui/currency-input";
 import { formatMoney, isMoneyField } from "@/lib/format/money-fields";
 import { translateFieldValue } from "@/lib/i18n/hubspot-values";
 
-
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,65 +103,79 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
     valuesRef.current = values;
   }, [values]);
 
+  // Campos preenchidos automaticamente pelo enriquecimento (para exibir o selo).
+  const [autofilled, setAutofilled] = useState<Record<string, boolean>>({});
+  // Última sugestão recebida, guardada para reaplicar quando os registros
+  // recarregarem (a ordem de chegada Apollo/registros não deve importar).
+  const suggestionsRef = useRef<EntitySuggestions | null>(null);
+  // Campos que o usuário editou manualmente — nunca são sobrescritos.
+  const touchedRef = useRef<Set<string>>(new Set());
+
+  /**
+   * Monta os valores a partir dos registros e, em seguida, aplica as
+   * sugestões nos campos vazios (mantendo edições manuais).
+   */
+  const buildValues = useCallback(
+    (records: Records, suggestions: EntitySuggestions | null) => {
+      const current = valuesRef.current;
+      const next: Values = { leads: {}, companies: {}, contacts: {} };
+      const filled: string[] = [];
+      for (const b of blocks) {
+        const row = records[b.entity];
+        for (const f of b.fields) {
+          const path = `${b.entity}.${f.key}`;
+          if (touchedRef.current.has(path)) {
+            next[b.entity][f.key] = current[b.entity]?.[f.key] ?? null;
+            continue;
+          }
+          const fromRow = row ? (row[f.key] ?? null) : null;
+          const sugg = suggestions?.[b.entity]?.[f.key];
+          if (isEmpty(fromRow) && sugg !== null && sugg !== undefined && sugg !== "") {
+            next[b.entity][f.key] = sugg;
+            filled.push(path);
+          } else {
+            next[b.entity][f.key] = fromRow;
+          }
+        }
+      }
+      valuesRef.current = next;
+      setValues(next);
+      setAutofilled(() => {
+        const map: Record<string, boolean> = {};
+        for (const k of filled) map[k] = true;
+        return map;
+      });
+      return filled.length;
+    },
+    [blocks],
+  );
+
   // Sincroniza os valores editáveis quando os registros carregam.
   // Blocos de entidades ainda sem registro vinculado começam vazios e
   // permanecem editáveis: o registro é criado e vinculado ao salvar.
   useEffect(() => {
     if (!data) return;
-    const next: Values = { leads: {}, companies: {}, contacts: {} };
-    for (const b of blocks) {
-      const row = data[b.entity];
-      for (const f of b.fields) {
-        next[b.entity][f.key] = row ? (row[f.key] ?? null) : null;
-      }
-    }
-    setValues(next);
-  }, [data, blocks]);
-
-  // Campos preenchidos automaticamente pelo enriquecimento (para exibir o selo).
-  const [autofilled, setAutofilled] = useState<Record<string, boolean>>({});
+    buildValues(data, suggestionsRef.current);
+  }, [data, buildValues]);
 
   const setValue = (entity: QualificationFieldEntity, key: string, value: unknown) => {
+    touchedRef.current.add(`${entity}.${key}`);
     setValues((prev) => ({ ...prev, [entity]: { ...prev[entity], [key]: value } }));
     setAutofilled((prev) => ({ ...prev, [`${entity}.${key}`]: false }));
   };
 
   /**
-   * Preenche automaticamente apenas os campos configurados que estão vazios,
-   * marcando-os com o selo de origem. Campos já preenchidos ficam como
-   * sugestão para o usuário aplicar manualmente.
+   * Registra as sugestões do enriquecimento e as aplica imediatamente nos
+   * campos vazios, marcando-os com o selo de origem. Campos já preenchidos
+   * (no banco ou pelo usuário) ficam como sugestão para aplicar manualmente.
    */
   const applySuggestions = useCallback(
     (suggestions: EntitySuggestions) => {
-      const current = valuesRef.current;
-      const next: Values = {
-        leads: { ...current.leads },
-        companies: { ...current.companies },
-        contacts: { ...current.contacts },
-      };
-      const filled: string[] = [];
-      for (const b of blocks) {
-        const sugg = suggestions[b.entity];
-        if (!sugg) continue;
-        for (const f of b.fields) {
-          const value = sugg[f.key];
-          if (value === null || value === undefined || value === "") continue;
-          if (!isEmpty(next[b.entity][f.key])) continue;
-          next[b.entity][f.key] = value;
-          filled.push(`${b.entity}.${f.key}`);
-        }
-      }
-      if (filled.length === 0) return 0;
-      valuesRef.current = next;
-      setValues(next);
-      setAutofilled((prev) => {
-        const merged = { ...prev };
-        for (const k of filled) merged[k] = true;
-        return merged;
-      });
-      return filled.length;
+      suggestionsRef.current = suggestions;
+      if (!data) return 0;
+      return buildValues(data, suggestions);
     },
-    [blocks],
+    [buildValues, data],
   );
 
   const missingRequired = useMemo(() => {
@@ -241,7 +254,6 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
         .select("id");
       if (upErr) throw new Error(upErr.message);
       assertAffected(affected, entity === "leads" ? "leads.update" : `${entity}.update`);
-
     }
   };
 
@@ -325,7 +337,6 @@ export function QualificationEntityBlocks({
                 />
               ))}
             </div>
-
           </section>
         );
       })}
@@ -458,7 +469,9 @@ function EntityFieldInput({
             title={`Aplicar sugestão do Apollo.io: ${formatMoney(suggestion) ?? String(suggestion)}`}
           >
             <Sparkles className="h-3 w-3" aria-hidden="true" />
-            <span className="truncate">Apollo: {formatMoney(suggestion) ?? String(suggestion)}</span>
+            <span className="truncate">
+              Apollo: {formatMoney(suggestion) ?? String(suggestion)}
+            </span>
           </Button>
         ) : null}
       </div>
@@ -492,5 +505,3 @@ function EntityFieldInput({
     </div>
   );
 }
-
-
