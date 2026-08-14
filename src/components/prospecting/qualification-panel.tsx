@@ -385,10 +385,15 @@ export function QualificationPanel({
     setDisqualifying(true);
     try {
       const combined = reasonNote.trim() ? `${reasonValue} — ${reasonNote.trim()}` : reasonValue;
-      // 1) atualiza status do lead
+      // 1) atualiza status do lead e move para a etapa de perda do funil
+      const lostPatch: Record<string, unknown> = { status: "disqualified" };
+      if (lostStage) {
+        lostPatch.stage_id = lostStage.value;
+        if (pipelineId) lostPatch.pipeline_id = pipelineId;
+      }
       const { data: updatedLead, error: leadErr } = await supabase
         .from("leads")
-        .update({ status: "disqualified" })
+        .update(lostPatch as never)
         .eq("id", entityId)
         .select("id");
       if (leadErr) throw new Error(leadErr.message);
