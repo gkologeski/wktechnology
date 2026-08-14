@@ -120,7 +120,6 @@ export function ActivityTimeline({
   // Contador incrementado por eventos de realtime para refazer o fetch das respostas.
   const [surveyTick, setSurveyTick] = useState(0);
 
-
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -570,7 +569,6 @@ export function ActivityTimeline({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relatedKey, relatedId, datePreset, dateCustom.start, dateCustom.end]);
-
 
   // Resolve email/phone/contact from parent entity for the "Criar" actions
   useEffect(() => {

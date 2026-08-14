@@ -53,7 +53,6 @@ import {
 } from "@/components/prospecting/qualification-entity-fields";
 import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
 
-
 type Selection = { source: SurveySourceKind; id: string };
 
 const ICP_LABEL: Record<string, string> = {
@@ -160,9 +159,7 @@ export function SurveyActivityDialog({
   );
   const maxInfo = useMemo(
     () =>
-      isSalesForm
-        ? computeQualificationMaxScore(scoreQuestions)
-        : { max: 0, hasOpenEnded: false },
+      isSalesForm ? computeQualificationMaxScore(scoreQuestions) : { max: 0, hasOpenEnded: false },
     [isSalesForm, scoreQuestions],
   );
   const percent = scorePercent(score, maxInfo.max);
@@ -207,9 +204,7 @@ export function SurveyActivityDialog({
   });
 
   // Opções da pesquisa conforme o tipo escolhido.
-  const options = useMemo<
-    Array<{ selection: Selection; name: string; group: string }>
-  >(() => {
+  const options = useMemo<Array<{ selection: Selection; name: string; group: string }>>(() => {
     const d = available.data;
     if (!d) return [];
     const tpl = (rows: Array<{ id: string; name: string }>, group: string) =>
@@ -333,7 +328,6 @@ export function SurveyActivityDialog({
               )}
             </div>
           </div>
-
 
           {selection && (
             <div className="space-y-3 rounded-lg border border-border/60 p-3">
