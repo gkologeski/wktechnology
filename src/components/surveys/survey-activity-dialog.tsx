@@ -48,6 +48,7 @@ import { getLeadIcpFit } from "@/lib/scoring/icp.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { QUESTIONNAIRES_CREATE, asKeys } from "@/lib/prospecting/permission-keys";
 import {
+import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
   QualificationEntityBlocks,
   useQualificationEntityFields,
 } from "@/components/prospecting/qualification-entity-fields";
@@ -197,6 +198,7 @@ export function SurveyActivityDialog({
           ? `Pesquisa registrada (score ${res.score}/${res.max_score}).`
           : "Pesquisa registrada na timeline.",
       );
+      notifyTimelineRefresh();
       onSaved?.();
       onOpenChange(false);
     },
