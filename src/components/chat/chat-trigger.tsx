@@ -45,7 +45,7 @@ export function ChatTrigger() {
                 size="icon"
                 onClick={() => setOpen(true)}
                 aria-label="Abrir mensageiro"
-                className="h-12 w-12 rounded-full shadow-lg relative"
+                className="h-12 w-12 rounded-full shadow-lg relative opacity-10 hover:opacity-100 transition-opacity duration-200"
                 variant="secondary"
               >
                 <MessageSquare className="h-5 w-5" />
