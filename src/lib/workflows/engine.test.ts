@@ -95,7 +95,9 @@ describe("workflow engine survey activity", () => {
           eq: () => ({ maybeSingle: async () => ({ data: { name: "Questionário Padrão" } }) }),
         }),
         insert: () => ({
-          select: () => ({ single: async () => ({ data: null, error: { message: "Falha ao criar" } }) }),
+          select: () => ({
+            single: async () => ({ data: null, error: { message: "Falha ao criar" } }),
+          }),
         }),
       }),
     };
