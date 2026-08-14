@@ -19,6 +19,8 @@ import { GenericRecordForm } from "../generic-record-form";
 import { TokenInput, TokenTextarea } from "../token-input";
 import { ActionTemplatesBar } from "../action-templates-bar";
 import { ACTION_LABELS, type WorkflowEntity, type WorkflowAction } from "@/lib/workflows/types";
+import { useServerFn } from "@tanstack/react-start";
+import { listAvailableSurveys } from "@/lib/surveys/survey-activity.functions";
 
 export function StepConfigPanel({
   action,
@@ -900,6 +902,8 @@ function StepConfigForm({
           onChange={onChange}
         />
       );
+    case "create_survey_activity":
+      return <CreateSurveyActivityForm action={action} onChange={onChange} />;
     case "delay_until_date":
       return <DelayUntilDateForm entity={entity} action={action} onChange={onChange} />;
     case "format_data":
@@ -1641,6 +1645,107 @@ function FormatDataForm({
           <code>{"{{vars." + (action.target_var || "nome") + "}}"}</code>.
         </p>
       </div>
+    </div>
+  );
+}
+
+/** Ação "Criar pesquisa (atividade)": escolhe o questionário/modelo de pesquisa. */
+function CreateSurveyActivityForm({
+  action,
+  onChange,
+}: {
+  action: Extract<WorkflowAction, { type: "create_survey_activity" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  const listFn = useServerFn(listAvailableSurveys);
+  const available = useQuery({
+    queryKey: ["survey-activity", "available"],
+    queryFn: () => listFn(),
+  });
+
+  const options = [
+    ...(available.data?.questionnaires ?? []).map((q) => ({
+      value: `prospecting_questionnaire:${q.id}`,
+      label: `${q.name} (vendas)`,
+    })),
+    ...(available.data?.templates ?? []).map((t) => ({
+      value: `survey_template:${t.id}`,
+      label: `${t.name} (${String(t.kind ?? "form").toUpperCase()})`,
+    })),
+  ];
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <Label htmlFor="wf-survey-source">Pesquisa</Label>
+        {available.isLoading ? (
+          <p className="text-xs text-muted-foreground">Carregando pesquisas…</p>
+        ) : available.isError ? (
+          <p className="text-xs text-destructive" role="alert">
+            Não foi possível carregar as pesquisas.
+          </p>
+        ) : options.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Nenhuma pesquisa ativa. Crie um questionário em Configurações → Prospecção.
+          </p>
+        ) : (
+          <Select
+            value={action.source_id ? `${action.source}:${action.source_id}` : ""}
+            onValueChange={(v) => {
+              const [source, id] = v.split(":");
+              if (source !== "survey_template" && source !== "prospecting_questionnaire") return;
+              onChange({ ...action, source, source_id: id });
+            }}
+          >
+            <SelectTrigger id="wf-survey-source">
+              <SelectValue placeholder="Selecione a pesquisa…" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((o) => (
+                <SelectItem key={o.value} value={o.value}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+      <div className="space-y-1">
+        <Label>Assunto (opcional)</Label>
+        <TokenInput
+          value={action.subject ?? ""}
+          onValueChange={(v) => onChange({ ...action, subject: v || undefined })}
+          placeholder="Pesquisa — nome da pesquisa"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label>Observação (opcional)</Label>
+        <TokenTextarea
+          value={action.body ?? ""}
+          onValueChange={(v) => onChange({ ...action, body: v || undefined })}
+          rows={3}
+          placeholder="Instruções para quem vai responder"
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <Label className="text-xs">Vence em (dias)</Label>
+        <Input
+          type="number"
+          min={0}
+          max={365}
+          className="w-24"
+          value={action.due_in_days ?? ""}
+          onChange={(e) =>
+            onChange({
+              ...action,
+              due_in_days: e.target.value ? Number(e.target.value) : undefined,
+            })
+          }
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        A atividade de pesquisa fica pendente na timeline do registro e é respondida em Pesquisas.
+      </p>
     </div>
   );
 }

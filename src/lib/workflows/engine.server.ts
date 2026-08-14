@@ -529,6 +529,61 @@ async function runAction(
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "create_activity", detail: { subject } };
       }
+      case "create_survey_activity": {
+        // Cria uma atividade de pesquisa PENDENTE (respondida depois em Pesquisas).
+        const isQuest = action.source === "prospecting_questionnaire";
+        const { data: src } = isQuest
+          ? await supabase
+              .from("prospecting_questionnaires")
+              .select("name")
+              .eq("id", action.source_id)
+              .maybeSingle()
+          : await supabase
+              .from("survey_templates")
+              .select("name")
+              .eq("id", action.source_id)
+              .maybeSingle();
+        const sourceName = (src as { name?: string } | null)?.name ?? "Pesquisa";
+        const subject = action.subject
+          ? (renderTokens(action.subject, ctx.after, ctx.vars) as string)
+          : `Pesquisa — ${sourceName}`;
+        const body = action.body ? (renderTokens(action.body, ctx.after, ctx.vars) as string) : null;
+        const due = action.due_in_days
+          ? new Date(Date.now() + action.due_in_days * 86_400_000).toISOString()
+          : null;
+        const row: Record<string, unknown> = {
+          owner_id: ctx.ownerId,
+          type: "survey",
+          subject,
+          body,
+          due_date: due,
+          completed: false,
+          custom_fields: {
+            survey_source: action.source,
+            survey_source_id: action.source_id,
+            survey_source_name: sourceName,
+            survey_status: "pending",
+          },
+        };
+        if (ctx.entity === "leads") row.related_lead_id = ctx.entityId;
+        else if (ctx.entity === "contacts") row.related_contact_id = ctx.entityId;
+        else if (ctx.entity === "companies") row.related_company_id = ctx.entityId;
+        else if (ctx.entity === "deals") row.related_deal_id = ctx.entityId;
+        else if (ctx.entity === "tickets") row.related_ticket_id = ctx.entityId;
+        else throw new Error("create_survey_activity não suporta esta entidade");
+        const { data: created, error } = await supabase
+          .from("activities")
+          .insert(row as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "create_survey_activity",
+          detail: { activity_id: (created as { id: string }).id, subject },
+        };
+      }
       case "add_to_sequence": {
         const { error } = await supabase.from("sequence_enrollments").insert({
           owner_id: ctx.ownerId,

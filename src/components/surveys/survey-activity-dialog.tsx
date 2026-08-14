@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState , useRef} from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -86,12 +86,20 @@ export function SurveyActivityDialog({
   relatedKey,
   relatedId,
   onSaved,
+  initialSource,
+  initialSourceId,
+  activityId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   relatedKey: RelatedKey;
   relatedId: string;
   onSaved?: () => void;
+  /** Abre já com esta pesquisa selecionada (ex.: pendência criada por workflow). */
+  initialSource?: SurveySourceKind;
+  initialSourceId?: string;
+  /** Atividade de pesquisa pendente que será concluída com as respostas. */
+  activityId?: string;
 }) {
   const listFn = useServerFn(listAvailableSurveys);
   const formFn = useServerFn(getSurveyForm);
@@ -102,6 +110,7 @@ export function SurveyActivityDialog({
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [notes, setNotes] = useState("");
   const [showErrors, setShowErrors] = useState(false);
+  const preselectedRef = useRef(false);
 
   const available = useQuery({
     queryKey: ["survey-activity", "available"],
@@ -128,12 +137,25 @@ export function SurveyActivityDialog({
     }
   }, [open]);
 
+  // Pesquisa pré-selecionada (pendência criada por workflow).
+  useEffect(() => {
+    if (!open || !initialSource || !initialSourceId) return;
+    preselectedRef.current = true;
+    setKind(initialSource === "prospecting_questionnaire" ? "vendas" : "livre");
+    setSelection({ source: initialSource, id: initialSourceId });
+  }, [open, initialSource, initialSourceId]);
+
   useEffect(() => {
     setAnswers({});
     setShowErrors(false);
   }, [selection?.id]);
 
   useEffect(() => {
+    // Preserva a seleção quando o tipo foi definido por uma pendência de workflow.
+    if (preselectedRef.current) {
+      preselectedRef.current = false;
+      return;
+    }
     setSelection(null);
   }, [kind]);
 
@@ -181,6 +203,7 @@ export function SurveyActivityDialog({
       if (isSalesLead && fieldLayout.length > 0) await entityFields.saveAll();
       return saveFn({
         data: {
+          ...(activityId ? { activity_id: activityId } : {}),
           source: selection.source,
           source_id: selection.id,
           related_key: relatedKey,

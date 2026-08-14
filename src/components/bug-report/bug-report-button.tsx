@@ -17,7 +17,7 @@ export function BugReportButton() {
                 size="icon"
                 onClick={() => setOpen(true)}
                 aria-label="Abrir chamado"
-                className="h-12 w-12 rounded-full shadow-lg"
+                className="h-12 w-12 rounded-full shadow-lg opacity-10 transition-opacity duration-200 hover:opacity-100 focus-visible:opacity-100"
               >
                 <Bug className="h-5 w-5" />
               </Button>
