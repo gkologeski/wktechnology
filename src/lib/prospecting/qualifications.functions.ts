@@ -247,16 +247,26 @@ export const nurtureLead = createServerFn({ method: "POST" })
         reason: z.string().max(1000).nullable().optional(),
         queue_id: z.string().uuid().nullable().optional(),
         qualification_id: z.string().uuid().nullable().optional(),
+        stage_id: z.string().nullable().optional(),
+        pipeline_id: z.string().uuid().nullable().optional(),
       })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
     const nowIso = new Date().toISOString();
 
-    // 1) Atualiza status do lead
+    // 1) Atualiza status do lead (e a etapa do funil quando informada)
+    const leadPatch: Record<string, unknown> = {
+      status: "nurturing",
+      nurture_started_at: nowIso,
+    };
+    if (data.stage_id) {
+      leadPatch.stage_id = data.stage_id;
+      if (data.pipeline_id) leadPatch.pipeline_id = data.pipeline_id;
+    }
     const { error: leadErr } = await context.supabase
       .from("leads")
-      .update({ status: "nurturing", nurture_started_at: nowIso } as never)
+      .update(leadPatch as never)
       .eq("id", data.lead_id);
     if (leadErr) throw new Error(leadErr.message);
 

@@ -279,11 +279,16 @@ export function QualificationPanel({
     }
   }
 
-  const { stages } = useLeadStages();
+  const { stages, pipelineId } = useLeadStages();
   const qualifiedStage = useMemo(
     () => stages.find((s) => s.value === "qualified") ?? stages.find((s) => s.type === "won"),
     [stages],
   );
+  const lostStage = useMemo(
+    () => stages.find((s) => s.value === "disqualified") ?? stages.find((s) => s.type === "lost"),
+    [stages],
+  );
+  const nurtureStage = useMemo(() => stages.find((s) => s.value === "nurturing"), [stages]);
 
   const saveDraft = useMutation({
     mutationFn: async () => {
@@ -380,10 +385,15 @@ export function QualificationPanel({
     setDisqualifying(true);
     try {
       const combined = reasonNote.trim() ? `${reasonValue} — ${reasonNote.trim()}` : reasonValue;
-      // 1) atualiza status do lead
+      // 1) atualiza status do lead e move para a etapa de perda do funil
+      const lostPatch: Record<string, unknown> = { status: "disqualified" };
+      if (lostStage) {
+        lostPatch.stage_id = lostStage.value;
+        if (pipelineId) lostPatch.pipeline_id = pipelineId;
+      }
       const { data: updatedLead, error: leadErr } = await supabase
         .from("leads")
-        .update({ status: "disqualified" })
+        .update(lostPatch as never)
         .eq("id", entityId)
         .select("id");
       if (leadErr) throw new Error(leadErr.message);
@@ -409,6 +419,7 @@ export function QualificationPanel({
         queryKey: ["prospecting", "qualifications", entity, entityId],
       });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", entityId] });
       setDisqualifyOpen(false);
       setReasonValue("");
       setReasonNote("");
@@ -433,6 +444,8 @@ export function QualificationPanel({
           reason: reason || null,
           queue_id: queueId ?? null,
           qualification_id: existingForActive?.id ?? null,
+          stage_id: nurtureStage?.value ?? null,
+          pipeline_id: nurtureStage && pipelineId ? pipelineId : null,
         },
       });
       if (res.enrolled && res.cadence_name) {
@@ -444,6 +457,7 @@ export function QualificationPanel({
         queryKey: ["prospecting", "qualifications", entity, entityId],
       });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", entityId] });
       qc.invalidateQueries({ queryKey: ["prospecting", "queue-items"] });
       qc.invalidateQueries({ queryKey: ["prospecting", "queue-count"] });
       notifyTimelineRefresh();
