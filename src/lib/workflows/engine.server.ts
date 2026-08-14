@@ -10,12 +10,21 @@ import type {
   WorkflowTrigger,
 } from "./types";
 import { isFilterGroup } from "./types";
+import { ACTION_LABELS } from "./types";
 import { getPath } from "@/lib/message-tokens";
 import { renderWorkflowTokens, toStr } from "./render-tokens";
 import { hydrateTriggerAssociations } from "./hydrate-associations.server";
 
 type AnyRow = Record<string, unknown>;
-type LogStep = { at: string; ok: boolean; action: string; detail?: unknown; error?: string };
+type LogStep = {
+  at: string;
+  ok: boolean;
+  action: string;
+  action_label?: string;
+  step_path?: string;
+  detail?: unknown;
+  error?: string;
+};
 
 function assignFieldFor(entity: WorkflowEntity): string {
   switch (entity) {
@@ -226,11 +235,12 @@ interface RunResult {
   waitingApproval?: { approvalId: string; resumeCursor: number };
 }
 
-async function runActions(
+export async function runActions(
   supabase: SupabaseClient,
   actions: WorkflowAction[],
   ctx: RunCtx,
   startIndex = 0,
+  pathPrefix = "",
 ): Promise<RunResult> {
   const rawLog: LogStep[] = [];
   let currentStep = -1;
@@ -255,6 +265,15 @@ async function runActions(
   for (let i = startIndex; i < actions.length; i++) {
     const action = actions[i];
     currentStep = i;
+    const stepPath = pathPrefix ? `${pathPrefix}.${i + 1}` : String(i + 1);
+    const annotate = (step: LogStep): LogStep => ({
+      ...step,
+      action_label:
+        ACTION_LABELS[step.action as keyof typeof ACTION_LABELS] ??
+        step.action_label ??
+        step.action,
+      step_path: step.step_path ?? stepPath,
+    });
 
     // Delay: agenda retomada e para aqui.
     if (action.type === "delay") {
@@ -262,12 +281,14 @@ async function runActions(
         action.unit === "minutes" ? 60_000 : action.unit === "hours" ? 3_600_000 : 86_400_000;
       const ms = Math.max(1, action.amount) * mult;
       const runAtIso = new Date(Date.now() + ms).toISOString();
-      log.push({
-        at: new Date().toISOString(),
-        ok: true,
-        action: "delay",
-        detail: { amount: action.amount, unit: action.unit, resume_at: runAtIso },
-      });
+      log.push(
+        annotate({
+          at: new Date().toISOString(),
+          ok: true,
+          action: "delay",
+          detail: { amount: action.amount, unit: action.unit, resume_at: runAtIso },
+        }),
+      );
       return { log: rawLog, hadError: false, suspendedAt: { runAtIso, resumeCursor: i + 1 } };
     }
 
@@ -277,13 +298,21 @@ async function runActions(
       const passes = evalConditions(filters, ctx.after, ctx.before, ctx.vars);
       const branchName = passes ? "then" : "else";
       const branchActions = passes ? (action.then ?? []) : (action.else ?? []);
-      log.push({
-        at: new Date().toISOString(),
-        ok: true,
-        action: "branch_if",
-        detail: { branch: branchName, filters },
-      });
-      const branchRes = await runActions(supabase, branchActions, ctx);
+      log.push(
+        annotate({
+          at: new Date().toISOString(),
+          ok: true,
+          action: "branch_if",
+          detail: { branch: branchName, filters },
+        }),
+      );
+      const branchRes = await runActions(
+        supabase,
+        branchActions,
+        ctx,
+        0,
+        `${stepPath}.${branchName}`,
+      );
       log.push(...branchRes.log);
       if (branchRes.hadError) return { log: rawLog, hadError: true };
       if (branchRes.suspendedAt) {
@@ -304,17 +333,25 @@ async function runActions(
       const v = getField(ctx.after, action.field);
       const matched = action.cases.find((c) => c.value === v);
       const branchActions = matched ? matched.actions : (action.default ?? []);
-      log.push({
-        at: new Date().toISOString(),
-        ok: true,
-        action: "switch_by_value",
-        detail: {
-          field: action.field,
-          value: v,
-          matched: matched ? (matched.label ?? String(matched.value)) : "default",
-        },
-      });
-      const branchRes = await runActions(supabase, branchActions, ctx);
+      log.push(
+        annotate({
+          at: new Date().toISOString(),
+          ok: true,
+          action: "switch_by_value",
+          detail: {
+            field: action.field,
+            value: v,
+            matched: matched ? (matched.label ?? String(matched.value)) : "default",
+          },
+        }),
+      );
+      const branchRes = await runActions(
+        supabase,
+        branchActions,
+        ctx,
+        0,
+        `${stepPath}.${matched ? "case" : "default"}`,
+      );
       log.push(...branchRes.log);
       if (branchRes.hadError) return { log: rawLog, hadError: true };
       if (branchRes.suspendedAt) {
@@ -335,13 +372,21 @@ async function runActions(
         evalConditions(b.filters, ctx.after, ctx.before, ctx.vars),
       );
       const branchActions = matched ? matched.actions : (action.else ?? []);
-      log.push({
-        at: new Date().toISOString(),
-        ok: true,
-        action: "branch_multi",
-        detail: { matched: matched ? (matched.label ?? "branch") : "else" },
-      });
-      const branchRes = await runActions(supabase, branchActions, ctx);
+      log.push(
+        annotate({
+          at: new Date().toISOString(),
+          ok: true,
+          action: "branch_multi",
+          detail: { matched: matched ? (matched.label ?? "branch") : "else" },
+        }),
+      );
+      const branchRes = await runActions(
+        supabase,
+        branchActions,
+        ctx,
+        0,
+        `${stepPath}.${matched ? "branch" : "else"}`,
+      );
       log.push(...branchRes.log);
       if (branchRes.hadError) return { log: rawLog, hadError: true };
       if (branchRes.suspendedAt) {
@@ -450,7 +495,7 @@ async function runActions(
       };
     }
 
-    const step = await runAction(supabase, action, ctx);
+    const step = annotate(await runAction(supabase, action, ctx));
     log.push(step);
     if (!step.ok) return { log: rawLog, hadError: true };
   }
@@ -547,7 +592,9 @@ async function runAction(
         const subject = action.subject
           ? (renderTokens(action.subject, ctx.after, ctx.vars) as string)
           : `Pesquisa — ${sourceName}`;
-        const body = action.body ? (renderTokens(action.body, ctx.after, ctx.vars) as string) : null;
+        const body = action.body
+          ? (renderTokens(action.body, ctx.after, ctx.vars) as string)
+          : null;
         const due = action.due_in_days
           ? new Date(Date.now() + action.due_in_days * 86_400_000).toISOString()
           : null;
@@ -1437,7 +1484,6 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     if (goalFilters.length > 0 && evalConditions(goalFilters, hydratedAfter, event.before)) {
       continue;
     }
-
 
     // Re-enrollment: se desabilitado e já existe run bem-sucedido, pula.
     // Se habilitado, só reprocessa quando o evento atual está na lista permitida.

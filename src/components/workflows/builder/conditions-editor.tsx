@@ -14,7 +14,14 @@ import {
 import { Plus, Trash2, Braces, List, X } from "lucide-react";
 import { FkPicker } from "../extra-fields-editor";
 import { TokenInput } from "../token-input";
-import { FILTER_OPS, type WorkflowFilter, type WorkflowCondition, type WorkflowFilterGroup, type FilterOp, isFilterGroup } from "@/lib/workflows/types";
+import {
+  FILTER_OPS,
+  type WorkflowFilter,
+  type WorkflowCondition,
+  type WorkflowFilterGroup,
+  type FilterOp,
+  isFilterGroup,
+} from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
 
 /** Cria uma condição simples com o campo padrão. */
@@ -309,6 +316,8 @@ export function FilterRow({
   const needsValue = filter.op !== "is_empty" && filter.op !== "is_not_empty";
   const isPriorStep = filter.field?.startsWith("steps.") ?? false;
   const selected = isPriorStep ? undefined : fields.find((f) => f.name === filter.field);
+  const missingSelectedField =
+    !isPriorStep && filter.field && !fields.some((field) => field.name === filter.field);
   const options = selected?.options;
   const type = selected?.type;
   return (
@@ -326,6 +335,9 @@ export function FilterRow({
                   {f.label}
                 </SelectItem>
               ))}
+              {missingSelectedField && (
+                <SelectItem value={filter.field}>{filter.field.replace(/_/g, " ")}</SelectItem>
+              )}
             </SelectGroup>
             {priorFields.length > 0 && (
               <SelectGroup>

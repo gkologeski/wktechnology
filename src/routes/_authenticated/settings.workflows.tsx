@@ -99,6 +99,8 @@ function WorkflowsPage() {
     null,
   );
   const [testing, setTesting] = useState(false);
+  const [activeTab, setActiveTab] = useState("list");
+  const [runsWorkflowId, setRunsWorkflowId] = useState<string | null>(null);
 
   const refresh = async () => {
     setLoading(true);
@@ -152,7 +154,6 @@ function WorkflowsPage() {
     }
   };
 
-
   const handleDelete = async (id: string) => {
     if (!(await confirmDialog("Excluir este workflow?"))) return;
     try {
@@ -203,7 +204,6 @@ function WorkflowsPage() {
   };
 
   const handlePublish = (row: WorkflowRow) => handlePublishById(row.id);
-
 
   const handleDiscard = async (row: WorkflowRow) => {
     if (
@@ -277,7 +277,7 @@ function WorkflowsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="list">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="list">Workflows</TabsTrigger>
           <TabsTrigger value="runs">Execuções recentes</TabsTrigger>
@@ -316,7 +316,18 @@ function WorkflowsPage() {
                         <Badge variant="outline">Rascunho</Badge>
                       )}
                       {row.errors_24h > 0 && (
-                        <Badge variant="destructive">{row.errors_24h} erro(s) hoje</Badge>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          className="h-6 px-2"
+                          onClick={() => {
+                            setRunsWorkflowId(row.id);
+                            setActiveTab("runs");
+                          }}
+                        >
+                          {row.errors_24h} erro(s) hoje
+                        </Button>
                       )}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">
@@ -389,7 +400,20 @@ function WorkflowsPage() {
         </TabsContent>
 
         <TabsContent value="runs" className="mt-3">
-          <WorkflowRunsList runs={runs} namesById={namesById} />
+          {runsWorkflowId && (
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2">
+              <p className="text-sm">
+                Execuções de <strong>{namesById[runsWorkflowId] ?? "workflow"}</strong>
+              </p>
+              <Button variant="ghost" size="sm" onClick={() => setRunsWorkflowId(null)}>
+                Mostrar todas
+              </Button>
+            </div>
+          )}
+          <WorkflowRunsList
+            runs={runsWorkflowId ? runs.filter((run) => run.workflow_id === runsWorkflowId) : runs}
+            namesById={namesById}
+          />
         </TabsContent>
 
         <TabsContent value="approvals" className="mt-3">
@@ -414,7 +438,6 @@ function WorkflowsPage() {
         publishedVersion={editingRow?.published_version ?? 0}
         hasDraftChanges={editingRow ? editingRow.has_draft_changes : true}
       />
-
 
       <Dialog
         open={!!testTarget}
