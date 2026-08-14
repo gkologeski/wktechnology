@@ -117,6 +117,9 @@ export function ActivityTimeline({
   const [emailMeta, setEmailMeta] = useState<Map<string, EmailMeta>>(new Map());
   // Respostas de pesquisas, indexadas pelo id da atividade do tipo "survey".
   const [surveyMeta, setSurveyMeta] = useState<Map<string, SurveyResponseSummary>>(new Map());
+  // Contador incrementado por eventos de realtime para refazer o fetch das respostas.
+  const [surveyTick, setSurveyTick] = useState(0);
+
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
