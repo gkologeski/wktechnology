@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
 import { getPendingSurveyActivity } from "@/lib/surveys/survey-activity.functions";
+import { triggerTickNow } from "@/lib/workflows.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { StageTracker } from "@/components/stage-tracker";
 import { ActivityTimeline } from "@/components/activity-timeline";
@@ -73,10 +74,11 @@ function LeadDetail() {
   const load = () => qc.invalidateQueries({ queryKey: qk.lead(id) });
 
   const pendingFn = useServerFn(getPendingSurveyActivity);
+  const tickWorkflows = useServerFn(triggerTickNow);
   /** Abre a pesquisa pendente criada pelo workflow (tentativas curtas). */
   const pollPendingSurvey = async () => {
-    for (let i = 0; i < 6; i++) {
-      await new Promise((r) => setTimeout(r, i === 0 ? 400 : 900));
+    for (let i = 0; i < 8; i++) {
+      if (i > 0) await new Promise((r) => setTimeout(r, 750));
       try {
         const found = await pendingFn({
           data: { related_key: "related_lead_id", related_id: id },
@@ -86,10 +88,12 @@ function LeadDetail() {
           setSurveyOpen(true);
           return;
         }
-      } catch {
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Não foi possível buscar a pesquisa.");
         return;
       }
     }
+    toast.info("Etapa atualizada. Nenhuma pesquisa pendente foi criada pelo workflow.");
   };
 
   useRealtimeInvalidate([
@@ -130,8 +134,15 @@ function LeadDetail() {
     if (deniedIfUnaffected(affected)) return;
 
     void load();
-    // O workflow roda de forma assíncrona: procura a pesquisa pendente gerada.
-    void pollPendingSurvey();
+    // Processa a fila imediatamente e procura a pesquisa criada pelo workflow.
+    void (async () => {
+      try {
+        await tickWorkflows();
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Não foi possível executar o workflow.");
+      }
+      await pollPendingSurvey();
+    })();
   };
 
 

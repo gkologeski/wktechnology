@@ -649,7 +649,10 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
 
     const fields: EntityFieldDef[] = [];
     for (const r of allRows) {
-      if (HIDDEN.has(r.column_name) || isSyncColumn(r.column_name)) continue;
+      const isPipelineStageField =
+        r.column_name === "stage_id" &&
+        (data.entity === "deals" || data.entity === "leads" || data.entity === "tickets");
+      if ((HIDDEN.has(r.column_name) && !isPipelineStageField) || isSyncColumn(r.column_name)) continue;
       const inferred = inferType(r.data_type);
       // Colunas numéricas com nome de dinheiro viram "currency" (formatação BRL).
       const type: EntityFieldType =
@@ -672,7 +675,10 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       } else if (canonicalOptions[r.column_name]) {
         def.type = "select";
         def.options = canonicalOptions[r.column_name];
-      } else if (pipelineStageOptions && r.column_name === "stage") {
+      } else if (
+        pipelineStageOptions &&
+        (r.column_name === "stage" || r.column_name === "stage_id")
+      ) {
         def.type = "select";
         def.options = pipelineStageOptions;
       } else if (registryOptions[r.column_name]) {

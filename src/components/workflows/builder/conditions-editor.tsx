@@ -309,6 +309,8 @@ export function FilterRow({
   const needsValue = filter.op !== "is_empty" && filter.op !== "is_not_empty";
   const isPriorStep = filter.field?.startsWith("steps.") ?? false;
   const selected = isPriorStep ? undefined : fields.find((f) => f.name === filter.field);
+  const missingSelectedField =
+    !isPriorStep && filter.field && !fields.some((field) => field.name === filter.field);
   const options = selected?.options;
   const type = selected?.type;
   return (
@@ -326,6 +328,9 @@ export function FilterRow({
                   {f.label}
                 </SelectItem>
               ))}
+              {missingSelectedField && (
+                <SelectItem value={filter.field}>{filter.field.replace(/_/g, " ")}</SelectItem>
+              )}
             </SelectGroup>
             {priorFields.length > 0 && (
               <SelectGroup>
