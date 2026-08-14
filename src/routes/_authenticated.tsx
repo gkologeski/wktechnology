@@ -25,6 +25,8 @@ export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
 
+const showTimer = false; // TimerWidget oculto temporariamente; reativar futuramente.
+
 const ADMIN_ONLY = [
   "/settings/roles",
   "/settings/teams",
@@ -141,7 +143,7 @@ function AuthenticatedLayout() {
       </div>
       <BugReportButton />
       <ChatTrigger />
-      <TimerWidget />
+      {showTimer && <TimerWidget />}
       <GlobalSearch />
     </SidebarProvider>
   );
