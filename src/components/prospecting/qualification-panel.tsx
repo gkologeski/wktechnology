@@ -457,6 +457,7 @@ export function QualificationPanel({
         queryKey: ["prospecting", "qualifications", entity, entityId],
       });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", entityId] });
       qc.invalidateQueries({ queryKey: ["prospecting", "queue-items"] });
       qc.invalidateQueries({ queryKey: ["prospecting", "queue-count"] });
       notifyTimelineRefresh();
