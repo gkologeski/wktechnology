@@ -419,6 +419,7 @@ export function QualificationPanel({
         queryKey: ["prospecting", "qualifications", entity, entityId],
       });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", entityId] });
       setDisqualifyOpen(false);
       setReasonValue("");
       setReasonNote("");
