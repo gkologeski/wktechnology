@@ -142,6 +142,15 @@ export type WorkflowAction =
       body?: string;
       due_in_days?: number;
     }
+  | {
+      /** Cria uma atividade de pesquisa pendente (aba Pesquisas) para ser respondida. */
+      type: "create_survey_activity";
+      source: "survey_template" | "prospecting_questionnaire";
+      source_id: string;
+      subject?: string;
+      body?: string;
+      due_in_days?: number;
+    }
   | { type: "assign_to"; user_id: string }
   | { type: "rotate_assign"; rule_id: string }
   | { type: "add_to_sequence"; sequence_id: string }
@@ -414,6 +423,7 @@ export const EVENT_LABELS: Record<WorkflowEventType, string> = {
 export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   set_field: "Atualizar campo",
   create_activity: "Criar atividade",
+  create_survey_activity: "Criar pesquisa (atividade)",
   assign_to: "Atribuir a usuário",
   rotate_assign: "Distribuir via regra (rotação)",
   add_to_sequence: "Adicionar a sequência",
@@ -494,6 +504,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
     label: "Comunicação",
     actions: [
       "create_activity",
+      "create_survey_activity",
       "send_notification",
       "send_email",
       "send_whatsapp",

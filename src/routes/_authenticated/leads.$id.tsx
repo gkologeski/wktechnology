@@ -16,14 +16,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { QualificationPanel } from "@/components/prospecting/qualification-panel";
+import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
+import { getPendingSurveyActivity } from "@/lib/surveys/survey-activity.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { StageTracker } from "@/components/stage-tracker";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
@@ -58,7 +53,12 @@ function LeadDetail() {
   const { user: _user } = useAuth();
   const qc = useQueryClient();
   const [createDealOpen, setCreateDealOpen] = useState(false);
-  const [qualifyOpen, setQualifyOpen] = useState(false);
+  const [pendingSurvey, setPendingSurvey] = useState<{
+    activity_id: string;
+    source: "survey_template" | "prospecting_questionnaire";
+    source_id: string;
+  } | null>(null);
+  const [surveyOpen, setSurveyOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -71,6 +71,26 @@ function LeadDetail() {
     },
   });
   const load = () => qc.invalidateQueries({ queryKey: qk.lead(id) });
+
+  const pendingFn = useServerFn(getPendingSurveyActivity);
+  /** Abre a pesquisa pendente criada pelo workflow (tentativas curtas). */
+  const pollPendingSurvey = async () => {
+    for (let i = 0; i < 6; i++) {
+      await new Promise((r) => setTimeout(r, i === 0 ? 400 : 900));
+      try {
+        const found = await pendingFn({
+          data: { related_key: "related_lead_id", related_id: id },
+        });
+        if (found) {
+          setPendingSurvey(found);
+          setSurveyOpen(true);
+          return;
+        }
+      } catch {
+        return;
+      }
+    }
+  };
 
   useRealtimeInvalidate([
     { table: "leads", queryKeys: [qk.lead(id)] },
@@ -92,12 +112,8 @@ function LeadDetail() {
   const setStage = async (v: string) => {
     if (v === currentStageValue) return;
     const stage = findLeadStage(stages, v);
-    // Apenas a etapa de qualificação exige o questionário. Outras etapas de
-    // ganho (ex.: "Oportunidade") são gravadas direto, sem abrir o modal.
-    if (stage && stage.value === "qualified") {
-      setQualifyOpen(true);
-      return;
-    }
+    // A etapa é sempre gravada. A pesquisa de qualificação é gerada por
+    // workflow (ação "Criar pesquisa") e aberta automaticamente abaixo.
     const { data: affected, error } = await supabase
       .from("leads")
       .update({
@@ -114,6 +130,8 @@ function LeadDetail() {
     if (deniedIfUnaffected(affected)) return;
 
     void load();
+    // O workflow roda de forma assíncrona: procura a pesquisa pendente gerada.
+    void pollPendingSurvey();
   };
 
 
@@ -251,25 +269,25 @@ function LeadDetail() {
         onCreated={() => void load()}
       />
 
-      <Dialog open={qualifyOpen} onOpenChange={setQualifyOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Qualificar lead</DialogTitle>
-            <DialogDescription>
-              Preencha o questionário de qualificação para mover o lead para a etapa Qualificado.
-            </DialogDescription>
-          </DialogHeader>
-          <QualificationPanel
-            entity="lead"
-            entityId={lead.id}
-            onDecided={() => {
-              setQualifyOpen(false);
-              void load();
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
+      {pendingSurvey ? (
+        <SurveyActivityDialog
+          open={surveyOpen}
+          onOpenChange={(v) => {
+            setSurveyOpen(v);
+            if (!v) setPendingSurvey(null);
+          }}
+          relatedKey="related_lead_id"
+          relatedId={lead.id}
+          initialSource={pendingSurvey.source}
+          initialSourceId={pendingSurvey.source_id}
+          activityId={pendingSurvey.activity_id}
+          onSaved={() => {
+            setSurveyOpen(false);
+            setPendingSurvey(null);
+            void load();
+          }}
+        />
+      ) : null}
 
       <AlertDialog open={confirmDelete} onOpenChange={(v) => !busy && setConfirmDelete(v)}>
         <AlertDialogContent>

@@ -39,7 +39,7 @@ export function AgentTrigger() {
         }}
         onPointerEnter={() => setMounted(true)}
         aria-label="Abrir assistente do CRM"
-        className="fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg opacity-10 hover:opacity-100 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+        className="fixed bottom-5 right-[8.75rem] z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg opacity-10 transition-opacity duration-200 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
         <Sparkles className="h-5 w-5" />
       </button>

@@ -246,7 +246,7 @@ export const saveSurveyActivity = createServerFn({ method: "POST" })
     if (activityId) {
       const { error } = await supabase
         .from("activities")
-        .update({ subject, body: data.notes ?? null } as never)
+        .update({ subject, body: data.notes ?? null, completed: true } as never)
         .eq("id", activityId);
       if (error) throw new Error(error.message);
     } else {
@@ -374,4 +374,64 @@ export const getActivitySurveyResponses = createServerFn({ method: "POST" })
       ...r,
       questions: bySource.get(r.source_id) ?? [],
     }));
+  });
+
+
+/**
+ * Pesquisa pendente (criada por workflow) de um registro: atividade do tipo
+ * `survey` ainda sem resposta registrada.
+ */
+export const getPendingSurveyActivity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((i: unknown) =>
+    z
+      .object({ related_key: z.enum(RELATED_KEYS), related_id: z.string().uuid() })
+      .parse(i),
+  )
+  .handler(async ({ context, data }) => {
+    const { data: rows, error } = await context.supabase
+      .from("activities")
+      .select("id, subject, custom_fields, completed")
+      .eq("type", "survey")
+      .eq(data.related_key, data.related_id)
+      .eq("completed", false)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(5);
+    if (error) throw new Error(error.message);
+    const candidates = (rows ?? []) as Array<{
+      id: string;
+      subject: string | null;
+      custom_fields: Json | null;
+    }>;
+    if (candidates.length === 0) return null;
+
+    const answered = await context.supabase
+      .from("activity_survey_responses")
+      .select("activity_id")
+      .in(
+        "activity_id",
+        candidates.map((c) => c.id),
+      );
+    const done = new Set((answered.data ?? []).map((r) => (r as { activity_id: string }).activity_id));
+
+    for (const c of candidates) {
+      if (done.has(c.id)) continue;
+      const cf = (c.custom_fields ?? {}) as Record<string, unknown>;
+      const source = cf.survey_source;
+      const sourceId = cf.survey_source_id;
+      if (
+        (source === "survey_template" || source === "prospecting_questionnaire") &&
+        typeof sourceId === "string" &&
+        sourceId
+      ) {
+        return {
+          activity_id: c.id,
+          source: source as SurveySourceKind,
+          source_id: sourceId,
+          subject: c.subject,
+        };
+      }
+    }
+    return null;
   });

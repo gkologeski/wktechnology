@@ -1,4 +1,4 @@
-import { Zap, Clock, GitBranch, Mail, Bell, Webhook, Users, UserPlus, Briefcase, ArrowRight, X, Sparkles, Building2, Handshake, Ticket, CheckSquare, Contact, Copy, Link2, Link2Off, Eraser, PlusIcon, MessageCircle, SplitSquareHorizontal, GitFork, CalendarClock, Wand2, Hash, MessageSquare } from "lucide-react";
+import { Zap, Clock, GitBranch, Mail, Bell, Webhook, Users, UserPlus, Briefcase, ArrowRight, X, Sparkles, Building2, Handshake, Ticket, CheckSquare, Contact, Copy, Link2, Link2Off, Eraser, PlusIcon, MessageCircle, SplitSquareHorizontal, GitFork, CalendarClock, Wand2, Hash, MessageSquare, ClipboardList } from "lucide-react";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowActionType } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
 
@@ -16,6 +16,7 @@ export type FieldOpt = {
 export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   set_field: Sparkles,
   create_activity: Mail,
+  create_survey_activity: ClipboardList,
   assign_to: UserPlus,
   rotate_assign: Users,
   add_to_sequence: Mail,
@@ -58,6 +59,8 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, field: "status", value: "" };
     case "create_activity":
       return { type, subject: "Nova tarefa", activity_type: "task" };
+    case "create_survey_activity":
+      return { type, source: "prospecting_questionnaire", source_id: "" };
     case "assign_to":
       return { type, user_id: "" };
     case "rotate_assign":
@@ -218,6 +221,10 @@ export const STEP_OUTPUT_KEYS: Partial<Record<WorkflowActionType, { key: string;
     { key: "table", label: "Tabela" },
   ],
   create_activity: [{ key: "subject", label: "Assunto" }],
+  create_survey_activity: [
+    { key: "activity_id", label: "ID da atividade de pesquisa" },
+    { key: "subject", label: "Assunto" },
+  ],
   create_task: [{ key: "subject", label: "Assunto" }],
   set_field: [
     { key: "field", label: "Campo" },
@@ -527,6 +534,8 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return `${a.field} = ${String(a.value ?? "")}`;
     case "create_activity":
       return `${a.activity_type ?? "task"}: ${a.subject}`;
+    case "create_survey_activity":
+      return a.source_id ? (a.subject || "Pesquisa pendente") : "Selecione a pesquisa";
     case "assign_to":
       return a.user_id ? L.labelForUser(a.user_id) : "—";
     case "rotate_assign":
