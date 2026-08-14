@@ -2,7 +2,14 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, AlertTriangle } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  AlertTriangle,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -85,12 +92,17 @@ export function WorkflowRunsList({
                 {steps.length > 0 ? (
                   <ol className="space-y-2">
                     {steps.map((step, index) => (
-                      <li key={`${step.at ?? "step"}-${index}`} className="rounded-md border bg-background p-2">
+                      <li
+                        key={`${step.at ?? "step"}-${index}`}
+                        className="rounded-md border bg-background p-2"
+                      >
                         <div className="flex flex-wrap items-center gap-2">
                           <Badge variant={step.ok === false ? "destructive" : "outline"}>
                             {step.step_path ? `Passo ${step.step_path}` : `Passo ${index + 1}`}
                           </Badge>
-                          <span className="font-medium">{step.action_label ?? step.action ?? "Ação"}</span>
+                          <span className="font-medium">
+                            {step.action_label ?? step.action ?? "Ação"}
+                          </span>
                           {step.at && (
                             <span className="text-muted-foreground">
                               {new Date(step.at).toLocaleTimeString("pt-BR")}

@@ -154,7 +154,6 @@ function WorkflowsPage() {
     }
   };
 
-
   const handleDelete = async (id: string) => {
     if (!(await confirmDialog("Excluir este workflow?"))) return;
     try {
@@ -205,7 +204,6 @@ function WorkflowsPage() {
   };
 
   const handlePublish = (row: WorkflowRow) => handlePublishById(row.id);
-
 
   const handleDiscard = async (row: WorkflowRow) => {
     if (
@@ -440,7 +438,6 @@ function WorkflowsPage() {
         publishedVersion={editingRow?.published_version ?? 0}
         hasDraftChanges={editingRow ? editingRow.has_draft_changes : true}
       />
-
 
       <Dialog
         open={!!testTarget}

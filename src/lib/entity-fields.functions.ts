@@ -638,7 +638,6 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       "cpf",
     ]);
 
-
     const isContracts = data.entity === "contracts";
     // Listas canônicas por entidade (substituem amostragem de valores distintos).
     const canonicalOptions: Record<string, { value: string; label: string }[]> = isContracts
@@ -652,7 +651,8 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       const isPipelineStageField =
         r.column_name === "stage_id" &&
         (data.entity === "deals" || data.entity === "leads" || data.entity === "tickets");
-      if ((HIDDEN.has(r.column_name) && !isPipelineStageField) || isSyncColumn(r.column_name)) continue;
+      if ((HIDDEN.has(r.column_name) && !isPipelineStageField) || isSyncColumn(r.column_name))
+        continue;
       const inferred = inferType(r.data_type);
       // Colunas numéricas com nome de dinheiro viram "currency" (formatação BRL).
       const type: EntityFieldType =

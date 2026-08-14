@@ -43,7 +43,6 @@ import { toast } from "sonner";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
-
 export const Route = createFileRoute("/_authenticated/leads/$id")({
   component: LeadDetail,
 });
@@ -139,12 +138,13 @@ function LeadDetail() {
       try {
         await tickWorkflows();
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Não foi possível executar o workflow.");
+        toast.error(
+          error instanceof Error ? error.message : "Não foi possível executar o workflow.",
+        );
       }
       await pollPendingSurvey();
     })();
   };
-
 
   const doDelete = async () => {
     if (!canDelete) {

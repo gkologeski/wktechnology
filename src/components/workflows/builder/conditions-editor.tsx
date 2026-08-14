@@ -14,7 +14,14 @@ import {
 import { Plus, Trash2, Braces, List, X } from "lucide-react";
 import { FkPicker } from "../extra-fields-editor";
 import { TokenInput } from "../token-input";
-import { FILTER_OPS, type WorkflowFilter, type WorkflowCondition, type WorkflowFilterGroup, type FilterOp, isFilterGroup } from "@/lib/workflows/types";
+import {
+  FILTER_OPS,
+  type WorkflowFilter,
+  type WorkflowCondition,
+  type WorkflowFilterGroup,
+  type FilterOp,
+  isFilterGroup,
+} from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
 
 /** Cria uma condição simples com o campo padrão. */
