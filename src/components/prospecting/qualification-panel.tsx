@@ -279,11 +279,16 @@ export function QualificationPanel({
     }
   }
 
-  const { stages } = useLeadStages();
+  const { stages, pipelineId } = useLeadStages();
   const qualifiedStage = useMemo(
     () => stages.find((s) => s.value === "qualified") ?? stages.find((s) => s.type === "won"),
     [stages],
   );
+  const lostStage = useMemo(
+    () => stages.find((s) => s.value === "disqualified") ?? stages.find((s) => s.type === "lost"),
+    [stages],
+  );
+  const nurtureStage = useMemo(() => stages.find((s) => s.value === "nurturing"), [stages]);
 
   const saveDraft = useMutation({
     mutationFn: async () => {
