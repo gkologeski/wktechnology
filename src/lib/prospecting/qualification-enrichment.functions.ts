@@ -1,83 +1,43 @@
 /**
  * Enriquecimento Apollo.io para a tela de qualificação.
  *
- * - `enrichLeadForQualification`: roda a cascata (domínio → empresa → pessoa)
- *   e devolve sugestões normalizadas por coluna de Lead/Empresa/Contato.
- *   O resultado é cacheado em `leads.custom_fields.apollo_enrichment`.
- * - `applyQualificationEnrichment`: grava as sugestões aceitas no lead e nos
- *   registros de empresa/contato vinculados, sem sobrescrever valores
- *   já preenchidos.
+ * - `enrichLeadForQualification`: roda a cascata (domínio → empresa → pessoa),
+ *   grava os campos vazios no lead/empresa/contato (quando `persist`) e
+ *   devolve as sugestões normalizadas por coluna. O resultado é cacheado em
+ *   `leads.custom_fields.apollo_enrichment`.
+ * - `applyQualificationEnrichment`: grava as sugestões aceitas, sem
+ *   sobrescrever valores já preenchidos.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { EnrichmentSuggestions } from "./qualification-enrichment.server";
 
-const LEAD_KEYS = ["first_name", "last_name", "email", "phone", "company_name"] as const;
-const COMPANY_KEYS = [
-  "name",
-  "domain",
-  "website",
-  "industry",
-  "size",
-  "phone",
-  "city",
-  "state",
-  "country",
-  "linkedin_company_page",
-  "annualrevenue",
-  "description",
-] as const;
-const CONTACT_KEYS = [
-  "first_name",
-  "last_name",
-  "email",
-  "phone",
-  "mobile_phone",
-  "job_title",
-  "linkedin_url",
-  "city",
-  "state",
-  "country",
-  "website",
-  "company_name",
-] as const;
-
-export type SuggestionValue = string | number | boolean | null;
-export type SuggestionMap = Record<string, SuggestionValue>;
-
-export type EnrichmentSuggestions = {
-  domain: string | null;
-  domainSource: string | null;
-  fetchedAt: string;
-  cached: boolean;
-  found: boolean;
-  /** Falhas parciais do provedor (ex.: créditos esgotados). */
-  warnings: string[];
-  lead: SuggestionMap;
-  companies: SuggestionMap;
-  contacts: SuggestionMap;
-};
+export type {
+  EnrichmentSuggestions,
+  SuggestionMap,
+  SuggestionValue,
+} from "./qualification-enrichment.server";
 
 const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dias
-
-function pick(source: Record<string, unknown> | null, keys: readonly string[]): SuggestionMap {
-  const out: SuggestionMap = {};
-  if (!source) return out;
-  for (const k of keys) {
-    const v = source[k];
-    if (v === null || v === undefined || v === "") continue;
-    if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") out[k] = v;
-  }
-  return out;
-}
 
 export const enrichLeadForQualification = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z.object({ leadId: z.string().uuid(), force: z.boolean().optional() }).parse(input),
+    z
+      .object({
+        leadId: z.string().uuid(),
+        force: z.boolean().optional(),
+        /** Grava imediatamente os campos vazios no banco (padrão: true). */
+        persist: z.boolean().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }): Promise<EnrichmentSuggestions> => {
     const { supabase } = context;
+    const { LEAD_KEYS, COMPANY_KEYS, CONTACT_KEYS, pick, onlyNew, applyEnrichmentToRecords } =
+      await import("./qualification-enrichment.server");
+
     const { data: lead, error } = await supabase
       .from("leads")
       .select(
@@ -88,6 +48,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!lead) throw new Error("Lead não encontrado.");
 
+    const persist = data.persist !== false;
     const custom = (lead.custom_fields ?? {}) as Record<string, unknown>;
     const cached = custom.apollo_enrichment as
       | { fetched_at?: string; payload?: EnrichmentSuggestions }
@@ -95,7 +56,18 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     if (!data.force && cached?.payload && cached.fetched_at) {
       const age = Date.now() - new Date(cached.fetched_at).getTime();
       if (Number.isFinite(age) && age < CACHE_TTL_MS) {
-        return { ...cached.payload, cached: true };
+        const payload = { ...cached.payload, cached: true };
+        // Mesmo vindo do cache, garante que os registros estejam gravados
+        // (ex.: empresa/contato vinculados depois da primeira consulta).
+        if (persist && payload.found) {
+          payload.applied = await applyEnrichmentToRecords(supabase as never, {
+            leadId: data.leadId,
+            lead: payload.lead,
+            companies: payload.companies,
+            contacts: payload.contacts,
+          });
+        }
+        return payload;
       }
     }
 
@@ -143,26 +115,8 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
       domain,
     });
 
-    const companySuggestions = pick(
-      result.company as Record<string, unknown> | null,
-      COMPANY_KEYS,
-    );
+    const companySuggestions = pick(result.company as Record<string, unknown> | null, COMPANY_KEYS);
     const personSuggestions = result.person as Record<string, unknown> | null;
-
-    /** Remove sugestões que apenas repetem o que já existe no registro. */
-    function onlyNew(map: SuggestionMap, row: Record<string, unknown> | null): SuggestionMap {
-      if (!row) return map;
-      const out: SuggestionMap = {};
-      for (const [k, v] of Object.entries(map)) {
-        const current = row[k];
-        const same =
-          current !== null &&
-          current !== undefined &&
-          String(current).trim().toLowerCase() === String(v).trim().toLowerCase();
-        if (!same) out[k] = v;
-      }
-      return out;
-    }
 
     const leadSuggestions = onlyNew(
       {
@@ -199,6 +153,14 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     // Só cacheia quando houve ganho real — sem isso, uma nova tentativa
     // (após preencher o site da empresa, por ex.) ficaria bloqueada 30 dias.
     if (payload.found) {
+      if (persist) {
+        payload.applied = await applyEnrichmentToRecords(supabase as never, {
+          leadId: data.leadId,
+          lead: payload.lead,
+          companies: payload.companies,
+          contacts: payload.contacts,
+        });
+      }
       await supabase
         .from("leads")
         .update({
@@ -212,7 +174,6 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
 
     return payload;
   });
-
 
 const ValuesSchema = z.record(z.string(), z.unknown()).optional();
 
@@ -230,84 +191,13 @@ export const applyQualificationEnrichment = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: lead, error } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("id", data.leadId)
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (!lead) throw new Error("Lead não encontrado.");
-
-    const leadRow = lead as unknown as Record<string, unknown>;
-    const applied: Record<string, string[]> = { leads: [], companies: [], contacts: [] };
-
-    async function updateRow(
-      table: "leads" | "companies" | "contacts",
-      id: string,
-      row: Record<string, unknown>,
-      values: Record<string, unknown> | undefined,
-      allowedKeys: readonly string[],
-    ) {
-      if (!values) return;
-      const patch: Record<string, unknown> = {};
-      for (const key of allowedKeys) {
-        if (!(key in values)) continue;
-        const next = values[key];
-        if (next === null || next === undefined || next === "") continue;
-        const current = row[key];
-        const isEmpty =
-          current === null ||
-          current === undefined ||
-          (typeof current === "string" && current.trim() === "");
-        if (!isEmpty && !data.overwrite) continue;
-        if (JSON.stringify(current ?? null) === JSON.stringify(next)) continue;
-        patch[key] = next;
-      }
-      if (Object.keys(patch).length === 0) return;
-      const { error: upErr } = await supabase
-        .from(table)
-        .update(patch as never)
-        .eq("id", id);
-      if (upErr) throw new Error(upErr.message);
-      applied[table] = Object.keys(patch);
-    }
-
-    await updateRow("leads", data.leadId, leadRow, data.lead, LEAD_KEYS);
-
-    const companyId = leadRow.company_id as string | null;
-    if (companyId) {
-      const { data: company } = await supabase
-        .from("companies")
-        .select("*")
-        .eq("id", companyId)
-        .maybeSingle();
-      if (company)
-        await updateRow(
-          "companies",
-          companyId,
-          company as unknown as Record<string, unknown>,
-          data.companies,
-          COMPANY_KEYS,
-        );
-    }
-
-    const contactId = leadRow.converted_contact_id as string | null;
-    if (contactId) {
-      const { data: contact } = await supabase
-        .from("contacts")
-        .select("*")
-        .eq("id", contactId)
-        .maybeSingle();
-      if (contact)
-        await updateRow(
-          "contacts",
-          contactId,
-          contact as unknown as Record<string, unknown>,
-          data.contacts,
-          CONTACT_KEYS,
-        );
-    }
-
+    const { applyEnrichmentToRecords } = await import("./qualification-enrichment.server");
+    const applied = await applyEnrichmentToRecords(context.supabase as never, {
+      leadId: data.leadId,
+      lead: data.lead,
+      companies: data.companies,
+      contacts: data.contacts,
+      overwrite: data.overwrite,
+    });
     return { applied };
   });

@@ -240,12 +240,26 @@ export function QualificationPanel({
     [enrichment.data],
   );
 
-  // Preenche automaticamente os campos vazios quando as sugestões chegam.
+  // Preenche automaticamente os campos vazios quando as sugestões chegam
+  // (independente da ordem de carregamento dos registros).
   const applySuggestions = entityFields.applySuggestions;
   useEffect(() => {
-    if (!suggestions || entityFields.isLoading) return;
+    if (!suggestions) return;
     applySuggestions(suggestions);
-  }, [suggestions, entityFields.isLoading, applySuggestions]);
+  }, [suggestions, applySuggestions]);
+
+  // O enriquecimento grava os campos vazios direto no banco: refaz as
+  // consultas da tela para refletir os valores sem precisar recarregar.
+  const appliedSignature = enrichment.data?.applied
+    ? JSON.stringify(enrichment.data.applied)
+    : null;
+  useEffect(() => {
+    if (!appliedSignature || appliedSignature === '{"leads":[],"companies":[],"contacts":[]}')
+      return;
+    qc.invalidateQueries({ queryKey: ["qualification-entity-records", entityId] });
+    qc.invalidateQueries({ queryKey: ["lead", entityId] });
+    qc.invalidateQueries({ queryKey: ["leads"] });
+  }, [appliedSignature, entityId, qc]);
 
   /** Persiste no banco todos os campos enriquecidos (lead, empresa e contato). */
   async function persistEnrichment() {
@@ -530,7 +544,12 @@ export function QualificationPanel({
                 title={enrichment.data.domain ? `Domínio: ${enrichment.data.domain}` : undefined}
               >
                 <Sparkles className="h-3 w-3" aria-hidden="true" />
-                Apollo {enrichment.data.domain ? `· ${enrichment.data.domain}` : ""}
+                Apollo
+                {enrichment.data.domain ? ` · ${enrichment.data.domain}` : ""}
+                {enrichment.data.applied &&
+                Object.values(enrichment.data.applied).some((v) => v.length > 0)
+                  ? " · gravado"
+                  : ""}
               </Badge>
             ) : enrichment.data ? (
               <Badge
