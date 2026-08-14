@@ -48,10 +48,11 @@ import { getLeadIcpFit } from "@/lib/scoring/icp.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { QUESTIONNAIRES_CREATE, asKeys } from "@/lib/prospecting/permission-keys";
 import {
-import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
   QualificationEntityBlocks,
   useQualificationEntityFields,
 } from "@/components/prospecting/qualification-entity-fields";
+import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
+
 
 type Selection = { source: SurveySourceKind; id: string };
 
