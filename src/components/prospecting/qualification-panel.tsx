@@ -73,6 +73,7 @@ import {
 import { useLeadStages } from "@/lib/leads/stages";
 import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
+import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
 
 type Entity = "lead";
 
@@ -286,6 +287,7 @@ export function QualificationPanel({
     },
     onSuccess: () => {
       toast.success("Qualificação salva.");
+      notifyTimelineRefresh();
       qc.invalidateQueries({
         queryKey: ["prospecting", "qualifications", entity, entityId],
       });
@@ -329,6 +331,7 @@ export function QualificationPanel({
       if (!updated || updated.length === 0) throw new PermissionDeniedError();
 
       toast.success("Lead qualificado.");
+      notifyTimelineRefresh();
       qc.invalidateQueries({
         queryKey: ["prospecting", "qualifications", entity, entityId],
       });
@@ -387,6 +390,7 @@ export function QualificationPanel({
         });
       }
       toast.success("Lead desqualificado.");
+      notifyTimelineRefresh();
       qc.invalidateQueries({
         queryKey: ["prospecting", "qualifications", entity, entityId],
       });
@@ -428,6 +432,7 @@ export function QualificationPanel({
       qc.invalidateQueries({ queryKey: ["leads"] });
       qc.invalidateQueries({ queryKey: ["prospecting", "queue-items"] });
       qc.invalidateQueries({ queryKey: ["prospecting", "queue-count"] });
+      notifyTimelineRefresh();
       onDecided?.("nurture");
     } catch (e) {
       toast.error((e as Error).message);

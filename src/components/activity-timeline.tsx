@@ -117,6 +117,8 @@ export function ActivityTimeline({
   const [emailMeta, setEmailMeta] = useState<Map<string, EmailMeta>>(new Map());
   // Respostas de pesquisas, indexadas pelo id da atividade do tipo "survey".
   const [surveyMeta, setSurveyMeta] = useState<Map<string, SurveyResponseSummary>>(new Map());
+  // Contador incrementado por eventos de realtime para refazer o fetch das respostas.
+  const [surveyTick, setSurveyTick] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -479,7 +481,7 @@ export function ActivityTimeline({
     return () => {
       cancelled = true;
     };
-  }, [items]);
+  }, [items, surveyTick]);
 
   // Re-sincroniza silenciosamente quando a janela volta a focar ou um modal fecha
   useRefreshCallback(() => {
@@ -502,6 +504,71 @@ export function ActivityTimeline({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
+
+  // Realtime: atualiza a timeline assim que uma atividade (ou resposta de
+  // pesquisa) deste registro é criada/alterada/removida — inclusive quando a
+  // gravação acontece no servidor após o modal fechar, ou por outro usuário.
+  useEffect(() => {
+    if (typeof window === "undefined" || !relatedId) return;
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const schedule = (fn: () => void) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(fn, 250);
+    };
+
+    const subscribe = () => {
+      if (channel) return;
+      channel = supabase
+        .channel(`timeline:${relatedKey}:${relatedId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "activities",
+            filter: `${relatedKey}=eq.${relatedId}`,
+          },
+          () => schedule(() => void load({ silent: true })),
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "activity_survey_responses" },
+          () => schedule(() => setSurveyTick((t) => t + 1)),
+        )
+        .subscribe();
+    };
+
+    const unsubscribe = () => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      if (channel) {
+        supabase.removeChannel(channel);
+        channel = null;
+      }
+    };
+
+    const onVisibility = () => {
+      if (document.hidden) unsubscribe();
+      else {
+        subscribe();
+        void load({ silent: true });
+      }
+    };
+
+    if (!document.hidden) subscribe();
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [relatedKey, relatedId, datePreset, dateCustom.start, dateCustom.end]);
 
   // Resolve email/phone/contact from parent entity for the "Criar" actions
   useEffect(() => {
