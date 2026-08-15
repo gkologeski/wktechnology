@@ -95,12 +95,15 @@ export function QualificationPanel({
   entityId,
   preselectedQuestionnaireId,
   queueId,
+  activityId,
   onDecided,
 }: {
   entity: Entity;
   entityId: string;
   preselectedQuestionnaireId?: string | null;
   queueId?: string | null;
+  /** Atividade de pesquisa (criada por workflow) a ser concluída na decisão. */
+  activityId?: string | null;
   onDecided?: (decision: "qualified" | "disqualified" | "nurture") => void;
 }) {
   const listQ = useServerFn(listQuestionnaires);
