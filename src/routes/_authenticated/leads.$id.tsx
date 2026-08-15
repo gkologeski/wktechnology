@@ -280,7 +280,35 @@ function LeadDetail() {
         onCreated={() => void load()}
       />
 
-      {pendingSurvey ? (
+      {pendingSurvey?.source === "prospecting_questionnaire" ? (
+        <Dialog
+          open={surveyOpen}
+          onOpenChange={(v) => {
+            setSurveyOpen(v);
+            if (!v) setPendingSurvey(null);
+          }}
+        >
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Qualificar lead</DialogTitle>
+              <DialogDescription>
+                Responda o questionário para calcular o score e decidir a qualificação.
+              </DialogDescription>
+            </DialogHeader>
+            <QualificationPanel
+              entity="lead"
+              entityId={lead.id}
+              preselectedQuestionnaireId={pendingSurvey.source_id}
+              activityId={pendingSurvey.activity_id}
+              onDecided={() => {
+                setSurveyOpen(false);
+                setPendingSurvey(null);
+                void load();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      ) : pendingSurvey ? (
         <SurveyActivityDialog
           open={surveyOpen}
           onOpenChange={(v) => {
