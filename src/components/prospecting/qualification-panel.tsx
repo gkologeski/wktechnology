@@ -266,6 +266,31 @@ export function QualificationPanel({
     qc.invalidateQueries({ queryKey: ["leads"] });
   }, [appliedSignature, entityId, qc]);
 
+  /**
+   * Conclui a atividade de pesquisa criada pelo workflow, registrando as
+   * respostas. Falhas aqui não bloqueiam a decisão de qualificação.
+   */
+  async function completeSurveyActivity(notes?: string | null) {
+    if (!activityId || !activeId) return;
+    try {
+      await saveSurvey({
+        data: {
+          activity_id: activityId,
+          related_key: "related_lead_id",
+          related_id: entityId,
+          source: "prospecting_questionnaire",
+          source_id: activeId,
+          answers,
+          notes: notes ?? null,
+        },
+      });
+    } catch (e) {
+      toast.error(
+        `Qualificação salva, mas a atividade de pesquisa não foi concluída: ${(e as Error).message}`,
+      );
+    }
+  }
+
   /** Persiste no banco todos os campos enriquecidos (lead, empresa e contato). */
   async function persistEnrichment() {
     if (!enrichment.data?.found) return;
