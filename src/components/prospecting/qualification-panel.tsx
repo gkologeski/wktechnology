@@ -379,6 +379,9 @@ export function QualificationPanel({
       if (leadErr) throw new Error(leadErr.message);
       if (!updated || updated.length === 0) throw new PermissionDeniedError();
 
+      // 4) conclui a atividade de pesquisa criada pelo workflow (se houver)
+      await completeSurveyActivity(reason || null);
+
       toast.success("Lead qualificado.");
       notifyTimelineRefresh();
       qc.invalidateQueries({
