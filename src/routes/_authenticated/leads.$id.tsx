@@ -16,6 +16,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { QualificationPanel } from "@/components/prospecting/qualification-panel";
 import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
 import { getPendingSurveyActivity } from "@/lib/surveys/survey-activity.functions";
 import { triggerTickNow } from "@/lib/workflows.functions";
