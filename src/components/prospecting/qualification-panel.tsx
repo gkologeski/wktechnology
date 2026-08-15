@@ -74,6 +74,7 @@ import { useLeadStages } from "@/lib/leads/stages";
 import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
 import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
+import { saveSurveyActivity } from "@/lib/surveys/survey-activity.functions";
 
 type Entity = "lead";
 
@@ -95,12 +96,15 @@ export function QualificationPanel({
   entityId,
   preselectedQuestionnaireId,
   queueId,
+  activityId,
   onDecided,
 }: {
   entity: Entity;
   entityId: string;
   preselectedQuestionnaireId?: string | null;
   queueId?: string | null;
+  /** Atividade de pesquisa (criada por workflow) a ser concluída na decisão. */
+  activityId?: string | null;
   onDecided?: (decision: "qualified" | "disqualified" | "nurture") => void;
 }) {
   const listQ = useServerFn(listQuestionnaires);
@@ -109,6 +113,7 @@ export function QualificationPanel({
   const save = useServerFn(saveQualification);
   const nurtureFn = useServerFn(nurtureLead);
   const listLossReasons = useServerFn(getDealLossReasons);
+  const saveSurvey = useServerFn(saveSurveyActivity);
   const qc = useQueryClient();
 
   const {
@@ -261,6 +266,31 @@ export function QualificationPanel({
     qc.invalidateQueries({ queryKey: ["leads"] });
   }, [appliedSignature, entityId, qc]);
 
+  /**
+   * Conclui a atividade de pesquisa criada pelo workflow, registrando as
+   * respostas. Falhas aqui não bloqueiam a decisão de qualificação.
+   */
+  async function completeSurveyActivity(notes?: string | null) {
+    if (!activityId || !activeId) return;
+    try {
+      await saveSurvey({
+        data: {
+          activity_id: activityId,
+          related_key: "related_lead_id",
+          related_id: entityId,
+          source: "prospecting_questionnaire",
+          source_id: activeId,
+          answers,
+          notes: notes ?? null,
+        },
+      });
+    } catch (e) {
+      toast.error(
+        `Qualificação salva, mas a atividade de pesquisa não foi concluída: ${(e as Error).message}`,
+      );
+    }
+  }
+
   /** Persiste no banco todos os campos enriquecidos (lead, empresa e contato). */
   async function persistEnrichment() {
     if (!enrichment.data?.found) return;
@@ -349,6 +379,9 @@ export function QualificationPanel({
       if (leadErr) throw new Error(leadErr.message);
       if (!updated || updated.length === 0) throw new PermissionDeniedError();
 
+      // 4) conclui a atividade de pesquisa criada pelo workflow (se houver)
+      await completeSurveyActivity(reason || null);
+
       toast.success("Lead qualificado.");
       notifyTimelineRefresh();
       qc.invalidateQueries({
@@ -413,6 +446,8 @@ export function QualificationPanel({
           },
         });
       }
+      await completeSurveyActivity(combined);
+
       toast.success("Lead desqualificado.");
       notifyTimelineRefresh();
       qc.invalidateQueries({

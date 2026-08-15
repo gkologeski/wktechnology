@@ -16,6 +16,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { QualificationPanel } from "@/components/prospecting/qualification-panel";
 import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
 import { getPendingSurveyActivity } from "@/lib/surveys/survey-activity.functions";
 import { triggerTickNow } from "@/lib/workflows.functions";
@@ -280,7 +288,35 @@ function LeadDetail() {
         onCreated={() => void load()}
       />
 
-      {pendingSurvey ? (
+      {pendingSurvey?.source === "prospecting_questionnaire" ? (
+        <Dialog
+          open={surveyOpen}
+          onOpenChange={(v) => {
+            setSurveyOpen(v);
+            if (!v) setPendingSurvey(null);
+          }}
+        >
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Qualificar lead</DialogTitle>
+              <DialogDescription>
+                Responda o questionário para calcular o score e decidir a qualificação.
+              </DialogDescription>
+            </DialogHeader>
+            <QualificationPanel
+              entity="lead"
+              entityId={lead.id}
+              preselectedQuestionnaireId={pendingSurvey.source_id}
+              activityId={pendingSurvey.activity_id}
+              onDecided={() => {
+                setSurveyOpen(false);
+                setPendingSurvey(null);
+                void load();
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      ) : pendingSurvey ? (
         <SurveyActivityDialog
           open={surveyOpen}
           onOpenChange={(v) => {
