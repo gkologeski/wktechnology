@@ -74,6 +74,7 @@ import { useLeadStages } from "@/lib/leads/stages";
 import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
 import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
+import { saveSurveyActivity } from "@/lib/surveys/survey-activity.functions";
 
 type Entity = "lead";
 
