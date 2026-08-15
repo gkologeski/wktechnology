@@ -446,6 +446,8 @@ export function QualificationPanel({
           },
         });
       }
+      await completeSurveyActivity(combined);
+
       toast.success("Lead desqualificado.");
       notifyTimelineRefresh();
       qc.invalidateQueries({
