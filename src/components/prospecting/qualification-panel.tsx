@@ -112,6 +112,7 @@ export function QualificationPanel({
   const save = useServerFn(saveQualification);
   const nurtureFn = useServerFn(nurtureLead);
   const listLossReasons = useServerFn(getDealLossReasons);
+  const saveSurvey = useServerFn(saveSurveyActivity);
   const qc = useQueryClient();
 
   const {
