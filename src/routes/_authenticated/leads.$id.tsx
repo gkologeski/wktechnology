@@ -26,6 +26,12 @@ import {
 import { QualificationPanel } from "@/components/prospecting/qualification-panel";
 import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
 import { getPendingSurveyActivity } from "@/lib/surveys/survey-activity.functions";
+import {
+  completeDealIntent,
+  getPendingDealIntent,
+  type PendingDealIntent,
+} from "@/lib/leads/deal-intent.functions";
+import { lastBusinessDayOfMonth } from "@/lib/date-business";
 import { triggerTickNow } from "@/lib/workflows.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { StageTracker } from "@/components/stage-tracker";
@@ -67,6 +73,7 @@ function LeadDetail() {
     source_id: string;
   } | null>(null);
   const [surveyOpen, setSurveyOpen] = useState(false);
+  const [dealIntent, setDealIntent] = useState<PendingDealIntent | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -81,7 +88,39 @@ function LeadDetail() {
   const load = () => qc.invalidateQueries({ queryKey: qk.lead(id) });
 
   const pendingFn = useServerFn(getPendingSurveyActivity);
+  const pendingDealFn = useServerFn(getPendingDealIntent);
+  const completeDealIntentFn = useServerFn(completeDealIntent);
   const tickWorkflows = useServerFn(triggerTickNow);
+
+  /**
+   * Abre o modal de criação de oportunidade quando o workflow registrar a
+   * intenção pendente (ação "Abrir criação de oportunidade").
+   */
+  const pollPendingDealIntent = async () => {
+    for (let i = 0; i < 8; i++) {
+      if (i > 0) await new Promise((r) => setTimeout(r, 750));
+      try {
+        const found = await pendingDealFn({ data: { lead_id: id } });
+        if (found) {
+          setDealIntent(found);
+          setCreateDealOpen(true);
+          return true;
+        }
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  };
+
+  const finishDealIntent = () => {
+    const activityId = dealIntent?.activity_id;
+    setDealIntent(null);
+    if (!activityId) return;
+    void completeDealIntentFn({ data: { activity_id: activityId } }).catch(() => {
+      /* intenção segue pendente; será reaberta na próxima mudança de etapa */
+    });
+  };
   /** Abre a pesquisa pendente criada pelo workflow (tentativas curtas). */
   const pollPendingSurvey = async () => {
     for (let i = 0; i < 8; i++) {
@@ -150,6 +189,8 @@ function LeadDetail() {
           error instanceof Error ? error.message : "Não foi possível executar o workflow.",
         );
       }
+      const openedDeal = await pollPendingDealIntent();
+      if (openedDeal) return;
       await pollPendingSurvey();
     })();
   };
@@ -283,9 +324,20 @@ function LeadDetail() {
 
       <CreateDealFromLeadDialog
         open={createDealOpen}
-        onOpenChange={setCreateDealOpen}
+        onOpenChange={(v) => {
+          setCreateDealOpen(v);
+          if (!v && dealIntent) finishDealIntent();
+        }}
         lead={lead}
-        onCreated={() => void load()}
+        initialPipelineId={dealIntent?.pipeline_id ?? null}
+        initialStageValue={dealIntent?.stage_value ?? null}
+        initialExpectedClose={
+          dealIntent && dealIntent.due_rule !== "none" ? lastBusinessDayOfMonth() : null
+        }
+        onCreated={() => {
+          if (dealIntent) finishDealIntent();
+          void load();
+        }}
       />
 
       {pendingSurvey?.source === "prospecting_questionnaire" ? (
