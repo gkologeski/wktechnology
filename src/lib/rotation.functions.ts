@@ -119,10 +119,10 @@ export const listWorkspaceMembers = createServerFn({ method: "GET" })
 
       const { data: ws } = await supabaseAdmin
         .from("workspaces")
-        .select("owner_id")
+        .select("created_by")
         .eq("id", activeWorkspaceId)
         .maybeSingle();
-      workspaceOwnerId = (ws as { owner_id: string | null } | null)?.owner_id ?? null;
+      workspaceOwnerId = (ws as { created_by: string | null } | null)?.created_by ?? null;
       if (workspaceOwnerId) ids.add(workspaceOwnerId);
     }
 
