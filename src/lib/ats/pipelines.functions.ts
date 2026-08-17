@@ -26,15 +26,16 @@ export const listAtsPipelines = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    // Visibilidade é decidida pelas políticas do banco (workspace/RBAC),
+    // não por filtro manual de owner_id.
     const { data, error } = await supabase
       .from("ats_pipelines")
       .select("id, name, is_default, stages, created_at, updated_at")
-      .eq("owner_id", userId)
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
-    // garante pelo menos um pipeline padrão
+    // garante pelo menos um pipeline padrão quando o workspace não tem nenhum visível
     if (!data || data.length === 0) {
       const { data: created, error: insErr } = await supabase
         .from("ats_pipelines")
@@ -51,6 +52,7 @@ export const listAtsPipelines = createServerFn({ method: "POST" })
     }
     return data;
   });
+
 
 export const savePipeline = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
