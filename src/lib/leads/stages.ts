@@ -32,6 +32,38 @@ export function useLeadStages() {
   return { stages, pipelineId: pipeline?.id ?? null, isLoading };
 }
 
+/** Rótulos em português para status legados sem etapa equivalente no funil. */
+export const LEGACY_STATUS_LABELS: Record<string, string> = {
+  new: "Novo",
+  contacted: "Contatado",
+  qualified: "Qualificado",
+  disqualified: "Desqualificado",
+  nurturing: "Em nutrição",
+};
+
+/**
+ * Fallback semântico: mapeia um status legado para a etapa equivalente do funil
+ * atual quando não existe etapa com o mesmo valor.
+ */
+export function mapLegacyStatusToStage(
+  status: string | null | undefined,
+  stages: LeadStage[],
+): LeadStage | undefined {
+  if (stages.length === 0) return undefined;
+  const open = stages.filter((s) => (s.type ?? "open") === "open");
+  switch (status) {
+    case "qualified":
+      return stages.find((s) => s.type === "won") ?? open[open.length - 1] ?? stages[0];
+    case "disqualified":
+      return stages.find((s) => s.type === "lost") ?? stages[stages.length - 1];
+    case "contacted":
+    case "nurturing":
+      return open[1] ?? open[0] ?? stages[0];
+    default:
+      return open[0] ?? stages[0];
+  }
+}
+
 /** Etapa atual do lead: `stage_id` quando existir, com fallback no `status` legado. */
 export function resolveLeadStageValue(
   lead: { stage_id?: string | null; status?: string | null },
@@ -43,8 +75,11 @@ export function resolveLeadStageValue(
   if (byStageId) return byStageId;
   const byStatus = lead.status ? stages.find((s) => s.value === lead.status)?.value : undefined;
   if (byStatus) return byStatus;
+  const mapped = mapLegacyStatusToStage(lead.status, stages)?.value;
+  if (mapped) return mapped;
   return lead.stage_id ?? lead.status ?? stages[0]?.value ?? "new";
 }
+
 
 /**
  * Status legado derivado da etapa — mantém filtros e relatórios existentes
