@@ -549,6 +549,7 @@ export function SurveyActivityDialog({
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             Registrar pesquisa
           </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
