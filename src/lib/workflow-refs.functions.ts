@@ -154,10 +154,10 @@ export const searchUsers = createServerFn({ method: "POST" })
       (wsMembers ?? []).forEach((m) => memberIds.add(m.user_id as string));
       const { data: ws } = await supabaseAdmin
         .from("workspaces")
-        .select("owner_id")
+        .select("created_by")
         .eq("id", activeWorkspaceId)
         .maybeSingle();
-      const ownerId = (ws as { owner_id: string | null } | null)?.owner_id ?? null;
+      const ownerId = (ws as { created_by: string | null } | null)?.created_by ?? null;
       if (ownerId) memberIds.add(ownerId);
     }
     // Fallback legado
