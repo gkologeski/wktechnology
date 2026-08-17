@@ -507,6 +507,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "create_contact",
       "create_company",
       "create_deal",
+      "open_deal_dialog",
       "create_ticket",
       "create_task",
     ],
