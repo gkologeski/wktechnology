@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState , useRef} from "react";
+import { useEffect, useMemo, useState, useRef, lazy, Suspense } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -52,6 +52,13 @@ import {
   useQualificationEntityFields,
 } from "@/components/prospecting/qualification-entity-fields";
 import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
+
+/** Tela padrão de qualificação (Apollo, campos, score, decisão) sob demanda. */
+const QualificationPanel = lazy(() =>
+  import("@/components/prospecting/qualification-panel").then((m) => ({
+    default: m.QualificationPanel,
+  })),
+);
 
 type Selection = { source: SurveySourceKind; id: string };
 
@@ -261,6 +268,8 @@ export function SurveyActivityDialog({
 
   // Campos de entidades (só para pesquisas de vendas em leads).
   const isSalesLead = kind === "vendas" && relatedKey === "related_lead_id";
+  // Pesquisa de vendas em lead: usa a tela padrão de qualificação.
+  const useQualificationScreen = isSalesLead && selection?.source === "prospecting_questionnaire";
   const fieldLayout = useMemo(
     () => (isSalesLead ? parseFieldLayout(form.data?.field_layout ?? null) : []),
     [isSalesLead, form.data],
@@ -271,7 +280,7 @@ export function SurveyActivityDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className={useQualificationScreen ? "max-w-4xl" : "max-w-2xl"}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4 text-primary" aria-hidden />
@@ -352,7 +361,34 @@ export function SurveyActivityDialog({
             </div>
           </div>
 
-          {selection && (
+          {useQualificationScreen && selection ? (
+            <Suspense
+              fallback={
+                <div className="space-y-3" aria-live="polite">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-9 w-full" />
+                  <Skeleton className="h-9 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+              }
+            >
+              <div className="max-h-[70vh] overflow-y-auto pr-1">
+                <QualificationPanel
+                  entity="lead"
+                  entityId={relatedId}
+                  preselectedQuestionnaireId={selection.id}
+                  activityId={activityId ?? null}
+                  onDecided={() => {
+                    notifyTimelineRefresh();
+                    onSaved?.();
+                    onOpenChange(false);
+                  }}
+                />
+              </div>
+            </Suspense>
+          ) : null}
+
+          {!useQualificationScreen && selection && (
             <div className="space-y-3 rounded-lg border border-border/60 p-3">
               {form.isLoading ? (
                 <div className="space-y-3" aria-live="polite">
@@ -496,8 +532,9 @@ export function SurveyActivityDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={save.isPending}>
-            Cancelar
+            {useQualificationScreen ? "Fechar" : "Cancelar"}
           </Button>
+          {useQualificationScreen ? null : (
           <Button
             onClick={() => {
               if (missing.length > 0) {
@@ -512,6 +549,7 @@ export function SurveyActivityDialog({
             {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
             Registrar pesquisa
           </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
