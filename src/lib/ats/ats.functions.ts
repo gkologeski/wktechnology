@@ -97,9 +97,11 @@ export const listAtsJobs = createServerFn({ method: "POST" })
         "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at, created_at, owner_id, assigned_to, hiring_manager_id, recruiter_id, metadata",
       )
       // Sem filtro por owner_id: as políticas RLS já expõem vagas do próprio
-      // usuário, das quais é hiring manager/recruiter, e das compartilhadas no
-      // workspace (ats_jobs_workspace_shared_select). Filtrar por owner_id aqui
-      // escondia vagas criadas por colegas do mesmo workspace.
+      // usuário, das quais é hiring manager/recruiter, e as compartilhadas no
+      // workspace para quem tem `techhire.jobs.view.workspace`
+      // (ats_jobs_rbac_select). Filtrar por owner_id aqui escondia vagas
+      // criadas por colegas do mesmo workspace.
+
       .order("updated_at", { ascending: false })
       .limit(200);
 
