@@ -7,6 +7,7 @@ A vaga "Desenvolvedor Fullstack" usa o pipeline `Pipeline padrão` que pertence 
 Resultado: o pipeline da vaga não existe na lista de opções, então o `Select` não encontra correspondência e aparece vazio (e o selo "Pipeline: ..." no cabeçalho também não aparece). No print, as duas opções mostradas ("RH – Seleção (padrão)" e "Pipeline padrão") são os pipelines do Guilherme — nenhuma é a da vaga.
 
 Observações adicionais confirmadas no banco:
+
 - As regras de acesso do banco já permitem que colegas do workspace vejam os pipelines (existe política por workspace/RBAC); o bloqueio está apenas no filtro do código.
 - Existem pipelines duplicados: a Priscila tem dois "Pipeline padrão", ambos marcados como padrão.
 
