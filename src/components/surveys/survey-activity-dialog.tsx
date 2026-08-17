@@ -532,8 +532,9 @@ export function SurveyActivityDialog({
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={save.isPending}>
-            Cancelar
+            {useQualificationScreen ? "Fechar" : "Cancelar"}
           </Button>
+          {useQualificationScreen ? null : (
           <Button
             onClick={() => {
               if (missing.length > 0) {
