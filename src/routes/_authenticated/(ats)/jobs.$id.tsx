@@ -911,6 +911,16 @@ function JobPropertiesPanel({
       .catch(() => undefined);
   }, [listPipelinesFn]);
 
+  // Garante que o pipeline atual da vaga sempre apareça no seletor,
+  // mesmo que ainda não esteja na lista carregada.
+  const pipelineOptions = useMemo(() => {
+    const current = j.pipeline_id;
+    if (!current || pipelines.some((p) => p.id === current)) return pipelines;
+    return [{ id: current, name: "Pipeline atual da vaga", is_default: false }, ...pipelines];
+  }, [pipelines, j.pipeline_id]);
+
+
+
   useEffect(() => {
     setForm({
       title: j.title,
@@ -1030,13 +1040,13 @@ function JobPropertiesPanel({
           <Select
             value={form.pipeline_id}
             onValueChange={(v) => setForm({ ...form, pipeline_id: v })}
-            disabled={pipelines.length === 0}
+            disabled={pipelineOptions.length === 0}
           >
             <SelectTrigger id="prop-pipeline">
               <SelectValue placeholder="Selecionar pipeline" />
             </SelectTrigger>
             <SelectContent>
-              {pipelines.map((p) => (
+              {pipelineOptions.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.name}
                   {p.is_default ? " (padrão)" : ""}
