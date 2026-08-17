@@ -374,6 +374,7 @@ export function SurveyActivityDialog({
             >
               <div className="max-h-[70vh] overflow-y-auto pr-1">
                 <QualificationPanel
+                  key={selection.id}
                   entity="lead"
                   entityId={relatedId}
                   preselectedQuestionnaireId={selection.id}
