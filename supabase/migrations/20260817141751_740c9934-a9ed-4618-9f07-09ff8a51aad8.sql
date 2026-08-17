@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS companies_name_order_idx ON public.companies USING btree (name) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS contacts_first_name_order_idx ON public.contacts USING btree (first_name) WHERE deleted_at IS NULL;
