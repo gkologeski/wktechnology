@@ -977,7 +977,6 @@ export const setAtsJobDepartment = createServerFn({ method: "POST" })
       .from("ats_jobs")
       .select("metadata")
       .eq("id", data.id)
-      .eq("owner_id", userId)
       .maybeSingle();
     if (readErr) throw new Error(readErr.message);
     const metaSrc =
@@ -988,14 +987,17 @@ export const setAtsJobDepartment = createServerFn({ method: "POST" })
     } else {
       next.department = data.department;
     }
-    const { error } = await supabase
+    const { data: upd, error } = await supabase
       .from("ats_jobs")
       .update({ metadata: next } as never)
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!upd || upd.length === 0)
+      throw new Error("Não foi possível alterar o departamento da vaga: sem permissão.");
     return { id: data.id, department: data.department };
   });
+
 
 export const setCandidateArchived = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
