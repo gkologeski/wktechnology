@@ -468,16 +468,23 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
       created_by: userId,
     };
     if (data.id) {
+      // Em update, não sobrescreve owner_id/created_by (evita "roubar" a autoria
+      // de um registro criado por colega) e não filtra por owner_id: o RLS decide.
+      const { owner_id: _ownerId, created_by: _createdBy, ...patch } = base;
       const { data: u, error } = await supabase
         .from("ats_candidates")
-        .update(base as never)
+        .update(patch as never)
         .eq("id", data.id)
-        .eq("owner_id", userId)
         .select("id")
-        .single();
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!u)
+        throw new Error(
+          "Não foi possível salvar o candidato: sem permissão ou registro inexistente.",
+        );
       return u;
     }
+
     const { data: ins, error } = await supabase
       .from("ats_candidates")
       .insert(base as never)
