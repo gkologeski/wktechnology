@@ -361,7 +361,34 @@ export function SurveyActivityDialog({
             </div>
           </div>
 
-          {selection && (
+          {useQualificationScreen && selection ? (
+            <Suspense
+              fallback={
+                <div className="space-y-3" aria-live="polite">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-9 w-full" />
+                  <Skeleton className="h-9 w-full" />
+                  <Skeleton className="h-24 w-full" />
+                </div>
+              }
+            >
+              <div className="max-h-[70vh] overflow-y-auto pr-1">
+                <QualificationPanel
+                  entity="lead"
+                  entityId={relatedId}
+                  preselectedQuestionnaireId={selection.id}
+                  activityId={activityId ?? null}
+                  onDecided={() => {
+                    notifyTimelineRefresh();
+                    onSaved?.();
+                    onOpenChange(false);
+                  }}
+                />
+              </div>
+            </Suspense>
+          ) : null}
+
+          {!useQualificationScreen && selection && (
             <div className="space-y-3 rounded-lg border border-border/60 p-3">
               {form.isLoading ? (
                 <div className="space-y-3" aria-live="polite">
