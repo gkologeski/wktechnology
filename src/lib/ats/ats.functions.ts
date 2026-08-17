@@ -293,12 +293,18 @@ export const deleteAtsJob = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
     await assertAnyPermission(supabase, userId, workspaceIdForCheck, ["techhire.jobs.delete.workspace"]);
-    const { error } = await supabase
+    // Sem filtro por owner_id: o RLS decide (dono, admin do workspace ou
+    // permissão de delete no workspace). Filtrar aqui impedia excluir
+    // registros criados por colegas do mesmo workspace.
+    const { data: del, error } = await supabase
       .from("ats_jobs")
       .delete()
-      .eq("owner_id", userId)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!del || del.length === 0)
+      throw new Error("Não foi possível excluir a vaga: sem permissão ou registro inexistente.");
+
     return { ok: true };
   });
 
@@ -416,13 +422,15 @@ export const listAtsCandidates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { search?: string } | undefined) => d ?? {})
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
+    // Sem filtro por owner_id: o RLS já expõe os candidatos do próprio usuário
+    // e os compartilhados no workspace (ats_candidates_rbac_select).
     let q = supabase
       .from("ats_candidates")
       .select(
         "id, full_name, email, phone, location, current_position, current_company, skills, tags, source, score, assigned_to, updated_at",
       )
-      .eq("owner_id", userId)
+
       .order("updated_at", { ascending: false })
       .limit(300);
     if (data.search)
@@ -460,16 +468,23 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
       created_by: userId,
     };
     if (data.id) {
+      // Em update, não sobrescreve owner_id/created_by (evita "roubar" a autoria
+      // de um registro criado por colega) e não filtra por owner_id: o RLS decide.
+      const { owner_id: _ownerId, created_by: _createdBy, ...patch } = base;
       const { data: u, error } = await supabase
         .from("ats_candidates")
-        .update(base as never)
+        .update(patch as never)
         .eq("id", data.id)
-        .eq("owner_id", userId)
         .select("id")
-        .single();
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!u)
+        throw new Error(
+          "Não foi possível salvar o candidato: sem permissão ou registro inexistente.",
+        );
       return u;
     }
+
     const { data: ins, error } = await supabase
       .from("ats_candidates")
       .insert(base as never)
@@ -497,12 +512,17 @@ export const deleteAtsCandidate = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
     await assertAnyPermission(supabase, userId, workspaceIdForCheck, ["techhire.candidates.delete.workspace"]);
-    const { error } = await supabase
+    const { data: del, error } = await supabase
       .from("ats_candidates")
       .delete()
-      .eq("owner_id", userId)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!del || del.length === 0)
+      throw new Error(
+        "Não foi possível excluir o candidato: sem permissão ou registro inexistente.",
+      );
+
     return { ok: true };
   });
 
@@ -668,10 +688,10 @@ export const moveApplication = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     // Estado anterior para detectar transição.
+    // Sem filtro por owner_id: o RLS libera candidaturas do workspace.
     const { data: prev } = await supabase
       .from("ats_applications")
       .select("id, stage_value, job_id, candidate_id, status")
-      .eq("owner_id", userId)
       .eq("id", data.applicationId)
       .maybeSingle();
     if (!prev) throw new Error("Aplicação não encontrada");
@@ -685,12 +705,15 @@ export const moveApplication = createServerFn({ method: "POST" })
     else if (data.toStage === "rejected") patch.status = "rejected";
     else patch.status = "active";
 
-    const { error } = await supabase
+    const { data: upd, error } = await supabase
       .from("ats_applications")
       .update(patch as never)
-      .eq("owner_id", userId)
-      .eq("id", data.applicationId);
+      .eq("id", data.applicationId)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!upd || upd.length === 0)
+      throw new Error("Não foi possível mover a candidatura: sem permissão.");
+
 
     if (prev.stage_value !== data.toStage) {
       // Auditoria
@@ -916,12 +939,15 @@ export const setAtsJobStatus = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const patch: Record<string, unknown> = { status: data.status };
     if (data.status === "published") patch.opened_at = new Date().toISOString();
-    const { error } = await supabase
+    const { data: upd, error } = await supabase
       .from("ats_jobs")
       .update(patch as never)
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!upd || upd.length === 0)
+      throw new Error("Não foi possível alterar o status da vaga: sem permissão.");
+
     if (data.status === "published") {
       await emitEvent(supabase, {
         ownerId: userId,
@@ -951,7 +977,6 @@ export const setAtsJobDepartment = createServerFn({ method: "POST" })
       .from("ats_jobs")
       .select("metadata")
       .eq("id", data.id)
-      .eq("owner_id", userId)
       .maybeSingle();
     if (readErr) throw new Error(readErr.message);
     const metaSrc =
@@ -962,14 +987,17 @@ export const setAtsJobDepartment = createServerFn({ method: "POST" })
     } else {
       next.department = data.department;
     }
-    const { error } = await supabase
+    const { data: upd, error } = await supabase
       .from("ats_jobs")
       .update({ metadata: next } as never)
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!upd || upd.length === 0)
+      throw new Error("Não foi possível alterar o departamento da vaga: sem permissão.");
     return { id: data.id, department: data.department };
   });
+
 
 export const setCandidateArchived = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -977,13 +1005,16 @@ export const setCandidateArchived = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), archived: z.boolean() }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
+    const { supabase } = context;
+    const { data: upd, error } = await supabase
       .from("ats_candidates")
       .update({ archived: data.archived } as never)
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!upd || upd.length === 0)
+      throw new Error("Não foi possível arquivar o candidato: sem permissão.");
+
     return { id: data.id, archived: data.archived };
   });
 
