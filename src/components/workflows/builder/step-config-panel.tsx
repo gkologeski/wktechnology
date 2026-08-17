@@ -904,6 +904,63 @@ function StepConfigForm({
       );
     case "create_survey_activity":
       return <CreateSurveyActivityForm action={action} onChange={onChange} />;
+    case "open_deal_dialog":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Pipeline de negócios</Label>
+            <FkPicker
+              kind="pipeline"
+              value={action.pipeline_id ?? ""}
+              onChange={(v) => onChange({ ...action, pipeline_id: v || undefined })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Em branco usa o pipeline padrão de negócios.
+            </p>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs" htmlFor="wf-open-deal-stage">
+              Estágio inicial (opcional)
+            </Label>
+            <Input
+              id="wf-open-deal-stage"
+              value={action.stage_value ?? ""}
+              onChange={(e) => onChange({ ...action, stage_value: e.target.value || undefined })}
+              placeholder="ex: scope/solution"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Data de previsão sugerida</Label>
+            <Select
+              value={action.due_rule ?? "last_business_day_of_month"}
+              onValueChange={(v) =>
+                onChange({
+                  ...action,
+                  due_rule: v === "none" ? "none" : "last_business_day_of_month",
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="last_business_day_of_month">
+                  Último dia útil do mês corrente
+                </SelectItem>
+                <SelectItem value="none">Não sugerir</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Título da pendência (opcional)</Label>
+            <TokenInput
+              value={action.subject ?? ""}
+              onValueChange={(v) => onChange({ ...action, subject: v || undefined })}
+              placeholder="Criar oportunidade"
+            />
+          </div>
+        </div>
+      );
     case "delay_until_date":
       return <DelayUntilDateForm entity={entity} action={action} onChange={onChange} />;
     case "format_data":
