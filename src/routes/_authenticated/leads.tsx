@@ -19,6 +19,8 @@ import {
   resolveLeadStageValue,
   deriveLeadStatus,
   findLeadStage,
+  LEGACY_STATUS_LABELS,
+
   type LeadStage,
 } from "@/lib/leads/stages";
 
@@ -1474,8 +1476,9 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
 
 function StagePill({ stage, value }: { stage?: LeadStage; value: string }) {
   const tone = STATUS_TONE[value] ?? STATUS_TONE[stage?.type === "won" ? "qualified" : "new"];
-  const label = stage?.label ?? value;
+  const label = stage?.label ?? LEGACY_STATUS_LABELS[value] ?? value;
   const color = stage?.color;
+
   return (
     <span
       className={cn(
