@@ -939,12 +939,15 @@ export const setAtsJobStatus = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const patch: Record<string, unknown> = { status: data.status };
     if (data.status === "published") patch.opened_at = new Date().toISOString();
-    const { error } = await supabase
+    const { data: upd, error } = await supabase
       .from("ats_jobs")
       .update(patch as never)
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!upd || upd.length === 0)
+      throw new Error("Não foi possível alterar o status da vaga: sem permissão.");
+
     if (data.status === "published") {
       await emitEvent(supabase, {
         ownerId: userId,
