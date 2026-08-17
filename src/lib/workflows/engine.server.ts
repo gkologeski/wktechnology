@@ -631,6 +631,42 @@ async function runAction(
           detail: { activity_id: (created as { id: string }).id, subject },
         };
       }
+      case "open_deal_dialog": {
+        // Registra uma intenção pendente. A criação do negócio é confirmada
+        // pelo usuário no modal aberto na tela do registro.
+        if (ctx.entity !== "leads")
+          throw new Error("open_deal_dialog suporta apenas leads");
+        const subject = action.subject
+          ? (renderTokens(action.subject, ctx.after, ctx.vars) as string)
+          : "Criar oportunidade";
+        const { data: created, error } = await supabase
+          .from("activities")
+          .insert({
+            owner_id: ctx.ownerId,
+            type: "task",
+            subject,
+            completed: false,
+            related_lead_id: ctx.entityId,
+            custom_fields: {
+              ui_action: "create_deal",
+              pipeline_id: action.pipeline_id ?? null,
+              stage_value: action.stage_value ?? null,
+              due_rule: action.due_rule ?? "last_business_day_of_month",
+            },
+          } as never)
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "open_deal_dialog",
+          detail: {
+            activity_id: (created as { id: string }).id,
+            pipeline_id: action.pipeline_id ?? null,
+          },
+        };
+      }
       case "add_to_sequence": {
         const { error } = await supabase.from("sequence_enrollments").insert({
           owner_id: ctx.ownerId,

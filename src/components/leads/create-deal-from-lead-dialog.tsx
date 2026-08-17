@@ -38,6 +38,9 @@ export function CreateDealFromLeadDialog({
   onCreated,
   onSaved,
   initialDescription,
+  initialPipelineId,
+  initialStageValue,
+  initialExpectedClose,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -45,6 +48,10 @@ export function CreateDealFromLeadDialog({
   onCreated?: (dealId: string) => void;
   onSaved?: (r: { id: string; action: "created" }) => void;
   initialDescription?: string;
+  /** Pré-preenchimentos (usados quando o modal é aberto por workflow). */
+  initialPipelineId?: string | null;
+  initialStageValue?: string | null;
+  initialExpectedClose?: string | null;
 }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
@@ -81,22 +88,35 @@ export function CreateDealFromLeadDialog({
   // initialize defaults when opening / lead changes
   useEffect(() => {
     if (!open) return;
-    const p = defaultPipeline ?? pipelines[0] ?? null;
+    const p =
+      (initialPipelineId ? pipelines.find((x) => x.id === initialPipelineId) : null) ??
+      defaultPipeline ??
+      pipelines[0] ??
+      null;
     setPipelineId(p?.id ?? "");
-    const qualifiedStage = p?.stages.find((s) => s.value === "qualified") ?? p?.stages[0] ?? null;
+    const preferred = initialStageValue
+      ? p?.stages.find((s) => s.value === initialStageValue)
+      : undefined;
+    const qualifiedStage =
+      preferred ?? p?.stages.find((s) => s.value === "qualified") ?? p?.stages[0] ?? null;
     setStageId(qualifiedStage?.value ?? "");
     const fullName = `${lead.first_name ?? ""} ${lead.last_name ?? ""}`.trim();
     setName(fullName ? `Negócio - ${fullName}` : "Novo negócio");
     setValue("");
     setCurrency("BRL");
-    setExpectedClose("");
+    setExpectedClose(initialExpectedClose ?? "");
     setDescription(initialDescription ?? "");
-    setCompanyId(null);
+    setCompanyId(lead.company_id ?? null);
     setCompanyName(lead.company_name ?? "");
-    setContactId(null);
+    setContactId(
+      (lead as unknown as { converted_contact_id?: string | null }).converted_contact_id ?? null,
+    );
 
     // Tenta localizar contato existente pelo e-mail/telefone do lead e pré-selecioná-lo,
     // assim como já fazemos com a empresa.
+    const knownContactId =
+      (lead as unknown as { converted_contact_id?: string | null }).converted_contact_id ?? null;
+    if (knownContactId && lead.company_id) return;
     const email = (lead.email ?? "").trim().toLowerCase();
     const phone = (lead.phone ?? "").trim();
     if (!email && !phone) return;
@@ -120,8 +140,10 @@ export function CreateDealFromLeadDialog({
         company_name: string | null;
         companies: { id: string; name: string } | null;
       };
-      setContactId(row.id);
-      if (row.companies?.id) {
+      if (!knownContactId) setContactId(row.id);
+      if (lead.company_id) {
+        // Empresa do lead tem prioridade.
+      } else if (row.companies?.id) {
         setCompanyId(row.companies.id);
         setCompanyName(row.companies.name);
       } else if (row.company_name) {
@@ -131,7 +153,16 @@ export function CreateDealFromLeadDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, lead, defaultPipeline, pipelines, initialDescription]);
+  }, [
+    open,
+    lead,
+    defaultPipeline,
+    pipelines,
+    initialDescription,
+    initialPipelineId,
+    initialStageValue,
+    initialExpectedClose,
+  ]);
 
   // ensure stage matches selected pipeline
   useEffect(() => {

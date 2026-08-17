@@ -17,6 +17,7 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   set_field: Sparkles,
   create_activity: Mail,
   create_survey_activity: ClipboardList,
+  open_deal_dialog: Handshake,
   assign_to: UserPlus,
   rotate_assign: Users,
   add_to_sequence: Mail,
@@ -61,6 +62,8 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
       return { type, subject: "Nova tarefa", activity_type: "task" };
     case "create_survey_activity":
       return { type, source: "prospecting_questionnaire", source_id: "" };
+    case "open_deal_dialog":
+      return { type, due_rule: "last_business_day_of_month" };
     case "assign_to":
       return { type, user_id: "" };
     case "rotate_assign":
@@ -224,6 +227,10 @@ export const STEP_OUTPUT_KEYS: Partial<Record<WorkflowActionType, { key: string;
   create_survey_activity: [
     { key: "activity_id", label: "ID da atividade de pesquisa" },
     { key: "subject", label: "Assunto" },
+  ],
+  open_deal_dialog: [
+    { key: "activity_id", label: "ID da intenção criada" },
+    { key: "pipeline_id", label: "Pipeline sugerido" },
   ],
   create_task: [{ key: "subject", label: "Assunto" }],
   set_field: [
@@ -536,6 +543,8 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return `${a.activity_type ?? "task"}: ${a.subject}`;
     case "create_survey_activity":
       return a.source_id ? (a.subject || "Pesquisa pendente") : "Selecione a pesquisa";
+    case "open_deal_dialog":
+      return a.pipeline_id ? L.labelForPipeline(a.pipeline_id) : "pipeline padrão de negócios";
     case "assign_to":
       return a.user_id ? L.labelForUser(a.user_id) : "—";
     case "rotate_assign":
