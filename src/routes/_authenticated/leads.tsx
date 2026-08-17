@@ -19,6 +19,8 @@ import {
   resolveLeadStageValue,
   deriveLeadStatus,
   findLeadStage,
+  LEGACY_STATUS_LABELS,
+
   type LeadStage,
 } from "@/lib/leads/stages";
 
