@@ -147,6 +147,13 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     body: z.string().max(5000).optional(),
     due_in_days: z.number().int().min(0).max(365).optional(),
   }),
+  z.object({
+    type: z.literal("open_deal_dialog"),
+    pipeline_id: z.string().uuid().optional(),
+    stage_value: z.string().max(100).optional(),
+    due_rule: z.enum(["last_business_day_of_month", "none"]).optional(),
+    subject: z.string().max(500).optional(),
+  }),
   z.object({ type: z.literal("assign_to"), user_id: z.string().uuid() }),
   z.object({ type: z.literal("rotate_assign"), rule_id: z.string().uuid() }),
   z.object({ type: z.literal("add_to_sequence"), sequence_id: z.string().uuid() }),
