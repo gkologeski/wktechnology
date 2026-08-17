@@ -1030,19 +1030,21 @@ function JobPropertiesPanel({
           <Select
             value={form.pipeline_id}
             onValueChange={(v) => setForm({ ...form, pipeline_id: v })}
-            disabled={pipelines.length === 0}
+            disabled={pipelineOptions.length === 0}
           >
             <SelectTrigger id="prop-pipeline">
               <SelectValue placeholder="Selecionar pipeline" />
             </SelectTrigger>
             <SelectContent>
-              {pipelines.map((p) => (
+              {pipelineOptions.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.name}
                   {p.is_default ? " (padrão)" : ""}
                 </SelectItem>
               ))}
             </SelectContent>
+          </Select>
+
           </Select>
           <p className="mt-1 text-[11px] text-text-tertiary">
             Define as etapas pelas quais as candidaturas desta vaga vão passar.
