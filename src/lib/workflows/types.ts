@@ -151,6 +151,19 @@ export type WorkflowAction =
       body?: string;
       due_in_days?: number;
     }
+  | {
+      /**
+       * Registra uma intenção pendente para abrir, na tela do registro, o modal
+       * de criação de oportunidade (negócio) já pré-preenchido. Não cria o
+       * negócio automaticamente — a confirmação é sempre do usuário.
+       */
+      type: "open_deal_dialog";
+      pipeline_id?: string;
+      stage_value?: string;
+      /** Regra da data de previsão de fechamento sugerida no modal. */
+      due_rule?: "last_business_day_of_month" | "none";
+      subject?: string;
+    }
   | { type: "assign_to"; user_id: string }
   | { type: "rotate_assign"; rule_id: string }
   | { type: "add_to_sequence"; sequence_id: string }
