@@ -116,7 +116,10 @@ export const saveQualification = createServerFn({ method: "POST" })
         answers: z.record(z.string(), z.unknown()).default({}),
         decision: DecisionEnum.optional(),
         decision_reason: z.string().max(1000).nullable().optional(),
+        /** Atividade de pesquisa já existente (criada por workflow) a reaproveitar. */
+        activity_id: z.string().uuid().nullable().optional(),
       })
+
       .parse(i),
   )
   .handler(async ({ context, data }) => {
@@ -184,6 +187,7 @@ export const saveQualification = createServerFn({ method: "POST" })
         score,
         decision: data.decision as "qualified" | "disqualified" | "nurture" | "scheduled",
         decisionReason: data.decision_reason ?? null,
+        activityId: data.activity_id ?? null,
       });
     };
 
@@ -313,7 +317,7 @@ export const nurtureLead = createServerFn({ method: "POST" })
         cadenceId = (q as { nurture_cadence_id: string | null }).nurture_cadence_id;
         // Remove o lead da fila manual
         if ((q as { kind?: string }).kind === "manual") {
-          const ids = (((q as { item_ids?: string[] }).item_ids) ?? []) as string[];
+          const ids = ((q as { item_ids?: string[] }).item_ids ?? []) as string[];
           const next = ids.filter((x) => x !== data.lead_id);
           if (next.length !== ids.length) {
             await context.supabase
@@ -326,7 +330,6 @@ export const nurtureLead = createServerFn({ method: "POST" })
     }
     // (Padrão de workspace pode ser adicionado no futuro via tabela dedicada;
     // por ora, a cadência é resolvida somente ao nível da fila.)
-
 
     // 4) Inscreve o lead na cadência resolvida (dedupe)
     let enrolled = false;
@@ -347,19 +350,17 @@ export const nurtureLead = createServerFn({ method: "POST" })
           .eq("status", "active")
           .maybeSingle();
         if (!exists) {
-          const { error: enrErr } = await context.supabase
-            .from("prospecting_enrollments")
-            .insert({
-              cadence_id: cadenceId,
-              entity: "lead",
-              entity_id: data.lead_id,
-              owner_id: context.userId,
-              status: "active",
-              current_step: 1,
-              next_run_at: nowIso,
-              started_at: nowIso,
-              started_by: context.userId,
-            } as never);
+          const { error: enrErr } = await context.supabase.from("prospecting_enrollments").insert({
+            cadence_id: cadenceId,
+            entity: "lead",
+            entity_id: data.lead_id,
+            owner_id: context.userId,
+            status: "active",
+            current_step: 1,
+            next_run_at: nowIso,
+            started_at: nowIso,
+            started_by: context.userId,
+          } as never);
           if (!enrErr) enrolled = true;
         } else {
           enrolled = true;
@@ -369,4 +370,3 @@ export const nurtureLead = createServerFn({ method: "POST" })
 
     return { ok: true, enrolled, cadence_name: cadenceName };
   });
-
