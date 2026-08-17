@@ -293,12 +293,18 @@ export const deleteAtsJob = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
     await assertAnyPermission(supabase, userId, workspaceIdForCheck, ["techhire.jobs.delete.workspace"]);
-    const { error } = await supabase
+    // Sem filtro por owner_id: o RLS decide (dono, admin do workspace ou
+    // permissão de delete no workspace). Filtrar aqui impedia excluir
+    // registros criados por colegas do mesmo workspace.
+    const { data: del, error } = await supabase
       .from("ats_jobs")
       .delete()
-      .eq("owner_id", userId)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!del || del.length === 0)
+      throw new Error("Não foi possível excluir a vaga: sem permissão ou registro inexistente.");
+
     return { ok: true };
   });
 
