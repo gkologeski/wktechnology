@@ -911,6 +911,16 @@ function JobPropertiesPanel({
       .catch(() => undefined);
   }, [listPipelinesFn]);
 
+  // Garante que o pipeline atual da vaga sempre apareça no seletor,
+  // mesmo que ainda não esteja na lista carregada.
+  const pipelineOptions = useMemo(() => {
+    const current = j.pipeline_id;
+    if (!current || pipelines.some((p) => p.id === current)) return pipelines;
+    return [{ id: current, name: "Pipeline atual da vaga", is_default: false }, ...pipelines];
+  }, [pipelines, j.pipeline_id]);
+
+
+
   useEffect(() => {
     setForm({
       title: j.title,
