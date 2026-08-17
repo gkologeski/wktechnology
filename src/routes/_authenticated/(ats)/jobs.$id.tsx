@@ -1044,8 +1044,6 @@ function JobPropertiesPanel({
               ))}
             </SelectContent>
           </Select>
-
-          </Select>
           <p className="mt-1 text-[11px] text-text-tertiary">
             Define as etapas pelas quais as candidaturas desta vaga vão passar.
           </p>
