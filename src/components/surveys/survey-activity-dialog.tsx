@@ -53,6 +53,13 @@ import {
 } from "@/components/prospecting/qualification-entity-fields";
 import { notifyTimelineRefresh } from "@/lib/timeline-refresh";
 
+/** Tela padrão de qualificação (Apollo, campos, score, decisão) sob demanda. */
+const QualificationPanel = lazy(() =>
+  import("@/components/prospecting/qualification-panel").then((m) => ({
+    default: m.QualificationPanel,
+  })),
+);
+
 type Selection = { source: SurveySourceKind; id: string };
 
 const ICP_LABEL: Record<string, string> = {
