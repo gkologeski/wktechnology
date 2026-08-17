@@ -1,44 +1,28 @@
-# Abertura imediata do modal ao entrar em "Em qualificação"
+# Drenar os 5.077 eventos pendentes do backfill
 
-## O que está acontecendo hoje
+## O que a verificação mostrou
 
-Ao mudar a etapa do lead, a tela grava a etapa e então chama o processamento da fila de automações sem filtro (`triggerTickNow` → `tickWorkflows(supabase, 50)`), que consome os eventos **mais antigos primeiro**. Com backlog gerado por backfills, o evento da mudança de etapa não é processado nessa chamada; o polling roda 8 tentativas de 750ms (até ~6s) e, no fim, dispara o toast "Nenhuma pesquisa pendente foi criada pelo workflow" — mensagem incorreta e atrasada.
+- 5.077 eventos pendentes do tipo `updated` em `leads`, todos criados em 17/08 às 15:11 — gerados pelo backfill de etapas, não por ação de usuário.
+- 16 eventos `stage_changed` de leads pendentes (15:14 até 17:10), presos atrás do backlog.
+- Os dois únicos workflows de Leads publicados e ativos ("Pesquisa de qualificação ao entrar em Em qualificação" e "Abrir criação de oportunidade ao entrar em Oportunidade") disparam **somente** em `stage_changed`. Nenhum workflow ativo escuta `updated`.
 
-## Correção proposta
+Consequência: processar os 5.077 eventos `updated` pelo motor não executaria nenhuma ação — apenas gastaria ~100 ciclos de fila (50 por vez) para marcá-los como processados. O resultado final é idêntico a marcá-los como processados diretamente, e sem risco de efeito colateral em massa.
 
-### 1. Processamento direcionado ao registro em foco
+## Execução proposta
 
-- `tickWorkflows` ganha um irmão `tickWorkflowsFor(supabase, entity, entityId, limit)` que seleciona apenas os eventos pendentes **daquele registro**, reusando `processEvent` sem alterar ordenação nem comportamento do tick geral.
-- `triggerTickNow` passa a aceitar `entity` e `entity_id` opcionais: quando informados, processa primeiro os eventos do registro e só então segue o comportamento atual. Chamadas existentes sem parâmetros continuam iguais.
-
-### 2. Mudança de etapa não bloqueia a UI
-
-- A gravação da etapa continua imediata.
-- O trabalho de automação passa a rodar em segundo plano, sem prender interação e sem toast de falha por demora.
-- Se o processamento direcionado falhar por erro real (permissão, erro do motor), o aviso aparece; demora de fila não gera aviso.
-
-### 3. Modal imediato
-
-- Nova server function `openQualificationForLead({ lead_id })` que, em uma única chamada: processa os eventos pendentes do lead, e devolve a atividade de pesquisa pendente (ou a intenção de oportunidade) já criada pelo workflow.
-- A tela do lead chama essa função ao mudar de etapa e abre o `QualificationPanel`/`SurveyActivityDialog` na resposta — sem depender do cron nem do backlog.
-- O polling atual passa a ser apenas fallback curto (2 tentativas) para o caso do workflow criar a atividade de forma assíncrona.
-
-### 4. Verificação de saúde da fila
-
-- A mesma função retorna `queue_backlog` (contagem de eventos pendentes do workspace). Quando houver backlog relevante e nada pendente para o lead, a tela mostra um aviso informativo com ação "Tentar novamente" — em vez de afirmar que o workflow não criou nada.
-- O aviso só aparece se, de fato, nenhuma pesquisa/intenção existir para o lead.
+1. **Drenar os eventos do backfill** (migration de dados): marcar `processed_at = now()` nos eventos pendentes de `leads` com `event_type = 'updated'` criados na janela do backfill (17/08 15:11). Nada de `stage_changed` é tocado.
+2. **Processar a fila real restante**: com o backlog fora do caminho, os 16 `stage_changed` de leads e os eventos pendentes de ATS passam a ser consumidos normalmente pelo cron (`workflows-tick`, 50 por ciclo), ou imediatamente ao abrir/mover um lead.
+3. **Conferir o resultado**: nova contagem de pendentes por entidade/evento e verificação de que as execuções dos dois workflows aparecem com sucesso.
 
 ## Detalhes técnicos
 
-- `src/lib/workflows/engine.server.ts`: adiciona `tickWorkflowsFor` (filtro `entity` + `entity_id`, mesma projeção e mesma chamada a `processEvent`). Nenhuma mudança em `tickWorkflows`, `tickTimeTriggers` ou `processEvent`.
-- `src/lib/workflows.functions.ts`: `triggerTickNow` recebe `inputValidator` opcional (`entity`, `entity_id`).
-- `src/lib/leads/deal-intent.functions.ts` (ou novo `src/lib/leads/qualification.functions.ts`): `openQualificationForLead` com `requireSupabaseAuth`, retornando `{ survey, deal_intent, queue_backlog }`.
-- `src/routes/_authenticated/leads.$id.tsx`: `setStage` chama a nova função sem `await` bloqueante na UI; abre o diálogo com o resultado; toast final substituído por aviso condicional com retry.
-- Sem alteração de RLS, grants, schema, permissões ou regras de negócio dos workflows. Sem migration.
+- Migration única, apenas de dados:
+  `update public.workflow_events set processed_at = now() where processed_at is null and entity = 'leads' and event_type = 'updated' and created_at >= '2026-08-17 15:00:00+00' and created_at < '2026-08-17 16:00:00+00'`.
+- Sem alteração de schema, RLS, grants, triggers, workflows ou código da aplicação.
+- Os eventos `stage_changed` e todos os eventos de ATS permanecem pendentes e serão processados pelo motor sem mudança de comportamento.
 
 ## Como validar
 
-1. Mover um lead de "Novo" para "Em qualificação": a etapa grava na hora e o modal de qualificação (Apollo + score ICP) abre em ~1s, mesmo com fila acumulada.
-2. A tela permanece interativa durante o processo; nenhum toast de erro aparece por demora.
-3. Se realmente não houver workflow ativo, o aviso informa fila/ausência e oferece nova tentativa.
-4. Mover para "Oportunidade" continua abrindo o modal de criação de oportunidade.
+1. Consultar `workflow_events` pendentes: `leads/updated` deve ir a zero.
+2. Aguardar (ou disparar) um ciclo do tick e confirmar que os `stage_changed` pendentes são processados.
+3. Mover um lead para "Em qualificação" e confirmar que o modal de qualificação abre.
