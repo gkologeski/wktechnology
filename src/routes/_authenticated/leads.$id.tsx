@@ -68,14 +68,15 @@ function LeadDetail() {
   const qc = useQueryClient();
   const [createDealOpen, setCreateDealOpen] = useState(false);
   const [pendingSurvey, setPendingSurvey] = useState<{
-    activity_id: string;
+    activity_id: string | null;
     source: "survey_template" | "prospecting_questionnaire";
-    source_id: string;
+    source_id: string | null;
   } | null>(null);
   const [surveyOpen, setSurveyOpen] = useState(false);
   const [dealIntent, setDealIntent] = useState<PendingDealIntent | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
+
 
   const { data: lead } = useQuery({
     queryKey: qk.lead(id),
@@ -121,8 +122,12 @@ function LeadDetail() {
       /* intenção segue pendente; será reaberta na próxima mudança de etapa */
     });
   };
-  /** Abre a pesquisa pendente criada pelo workflow (tentativas curtas). */
-  const pollPendingSurvey = async () => {
+  /**
+   * Procura a pesquisa criada pelo workflow. Quando o diálogo já foi aberto de
+   * forma otimista (`silent`), apenas vincula a atividade encontrada — sem
+   * bloquear a tela nem exibir aviso tardio.
+   */
+  const pollPendingSurvey = async (silent = false) => {
     for (let i = 0; i < 8; i++) {
       if (i > 0) await new Promise((r) => setTimeout(r, 750));
       try {
@@ -130,17 +135,26 @@ function LeadDetail() {
           data: { related_key: "related_lead_id", related_id: id },
         });
         if (found) {
-          setPendingSurvey(found);
-          setSurveyOpen(true);
+          setPendingSurvey((prev) =>
+            prev && silent ? { ...prev, activity_id: found.activity_id } : found,
+          );
+          if (!silent) setSurveyOpen(true);
           return;
         }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : "Não foi possível buscar a pesquisa.");
+        if (!silent) {
+          toast.error(
+            error instanceof Error ? error.message : "Não foi possível buscar a pesquisa.",
+          );
+        }
         return;
       }
     }
-    toast.info("Etapa atualizada. Nenhuma pesquisa pendente foi criada pelo workflow.");
+    if (!silent) {
+      toast.info("Etapa atualizada. Nenhuma pesquisa pendente foi criada pelo workflow.");
+    }
   };
+
 
   useRealtimeInvalidate([
     { table: "leads", queryKeys: [qk.lead(id)] },
@@ -180,20 +194,36 @@ function LeadDetail() {
     if (deniedIfUnaffected(affected)) return;
 
     void load();
-    // Processa a fila imediatamente e procura a pesquisa criada pelo workflow.
+
+    // Etapa de qualificação: abre o questionário na hora, sem esperar o
+    // processamento do workflow (a atividade é vinculada depois, em segundo plano).
+    const isQualifying = v === "qualifying";
+    if (isQualifying) {
+      setPendingSurvey({ activity_id: null, source: "prospecting_questionnaire", source_id: null });
+      setSurveyOpen(true);
+    }
+
+    // Processa a fila em segundo plano e reconcilia pesquisa/oportunidade.
     void (async () => {
       try {
         await tickWorkflows();
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Não foi possível executar o workflow.",
-        );
+        if (!isQualifying) {
+          toast.error(
+            error instanceof Error ? error.message : "Não foi possível executar o workflow.",
+          );
+        }
+      }
+      if (isQualifying) {
+        await pollPendingSurvey(true);
+        return;
       }
       const openedDeal = await pollPendingDealIntent();
       if (openedDeal) return;
       await pollPendingSurvey();
     })();
   };
+
 
   const doDelete = async () => {
     if (!canDelete) {
@@ -360,10 +390,21 @@ function LeadDetail() {
               entityId={lead.id}
               preselectedQuestionnaireId={pendingSurvey.source_id}
               activityId={pendingSurvey.activity_id}
-              onDecided={() => {
+              onDecided={(decision) => {
                 setSurveyOpen(false);
                 setPendingSurvey(null);
                 void load();
+                // A qualificação move o lead para a etapa de oportunidade:
+                // abre o modal de criação de negócio criado pelo workflow.
+                if (decision !== "qualified") return;
+                void (async () => {
+                  try {
+                    await tickWorkflows();
+                  } catch {
+                    /* processado depois pelo cron */
+                  }
+                  await pollPendingDealIntent();
+                })();
               }}
             />
           </DialogContent>
@@ -378,8 +419,9 @@ function LeadDetail() {
           relatedKey="related_lead_id"
           relatedId={lead.id}
           initialSource={pendingSurvey.source}
-          initialSourceId={pendingSurvey.source_id}
-          activityId={pendingSurvey.activity_id}
+          initialSourceId={pendingSurvey.source_id ?? undefined}
+          activityId={pendingSurvey.activity_id ?? undefined}
+
           onSaved={() => {
             setSurveyOpen(false);
             setPendingSurvey(null);

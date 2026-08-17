@@ -116,7 +116,10 @@ export const saveQualification = createServerFn({ method: "POST" })
         answers: z.record(z.string(), z.unknown()).default({}),
         decision: DecisionEnum.optional(),
         decision_reason: z.string().max(1000).nullable().optional(),
+        /** Atividade de pesquisa já existente (criada por workflow) a reaproveitar. */
+        activity_id: z.string().uuid().nullable().optional(),
       })
+
       .parse(i),
   )
   .handler(async ({ context, data }) => {
@@ -184,6 +187,7 @@ export const saveQualification = createServerFn({ method: "POST" })
         score,
         decision: data.decision as "qualified" | "disqualified" | "nurture" | "scheduled",
         decisionReason: data.decision_reason ?? null,
+        activityId: data.activity_id ?? null,
       });
     };
 

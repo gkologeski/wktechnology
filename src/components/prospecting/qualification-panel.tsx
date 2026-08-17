@@ -356,7 +356,10 @@ export function QualificationPanel({
       await entityFields.saveAll();
       // 1.1) persiste os campos enriquecidos (lead, empresa e contato)
       await persistEnrichment();
-      // 2) registra a qualificação (respostas + score + observações)
+      // 2) conclui a atividade de pesquisa criada pelo workflow (se houver),
+      //    para que o registro da qualificação reaproveite a mesma atividade
+      await completeSurveyActivity(reason || null);
+      // 3) registra a qualificação (respostas + score + observações)
       await save({
         data: {
           id: existingForActive?.id,
@@ -366,9 +369,10 @@ export function QualificationPanel({
           answers,
           decision: "qualified",
           decision_reason: reason || null,
+          activity_id: activityId ?? null,
         },
       });
-      // 3) move o lead para a etapa de qualificado do funil
+      // 4) move o lead para a etapa de qualificado do funil
       const patch: Record<string, unknown> = { status: "qualified" };
       if (qualifiedStage) patch.stage_id = qualifiedStage.value;
       const { data: updated, error: leadErr } = await supabase
@@ -379,8 +383,7 @@ export function QualificationPanel({
       if (leadErr) throw new Error(leadErr.message);
       if (!updated || updated.length === 0) throw new PermissionDeniedError();
 
-      // 4) conclui a atividade de pesquisa criada pelo workflow (se houver)
-      await completeSurveyActivity(reason || null);
+
 
       toast.success("Lead qualificado.");
       notifyTimelineRefresh();
@@ -432,7 +435,11 @@ export function QualificationPanel({
       if (leadErr) throw new Error(leadErr.message);
       if (!updatedLead || updatedLead.length === 0) throw new PermissionDeniedError();
 
-      // 2) grava a qualificação com decision + motivo (obrigatório)
+      // 2) conclui a atividade de pesquisa do workflow (se houver) para que a
+      //    qualificação atualize a mesma atividade em vez de criar outra
+      await completeSurveyActivity(combined);
+
+      // 3) grava a qualificação com decision + motivo (obrigatório)
       if (activeId) {
         await save({
           data: {
@@ -443,10 +450,11 @@ export function QualificationPanel({
             answers,
             decision: "disqualified",
             decision_reason: combined,
+            activity_id: activityId ?? null,
           },
         });
       }
-      await completeSurveyActivity(combined);
+
 
       toast.success("Lead desqualificado.");
       notifyTimelineRefresh();
@@ -483,6 +491,9 @@ export function QualificationPanel({
           pipeline_id: nurtureStage && pipelineId ? pipelineId : null,
         },
       });
+      // Encerra a atividade de pesquisa pendente (criada por workflow).
+      await completeSurveyActivity(reason || null);
+
       if (res.enrolled && res.cadence_name) {
         toast.success(`Lead enviado para nutrição — cadência: ${res.cadence_name}.`);
       } else {

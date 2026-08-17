@@ -39,7 +39,10 @@ export async function logQualificationActivity(
     occurredAt?: string | null;
     /** Vínculos adicionais (contato/empresa do lead). */
     links?: { contactId?: string | null; companyId?: string | null };
+    /** Atividade de pesquisa já existente (criada por workflow) a reaproveitar. */
+    activityId?: string | null;
   },
+
 ): Promise<{ created: boolean; skipped: boolean }> {
   try {
 
@@ -66,26 +69,43 @@ export async function logQualificationActivity(
     if (args.decisionReason?.trim()) bodyLines.push(`Motivo: ${args.decisionReason.trim()}`);
     const body = bodyLines.join("\n");
 
-    // Reaproveita a atividade já existente para este questionário + registro.
-    const { data: prior } = await supabase
-      .from("activities")
-      .select("id")
-      .eq("type", "survey")
-      .eq(relatedKey, args.entityId)
-      .order("created_at", { ascending: false })
-      .limit(50);
-    const priorIds = ((prior as { id: string }[] | null) ?? []).map((r) => r.id);
-    let activityId: string | null = null;
-    if (priorIds.length > 0) {
-      const { data: matches } = await supabase
-        .from("activity_survey_responses")
-        .select("activity_id")
-        .in("activity_id", priorIds)
-        .eq("source", "prospecting_questionnaire")
-        .eq("source_id", args.questionnaireId)
-        .limit(1);
-      activityId = ((matches as { activity_id: string }[] | null) ?? [])[0]?.activity_id ?? null;
+    // Reaproveita a atividade já existente para este questionário + registro:
+    // 1) a atividade informada pelo chamador (criada por workflow);
+    // 2) a que já tem resposta gravada para o mesmo questionário;
+    // 3) a atividade de pesquisa pendente marcada com a mesma origem.
+    let activityId: string | null = args.activityId ?? null;
+    if (!activityId) {
+      const { data: prior } = await supabase
+        .from("activities")
+        .select("id, custom_fields")
+        .eq("type", "survey")
+        .eq(relatedKey, args.entityId)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      const priorRows = (prior as { id: string; custom_fields: unknown }[] | null) ?? [];
+      const priorIds = priorRows.map((r) => r.id);
+      if (priorIds.length > 0) {
+        const { data: matches } = await supabase
+          .from("activity_survey_responses")
+          .select("activity_id")
+          .in("activity_id", priorIds)
+          .eq("source", "prospecting_questionnaire")
+          .eq("source_id", args.questionnaireId)
+          .limit(1);
+        activityId = ((matches as { activity_id: string }[] | null) ?? [])[0]?.activity_id ?? null;
+      }
+      if (!activityId) {
+        const marked = priorRows.find((r) => {
+          const cf = (r.custom_fields ?? {}) as Record<string, unknown>;
+          return (
+            cf["survey_source"] === "prospecting_questionnaire" &&
+            cf["survey_source_id"] === args.questionnaireId
+          );
+        });
+        activityId = marked?.id ?? null;
+      }
     }
+
 
     let created = false;
     if (activityId) {
