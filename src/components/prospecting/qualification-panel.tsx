@@ -383,8 +383,6 @@ export function QualificationPanel({
       if (leadErr) throw new Error(leadErr.message);
       if (!updated || updated.length === 0) throw new PermissionDeniedError();
 
-
-
       toast.success("Lead qualificado.");
       notifyTimelineRefresh();
       qc.invalidateQueries({
@@ -454,7 +452,6 @@ export function QualificationPanel({
           },
         });
       }
-
 
       toast.success("Lead desqualificado.");
       notifyTimelineRefresh();

@@ -77,7 +77,6 @@ function LeadDetail() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
-
   const { data: lead } = useQuery({
     queryKey: qk.lead(id),
     queryFn: async () => {
@@ -155,7 +154,6 @@ function LeadDetail() {
     }
   };
 
-
   useRealtimeInvalidate([
     { table: "leads", queryKeys: [qk.lead(id)] },
     { table: "activities", queryKeys: [qk.activities("related_lead_id", id)] },
@@ -223,7 +221,6 @@ function LeadDetail() {
       await pollPendingSurvey();
     })();
   };
-
 
   const doDelete = async () => {
     if (!canDelete) {
@@ -421,7 +418,6 @@ function LeadDetail() {
           initialSource={pendingSurvey.source}
           initialSourceId={pendingSurvey.source_id ?? undefined}
           activityId={pendingSurvey.activity_id ?? undefined}
-
           onSaved={() => {
             setSurveyOpen(false);
             setPendingSurvey(null);

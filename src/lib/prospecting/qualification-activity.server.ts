@@ -42,10 +42,8 @@ export async function logQualificationActivity(
     /** Atividade de pesquisa já existente (criada por workflow) a reaproveitar. */
     activityId?: string | null;
   },
-
 ): Promise<{ created: boolean; skipped: boolean }> {
   try {
-
     const relatedKey = args.entity === "lead" ? "related_lead_id" : "related_contact_id";
 
     const { data: q } = await supabase
@@ -106,10 +104,12 @@ export async function logQualificationActivity(
       }
     }
 
-
     let created = false;
     if (activityId) {
-      await supabase.from("activities").update({ subject, body } as never).eq("id", activityId);
+      await supabase
+        .from("activities")
+        .update({ subject, body } as never)
+        .eq("id", activityId);
     } else {
       const { data: inserted, error } = await supabase
         .from("activities")
@@ -159,4 +159,3 @@ export async function logQualificationActivity(
     return { created: false, skipped: true };
   }
 }
-
