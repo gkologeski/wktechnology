@@ -512,12 +512,17 @@ export const deleteAtsCandidate = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
     await assertAnyPermission(supabase, userId, workspaceIdForCheck, ["techhire.candidates.delete.workspace"]);
-    const { error } = await supabase
+    const { data: del, error } = await supabase
       .from("ats_candidates")
       .delete()
-      .eq("owner_id", userId)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!del || del.length === 0)
+      throw new Error(
+        "Não foi possível excluir o candidato: sem permissão ou registro inexistente.",
+      );
+
     return { ok: true };
   });
 
