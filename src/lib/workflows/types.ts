@@ -437,6 +437,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   set_field: "Atualizar campo",
   create_activity: "Criar atividade",
   create_survey_activity: "Criar pesquisa (atividade)",
+  open_deal_dialog: "Abrir criação de oportunidade",
   assign_to: "Atribuir a usuário",
   rotate_assign: "Distribuir via regra (rotação)",
   add_to_sequence: "Adicionar a sequência",
