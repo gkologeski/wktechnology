@@ -1005,13 +1005,16 @@ export const setCandidateArchived = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), archived: z.boolean() }).parse(d),
   )
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
-    const { error } = await supabase
+    const { supabase } = context;
+    const { data: upd, error } = await supabase
       .from("ats_candidates")
       .update({ archived: data.archived } as never)
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!upd || upd.length === 0)
+      throw new Error("Não foi possível arquivar o candidato: sem permissão.");
+
     return { id: data.id, archived: data.archived };
   });
 
