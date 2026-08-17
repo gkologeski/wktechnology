@@ -268,6 +268,8 @@ export function SurveyActivityDialog({
 
   // Campos de entidades (só para pesquisas de vendas em leads).
   const isSalesLead = kind === "vendas" && relatedKey === "related_lead_id";
+  // Pesquisa de vendas em lead: usa a tela padrão de qualificação.
+  const useQualificationScreen = isSalesLead && selection?.source === "prospecting_questionnaire";
   const fieldLayout = useMemo(
     () => (isSalesLead ? parseFieldLayout(form.data?.field_layout ?? null) : []),
     [isSalesLead, form.data],
