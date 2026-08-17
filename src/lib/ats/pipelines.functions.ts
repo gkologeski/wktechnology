@@ -67,8 +67,7 @@ export const savePipeline = createServerFn({ method: "POST" })
       values.add(s.value);
     }
 
-    const payload = {
-      owner_id: userId,
+    const basePayload = {
       name: data.name,
       is_default: data.is_default,
       stages: data.stages as unknown as AtsStage[],
@@ -76,31 +75,31 @@ export const savePipeline = createServerFn({ method: "POST" })
 
     let row;
     if (data.id) {
+      // não sobrescreve owner_id: preserva a autoria original ao editar
       const { data: u, error } = await supabase
         .from("ats_pipelines")
-        .update(payload as never)
+        .update(basePayload as never)
         .eq("id", data.id)
-        .eq("owner_id", userId)
         .select("id, is_default")
-        .single();
+        .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!u) throw new Error("Você não tem permissão para editar este pipeline.");
       row = u;
     } else {
       const { data: ins, error } = await supabase
         .from("ats_pipelines")
-        .insert(payload as never)
+        .insert({ ...basePayload, owner_id: userId } as never)
         .select("id, is_default")
         .single();
       if (error) throw new Error(error.message);
       row = ins;
     }
 
-    // se marcou como padrão, desmarca os outros
+    // se marcou como padrão, desmarca os outros visíveis no workspace
     if (data.is_default && row?.id) {
       await supabase
         .from("ats_pipelines")
         .update({ is_default: false } as never)
-        .eq("owner_id", userId)
         .neq("id", row.id as string);
     }
     return row;
@@ -110,13 +109,12 @@ export const deletePipeline = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
 
     // não permitir apagar se há vagas usando
     const { count } = await supabase
       .from("ats_jobs")
       .select("id", { count: "exact", head: true })
-      .eq("owner_id", userId)
       .eq("pipeline_id", data.id);
     if ((count ?? 0) > 0) {
       throw new Error(
@@ -128,18 +126,20 @@ export const deletePipeline = createServerFn({ method: "POST" })
       .from("ats_pipelines")
       .select("is_default")
       .eq("id", data.id)
-      .eq("owner_id", userId)
       .maybeSingle();
     if ((row as { is_default?: boolean } | null)?.is_default) {
       throw new Error("Não é possível excluir o pipeline padrão.");
     }
 
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
       .from("ats_pipelines")
       .delete()
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!deleted || deleted.length === 0) {
+      throw new Error("Você não tem permissão para excluir este pipeline.");
+    }
     return { ok: true };
   });
 
@@ -147,16 +147,20 @@ export const setDefaultPipeline = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
     await supabase
       .from("ats_pipelines")
       .update({ is_default: false } as never)
-      .eq("owner_id", userId);
-    const { error } = await supabase
+      .neq("id", data.id);
+    const { data: updated, error } = await supabase
       .from("ats_pipelines")
       .update({ is_default: true } as never)
-      .eq("owner_id", userId)
-      .eq("id", data.id);
+      .eq("id", data.id)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!updated || updated.length === 0) {
+      throw new Error("Você não tem permissão para alterar este pipeline.");
+    }
     return { ok: true };
+
   });
