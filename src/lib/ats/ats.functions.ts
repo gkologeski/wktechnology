@@ -688,10 +688,10 @@ export const moveApplication = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     // Estado anterior para detectar transição.
+    // Sem filtro por owner_id: o RLS libera candidaturas do workspace.
     const { data: prev } = await supabase
       .from("ats_applications")
       .select("id, stage_value, job_id, candidate_id, status")
-      .eq("owner_id", userId)
       .eq("id", data.applicationId)
       .maybeSingle();
     if (!prev) throw new Error("Aplicação não encontrada");
@@ -705,12 +705,15 @@ export const moveApplication = createServerFn({ method: "POST" })
     else if (data.toStage === "rejected") patch.status = "rejected";
     else patch.status = "active";
 
-    const { error } = await supabase
+    const { data: upd, error } = await supabase
       .from("ats_applications")
       .update(patch as never)
-      .eq("owner_id", userId)
-      .eq("id", data.applicationId);
+      .eq("id", data.applicationId)
+      .select("id");
     if (error) throw new Error(error.message);
+    if (!upd || upd.length === 0)
+      throw new Error("Não foi possível mover a candidatura: sem permissão.");
+
 
     if (prev.stage_value !== data.toStage) {
       // Auditoria
