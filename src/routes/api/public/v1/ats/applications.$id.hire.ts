@@ -35,7 +35,7 @@ export const Route = createFileRoute("/api/public/v1/ats/applications/$id/hire")
         const nowIso = new Date().toISOString();
         const { data: updated, error } = await supabaseAdmin
           .from("ats_applications")
-          .update({ status: "hired", stage_value: "hired", moved_at: nowIso })
+          .update({ status: "hired", stage_value: "profissional_contratado", moved_at: nowIso })
           .eq("id", id)
           .eq("owner_id", auth.ownerId)
           .select("id, job_id, candidate_id, status, stage_value, moved_at")

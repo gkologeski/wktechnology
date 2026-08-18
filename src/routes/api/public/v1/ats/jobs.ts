@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import {
   authenticateApiKey,
   requireScope,
@@ -67,8 +68,10 @@ export const Route = createFileRoute("/api/public/v1/ats/jobs")({
         const body = await request.json().catch(() => null);
         const parsed = CreateJob.safeParse(body);
         if (!parsed.success) return badRequest(parsed.error.flatten());
+        const workspaceId = await getActiveWorkspaceId(supabaseAdmin, auth.ownerId);
         const insertPayload = {
           owner_id: auth.ownerId,
+          workspace_id: workspaceId,
           opened_at:
             parsed.data.status === "open" ? new Date().toISOString() : null,
           ...parsed.data,
