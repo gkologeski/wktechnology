@@ -765,7 +765,7 @@ export const moveApplication = createServerFn({ method: "POST" })
         },
       }).catch(() => undefined);
 
-      if (data.toStage === "hired") {
+      if (data.toStage === "profissional_contratado") {
         await recordAtsEvent(supabase, {
           ownerId: userId,
           name: "ats.candidate.hired",
@@ -779,7 +779,7 @@ export const moveApplication = createServerFn({ method: "POST" })
           },
         }).catch(() => undefined);
       }
-      if (data.toStage === "rejected") {
+      if (data.toStage === "vaga_cancelada") {
         await emitEvent(supabase, {
           ownerId: userId,
           eventName: "ats.application.rejected",
