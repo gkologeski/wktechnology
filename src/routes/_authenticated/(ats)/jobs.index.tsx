@@ -296,19 +296,35 @@ function AtsJobsPage() {
     deal_id: null as string | null,
   });
 
+  const loadPipelines = useCallback(async () => {
+    setPipelinesLoading(true);
+    setPipelinesError(null);
+    try {
+      // garante um único pipeline padrão do workspace antes de listar
+      await ensureDefaultPipelineFn().catch(() => undefined);
+      const rs = await listPipelinesFn();
+      const list = (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
+        id: p.id,
+        name: p.name,
+        is_default: p.is_default,
+      }));
+      setPipelines(list);
+      setForm((f) =>
+        f.pipeline_id
+          ? f
+          : { ...f, pipeline_id: list.find((p) => p.is_default)?.id ?? list[0]?.id ?? "" },
+      );
+    } catch (e) {
+      setPipelinesError(e instanceof Error ? e.message : "Falha ao carregar pipelines");
+    } finally {
+      setPipelinesLoading(false);
+    }
+  }, [listPipelinesFn, ensureDefaultPipelineFn]);
+
   useEffect(() => {
-    listPipelinesFn()
-      .then((rs) => {
-        const list = (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
-          id: p.id,
-          name: p.name,
-          is_default: p.is_default,
-        }));
-        setPipelines(list);
-        setForm((f) => (f.pipeline_id ? f : { ...f, pipeline_id: list.find((p) => p.is_default)?.id ?? list[0]?.id ?? "" }));
-      })
-      .catch(() => undefined);
-  }, [listPipelinesFn]);
+    void loadPipelines();
+  }, [loadPipelines]);
+
 
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("jobs:view", view);
