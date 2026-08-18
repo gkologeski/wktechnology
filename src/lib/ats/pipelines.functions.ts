@@ -176,15 +176,13 @@ export const setDefaultPipeline = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    await supabase
-      .from("ats_pipelines")
-      .update({ is_default: false } as never)
-      .neq("id", data.id);
+    // o gatilho do banco desmarca os outros padrões do mesmo workspace
     const { data: updated, error } = await supabase
       .from("ats_pipelines")
       .update({ is_default: true } as never)
       .eq("id", data.id)
       .select("id");
+
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Você não tem permissão para alterar este pipeline.");
