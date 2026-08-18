@@ -51,7 +51,9 @@ import {
   setAtsJobStatus,
   setAtsJobDepartment,
 } from "@/lib/ats/ats.functions";
-import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
+import { listAtsPipelines, ensureDefaultAtsPipeline } from "@/lib/ats/pipelines.functions";
+import { PipelineSelectNotice } from "@/components/ats/pipeline-select-notice";
+
 
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
 import {
