@@ -621,7 +621,7 @@ export const addApplication = createServerFn({ method: "POST" })
         owner_id: userId,
         job_id: data.jobId,
         candidate_id: data.candidateId,
-        stage_value: "applied",
+        stage_value: "caixa_de_entrada",
         status: "active",
         source: data.source,
         position: 0,
@@ -637,7 +637,7 @@ export const addApplication = createServerFn({ method: "POST" })
         job_id: data.jobId,
         candidate_id: data.candidateId,
         event_type: "application_created",
-        to_stage: "applied",
+        to_stage: "caixa_de_entrada",
         actor_id: userId,
         metadata: { source: data.source },
       } as never)
@@ -721,8 +721,8 @@ export const moveApplication = createServerFn({ method: "POST" })
       position: data.position,
       moved_at: new Date().toISOString(),
     };
-    if (data.toStage === "hired") patch.status = "hired";
-    else if (data.toStage === "rejected") patch.status = "rejected";
+    if (data.toStage === "profissional_contratado") patch.status = "hired";
+    else if (data.toStage === "vaga_cancelada") patch.status = "rejected";
     else patch.status = "active";
 
     const { data: upd, error } = await supabase
