@@ -5,6 +5,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { CrossModuleBanner } from "@/components/cross-module-banner";
 import { useAuth } from "@/lib/auth";
 import { useMyRole } from "@/lib/use-my-role";
+import { useModuleLicenses } from "@/hooks/use-module-licenses";
+import { detectModuleFromPath } from "@/lib/modules/active-module";
 import { ShieldAlert } from "lucide-react";
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
