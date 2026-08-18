@@ -632,6 +632,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
           personId = existing.id;
         } else {
           const insertPayload = {
+            workspace_id: ownerId,
             owner_id: ownerId,
             created_by: userId,
             full_name: row.full_name,

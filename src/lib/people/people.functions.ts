@@ -351,7 +351,13 @@ export const upsertPerson = createServerFn({ method: "POST" })
       return { id: data.id };
     }
 
-    const insertPayload = { ...payload, owner_id: ownerId, created_by: userId };
+    // workspace_id é a fonte de verdade do isolamento; owner_id segue espelhado (legado).
+    const insertPayload = {
+      ...payload,
+      workspace_id: ownerId,
+      owner_id: ownerId,
+      created_by: userId,
+    };
     const { data: row, error } = await supabase
       .from("people")
       .insert(insertPayload as never)

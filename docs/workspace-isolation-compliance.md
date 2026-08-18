@@ -84,12 +84,19 @@ observabilidade): `modules`, `plans`, `plan_entitlements`, `permissions`,
 
 **c) Pendências reais (dado de cliente ainda sem `workspace_id`)** — alvo do
 próximo lote, fora do escopo desta fase:
-`people` (usa `owner_id` com id de workspace, semântica a padronizar),
-`people_events`, `people_psychosocial_assessments`, `ats_sourcing_step_log`,
-`ads_accounts`, `ads_audiences`, `ads_lead_forms`, `ab_tests`,
-`ab_test_events`, `attribution_touchpoints`, `landing_pages`,
+`ats_sourcing_step_log`, `ads_accounts`, `ads_audiences`, `ads_lead_forms`,
+`ab_tests`, `ab_test_events`, `attribution_touchpoints`, `landing_pages`,
 `landing_page_events`, `live_chat_sessions`, `live_chat_messages`,
 `kb_categories`.
+
+Padronizadas em 18/08/2026 (saíram do grupo c): `people`, `people_events`,
+`people_psychosocial_assessments` — passaram a ter `workspace_id` (NOT NULL,
+FK + índice), triggers de sincronização com `owner_id` (mantido por
+compatibilidade) e políticas únicas por operação no padrão
+`workspace_id IN (SELECT current_user_workspaces())` + RBAC granular +
+bypass de administrador de plataforma. As funções `can_view_person`,
+`can_manage_person` e `can_view_person_sensitive` passaram a usar
+`people.workspace_id` e não aceitam mais o atalho `owner_id = auth.uid()`.
 
 Observação: várias dessas tabelas já são isoladas indiretamente (por FK ao pai
 que tem `workspace_id`, ou por `owner_id`), então não há vazamento conhecido —
