@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
+import { useModuleLicenses } from "@/hooks/use-module-licenses";
 import { useActiveModule, setStoredActiveModule } from "@/lib/modules/active-module";
 import { isWorkspacePathname } from "@/lib/menu-config-erp";
 import { cn } from "@/lib/utils";
