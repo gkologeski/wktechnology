@@ -575,7 +575,9 @@ function AtsJobsPage() {
               disabled={pipelines.length === 0}
             >
               <SelectTrigger id="job-pipeline">
-                <SelectValue placeholder="Selecionar pipeline" />
+                <SelectValue
+                  placeholder={pipelinesLoading ? "Carregando pipelines..." : "Selecionar pipeline"}
+                />
               </SelectTrigger>
               <SelectContent>
                 {pipelines.map((p) => (
@@ -586,9 +588,17 @@ function AtsJobsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="mt-1 text-[11px] text-text-tertiary">
-              Define as etapas pelas quais as candidaturas desta vaga vão passar.
-            </p>
+            {!pipelinesLoading && (pipelinesError || pipelines.length === 0) ? (
+              <PipelineSelectNotice
+                error={pipelinesError}
+                onRetry={() => void loadPipelines()}
+              />
+            ) : (
+              <p className="mt-1 text-[11px] text-text-tertiary">
+                Define as etapas pelas quais as candidaturas desta vaga vão passar.
+              </p>
+            )}
+
           </div>
           <div className="col-span-2">
             <Label className="text-xs text-text-tertiary">Negócio (opcional)</Label>
