@@ -29,6 +29,7 @@ function isWorkspaceRoute(pathname: string): boolean {
 
 export function ModuleSwitcher({ className }: { className?: string }) {
   const active = useActiveModule();
+  const { isLicensed } = useModuleLicenses();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
