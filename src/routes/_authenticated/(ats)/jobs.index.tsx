@@ -111,7 +111,7 @@ const EMPLOYMENT_LABEL: Record<string, string> = {
   temporary: "Temporário",
 };
 
-function JobCard({ job }: { job: JobRow }) {
+function JobCard({ job, showPipeline }: { job: JobRow; showPipeline?: boolean }) {
   const badgeStatus = STATUS_TO_BADGE[job.status] ?? "draft";
   const statusLabel = STATUS_LABEL[job.status] ?? job.status;
   const createdAt = (job as { created_at?: string }).created_at;
@@ -150,6 +150,7 @@ function JobCard({ job }: { job: JobRow }) {
         {(job as { department?: string | null }).department ? (
           <MetaPill>{(job as { department?: string | null }).department}</MetaPill>
         ) : null}
+        {showPipeline && job.pipeline_name ? <MetaPill>{job.pipeline_name}</MetaPill> : null}
       </div>
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pt-2 text-xs text-text-secondary">
@@ -192,11 +193,13 @@ function JobKanbanCard({
   onDragStart,
   onDragEnd,
   dragging,
+  showPipeline,
 }: {
   job: JobRow;
   onDragStart?: (jobId: string) => void;
   onDragEnd?: () => void;
   dragging?: boolean;
+  showPipeline?: boolean;
 }) {
   return (
     <Link
@@ -225,6 +228,7 @@ function JobKanbanCard({
         {job.remote_mode ? (
           <MetaPill>{REMOTE_LABEL[job.remote_mode] ?? job.remote_mode}</MetaPill>
         ) : null}
+        {showPipeline && job.pipeline_name ? <MetaPill>{job.pipeline_name}</MetaPill> : null}
       </div>
       <div className="mt-2 flex items-center justify-between text-xs text-text-tertiary">
         {job.location ? (
@@ -276,7 +280,15 @@ function AtsJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
-  const rows = filterRows(allRows);
+  // filtro de pipeline (persistido por usuário): "all" = todos os pipelines
+  const [pipelineFilter, setPipelineFilter] = useState<string>(() =>
+    typeof window !== "undefined"
+      ? (localStorage.getItem("jobs:pipeline") ?? "all")
+      : "all",
+  );
+  const rows = filterRows(allRows).filter((r) =>
+    pipelineFilter === "all" ? true : r.pipeline_id === pipelineFilter,
+  );
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<ViewKind>(() =>
     typeof window !== "undefined"
@@ -309,17 +321,33 @@ function AtsJobsPage() {
         is_default: p.is_default,
       }));
       setPipelines(list);
-      setForm((f) =>
-        f.pipeline_id
-          ? f
-          : { ...f, pipeline_id: list.find((p) => p.is_default)?.id ?? list[0]?.id ?? "" },
-      );
     } catch (e) {
       setPipelinesError(e instanceof Error ? e.message : "Falha ao carregar pipelines");
     } finally {
       setPipelinesLoading(false);
     }
   }, [listPipelinesFn, ensureDefaultPipelineFn]);
+
+  // Mantém coerência entre o filtro da tela e o pipeline sugerido na criação.
+  useEffect(() => {
+    if (pipelines.length === 0) return;
+    if (pipelineFilter !== "all" && !pipelines.some((p) => p.id === pipelineFilter)) {
+      setPipelineFilter("all");
+      return;
+    }
+    setForm((f) =>
+      f.pipeline_id
+        ? f
+        : {
+            ...f,
+            pipeline_id:
+              pipelines.find((p) => p.id === pipelineFilter)?.id ??
+              pipelines.find((p) => p.is_default)?.id ??
+              pipelines[0]?.id ??
+              "",
+          },
+    );
+  }, [pipelines, pipelineFilter]);
 
   useEffect(() => {
     void loadPipelines();
@@ -329,6 +357,10 @@ function AtsJobsPage() {
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("jobs:view", view);
   }, [view]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") localStorage.setItem("jobs:pipeline", pipelineFilter);
+  }, [pipelineFilter]);
 
   const refresh = async () => {
     setLoading(true);
@@ -392,7 +424,11 @@ function AtsJobsPage() {
         description: "",
         requirements: "",
         status: "draft",
-        pipeline_id: pipelines.find((p) => p.is_default)?.id ?? pipelines[0]?.id ?? "",
+        pipeline_id:
+          pipelines.find((p) => p.id === pipelineFilter)?.id ??
+          pipelines.find((p) => p.is_default)?.id ??
+          pipelines[0]?.id ??
+          "",
         deal_id: null,
       });
       if (r?.id) navigate({ to: "/jobs/$id", params: { id: r.id as string } });
@@ -416,15 +452,37 @@ function AtsJobsPage() {
       </button>
     ) : null;
 
+  const selectedPipeline = pipelines.find((p) => p.id === pipelineFilter) ?? null;
+  const pipelineFilterChip = selectedPipeline ? (
+    <button
+      type="button"
+      onClick={() => setPipelineFilter("all")}
+      className="inline-flex items-center gap-1 rounded-md border border-border-subtle bg-surface-1 px-1.5 py-0.5 text-[11px] font-medium text-text-secondary hover:border-border-strong hover:text-text-primary"
+    >
+      <span className="text-text-tertiary">Pipeline:</span>
+      <span>{selectedPipeline.name}</span>
+      <span aria-hidden className="text-text-tertiary">×</span>
+      <span className="sr-only">Remover filtro de pipeline</span>
+    </button>
+  ) : null;
+
+  const filterChips =
+    statusFilterChip || pipelineFilterChip ? (
+      <>
+        {statusFilterChip}
+        {pipelineFilterChip}
+      </>
+    ) : null;
+
   const total = rows.length;
   const subtitle = useMemo(() => {
     if (loading) return "Carregando vagas…";
     if (error) return "Não foi possível carregar a lista.";
-    if (total === 0 && (search || status !== "all"))
+    if (total === 0 && (search || status !== "all" || pipelineFilter !== "all"))
       return "Nenhuma vaga corresponde aos filtros atuais.";
     if (total === 0) return "Crie a primeira vaga para iniciar o pipeline.";
     return `${total} ${total === 1 ? "vaga" : "vagas"} no workspace`;
-  }, [loading, error, total, search, status]);
+  }, [loading, error, total, search, status, pipelineFilter]);
 
   // Group rows for kanban views
   const byStatus = useMemo(() => {
@@ -638,9 +696,32 @@ function AtsJobsPage() {
           onChange: setSearch,
           placeholder: "Buscar por título, departamento ou local…",
         }}
-        chips={statusFilterChip}
+        chips={filterChips}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select
+              value={pipelineFilter}
+              onValueChange={setPipelineFilter}
+              disabled={pipelines.length === 0}
+            >
+              <SelectTrigger
+                aria-label="Filtrar por pipeline"
+                className="h-8 w-48 border-border-subtle bg-surface-1 text-xs"
+              >
+                <SelectValue
+                  placeholder={pipelinesLoading ? "Carregando pipelines…" : "Pipeline"}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os pipelines</SelectItem>
+                {pipelines.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                    {p.is_default ? " (padrão)" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="h-8 w-40 border-border-subtle bg-surface-1 text-xs">
                 <SelectValue />
@@ -674,6 +755,14 @@ function AtsJobsPage() {
           </div>
         }
       />
+
+      {!pipelinesLoading && (pipelinesError || pipelines.length === 0) ? (
+        <PipelineSelectNotice
+          error={pipelinesError}
+          onRetry={() => void loadPipelines()}
+        />
+      ) : null}
+
 
       {loading ? (
         <JobsGridSkeleton />
@@ -721,7 +810,7 @@ function AtsJobsPage() {
       ) : view === "cards" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {rows.map((j) => (
-            <JobCard key={j.id} job={j} />
+            <JobCard key={j.id} job={j} showPipeline={pipelineFilter === "all"} />
           ))}
         </div>
       ) : view === "table" ? (
@@ -856,6 +945,7 @@ function AtsJobsPage() {
                       <JobKanbanCard
                         key={j.id}
                         job={j}
+                        showPipeline={pipelineFilter === "all"}
                         dragging={draggingId === j.id}
                         onDragStart={(id) => setDraggingId(id)}
                         onDragEnd={() => {
@@ -961,6 +1051,7 @@ function AtsJobsPage() {
                       <JobKanbanCard
                         key={j.id}
                         job={j}
+                        showPipeline={pipelineFilter === "all"}
                         dragging={draggingId === j.id}
                         onDragStart={(id) => setDraggingId(id)}
                         onDragEnd={() => {
