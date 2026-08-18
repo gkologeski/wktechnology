@@ -5,6 +5,8 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { CrossModuleBanner } from "@/components/cross-module-banner";
 import { useAuth } from "@/lib/auth";
 import { useMyRole } from "@/lib/use-my-role";
+import { useModuleLicenses } from "@/hooks/use-module-licenses";
+import { detectModuleFromPath } from "@/lib/modules/active-module";
 import { ShieldAlert } from "lucide-react";
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
@@ -85,6 +87,7 @@ function AuthenticatedLayout() {
   const router = useRouter();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager, loading: roleLoading } = useMyRole();
+  const { isLicensed } = useModuleLicenses();
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });
@@ -98,9 +101,13 @@ function AuthenticatedLayout() {
     );
   }
 
-  const blocked =
+  const roleBlocked =
     !roleLoading &&
     ((matches(path, ADMIN_ONLY) && !isAdmin) || (matches(path, MANAGER_PLUS) && !isManager));
+
+  const pathModule = detectModuleFromPath(path);
+  const licenseBlocked = !!pathModule && !isLicensed(pathModule);
+  const blocked = roleBlocked || licenseBlocked;
 
   return (
     <SidebarProvider>
@@ -129,10 +136,13 @@ function AuthenticatedLayout() {
             {blocked ? (
               <div className="max-w-md mx-auto mt-24 text-center space-y-3 border rounded-lg p-8 bg-background">
                 <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Acesso restrito</h2>
+                <h2 className="text-lg font-semibold">
+                  {licenseBlocked && !roleBlocked ? "Módulo não contratado" : "Acesso restrito"}
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Você não tem permissão para acessar esta tela. Fale com um administrador do
-                  workspace.
+                  {licenseBlocked && !roleBlocked
+                    ? "Este módulo não está habilitado para o seu workspace. Um administrador pode contratá-lo em Módulos do workspace."
+                    : "Você não tem permissão para acessar esta tela. Fale com um administrador do workspace."}
                 </p>
               </div>
             ) : (

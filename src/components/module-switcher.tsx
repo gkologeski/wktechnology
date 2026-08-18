@@ -12,6 +12,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
+import { useModuleLicenses } from "@/hooks/use-module-licenses";
 import { useActiveModule, setStoredActiveModule } from "@/lib/modules/active-module";
 import { isWorkspacePathname } from "@/lib/menu-config-erp";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ function isWorkspaceRoute(pathname: string): boolean {
 
 export function ModuleSwitcher({ className }: { className?: string }) {
   const active = useActiveModule();
+  const { isLicensed } = useModuleLicenses();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -93,7 +95,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
           Módulos do ERP
         </div>
 
-        {MODULE_LIST.filter((m) => m.id !== "services").map((m) => {
+        {MODULE_LIST.filter((m) => m.id !== "services" && isLicensed(m.id)).map((m) => {
           const Icon = m.icon;
           const isActive = !isWorkspaceContext && m.id === active;
           return (
