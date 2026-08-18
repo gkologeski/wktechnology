@@ -10897,6 +10897,7 @@ export type Database = {
           timezone: string | null
           trade_name: string | null
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           address?: string | null
@@ -10943,6 +10944,7 @@ export type Database = {
           timezone?: string | null
           trade_name?: string | null
           updated_at?: string
+          workspace_id: string
         }
         Update: {
           address?: string | null
@@ -10989,6 +10991,7 @@ export type Database = {
           timezone?: string | null
           trade_name?: string | null
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -11003,6 +11006,13 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -11282,6 +11292,7 @@ export type Database = {
           person_id: string
           title: string
           visible_to_person: boolean
+          workspace_id: string
         }
         Insert: {
           actor_id?: string | null
@@ -11294,6 +11305,7 @@ export type Database = {
           person_id: string
           title: string
           visible_to_person?: boolean
+          workspace_id: string
         }
         Update: {
           actor_id?: string | null
@@ -11306,6 +11318,7 @@ export type Database = {
           person_id?: string
           title?: string
           visible_to_person?: boolean
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -11321,6 +11334,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "people_total_cost"
             referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "people_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -11757,6 +11777,7 @@ export type Database = {
           risk_level: string
           status: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           action_plan?: string | null
@@ -11776,6 +11797,7 @@ export type Database = {
           risk_level?: string
           status?: string
           updated_at?: string
+          workspace_id: string
         }
         Update: {
           action_plan?: string | null
@@ -11795,6 +11817,7 @@ export type Database = {
           risk_level?: string
           status?: string
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -11810,6 +11833,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "people_total_cost"
             referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "people_psychosocial_assessments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
           },
         ]
       }
