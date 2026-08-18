@@ -94,7 +94,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     let q = supabase
       .from("ats_jobs")
       .select(
-        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, opened_at, filled_at, updated_at, created_at, owner_id, assigned_to, hiring_manager_id, recruiter_id, metadata",
+        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, pipeline_id, opened_at, filled_at, updated_at, created_at, owner_id, assigned_to, hiring_manager_id, recruiter_id, metadata",
       )
       // Sem filtro por owner_id: as políticas RLS já expõem vagas do próprio
       // usuário, das quais é hiring manager/recruiter, e as compartilhadas no
@@ -138,6 +138,24 @@ export const listAtsJobs = createServerFn({ method: "POST" })
         deals[d.id] = { id: d.id, name: d.name };
       }
     }
+    // Hidratar nomes dos pipelines vinculados (visibilidade decidida pelo RLS)
+    const pipelineIds = Array.from(
+      new Set(
+        ((rows ?? []) as Array<{ pipeline_id: string | null }>)
+          .map((r) => r.pipeline_id)
+          .filter((v): v is string => !!v),
+      ),
+    );
+    const pipelineNames: Record<string, string> = {};
+    if (pipelineIds.length) {
+      const { data: pipeRows } = await supabase
+        .from("ats_pipelines")
+        .select("id, name")
+        .in("id", pipelineIds);
+      for (const p of (pipeRows ?? []) as Array<{ id: string; name: string }>) {
+        pipelineNames[p.id] = p.name;
+      }
+    }
     type JobRow = {
       id: string;
       title: string;
@@ -150,6 +168,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
       salary_min: number | null;
       salary_max: number | null;
       deal_id: string | null;
+      pipeline_id: string | null;
       opened_at: string | null;
       filled_at: string | null;
       updated_at: string;
@@ -162,6 +181,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
       department: ((r.metadata as { department?: string } | null)?.department) ?? null,
       active_applications: counts[r.id] ?? 0,
       deal: r.deal_id ? deals[r.deal_id] ?? null : null,
+      pipeline_name: r.pipeline_id ? pipelineNames[r.pipeline_id] ?? null : null,
     }));
   });
 
