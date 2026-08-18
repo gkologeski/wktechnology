@@ -255,8 +255,8 @@ function PipelinesPage() {
                 <EmptyState
                   compact
                   icon={GitBranch}
-                  title="Nenhum pipeline"
-                  description="Crie seu primeiro pipeline."
+                  title="Nenhum pipeline visível"
+                  description="Não há pipeline visível para você. Se este workspace já possui pipelines, peça a um administrador acesso de visualização de pipelines; caso contrário, crie o primeiro."
                   action={
                     <Button size="sm" onClick={newPipeline}>
                       <Plus className="h-4 w-4 mr-1" aria-hidden="true" />
