@@ -1,0 +1,1 @@
+update public.workspace_modules set enabled = true where module_id = 'projects';
