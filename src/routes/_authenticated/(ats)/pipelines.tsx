@@ -33,6 +33,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import {
   listAtsPipelines,
+  ensureDefaultAtsPipeline,
   savePipeline,
   deletePipeline,
   setDefaultPipeline,
