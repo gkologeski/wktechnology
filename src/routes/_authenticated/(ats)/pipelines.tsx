@@ -81,6 +81,7 @@ function PipelinesSkeleton() {
 
 function PipelinesPage() {
   const list = useServerFn(listAtsPipelines);
+  const ensureDefault = useServerFn(ensureDefaultAtsPipeline);
   const save = useServerFn(savePipeline);
   const del = useServerFn(deletePipeline);
   const setDef = useServerFn(setDefaultPipeline);
@@ -93,8 +94,13 @@ function PipelinesPage() {
     refetch,
   } = useQuery({
     queryKey: ["ats-pipelines"],
-    queryFn: () => list() as unknown as Promise<Pipeline[]>,
+    queryFn: async () => {
+      // garante um único pipeline padrão do workspace (idempotente)
+      await ensureDefault().catch(() => undefined);
+      return (await list()) as unknown as Pipeline[];
+    },
   });
+
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState("");
