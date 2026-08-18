@@ -259,7 +259,11 @@ function AtsJobsPage() {
   const updateJobStatus = useServerFn(setAtsJobStatus);
   const updateJobDepartment = useServerFn(setAtsJobDepartment);
   const listPipelinesFn = useServerFn(listAtsPipelines);
+  const ensureDefaultPipelineFn = useServerFn(ensureDefaultAtsPipeline);
   const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
+  const [pipelinesError, setPipelinesError] = useState<string | null>(null);
+  const [pipelinesLoading, setPipelinesLoading] = useState(true);
+
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
