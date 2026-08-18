@@ -33,6 +33,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import {
   listAtsPipelines,
+  ensureDefaultAtsPipeline,
   savePipeline,
   deletePipeline,
   setDefaultPipeline,
@@ -81,6 +82,7 @@ function PipelinesSkeleton() {
 
 function PipelinesPage() {
   const list = useServerFn(listAtsPipelines);
+  const ensureDefault = useServerFn(ensureDefaultAtsPipeline);
   const save = useServerFn(savePipeline);
   const del = useServerFn(deletePipeline);
   const setDef = useServerFn(setDefaultPipeline);
@@ -93,8 +95,13 @@ function PipelinesPage() {
     refetch,
   } = useQuery({
     queryKey: ["ats-pipelines"],
-    queryFn: () => list() as unknown as Promise<Pipeline[]>,
+    queryFn: async () => {
+      // garante um único pipeline padrão do workspace (idempotente)
+      await ensureDefault().catch(() => undefined);
+      return (await list()) as unknown as Pipeline[];
+    },
   });
+
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -248,8 +255,8 @@ function PipelinesPage() {
                 <EmptyState
                   compact
                   icon={GitBranch}
-                  title="Nenhum pipeline"
-                  description="Crie seu primeiro pipeline."
+                  title="Nenhum pipeline visível"
+                  description="Não há pipeline visível para você. Se este workspace já possui pipelines, peça a um administrador acesso de visualização de pipelines; caso contrário, crie o primeiro."
                   action={
                     <Button size="sm" onClick={newPipeline}>
                       <Plus className="h-4 w-4 mr-1" aria-hidden="true" />

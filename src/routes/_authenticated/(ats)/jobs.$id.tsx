@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   Plus,
@@ -45,6 +45,7 @@ import {
   listJobInterviews,
 } from "@/lib/ats/ats.functions";
 import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
+import { PipelineSelectNotice } from "@/components/ats/pipeline-select-notice";
 import { DEFAULT_ATS_STAGES, type AtsStage, ATS_JOB_STATUSES } from "@/lib/ats/stages";
 import {
   AlertDialog,
@@ -894,22 +895,34 @@ function JobPropertiesPanel({
   });
   const [saving, setSaving] = useState(false);
   const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
+  const [pipelinesError, setPipelinesError] = useState<string | null>(null);
+  const [pipelinesLoading, setPipelinesLoading] = useState(true);
   const [confirmPipeline, setConfirmPipeline] = useState<string | null>(null);
   const listPipelinesFn = useServerFn(listAtsPipelines);
 
-  useEffect(() => {
-    listPipelinesFn()
-      .then((rs) =>
-        setPipelines(
-          (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
-            id: p.id,
-            name: p.name,
-            is_default: p.is_default,
-          })),
-        ),
-      )
-      .catch(() => undefined);
+  const loadPipelines = useCallback(async () => {
+    setPipelinesLoading(true);
+    setPipelinesError(null);
+    try {
+      const rs = await listPipelinesFn();
+      setPipelines(
+        (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
+          id: p.id,
+          name: p.name,
+          is_default: p.is_default,
+        })),
+      );
+    } catch (e) {
+      setPipelinesError(e instanceof Error ? e.message : "Falha ao carregar pipelines");
+    } finally {
+      setPipelinesLoading(false);
+    }
   }, [listPipelinesFn]);
+
+  useEffect(() => {
+    void loadPipelines();
+  }, [loadPipelines]);
+
 
   // Garante que o pipeline atual da vaga sempre apareça no seletor,
   // mesmo que ainda não esteja na lista carregada.
@@ -1043,7 +1056,9 @@ function JobPropertiesPanel({
             disabled={pipelineOptions.length === 0}
           >
             <SelectTrigger id="prop-pipeline">
-              <SelectValue placeholder="Selecionar pipeline" />
+              <SelectValue
+                placeholder={pipelinesLoading ? "Carregando pipelines..." : "Selecionar pipeline"}
+              />
             </SelectTrigger>
             <SelectContent>
               {pipelineOptions.map((p) => (
@@ -1054,9 +1069,17 @@ function JobPropertiesPanel({
               ))}
             </SelectContent>
           </Select>
-          <p className="mt-1 text-[11px] text-text-tertiary">
-            Define as etapas pelas quais as candidaturas desta vaga vão passar.
-          </p>
+          {!pipelinesLoading && (pipelinesError || pipelines.length === 0) ? (
+            <PipelineSelectNotice
+              error={pipelinesError}
+              onRetry={() => void loadPipelines()}
+            />
+          ) : (
+            <p className="mt-1 text-[11px] text-text-tertiary">
+              Define as etapas pelas quais as candidaturas desta vaga vão passar.
+            </p>
+          )}
+
         </div>
         <div>
           <div className="flex items-center justify-between">

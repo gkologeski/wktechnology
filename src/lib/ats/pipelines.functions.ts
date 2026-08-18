@@ -25,33 +25,66 @@ const PipelineSaveSchema = z.object({
 export const listAtsPipelines = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
     // Visibilidade é decidida pelas políticas do banco (workspace/RBAC),
-    // não por filtro manual de owner_id.
+    // não por filtro manual de owner_id. A listagem não cria registros:
+    // a criação do pipeline padrão é feita por ensureDefaultAtsPipeline.
     const { data, error } = await supabase
       .from("ats_pipelines")
       .select("id, name, is_default, stages, created_at, updated_at")
       .order("is_default", { ascending: false })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
-
-    // garante pelo menos um pipeline padrão quando o workspace não tem nenhum visível
-    if (!data || data.length === 0) {
-      const { data: created, error: insErr } = await supabase
-        .from("ats_pipelines")
-        .insert({
-          owner_id: userId,
-          name: "Pipeline padrão",
-          is_default: true,
-          stages: DEFAULT_ATS_STAGES as never,
-        } as never)
-        .select("id, name, is_default, stages, created_at, updated_at")
-        .single();
-      if (insErr) throw new Error(insErr.message);
-      return [created];
-    }
-    return data;
+    return data ?? [];
   });
+
+/**
+ * Garante um único pipeline padrão visível para o workspace.
+ * Idempotente: reaproveita o padrão existente, promove o primeiro visível
+ * quando nenhum é padrão e só cria "Pipeline padrão" quando não há nenhum.
+ * Retorna null quando o usuário não pode ver nem criar pipelines.
+ */
+export const ensureDefaultAtsPipeline = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const { data: rows, error } = await supabase
+      .from("ats_pipelines")
+      .select("id, name, is_default, stages, created_at, updated_at")
+      .order("is_default", { ascending: false })
+      .order("created_at", { ascending: true });
+    if (error) throw new Error(error.message);
+
+    const existing = rows ?? [];
+    const current = existing.find((p) => p.is_default);
+    if (current) return current;
+
+    if (existing.length > 0) {
+      const first = existing[0];
+      const { data: promoted } = await supabase
+        .from("ats_pipelines")
+        .update({ is_default: true } as never)
+        .eq("id", first.id)
+        .select("id, name, is_default, stages, created_at, updated_at")
+        .maybeSingle();
+      // sem permissão de update: devolve o primeiro visível como está
+      return promoted ?? first;
+    }
+
+    const { data: created, error: insErr } = await supabase
+      .from("ats_pipelines")
+      .insert({
+        owner_id: userId,
+        name: "Pipeline padrão",
+        is_default: true,
+        stages: DEFAULT_ATS_STAGES as never,
+      } as never)
+      .select("id, name, is_default, stages, created_at, updated_at")
+      .maybeSingle();
+    if (insErr) return null;
+    return created ?? null;
+  });
+
 
 
 export const savePipeline = createServerFn({ method: "POST" })
@@ -95,14 +128,9 @@ export const savePipeline = createServerFn({ method: "POST" })
       row = ins;
     }
 
-    // se marcou como padrão, desmarca os outros visíveis no workspace
-    if (data.is_default && row?.id) {
-      await supabase
-        .from("ats_pipelines")
-        .update({ is_default: false } as never)
-        .neq("id", row.id as string);
-    }
+    // exclusividade do padrão por workspace é garantida por gatilho no banco
     return row;
+
   });
 
 export const deletePipeline = createServerFn({ method: "POST" })
@@ -148,15 +176,13 @@ export const setDefaultPipeline = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    await supabase
-      .from("ats_pipelines")
-      .update({ is_default: false } as never)
-      .neq("id", data.id);
+    // o gatilho do banco desmarca os outros padrões do mesmo workspace
     const { data: updated, error } = await supabase
       .from("ats_pipelines")
       .update({ is_default: true } as never)
       .eq("id", data.id)
       .select("id");
+
     if (error) throw new Error(error.message);
     if (!updated || updated.length === 0) {
       throw new Error("Você não tem permissão para alterar este pipeline.");

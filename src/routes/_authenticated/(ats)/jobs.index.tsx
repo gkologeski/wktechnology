@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Plus,
   Briefcase,
@@ -51,7 +51,9 @@ import {
   setAtsJobStatus,
   setAtsJobDepartment,
 } from "@/lib/ats/ats.functions";
-import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
+import { listAtsPipelines, ensureDefaultAtsPipeline } from "@/lib/ats/pipelines.functions";
+import { PipelineSelectNotice } from "@/components/ats/pipeline-select-notice";
+
 
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
 import {
@@ -259,7 +261,11 @@ function AtsJobsPage() {
   const updateJobStatus = useServerFn(setAtsJobStatus);
   const updateJobDepartment = useServerFn(setAtsJobDepartment);
   const listPipelinesFn = useServerFn(listAtsPipelines);
+  const ensureDefaultPipelineFn = useServerFn(ensureDefaultAtsPipeline);
   const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
+  const [pipelinesError, setPipelinesError] = useState<string | null>(null);
+  const [pipelinesLoading, setPipelinesLoading] = useState(true);
+
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
@@ -290,19 +296,35 @@ function AtsJobsPage() {
     deal_id: null as string | null,
   });
 
+  const loadPipelines = useCallback(async () => {
+    setPipelinesLoading(true);
+    setPipelinesError(null);
+    try {
+      // garante um único pipeline padrão do workspace antes de listar
+      await ensureDefaultPipelineFn().catch(() => undefined);
+      const rs = await listPipelinesFn();
+      const list = (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
+        id: p.id,
+        name: p.name,
+        is_default: p.is_default,
+      }));
+      setPipelines(list);
+      setForm((f) =>
+        f.pipeline_id
+          ? f
+          : { ...f, pipeline_id: list.find((p) => p.is_default)?.id ?? list[0]?.id ?? "" },
+      );
+    } catch (e) {
+      setPipelinesError(e instanceof Error ? e.message : "Falha ao carregar pipelines");
+    } finally {
+      setPipelinesLoading(false);
+    }
+  }, [listPipelinesFn, ensureDefaultPipelineFn]);
+
   useEffect(() => {
-    listPipelinesFn()
-      .then((rs) => {
-        const list = (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
-          id: p.id,
-          name: p.name,
-          is_default: p.is_default,
-        }));
-        setPipelines(list);
-        setForm((f) => (f.pipeline_id ? f : { ...f, pipeline_id: list.find((p) => p.is_default)?.id ?? list[0]?.id ?? "" }));
-      })
-      .catch(() => undefined);
-  }, [listPipelinesFn]);
+    void loadPipelines();
+  }, [loadPipelines]);
+
 
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("jobs:view", view);
@@ -553,7 +575,9 @@ function AtsJobsPage() {
               disabled={pipelines.length === 0}
             >
               <SelectTrigger id="job-pipeline">
-                <SelectValue placeholder="Selecionar pipeline" />
+                <SelectValue
+                  placeholder={pipelinesLoading ? "Carregando pipelines..." : "Selecionar pipeline"}
+                />
               </SelectTrigger>
               <SelectContent>
                 {pipelines.map((p) => (
@@ -564,9 +588,17 @@ function AtsJobsPage() {
                 ))}
               </SelectContent>
             </Select>
-            <p className="mt-1 text-[11px] text-text-tertiary">
-              Define as etapas pelas quais as candidaturas desta vaga vão passar.
-            </p>
+            {!pipelinesLoading && (pipelinesError || pipelines.length === 0) ? (
+              <PipelineSelectNotice
+                error={pipelinesError}
+                onRetry={() => void loadPipelines()}
+              />
+            ) : (
+              <p className="mt-1 text-[11px] text-text-tertiary">
+                Define as etapas pelas quais as candidaturas desta vaga vão passar.
+              </p>
+            )}
+
           </div>
           <div className="col-span-2">
             <Label className="text-xs text-text-tertiary">Negócio (opcional)</Label>
