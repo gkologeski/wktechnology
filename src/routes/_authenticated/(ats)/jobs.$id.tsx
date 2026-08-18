@@ -45,6 +45,7 @@ import {
   listJobInterviews,
 } from "@/lib/ats/ats.functions";
 import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
+import { PipelineSelectNotice } from "@/components/ats/pipeline-select-notice";
 import { DEFAULT_ATS_STAGES, type AtsStage, ATS_JOB_STATUSES } from "@/lib/ats/stages";
 import {
   AlertDialog,
