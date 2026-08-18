@@ -225,7 +225,7 @@ export const upsertPsychAssessment = createServerFn({ method: "POST" })
     const ownerId = await resolveOwnerId(supabase, userId);
     const { data: row, error } = await supabase
       .from("people_psychosocial_assessments")
-      .insert({ ...payload, owner_id: ownerId, created_by: userId } as never)
+      .insert({ ...payload, workspace_id: ownerId, owner_id: ownerId, created_by: userId } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
