@@ -136,10 +136,13 @@ function AuthenticatedLayout() {
             {blocked ? (
               <div className="max-w-md mx-auto mt-24 text-center space-y-3 border rounded-lg p-8 bg-background">
                 <ShieldAlert className="h-10 w-10 mx-auto text-muted-foreground" />
-                <h2 className="text-lg font-semibold">Acesso restrito</h2>
+                <h2 className="text-lg font-semibold">
+                  {licenseBlocked && !roleBlocked ? "Módulo não contratado" : "Acesso restrito"}
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                  Você não tem permissão para acessar esta tela. Fale com um administrador do
-                  workspace.
+                  {licenseBlocked && !roleBlocked
+                    ? "Este módulo não está habilitado para o seu workspace. Um administrador pode contratá-lo em Módulos do workspace."
+                    : "Você não tem permissão para acessar esta tela. Fale com um administrador do workspace."}
                 </p>
               </div>
             ) : (
