@@ -128,14 +128,9 @@ export const savePipeline = createServerFn({ method: "POST" })
       row = ins;
     }
 
-    // se marcou como padrão, desmarca os outros visíveis no workspace
-    if (data.is_default && row?.id) {
-      await supabase
-        .from("ats_pipelines")
-        .update({ is_default: false } as never)
-        .neq("id", row.id as string);
-    }
+    // exclusividade do padrão por workspace é garantida por gatilho no banco
     return row;
+
   });
 
 export const deletePipeline = createServerFn({ method: "POST" })
