@@ -894,22 +894,34 @@ function JobPropertiesPanel({
   });
   const [saving, setSaving] = useState(false);
   const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
+  const [pipelinesError, setPipelinesError] = useState<string | null>(null);
+  const [pipelinesLoading, setPipelinesLoading] = useState(true);
   const [confirmPipeline, setConfirmPipeline] = useState<string | null>(null);
   const listPipelinesFn = useServerFn(listAtsPipelines);
 
-  useEffect(() => {
-    listPipelinesFn()
-      .then((rs) =>
-        setPipelines(
-          (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
-            id: p.id,
-            name: p.name,
-            is_default: p.is_default,
-          })),
-        ),
-      )
-      .catch(() => undefined);
+  const loadPipelines = useCallback(async () => {
+    setPipelinesLoading(true);
+    setPipelinesError(null);
+    try {
+      const rs = await listPipelinesFn();
+      setPipelines(
+        (rs as Array<{ id: string; name: string; is_default: boolean }>).map((p) => ({
+          id: p.id,
+          name: p.name,
+          is_default: p.is_default,
+        })),
+      );
+    } catch (e) {
+      setPipelinesError(e instanceof Error ? e.message : "Falha ao carregar pipelines");
+    } finally {
+      setPipelinesLoading(false);
+    }
   }, [listPipelinesFn]);
+
+  useEffect(() => {
+    void loadPipelines();
+  }, [loadPipelines]);
+
 
   // Garante que o pipeline atual da vaga sempre apareça no seletor,
   // mesmo que ainda não esteja na lista carregada.
