@@ -890,6 +890,7 @@ export type Database = {
           stage_value: string
           status: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           ai_match_score?: number | null
@@ -910,6 +911,7 @@ export type Database = {
           stage_value?: string
           status?: string
           updated_at?: string
+          workspace_id: string
         }
         Update: {
           ai_match_score?: number | null
@@ -930,6 +932,7 @@ export type Database = {
           stage_value?: string
           status?: string
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -944,6 +947,13 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ats_applications_workspace"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -1201,6 +1211,7 @@ export type Database = {
           tags: string[]
           updated_at: string
           volunteering: Json | null
+          workspace_id: string
         }
         Insert: {
           about?: string | null
@@ -1254,6 +1265,7 @@ export type Database = {
           tags?: string[]
           updated_at?: string
           volunteering?: Json | null
+          workspace_id: string
         }
         Update: {
           about?: string | null
@@ -1307,8 +1319,17 @@ export type Database = {
           tags?: string[]
           updated_at?: string
           volunteering?: Json | null
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ats_candidates_workspace"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ats_daily_briefings: {
         Row: {
@@ -1917,6 +1938,7 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           assigned_to?: string | null
@@ -1957,6 +1979,7 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          workspace_id: string
         }
         Update: {
           assigned_to?: string | null
@@ -1997,6 +2020,7 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -2004,6 +2028,13 @@ export type Database = {
             columns: ["pipeline_id"]
             isOneToOne: false
             referencedRelation: "ats_pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_ats_jobs_workspace"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -2185,6 +2216,7 @@ export type Database = {
           owner_id: string
           stages: Json
           updated_at: string
+          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -2194,6 +2226,7 @@ export type Database = {
           owner_id: string
           stages?: Json
           updated_at?: string
+          workspace_id: string
         }
         Update: {
           created_at?: string
@@ -2203,8 +2236,17 @@ export type Database = {
           owner_id?: string
           stages?: Json
           updated_at?: string
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_ats_pipelines_workspace"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ats_referral_programs: {
         Row: {
