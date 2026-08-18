@@ -100,9 +100,13 @@ function AuthenticatedLayout() {
     );
   }
 
-  const blocked =
+  const roleBlocked =
     !roleLoading &&
     ((matches(path, ADMIN_ONLY) && !isAdmin) || (matches(path, MANAGER_PLUS) && !isManager));
+
+  const pathModule = detectModuleFromPath(path);
+  const licenseBlocked = !!pathModule && !isLicensed(pathModule);
+  const blocked = roleBlocked || licenseBlocked;
 
   return (
     <SidebarProvider>
