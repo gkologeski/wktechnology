@@ -87,6 +87,7 @@ function AuthenticatedLayout() {
   const router = useRouter();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager, loading: roleLoading } = useMyRole();
+  const { isLicensed } = useModuleLicenses();
 
   useEffect(() => {
     if (!loading && !user) router.navigate({ to: "/login" });
