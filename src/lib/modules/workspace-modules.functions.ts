@@ -69,6 +69,8 @@ export const setWorkspaceModuleEnabled = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { assertWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
+    await assertWorkspaceAdmin(context.userId, workspaceId);
 
     const { error } = await supabaseAdmin
       .from("workspace_modules")
@@ -98,6 +100,8 @@ export const setWorkspaceModulePlan = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { assertWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
+    await assertWorkspaceAdmin(context.userId, workspaceId);
 
     const { error } = await supabaseAdmin
       .from("workspace_modules")

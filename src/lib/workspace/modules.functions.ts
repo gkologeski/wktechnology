@@ -91,6 +91,8 @@ export const toggleWorkspaceModule = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     if (!workspaceId) throw new Error("Workspace não encontrado");
+    const { assertWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
+    await assertWorkspaceAdmin(userId, workspaceId);
 
     // Verifica se o módulo já está contratado
     const existing = await supabase
