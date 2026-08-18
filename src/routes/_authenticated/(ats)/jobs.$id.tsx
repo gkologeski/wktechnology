@@ -1055,7 +1055,9 @@ function JobPropertiesPanel({
             disabled={pipelineOptions.length === 0}
           >
             <SelectTrigger id="prop-pipeline">
-              <SelectValue placeholder="Selecionar pipeline" />
+              <SelectValue
+                placeholder={pipelinesLoading ? "Carregando pipelines..." : "Selecionar pipeline"}
+              />
             </SelectTrigger>
             <SelectContent>
               {pipelineOptions.map((p) => (
@@ -1066,9 +1068,17 @@ function JobPropertiesPanel({
               ))}
             </SelectContent>
           </Select>
-          <p className="mt-1 text-[11px] text-text-tertiary">
-            Define as etapas pelas quais as candidaturas desta vaga vão passar.
-          </p>
+          {!pipelinesLoading && (pipelinesError || pipelines.length === 0) ? (
+            <PipelineSelectNotice
+              error={pipelinesError}
+              onRetry={() => void loadPipelines()}
+            />
+          ) : (
+            <p className="mt-1 text-[11px] text-text-tertiary">
+              Define as etapas pelas quais as candidaturas desta vaga vão passar.
+            </p>
+          )}
+
         </div>
         <div>
           <div className="flex items-center justify-between">
