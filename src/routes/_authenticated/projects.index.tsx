@@ -28,12 +28,19 @@ import { formatDateTime } from "@/lib/crm";
 import { QuickCreateProjectDialog } from "@/components/projects/quick-create-project-dialog";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
   head: () => ({
     meta: [
       { title: "Projetos" },
-      { name: "description", content: "Projetos com marcos billáveis, timesheet e custo × receita." },
+      {
+        name: "description",
+        content: "Projetos com marcos billáveis, timesheet e custo × receita.",
+      },
     ],
   }),
   component: ProjectsPage,
@@ -76,6 +83,12 @@ function ProjectsPage() {
 
   const rows = filterRows(allRows as any[]);
 
+  // Seleção múltipla / ações em massa (padrão de grids).
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(rows as Array<{ id: string }>);
+  const selectAllFiltered = () =>
+    selection.setSelectedIds(new Set(rows.map((r: any) => r.id as string)));
+
   return (
     <div className="p-6 space-y-5">
       <PageHeader
@@ -116,6 +129,40 @@ function ProjectsPage() {
         <AssigneeFilter value={assignee} onChange={setAssignee} />
       </div>
 
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="projects"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="projeto(s)"
+          onClear={selection.clear}
+          onDone={() => {
+            selection.clear();
+            void qc.invalidateQueries({ queryKey: ["projects"] });
+          }}
+          totalMatching={rows.length}
+          onSelectAll={selectAllFiltered}
+          canUpdate={canAny([
+            "techprojects.projects.update.workspace",
+            "techprojects.projects.update.team",
+            "techprojects.projects.update.own",
+          ])}
+          canDelete={canAny([
+            "techprojects.projects.delete.workspace",
+            "techprojects.projects.delete.own",
+          ])}
+          bulkEditFields={[
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+            },
+            { name: "due_at", label: "Prazo", type: "date" },
+          ]}
+        />
+      )}
+
       <div className="rounded-lg border bg-card">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
@@ -134,6 +181,19 @@ function ProjectsPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    aria-label="Selecionar todos os projetos exibidos"
+                    checked={
+                      selection.allOnPageSelected
+                        ? true
+                        : selection.someOnPageSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={selection.toggleAllOnPage}
+                  />
+                </TableHead>
                 <TableHead>Nome</TableHead>
                 <TableHead>Contrato</TableHead>
                 <TableHead>Status</TableHead>
@@ -146,13 +206,28 @@ function ProjectsPage() {
               {rows.map((p: any) => (
                 <TableRow key={p.id}>
                   <TableCell>
-                    <Link to="/projects/$id" params={{ id: p.id }} className="font-medium hover:underline">
+                    <Checkbox
+                      aria-label={`Selecionar projeto ${p.name}`}
+                      checked={selection.selectedIds.has(p.id)}
+                      onCheckedChange={() => selection.toggleOne(p.id)}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Link
+                      to="/projects/$id"
+                      params={{ id: p.id }}
+                      className="font-medium hover:underline"
+                    >
                       {p.name}
                     </Link>
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {p.contracts ? (
-                      <Link to="/contracts/$id" params={{ id: p.contracts.id }} className="hover:underline">
+                      <Link
+                        to="/contracts/$id"
+                        params={{ id: p.contracts.id }}
+                        className="hover:underline"
+                      >
                         {p.contracts.number ?? p.contracts.title}
                       </Link>
                     ) : (

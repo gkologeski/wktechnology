@@ -78,7 +78,14 @@ export function EntriesListPage({
 
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: allRows = [], isLoading } = useQuery({
-    queryKey: ["finance-entries", direction, status, search, legalEntityId, JSON.stringify(filterInput)],
+    queryKey: [
+      "finance-entries",
+      direction,
+      status,
+      search,
+      legalEntityId,
+      JSON.stringify(filterInput),
+    ],
     queryFn: () =>
       list({
         data: {
@@ -96,11 +103,7 @@ export function EntriesListPage({
   const rows = useMemo(() => filterRows(allRows as Entry[]), [allRows, filterRows]);
 
   const total = useMemo(
-    () =>
-      rows.reduce(
-        (acc, r) => acc + (Number(r.amount) - Number(r.paid_amount ?? 0)),
-        0,
-      ),
+    () => rows.reduce((acc, r) => acc + (Number(r.amount) - Number(r.paid_amount ?? 0)), 0),
     [rows],
   );
 
@@ -149,7 +152,10 @@ export function EntriesListPage({
                   { header: "Vencimento", value: (r) => r.due_date },
                   { header: "Competência", value: (r) => r.competence_date ?? "" },
                 ]);
-                downloadCsv(`financeiro-${direction}-${new Date().toISOString().slice(0, 10)}`, csv);
+                downloadCsv(
+                  `financeiro-${direction}-${new Date().toISOString().slice(0, 10)}`,
+                  csv,
+                );
               }}
             >
               <Download className="h-4 w-4 mr-1" /> Exportar CSV
@@ -317,7 +323,9 @@ export function EntriesListPage({
                       {formatDateTime(e.due_date).split(" ")[0]}
                     </TableCell>
                     <TableCell>
-                      <AssigneeCell assignedTo={(e as { assigned_to?: string | null }).assigned_to} />
+                      <AssigneeCell
+                        assignedTo={(e as { assigned_to?: string | null }).assigned_to}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       {!paid && (
