@@ -28,6 +28,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   Dialog,
   DialogContent,
@@ -109,6 +113,11 @@ function PeoplePage() {
 
   const rows = filterRows(allRows);
 
+  // Seleção múltipla / ações em massa (padrão de grids).
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(rows as Array<(typeof rows)[number] & { id: string }>);
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
+
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-6">
       <PageHeader
@@ -159,10 +168,62 @@ function PeoplePage() {
         <AssigneeFilter value={assignee} onChange={setAssignee} className="w-full sm:w-56" />
       </div>
 
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="people"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="pessoa(s)"
+          onClear={selection.clear}
+          onDone={() => void qc.invalidateQueries({ queryKey: ["people"] })}
+          totalMatching={rows.length}
+          onSelectAll={selectAllFiltered}
+          canUpdate={canAny([
+            "techpeople.people.update.workspace",
+            "techpeople.people.update.team",
+            "techpeople.people.update.own",
+          ])}
+          canDelete={canAny(["techpeople.people.delete.workspace", "techpeople.people.delete.own"])}
+          bulkEditFields={[
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: PEOPLE_STATUSES.map((s) => ({ value: s, label: PEOPLE_STATUS_LABELS[s] })),
+            },
+            {
+              name: "employment_type",
+              label: "Vínculo",
+              type: "select",
+              options: PEOPLE_EMPLOYMENT_TYPES.map((t) => ({
+                value: t,
+                label: PEOPLE_EMPLOYMENT_LABELS[t],
+              })),
+            },
+            { name: "role_title", label: "Cargo / posição", type: "text" },
+            { name: "seniority", label: "Senioridade", type: "text" },
+            { name: "location", label: "Localização", type: "text" },
+          ]}
+        />
+      )}
+
       <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  aria-label="Selecionar todas as pessoas exibidas"
+                  checked={
+                    selection.allOnPageSelected
+                      ? true
+                      : selection.someOnPageSelected
+                        ? "indeterminate"
+                        : false
+                  }
+                  onCheckedChange={selection.toggleAllOnPage}
+                />
+              </TableHead>
               <TableHead>Pessoa</TableHead>
               <TableHead>Cargo</TableHead>
               <TableHead>Vínculo</TableHead>
@@ -175,13 +236,13 @@ function PeoplePage() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
                   Carregando…
                 </TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
+                <TableCell colSpan={8} className="text-center py-12">
                   <div className="flex flex-col items-center gap-3">
                     <UserCog className="h-8 w-8 text-muted-foreground" />
                     <div>
@@ -200,6 +261,13 @@ function PeoplePage() {
               rows.map((p) => (
                 <TableRow key={p.id} className="hover:bg-muted/40">
                   <TableCell>
+                    <Checkbox
+                      aria-label={`Selecionar ${p.full_name}`}
+                      checked={selection.selectedIds.has(p.id)}
+                      onCheckedChange={() => selection.toggleOne(p.id)}
+                    />
+                  </TableCell>
+                  <TableCell>
                     <Link
                       to="/people/$id"
                       params={{ id: p.id }}
@@ -207,9 +275,7 @@ function PeoplePage() {
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={p.photo_url ?? undefined} alt={p.full_name} />
-                        <AvatarFallback className="text-xs">
-                          {initials(p.full_name)}
-                        </AvatarFallback>
+                        <AvatarFallback className="text-xs">{initials(p.full_name)}</AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
                         <span className="font-medium">{p.full_name}</span>
@@ -371,15 +437,29 @@ function NewPersonDialog({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="p-name">Nome completo *</Label>
-                <Input id="p-name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Ex: Maria Silva" />
+                <Input
+                  id="p-name"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Ex: Maria Silva"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-preferred">Como prefere ser chamado(a)</Label>
-                <Input id="p-preferred" value={preferredName} onChange={(e) => setPreferredName(e.target.value)} />
+                <Input
+                  id="p-preferred"
+                  value={preferredName}
+                  onChange={(e) => setPreferredName(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-email">E-mail</Label>
-                <Input id="p-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Input
+                  id="p-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-phone">Telefone</Label>
@@ -387,7 +467,12 @@ function NewPersonDialog({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-location">Localização</Label>
-                <Input id="p-location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Cidade / UF" />
+                <Input
+                  id="p-location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Cidade / UF"
+                />
               </div>
             </div>
           </section>
@@ -403,15 +488,27 @@ function NewPersonDialog({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-seniority">Senioridade</Label>
-                <Input id="p-seniority" value={seniority} onChange={(e) => setSeniority(e.target.value)} placeholder="Ex: Pleno, Sênior" />
+                <Input
+                  id="p-seniority"
+                  value={seniority}
+                  onChange={(e) => setSeniority(e.target.value)}
+                  placeholder="Ex: Pleno, Sênior"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Vínculo</Label>
-                <Select value={employment} onValueChange={(v) => setEmployment(v as PeopleEmploymentType)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={employment}
+                  onValueChange={(v) => setEmployment(v as PeopleEmploymentType)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {PEOPLE_EMPLOYMENT_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>{PEOPLE_EMPLOYMENT_LABELS[t]}</SelectItem>
+                      <SelectItem key={t} value={t}>
+                        {PEOPLE_EMPLOYMENT_LABELS[t]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -419,17 +516,26 @@ function NewPersonDialog({
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select value={status} onValueChange={(v) => setStatus(v as PeopleStatus)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {PEOPLE_STATUSES.map((s) => (
-                      <SelectItem key={s} value={s}>{PEOPLE_STATUS_LABELS[s]}</SelectItem>
+                      <SelectItem key={s} value={s}>
+                        {PEOPLE_STATUS_LABELS[s]}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-hire">Data de contratação</Label>
-                <Input id="p-hire" type="date" value={hireDate} onChange={(e) => setHireDate(e.target.value)} />
+                <Input
+                  id="p-hire"
+                  type="date"
+                  value={hireDate}
+                  onChange={(e) => setHireDate(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-tz">Fuso horário</Label>
@@ -445,7 +551,11 @@ function NewPersonDialog({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="p-legal">Razão social</Label>
-                <Input id="p-legal" value={legalEntity} onChange={(e) => setLegalEntity(e.target.value)} />
+                <Input
+                  id="p-legal"
+                  value={legalEntity}
+                  onChange={(e) => setLegalEntity(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-cnpj">CNPJ / CPF</Label>
@@ -461,15 +571,34 @@ function NewPersonDialog({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label htmlFor="p-cost-hour">Custo/hora</Label>
-                <Input id="p-cost-hour" type="number" step="0.01" min="0" value={costHour} onChange={(e) => setCostHour(e.target.value)} />
+                <Input
+                  id="p-cost-hour"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={costHour}
+                  onChange={(e) => setCostHour(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-monthly">Custo mensal</Label>
-                <Input id="p-monthly" type="number" step="0.01" min="0" value={monthlyCost} onChange={(e) => setMonthlyCost(e.target.value)} />
+                <Input
+                  id="p-monthly"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={monthlyCost}
+                  onChange={(e) => setMonthlyCost(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="p-cur">Moeda</Label>
-                <Input id="p-cur" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} />
+                <Input
+                  id="p-cur"
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                  maxLength={3}
+                />
               </div>
             </div>
           </section>
@@ -480,18 +609,36 @@ function NewPersonDialog({
             </h3>
             <div className="space-y-2">
               <Label htmlFor="p-tags">Tags (separadas por vírgula)</Label>
-              <Input id="p-tags" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="ex: pj-recorrente, sp, dev" />
+              <Input
+                id="p-tags"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="ex: pj-recorrente, sp, dev"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="p-notes">Notas internas</Label>
-              <textarea id="p-notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full min-h-[80px] rounded-md border bg-background p-2 text-sm" placeholder="Observações relevantes..." />
+              <textarea
+                id="p-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="w-full min-h-[80px] rounded-md border bg-background p-2 text-sm"
+                placeholder="Observações relevantes..."
+              />
             </div>
           </section>
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button disabled={mut.isPending || fullName.trim().length < 2} onClick={() => mut.mutate()}>Cadastrar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button
+            disabled={mut.isPending || fullName.trim().length < 2}
+            onClick={() => mut.mutate()}
+          >
+            Cadastrar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -19,16 +19,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   listExpiringDocuments,
   getDocumentDownloadUrl,
   type ExpiringDocumentRow,
 } from "@/lib/people/documents.functions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/people/documents")({
   head: () => ({
@@ -65,6 +66,12 @@ function DocumentsPage() {
     staleTime: 30_000,
   });
 
+  // Seleção múltipla / ações em massa (padrão de grids).
+  const qc = useQueryClient();
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(data as ExpiringDocumentRow[]);
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(data.map((d) => d.id)));
+
   async function handleDownload(id: string) {
     try {
       const { url } = await downloadFn({ data: { id } });
@@ -89,6 +96,28 @@ function DocumentsPage() {
         </TabsList>
       </Tabs>
 
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="people_documents"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="documento(s)"
+          onClear={selection.clear}
+          onDone={() => void qc.invalidateQueries({ queryKey: ["people-docs-expiring"] })}
+          totalMatching={data.length}
+          onSelectAll={selectAllFiltered}
+          canUpdate={canAny([
+            "techpeople.documents.update.workspace",
+            "techpeople.documents.update.team",
+            "techpeople.documents.update.own",
+          ])}
+          canDelete={canAny([
+            "techpeople.documents.delete.workspace",
+            "techpeople.documents.delete.own",
+          ])}
+        />
+      )}
+
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -102,6 +131,19 @@ function DocumentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Selecionar todos os documentos exibidos"
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={selection.toggleAllOnPage}
+                    />
+                  </TableHead>
                   <TableHead>Pessoa</TableHead>
                   <TableHead>Documento</TableHead>
                   <TableHead>Validade</TableHead>
@@ -112,6 +154,13 @@ function DocumentsPage() {
               <TableBody>
                 {data.map((d: ExpiringDocumentRow) => (
                   <TableRow key={d.id}>
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Selecionar documento ${d.doc_type}`}
+                        checked={selection.selectedIds.has(d.id)}
+                        onCheckedChange={() => selection.toggleOne(d.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Link
                         to="/people/$id"
