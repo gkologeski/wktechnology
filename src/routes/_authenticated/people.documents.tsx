@@ -159,6 +159,13 @@ function DocumentsPage() {
                 {data.map((d: ExpiringDocumentRow) => (
                   <TableRow key={d.id}>
                     <TableCell>
+                      <Checkbox
+                        aria-label={`Selecionar documento ${d.doc_type}`}
+                        checked={selection.selectedIds.has(d.id)}
+                        onCheckedChange={() => selection.toggleOne(d.id)}
+                      />
+                    </TableCell>
+                    <TableCell>
                       <Link
                         to="/people/$id"
                         params={{ id: d.person_id }}
