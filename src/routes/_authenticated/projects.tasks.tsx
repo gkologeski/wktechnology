@@ -31,15 +31,20 @@ import { listAllProjectTasks, listProjects } from "@/lib/projects.functions";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
-
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/projects/tasks")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    view: search.view === "kanban" ? ("kanban" as const) : ("table" as const),
+  }),
   head: () => ({
     meta: [
       { title: "Tarefas de projetos" },
       {
         name: "description",
-        content: "Tarefas de todos os projetos ativos com filtros por status, projeto e responsável.",
+        content:
+          "Tarefas de todos os projetos ativos com filtros por status, projeto e responsável.",
       },
     ],
   }),
@@ -58,6 +63,14 @@ const STATUS_TONE: Record<string, string> = {
   doing: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
   review: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
   done: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+};
+
+// Tom dos "dots" das colunas do kanban (tokens semânticos).
+const KANBAN_TONE: Record<string, string> = {
+  todo: "bg-muted-foreground/40",
+  doing: "bg-primary",
+  review: "bg-amber-500",
+  done: "bg-emerald-500",
 };
 
 type StatusFilter = "all" | "todo" | "doing" | "review" | "done";
@@ -115,6 +128,10 @@ function ProjectTasksPage() {
     "techprojects.tasks.delete.own",
   ]);
 
+  const { view } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const setView = (v: "table" | "kanban") =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
 
   return (
     <div className="p-6 space-y-5">
@@ -170,10 +187,10 @@ function ProjectTasksPage() {
             <SelectItem value="mine">Minhas tarefas</SelectItem>
           </SelectContent>
         </Select>
+        <ViewModeToggle value={view} onChange={setView} />
       </div>
 
-
-      {selection.hasSelection && (
+      {view === "table" && selection.hasSelection && (
         <GridBulkBar
           table="project_tasks"
           ids={selection.ids}
@@ -209,101 +226,152 @@ function ProjectTasksPage() {
         />
       )}
 
-      <div className="rounded-lg border bg-card">
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
-        ) : rows.length === 0 ? (
-          <div className="p-12 text-center">
-            <ListTodo className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">Nenhuma tarefa encontrada</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Crie tarefas dentro de um projeto para vê-las aqui.
-            </p>
-            <Button asChild className="mt-4" size="sm" variant="outline">
-              <Link to="/projects">Ir para projetos</Link>
-            </Button>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={
-                      selection.allOnPageSelected
-                        ? true
-                        : selection.someOnPageSelected
-                          ? "indeterminate"
-                          : false
-                    }
-                    onCheckedChange={() => selection.toggleAllOnPage()}
-                    aria-label="Selecionar todas as tarefas da página"
-                  />
-                </TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>Projeto</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Horas est.</TableHead>
-                <TableHead>Prazo</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((t) => {
-                const project = (t as { projects?: { id: string; name: string } }).projects;
-                return (
-                  <TableRow key={t.id} data-state={selection.isSelected(t.id) ? "selected" : undefined}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selection.isSelected(t.id)}
-                        onCheckedChange={() => selection.toggleOne(t.id)}
-                        aria-label={`Selecionar tarefa ${t.title}`}
-                      />
-                    </TableCell>
-                    <TableCell>
-
-                      {project ? (
-                        <Link
-                          to="/projects/$id"
-                          params={{ id: project.id }}
-                          className="font-medium hover:underline"
-                        >
-                          {t.title}
-                        </Link>
-                      ) : (
-                        <span className="font-medium">{t.title}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {project ? (
-                        <Link
-                          to="/projects/$id"
-                          params={{ id: project.id }}
-                          className="hover:underline"
-                        >
-                          {project.name}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={STATUS_TONE[t.status] ?? ""}>
-                        {STATUS_LABEL[t.status] ?? t.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {t.estimated_hours ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "—"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+      {view === "kanban" ? (
+        <KanbanBoard
+          rows={rows as Array<(typeof rows)[number] & { id: string }>}
+          table="project_tasks"
+          stageField="status"
+          canUpdate={canUpdate}
+          isLoading={isLoading}
+          invalidateKeys={[["project_tasks"]]}
+          ariaLabel="Quadro de tarefas de projetos"
+          columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
+            value,
+            label,
+            tone: KANBAN_TONE[value],
+          }))}
+          emptyState={
+            <div className="p-12 text-center">
+              <ListTodo className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">Nenhuma tarefa encontrada</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crie tarefas dentro de um projeto para vê-las aqui.
+              </p>
+            </div>
+          }
+          renderCard={(t) => {
+            const project = (t as { projects?: { id: string; name: string } }).projects;
+            return (
+              <div className="space-y-1 pr-6">
+                <p className="text-sm font-medium leading-snug">{t.title}</p>
+                {project && (
+                  <Link
+                    to="/projects/$id"
+                    params={{ id: project.id }}
+                    className="block text-xs text-muted-foreground hover:underline"
+                  >
+                    {project.name}
+                  </Link>
+                )}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "sem prazo"}</span>
+                  <span className="tabular-nums">
+                    {t.estimated_hours ? `${t.estimated_hours}h` : ""}
+                  </span>
+                </div>
+              </div>
+            );
+          }}
+        />
+      ) : (
+        <div className="rounded-lg border bg-card">
+          {isLoading ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
+          ) : rows.length === 0 ? (
+            <div className="p-12 text-center">
+              <ListTodo className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">Nenhuma tarefa encontrada</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crie tarefas dentro de um projeto para vê-las aqui.
+              </p>
+              <Button asChild className="mt-4" size="sm" variant="outline">
+                <Link to="/projects">Ir para projetos</Link>
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={() => selection.toggleAllOnPage()}
+                      aria-label="Selecionar todas as tarefas da página"
+                    />
+                  </TableHead>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Projeto</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Horas est.</TableHead>
+                  <TableHead>Prazo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((t) => {
+                  const project = (t as { projects?: { id: string; name: string } }).projects;
+                  return (
+                    <TableRow
+                      key={t.id}
+                      data-state={selection.isSelected(t.id) ? "selected" : undefined}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={selection.isSelected(t.id)}
+                          onCheckedChange={() => selection.toggleOne(t.id)}
+                          aria-label={`Selecionar tarefa ${t.title}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {project ? (
+                          <Link
+                            to="/projects/$id"
+                            params={{ id: project.id }}
+                            className="font-medium hover:underline"
+                          >
+                            {t.title}
+                          </Link>
+                        ) : (
+                          <span className="font-medium">{t.title}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {project ? (
+                          <Link
+                            to="/projects/$id"
+                            params={{ id: project.id }}
+                            className="hover:underline"
+                          >
+                            {project.name}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={STATUS_TONE[t.status] ?? ""}>
+                          {STATUS_LABEL[t.status] ?? t.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {t.estimated_hours ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      )}
     </div>
   );
 }
