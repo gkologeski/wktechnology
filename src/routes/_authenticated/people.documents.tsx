@@ -29,6 +29,11 @@ import {
   getDocumentDownloadUrl,
   type ExpiringDocumentRow,
 } from "@/lib/people/documents.functions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/people/documents")({
   head: () => ({
