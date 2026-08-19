@@ -9437,6 +9437,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          assigned_to: string | null
           assigned_user_id: string | null
           company_id: string | null
           company_name: string | null
@@ -9471,6 +9472,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           assigned_user_id?: string | null
           company_id?: string | null
           company_name?: string | null
@@ -9505,6 +9507,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           assigned_user_id?: string | null
           company_id?: string | null
           company_name?: string | null
