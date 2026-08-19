@@ -94,6 +94,28 @@ function DocumentsPage() {
         </TabsList>
       </Tabs>
 
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="people_documents"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="documento(s)"
+          onClear={selection.clear}
+          onDone={() => void qc.invalidateQueries({ queryKey: ["people-docs-expiring"] })}
+          totalMatching={data.length}
+          onSelectAll={selectAllFiltered}
+          canUpdate={canAny([
+            "techpeople.documents.update.workspace",
+            "techpeople.documents.update.team",
+            "techpeople.documents.update.own",
+          ])}
+          canDelete={canAny([
+            "techpeople.documents.delete.workspace",
+            "techpeople.documents.delete.own",
+          ])}
+        />
+      )}
+
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -107,6 +129,19 @@ function DocumentsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Selecionar todos os documentos exibidos"
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={selection.toggleAllOnPage}
+                    />
+                  </TableHead>
                   <TableHead>Pessoa</TableHead>
                   <TableHead>Documento</TableHead>
                   <TableHead>Validade</TableHead>
