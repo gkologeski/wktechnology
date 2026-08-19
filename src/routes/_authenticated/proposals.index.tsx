@@ -35,8 +35,13 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/proposals/")({
+  validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
+    view: search.view === "kanban" ? "kanban" : "table",
+  }),
   component: ProposalsPage,
 });
 
@@ -87,6 +92,15 @@ function ProposalsPage() {
   const selection = useGridSelection(rows);
   const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
   const refresh = () => qc.invalidateQueries({ queryKey: ["proposals"] });
+  const view = Route.useSearch().view ?? "table";
+  const navigate = Route.useNavigate();
+  const setView = (v: "table" | "kanban") =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
+  const canUpdateProposal = canAny([
+    "techcontracts.contracts.update.workspace",
+    "techcontracts.contracts.update.team",
+    "techcontracts.contracts.update.own",
+  ]);
 
   const createM = useMutation({
     mutationFn: () => create({ data: { title, totalAmount: amount ? Number(amount) : null } }),
@@ -168,10 +182,13 @@ function ProposalsPage() {
       <Card>
         <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Suas propostas</CardTitle>
-          <AssigneeFilter value={assignee} onChange={setAssignee} />
+          <div className="flex flex-wrap items-center gap-2">
+            <AssigneeFilter value={assignee} onChange={setAssignee} />
+            <ViewModeToggle value={view} onChange={setView} />
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          {selection.hasSelection && (
+          {view === "table" && selection.hasSelection && (
             <GridBulkBar
               table="proposals"
               ids={selection.ids}
@@ -204,7 +221,39 @@ function ProposalsPage() {
             />
           )}
 
-          {rows.length === 0 ? (
+          {view === "kanban" ? (
+            <KanbanBoard
+              rows={rows}
+              table="proposals"
+              stageField="status"
+              canUpdate={canUpdateProposal}
+              invalidateKeys={[["proposals"]]}
+              ariaLabel="Quadro de propostas"
+              columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label }))}
+              emptyState={
+                <div className="flex flex-col items-center gap-2 py-10 text-center">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Nenhuma proposta ainda.</p>
+                </div>
+              }
+              renderCard={(p) => (
+                <div className="space-y-1 pr-6">
+                  <Link
+                    to="/proposals/$id"
+                    params={{ id: p.id }}
+                    className="block text-sm font-medium leading-snug hover:underline"
+                  >
+                    {p.title}
+                  </Link>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>v{p.version}</span>
+                    <span className="tabular-nums">{money(p)}</span>
+                  </div>
+                  <AssigneeCell assignedTo={p.assigned_to} className="text-xs" />
+                </div>
+              )}
+            />
+          ) : rows.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-10 text-center">
               <FileText className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground">Nenhuma proposta ainda.</p>

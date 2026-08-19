@@ -32,8 +32,13 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/projects/")({
+  validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
+    view: search.view === "kanban" ? "kanban" : "table",
+  }),
   head: () => ({
     meta: [
       { title: "Projetos" },
@@ -62,6 +67,14 @@ const STATUS_TONE: Record<string, string> = {
   cancelled: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
 };
 
+const KANBAN_TONE: Record<string, string> = {
+  planning: "bg-muted-foreground/40",
+  active: "bg-emerald-500",
+  on_hold: "bg-amber-500",
+  done: "bg-primary",
+  cancelled: "bg-destructive",
+};
+
 function ProjectsPage() {
   const list = useServerFn(listProjects);
   const qc = useQueryClient();
@@ -69,6 +82,12 @@ function ProjectsPage() {
   const [status, setStatus] = useState("all");
   const [openCreate, setOpenCreate] = useState(false);
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
+  const view = Route.useSearch().view ?? "table";
+  const navigate = Route.useNavigate();
+  const setView = (v: "table" | "kanban") =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
+
+
 
   const { data: allRows = [], isLoading } = useQuery({
     queryKey: ["projects", { status, search }],
@@ -127,9 +146,10 @@ function ProjectsPage() {
           </SelectContent>
         </Select>
         <AssigneeFilter value={assignee} onChange={setAssignee} />
+        <ViewModeToggle value={view} onChange={setView} />
       </div>
 
-      {selection.hasSelection && (
+      {view === "table" && selection.hasSelection && (
         <GridBulkBar
           table="projects"
           ids={selection.ids}
@@ -163,6 +183,59 @@ function ProjectsPage() {
         />
       )}
 
+      {view === "kanban" ? (
+        <KanbanBoard
+          rows={rows as Array<{ id: string }>}
+          table="projects"
+          stageField="status"
+          canUpdate={canAny([
+            "techprojects.projects.update.workspace",
+            "techprojects.projects.update.team",
+            "techprojects.projects.update.own",
+          ])}
+          isLoading={isLoading}
+          invalidateKeys={[["projects"]]}
+          ariaLabel="Quadro de projetos"
+          columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
+            value,
+            label,
+            tone: KANBAN_TONE[value],
+          }))}
+          emptyState={
+            <div className="p-12 text-center">
+              <Kanban className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">Nenhum projeto ainda</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crie um projeto avulso ou a partir de um contrato/serviço.
+              </p>
+            </div>
+          }
+          renderCard={(row) => {
+            const p = row as any;
+            return (
+              <div className="space-y-1 pr-6">
+                <Link
+                  to="/projects/$id"
+                  params={{ id: p.id }}
+                  className="block text-sm font-medium leading-snug hover:underline"
+                >
+                  {p.name}
+                </Link>
+                {p.contracts && (
+                  <p className="text-xs text-muted-foreground">
+                    {p.contracts.number ?? p.contracts.title}
+                  </p>
+                )}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "sem prazo"}</span>
+                  <span className="tabular-nums">{p.progress ?? 0}%</span>
+                </div>
+                <AssigneeCell assignedTo={p.assigned_to} />
+              </div>
+            );
+          }}
+        />
+      ) : (
       <div className="rounded-lg border bg-card">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
@@ -252,6 +325,7 @@ function ProjectsPage() {
           </Table>
         )}
       </div>
+      )}
 
       <QuickCreateProjectDialog
         open={openCreate}
