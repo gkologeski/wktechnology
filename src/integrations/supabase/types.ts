@@ -4200,7 +4200,7 @@ export type Database = {
           user_resolution_at: string | null
           user_resolution_confirmed: boolean | null
           user_resolution_feedback: string | null
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           category: string
@@ -4224,7 +4224,7 @@ export type Database = {
           user_resolution_at?: string | null
           user_resolution_confirmed?: boolean | null
           user_resolution_feedback?: string | null
-          workspace_id?: string | null
+          workspace_id: string
         }
         Update: {
           category?: string
@@ -4248,9 +4248,17 @@ export type Database = {
           user_resolution_at?: string | null
           user_resolution_confirmed?: boolean | null
           user_resolution_feedback?: string | null
-          workspace_id?: string | null
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bug_reports_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       calendar_accounts: {
         Row: {
@@ -7975,6 +7983,13 @@ export type Database = {
             columns: ["set_id"]
             isOneToOne: false
             referencedRelation: "permission_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "field_permission_rules_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -17704,7 +17719,7 @@ export type Database = {
           owner_id: string
           role_id: string
           user_id: string
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           created_at?: string
@@ -17713,7 +17728,7 @@ export type Database = {
           owner_id: string
           role_id: string
           user_id: string
-          workspace_id?: string | null
+          workspace_id: string
         }
         Update: {
           created_at?: string
@@ -17722,7 +17737,7 @@ export type Database = {
           owner_id?: string
           role_id?: string
           user_id?: string
-          workspace_id?: string | null
+          workspace_id?: string
         }
         Relationships: [
           {
@@ -17730,6 +17745,13 @@ export type Database = {
             columns: ["role_id"]
             isOneToOne: false
             referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_job_roles_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -18958,7 +18980,7 @@ export type Database = {
           name: string
           owner_id: string
           updated_at: string
-          workspace_id: string | null
+          workspace_id: string
         }
         Insert: {
           action: Json
@@ -18971,7 +18993,7 @@ export type Database = {
           name: string
           owner_id: string
           updated_at?: string
-          workspace_id?: string | null
+          workspace_id: string
         }
         Update: {
           action?: Json
@@ -18984,9 +19006,17 @@ export type Database = {
           name?: string
           owner_id?: string
           updated_at?: string
-          workspace_id?: string | null
+          workspace_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workflow_subscriptions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workflow_time_cursors: {
         Row: {

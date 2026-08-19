@@ -365,6 +365,7 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
     const roleRows: Array<{
       user_id: string;
       owner_id: string;
+      workspace_id: string;
       role_id: string;
       is_primary: boolean;
     }> = [];
@@ -373,6 +374,7 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
       roleRows.push({
         user_id: data.user_id,
         owner_id: userId,
+        workspace_id: workspaceId,
         role_id: data.primary_role_id,
         is_primary: true,
       });
@@ -383,6 +385,7 @@ export const setMemberAssignments = createServerFn({ method: "POST" })
       roleRows.push({
         user_id: data.user_id,
         owner_id: userId,
+        workspace_id: workspaceId,
         role_id: rid,
         is_primary: false,
       });
