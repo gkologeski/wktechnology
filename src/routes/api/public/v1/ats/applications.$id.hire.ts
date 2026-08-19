@@ -11,6 +11,7 @@ import {
   notFound,
 } from "@/lib/ats/public-api.server";
 import { recordAtsEvent } from "@/lib/ats/audit.server";
+import { wonAtsStageValue } from "@/lib/ats/stages";
 
 export const Route = createFileRoute("/api/public/v1/ats/applications/$id/hire")({
   server: {
@@ -33,9 +34,24 @@ export const Route = createFileRoute("/api/public/v1/ats/applications/$id/hire")
           return Response.json({ data: app, already_hired: true });
         }
         const nowIso = new Date().toISOString();
+        // Etapa de contratação do pipeline da vaga (fallback: slug padrão).
+        let hiredStage = "profissional_contratado";
+        const { data: job } = await supabaseAdmin
+          .from("ats_jobs")
+          .select("pipeline_id")
+          .eq("id", app.job_id as string)
+          .maybeSingle();
+        if (job?.pipeline_id) {
+          const { data: pipeline } = await supabaseAdmin
+            .from("ats_pipelines")
+            .select("stages")
+            .eq("id", job.pipeline_id as string)
+            .maybeSingle();
+          hiredStage = wonAtsStageValue(pipeline?.stages) ?? hiredStage;
+        }
         const { data: updated, error } = await supabaseAdmin
           .from("ats_applications")
-          .update({ status: "hired", stage_value: "profissional_contratado", moved_at: nowIso })
+          .update({ status: "hired", stage_value: hiredStage, moved_at: nowIso })
           .eq("id", id)
           .eq("owner_id", auth.ownerId)
           .select("id, job_id, candidate_id, status, stage_value, moved_at")

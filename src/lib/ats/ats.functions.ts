@@ -630,8 +630,18 @@ export const listJobApplications = createServerFn({ method: "POST" })
  * Etapas do pipeline da vaga. Retorna [] quando a vaga não tem pipeline
  * visível/associado — nesse caso os chamadores usam os padrões conhecidos.
  */
+type PipelineReader = {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        maybeSingle: () => Promise<{ data: unknown }>;
+      };
+    };
+  };
+};
+
 async function loadJobPipelineStages(
-  supabase: { from: (t: string) => any },
+  supabase: PipelineReader,
   jobId: string,
 ): Promise<unknown> {
   const { data: job } = await supabase
