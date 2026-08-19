@@ -94,6 +94,9 @@ function OffersPage() {
   const del = useServerFn(deleteOffer);
   const [rows, setRows] = useState<OfferRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(rows, { buildIdQuery: idQueryFor("ats_offers") });
+
 
   const reload = useCallback(async () => {
     setLoading(true);
