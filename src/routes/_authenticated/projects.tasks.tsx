@@ -34,6 +34,9 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 
 
 export const Route = createFileRoute("/_authenticated/projects/tasks")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    view: search.view === "kanban" ? ("kanban" as const) : ("table" as const),
+  }),
   head: () => ({
     meta: [
       { title: "Tarefas de projetos" },
