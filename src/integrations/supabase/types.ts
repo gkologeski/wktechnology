@@ -269,6 +269,7 @@ export type Database = {
       }
       activities: {
         Row: {
+          assigned_to: string | null
           attachments: Json
           body: string | null
           completed: boolean
@@ -318,6 +319,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           attachments?: Json
           body?: string | null
           completed?: boolean
@@ -367,6 +369,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           attachments?: Json
           body?: string | null
           completed?: boolean
