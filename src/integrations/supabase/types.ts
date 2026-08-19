@@ -269,6 +269,7 @@ export type Database = {
       }
       activities: {
         Row: {
+          assigned_to: string | null
           attachments: Json
           body: string | null
           completed: boolean
@@ -318,6 +319,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           attachments?: Json
           body?: string | null
           completed?: boolean
@@ -367,6 +369,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           attachments?: Json
           body?: string | null
           completed?: boolean
@@ -4663,6 +4666,7 @@ export type Database = {
         Row: {
           address: string | null
           annualrevenue: number | null
+          assigned_to: string | null
           assigned_user_id: string | null
           cep: string | null
           city: string | null
@@ -4706,6 +4710,7 @@ export type Database = {
         Insert: {
           address?: string | null
           annualrevenue?: number | null
+          assigned_to?: string | null
           assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
@@ -4749,6 +4754,7 @@ export type Database = {
         Update: {
           address?: string | null
           annualrevenue?: number | null
+          assigned_to?: string | null
           assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
@@ -4857,6 +4863,7 @@ export type Database = {
       contacts: {
         Row: {
           address: string | null
+          assigned_to: string | null
           assigned_user_id: string | null
           cep: string | null
           city: string | null
@@ -4899,6 +4906,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          assigned_to?: string | null
           assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
@@ -4941,6 +4949,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          assigned_to?: string | null
           assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
@@ -6476,6 +6485,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          assigned_to: string | null
           assigned_user_id: string | null
           closed_lost_reason: string | null
           closed_won_reason: string | null
@@ -6509,6 +6519,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           assigned_user_id?: string | null
           closed_lost_reason?: string | null
           closed_won_reason?: string | null
@@ -6542,6 +6553,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           assigned_user_id?: string | null
           closed_lost_reason?: string | null
           closed_won_reason?: string | null
@@ -9434,6 +9446,7 @@ export type Database = {
       }
       leads: {
         Row: {
+          assigned_to: string | null
           assigned_user_id: string | null
           company_id: string | null
           company_name: string | null
@@ -9468,6 +9481,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           assigned_user_id?: string | null
           company_id?: string | null
           company_name?: string | null
@@ -9502,6 +9516,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           assigned_user_id?: string | null
           company_id?: string | null
           company_name?: string | null
