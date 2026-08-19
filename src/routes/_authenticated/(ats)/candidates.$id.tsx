@@ -33,6 +33,7 @@ import {
   type CandidateDetail,
 } from "@/lib/ats/candidate-detail.functions";
 import { saveAtsCandidate, deleteAtsCandidate } from "@/lib/ats/ats.functions";
+import { formatValidationError } from "@/lib/validation-message";
 import {
   AboutBlock,
   CaptureMetaBlock,
@@ -381,7 +382,7 @@ function PropertiesPanel({
       });
       toast.success("Atualizado");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+      toast.error(formatValidationError(e, "Erro ao salvar"));
     } finally {
       setSaving(false);
     }
