@@ -178,10 +178,10 @@ function ProjectTasksPage() {
             <SelectItem value="mine">Minhas tarefas</SelectItem>
           </SelectContent>
         </Select>
+        <ViewModeToggle value={view} onChange={setView} />
       </div>
 
-
-      {selection.hasSelection && (
+      {view === "table" && selection.hasSelection && (
         <GridBulkBar
           table="project_tasks"
           ids={selection.ids}
