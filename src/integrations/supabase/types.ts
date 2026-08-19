@@ -19686,6 +19686,7 @@ export type Database = {
         Args: { _candidate_id: string }
         Returns: undefined
       }
+      backfill_activities_assigned_to_batch: { Args: never; Returns: number }
       can_access_ats_job: { Args: { _job_id: string }; Returns: boolean }
       can_manage_access_scope: { Args: { _owner: string }; Returns: boolean }
       can_manage_person: { Args: { _person_id: string }; Returns: boolean }
