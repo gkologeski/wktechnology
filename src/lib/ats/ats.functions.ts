@@ -421,12 +421,33 @@ const EducationEntrySchema = z.object({
   end: z.string().trim().max(40).optional().default(""),
 });
 
+// Origens conhecidas + tolerância a valores legados já gravados no banco
+// (cv_pdf, linkedin_apply, linkedin_extension, linkedin_unipile_search, ...).
+const CandidateSourceSchema = z
+  .string()
+  .trim()
+  .max(60)
+  .optional()
+  .transform((v) => (v && v.length > 0 ? v : "manual"));
+
+// Aceita endereços sem protocolo ("www.linkedin.com/in/x") normalizando para https.
+const LinkedinUrlSchema = z
+  .preprocess((v) => {
+    if (typeof v !== "string") return v;
+    const t = v.trim();
+    if (!t) return "";
+    if (/^https?:\/\//i.test(t)) return t;
+    return `https://${t.replace(/^\/+/, "")}`;
+  }, z.string().url({ message: "LinkedIn inválido" }).max(500).or(z.literal("")))
+  .optional()
+  .nullable();
+
 const CandidateSaveSchema = z.object({
   id: z.string().uuid().optional(),
   full_name: z.string().trim().min(1).max(200),
   email: z.string().trim().email().max(255).optional().nullable().or(z.literal("")),
   phone: z.string().max(40).optional().nullable(),
-  linkedin_url: z.string().url().max(500).optional().nullable().or(z.literal("")),
+  linkedin_url: LinkedinUrlSchema,
   location: z.string().max(120).optional().nullable(),
   current_position: z.string().max(200).optional().nullable(),
   current_company: z.string().max(200).optional().nullable(),
@@ -434,7 +455,7 @@ const CandidateSaveSchema = z.object({
   tags: z.array(z.string().max(40)).max(20).optional(),
   experiences: z.array(ExperienceEntrySchema).max(20).optional(),
   education: z.array(EducationEntrySchema).max(20).optional(),
-  source: z.enum(["manual", "career_page", "linkedin_easy_apply", "referral", "import"]).default("manual"),
+  source: CandidateSourceSchema,
   notes: z.string().max(5000).optional().nullable(),
 });
 
@@ -607,9 +628,7 @@ export const addApplication = createServerFn({ method: "POST" })
       .object({
         jobId: z.string().uuid(),
         candidateId: z.string().uuid(),
-        source: z
-          .enum(["manual", "career_page", "linkedin_easy_apply", "referral", "import"])
-          .default("manual"),
+        source: CandidateSourceSchema,
       })
       .parse(d),
   )
