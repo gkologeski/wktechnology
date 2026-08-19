@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { FileSignature, Send, X, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -18,6 +19,10 @@ import { cn } from "@/lib/utils";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeader, EmptyState, Skeletons, MetaPill } from "@/components/techhire/ui";
 import { listOffers, sendOffer, cancelOffer, deleteOffer } from "@/lib/ats/offers.functions";
+import { useGridSelection, idQueryFor } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+
 
 export const Route = createFileRoute("/_authenticated/(ats)/offers")({
   component: OffersPage,
