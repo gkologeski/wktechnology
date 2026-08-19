@@ -2,7 +2,7 @@
 // Desacopla o menu de "Tarefas" do domínio de Sales (`activities` em /tasks).
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ListTodo, Search } from "lucide-react";
 
@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,10 @@ import {
 } from "@/components/ui/table";
 import { formatDateTime } from "@/lib/crm";
 import { listAllProjectTasks, listProjects } from "@/lib/projects.functions";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+
 
 export const Route = createFileRoute("/_authenticated/projects/tasks")({
   head: () => ({
@@ -59,6 +64,7 @@ type StatusFilter = "all" | "todo" | "doing" | "review" | "done";
 type OwnerFilter = "all" | "mine";
 
 function ProjectTasksPage() {
+  const qc = useQueryClient();
   const listTasksFn = useServerFn(listAllProjectTasks);
   const listProjectsFn = useServerFn(listProjects);
   const [search, setSearch] = useState("");
@@ -72,8 +78,9 @@ function ProjectTasksPage() {
     staleTime: 60_000,
   });
 
+  const tasksKey = ["project_tasks", "all", { status, projectId, owner, search }] as const;
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["project_tasks", "all", { status, projectId, owner, search }],
+    queryKey: tasksKey,
     queryFn: () =>
       listTasksFn({
         data: {
@@ -93,6 +100,21 @@ function ProjectTasksPage() {
       })),
     [projectsQ.data],
   );
+
+  // Seleção múltipla / ações em massa (padrão de grids — Fase 4).
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(rows as Array<(typeof rows)[number] & { id: string }>);
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((t) => t.id)));
+  const canUpdate = canAny([
+    "techprojects.tasks.update.workspace",
+    "techprojects.tasks.update.team",
+    "techprojects.tasks.update.own",
+  ]);
+  const canDelete = canAny([
+    "techprojects.tasks.delete.workspace",
+    "techprojects.tasks.delete.own",
+  ]);
+
 
   return (
     <div className="p-6 space-y-5">
@@ -150,6 +172,43 @@ function ProjectTasksPage() {
         </Select>
       </div>
 
+
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="project_tasks"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="tarefa(s)"
+          onClear={selection.clear}
+          onDone={() => void qc.invalidateQueries({ queryKey: ["project_tasks"] })}
+          totalMatching={rows.length}
+          onSelectAll={selectAllFiltered}
+          assignColumn={canUpdate ? "assignee_id" : null}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          bulkEditFields={[
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+            },
+            {
+              name: "priority",
+              label: "Prioridade",
+              type: "select",
+              options: [
+                { value: "low", label: "Baixa" },
+                { value: "normal", label: "Normal" },
+                { value: "high", label: "Alta" },
+                { value: "urgent", label: "Urgente" },
+              ],
+            },
+            { name: "due_at", label: "Prazo", type: "date" },
+          ]}
+        />
+      )}
+
       <div className="rounded-lg border bg-card">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
@@ -168,6 +227,19 @@ function ProjectTasksPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={
+                      selection.allOnPageSelected
+                        ? true
+                        : selection.someOnPageSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={() => selection.toggleAllOnPage()}
+                    aria-label="Selecionar todas as tarefas da página"
+                  />
+                </TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Projeto</TableHead>
                 <TableHead>Status</TableHead>
@@ -179,8 +251,16 @@ function ProjectTasksPage() {
               {rows.map((t) => {
                 const project = (t as { projects?: { id: string; name: string } }).projects;
                 return (
-                  <TableRow key={t.id}>
+                  <TableRow key={t.id} data-state={selection.isSelected(t.id) ? "selected" : undefined}>
                     <TableCell>
+                      <Checkbox
+                        checked={selection.isSelected(t.id)}
+                        onCheckedChange={() => selection.toggleOne(t.id)}
+                        aria-label={`Selecionar tarefa ${t.title}`}
+                      />
+                    </TableCell>
+                    <TableCell>
+
                       {project ? (
                         <Link
                           to="/projects/$id"
