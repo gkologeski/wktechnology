@@ -53,8 +53,41 @@ import {
 } from "@/lib/invoices.functions";
 import { issueNfse } from "@/lib/nfse.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
+
+const INVOICE_STATUSES = [
+  "draft",
+  "open",
+  "paid",
+  "overdue",
+  "cancelled",
+  "refunded",
+] as const;
+
+const STATUS_LABEL: Record<string, string> = {
+  draft: "Rascunho",
+  open: "Em aberto",
+  paid: "Paga",
+  overdue: "Vencida",
+  cancelled: "Cancelada",
+  refunded: "Reembolsada",
+};
+
+// Status vem do gateway de pagamento — quadro somente leitura (sem "Mover para").
+const STATUS_DOT: Record<string, string> = {
+  draft: "bg-muted-foreground/40",
+  open: "bg-primary",
+  paid: "bg-emerald-500",
+  overdue: "bg-destructive",
+  cancelled: "bg-muted-foreground/40",
+  refunded: "bg-amber-500",
+};
 
 export const Route = createFileRoute("/_authenticated/invoices")({
+  validateSearch: (search: Record<string, unknown>): { view: "table" | "kanban" } => ({
+    view: search.view === "kanban" ? "kanban" : "table",
+  }),
   component: InvoicesPage,
 });
 
@@ -83,7 +116,10 @@ function InvoicesPage() {
   >("all");
   const [openCreate, setOpenCreate] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { view } = Route.useSearch();
+  const navigate = Route.useNavigate();
+
+  const { data, isLoading, error } = useQuery({
     queryKey: ["invoices", status, search],
     queryFn: () =>
       list({ data: { status, search: search || undefined, limit: 200, gateway: "all" } }),
@@ -182,9 +218,52 @@ function InvoicesPage() {
                 <SelectItem value="refunded">Reembolsadas</SelectItem>
               </SelectContent>
             </Select>
+            <ViewModeToggle
+              value={view}
+              onChange={(v) => void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) })}
+            />
           </div>
         </CardHeader>
         <CardContent>
+          {view === "kanban" ? (
+            <KanbanBoard
+              rows={data?.invoices ?? []}
+              table="customer_invoices"
+              stageField="status"
+              readOnly
+              isLoading={isLoading}
+              error={error}
+              ariaLabel="Quadro de faturas por status"
+              columns={INVOICE_STATUSES.map((s) => ({
+                value: s,
+                label: STATUS_LABEL[s] ?? s,
+                tone: STATUS_DOT[s],
+              }))}
+              emptyState={
+                <p className="p-12 text-center text-sm text-muted-foreground">
+                  Nenhuma fatura encontrada.
+                </p>
+              }
+              renderCard={(inv) => (
+                <div className="space-y-1.5">
+                  <p className="pr-6 text-sm font-medium">{inv.invoice_number}</p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="tabular-nums font-medium text-foreground">
+                      {Number(inv.amount).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: inv.currency || "BRL",
+                      })}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {formatDateTime(inv.due_date).split(" ")[0]}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{inv.gateway ?? "—"}</p>
+                </div>
+              )}
+            />
+          ) : (
+            <>
           {isLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -308,6 +387,8 @@ function InvoicesPage() {
                 ))}
               </TableBody>
             </Table>
+          )}
+            </>
           )}
         </CardContent>
       </Card>

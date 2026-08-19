@@ -17,12 +17,32 @@ import {
 import { listNfse } from "@/lib/nfse.functions";
 import { formatDateTime } from "@/lib/crm";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   LegalEntitySelect,
   useLegalEntityFilter,
   useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
+
+const NFSE_STATUSES = ["pending", "processing", "issued", "error", "cancelled"] as const;
+type NfseStatus = (typeof NFSE_STATUSES)[number];
 
 export const Route = createFileRoute("/_authenticated/finance/nfse")({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { view: "table" | "kanban"; status: NfseStatus | "all" } => ({
+    view: search.view === "kanban" ? "kanban" : "table",
+    status: NFSE_STATUSES.includes(search.status as NfseStatus)
+      ? (search.status as NfseStatus)
+      : "all",
+  }),
   head: () => ({ meta: [{ title: "NFS-e" }] }),
   component: NfseListPage,
 });
@@ -43,6 +63,16 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "Cancelada",
 };
 
+// Status vem do provedor fiscal — o quadro é somente leitura.
+const STATUS_DOT: Record<string, string> = {
+  pending: "bg-muted-foreground/40",
+  processing: "bg-amber-500",
+  issued: "bg-emerald-500",
+  error: "bg-destructive",
+  cancelled: "bg-muted-foreground/40",
+};
+
+
 type NfseRow = {
   id: string;
   status: string;
@@ -62,12 +92,15 @@ function NfseListPage() {
   const list = useServerFn(listNfse);
   const [legalEntityId, setLegalEntityId] = useLegalEntityFilter();
   const filterInput = useLegalEntityFilterInput(legalEntityId);
-  const { data, isLoading } = useQuery({
+  const { view, status } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const { data, isLoading, error } = useQuery({
     queryKey: ["nfse-invoices", legalEntityId, JSON.stringify(filterInput)],
     queryFn: () => list({ data: filterInput }) as Promise<{ items: NfseRow[] }>,
   });
 
-  const items = data?.items ?? [];
+  const allItems = data?.items ?? [];
+  const items = status === "all" ? allItems : allItems.filter((n) => n.status === status);
 
   return (
     <div className="space-y-4 p-6">
@@ -75,14 +108,89 @@ function NfseListPage() {
         title="NFS-e"
         description="Notas fiscais de serviço emitidas pela plataforma."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Select
+              value={status}
+              onValueChange={(v) =>
+                void navigate({ to: ".", search: (prev) => ({ ...prev, status: v as NfseStatus }) })
+              }
+            >
+              <SelectTrigger className="w-[180px]" aria-label="Filtrar por status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os status</SelectItem>
+                {NFSE_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {STATUS_LABEL[s]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
+            <ViewModeToggle
+              value={view}
+              onChange={(v) => void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) })}
+            />
             <Button asChild variant="outline">
               <Link to="/settings/nfse">Configurações</Link>
             </Button>
           </div>
         }
       />
+
+      {view === "kanban" && (
+        <KanbanBoard
+          rows={items}
+          table="nfse_invoices"
+          stageField="status"
+          readOnly
+          isLoading={isLoading}
+          error={error}
+          ariaLabel="Quadro de NFS-e por status"
+          columns={NFSE_STATUSES.map((s) => ({
+            value: s,
+            label: STATUS_LABEL[s] ?? s,
+            tone: STATUS_DOT[s],
+          }))}
+          emptyState={
+            <p className="p-12 text-center text-sm text-muted-foreground">
+              Nenhuma NFS-e emitida. Emita a partir de uma fatura em "Faturas".
+            </p>
+          }
+          renderCard={(n) => (
+            <div className="space-y-1.5">
+              <p className="pr-6 text-sm font-medium">
+                {n.customer_invoices?.invoice_number ?? "Sem fatura"}
+              </p>
+              <p className="font-mono text-xs text-muted-foreground">
+                {n.nf_number ?? n.rps_number ?? "—"}
+              </p>
+              <div className="flex items-center justify-between text-xs">
+                <span className="tabular-nums font-medium text-foreground">
+                  {n.amount != null
+                    ? Number(n.amount).toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })
+                    : "—"}
+                </span>
+                <span className="text-muted-foreground">
+                  {formatDateTime(n.issued_at ?? n.created_at).split(" ")[0]}
+                </span>
+              </div>
+              {n.error_message && (
+                <p className="truncate text-xs text-destructive" title={n.error_message}>
+                  {n.error_message}
+                </p>
+              )}
+            </div>
+          )}
+        />
+      )}
+
+      {view === "table" && (
+
 
       <Card>
         <CardHeader className="pb-3">
@@ -176,6 +284,8 @@ function NfseListPage() {
           )}
         </CardContent>
       </Card>
+      )}
+
     </div>
   );
 }
