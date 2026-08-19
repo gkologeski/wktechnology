@@ -294,7 +294,9 @@ export const saveAtsJob = createServerFn({ method: "POST" })
 
     const { data: inserted, error } = await supabase
       .from("ats_jobs")
-      .insert({ ...base, slug } as never)
+      // Novas vagas assumem o usuário atual como responsável (assigned_to);
+      // owner_id continua registrando a autoria.
+      .insert({ ...base, slug, assigned_to: userId } as never)
       .select("id, status")
       .single();
     if (error) throw new Error(error.message);
