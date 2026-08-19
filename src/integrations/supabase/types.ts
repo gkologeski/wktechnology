@@ -6476,6 +6476,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          assigned_to: string | null
           assigned_user_id: string | null
           closed_lost_reason: string | null
           closed_won_reason: string | null
@@ -6509,6 +6510,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assigned_to?: string | null
           assigned_user_id?: string | null
           closed_lost_reason?: string | null
           closed_won_reason?: string | null
@@ -6542,6 +6544,7 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assigned_to?: string | null
           assigned_user_id?: string | null
           closed_lost_reason?: string | null
           closed_won_reason?: string | null
