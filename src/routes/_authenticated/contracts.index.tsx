@@ -60,14 +60,19 @@ import {
 import { ContractsBulkBar } from "@/components/contracts/contracts-bulk-bar";
 import { useCanDelete } from "@/lib/access-control/use-can-delete";
 import { Checkbox } from "@/components/ui/checkbox";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle, type ListViewMode } from "@/components/kanban/view-mode-toggle";
 
 type GroupBy = "none" | "company" | "service" | "job_profile" | "seniority";
+
 
 const GROUP_BY_VALUES: GroupBy[] = ["none", "company", "service", "job_profile", "seniority"];
 const PAGE_SIZES = [25, 50, 100, 200];
 
 type ContractSearch = {
+  view?: ListViewMode;
   groupBy: GroupBy;
+
   page: number;
   pageSize: number;
   q: string;
@@ -96,6 +101,7 @@ export const Route = createFileRoute("/_authenticated/contracts/")({
       ? (raw as GroupBy)
       : "none";
     return {
+      view: search["view"] === "kanban" ? "kanban" : "table",
       groupBy,
       page: num(search["page"], 1),
       pageSize: num(search["pageSize"], 50),
@@ -132,7 +138,20 @@ const STATUS_LABEL: Record<string, string> = {
   terminated: "Rescindido",
 };
 
+// Tons por status usando tokens semânticos.
+const CONTRACT_KANBAN_TONE: Record<string, string> = {
+  draft: "bg-muted-foreground/40",
+  in_review: "bg-primary/40",
+  in_negotiation: "bg-primary/60",
+  awaiting_signature: "bg-primary",
+  active: "bg-emerald-500",
+  renewing: "bg-amber-500",
+  ended: "bg-muted-foreground/60",
+  terminated: "bg-destructive",
+};
+
 const ROLE_LABEL: Record<string, string> = { provider: "Prestação", client: "Compra" };
+
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const plusDays = (days: number) => {
@@ -439,6 +458,11 @@ function ContractsPage() {
           value={sp.assignee || ASSIGNEE_ALL}
           onChange={(next) => setFilter({ assignee: next })}
         />
+        <ViewModeToggle
+          value={sp.view ?? "table"}
+          onChange={(v) => navigate({ search: (prev) => ({ ...prev, view: v }) })}
+        />
+
 
         <Popover open={openFilters} onOpenChange={setOpenFilters}>
           <PopoverTrigger asChild>
@@ -700,10 +724,46 @@ function ContractsPage() {
             </p>
           )}
 
-          {sp.groupBy === "none" ? (
+          {(sp.view ?? "table") === "kanban" ? (
+            <KanbanBoard
+              rows={rows as Array<ContractRow & { id: string }>}
+              table="contracts"
+              stageField="status"
+              readOnly
+              ariaLabel="Quadro de contratos por status"
+              columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
+                value,
+                label,
+                tone: CONTRACT_KANBAN_TONE[value],
+              }))}
+              renderCard={(c) => (
+                <div className="space-y-1">
+                  <Link
+                    to="/contracts/$id"
+                    params={{ id: c.id }}
+                    className="block text-sm font-medium hover:underline"
+                  >
+                    {c.title}
+                  </Link>
+                  <p className="text-xs text-muted-foreground">
+                    {ROLE_LABEL[c.role as string] ?? c.role}
+                    {c.number ? ` · ${c.number}` : ""}
+                  </p>
+                  {c.starts_at ? (
+                    <p className="text-xs text-muted-foreground">
+                      Início {new Date(c.starts_at).toLocaleDateString("pt-BR")}
+                    </p>
+                  ) : null}
+
+
+                </div>
+              )}
+            />
+          ) : sp.groupBy === "none" ? (
             <div className="rounded-lg border bg-card">
               <ContractsTable rows={rows} selection={selection} editable nestLinks={nestLinks} />
             </div>
+
           ) : (
             <ContractsGroupedList
               rows={rows}

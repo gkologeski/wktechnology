@@ -31,7 +31,7 @@ export type KanbanColumn = {
 
 export type KanbanBoardProps<T extends { id: string }> = {
   rows: T[];
-  /** Tabela usada no update de etapa. Ignorada quando `readOnly`. */
+  /** Tabela usada no update de etapa. Ignorada quando `readOnly` ou `onMove`. */
   table: string;
   /** Coluna de etapa/status na tabela. */
   stageField: string;
@@ -43,11 +43,17 @@ export type KanbanBoardProps<T extends { id: string }> = {
   readOnly?: boolean;
   /** Guarda de RBAC na UI; a RLS ainda valida no banco. */
   canUpdate?: boolean;
+  /**
+   * Update customizado da etapa (ex.: server function com regras próprias).
+   * Quando informado, substitui o update direto na tabela.
+   */
+  onMove?: (id: string, stage: string) => Promise<void> | void;
   isLoading?: boolean;
   error?: unknown;
   emptyState?: ReactNode;
   ariaLabel?: string;
 };
+
 
 export function KanbanBoard<T extends { id: string }>({
   rows,
@@ -58,6 +64,7 @@ export function KanbanBoard<T extends { id: string }>({
   invalidateKeys,
   readOnly = false,
   canUpdate = true,
+  onMove,
   isLoading = false,
   error,
   emptyState,
@@ -80,6 +87,10 @@ export function KanbanBoard<T extends { id: string }>({
     if (current && current[stageField] === stage) return;
     setMovingId(id);
     try {
+      if (onMove) {
+        await onMove(id, stage);
+        return;
+      }
       // Cast do client inteiro: `table` é dinâmico e a inferência de tipos do
       // supabase-js por string literal fica proibitivamente lenta aqui.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -95,6 +106,7 @@ export function KanbanBoard<T extends { id: string }>({
       if (deniedIfUnaffected(data, "mover este registro")) return;
       toast.success("Etapa atualizada");
       invalidate();
+
     } finally {
       setMovingId(null);
     }
