@@ -362,6 +362,7 @@ function ProjectTasksPage() {
           </Table>
         )}
       </div>
+      )}
     </div>
   );
 }
