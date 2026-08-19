@@ -628,9 +628,7 @@ export const addApplication = createServerFn({ method: "POST" })
       .object({
         jobId: z.string().uuid(),
         candidateId: z.string().uuid(),
-        source: z
-          .enum(["manual", "career_page", "linkedin_easy_apply", "referral", "import"])
-          .default("manual"),
+        source: CandidateSourceSchema,
       })
       .parse(d),
   )
