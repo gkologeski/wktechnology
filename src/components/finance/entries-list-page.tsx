@@ -275,6 +275,13 @@ export function EntriesListPage({
                 return (
                   <TableRow key={e.id}>
                     <TableCell>
+                      <Checkbox
+                        aria-label={`Selecionar lançamento ${e.description}`}
+                        checked={selection.selectedIds.has(e.id)}
+                        onCheckedChange={() => selection.toggleOne(e.id)}
+                      />
+                    </TableCell>
+                    <TableCell>
                       <Link
                         to="/finance/entries/$id"
                         params={{ id: e.id }}
