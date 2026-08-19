@@ -31,6 +31,8 @@ import { listAllProjectTasks, listProjects } from "@/lib/projects.functions";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 
 export const Route = createFileRoute("/_authenticated/projects/tasks")({
