@@ -35,6 +35,10 @@ import {
 import { downloadCsv, toCsv } from "@/lib/csv-export";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 const STATUS_LABEL: Record<string, string> = {
   open: "Em aberto",
@@ -74,7 +78,14 @@ export function EntriesListPage({
 
   const filterInput = useLegalEntityFilterInput(legalEntityId);
   const { data: allRows = [], isLoading } = useQuery({
-    queryKey: ["finance-entries", direction, status, search, legalEntityId, JSON.stringify(filterInput)],
+    queryKey: [
+      "finance-entries",
+      direction,
+      status,
+      search,
+      legalEntityId,
+      JSON.stringify(filterInput),
+    ],
     queryFn: () =>
       list({
         data: {
@@ -92,13 +103,22 @@ export function EntriesListPage({
   const rows = useMemo(() => filterRows(allRows as Entry[]), [allRows, filterRows]);
 
   const total = useMemo(
-    () =>
-      rows.reduce(
-        (acc, r) => acc + (Number(r.amount) - Number(r.paid_amount ?? 0)),
-        0,
-      ),
+    () => rows.reduce((acc, r) => acc + (Number(r.amount) - Number(r.paid_amount ?? 0)), 0),
     [rows],
   );
+
+  // Seleção múltipla / ações em massa (padrão de grids).
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(
+    rows as unknown as Array<Record<string, unknown> & { id: string }>,
+  );
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
+  const canUpdateEntries = canAny([
+    "techfinance.entries.manage.workspace",
+    "techfinance.entries.update.workspace",
+    "techfinance.entries.update.team",
+    "techfinance.entries.update.own",
+  ]);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["finance-entries", direction] });
@@ -132,7 +152,10 @@ export function EntriesListPage({
                   { header: "Vencimento", value: (r) => r.due_date },
                   { header: "Competência", value: (r) => r.competence_date ?? "" },
                 ]);
-                downloadCsv(`financeiro-${direction}-${new Date().toISOString().slice(0, 10)}`, csv);
+                downloadCsv(
+                  `financeiro-${direction}-${new Date().toISOString().slice(0, 10)}`,
+                  csv,
+                );
               }}
             >
               <Download className="h-4 w-4 mr-1" /> Exportar CSV
@@ -177,6 +200,38 @@ export function EntriesListPage({
         </div>
       </div>
 
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="financial_entries"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="lançamento(s)"
+          onClear={selection.clear}
+          onDone={() => {
+            selection.clear();
+            invalidate();
+          }}
+          totalMatching={rows.length}
+          onSelectAll={selectAllFiltered}
+          canUpdate={canUpdateEntries}
+          canDelete={canAny([
+            "techfinance.entries.manage.workspace",
+            "techfinance.entries.delete.workspace",
+            "techfinance.entries.delete.own",
+          ])}
+          bulkEditFields={[
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+            },
+            { name: "due_date", label: "Vencimento", type: "date" },
+            { name: "competence_date", label: "Competência", type: "date" },
+          ]}
+        />
+      )}
+
       <div className="rounded-lg border bg-card">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
@@ -195,6 +250,19 @@ export function EntriesListPage({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    aria-label="Selecionar todos os lançamentos exibidos"
+                    checked={
+                      selection.allOnPageSelected
+                        ? true
+                        : selection.someOnPageSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={selection.toggleAllOnPage}
+                  />
+                </TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Contraparte</TableHead>
                 <TableHead>Categoria</TableHead>
@@ -212,6 +280,13 @@ export function EntriesListPage({
                 const paid = e.status === "paid" || e.status === "cancelled";
                 return (
                   <TableRow key={e.id}>
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Selecionar lançamento ${e.description}`}
+                        checked={selection.selectedIds.has(e.id)}
+                        onCheckedChange={() => selection.toggleOne(e.id)}
+                      />
+                    </TableCell>
                     <TableCell>
                       <Link
                         to="/finance/entries/$id"
@@ -248,7 +323,9 @@ export function EntriesListPage({
                       {formatDateTime(e.due_date).split(" ")[0]}
                     </TableCell>
                     <TableCell>
-                      <AssigneeCell assignedTo={(e as { assigned_to?: string | null }).assigned_to} />
+                      <AssigneeCell
+                        assignedTo={(e as { assigned_to?: string | null }).assigned_to}
+                      />
                     </TableCell>
                     <TableCell className="text-right">
                       {!paid && (
