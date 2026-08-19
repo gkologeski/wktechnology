@@ -36,7 +36,11 @@ export const Route = createFileRoute("/_authenticated/services/")({
   head: () => ({
     meta: [
       { title: "Serviços em execução" },
-      { name: "description", content: "Serviços em execução vinculados a contratos, com cadência de faturamento e entrega." },
+      {
+        name: "description",
+        content:
+          "Serviços em execução vinculados a contratos, com cadência de faturamento e entrega.",
+      },
     ],
   }),
   component: ServicesPage,
@@ -153,15 +157,7 @@ function ServicesPage() {
   const grid = useGridColumns<ServiceRow>({
     gridKey: "services",
     columns: allColumns,
-    defaults: [
-      "name",
-      "contract",
-      "type",
-      "status",
-      "amount",
-      "next_billing_at",
-      "assigned_to",
-    ],
+    defaults: ["name", "contract", "type", "status", "amount", "next_billing_at", "assigned_to"],
   });
 
   const selection = useGridSelection(rows, {
@@ -193,20 +189,28 @@ function ServicesPage() {
           />
         </div>
         <Select value={type} onValueChange={setType}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Tipo" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os tipos</SelectItem>
             {Object.entries(TYPE_LABEL).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+              <SelectItem key={k} value={k}>
+                {v}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os status</SelectItem>
             {Object.entries(STATUS_LABEL).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+              <SelectItem key={k} value={k}>
+                {v}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -234,7 +238,6 @@ function ServicesPage() {
             "techservice.services.delete.own",
             "techsales.catalog.services.delete.workspace",
           ])}
-
           bulkEditFields={[
             {
               name: "status",
@@ -261,7 +264,8 @@ function ServicesPage() {
             <Package className="mx-auto h-10 w-10 text-muted-foreground" />
             <h3 className="mt-4 text-lg font-medium">Nenhum serviço ainda</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Crie serviços dentro de um contrato. O motor de billing gera automaticamente as contas conforme a cadência.
+              Crie serviços dentro de um contrato. O motor de billing gera automaticamente as contas
+              conforme a cadência.
             </p>
           </div>
         ) : (
@@ -290,7 +294,10 @@ function ServicesPage() {
             </TableHeader>
             <TableBody>
               {rows.map((s) => (
-                <TableRow key={s.id} data-state={selection.isSelected(s.id) ? "selected" : undefined}>
+                <TableRow
+                  key={s.id}
+                  data-state={selection.isSelected(s.id) ? "selected" : undefined}
+                >
                   <TableCell>
                     <Checkbox
                       aria-label="Selecionar serviço"

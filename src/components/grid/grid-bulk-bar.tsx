@@ -179,7 +179,6 @@ export function GridBulkBar<T extends { id: string }>({
         onConfirm={async () => {
           await bulkDelete();
         }}
-
       />
     </>
   );

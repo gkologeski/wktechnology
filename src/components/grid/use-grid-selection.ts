@@ -81,7 +81,10 @@ export function useGridSelection<T extends { id: string }>(
   }, [buildIdQuery, maxIds]);
 
   const ids = useMemo(() => Array.from(selectedIds), [selectedIds]);
-  const selectedRows = useMemo(() => rows.filter((r) => selectedIds.has(r.id)), [rows, selectedIds]);
+  const selectedRows = useMemo(
+    () => rows.filter((r) => selectedIds.has(r.id)),
+    [rows, selectedIds],
+  );
 
   return {
     selectedIds,

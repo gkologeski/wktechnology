@@ -23,7 +23,6 @@ import { useGridSelection, idQueryFor } from "@/components/grid/use-grid-selecti
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 
-
 export const Route = createFileRoute("/_authenticated/(ats)/offers")({
   component: OffersPage,
 });
@@ -97,7 +96,6 @@ function OffersPage() {
   const { canAny } = usePermissions();
   const selection = useGridSelection(rows, { buildIdQuery: idQueryFor("ats_offers") });
 
-
   const reload = useCallback(async () => {
     setLoading(true);
     try {
@@ -168,14 +166,8 @@ function OffersPage() {
           totalMatching={rows.length}
           onSelectAll={selection.selectAllMatching}
           isSelectingAll={selection.isSelectingAll}
-          canUpdate={canAny([
-            "techhire.offers.update.workspace",
-            "techhire.offers.update.own",
-          ])}
-          canDelete={canAny([
-            "techhire.offers.delete.workspace",
-            "techhire.offers.delete.own",
-          ])}
+          canUpdate={canAny(["techhire.offers.update.workspace", "techhire.offers.update.own"])}
+          canDelete={canAny(["techhire.offers.delete.workspace", "techhire.offers.delete.own"])}
         />
       )}
 
