@@ -168,10 +168,65 @@ function PeoplePage() {
         <AssigneeFilter value={assignee} onChange={setAssignee} className="w-full sm:w-56" />
       </div>
 
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="people"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="pessoa(s)"
+          onClear={selection.clear}
+          onDone={() => void qc.invalidateQueries({ queryKey: ["people"] })}
+          totalMatching={rows.length}
+          onSelectAll={selectAllFiltered}
+          canUpdate={canAny([
+            "techpeople.people.update.workspace",
+            "techpeople.people.update.team",
+            "techpeople.people.update.own",
+          ])}
+          canDelete={canAny([
+            "techpeople.people.delete.workspace",
+            "techpeople.people.delete.own",
+          ])}
+          bulkEditFields={[
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: PEOPLE_STATUSES.map((s) => ({ value: s, label: PEOPLE_STATUS_LABELS[s] })),
+            },
+            {
+              name: "employment_type",
+              label: "Vínculo",
+              type: "select",
+              options: PEOPLE_EMPLOYMENT_TYPES.map((t) => ({
+                value: t,
+                label: PEOPLE_EMPLOYMENT_LABELS[t],
+              })),
+            },
+            { name: "role_title", label: "Cargo / posição", type: "text" },
+            { name: "seniority", label: "Senioridade", type: "text" },
+            { name: "location", label: "Localização", type: "text" },
+          ]}
+        />
+      )}
+
       <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  aria-label="Selecionar todas as pessoas exibidas"
+                  checked={
+                    selection.allOnPageSelected
+                      ? true
+                      : selection.someOnPageSelected
+                        ? "indeterminate"
+                        : false
+                  }
+                  onCheckedChange={selection.toggleAllOnPage}
+                />
+              </TableHead>
               <TableHead>Pessoa</TableHead>
               <TableHead>Cargo</TableHead>
               <TableHead>Vínculo</TableHead>
