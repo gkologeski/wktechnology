@@ -124,7 +124,7 @@ function ProjectTasksPage() {
   const setView = (v: "table" | "kanban") =>
     void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
 
-
+  return (
     <div className="p-6 space-y-5">
       <PageHeader
         title="Tarefas de projetos"
