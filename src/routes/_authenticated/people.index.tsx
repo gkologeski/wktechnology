@@ -264,6 +264,13 @@ function PeoplePage() {
               rows.map((p) => (
                 <TableRow key={p.id} className="hover:bg-muted/40">
                   <TableCell>
+                    <Checkbox
+                      aria-label={`Selecionar ${p.full_name}`}
+                      checked={selection.selectedIds.has(p.id)}
+                      onCheckedChange={() => selection.toggleOne(p.id)}
+                    />
+                  </TableCell>
+                  <TableCell>
                     <Link
                       to="/people/$id"
                       params={{ id: p.id }}
