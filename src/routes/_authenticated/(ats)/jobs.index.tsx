@@ -901,47 +901,50 @@ function AtsJobsPage() {
                     </TableCell>
                     <TableCell className="font-medium">
                       <Link
-
-                      to="/jobs/$id"
-                      params={{ id: j.id }}
-                      className="text-text-primary hover:underline inline-flex items-center gap-1"
-                    >
-                      {j.title}
-                      <ExternalLink
-                        className="h-3 w-3 opacity-0 group-hover:opacity-60"
-                        aria-hidden
+                        to="/jobs/$id"
+                        params={{ id: j.id }}
+                        className="text-text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        {j.title}
+                        <ExternalLink
+                          className="h-3 w-3 opacity-0 group-hover:opacity-60"
+                          aria-hidden
+                        />
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        status={STATUS_TO_BADGE[j.status] ?? "draft"}
+                        label={STATUS_LABEL[j.status] ?? j.status}
                       />
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge
-                      status={STATUS_TO_BADGE[j.status] ?? "draft"}
-                      label={STATUS_LABEL[j.status] ?? j.status}
-                    />
-                  </TableCell>
-                  <TableCell className="text-text-secondary text-sm">
-                    {j.seniority ? SENIORITY_LABEL[j.seniority] ?? j.seniority : "—"}
-                  </TableCell>
-                  <TableCell className="text-text-secondary text-sm">
-                    {j.remote_mode ? REMOTE_LABEL[j.remote_mode] ?? j.remote_mode : "—"}
-                  </TableCell>
-                  <TableCell className="text-text-secondary text-sm">
-                    {j.location ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-text-secondary text-sm">
-                    {(j as { department?: string | null }).department ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    <AssigneeCell assignedTo={(j as { assigned_to?: string | null }).assigned_to} />
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums font-medium">
-                    {j.active_applications}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                    </TableCell>
+                    <TableCell className="text-text-secondary text-sm">
+                      {j.seniority ? SENIORITY_LABEL[j.seniority] ?? j.seniority : "—"}
+                    </TableCell>
+                    <TableCell className="text-text-secondary text-sm">
+                      {j.remote_mode ? REMOTE_LABEL[j.remote_mode] ?? j.remote_mode : "—"}
+                    </TableCell>
+                    <TableCell className="text-text-secondary text-sm">
+                      {j.location ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-text-secondary text-sm">
+                      {(j as { department?: string | null }).department ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      <AssigneeCell
+                        assignedTo={(j as { assigned_to?: string | null }).assigned_to}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums font-medium">
+                      {j.active_applications}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+
       ) : view === "kanban_status" ? (
         <KanbanScrollContainer ariaLabel="Vagas por status">
           <div className="flex gap-2 pb-4">
