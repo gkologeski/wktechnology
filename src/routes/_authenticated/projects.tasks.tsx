@@ -65,6 +65,14 @@ const STATUS_TONE: Record<string, string> = {
   done: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
 };
 
+// Tom dos "dots" das colunas do kanban (tokens semânticos).
+const KANBAN_TONE: Record<string, string> = {
+  todo: "bg-muted-foreground/40",
+  doing: "bg-primary",
+  review: "bg-amber-500",
+  done: "bg-emerald-500",
+};
+
 type StatusFilter = "all" | "todo" | "doing" | "review" | "done";
 type OwnerFilter = "all" | "mine";
 
