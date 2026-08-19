@@ -54,7 +54,6 @@ import {
 import { listAtsPipelines, ensureDefaultAtsPipeline } from "@/lib/ats/pipelines.functions";
 import { PipelineSelectNotice } from "@/components/ats/pipeline-select-notice";
 
-
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
 import {
   AtsPageHeader,
@@ -70,6 +69,10 @@ import { DealPicker } from "@/components/ats/deal-picker";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/")({
   component: AtsJobsPage,
@@ -248,7 +251,6 @@ function JobKanbanCard({
   );
 }
 
-
 function JobsGridSkeleton() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -266,7 +268,9 @@ function AtsJobsPage() {
   const updateJobDepartment = useServerFn(setAtsJobDepartment);
   const listPipelinesFn = useServerFn(listAtsPipelines);
   const ensureDefaultPipelineFn = useServerFn(ensureDefaultAtsPipeline);
-  const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
+  const [pipelines, setPipelines] = useState<
+    Array<{ id: string; name: string; is_default: boolean }>
+  >([]);
   const [pipelinesError, setPipelinesError] = useState<string | null>(null);
   const [pipelinesLoading, setPipelinesLoading] = useState(true);
 
@@ -282,13 +286,16 @@ function AtsJobsPage() {
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
   // filtro de pipeline (persistido por usuário): "all" = todos os pipelines
   const [pipelineFilter, setPipelineFilter] = useState<string>(() =>
-    typeof window !== "undefined"
-      ? (localStorage.getItem("jobs:pipeline") ?? "all")
-      : "all",
+    typeof window !== "undefined" ? (localStorage.getItem("jobs:pipeline") ?? "all") : "all",
   );
   const rows = filterRows(allRows).filter((r) =>
     pipelineFilter === "all" ? true : r.pipeline_id === pipelineFilter,
   );
+  // Seleção múltipla / em massa (padrão de grids — visão em tabela).
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(rows as Array<JobRow & { id: string }>);
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
+
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<ViewKind>(() =>
     typeof window !== "undefined"
@@ -352,7 +359,6 @@ function AtsJobsPage() {
   useEffect(() => {
     void loadPipelines();
   }, [loadPipelines]);
-
 
   useEffect(() => {
     if (typeof window !== "undefined") localStorage.setItem("jobs:view", view);
@@ -447,7 +453,9 @@ function AtsJobsPage() {
       >
         <span className="text-text-tertiary">Status:</span>
         <span>{STATUS_LABEL[status] ?? status}</span>
-        <span aria-hidden className="text-text-tertiary">×</span>
+        <span aria-hidden className="text-text-tertiary">
+          ×
+        </span>
         <span className="sr-only">Remover filtro de status</span>
       </button>
     ) : null;
@@ -461,7 +469,9 @@ function AtsJobsPage() {
     >
       <span className="text-text-tertiary">Pipeline:</span>
       <span>{selectedPipeline.name}</span>
-      <span aria-hidden className="text-text-tertiary">×</span>
+      <span aria-hidden className="text-text-tertiary">
+        ×
+      </span>
       <span className="sr-only">Remover filtro de pipeline</span>
     </button>
   ) : null;
@@ -513,169 +523,165 @@ function AtsJobsPage() {
             <Plus className="mr-1.5 h-4 w-4" /> Nova vaga
           </Button>
         </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Nova vaga</DialogTitle>
-        </DialogHeader>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2">
-            <Label htmlFor="job-title">Título *</Label>
-            <Input
-              id="job-title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Ex.: Desenvolvedor(a) Full Stack Pleno"
-            />
-          </div>
-          <div>
-            <Label htmlFor="job-seniority">Senioridade</Label>
-            <Select
-              value={form.seniority}
-              onValueChange={(v) => setForm({ ...form, seniority: v })}
-            >
-              <SelectTrigger id="job-seniority">
-                <SelectValue placeholder="—" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="intern">Estágio</SelectItem>
-                <SelectItem value="junior">Júnior</SelectItem>
-                <SelectItem value="mid">Pleno</SelectItem>
-                <SelectItem value="senior">Sênior</SelectItem>
-                <SelectItem value="lead">Líder</SelectItem>
-                <SelectItem value="principal">Principal</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="job-employment">Vínculo</Label>
-            <Select
-              value={form.employment_type}
-              onValueChange={(v) => setForm({ ...form, employment_type: v })}
-            >
-              <SelectTrigger id="job-employment">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="clt">CLT</SelectItem>
-                <SelectItem value="pj">PJ</SelectItem>
-                <SelectItem value="contract">Contrato</SelectItem>
-                <SelectItem value="internship">Estágio</SelectItem>
-                <SelectItem value="temporary">Temporário</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="job-remote">Modalidade</Label>
-            <Select
-              value={form.remote_mode}
-              onValueChange={(v) => setForm({ ...form, remote_mode: v })}
-            >
-              <SelectTrigger id="job-remote">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="onsite">Presencial</SelectItem>
-                <SelectItem value="hybrid">Híbrido</SelectItem>
-                <SelectItem value="remote">Remoto</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="job-location">Localização</Label>
-            <Input
-              id="job-location"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-              placeholder="Cidade, UF"
-            />
-          </div>
-          <div className="col-span-2">
-            <Label htmlFor="job-description">Descrição</Label>
-            <Textarea
-              id="job-description"
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-          </div>
-          <div className="col-span-2">
-            <Label htmlFor="job-requirements">Requisitos</Label>
-            <Textarea
-              id="job-requirements"
-              rows={3}
-              value={form.requirements}
-              onChange={(e) => setForm({ ...form, requirements: e.target.value })}
-            />
-          </div>
-          <div className="col-span-2">
-            <Label htmlFor="job-status">Status</Label>
-            <Select
-              value={form.status}
-              onValueChange={(v) => setForm({ ...form, status: v })}
-            >
-              <SelectTrigger id="job-status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ATS_JOB_STATUSES.map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="col-span-2">
-            <Label htmlFor="job-pipeline">Pipeline</Label>
-            <Select
-              value={form.pipeline_id}
-              onValueChange={(v) => setForm({ ...form, pipeline_id: v })}
-              disabled={pipelines.length === 0}
-            >
-              <SelectTrigger id="job-pipeline">
-                <SelectValue
-                  placeholder={pipelinesLoading ? "Carregando pipelines..." : "Selecionar pipeline"}
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {pipelines.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                    {p.is_default ? " (padrão)" : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!pipelinesLoading && (pipelinesError || pipelines.length === 0) ? (
-              <PipelineSelectNotice
-                error={pipelinesError}
-                onRetry={() => void loadPipelines()}
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Nova vaga</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <Label htmlFor="job-title">Título *</Label>
+              <Input
+                id="job-title"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="Ex.: Desenvolvedor(a) Full Stack Pleno"
               />
-            ) : (
+            </div>
+            <div>
+              <Label htmlFor="job-seniority">Senioridade</Label>
+              <Select
+                value={form.seniority}
+                onValueChange={(v) => setForm({ ...form, seniority: v })}
+              >
+                <SelectTrigger id="job-seniority">
+                  <SelectValue placeholder="—" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="intern">Estágio</SelectItem>
+                  <SelectItem value="junior">Júnior</SelectItem>
+                  <SelectItem value="mid">Pleno</SelectItem>
+                  <SelectItem value="senior">Sênior</SelectItem>
+                  <SelectItem value="lead">Líder</SelectItem>
+                  <SelectItem value="principal">Principal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="job-employment">Vínculo</Label>
+              <Select
+                value={form.employment_type}
+                onValueChange={(v) => setForm({ ...form, employment_type: v })}
+              >
+                <SelectTrigger id="job-employment">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="clt">CLT</SelectItem>
+                  <SelectItem value="pj">PJ</SelectItem>
+                  <SelectItem value="contract">Contrato</SelectItem>
+                  <SelectItem value="internship">Estágio</SelectItem>
+                  <SelectItem value="temporary">Temporário</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="job-remote">Modalidade</Label>
+              <Select
+                value={form.remote_mode}
+                onValueChange={(v) => setForm({ ...form, remote_mode: v })}
+              >
+                <SelectTrigger id="job-remote">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="onsite">Presencial</SelectItem>
+                  <SelectItem value="hybrid">Híbrido</SelectItem>
+                  <SelectItem value="remote">Remoto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="job-location">Localização</Label>
+              <Input
+                id="job-location"
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                placeholder="Cidade, UF"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="job-description">Descrição</Label>
+              <Textarea
+                id="job-description"
+                rows={3}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="job-requirements">Requisitos</Label>
+              <Textarea
+                id="job-requirements"
+                rows={3}
+                value={form.requirements}
+                onChange={(e) => setForm({ ...form, requirements: e.target.value })}
+              />
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="job-status">Status</Label>
+              <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
+                <SelectTrigger id="job-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ATS_JOB_STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="job-pipeline">Pipeline</Label>
+              <Select
+                value={form.pipeline_id}
+                onValueChange={(v) => setForm({ ...form, pipeline_id: v })}
+                disabled={pipelines.length === 0}
+              >
+                <SelectTrigger id="job-pipeline">
+                  <SelectValue
+                    placeholder={
+                      pipelinesLoading ? "Carregando pipelines..." : "Selecionar pipeline"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {pipelines.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                      {p.is_default ? " (padrão)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!pipelinesLoading && (pipelinesError || pipelines.length === 0) ? (
+                <PipelineSelectNotice error={pipelinesError} onRetry={() => void loadPipelines()} />
+              ) : (
+                <p className="mt-1 text-[11px] text-text-tertiary">
+                  Define as etapas pelas quais as candidaturas desta vaga vão passar.
+                </p>
+              )}
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs text-text-tertiary">Negócio (opcional)</Label>
+              <DealPicker
+                value={form.deal_id}
+                onChange={(id) => setForm({ ...form, deal_id: id })}
+                placeholder="Vincular a um negócio…"
+              />
               <p className="mt-1 text-[11px] text-text-tertiary">
-                Define as etapas pelas quais as candidaturas desta vaga vão passar.
+                Associe esta vaga a um negócio do CRM. A empresa do negócio será preenchida
+                automaticamente.
               </p>
-            )}
-
+            </div>
           </div>
-          <div className="col-span-2">
-            <Label className="text-xs text-text-tertiary">Negócio (opcional)</Label>
-            <DealPicker
-              value={form.deal_id}
-              onChange={(id) => setForm({ ...form, deal_id: id })}
-              placeholder="Vincular a um negócio…"
-            />
-            <p className="mt-1 text-[11px] text-text-tertiary">
-              Associe esta vaga a um negócio do CRM. A empresa do negócio será preenchida automaticamente.
-            </p>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancelar
-          </Button>
-          <Button onClick={handleCreate}>Criar vaga</Button>
-        </DialogFooter>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCreate}>Criar vaga</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Can>
@@ -757,12 +763,8 @@ function AtsJobsPage() {
       />
 
       {!pipelinesLoading && (pipelinesError || pipelines.length === 0) ? (
-        <PipelineSelectNotice
-          error={pipelinesError}
-          onRetry={() => void loadPipelines()}
-        />
+        <PipelineSelectNotice error={pipelinesError} onRetry={() => void loadPipelines()} />
       ) : null}
-
 
       {loading ? (
         <JobsGridSkeleton />
@@ -780,9 +782,7 @@ function AtsJobsPage() {
       ) : rows.length === 0 ? (
         <EmptyState
           icon={Briefcase}
-          title={
-            search || status !== "all" ? "Nenhuma vaga encontrada" : "Nenhuma vaga ainda"
-          }
+          title={search || status !== "all" ? "Nenhuma vaga encontrada" : "Nenhuma vaga ainda"}
           description={
             search || status !== "all"
               ? "Ajuste a busca ou os filtros para ver outras vagas."
@@ -814,65 +814,126 @@ function AtsJobsPage() {
           ))}
         </div>
       ) : view === "table" ? (
-        <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Senioridade</TableHead>
-                <TableHead>Modalidade</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Depto</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead className="text-right">Ativos</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((j) => (
-                <TableRow key={j.id} className="group">
-                  <TableCell className="font-medium">
-                    <Link
-                      to="/jobs/$id"
-                      params={{ id: j.id }}
-                      className="text-text-primary hover:underline inline-flex items-center gap-1"
-                    >
-                      {j.title}
-                      <ExternalLink
-                        className="h-3 w-3 opacity-0 group-hover:opacity-60"
-                        aria-hidden
-                      />
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge
-                      status={STATUS_TO_BADGE[j.status] ?? "draft"}
-                      label={STATUS_LABEL[j.status] ?? j.status}
+        <>
+          {selection.hasSelection && (
+            <GridBulkBar
+              table="ats_jobs"
+              ids={selection.ids}
+              rows={selection.selectedRows}
+              entityLabel="vaga(s)"
+              onClear={selection.clear}
+              onDone={() => void refresh()}
+              totalMatching={rows.length}
+              onSelectAll={selectAllFiltered}
+              canUpdate={canAny(["techhire.jobs.update.workspace", "techhire.jobs.update.team"])}
+              canDelete={canAny(["techhire.jobs.delete.workspace"])}
+              bulkEditFields={[
+                {
+                  name: "status",
+                  label: "Status",
+                  type: "select",
+                  options: ATS_JOB_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                },
+                { name: "department", label: "Departamento", type: "text" },
+                { name: "location", label: "Localização", type: "text" },
+                {
+                  name: "remote_mode",
+                  label: "Modalidade",
+                  type: "select",
+                  options: Object.entries(REMOTE_LABEL).map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
+                },
+              ]}
+            />
+          )}
+          <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Selecionar todas as vagas exibidas"
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={selection.toggleAllOnPage}
                     />
-                  </TableCell>
-                  <TableCell className="text-text-secondary text-sm">
-                    {j.seniority ? SENIORITY_LABEL[j.seniority] ?? j.seniority : "—"}
-                  </TableCell>
-                  <TableCell className="text-text-secondary text-sm">
-                    {j.remote_mode ? REMOTE_LABEL[j.remote_mode] ?? j.remote_mode : "—"}
-                  </TableCell>
-                  <TableCell className="text-text-secondary text-sm">
-                    {j.location ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-text-secondary text-sm">
-                    {(j as { department?: string | null }).department ?? "—"}
-                  </TableCell>
-                  <TableCell>
-                    <AssigneeCell assignedTo={(j as { assigned_to?: string | null }).assigned_to} />
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums font-medium">
-                    {j.active_applications}
-                  </TableCell>
+                  </TableHead>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Senioridade</TableHead>
+                  <TableHead>Modalidade</TableHead>
+                  <TableHead>Local</TableHead>
+                  <TableHead>Depto</TableHead>
+                  <TableHead>Responsável</TableHead>
+                  <TableHead className="text-right">Ativos</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {rows.map((j) => (
+                  <TableRow
+                    key={j.id}
+                    className="group"
+                    data-state={selection.isSelected(j.id) ? "selected" : undefined}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Selecionar vaga ${j.title}`}
+                        checked={selection.isSelected(j.id)}
+                        onCheckedChange={() => selection.toggleOne(j.id)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <Link
+                        to="/jobs/$id"
+                        params={{ id: j.id }}
+                        className="text-text-primary hover:underline inline-flex items-center gap-1"
+                      >
+                        {j.title}
+                        <ExternalLink
+                          className="h-3 w-3 opacity-0 group-hover:opacity-60"
+                          aria-hidden
+                        />
+                      </Link>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        status={STATUS_TO_BADGE[j.status] ?? "draft"}
+                        label={STATUS_LABEL[j.status] ?? j.status}
+                      />
+                    </TableCell>
+                    <TableCell className="text-text-secondary text-sm">
+                      {j.seniority ? (SENIORITY_LABEL[j.seniority] ?? j.seniority) : "—"}
+                    </TableCell>
+                    <TableCell className="text-text-secondary text-sm">
+                      {j.remote_mode ? (REMOTE_LABEL[j.remote_mode] ?? j.remote_mode) : "—"}
+                    </TableCell>
+                    <TableCell className="text-text-secondary text-sm">
+                      {j.location ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-text-secondary text-sm">
+                      {(j as { department?: string | null }).department ?? "—"}
+                    </TableCell>
+                    <TableCell>
+                      <AssigneeCell
+                        assignedTo={(j as { assigned_to?: string | null }).assigned_to}
+                      />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums font-medium">
+                      {j.active_applications}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </>
       ) : view === "kanban_status" ? (
         <KanbanScrollContainer ariaLabel="Vagas por status">
           <div className="flex gap-2 pb-4">
@@ -886,8 +947,7 @@ function AtsJobsPage() {
                     if (!draggingId) return;
                     e.preventDefault();
                     e.dataTransfer.dropEffect = "move";
-                    if (dragOverCol !== `status:${s.value}`)
-                      setDragOverCol(`status:${s.value}`);
+                    if (dragOverCol !== `status:${s.value}`) setDragOverCol(`status:${s.value}`);
                   }}
                   onDragLeave={(e) => {
                     if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node))
@@ -896,8 +956,7 @@ function AtsJobsPage() {
                   onDrop={async (e) => {
                     e.preventDefault();
                     setDragOverCol(null);
-                    const jobId =
-                      e.dataTransfer.getData("text/plain") || draggingId;
+                    const jobId = e.dataTransfer.getData("text/plain") || draggingId;
                     setDraggingId(null);
                     if (!jobId) return;
                     const current = rows.find((r) => r.id === jobId);
@@ -917,24 +976,17 @@ function AtsJobsPage() {
                       setRows((rs) =>
                         rs.map((r) => (r.id === jobId ? { ...r, status: prevStatus } : r)),
                       );
-                      toast.error(
-                        err instanceof Error ? err.message : "Falha ao mover vaga",
-                      );
+                      toast.error(err instanceof Error ? err.message : "Falha ao mover vaga");
                     }
                   }}
                   className={cn(
                     "flex w-[280px] shrink-0 flex-col rounded-md border bg-surface-sunken transition-colors",
-                    isOver
-                      ? "border-primary/60 ring-1 ring-primary/30"
-                      : "border-border-subtle",
+                    isOver ? "border-primary/60 ring-1 ring-primary/30" : "border-border-subtle",
                   )}
                 >
                   <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
-                      <StatusBadge
-                        status={STATUS_TO_BADGE[s.value] ?? "draft"}
-                        label={s.label}
-                      />
+                      <StatusBadge status={STATUS_TO_BADGE[s.value] ?? "draft"} label={s.label} />
                       <span className="text-[11px] tabular-nums text-text-tertiary">
                         {colRows.length}
                       </span>
@@ -987,8 +1039,7 @@ function AtsJobsPage() {
                   onDrop={async (e) => {
                     e.preventDefault();
                     setDragOverCol(null);
-                    const jobId =
-                      e.dataTransfer.getData("text/plain") || draggingId;
+                    const jobId = e.dataTransfer.getData("text/plain") || draggingId;
                     setDraggingId(null);
                     if (!jobId) return;
                     const current = rows.find((r) => r.id === jobId) as
@@ -999,9 +1050,7 @@ function AtsJobsPage() {
                     if ((prevDept ?? null) === (targetDept ?? null)) return;
                     setRows((rs) =>
                       rs.map((r) =>
-                        r.id === jobId
-                          ? ({ ...r, department: targetDept } as JobRow)
-                          : r,
+                        r.id === jobId ? ({ ...r, department: targetDept } as JobRow) : r,
                       ),
                     );
                     try {
@@ -1016,23 +1065,15 @@ function AtsJobsPage() {
                     } catch (err) {
                       setRows((rs) =>
                         rs.map((r) =>
-                          r.id === jobId
-                            ? ({ ...r, department: prevDept } as JobRow)
-                            : r,
+                          r.id === jobId ? ({ ...r, department: prevDept } as JobRow) : r,
                         ),
                       );
-                      toast.error(
-                        err instanceof Error
-                          ? err.message
-                          : "Falha ao mover vaga",
-                      );
+                      toast.error(err instanceof Error ? err.message : "Falha ao mover vaga");
                     }
                   }}
                   className={cn(
                     "flex w-[280px] shrink-0 flex-col rounded-md border bg-surface-sunken transition-colors",
-                    isOver
-                      ? "border-primary/60 ring-1 ring-primary/30"
-                      : "border-border-subtle",
+                    isOver ? "border-primary/60 ring-1 ring-primary/30" : "border-border-subtle",
                   )}
                 >
                   <div className="sticky top-0 z-10 rounded-t-md border-b border-border-subtle bg-surface-sunken px-3 py-2">
@@ -1072,7 +1113,6 @@ function AtsJobsPage() {
           </div>
         </KanbanScrollContainer>
       )}
-
     </div>
   );
 }
