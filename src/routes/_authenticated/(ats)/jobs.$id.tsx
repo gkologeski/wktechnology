@@ -1010,12 +1010,18 @@ function JobPropertiesPanel({
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3">
       <AtsSectionHeader title="Propriedades" />
-      <div className="pb-3 border-b border-border-subtle">
+      <div className="space-y-3 pb-3 border-b border-border-subtle">
         <OwnerField
           table="ats_jobs"
           rowId={jobRow.id}
           ownerId={jobRow.owner_id}
           onChanged={onSaved}
+        />
+        <AssigneeField
+          table="ats_jobs"
+          rowId={jobRow.id}
+          assignedTo={jobRow.assigned_to}
+          onChanged={() => onSaved()}
         />
       </div>
       <div className="space-y-2 text-sm">
