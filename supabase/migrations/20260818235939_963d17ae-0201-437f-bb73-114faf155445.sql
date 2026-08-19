@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.sync_workspace_owner_id() FROM PUBLIC, anon, authenticated;

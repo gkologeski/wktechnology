@@ -61,6 +61,7 @@ export const saveLandingPage = createServerFn({ method: "POST" })
     const ws = await activeWorkspace(context.supabase, context.userId);
     const payload = {
       owner_id: ws,
+      workspace_id: ws,
       slug: data.slug,
       title: data.title,
       description: data.description ?? null,
@@ -136,6 +137,7 @@ export const trackLpEvent = createServerFn({ method: "POST" })
     if (!lp) return { ok: false };
     await (supabaseAdmin.from("landing_page_events") as any).insert({
       owner_id: lp.owner_id,
+      workspace_id: lp.owner_id,
       landing_page_id: data.landing_page_id,
       variant_id: data.variant_id ?? null,
       event_type: data.event_type,

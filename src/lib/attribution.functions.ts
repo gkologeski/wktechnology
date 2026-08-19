@@ -35,6 +35,7 @@ export const recordTouchpoint = createServerFn({ method: "POST" })
     const ws = await activeWorkspace(context.supabase, context.userId);
     const { error } = await (context.supabase.from("attribution_touchpoints") as any).insert({
       owner_id: ws,
+      workspace_id: ws,
       ...data,
     });
     if (error) throw new Error(error.message);

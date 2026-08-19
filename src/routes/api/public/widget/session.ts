@@ -52,6 +52,7 @@ export const Route = createFileRoute("/api/public/widget/session")({
             .from("live_chat_sessions")
             .insert({
               owner_id: data.workspace_id,
+              workspace_id: data.workspace_id,
               visitor_id: data.visitor_id,
               visitor_name: data.visitor_name ?? null,
               visitor_email: data.visitor_email ?? null,

@@ -51,6 +51,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("live_chat_messages").insert({
       session_id: data.session_id,
       owner_id: ws,
+      workspace_id: ws,
       direction: "outbound",
       author_user_id: context.userId,
       body: data.body,
