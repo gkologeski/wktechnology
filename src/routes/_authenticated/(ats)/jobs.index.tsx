@@ -824,25 +824,84 @@ function AtsJobsPage() {
           ))}
         </div>
       ) : view === "table" ? (
-        <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Senioridade</TableHead>
-                <TableHead>Modalidade</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Depto</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead className="text-right">Ativos</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((j) => (
-                <TableRow key={j.id} className="group">
-                  <TableCell className="font-medium">
-                    <Link
+        <>
+          {selection.hasSelection && (
+            <GridBulkBar
+              table="ats_jobs"
+              ids={selection.ids}
+              rows={selection.selectedRows}
+              entityLabel="vaga(s)"
+              onClear={selection.clear}
+              onDone={() => void refresh()}
+              totalMatching={rows.length}
+              onSelectAll={selectAllFiltered}
+              canUpdate={canAny(["techhire.jobs.update.workspace", "techhire.jobs.update.team"])}
+              canDelete={canAny(["techhire.jobs.delete.workspace"])}
+              bulkEditFields={[
+                {
+                  name: "status",
+                  label: "Status",
+                  type: "select",
+                  options: ATS_JOB_STATUSES.map((s) => ({ value: s.value, label: s.label })),
+                },
+                { name: "department", label: "Departamento", type: "text" },
+                { name: "location", label: "Localização", type: "text" },
+                {
+                  name: "remote_mode",
+                  label: "Modalidade",
+                  type: "select",
+                  options: Object.entries(REMOTE_LABEL).map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
+                },
+              ]}
+            />
+          )}
+          <div className="rounded-lg border border-border-subtle bg-surface-1 overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Selecionar todas as vagas exibidas"
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={selection.toggleAllOnPage}
+                    />
+                  </TableHead>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Senioridade</TableHead>
+                  <TableHead>Modalidade</TableHead>
+                  <TableHead>Local</TableHead>
+                  <TableHead>Depto</TableHead>
+                  <TableHead>Responsável</TableHead>
+                  <TableHead className="text-right">Ativos</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((j) => (
+                  <TableRow
+                    key={j.id}
+                    className="group"
+                    data-state={selection.isSelected(j.id) ? "selected" : undefined}
+                  >
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Selecionar vaga ${j.title}`}
+                        checked={selection.isSelected(j.id)}
+                        onCheckedChange={() => selection.toggleOne(j.id)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <Link
+
                       to="/jobs/$id"
                       params={{ id: j.id }}
                       className="text-text-primary hover:underline inline-flex items-center gap-1"
