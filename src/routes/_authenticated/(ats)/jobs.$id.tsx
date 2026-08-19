@@ -76,6 +76,7 @@ import {
 } from "@/components/ats/ui";
 import { MetaPill } from "@/components/techhire/ui";
 import { OwnerField } from "@/components/entity/owner-field";
+import { AssigneeField } from "@/components/entity/assignee-field";
 import { DealPicker } from "@/components/ats/deal-picker";
 import { cn } from "@/lib/utils";
 
