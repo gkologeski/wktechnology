@@ -9,6 +9,15 @@ import { CurrencyInput } from "@/components/ui/currency-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +32,9 @@ import { ImportContractWizard } from "@/components/import-contract-wizard";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 export const Route = createFileRoute("/_authenticated/proposals/")({
   component: ProposalsPage,
@@ -49,6 +61,16 @@ const STATUS_VARIANT: Record<string, "default" | "secondary" | "destructive" | "
   canceled: "outline",
 };
 
+type ProposalRow = {
+  id: string;
+  title: string;
+  version: number;
+  status: string;
+  currency: string;
+  total_amount: number | string | null;
+  assigned_to: string | null;
+};
+
 function ProposalsPage() {
   const qc = useQueryClient();
   const list = useServerFn(listProposals);
@@ -60,6 +82,12 @@ function ProposalsPage() {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
 
+  const { canAny } = usePermissions();
+  const rows = filterRows((data ?? []) as unknown as ProposalRow[]) as ProposalRow[];
+  const selection = useGridSelection(rows);
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
+  const refresh = () => qc.invalidateQueries({ queryKey: ["proposals"] });
+
   const createM = useMutation({
     mutationFn: () => create({ data: { title, totalAmount: amount ? Number(amount) : null } }),
     onSuccess: () => {
@@ -67,7 +95,7 @@ function ProposalsPage() {
       setOpen(false);
       setTitle("");
       setAmount("");
-      qc.invalidateQueries({ queryKey: ["proposals"] });
+      void refresh();
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -75,21 +103,28 @@ function ProposalsPage() {
     mutationFn: (id: string) => del({ data: { id } }),
     onSuccess: () => {
       toast.success("Contrato removida");
-      qc.invalidateQueries({ queryKey: ["proposals"] });
+      void refresh();
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const money = (p: ProposalRow) =>
+    p.total_amount
+      ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: p.currency }).format(
+          Number(p.total_amount),
+        )
+      : "sem valor";
+
   return (
     <div className="space-y-4 p-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Contratos</h1>
           <p className="text-sm text-muted-foreground">
             Gere, aprove e envie propostas comerciais com selo de validade.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <ImportContractWizard />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
@@ -131,54 +166,125 @@ function ProposalsPage() {
       </div>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+        <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle>Suas propostas</CardTitle>
           <AssigneeFilter value={assignee} onChange={setAssignee} />
         </CardHeader>
-        <CardContent className="space-y-2">
-          {(data ?? []).length === 0 && (
-            <p className="text-sm text-muted-foreground">Nenhuma proposta ainda.</p>
+        <CardContent className="space-y-3">
+          {selection.hasSelection && (
+            <GridBulkBar
+              table="proposals"
+              ids={selection.ids}
+              rows={selection.selectedRows}
+              entityLabel="proposta(s)"
+              onClear={selection.clear}
+              onDone={() => void refresh()}
+              totalMatching={rows.length}
+              onSelectAll={selectAllFiltered}
+              canUpdate={canAny([
+                "techcontracts.contracts.update.workspace",
+                "techcontracts.contracts.update.team",
+                "techcontracts.contracts.update.own",
+              ])}
+              canDelete={canAny([
+                "techcontracts.contracts.delete.workspace",
+                "techcontracts.contracts.delete.own",
+              ])}
+              bulkEditFields={[
+                {
+                  name: "status",
+                  label: "Status",
+                  type: "select",
+                  options: Object.entries(STATUS_LABEL).map(([value, label]) => ({
+                    value,
+                    label,
+                  })),
+                },
+              ]}
+            />
           )}
-          {filterRows((data ?? []) as any[]).map((p: any) => (
-            <div key={p.id} className="flex items-center justify-between rounded-md border p-3">
-              <div className="flex items-center gap-3">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <Link
-                    to="/proposals/$id"
-                    params={{ id: p.id }}
-                    className="font-medium hover:underline"
-                  >
-                    {p.title}
-                  </Link>
-                  <div className="text-xs text-muted-foreground">
-                    v{p.version} ·{" "}
-                    {p.total_amount
-                      ? new Intl.NumberFormat("pt-BR", {
-                          style: "currency",
-                          currency: p.currency,
-                        }).format(Number(p.total_amount))
-                      : "sem valor"}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <AssigneeCell assignedTo={p.assigned_to} className="text-xs" />
-                <Badge variant={STATUS_VARIANT[p.status] ?? "outline"}>
-                  {STATUS_LABEL[p.status] ?? p.status}
-                </Badge>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={async () => {
-                    if (await confirmDialog("Remover proposta?")) delM.mutate(p.id);
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+
+          {rows.length === 0 ? (
+            <div className="flex flex-col items-center gap-2 py-10 text-center">
+              <FileText className="h-8 w-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Nenhuma proposta ainda.</p>
             </div>
-          ))}
+          ) : (
+            <div className="overflow-x-auto rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        aria-label="Selecionar todas as propostas exibidas"
+                        checked={
+                          selection.allOnPageSelected
+                            ? true
+                            : selection.someOnPageSelected
+                              ? "indeterminate"
+                              : false
+                        }
+                        onCheckedChange={selection.toggleAllOnPage}
+                      />
+                    </TableHead>
+                    <TableHead>Título</TableHead>
+                    <TableHead>Versão</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Responsável</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((p) => (
+                    <TableRow key={p.id} className="hover:bg-muted/40">
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Selecionar ${p.title}`}
+                          checked={selection.selectedIds.has(p.id)}
+                          onCheckedChange={() => selection.toggleOne(p.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <Link
+                            to="/proposals/$id"
+                            params={{ id: p.id }}
+                            className="font-medium hover:underline"
+                          >
+                            {p.title}
+                          </Link>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">v{p.version}</TableCell>
+                      <TableCell className="text-sm">{money(p)}</TableCell>
+                      <TableCell>
+                        <Badge variant={STATUS_VARIANT[p.status] ?? "outline"}>
+                          {STATUS_LABEL[p.status] ?? p.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <AssigneeCell assignedTo={p.assigned_to} className="text-xs" />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={`Remover ${p.title}`}
+                          onClick={async () => {
+                            if (await confirmDialog("Remover proposta?")) delM.mutate(p.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
