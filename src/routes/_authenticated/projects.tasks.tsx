@@ -64,6 +64,7 @@ type StatusFilter = "all" | "todo" | "doing" | "review" | "done";
 type OwnerFilter = "all" | "mine";
 
 function ProjectTasksPage() {
+  const qc = useQueryClient();
   const listTasksFn = useServerFn(listAllProjectTasks);
   const listProjectsFn = useServerFn(listProjects);
   const [search, setSearch] = useState("");
@@ -77,8 +78,9 @@ function ProjectTasksPage() {
     staleTime: 60_000,
   });
 
+  const tasksKey = ["project_tasks", "all", { status, projectId, owner, search }] as const;
   const { data: rows = [], isLoading } = useQuery({
-    queryKey: ["project_tasks", "all", { status, projectId, owner, search }],
+    queryKey: tasksKey,
     queryFn: () =>
       listTasksFn({
         data: {
@@ -98,6 +100,21 @@ function ProjectTasksPage() {
       })),
     [projectsQ.data],
   );
+
+  // Seleção múltipla / ações em massa (padrão de grids — Fase 4).
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(rows as Array<(typeof rows)[number] & { id: string }>);
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((t) => t.id)));
+  const canUpdate = canAny([
+    "techprojects.tasks.update.workspace",
+    "techprojects.tasks.update.team",
+    "techprojects.tasks.update.own",
+  ]);
+  const canDelete = canAny([
+    "techprojects.tasks.delete.workspace",
+    "techprojects.tasks.delete.own",
+  ]);
+
 
   return (
     <div className="p-6 space-y-5">
