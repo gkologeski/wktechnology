@@ -39,6 +39,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
+import { useViewMode } from "@/components/kanban/use-view-mode";
 
 const STATUS_LABEL: Record<string, string> = {
   open: "Em aberto",
@@ -55,6 +58,17 @@ const STATUS_TONE: Record<string, string> = {
   overdue: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
   cancelled: "bg-muted text-muted-foreground",
 };
+
+// Dot da coluna do kanban. O status financeiro é derivado dos pagamentos
+// (`recalc_financial_entry`), portanto o board é somente leitura.
+const STATUS_DOT: Record<string, string> = {
+  open: "bg-primary",
+  partial: "bg-amber-500",
+  paid: "bg-emerald-500",
+  overdue: "bg-destructive",
+  cancelled: "bg-muted-foreground/40",
+};
+
 
 type Entry = Awaited<ReturnType<typeof listFinancialEntries>>[number];
 
@@ -75,9 +89,11 @@ export function EntriesListPage({
   const [openNew, setOpenNew] = useState(false);
   const [payFor, setPayFor] = useState<Entry | null>(null);
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
+  const [view, setView] = useViewMode();
 
   const filterInput = useLegalEntityFilterInput(legalEntityId);
-  const { data: allRows = [], isLoading } = useQuery({
+  const { data: allRows = [], isLoading, error } = useQuery({
+
     queryKey: [
       "finance-entries",
       direction,
@@ -192,6 +208,7 @@ export function EntriesListPage({
         </Select>
         <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
         <AssigneeFilter value={assignee} onChange={setAssignee} />
+        <ViewModeToggle value={view} onChange={setView} />
         <div className="ml-auto text-sm text-muted-foreground">
           Total em aberto:{" "}
           <span className="font-semibold tabular-nums text-foreground">
@@ -200,7 +217,8 @@ export function EntriesListPage({
         </div>
       </div>
 
-      {selection.hasSelection && (
+      {view === "table" && selection.hasSelection && (
+
         <GridBulkBar
           table="financial_entries"
           ids={selection.ids}
@@ -232,7 +250,62 @@ export function EntriesListPage({
         />
       )}
 
-      <div className="rounded-lg border bg-card">
+      {view === "kanban" && (
+        <KanbanBoard
+          rows={rows as Array<Entry & { id: string }>}
+          table="financial_entries"
+          stageField="status"
+          readOnly
+          isLoading={isLoading}
+          error={error}
+          ariaLabel="Quadro de lançamentos por status"
+          columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
+            value,
+            label,
+            tone: STATUS_DOT[value],
+          }))}
+          emptyState={
+            <div className="p-12 text-center">
+              <DollarSign className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">Nenhum lançamento</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crie manualmente ou aguarde a geração automática por serviços e contratos.
+              </p>
+              <Button className="mt-4" onClick={() => setOpenNew(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Novo lançamento
+              </Button>
+            </div>
+          }
+          renderCard={(e) => (
+            <div className="space-y-1.5">
+              <Link
+                to="/finance/entries/$id"
+                params={{ id: e.id }}
+                className="block pr-6 text-sm font-medium hover:underline"
+              >
+                {e.description}
+              </Link>
+              <p className="text-xs text-muted-foreground">{e.companies?.name ?? "—"}</p>
+              <div className="flex items-center justify-between text-xs">
+                <span className="tabular-nums font-medium text-foreground">
+                  {formatCurrency(Number(e.amount), e.currency)}
+                </span>
+                <span className="text-muted-foreground">
+                  {formatDateTime(e.due_date).split(" ")[0]}
+                </span>
+              </div>
+              <Badge variant="outline" className={STATUS_TONE[e.status] ?? ""}>
+                {STATUS_LABEL[e.status] ?? e.status}
+              </Badge>
+            </div>
+          )}
+        />
+      )}
+
+      {view === "table" && (
+        <div className="rounded-lg border bg-card">
+
+
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
         ) : rows.length === 0 ? (
@@ -340,7 +413,9 @@ export function EntriesListPage({
             </TableBody>
           </Table>
         )}
-      </div>
+        </div>
+      )}
+
 
       <QuickCreateEntryDialog
         open={openNew}
