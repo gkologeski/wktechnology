@@ -35,8 +35,8 @@ import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/projects/tasks")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    view: search.view === "kanban" ? ("kanban" as const) : ("table" as const),
+  validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
+    view: search.view === "kanban" ? "kanban" : "table",
   }),
   head: () => ({
     meta: [
@@ -128,7 +128,7 @@ function ProjectTasksPage() {
     "techprojects.tasks.delete.own",
   ]);
 
-  const { view } = Route.useSearch();
+  const view = Route.useSearch().view ?? "table";
   const navigate = Route.useNavigate();
   const setView = (v: "table" | "kanban") =>
     void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });

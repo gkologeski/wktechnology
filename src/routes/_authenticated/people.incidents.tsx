@@ -34,8 +34,13 @@ import {
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/people/incidents")({
+  validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
+    view: search.view === "kanban" ? "kanban" : "table",
+  }),
   head: () => ({
     meta: [
       { title: "Incidentes · TechPeople" },
@@ -75,6 +80,19 @@ function IncidentsListPage() {
   const selection = useGridSelection(filtered as Array<(typeof filtered)[number] & { id: string }>);
   const selectAllFiltered = () => selection.setSelectedIds(new Set(filtered.map((i) => i.id)));
 
+  const view = Route.useSearch().view ?? "table";
+  const navigate = Route.useNavigate();
+  const setView = (v: "table" | "kanban") =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
+  const canUpdateIncident = canAny([
+    "techpeople.wellbeing.incidents.update.workspace",
+    "techpeople.wellbeing.incidents.update.team",
+    "techpeople.wellbeing.incidents.update.own",
+    "techpeople.incidents.update.workspace",
+    "techpeople.incidents.update.team",
+    "techpeople.incidents.update.own",
+  ]);
+
   return (
     <div className="container max-w-6xl mx-auto p-6 space-y-4">
       <PageHeader
@@ -96,9 +114,10 @@ function IncidentsListPage() {
             ))}
           </SelectContent>
         </Select>
+        <ViewModeToggle value={view} onChange={setView} />
       </div>
 
-      {selection.hasSelection && (
+      {view === "table" && selection.hasSelection && (
         <GridBulkBar
           table="people_incidents"
           ids={selection.ids}
@@ -145,6 +164,41 @@ function IncidentsListPage() {
         />
       )}
 
+      {view === "kanban" ? (
+        <KanbanBoard
+          rows={filtered as Array<(typeof filtered)[number] & { id: string }>}
+          table="people_incidents"
+          stageField="status"
+          canUpdate={canUpdateIncident}
+          isLoading={isLoading}
+          invalidateKeys={[["ws-incidents"]]}
+          ariaLabel="Quadro de incidentes"
+          columns={Object.entries(INCIDENT_STATUS_LABELS).map(([value, label]) => ({
+            value,
+            label: String(label),
+          }))}
+          emptyState={
+            <div className="flex flex-col items-center gap-2 p-12 text-center">
+              <ShieldAlert className="h-8 w-8 text-muted-foreground" />
+              <div className="text-sm font-medium">Nenhum incidente registrado</div>
+            </div>
+          }
+          renderCard={(i) => (
+            <div className="space-y-1 pr-6">
+              <p className="text-sm font-medium leading-snug">{i.title}</p>
+              <div className="flex flex-wrap items-center gap-1">
+                <Badge variant="outline">{INCIDENT_CATEGORY_LABELS[i.category]}</Badge>
+                <Badge className={SEV_TONE[i.severity]} variant="outline">
+                  {INCIDENT_SEVERITY_LABELS[i.severity]}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {new Date(i.occurred_at).toLocaleDateString("pt-BR")}
+              </p>
+            </div>
+          )}
+        />
+      ) : (
       <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
@@ -231,6 +285,7 @@ function IncidentsListPage() {
           </TableBody>
         </Table>
       </div>
+      )}
     </div>
   );
 }
