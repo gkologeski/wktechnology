@@ -258,10 +258,22 @@ export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: 
         imagePaths.push(path);
       }
 
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("active_workspace_id")
+        .eq("id", user.id)
+        .maybeSingle();
+      const workspaceId =
+        (profile as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
+      if (!workspaceId) {
+        throw new Error("Nenhum workspace ativo. Selecione um workspace e tente novamente.");
+      }
+
       const { data: inserted, error: insErr } = await supabase
         .from("bug_reports")
         .insert({
           owner_id: user.id,
+          workspace_id: workspaceId,
           kind: parsed.data.kind,
           category: parsed.data.category,
           subtype: parsed.data.subtype,
