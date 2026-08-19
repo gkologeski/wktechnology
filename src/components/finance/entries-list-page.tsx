@@ -35,6 +35,10 @@ import {
 import { downloadCsv, toCsv } from "@/lib/csv-export";
 import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 const STATUS_LABEL: Record<string, string> = {
   open: "Em aberto",
@@ -99,6 +103,19 @@ export function EntriesListPage({
       ),
     [rows],
   );
+
+  // Seleção múltipla / ações em massa (padrão de grids).
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(
+    rows as unknown as Array<Record<string, unknown> & { id: string }>,
+  );
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
+  const canUpdateEntries = canAny([
+    "techfinance.entries.manage.workspace",
+    "techfinance.entries.update.workspace",
+    "techfinance.entries.update.team",
+    "techfinance.entries.update.own",
+  ]);
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["finance-entries", direction] });
@@ -176,6 +193,38 @@ export function EntriesListPage({
           </span>
         </div>
       </div>
+
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="financial_entries"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="lançamento(s)"
+          onClear={selection.clear}
+          onDone={() => {
+            selection.clear();
+            invalidate();
+          }}
+          totalMatching={rows.length}
+          onSelectAll={selectAllFiltered}
+          canUpdate={canUpdateEntries}
+          canDelete={canAny([
+            "techfinance.entries.manage.workspace",
+            "techfinance.entries.delete.workspace",
+            "techfinance.entries.delete.own",
+          ])}
+          bulkEditFields={[
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+            },
+            { name: "due_date", label: "Vencimento", type: "date" },
+            { name: "competence_date", label: "Competência", type: "date" },
+          ]}
+        />
+      )}
 
       <div className="rounded-lg border bg-card">
         {isLoading ? (
