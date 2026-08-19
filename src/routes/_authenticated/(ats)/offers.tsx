@@ -22,8 +22,13 @@ import { listOffers, sendOffer, cancelOffer, deleteOffer } from "@/lib/ats/offer
 import { useGridSelection, idQueryFor } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/(ats)/offers")({
+  validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
+    view: search.view === "kanban" ? "kanban" : "table",
+  }),
   component: OffersPage,
 });
 
@@ -66,6 +71,16 @@ const OFFER_STATUS: Record<string, { label: string; cls: string }> = {
   },
 };
 
+// Colunas do kanban de leitura: o status da oferta é conduzido pelo fluxo de
+// assinatura eletrônica (enviar/cancelar/assinar), então não há drag-and-drop.
+const OFFER_KANBAN_COLUMNS = [
+  { value: "draft", label: "Rascunho", tone: "bg-muted-foreground/40" },
+  { value: "sent", label: "Enviada", tone: "bg-status-onhold" },
+  { value: "signed", label: "Assinada", tone: "bg-status-open" },
+  { value: "declined", label: "Recusada", tone: "bg-status-closed" },
+  { value: "cancelled", label: "Cancelada", tone: "bg-border-subtle" },
+];
+
 function OfferStatusBadge({ status }: { status: string }) {
   const cfg = OFFER_STATUS[status] ?? OFFER_STATUS.draft;
   return (
@@ -95,6 +110,11 @@ function OffersPage() {
   const [loading, setLoading] = useState(true);
   const { canAny } = usePermissions();
   const selection = useGridSelection(rows, { buildIdQuery: idQueryFor("ats_offers") });
+
+  const view = Route.useSearch().view ?? "table";
+  const navigate = Route.useNavigate();
+  const setView = (v: "table" | "kanban") =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -153,9 +173,15 @@ function OffersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader eyebrow="ATS" title="Ofertas" description={description} descriptionLive />
+      <PageHeader
+        eyebrow="ATS"
+        title="Ofertas"
+        description={description}
+        descriptionLive
+        secondaryActions={<ViewModeToggle value={view} onChange={setView} />}
+      />
 
-      {selection.hasSelection && (
+      {view === "table" && selection.hasSelection && (
         <GridBulkBar
           table="ats_offers"
           ids={selection.ids}
@@ -171,7 +197,38 @@ function OffersPage() {
         />
       )}
 
-      {loading ? (
+      {view === "kanban" ? (
+        <KanbanBoard
+          rows={rows}
+          table="ats_offers"
+          stageField="status"
+          readOnly
+          isLoading={loading}
+          ariaLabel="Quadro de ofertas"
+          columns={OFFER_KANBAN_COLUMNS}
+          emptyState={
+            <EmptyState
+              icon={FileSignature}
+              title="Nenhuma oferta ainda"
+              description="Crie uma oferta a partir da avaliação de um candidato no detalhe da vaga."
+            />
+          }
+          renderCard={(r) => (
+            <div className="space-y-1">
+              <p className="text-sm font-medium leading-snug text-text-primary">
+                {r.ats_candidates?.full_name ?? "—"}
+              </p>
+              <p className="text-xs text-text-tertiary">{r.ats_jobs?.title ?? "—"}</p>
+              <div className="flex items-center justify-between pt-1">
+                <MetaPill>{formatSalary(r.salary_amount, r.salary_currency)}</MetaPill>
+                <span className="text-xs text-text-tertiary tabular-nums">
+                  {r.start_date ?? "—"}
+                </span>
+              </div>
+            </div>
+          )}
+        />
+      ) : loading ? (
         <div className="rounded-lg border border-border-subtle bg-surface-1 p-2 shadow-xs">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeletons.Row key={i} />

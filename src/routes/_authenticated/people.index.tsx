@@ -51,8 +51,13 @@ import {
   type PeopleStatus,
   type PeopleEmploymentType,
 } from "@/lib/people/people.functions";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/people/")({
+  validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
+    view: search.view === "kanban" ? "kanban" : "table",
+  }),
   head: () => ({
     meta: [
       { title: "Pessoas · TechPeople" },
@@ -78,6 +83,15 @@ const STATUS_TONE: Record<PeopleStatus, string> = {
   on_leave: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
   offboarding: "bg-orange-500/10 text-orange-700 dark:text-orange-400",
   terminated: "bg-rose-500/10 text-rose-700 dark:text-rose-400",
+};
+
+// Tokens de cor para o "dot" das colunas do kanban.
+const KANBAN_TONE: Record<PeopleStatus, string> = {
+  active: "bg-emerald-500",
+  bench: "bg-amber-500",
+  on_leave: "bg-blue-500",
+  offboarding: "bg-orange-500",
+  terminated: "bg-rose-500",
 };
 
 function initials(name: string) {
@@ -117,6 +131,16 @@ function PeoplePage() {
   const { canAny } = usePermissions();
   const selection = useGridSelection(rows as Array<(typeof rows)[number] & { id: string }>);
   const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
+
+  const view = Route.useSearch().view ?? "table";
+  const navigate = Route.useNavigate();
+  const setView = (v: "table" | "kanban") =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
+  const canUpdatePerson = canAny([
+    "techpeople.people.update.workspace",
+    "techpeople.people.update.team",
+    "techpeople.people.update.own",
+  ]);
 
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-6">
@@ -166,9 +190,10 @@ function PeoplePage() {
           </SelectContent>
         </Select>
         <AssigneeFilter value={assignee} onChange={setAssignee} className="w-full sm:w-56" />
+        <ViewModeToggle value={view} onChange={setView} />
       </div>
 
-      {selection.hasSelection && (
+      {view === "table" && selection.hasSelection && (
         <GridBulkBar
           table="people"
           ids={selection.ids}
@@ -207,6 +232,52 @@ function PeoplePage() {
         />
       )}
 
+      {view === "kanban" ? (
+        <KanbanBoard
+          rows={rows as Array<(typeof rows)[number] & { id: string }>}
+          table="people"
+          stageField="status"
+          canUpdate={canUpdatePerson}
+          isLoading={isLoading}
+          invalidateKeys={[["people"]]}
+          ariaLabel="Quadro de pessoas"
+          columns={PEOPLE_STATUSES.map((s) => ({
+            value: s,
+            label: PEOPLE_STATUS_LABELS[s],
+            tone: KANBAN_TONE[s],
+          }))}
+          emptyState={
+            <div className="flex flex-col items-center gap-2 p-12 text-center">
+              <UserCog className="h-8 w-8 text-muted-foreground" />
+              <div className="text-sm font-medium">Nenhuma pessoa cadastrada</div>
+            </div>
+          }
+          renderCard={(p) => (
+            <div className="space-y-2 pr-6">
+              <Link
+                to="/people/$id"
+                params={{ id: p.id }}
+                className="flex items-center gap-2 hover:underline"
+              >
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={p.photo_url ?? undefined} alt={p.full_name} />
+                  <AvatarFallback className="text-[10px]">
+                    {initials(p.full_name)}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-sm font-medium leading-snug">{p.full_name}</span>
+              </Link>
+              <p className="text-xs text-muted-foreground">
+                {p.role_title ?? "Sem cargo definido"}
+              </p>
+              <div className="flex items-center justify-between">
+                <Badge variant="outline">{PEOPLE_EMPLOYMENT_LABELS[p.employment_type]}</Badge>
+                <AssigneeCell assignedTo={p.assigned_to} />
+              </div>
+            </div>
+          )}
+        />
+      ) : (
       <div className="rounded-md border bg-card">
         <Table>
           <TableHeader>
@@ -318,6 +389,7 @@ function PeoplePage() {
           </TableBody>
         </Table>
       </div>
+      )}
 
       <NewPersonDialog
         open={openNew}

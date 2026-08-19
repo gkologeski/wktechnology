@@ -31,8 +31,13 @@ import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { useGridSelection, idQueryFor } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/services/")({
+  validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
+    view: search.view === "kanban" ? "kanban" : "table",
+  }),
   head: () => ({
     meta: [
       { title: "Serviços em execução" },
@@ -62,6 +67,15 @@ const STATUS_TONE: Record<string, string> = {
   completed: "bg-blue-500/10 text-blue-700 dark:text-blue-400",
 };
 
+// Tokens semânticos do "dot" das colunas do kanban.
+const KANBAN_TONE: Record<string, string> = {
+  pending: "bg-muted-foreground/40",
+  active: "bg-emerald-500",
+  paused: "bg-amber-500",
+  cancelled: "bg-rose-500",
+  completed: "bg-blue-500",
+};
+
 const TYPE_LABEL: Record<string, string> = {
   recurring: "Recorrente",
   one_time: "Único",
@@ -80,6 +94,11 @@ function ServicesPage() {
   const [status, setStatus] = useState<string>("all");
   const [type, setType] = useState<string>("all");
   const { assignee, setAssignee, filterRows } = useAssigneeFilter();
+
+  const view = Route.useSearch().view ?? "table";
+  const navigate = Route.useNavigate();
+  const setView = (v: "table" | "kanban") =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
 
   const { data: allRows = [], isLoading } = useQuery({
     queryKey: ["services", { status, type, search }],
@@ -175,7 +194,12 @@ function ServicesPage() {
         description="Visão operacional dos serviços vinculados a contratos, com cadência de faturamento e entrega. Novos serviços nascem dentro de um contrato."
         count={rows.length}
         countLabel={rows.length === 1 ? "serviço" : "serviços"}
-        actions={<grid.ColumnsButton />}
+        actions={
+          <div className="flex items-center gap-2">
+            <ViewModeToggle value={view} onChange={setView} />
+            <grid.ColumnsButton />
+          </div>
+        }
       />
 
       <div className="flex flex-wrap items-center gap-2">
@@ -217,7 +241,7 @@ function ServicesPage() {
         <AssigneeFilter value={assignee} onChange={setAssignee} />
       </div>
 
-      {selection.hasSelection && (
+      {view === "table" && selection.hasSelection && (
         <GridBulkBar
           table="services"
           ids={selection.ids}
@@ -256,7 +280,52 @@ function ServicesPage() {
         />
       )}
 
-      <div className="rounded-lg border bg-card">
+      {view === "kanban" && (
+        <KanbanBoard
+          rows={rows}
+          table="services"
+          stageField="status"
+          canUpdate={canAny([
+            "techservice.services.update.workspace",
+            "techservice.services.update.own",
+            "techsales.catalog.services.update.workspace",
+          ])}
+          isLoading={isLoading}
+          invalidateKeys={[["services"]]}
+          ariaLabel="Quadro de serviços"
+          columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
+            value,
+            label,
+            tone: KANBAN_TONE[value],
+          }))}
+          emptyState={
+            <div className="p-12 text-center">
+              <Package className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">Nenhum serviço ainda</h3>
+            </div>
+          }
+          renderCard={(s) => (
+            <div className="space-y-1 pr-6">
+              <Link
+                to="/services/$id"
+                params={{ id: s.id }}
+                className="text-sm font-medium hover:underline"
+              >
+                {s.name}
+              </Link>
+              <p className="text-xs text-muted-foreground">{TYPE_LABEL[s.type] ?? s.type}</p>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {formatCurrency(Number(s.quantity) * Number(s.unit_price), s.currency)}
+                </span>
+                <AssigneeCell assignedTo={s.assigned_to} />
+              </div>
+            </div>
+          )}
+        />
+      )}
+
+      <div className={`rounded-lg border bg-card ${view === "kanban" ? "hidden" : ""}`}>
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
         ) : rows.length === 0 ? (
