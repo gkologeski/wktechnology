@@ -70,6 +70,12 @@ function DocumentsPage() {
     staleTime: 30_000,
   });
 
+  // Seleção múltipla / ações em massa (padrão de grids).
+  const qc = useQueryClient();
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(data as ExpiringDocumentRow[]);
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(data.map((d) => d.id)));
+
   async function handleDownload(id: string) {
     try {
       const { url } = await downloadFn({ data: { id } });
