@@ -323,8 +323,6 @@ function CandidatesPage() {
   const selectAllFiltered = () =>
     selection.setSelectedIds(new Set(visibleRows.map((r) => r.id as string)));
 
-
-
   const statusCounts = useMemo(() => {
     const c: Record<DerivedCandidateStatus, number> = {
       new: 0,
@@ -1292,7 +1290,6 @@ function CandidatesPage() {
             </Table>
           </div>
         </>
-
       ) : (
         <>
           <div className="mb-2 flex justify-end">
