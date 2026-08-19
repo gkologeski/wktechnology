@@ -71,7 +71,7 @@ type ServiceRow = { id: string; assigned_to?: string | null } & Record<string, a
 function ServicesPage() {
   const list = useServerFn(listServices);
   const qc = useQueryClient();
-  const { can } = usePermissions();
+  const { canAny } = usePermissions();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [type, setType] = useState<string>("all");
