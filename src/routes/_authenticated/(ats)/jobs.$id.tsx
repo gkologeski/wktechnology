@@ -1002,7 +1002,11 @@ function JobPropertiesPanel({
   };
 
 
-  const jobRow = job as unknown as { id: string; owner_id: string | null };
+  const jobRow = job as unknown as {
+    id: string;
+    owner_id: string | null;
+    assigned_to: string | null;
+  };
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-1 p-4 space-y-3">
       <AtsSectionHeader title="Propriedades" />
