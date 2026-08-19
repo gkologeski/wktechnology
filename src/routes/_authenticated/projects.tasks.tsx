@@ -34,7 +34,6 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
-
 export const Route = createFileRoute("/_authenticated/projects/tasks")({
   validateSearch: (search: Record<string, unknown>) => ({
     view: search.view === "kanban" ? ("kanban" as const) : ("table" as const),
@@ -44,7 +43,8 @@ export const Route = createFileRoute("/_authenticated/projects/tasks")({
       { title: "Tarefas de projetos" },
       {
         name: "description",
-        content: "Tarefas de todos os projetos ativos com filtros por status, projeto e responsável.",
+        content:
+          "Tarefas de todos os projetos ativos com filtros por status, projeto e responsável.",
       },
     ],
   }),
@@ -127,7 +127,6 @@ function ProjectTasksPage() {
     "techprojects.tasks.delete.workspace",
     "techprojects.tasks.delete.own",
   ]);
-
 
   const { view } = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -275,101 +274,103 @@ function ProjectTasksPage() {
           }}
         />
       ) : (
-      <div className="rounded-lg border bg-card">
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
-        ) : rows.length === 0 ? (
-          <div className="p-12 text-center">
-            <ListTodo className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">Nenhuma tarefa encontrada</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Crie tarefas dentro de um projeto para vê-las aqui.
-            </p>
-            <Button asChild className="mt-4" size="sm" variant="outline">
-              <Link to="/projects">Ir para projetos</Link>
-            </Button>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    checked={
-                      selection.allOnPageSelected
-                        ? true
-                        : selection.someOnPageSelected
-                          ? "indeterminate"
-                          : false
-                    }
-                    onCheckedChange={() => selection.toggleAllOnPage()}
-                    aria-label="Selecionar todas as tarefas da página"
-                  />
-                </TableHead>
-                <TableHead>Título</TableHead>
-                <TableHead>Projeto</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Horas est.</TableHead>
-                <TableHead>Prazo</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((t) => {
-                const project = (t as { projects?: { id: string; name: string } }).projects;
-                return (
-                  <TableRow key={t.id} data-state={selection.isSelected(t.id) ? "selected" : undefined}>
-                    <TableCell>
-                      <Checkbox
-                        checked={selection.isSelected(t.id)}
-                        onCheckedChange={() => selection.toggleOne(t.id)}
-                        aria-label={`Selecionar tarefa ${t.title}`}
-                      />
-                    </TableCell>
-                    <TableCell>
-
-                      {project ? (
-                        <Link
-                          to="/projects/$id"
-                          params={{ id: project.id }}
-                          className="font-medium hover:underline"
-                        >
-                          {t.title}
-                        </Link>
-                      ) : (
-                        <span className="font-medium">{t.title}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {project ? (
-                        <Link
-                          to="/projects/$id"
-                          params={{ id: project.id }}
-                          className="hover:underline"
-                        >
-                          {project.name}
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={STATUS_TONE[t.status] ?? ""}>
-                        {STATUS_LABEL[t.status] ?? t.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {t.estimated_hours ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "—"}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+        <div className="rounded-lg border bg-card">
+          {isLoading ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
+          ) : rows.length === 0 ? (
+            <div className="p-12 text-center">
+              <ListTodo className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">Nenhuma tarefa encontrada</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crie tarefas dentro de um projeto para vê-las aqui.
+              </p>
+              <Button asChild className="mt-4" size="sm" variant="outline">
+                <Link to="/projects">Ir para projetos</Link>
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={() => selection.toggleAllOnPage()}
+                      aria-label="Selecionar todas as tarefas da página"
+                    />
+                  </TableHead>
+                  <TableHead>Título</TableHead>
+                  <TableHead>Projeto</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Horas est.</TableHead>
+                  <TableHead>Prazo</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((t) => {
+                  const project = (t as { projects?: { id: string; name: string } }).projects;
+                  return (
+                    <TableRow
+                      key={t.id}
+                      data-state={selection.isSelected(t.id) ? "selected" : undefined}
+                    >
+                      <TableCell>
+                        <Checkbox
+                          checked={selection.isSelected(t.id)}
+                          onCheckedChange={() => selection.toggleOne(t.id)}
+                          aria-label={`Selecionar tarefa ${t.title}`}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {project ? (
+                          <Link
+                            to="/projects/$id"
+                            params={{ id: project.id }}
+                            className="font-medium hover:underline"
+                          >
+                            {t.title}
+                          </Link>
+                        ) : (
+                          <span className="font-medium">{t.title}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {project ? (
+                          <Link
+                            to="/projects/$id"
+                            params={{ id: project.id }}
+                            className="hover:underline"
+                          >
+                            {project.name}
+                          </Link>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={STATUS_TONE[t.status] ?? ""}>
+                          {STATUS_LABEL[t.status] ?? t.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {t.estimated_hours ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       )}
     </div>
   );

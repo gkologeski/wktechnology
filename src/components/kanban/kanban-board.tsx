@@ -104,7 +104,10 @@ export function KanbanBoard<T extends { id: string }>({
     return (
       <div className="flex gap-3 overflow-hidden pb-4">
         {columns.slice(0, 5).map((c) => (
-          <div key={c.value} className="w-[260px] flex-shrink-0 space-y-2 rounded-lg border bg-muted/30 p-2">
+          <div
+            key={c.value}
+            className="w-[260px] flex-shrink-0 space-y-2 rounded-lg border bg-muted/30 p-2"
+          >
             <Skeleton className="h-5 w-32" />
             <Skeleton className="h-20 w-full" />
             <Skeleton className="h-20 w-full" />
