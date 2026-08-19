@@ -9,9 +9,20 @@ import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   listIncidents,
   INCIDENT_CATEGORY_LABELS,
@@ -28,7 +39,10 @@ export const Route = createFileRoute("/_authenticated/people/incidents")({
   head: () => ({
     meta: [
       { title: "Incidentes · TechPeople" },
-      { name: "description", content: "Registros de segurança, assédio e discriminação do workspace." },
+      {
+        name: "description",
+        content: "Registros de segurança, assédio e discriminação do workspace.",
+      },
       { property: "og:title", content: "Incidentes · TechPeople" },
       { property: "og:description", content: "Ocorrências de segurança e conduta do time." },
     ],
@@ -63,15 +77,22 @@ function IncidentsListPage() {
 
   return (
     <div className="container max-w-6xl mx-auto p-6 space-y-4">
-      <PageHeader title="Incidentes" description="Segurança, assédio, discriminação e quase-acidentes." />
+      <PageHeader
+        title="Incidentes"
+        description="Segurança, assédio, discriminação e quase-acidentes."
+      />
 
       <div className="flex gap-2">
         <Select value={sev} onValueChange={setSev}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="Severidade" /></SelectTrigger>
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Severidade" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as severidades</SelectItem>
             {INCIDENT_SEVERITIES.map((s) => (
-              <SelectItem key={s} value={s}>{INCIDENT_SEVERITY_LABELS[s]}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {INCIDENT_SEVERITY_LABELS[s]}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -151,14 +172,20 @@ function IncidentsListPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={7} className="text-center py-8 text-sm text-muted-foreground">Carregando…</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-8 text-sm text-muted-foreground">
+                  Carregando…
+                </TableCell>
+              </TableRow>
             ) : filtered.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <ShieldAlert className="h-8 w-8 text-muted-foreground" />
                     <div className="text-sm font-medium">Nenhum incidente registrado</div>
-                    <div className="text-xs text-muted-foreground">Registre incidentes na ficha da pessoa (aba Incidentes) ou aqui via API.</div>
+                    <div className="text-xs text-muted-foreground">
+                      Registre incidentes na ficha da pessoa (aba Incidentes) ou aqui via API.
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>
@@ -172,15 +199,31 @@ function IncidentsListPage() {
                       onCheckedChange={() => selection.toggleOne(i.id)}
                     />
                   </TableCell>
-                  <TableCell className="text-sm">{new Date(i.occurred_at).toLocaleDateString("pt-BR")}</TableCell>
+                  <TableCell className="text-sm">
+                    {new Date(i.occurred_at).toLocaleDateString("pt-BR")}
+                  </TableCell>
                   <TableCell className="font-medium">{i.title}</TableCell>
-                  <TableCell><Badge variant="outline">{INCIDENT_CATEGORY_LABELS[i.category]}</Badge></TableCell>
-                  <TableCell><Badge className={SEV_TONE[i.severity]} variant="outline">{INCIDENT_SEVERITY_LABELS[i.severity]}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{INCIDENT_CATEGORY_LABELS[i.category]}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge className={SEV_TONE[i.severity]} variant="outline">
+                      {INCIDENT_SEVERITY_LABELS[i.severity]}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-sm">{INCIDENT_STATUS_LABELS[i.status]}</TableCell>
                   <TableCell>
                     {i.person_id ? (
-                      <Link to="/people/$id" params={{ id: i.person_id }} className="text-sm text-primary hover:underline">Abrir ficha</Link>
-                    ) : (<span className="text-xs text-muted-foreground">Sem vínculo</span>)}
+                      <Link
+                        to="/people/$id"
+                        params={{ id: i.person_id }}
+                        className="text-sm text-primary hover:underline"
+                      >
+                        Abrir ficha
+                      </Link>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Sem vínculo</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

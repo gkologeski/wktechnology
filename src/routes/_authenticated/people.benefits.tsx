@@ -10,7 +10,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   BENEFIT_TYPE_LABELS,
   type PeopleBenefitRow,
@@ -22,9 +29,7 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 
 const listWorkspaceBenefits = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    z.object({ only_active: z.boolean().default(true) }).parse(i ?? {}),
-  )
+  .inputValidator((i) => z.object({ only_active: z.boolean().default(true) }).parse(i ?? {}))
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("people_benefits")
@@ -44,7 +49,10 @@ export const Route = createFileRoute("/_authenticated/people/benefits")({
   head: () => ({
     meta: [
       { title: "Benefícios · TechPeople" },
-      { name: "description", content: "Benefícios ativos do workspace com valor mensal e cota do empregado." },
+      {
+        name: "description",
+        content: "Benefícios ativos do workspace com valor mensal e cota do empregado.",
+      },
       { property: "og:title", content: "Benefícios · TechPeople" },
       { property: "og:description", content: "Consulta consolidada de benefícios do time." },
     ],
@@ -53,7 +61,11 @@ export const Route = createFileRoute("/_authenticated/people/benefits")({
 });
 
 const brl = (n: number | null | undefined) =>
-  (n ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 2 });
+  (n ?? 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 2,
+  });
 
 function BenefitsListPage() {
   const qc = useQueryClient();
@@ -76,7 +88,11 @@ function BenefitsListPage() {
       <PageHeader
         title="Benefícios"
         description="Benefícios ativos em todo o workspace."
-        actions={<div className="text-sm text-muted-foreground">Total mensal: <span className="font-medium text-foreground">{brl(totalMonthly)}</span></div>}
+        actions={
+          <div className="text-sm text-muted-foreground">
+            Total mensal: <span className="font-medium text-foreground">{brl(totalMonthly)}</span>
+          </div>
+        }
       />
 
       {selection.hasSelection && (
@@ -134,14 +150,20 @@ function BenefitsListPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">Carregando…</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                  Carregando…
+                </TableCell>
+              </TableRow>
             ) : data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <HeartHandshake className="h-8 w-8 text-muted-foreground" />
                     <div className="text-sm font-medium">Nenhum benefício ativo</div>
-                    <div className="text-xs text-muted-foreground">Cadastre benefícios na ficha da pessoa (aba Benefícios).</div>
+                    <div className="text-xs text-muted-foreground">
+                      Cadastre benefícios na ficha da pessoa (aba Benefícios).
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>
@@ -157,17 +179,33 @@ function BenefitsListPage() {
                   </TableCell>
                   <TableCell>
                     {b.people ? (
-                      <Link to="/people/$id" params={{ id: b.people.id }} className="font-medium hover:underline">{b.people.full_name}</Link>
-                    ) : "—"}
+                      <Link
+                        to="/people/$id"
+                        params={{ id: b.people.id }}
+                        className="font-medium hover:underline"
+                      >
+                        {b.people.full_name}
+                      </Link>
+                    ) : (
+                      "—"
+                    )}
                   </TableCell>
-                  <TableCell><Badge variant="outline">{BENEFIT_TYPE_LABELS[b.benefit_type as BenefitType] ?? b.benefit_type}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant="outline">
+                      {BENEFIT_TYPE_LABELS[b.benefit_type as BenefitType] ?? b.benefit_type}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-sm">
                     <div>{b.provider ?? "—"}</div>
-                    {b.plan_name ? <div className="text-xs text-muted-foreground">{b.plan_name}</div> : null}
+                    {b.plan_name ? (
+                      <div className="text-xs text-muted-foreground">{b.plan_name}</div>
+                    ) : null}
                   </TableCell>
                   <TableCell className="text-right">{brl(b.monthly_value)}</TableCell>
                   <TableCell className="text-right">{brl(b.employee_share)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{b.starts_on ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {b.starts_on ?? "—"}
+                  </TableCell>
                 </TableRow>
               ))
             )}
