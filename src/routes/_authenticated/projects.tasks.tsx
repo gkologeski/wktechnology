@@ -219,6 +219,54 @@ function ProjectTasksPage() {
         />
       )}
 
+      {view === "kanban" ? (
+        <KanbanBoard
+          rows={rows as Array<(typeof rows)[number] & { id: string }>}
+          table="project_tasks"
+          stageField="status"
+          canUpdate={canUpdate}
+          isLoading={isLoading}
+          invalidateKeys={[["project_tasks"]]}
+          ariaLabel="Quadro de tarefas de projetos"
+          columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({
+            value,
+            label,
+            tone: KANBAN_TONE[value],
+          }))}
+          emptyState={
+            <div className="p-12 text-center">
+              <ListTodo className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">Nenhuma tarefa encontrada</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crie tarefas dentro de um projeto para vê-las aqui.
+              </p>
+            </div>
+          }
+          renderCard={(t) => {
+            const project = (t as { projects?: { id: string; name: string } }).projects;
+            return (
+              <div className="space-y-1 pr-6">
+                <p className="text-sm font-medium leading-snug">{t.title}</p>
+                {project && (
+                  <Link
+                    to="/projects/$id"
+                    params={{ id: project.id }}
+                    className="block text-xs text-muted-foreground hover:underline"
+                  >
+                    {project.name}
+                  </Link>
+                )}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "sem prazo"}</span>
+                  <span className="tabular-nums">
+                    {t.estimated_hours ? `${t.estimated_hours}h` : ""}
+                  </span>
+                </div>
+              </div>
+            );
+          }}
+        />
+      ) : (
       <div className="rounded-lg border bg-card">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
