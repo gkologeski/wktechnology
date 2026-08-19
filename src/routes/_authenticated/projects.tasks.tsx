@@ -119,7 +119,12 @@ function ProjectTasksPage() {
   ]);
 
 
-  return (
+  const { view } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const setView = (v: "table" | "kanban") =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
+
+
     <div className="p-6 space-y-5">
       <PageHeader
         title="Tarefas de projetos"
