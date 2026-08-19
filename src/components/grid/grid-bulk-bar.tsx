@@ -176,7 +176,10 @@ export function GridBulkBar<T extends { id: string }>({
         setOpen={setDeleteOpen}
         count={ids.length}
         entity={entityLabel}
-        onConfirm={bulkDelete}
+        onConfirm={async () => {
+          await bulkDelete();
+        }}
+
       />
     </>
   );
