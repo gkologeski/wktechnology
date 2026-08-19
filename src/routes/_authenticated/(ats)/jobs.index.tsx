@@ -70,6 +70,10 @@ import { DealPicker } from "@/components/ats/deal-picker";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { cn } from "@/lib/utils";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useGridSelection } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/")({
   component: AtsJobsPage,
@@ -289,6 +293,12 @@ function AtsJobsPage() {
   const rows = filterRows(allRows).filter((r) =>
     pipelineFilter === "all" ? true : r.pipeline_id === pipelineFilter,
   );
+  // Seleção múltipla / em massa (padrão de grids — visão em tabela).
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(rows as Array<JobRow & { id: string }>);
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
+
+
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<ViewKind>(() =>
     typeof window !== "undefined"
