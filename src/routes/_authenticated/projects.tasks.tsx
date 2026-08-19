@@ -172,6 +172,43 @@ function ProjectTasksPage() {
         </Select>
       </div>
 
+
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="project_tasks"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="tarefa(s)"
+          onClear={selection.clear}
+          onDone={() => void qc.invalidateQueries({ queryKey: ["project_tasks"] })}
+          totalMatching={rows.length}
+          onSelectAll={selectAllFiltered}
+          assignColumn={canUpdate ? "assignee_id" : null}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          bulkEditFields={[
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: Object.entries(STATUS_LABEL).map(([value, label]) => ({ value, label })),
+            },
+            {
+              name: "priority",
+              label: "Prioridade",
+              type: "select",
+              options: [
+                { value: "low", label: "Baixa" },
+                { value: "normal", label: "Normal" },
+                { value: "high", label: "Alta" },
+                { value: "urgent", label: "Urgente" },
+              ],
+            },
+            { name: "due_at", label: "Prazo", type: "date" },
+          ]}
+        />
+      )}
+
       <div className="rounded-lg border bg-card">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
@@ -190,6 +227,19 @@ function ProjectTasksPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    checked={
+                      selection.allOnPageSelected
+                        ? true
+                        : selection.someOnPageSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={() => selection.toggleAllOnPage()}
+                    aria-label="Selecionar todas as tarefas da página"
+                  />
+                </TableHead>
                 <TableHead>Título</TableHead>
                 <TableHead>Projeto</TableHead>
                 <TableHead>Status</TableHead>
@@ -201,8 +251,16 @@ function ProjectTasksPage() {
               {rows.map((t) => {
                 const project = (t as { projects?: { id: string; name: string } }).projects;
                 return (
-                  <TableRow key={t.id}>
+                  <TableRow key={t.id} data-state={selection.isSelected(t.id) ? "selected" : undefined}>
                     <TableCell>
+                      <Checkbox
+                        checked={selection.isSelected(t.id)}
+                        onCheckedChange={() => selection.toggleOne(t.id)}
+                        aria-label={`Selecionar tarefa ${t.title}`}
+                      />
+                    </TableCell>
+                    <TableCell>
+
                       {project ? (
                         <Link
                           to="/projects/$id"
