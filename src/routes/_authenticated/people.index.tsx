@@ -113,6 +113,11 @@ function PeoplePage() {
 
   const rows = filterRows(allRows);
 
+  // Seleção múltipla / ações em massa (padrão de grids).
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(rows as Array<(typeof rows)[number] & { id: string }>);
+  const selectAllFiltered = () => selection.setSelectedIds(new Set(rows.map((r) => r.id)));
+
   return (
     <div className="container max-w-7xl mx-auto p-6 space-y-6">
       <PageHeader
