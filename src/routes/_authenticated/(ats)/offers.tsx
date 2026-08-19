@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { FileSignature, Send, X, Trash2, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -18,6 +19,9 @@ import { cn } from "@/lib/utils";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeader, EmptyState, Skeletons, MetaPill } from "@/components/techhire/ui";
 import { listOffers, sendOffer, cancelOffer, deleteOffer } from "@/lib/ats/offers.functions";
+import { useGridSelection, idQueryFor } from "@/components/grid/use-grid-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/offers")({
   component: OffersPage,
@@ -89,6 +93,8 @@ function OffersPage() {
   const del = useServerFn(deleteOffer);
   const [rows, setRows] = useState<OfferRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { canAny } = usePermissions();
+  const selection = useGridSelection(rows, { buildIdQuery: idQueryFor("ats_offers") });
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -149,6 +155,22 @@ function OffersPage() {
     <div className="flex flex-col gap-6">
       <PageHeader eyebrow="ATS" title="Ofertas" description={description} descriptionLive />
 
+      {selection.hasSelection && (
+        <GridBulkBar
+          table="ats_offers"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="oferta(s)"
+          onClear={selection.clear}
+          onDone={reload}
+          totalMatching={rows.length}
+          onSelectAll={selection.selectAllMatching}
+          isSelectingAll={selection.isSelectingAll}
+          canUpdate={canAny(["techhire.offers.update.workspace", "techhire.offers.update.own"])}
+          canDelete={canAny(["techhire.offers.delete.workspace", "techhire.offers.delete.own"])}
+        />
+      )}
+
       {loading ? (
         <div className="rounded-lg border border-border-subtle bg-surface-1 p-2 shadow-xs">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -166,6 +188,19 @@ function OffersPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-surface-2/60">
+                <TableHead className="w-10">
+                  <Checkbox
+                    aria-label="Selecionar todas da página"
+                    checked={
+                      selection.allOnPageSelected
+                        ? true
+                        : selection.someOnPageSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={selection.toggleAllOnPage}
+                  />
+                </TableHead>
                 <TableHead>Candidato</TableHead>
                 <TableHead>Vaga</TableHead>
                 <TableHead>Salário</TableHead>
@@ -176,7 +211,19 @@ function OffersPage() {
             </TableHeader>
             <TableBody>
               {rows.map((r) => (
-                <TableRow key={r.id} className="group">
+                <TableRow
+                  key={r.id}
+                  className="group"
+                  data-state={selection.isSelected(r.id) ? "selected" : undefined}
+                >
+                  <TableCell>
+                    <Checkbox
+                      aria-label="Selecionar oferta"
+                      checked={selection.isSelected(r.id)}
+                      onCheckedChange={() => selection.toggleOne(r.id)}
+                    />
+                  </TableCell>
+
                   <TableCell>
                     <div className="font-medium text-text-primary">
                       {r.ats_candidates?.full_name ?? "—"}
