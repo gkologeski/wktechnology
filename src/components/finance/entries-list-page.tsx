@@ -244,6 +244,19 @@ export function EntriesListPage({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10">
+                  <Checkbox
+                    aria-label="Selecionar todos os lançamentos exibidos"
+                    checked={
+                      selection.allOnPageSelected
+                        ? true
+                        : selection.someOnPageSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={selection.toggleAllOnPage}
+                  />
+                </TableHead>
                 <TableHead>Descrição</TableHead>
                 <TableHead>Contraparte</TableHead>
                 <TableHead>Categoria</TableHead>
