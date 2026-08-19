@@ -4860,6 +4860,7 @@ export type Database = {
       contacts: {
         Row: {
           address: string | null
+          assigned_to: string | null
           assigned_user_id: string | null
           cep: string | null
           city: string | null
@@ -4902,6 +4903,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          assigned_to?: string | null
           assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
@@ -4944,6 +4946,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          assigned_to?: string | null
           assigned_user_id?: string | null
           cep?: string | null
           city?: string | null
