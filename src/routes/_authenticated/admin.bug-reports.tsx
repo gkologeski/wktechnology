@@ -1,5 +1,8 @@
 // Painel super-admin: caixa de entrada dos chamados internos (bug reports).
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { ViewModeToggle, type ListViewMode } from "@/components/kanban/view-mode-toggle";
+
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -54,8 +57,12 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/bug-reports")({
+  validateSearch: (search: Record<string, unknown>): { view: ListViewMode } => ({
+    view: search["view"] === "kanban" ? "kanban" : "table",
+  }),
   component: BugReportsAdminPage,
 });
+
 
 const STATUS_LABEL: Record<BugReportStatus, string> = {
   open: "Aberto",
@@ -86,9 +93,19 @@ function subLabel(cat: string, value: string) {
 function kindLabel(value: string) {
   return BUG_KINDS.find((k) => k.value === value)?.label ?? value;
 }
+const KANBAN_TONE: Record<BugReportStatus, string> = {
+  open: "bg-destructive",
+  triaged: "bg-primary/60",
+  in_progress: "bg-primary",
+  resolved: "bg-emerald-500",
+  wont_fix: "bg-muted-foreground/40",
+};
 
 function BugReportsAdminPage() {
+  const sp = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
   const { isPlatformAdmin, loading } = useIsPlatformAdmin();
+
   const listFn = useServerFn(listBugReports);
   const updateFn = useServerFn(updateBugReportStatus);
   const deleteFn = useServerFn(deleteBugReport);
@@ -324,6 +341,12 @@ function BugReportsAdminPage() {
             </SelectContent>
           </Select>
         </div>
+        <div className="ml-auto">
+          <ViewModeToggle
+            value={sp.view}
+            onChange={(v) => navigate({ search: { view: v } })}
+          />
+        </div>
       </div>
 
       {list.isLoading ? (
@@ -335,7 +358,51 @@ function BugReportsAdminPage() {
             Nenhum chamado para os filtros selecionados.
           </CardContent>
         </Card>
+      ) : sp.view === "kanban" ? (
+        <KanbanBoard
+          rows={rows as Array<{ id: string; status: string }>}
+          table="bug_reports"
+          stageField="status"
+          ariaLabel="Quadro de chamados internos"
+          columns={BUG_REPORT_STATUSES.map((s) => ({
+            value: s,
+            label: STATUS_LABEL[s],
+            tone: KANBAN_TONE[s],
+          }))}
+          onMove={async (id, stage) => {
+            handleStatusChange(id, stage as BugReportStatus);
+          }}
+          renderCard={(r) => {
+            const row = r as unknown as Record<string, unknown>;
+            const created = new Date(row["created_at"] as string);
+            const reporter = row["reporter"] as
+              | { email?: string | null; full_name?: string | null }
+              | null
+              | undefined;
+            return (
+              <div className="space-y-2 pr-6">
+                <div className="flex flex-wrap gap-1.5">
+                  <Badge variant="outline" className="text-[10px]">
+                    {kindLabel(row["kind"] as string)}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {catLabel(row["category"] as string)}
+                  </Badge>
+                </div>
+                <HtmlContent
+                  html={row["description"] as string}
+                  className="line-clamp-3 text-xs text-muted-foreground"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  {reporter?.email ?? reporter?.full_name ?? "—"} ·{" "}
+                  {format(created, "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                </p>
+              </div>
+            );
+          }}
+        />
       ) : (
+
         <div className="space-y-3">
           {rows.map((r) => {
             const created = new Date(r.created_at as string);
