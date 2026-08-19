@@ -43,22 +43,21 @@ where rls = false
 order by rls, tem_coluna_workspace, t;
 ```
 
-## 2. Snapshot (18/08/2026)
+## 2. Snapshot (18/08/2026 — após padronização final)
 
 | Indicador | Valor |
 | --- | --- |
 | Tabelas em `public` | 312 |
 | Sem RLS habilitada | 0 |
 | Sem nenhuma política | 1 (`payment_webhook_events` — fechada de propósito, gravada só pelo servidor) |
-| Com coluna `workspace_id` | 228 |
-| Com política citando `workspace_id` | 237 |
-| Sem coluna e sem política de workspace | 70 |
+| Pendências reais de isolamento (grupo c) | 0 |
 
 Órfãos de backfill verificados: `ats_jobs`, `ats_interviews`, `user_files`,
-`message_drafts`, `prospecting_questionnaires` → **0** registros sem
-`workspace_id`.
+`message_drafts`, `prospecting_questionnaires`, `people` e as 12 tabelas do
+último lote → **0** registros sem `workspace_id` e **0** divergências entre
+`workspace_id` e `owner_id`.
 
-### Classificação das 70 tabelas restantes
+### Classificação das tabelas sem `workspace_id`
 
 **a) Globais/plataforma — não devem ter `workspace_id`** (catálogo, plataforma,
 observabilidade): `modules`, `plans`, `plan_entitlements`, `permissions`,
@@ -82,25 +81,32 @@ observabilidade): `modules`, `plans`, `plan_entitlements`, `permissions`,
 `chat_messages`, `chat_message_attachments`, `workspaces`,
 `workspace_subscriptions`.
 
-**c) Pendências reais (dado de cliente ainda sem `workspace_id`)** — alvo do
-próximo lote, fora do escopo desta fase:
-`ats_sourcing_step_log`, `ads_accounts`, `ads_audiences`, `ads_lead_forms`,
-`ab_tests`, `ab_test_events`, `attribution_touchpoints`, `landing_pages`,
-`landing_page_events`, `live_chat_sessions`, `live_chat_messages`,
-`kb_categories`.
+**c) Pendências reais: nenhuma.**
 
-Padronizadas em 18/08/2026 (saíram do grupo c): `people`, `people_events`,
-`people_psychosocial_assessments` — passaram a ter `workspace_id` (NOT NULL,
-FK + índice), triggers de sincronização com `owner_id` (mantido por
-compatibilidade) e políticas únicas por operação no padrão
-`workspace_id IN (SELECT current_user_workspaces())` + RBAC granular +
-bypass de administrador de plataforma. As funções `can_view_person`,
-`can_manage_person` e `can_view_person_sensitive` passaram a usar
-`people.workspace_id` e não aceitam mais o atalho `owner_id = auth.uid()`.
+Padronizadas em 18/08/2026 (lote 1): `people`, `people_events`,
+`people_psychosocial_assessments`.
 
-Observação: várias dessas tabelas já são isoladas indiretamente (por FK ao pai
-que tem `workspace_id`, ou por `owner_id`), então não há vazamento conhecido —
-o que falta é padronizar a coluna e a política.
+Padronizadas em 18/08/2026 (lote 2, encerra o grupo c): `ads_accounts`,
+`ads_audiences`, `ads_lead_forms`, `ab_tests`, `ab_test_events`,
+`attribution_touchpoints`, `landing_pages`, `landing_page_events`,
+`live_chat_sessions`, `live_chat_messages`, `kb_categories`,
+`ats_sourcing_step_log`. Todas ganharam `workspace_id` (NOT NULL, FK +
+índice), trigger `trg_<tabela>_sync_workspace` (função
+`public.sync_workspace_owner_id`, que mantém `workspace_id` e `owner_id`
+sincronizados) e políticas no padrão
+`workspace_id IN (SELECT current_user_workspaces())` combinado com a exigência
+de papel que já existia (membro; administrador do workspace em `ads_accounts`
+e nas escritas de `landing_pages`), mais bypass de administrador de plataforma.
+O atalho inseguro `owner_id = auth.uid()` foi removido de
+`ats_sourcing_step_log`. O grant residual de `anon` foi revogado nas 12 tabelas
+(nenhuma tinha política anônima).
+
+**Exceção documentada**: `payment_webhook_events` já possui `workspace_id`,
+mantém RLS habilitada **sem políticas** e sem grant para `authenticated` — é
+gravada e lida apenas pelo servidor (chave de serviço). Não é uma pendência.
+
+A leitura pública de landing page publicada continua via server function com
+cliente administrativo e projeção mínima, sem política anônima.
 
 ## 3. Licenciamento por módulo
 

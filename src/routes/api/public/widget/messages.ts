@@ -64,6 +64,7 @@ export const Route = createFileRoute("/api/public/widget/messages")({
           const { error } = await supabaseAdmin.from("live_chat_messages").insert({
             session_id: data.session_id,
             owner_id: s.owner_id,
+            workspace_id: s.owner_id,
             direction: "inbound",
             body: data.body,
           });

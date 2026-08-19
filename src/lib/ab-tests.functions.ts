@@ -48,6 +48,7 @@ export const upsertAbTest = createServerFn({ method: "POST" })
     const ws = await activeWorkspace(context.supabase, context.userId);
     const payload = {
       owner_id: ws,
+      workspace_id: ws,
       name: data.name,
       entity_type: data.entity_type,
       entity_id: data.entity_id ?? null,

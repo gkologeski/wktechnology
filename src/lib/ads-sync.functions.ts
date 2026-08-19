@@ -39,7 +39,7 @@ export const connectAdsAccount = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ws = await activeWorkspace(context.supabase, context.userId);
     const { data: row, error } = await (context.supabase.from("ads_accounts") as any)
-      .insert({ owner_id: ws, ...data })
+      .insert({ owner_id: ws, workspace_id: ws, ...data })
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -83,6 +83,7 @@ export const syncAudience = createServerFn({ method: "POST" })
     const { data: row, error } = await (context.supabase.from("ads_audiences") as any)
       .insert({
         owner_id: ws,
+        workspace_id: ws,
         ...data,
         status: "synced",
         last_synced_at: new Date().toISOString(),

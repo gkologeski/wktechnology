@@ -66,6 +66,7 @@ export const upsertKbCategory = createServerFn({ method: "POST" })
     const slug = data.slug || slugify(data.name);
     const payload = {
       owner_id: ws,
+      workspace_id: ws,
       name: data.name,
       slug,
       description: data.description ?? null,
@@ -301,7 +302,14 @@ export const seedStarterKb = createServerFn({ method: "POST" })
       }
       const { data: ins, error } = await supabaseAdmin
         .from("kb_categories")
-        .insert({ owner_id: ws, name: c.name, slug, description: c.description, position: 0 })
+        .insert({
+          owner_id: ws,
+          workspace_id: ws,
+          name: c.name,
+          slug,
+          description: c.description,
+          position: 0,
+        })
         .select("id")
         .single();
       if (error) throw new Error(error.message);
