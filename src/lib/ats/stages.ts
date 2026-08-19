@@ -64,10 +64,8 @@ export function firstAtsStageValue(rawStages: unknown): string {
 export function atsStageOutcome(rawStages: unknown, value: string): "open" | "won" | "lost" {
   const stage = parseAtsStages(rawStages).find((s) => s.value === value);
   if (stage && (stage.type === "won" || stage.type === "lost")) return stage.type;
-  if (!stage) {
-    if (WON_STAGE_FALLBACKS.has(value)) return "won";
-    if (LOST_STAGE_FALLBACKS.has(value)) return "lost";
-  }
+  if (WON_STAGE_FALLBACKS.has(value)) return "won";
+  if (LOST_STAGE_FALLBACKS.has(value)) return "lost";
   return "open";
 }
 
