@@ -4,7 +4,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emitEvent } from "@/lib/events.server";
 import { recordAtsEvent } from "./audit.server";
-import { DEFAULT_ATS_STAGES, type AtsStage } from "./stages";
+import {
+  DEFAULT_ATS_STAGES,
+  type AtsStage,
+  atsStageOutcome,
+  firstAtsStageValue,
+} from "./stages";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
 // ---------- helpers ---------------------------------------------------------
@@ -621,6 +626,39 @@ export const listJobApplications = createServerFn({ method: "POST" })
     });
   });
 
+/**
+ * Etapas do pipeline da vaga. Retorna [] quando a vaga não tem pipeline
+ * visível/associado — nesse caso os chamadores usam os padrões conhecidos.
+ */
+type PipelineReader = {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        maybeSingle: () => Promise<{ data: unknown }>;
+      };
+    };
+  };
+};
+
+async function loadJobPipelineStages(
+  supabase: PipelineReader,
+  jobId: string,
+): Promise<unknown> {
+  const { data: job } = await supabase
+    .from("ats_jobs")
+    .select("pipeline_id")
+    .eq("id", jobId)
+    .maybeSingle();
+  const pipelineId = (job as { pipeline_id: string | null } | null)?.pipeline_id ?? null;
+  if (!pipelineId) return null;
+  const { data: pipeline } = await supabase
+    .from("ats_pipelines")
+    .select("stages")
+    .eq("id", pipelineId)
+    .maybeSingle();
+  return (pipeline as { stages: unknown } | null)?.stages ?? null;
+}
+
 export const addApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -634,13 +672,17 @@ export const addApplication = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    // A etapa inicial vem do pipeline da vaga (nunca um slug fixo),
+    // senão a candidatura não apareceria em nenhuma coluna do kanban.
+    const jobStages = await loadJobPipelineStages(supabase as never, data.jobId);
+    const initialStage = firstAtsStageValue(jobStages);
     const { data: ins, error } = await supabase
       .from("ats_applications")
       .insert({
         owner_id: userId,
         job_id: data.jobId,
         candidate_id: data.candidateId,
-        stage_value: "caixa_de_entrada",
+        stage_value: initialStage,
         status: "active",
         source: data.source,
         position: 0,
@@ -656,7 +698,7 @@ export const addApplication = createServerFn({ method: "POST" })
         job_id: data.jobId,
         candidate_id: data.candidateId,
         event_type: "application_created",
-        to_stage: "caixa_de_entrada",
+        to_stage: initialStage,
         actor_id: userId,
         metadata: { source: data.source },
       } as never)
@@ -740,8 +782,12 @@ export const moveApplication = createServerFn({ method: "POST" })
       position: data.position,
       moved_at: new Date().toISOString(),
     };
-    if (data.toStage === "profissional_contratado") patch.status = "hired";
-    else if (data.toStage === "vaga_cancelada") patch.status = "rejected";
+    // O desfecho da etapa vem do pipeline da vaga (type won/lost),
+    // com fallback para os slugs conhecidos.
+    const moveStages = await loadJobPipelineStages(supabase as never, prev.job_id as string);
+    const outcome = atsStageOutcome(moveStages, data.toStage);
+    if (outcome === "won") patch.status = "hired";
+    else if (outcome === "lost") patch.status = "rejected";
     else patch.status = "active";
 
     const { data: upd, error } = await supabase
@@ -784,7 +830,7 @@ export const moveApplication = createServerFn({ method: "POST" })
         },
       }).catch(() => undefined);
 
-      if (data.toStage === "profissional_contratado") {
+      if (outcome === "won") {
         await recordAtsEvent(supabase, {
           ownerId: userId,
           name: "ats.candidate.hired",
@@ -798,7 +844,7 @@ export const moveApplication = createServerFn({ method: "POST" })
           },
         }).catch(() => undefined);
       }
-      if (data.toStage === "vaga_cancelada") {
+      if (outcome === "lost") {
         await emitEvent(supabase, {
           ownerId: userId,
           eventName: "ats.application.rejected",
