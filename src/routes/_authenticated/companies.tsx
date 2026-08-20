@@ -150,7 +150,12 @@ function CompaniesHubspotView() {
     },
   });
 
-  const { data: result, isLoading } = useQuery({
+  const {
+    data: result,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: [
       "companies",
       "hubspot-list",
@@ -162,12 +167,19 @@ function CompaniesHubspotView() {
       page,
       pageSize,
       user?.id,
+      projection.selectSignature,
+      projection.needsCustomFields,
     ],
+    enabled: !projection.isLoading,
     queryFn: async () => {
-      let q = supabase
-        .from("companies")
-        // `*` para suportar qualquer coluna escolhida no editor de colunas.
-        .select("*", { count: "exact" });
+      let q = supabase.from("companies").select(
+        // Projeção sob demanda: colunas base + colunas visíveis do catálogo.
+        buildGridSelect(BASE_COMPANY_KEYS, projection.selectKeys, {
+          customFields: projection.needsCustomFields,
+          allowed: projection.knownColumns,
+        }),
+        { count: "exact" },
+      );
 
       if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
       if (activeView === "unassigned") q = q.is("owner_id", null);
