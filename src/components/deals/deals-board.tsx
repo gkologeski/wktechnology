@@ -85,7 +85,7 @@ export function DealsBoard({
       return;
     }
 
-    qc.setQueryData<Deal[]>(["deals", "list"], (old = []) =>
+    qc.setQueriesData<Deal[]>({ queryKey: ["deals", "list"] }, (old = []) =>
       old.map((d) =>
         d.id === id ? { ...d, stage: newStage as Deal["stage"], stage_id: newStage } : d,
       ),
@@ -97,7 +97,7 @@ export function DealsBoard({
   const confirmLost = async (result: LostReasonResult) => {
     if (!lostTarget) return;
     const notes = result.notes ? `${result.reasonLabel} — ${result.notes}` : result.reasonLabel;
-    qc.setQueryData<Deal[]>(["deals", "list"], (old = []) =>
+    qc.setQueriesData<Deal[]>({ queryKey: ["deals", "list"] }, (old = []) =>
       old.map((d) =>
         d.id === lostTarget.id
           ? { ...d, stage: "lost" as Deal["stage"], stage_id: lostTarget.stageId }
