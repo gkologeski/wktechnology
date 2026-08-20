@@ -742,6 +742,25 @@ function CompaniesHubspotView() {
                       Carregando empresas…
                     </td>
                   </tr>
+                ) : isError ? (
+                  <tr>
+                    <td
+                      colSpan={visibleColumns.length + 2}
+                      className="px-3 py-16 text-center text-sm"
+                    >
+                      <p className="text-muted-foreground">
+                        Não foi possível carregar as empresas.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => void refetch()}
+                      >
+                        Tentar novamente
+                      </Button>
+                    </td>
+                  </tr>
                 ) : rows.length === 0 ? (
                   <tr>
                     <td
