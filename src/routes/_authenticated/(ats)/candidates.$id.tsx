@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { HireCandidateDialog } from "@/components/people/hire-candidate-dialog";
 import { Button } from "@/components/ui/button";
 import { RecordLayout } from "@/components/record/record-layout";
+import { AssigneeField } from "@/components/entity/assignee-field";
 import { ScoreBadge, SourceBadge } from "@/components/ats/ui/badges";
 import { MetaPill } from "@/components/techhire/ui/meta-pill";
 import { CandidateCopilotPanel } from "@/components/ats/candidate-copilot-panel";
@@ -273,6 +274,7 @@ function CandidateDetailPage() {
           <div className="space-y-4">
             <IdentityBlock candidate={c} />
             <PropertiesPanel
+              onChanged={load}
               candidate={c}
               onSave={async (patch) => {
                 await saveFn({
@@ -346,9 +348,11 @@ type EditablePatch = Partial<CandidateDetail["candidate"]>;
 function PropertiesPanel({
   candidate,
   onSave,
+  onChanged,
 }: {
   candidate: CandidateDetail["candidate"];
   onSave: (patch: EditablePatch) => Promise<void>;
+  onChanged?: () => void | Promise<void>;
 }) {
   const [form, setForm] = useState(candidate);
   const [saving, setSaving] = useState(false);
@@ -394,6 +398,14 @@ function PropertiesPanel({
         <h2 className="text-sm font-semibold text-text-primary">Propriedades</h2>
       </header>
       <div className="p-4 space-y-3 text-sm">
+        <div className="pb-3 border-b border-border-subtle">
+          <AssigneeField
+            table="ats_candidates"
+            rowId={candidate.id}
+            assignedTo={candidate.assigned_to}
+            onChanged={() => onChanged?.()}
+          />
+        </div>
         <Field label="Nome">
           <Input value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
         </Field>
@@ -559,7 +571,18 @@ function ApplicationsCard({
                   {a.moved_at && <span>· {formatDateTime(a.moved_at)}</span>}
                 </div>
               </div>
-              {a.ai_match_score != null && <ScoreBadge score={Number(a.ai_match_score)} />}
+              <div className="flex shrink-0 items-center gap-3">
+                {a.ai_match_score != null && <ScoreBadge score={Number(a.ai_match_score)} />}
+                <div className="w-44">
+                  <AssigneeField
+                    table="ats_applications"
+                    rowId={a.id}
+                    assignedTo={a.assigned_to}
+                    compact
+                    onChanged={() => onChanged?.()}
+                  />
+                </div>
+              </div>
             </div>
           ))
         )}

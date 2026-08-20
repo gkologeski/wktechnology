@@ -77,6 +77,7 @@ import {
 import { MetaPill } from "@/components/techhire/ui";
 import { OwnerField } from "@/components/entity/owner-field";
 import { AssigneeField } from "@/components/entity/assignee-field";
+import { AssigneeCell } from "@/components/entity/assignee-cell";
 import { DealPicker } from "@/components/ats/deal-picker";
 import { cn } from "@/lib/utils";
 
@@ -506,6 +507,10 @@ function JobDetailPage() {
                             </MetaPill>
                           )}
                         </div>
+                        <AssigneeCell
+                          assignedTo={(a as { assigned_to?: string | null }).assigned_to}
+                          className="mt-2 text-xs"
+                        />
                         <div className="mt-2 flex justify-end">
                           <Button
                             size="sm"
