@@ -222,7 +222,6 @@ function ContactsHubspotView() {
         { count: "exact" },
       );
 
-
       if (activeView === "mine" && user?.id) {
         q = q.or(
           `assigned_user_id.eq.${user.id},and(assigned_user_id.is.null,owner_id.eq.${user.id})`,
@@ -486,7 +485,6 @@ function ContactsHubspotView() {
     catalogEntity: "contacts",
     sortHeader: autoSortHeader,
   });
-
 
   const hasActiveFilters =
     filters.lifecycle.length > 0 ||

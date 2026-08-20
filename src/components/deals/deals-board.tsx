@@ -50,11 +50,17 @@ export function DealsBoard({
     return map;
   }, [deals, pipeline]);
 
-  const [lostTarget, setLostTarget] = useState<
-    { id: string; name: string | null; stageId: string } | null
-  >(null);
+  const [lostTarget, setLostTarget] = useState<{
+    id: string;
+    name: string | null;
+    stageId: string;
+  } | null>(null);
 
-  const applyStageUpdate = async (id: string, newStage: string, extra?: Record<string, unknown>) => {
+  const applyStageUpdate = async (
+    id: string,
+    newStage: string,
+    extra?: Record<string, unknown>,
+  ) => {
     const legacyEnum = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
     const stageType = pipeline.stages.find((s) => s.value === newStage)?.type;
     const payload: Record<string, unknown> = { stage_id: newStage, ...(extra ?? {}) };
@@ -131,10 +137,7 @@ export function DealsBoard({
                 (sum, d) => sum + Number(d.value || 0) * ((s.probability ?? 0) / 100),
                 0,
               );
-              const hotCount = rows.reduce(
-                (n, d) => n + (signals.get(d.id)?.isHot ? 1 : 0),
-                0,
-              );
+              const hotCount = rows.reduce((n, d) => n + (signals.get(d.id)?.isHot ? 1 : 0), 0);
               return (
                 <DealsBoardColumn
                   key={s.value}
@@ -153,7 +156,9 @@ export function DealsBoard({
                         columnId={s.value}
                         companyName={d.company_id ? lookups.companies.get(d.company_id) : undefined}
                         contactName={
-                          d.primary_contact_id ? lookups.contacts.get(d.primary_contact_id) : undefined
+                          d.primary_contact_id
+                            ? lookups.contacts.get(d.primary_contact_id)
+                            : undefined
                         }
                         ownerName={lookups.owners.get(d.owner_id) ?? "—"}
                         fields={pipeline.config?.card_fields}
