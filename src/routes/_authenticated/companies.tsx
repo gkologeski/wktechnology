@@ -111,6 +111,19 @@ function CompaniesHubspotView() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const projection = useGridProjection({
+    gridKey: "companies",
+    entity: "companies",
+    declaredSortKeys: DECLARED_SORT_KEYS,
+  });
+  // Reaplica a ordenação salva do usuário na primeira carga da preferência.
+  const sortHydrated = useRef(false);
+  useEffect(() => {
+    if (sortHydrated.current || !projection.sortKey) return;
+    sortHydrated.current = true;
+    setSortKey(projection.sortKey);
+    setSortDir(projection.sortDir ?? "asc");
+  }, [projection.sortKey, projection.sortDir]);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
