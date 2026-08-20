@@ -42,6 +42,7 @@ export function useGridColumns<T extends object>({
   columns,
   defaults,
   customEntity,
+  catalogEntity,
 }: UseGridColumnsOptions<T>) {
   const qc = useQueryClient();
   const getPrefFn = useServerFn(getGridPreference);
