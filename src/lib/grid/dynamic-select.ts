@@ -39,7 +39,6 @@ export function buildGridSelect(
   return sel(Array.from(out).join(", "));
 }
 
-
 /** Chave estável para usar em `queryKey` (a ordem do Set não deve gerar refetch). */
 export function selectKeysSignature(keys: readonly string[]): string {
   return keys.slice().sort().join(",");

@@ -520,7 +520,6 @@ function LeadsHubspotView() {
     },
   });
 
-
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -1333,7 +1332,6 @@ function LeadsHubspotView() {
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
-
                   <tr>
                     <td
                       colSpan={visibleColumns.length + 2}
