@@ -454,10 +454,9 @@ function LeadsHubspotView() {
     queryFn: async () => {
       let q = supabase
         .from("leads")
-        .select(
-          "id, first_name, last_name, email, phone, company_name, source, label, score, status, stage_id, pipeline_id, owner_id, assigned_user_id, hubspot_owner_id, created_at, updated_at, custom_fields",
-          { count: "exact" },
-        );
+        // `*` para que qualquer coluna escolhida no editor de colunas
+        // (catálogo dinâmico de campos) já venha na projeção.
+        .select("*", { count: "exact" });
 
       q = applyFilters(q);
       q = q.order(sortKey, { ascending: sortDir === "asc" });
