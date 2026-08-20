@@ -194,6 +194,7 @@ export function useGridColumns<T extends object>({
   return {
     columns: visibleColumns,
     columnKeys: visibleKeys,
+    selectKeys,
     allColumns,
     openEditor,
     ColumnsButton,
