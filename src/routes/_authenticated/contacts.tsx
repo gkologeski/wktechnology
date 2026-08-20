@@ -421,6 +421,7 @@ function ContactsHubspotView() {
     columns: contactColumns,
     defaults: DEFAULT_CONTACT_COLS,
     customEntity: "contacts",
+    catalogEntity: "contacts",
   });
 
   const hasActiveFilters =

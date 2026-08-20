@@ -355,6 +355,7 @@ export function DealsHubspotTable({
     columns: dealColumns,
     defaults: DEFAULT_DEAL_COLS,
     customEntity: "deals",
+    catalogEntity: "deals",
   });
 
   return (

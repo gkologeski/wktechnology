@@ -166,10 +166,8 @@ function CompaniesHubspotView() {
     queryFn: async () => {
       let q = supabase
         .from("companies")
-        .select(
-          "id, name, domain, industry, size, city, state, country, phone, owner_id, is_target_account, target_account_tier, created_at, updated_at, custom_fields",
-          { count: "exact" },
-        );
+        // `*` para suportar qualquer coluna escolhida no editor de colunas.
+        .select("*", { count: "exact" });
 
       if (activeView === "mine" && user?.id) q = q.eq("owner_id", user.id);
       if (activeView === "unassigned") q = q.is("owner_id", null);
@@ -398,6 +396,7 @@ function CompaniesHubspotView() {
     columns: companyColumns,
     defaults: DEFAULT_COMPANY_COLS,
     customEntity: "companies",
+    catalogEntity: "companies",
   });
 
   const hasActiveFilters =

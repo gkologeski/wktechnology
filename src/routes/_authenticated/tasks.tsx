@@ -259,10 +259,8 @@ function TasksHubspotView() {
     queryFn: async () => {
       let q = supabase
         .from("activities")
-        .select(
-          "id, subject, body, type, task_status, task_priority, due_date, completed, owner_id, related_contact_id, related_company_id, related_deal_id, related_lead_id, created_at, updated_at, custom_fields",
-          { count: "exact" },
-        );
+        // `*` para suportar qualquer coluna escolhida no editor de colunas.
+        .select("*", { count: "exact" });
       q = applyTaskFilters(q);
       q =
         sortKey === "created_at"
@@ -641,6 +639,7 @@ function TasksHubspotView() {
     columns: taskColumns,
     defaults: DEFAULT_TASK_COLS,
     customEntity: "activities",
+    catalogEntity: "activities",
   });
 
   return (
