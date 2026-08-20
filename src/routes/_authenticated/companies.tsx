@@ -391,12 +391,14 @@ function CompaniesHubspotView() {
     columns: visibleColumns,
     ColumnsButton,
     ColumnsEditor,
+    persistSort,
   } = useGridColumns<CompanyRow>({
     gridKey: "companies",
     columns: companyColumns,
     defaults: DEFAULT_COMPANY_COLS,
     customEntity: "companies",
     catalogEntity: "companies",
+    sortHeader: autoSortHeader,
   });
 
   const hasActiveFilters =
