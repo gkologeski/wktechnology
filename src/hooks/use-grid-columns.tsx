@@ -113,6 +113,15 @@ export function useGridColumns<T extends object>({
     [visibleKeys, allColumns],
   );
 
+  /**
+   * Colunas de banco que a consulta precisa projetar por causa das colunas
+   * automáticas visíveis (as declaradas manualmente já estão no `select` da tela).
+   */
+  const selectKeys = useMemo(() => {
+    const autoKeys = new Set(autoColumns.map((c) => c.key));
+    return visibleKeys.filter((k) => autoKeys.has(k));
+  }, [visibleKeys, autoColumns]);
+
   const saveMut = useMutation({
     mutationFn: (order: string[]) => savePrefFn({ data: { gridKey, visibleColumns: order } }),
     onMutate: async (order) => {
