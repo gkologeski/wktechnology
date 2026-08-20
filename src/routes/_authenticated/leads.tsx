@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Can, usePermissions } from "@/lib/access-control/use-permissions";
 import { useServerFn } from "@tanstack/react-start";
@@ -55,6 +55,8 @@ import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useHubspotOwners } from "@/hooks/use-hubspot-owners";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
+import { useGridProjection } from "@/hooks/use-grid-projection";
+import { buildGridSelect } from "@/lib/grid/dynamic-select";
 
 import { getDateRange, type CustomRange, type DatePreset } from "@/lib/date-presets";
 import { DateFilter } from "@/components/date-filter";
@@ -131,7 +133,32 @@ const VIEWS: { id: ViewId; label: string }[] = [
   { id: "new_week", label: "Novos esta semana" },
 ];
 
-type SortKey = "first_name" | "created_at" | "score";
+/** Colunas fixas ordenáveis do grid; colunas do catálogo entram como string. */
+type SortKey = string;
+const DECLARED_SORT_KEYS = ["first_name", "created_at", "score"] as const;
+/** Colunas sempre projetadas (ações, filtros, seleção e células fixas). */
+const BASE_LEAD_KEYS = [
+  "id",
+  "first_name",
+  "last_name",
+  "email",
+  "phone",
+  "company_name",
+  "company_id",
+  "contact_id",
+  "status",
+  "stage_id",
+  "source",
+  "score",
+  "value",
+  "label",
+  "owner_id",
+  "assigned_to",
+  "assigned_user_id",
+  "hubspot_owner_id",
+  "created_at",
+  "updated_at",
+] as const;
 type SortDir = "asc" | "desc";
 
 type Filters = {
@@ -221,6 +248,19 @@ function LeadsHubspotView() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const projection = useGridProjection({
+    gridKey: "leads",
+    entity: "leads",
+    declaredSortKeys: DECLARED_SORT_KEYS,
+  });
+  // Reaplica a ordenação salva do usuário na primeira carga da preferência.
+  const sortHydrated = useRef(false);
+  useEffect(() => {
+    if (sortHydrated.current || !projection.sortKey) return;
+    sortHydrated.current = true;
+    setSortKey(projection.sortKey);
+    setSortDir(projection.sortDir ?? "asc");
+  }, [projection.sortKey, projection.sortDir]);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -449,20 +489,26 @@ function LeadsHubspotView() {
       pageSize,
       user?.id,
       stagesKey,
+      projection.selectSignature,
+      projection.needsCustomFields,
     ],
     queryFn: async () => {
       let q = supabase
         .from("leads")
-        // `*` para que qualquer coluna escolhida no editor de colunas
-        // (catálogo dinâmico de campos) já venha na projeção.
-        .select("*", { count: "exact" });
+        // Projeção dinâmica: colunas base + colunas escolhidas no editor.
+        .select(
+          buildGridSelect(BASE_LEAD_KEYS, projection.selectKeys, {
+            customFields: projection.needsCustomFields,
+          }),
+          { count: "exact" },
+        );
 
       q = applyFilters(q);
       q = q.order(sortKey, { ascending: sortDir === "asc" });
       q = q.range(page * pageSize, page * pageSize + pageSize - 1);
       const { data, error, count } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as Lead[], count: count ?? 0 };
+      return { rows: (data ?? []) as unknown as Lead[], count: count ?? 0 };
     },
   });
 
@@ -531,12 +577,22 @@ function LeadsHubspotView() {
   };
 
   const onSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
-    else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
+    const nextDir: SortDir = sortKey === key ? (sortDir === "asc" ? "desc" : "asc") : "asc";
+    setSortKey(key);
+    setSortDir(nextDir);
+    persistSort(key, nextDir);
   };
+
+  /** Cabeçalho ordenável para as colunas do catálogo dinâmico ("Outros campos"). */
+  const autoSortHeader = useCallback(
+    (col: { key: string; label: string }) => (
+      <Th sortable active={sortKey === col.key} dir={sortDir} onClick={() => onSort(col.key)}>
+        {col.label}
+      </Th>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir],
+  );
 
   // ----- Columns ----------------------------------------------------------
   type LeadRow = (typeof rows)[number];
@@ -726,12 +782,14 @@ function LeadsHubspotView() {
     columns: visibleColumns,
     ColumnsButton,
     ColumnsEditor,
+    persistSort,
   } = useGridColumns<LeadRow>({
     gridKey: "leads",
     columns: leadColumns,
     defaults: DEFAULT_LEAD_COLS,
     customEntity: "leads",
     catalogEntity: "leads",
+    sortHeader: autoSortHeader,
   });
 
   const hasActiveFilters =

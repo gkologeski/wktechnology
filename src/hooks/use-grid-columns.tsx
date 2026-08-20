@@ -22,6 +22,8 @@ export type GridColumnDef<T> = ColumnDef & {
   headerClassName?: string;
   /** Optional custom header content (replaces the default label, e.g. for sortable headers). */
   header?: React.ReactNode;
+  /** Coluna de banco ordenável (usada pelas colunas do catálogo dinâmico). */
+  sortable?: boolean;
 };
 
 export type UseGridColumnsOptions<T> = {
@@ -35,6 +37,11 @@ export type UseGridColumnsOptions<T> = {
    * remaining column as an optional grid column (group "Outros campos").
    */
   catalogEntity?: CatalogEntity;
+  /**
+   * Cabeçalho ordenável da tela (ex.: componente `Th sortable`), aplicado às
+   * colunas do catálogo dinâmico que podem ser ordenadas no banco.
+   */
+  sortHeader?: (col: { key: string; label: string }) => React.ReactNode;
 };
 
 export function useGridColumns<T extends object>({
@@ -43,6 +50,7 @@ export function useGridColumns<T extends object>({
   defaults,
   customEntity,
   catalogEntity,
+  sortHeader,
 }: UseGridColumnsOptions<T>) {
   const qc = useQueryClient();
   const getPrefFn = useServerFn(getGridPreference);
@@ -86,10 +94,18 @@ export function useGridColumns<T extends object>({
   }, [customEntity, customQuery.data]);
 
   const declaredKeys = useMemo(() => columns.map((c) => c.key), [columns]);
-  const { columns: autoColumns } = useAutoGridColumns<T>({
+  const { columns: autoColumnsRaw, fieldByKey } = useAutoGridColumns<T>({
     entity: catalogEntity,
     exclude: declaredKeys,
   });
+
+  // Cabeçalho ordenável nas colunas dinâmicas cujo tipo suporta ORDER BY.
+  const autoColumns = useMemo<GridColumnDef<T>[]>(() => {
+    if (!sortHeader) return autoColumnsRaw;
+    return autoColumnsRaw.map((c) =>
+      c.sortable ? { ...c, header: sortHeader({ key: c.key, label: c.label }) } : c,
+    );
+  }, [autoColumnsRaw, sortHeader]);
 
   const allColumns = useMemo<GridColumnDef<T>[]>(
     () => [...columns, ...customColumns, ...autoColumns],
@@ -122,12 +138,53 @@ export function useGridColumns<T extends object>({
     return visibleKeys.filter((k) => autoKeys.has(k));
   }, [visibleKeys, autoColumns]);
 
+  /** Colunas do catálogo que podem ser usadas em `.order()` no banco. */
+  const sortableKeys = useMemo(
+    () => autoColumnsRaw.filter((c) => c.sortable).map((c) => c.key),
+    [autoColumnsRaw],
+  );
+
+  /** Todas as colunas de banco conhecidas da entidade (para validar ordenação). */
+  const catalogKeys = useMemo(() => Array.from(fieldByKey.keys()), [fieldByKey]);
+
+  const savedSort = useMemo(
+    () => ({
+      sortKey: prefQuery.data?.sortKey ?? null,
+      sortDir: prefQuery.data?.sortDir ?? null,
+    }),
+    [prefQuery.data],
+  );
+
+  /** Persiste a ordenação escolhida (sem toast — é uma ação de alta frequência). */
+  const persistSort = useCallback(
+    (sortKey: string, sortDir: "asc" | "desc") => {
+      qc.setQueryData(
+        ["grid-pref", gridKey],
+        (prev: { visibleColumns: string[] | null } | undefined) => ({
+          visibleColumns: prev?.visibleColumns ?? null,
+          sortKey,
+          sortDir,
+        }),
+      );
+      void savePrefFn({ data: { gridKey, sortKey, sortDir } }).catch(() => {
+        /* preferência de ordenação é best-effort */
+      });
+    },
+    [gridKey, qc, savePrefFn],
+  );
+
+  type PrefData = {
+    visibleColumns: string[] | null;
+    sortKey?: string | null;
+    sortDir?: "asc" | "desc" | null;
+  };
+
   const saveMut = useMutation({
     mutationFn: (order: string[]) => savePrefFn({ data: { gridKey, visibleColumns: order } }),
     onMutate: async (order) => {
       await qc.cancelQueries({ queryKey: ["grid-pref", gridKey] });
-      const prev = qc.getQueryData<{ visibleColumns: string[] | null }>(["grid-pref", gridKey]);
-      qc.setQueryData(["grid-pref", gridKey], { visibleColumns: order });
+      const prev = qc.getQueryData<PrefData>(["grid-pref", gridKey]);
+      qc.setQueryData(["grid-pref", gridKey], { ...(prev ?? {}), visibleColumns: order });
       return { prev };
     },
     onError: (e, _v, ctx) => {
@@ -140,7 +197,11 @@ export function useGridColumns<T extends object>({
   const resetMut = useMutation({
     mutationFn: () => resetPrefFn({ data: { gridKey } }),
     onSuccess: () => {
-      qc.setQueryData(["grid-pref", gridKey], { visibleColumns: null });
+      qc.setQueryData(["grid-pref", gridKey], {
+        visibleColumns: null,
+        sortKey: null,
+        sortDir: null,
+      });
     },
   });
 
@@ -195,6 +256,10 @@ export function useGridColumns<T extends object>({
     columns: visibleColumns,
     columnKeys: visibleKeys,
     selectKeys,
+    sortableKeys,
+    catalogKeys,
+    savedSort,
+    persistSort,
     allColumns,
     openEditor,
     ColumnsButton,

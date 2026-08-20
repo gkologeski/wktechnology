@@ -6,7 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
-import { renderAutoCell } from "@/lib/grid/auto-column-render";
+import { renderAutoCell, isSortableField } from "@/lib/grid/auto-column-render";
 import type { GridColumnDef } from "@/hooks/use-grid-columns";
 
 export type CatalogEntity =
@@ -134,6 +134,7 @@ export function useAutoGridColumns<T extends object>({
         key: f.name,
         label: f.label,
         group: "Outros campos",
+        sortable: isSortableField(f),
         render: (row: T) => renderAutoCell(f, row as Record<string, unknown>, refLabel),
       })),
     [fields, refLabel],
