@@ -265,6 +265,18 @@ function JobDetailPage() {
 
   const totalApps = apps.length;
 
+  const sortedApps = useMemo(() => {
+    const rows = [...visibleApps];
+    rows.sort((a, b) => {
+      const an = assigneeNameFor((a as { assigned_to?: string | null }).assigned_to ?? null);
+      const bn = assigneeNameFor((b as { assigned_to?: string | null }).assigned_to ?? null);
+      const cmp = an.localeCompare(bn, "pt-BR");
+      return appsSortDir === "asc" ? cmp : -cmp;
+    });
+    return rows;
+  }, [visibleApps, assigneeNameFor, appsSortDir]);
+
+
   const openAdd = async () => {
     setAddOpen(true);
     try {
@@ -457,17 +469,6 @@ function JobDetailPage() {
       }
     />
   );
-
-  const sortedApps = useMemo(() => {
-    const rows = [...visibleApps];
-    rows.sort((a, b) => {
-      const an = assigneeNameFor((a as { assigned_to?: string | null }).assigned_to ?? null);
-      const bn = assigneeNameFor((b as { assigned_to?: string | null }).assigned_to ?? null);
-      const cmp = an.localeCompare(bn, "pt-BR");
-      return appsSortDir === "asc" ? cmp : -cmp;
-    });
-    return rows;
-  }, [visibleApps, assigneeNameFor, appsSortDir]);
 
   const appsToolbar = (
     <div className="flex flex-wrap items-center justify-between gap-2">
