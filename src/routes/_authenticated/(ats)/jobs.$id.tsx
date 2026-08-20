@@ -79,7 +79,11 @@ import { MetaPill } from "@/components/techhire/ui";
 import { OwnerField } from "@/components/entity/owner-field";
 import { AssigneeField } from "@/components/entity/assignee-field";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
-import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import {
+  AssigneeFilter,
+  useAssigneeFilter,
+  ASSIGNEE_ALL,
+} from "@/components/entity/assignee-filter";
 import { ViewModeToggle, type ListViewMode } from "@/components/kanban/view-mode-toggle";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import {
@@ -454,6 +458,133 @@ function JobDetailPage() {
     />
   );
 
+  const sortedApps = useMemo(() => {
+    const rows = [...visibleApps];
+    rows.sort((a, b) => {
+      const an = assigneeNameFor((a as { assigned_to?: string | null }).assigned_to ?? null);
+      const bn = assigneeNameFor((b as { assigned_to?: string | null }).assigned_to ?? null);
+      const cmp = an.localeCompare(bn, "pt-BR");
+      return appsSortDir === "asc" ? cmp : -cmp;
+    });
+    return rows;
+  }, [visibleApps, assigneeNameFor, appsSortDir]);
+
+  const appsToolbar = (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <AssigneeFilter value={appsAssignee} onChange={setAppsAssignee} className="h-9 w-56" />
+        <span className="text-xs text-text-tertiary" aria-live="polite">
+          {visibleApps.length} de {totalApps} candidatura(s)
+        </span>
+      </div>
+      <ViewModeToggle value={appsView} onChange={setAppsView} />
+    </div>
+  );
+
+  const appsTable =
+    sortedApps.length === 0 ? (
+      <EmptyState
+        icon={Users}
+        title="Nenhuma candidatura encontrada"
+        description={
+          appsAssigneeActive
+            ? "Nenhuma candidatura para o responsável selecionado. Ajuste o filtro para ver mais registros."
+            : "Adicione candidatos manualmente ou compartilhe a página de carreiras para receber aplicações."
+        }
+        action={
+          appsAssigneeActive ? (
+            <Button variant="outline" onClick={() => setAppsAssignee(ASSIGNEE_ALL)}>
+              Limpar filtro
+            </Button>
+          ) : (
+            <Button onClick={openAdd}>
+              <Plus className="h-4 w-4 mr-2" aria-hidden />
+              Adicionar candidato
+            </Button>
+          )
+        }
+      />
+    ) : (
+      <div className="rounded-lg border border-border-subtle bg-surface-1">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Candidato</TableHead>
+              <TableHead>Etapa</TableHead>
+              <TableHead>Avaliação</TableHead>
+              <TableHead aria-sort={appsSortDir === "asc" ? "ascending" : "descending"}>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 font-medium hover:text-text-primary"
+                  onClick={() => setAppsSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                >
+                  Responsável
+                  <ArrowUpDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                  <span className="sr-only">
+                    Ordenar por responsável ({appsSortDir === "asc" ? "crescente" : "decrescente"})
+                  </span>
+                </button>
+              </TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedApps.map((a) => (
+              <TableRow key={a.id as string}>
+                <TableCell>
+                  <Link
+                    to="/candidates/$id"
+                    params={{ id: a.candidate_id as string }}
+                    className="font-medium text-text-primary hover:underline"
+                  >
+                    {a.candidate?.full_name ?? "Candidato"}
+                  </Link>
+                  {a.candidate?.current_position && (
+                    <div className="text-xs text-text-tertiary truncate">
+                      {a.candidate.current_position}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell className="text-sm text-text-secondary">
+                  {stages.find((s) => s.value === a.stage_value)?.label ??
+                    a.stage_value ??
+                    "applied"}
+                </TableCell>
+                <TableCell>
+                  {a.ai_match_score != null ? (
+                    <ScoreBadge score={Number(a.ai_match_score)} />
+                  ) : scoreSummary[a.id] ? (
+                    <MetaPill>
+                      {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
+                    </MetaPill>
+                  ) : (
+                    <span className="text-xs text-text-tertiary">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <AssigneeCell
+                    assignedTo={(a as { assigned_to?: string | null }).assigned_to}
+                    className="text-sm"
+                  />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={() => setEvalApp(a)}
+                  >
+                    <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden />
+                    Avaliar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+
   const pipelineSection = totalApps === 0 ? (
     <EmptyState
       icon={Users}
@@ -798,10 +929,17 @@ function JobDetailPage() {
             </TabsContent>
             <TabsContent value="pipeline" className="mt-0">
               <AtsSectionHeader
-                title="Pipeline"
-                description="Arraste candidatos entre etapas para atualizar o status."
+                title="Candidaturas"
+                description={
+                  appsView === "kanban"
+                    ? "Arraste candidatos entre etapas para atualizar o status."
+                    : "Lista de candidaturas desta vaga. Ordene pela coluna Responsável."
+                }
               />
-              <div className="mt-3">{pipelineSection}</div>
+              <div className="mt-3 space-y-3">
+                {totalApps > 0 ? appsToolbar : null}
+                {appsView === "table" ? appsTable : pipelineSection}
+              </div>
             </TabsContent>
             <TabsContent value="interviews" className="mt-0">
               {interviewsSection}
