@@ -265,6 +265,14 @@ function JobDetailPage() {
 
   const totalApps = apps.length;
 
+  const stageLabel = (value: string | null | undefined) => {
+    const raw = value ?? "applied";
+    const known = stages.find((s) => s.value === raw)?.label;
+    if (known) return known;
+    const pretty = raw.replace(/_/g, " ").trim();
+    return pretty.charAt(0).toUpperCase() + pretty.slice(1);
+  };
+
   const sortedApps = useMemo(() => {
     const rows = [...visibleApps];
     rows.sort((a, b) => {
@@ -507,7 +515,7 @@ function JobDetailPage() {
       />
     ) : (
       <div className="rounded-lg border border-border-subtle bg-surface-1">
-        <Table>
+        <Table className="min-w-[680px]">
           <TableHeader>
             <TableRow>
               <TableHead>Candidato</TableHead>
@@ -547,9 +555,7 @@ function JobDetailPage() {
                   )}
                 </TableCell>
                 <TableCell className="text-sm text-text-secondary">
-                  {stages.find((s) => s.value === a.stage_value)?.label ??
-                    a.stage_value ??
-                    "applied"}
+                  {stageLabel(a.stage_value)}
                 </TableCell>
                 <TableCell>
                   {a.ai_match_score != null ? (
