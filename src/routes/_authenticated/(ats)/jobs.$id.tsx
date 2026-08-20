@@ -12,6 +12,7 @@ import {
   Building2,
   ExternalLink,
   Save,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,17 @@ import { MetaPill } from "@/components/techhire/ui";
 import { OwnerField } from "@/components/entity/owner-field";
 import { AssigneeField } from "@/components/entity/assignee-field";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
+import { AssigneeFilter, useAssigneeFilter } from "@/components/entity/assignee-filter";
+import { ViewModeToggle, type ListViewMode } from "@/components/kanban/view-mode-toggle";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { DealPicker } from "@/components/ats/deal-picker";
 import { cn } from "@/lib/utils";
 
@@ -173,6 +185,16 @@ function JobDetailPage() {
   const [schedSearch, setSchedSearch] = useState("");
   const [schedActiveOnly, setSchedActiveOnly] = useState(true);
   const [scheduleApp, setScheduleApp] = useState<App | null>(null);
+  // Candidaturas: filtro por responsável, alternância de visualização e ordenação
+  const {
+    assignee: appsAssignee,
+    setAssignee: setAppsAssignee,
+    filterRows: filterAppsByAssignee,
+    isActive: appsAssigneeActive,
+  } = useAssigneeFilter();
+  const [appsView, setAppsView] = useState<ListViewMode>("kanban");
+  const [appsSortDir, setAppsSortDir] = useState<"asc" | "desc">("asc");
+  const { nameFor: assigneeNameFor } = useWorkspaceMembers();
 
   const stages: AtsStage[] = DEFAULT_ATS_STAGES;
 
@@ -225,15 +247,17 @@ function JobDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const visibleApps = useMemo(() => filterAppsByAssignee(apps), [apps, filterAppsByAssignee]);
+
   const byStage = useMemo(() => {
     const m: Record<string, App[]> = {};
     for (const s of stages) m[s.value] = [];
-    for (const a of apps) {
+    for (const a of visibleApps) {
       const k = a.stage_value in m ? a.stage_value : "applied";
       m[k].push(a);
     }
     return m;
-  }, [apps, stages]);
+  }, [visibleApps, stages]);
 
   const totalApps = apps.length;
 
