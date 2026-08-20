@@ -1310,7 +1310,30 @@ function LeadsHubspotView() {
                       Carregando leads…
                     </td>
                   </tr>
+                ) : isError ? (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center">
+                      <p className="text-sm font-medium text-foreground">
+                        Não foi possível carregar os leads.
+                      </p>
+                      <p
+                        className="mx-auto mt-1 max-w-xl text-xs text-muted-foreground"
+                        aria-live="polite"
+                      >
+                        {listError instanceof Error ? listError.message : "Erro inesperado."}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-4"
+                        onClick={() => void refetch()}
+                      >
+                        Tentar novamente
+                      </Button>
+                    </td>
+                  </tr>
                 ) : rows.length === 0 ? (
+
                   <tr>
                     <td
                       colSpan={visibleColumns.length + 2}
