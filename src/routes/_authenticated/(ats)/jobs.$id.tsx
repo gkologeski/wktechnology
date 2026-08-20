@@ -12,6 +12,7 @@ import {
   Building2,
   ExternalLink,
   Save,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,21 @@ import { MetaPill } from "@/components/techhire/ui";
 import { OwnerField } from "@/components/entity/owner-field";
 import { AssigneeField } from "@/components/entity/assignee-field";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
+import {
+  AssigneeFilter,
+  useAssigneeFilter,
+  ASSIGNEE_ALL,
+} from "@/components/entity/assignee-filter";
+import { ViewModeToggle, type ListViewMode } from "@/components/kanban/view-mode-toggle";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { DealPicker } from "@/components/ats/deal-picker";
 import { cn } from "@/lib/utils";
 
@@ -173,6 +189,16 @@ function JobDetailPage() {
   const [schedSearch, setSchedSearch] = useState("");
   const [schedActiveOnly, setSchedActiveOnly] = useState(true);
   const [scheduleApp, setScheduleApp] = useState<App | null>(null);
+  // Candidaturas: filtro por responsável, alternância de visualização e ordenação
+  const {
+    assignee: appsAssignee,
+    setAssignee: setAppsAssignee,
+    filterRows: filterAppsByAssignee,
+    isActive: appsAssigneeActive,
+  } = useAssigneeFilter();
+  const [appsView, setAppsView] = useState<ListViewMode>("kanban");
+  const [appsSortDir, setAppsSortDir] = useState<"asc" | "desc">("asc");
+  const { nameFor: assigneeNameFor } = useWorkspaceMembers();
 
   const stages: AtsStage[] = DEFAULT_ATS_STAGES;
 
@@ -225,17 +251,39 @@ function JobDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
+  const visibleApps = useMemo(() => filterAppsByAssignee(apps), [apps, filterAppsByAssignee]);
+
   const byStage = useMemo(() => {
     const m: Record<string, App[]> = {};
     for (const s of stages) m[s.value] = [];
-    for (const a of apps) {
+    for (const a of visibleApps) {
       const k = a.stage_value in m ? a.stage_value : "applied";
       m[k].push(a);
     }
     return m;
-  }, [apps, stages]);
+  }, [visibleApps, stages]);
 
   const totalApps = apps.length;
+
+  const stageLabel = (value: string | null | undefined) => {
+    const raw = value ?? "applied";
+    const known = stages.find((s) => s.value === raw)?.label;
+    if (known) return known;
+    const pretty = raw.replace(/_/g, " ").trim();
+    return pretty.charAt(0).toUpperCase() + pretty.slice(1);
+  };
+
+  const sortedApps = useMemo(() => {
+    const rows = [...visibleApps];
+    rows.sort((a, b) => {
+      const an = assigneeNameFor((a as { assigned_to?: string | null }).assigned_to ?? null);
+      const bn = assigneeNameFor((b as { assigned_to?: string | null }).assigned_to ?? null);
+      const cmp = an.localeCompare(bn, "pt-BR");
+      return appsSortDir === "asc" ? cmp : -cmp;
+    });
+    return rows;
+  }, [visibleApps, assigneeNameFor, appsSortDir]);
+
 
   const openAdd = async () => {
     setAddOpen(true);
@@ -429,6 +477,120 @@ function JobDetailPage() {
       }
     />
   );
+
+  const appsToolbar = (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <AssigneeFilter value={appsAssignee} onChange={setAppsAssignee} className="h-9 w-56" />
+        <span className="text-xs text-text-tertiary" aria-live="polite">
+          {visibleApps.length} de {totalApps} candidatura(s)
+        </span>
+      </div>
+      <ViewModeToggle value={appsView} onChange={setAppsView} />
+    </div>
+  );
+
+  const appsTable =
+    sortedApps.length === 0 ? (
+      <EmptyState
+        icon={Users}
+        title="Nenhuma candidatura encontrada"
+        description={
+          appsAssigneeActive
+            ? "Nenhuma candidatura para o responsável selecionado. Ajuste o filtro para ver mais registros."
+            : "Adicione candidatos manualmente ou compartilhe a página de carreiras para receber aplicações."
+        }
+        action={
+          appsAssigneeActive ? (
+            <Button variant="outline" onClick={() => setAppsAssignee(ASSIGNEE_ALL)}>
+              Limpar filtro
+            </Button>
+          ) : (
+            <Button onClick={openAdd}>
+              <Plus className="h-4 w-4 mr-2" aria-hidden />
+              Adicionar candidato
+            </Button>
+          )
+        }
+      />
+    ) : (
+      <div className="rounded-lg border border-border-subtle bg-surface-1">
+        <Table className="min-w-[680px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Candidato</TableHead>
+              <TableHead>Etapa</TableHead>
+              <TableHead>Avaliação</TableHead>
+              <TableHead aria-sort={appsSortDir === "asc" ? "ascending" : "descending"}>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 font-medium hover:text-text-primary"
+                  onClick={() => setAppsSortDir((d) => (d === "asc" ? "desc" : "asc"))}
+                >
+                  Responsável
+                  <ArrowUpDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
+                  <span className="sr-only">
+                    Ordenar por responsável ({appsSortDir === "asc" ? "crescente" : "decrescente"})
+                  </span>
+                </button>
+              </TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedApps.map((a) => (
+              <TableRow key={a.id as string}>
+                <TableCell>
+                  <Link
+                    to="/candidates/$id"
+                    params={{ id: a.candidate_id as string }}
+                    className="font-medium text-text-primary hover:underline"
+                  >
+                    {a.candidate?.full_name ?? "Candidato"}
+                  </Link>
+                  {a.candidate?.current_position && (
+                    <div className="text-xs text-text-tertiary truncate">
+                      {a.candidate.current_position}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell className="text-sm text-text-secondary">
+                  {stageLabel(a.stage_value)}
+                </TableCell>
+                <TableCell>
+                  {a.ai_match_score != null ? (
+                    <ScoreBadge score={Number(a.ai_match_score)} />
+                  ) : scoreSummary[a.id] ? (
+                    <MetaPill>
+                      {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
+                    </MetaPill>
+                  ) : (
+                    <span className="text-xs text-text-tertiary">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <AssigneeCell
+                    assignedTo={(a as { assigned_to?: string | null }).assigned_to}
+                    className="text-sm"
+                  />
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 px-2 text-[11px]"
+                    onClick={() => setEvalApp(a)}
+                  >
+                    <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden />
+                    Avaliar
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
 
   const pipelineSection = totalApps === 0 ? (
     <EmptyState
@@ -774,10 +936,17 @@ function JobDetailPage() {
             </TabsContent>
             <TabsContent value="pipeline" className="mt-0">
               <AtsSectionHeader
-                title="Pipeline"
-                description="Arraste candidatos entre etapas para atualizar o status."
+                title="Candidaturas"
+                description={
+                  appsView === "kanban"
+                    ? "Arraste candidatos entre etapas para atualizar o status."
+                    : "Lista de candidaturas desta vaga. Ordene pela coluna Responsável."
+                }
               />
-              <div className="mt-3">{pipelineSection}</div>
+              <div className="mt-3 space-y-3">
+                {totalApps > 0 ? appsToolbar : null}
+                {appsView === "table" ? appsTable : pipelineSection}
+              </div>
             </TabsContent>
             <TabsContent value="interviews" className="mt-0">
               {interviewsSection}
