@@ -85,9 +85,15 @@ export function useGridColumns<T extends object>({
       }));
   }, [customEntity, customQuery.data]);
 
+  const declaredKeys = useMemo(() => columns.map((c) => c.key), [columns]);
+  const { columns: autoColumns } = useAutoGridColumns<T>({
+    entity: catalogEntity,
+    exclude: declaredKeys,
+  });
+
   const allColumns = useMemo<GridColumnDef<T>[]>(
-    () => [...columns, ...customColumns],
-    [columns, customColumns],
+    () => [...columns, ...customColumns, ...autoColumns],
+    [columns, customColumns, autoColumns],
   );
 
   const visibleKeys = useMemo(() => {
