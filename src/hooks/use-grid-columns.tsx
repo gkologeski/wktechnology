@@ -11,6 +11,7 @@ import {
   resetGridPreference,
 } from "@/lib/grid-preferences.functions";
 import { listCustomProperties, type CustomEntity } from "@/lib/custom-properties.functions";
+import { useAutoGridColumns, type CatalogEntity } from "@/hooks/use-auto-grid-columns";
 
 export type GridColumnDef<T> = ColumnDef & {
   /** Render function for the cell. Receives the row. */
