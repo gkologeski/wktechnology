@@ -250,12 +250,22 @@ function CompaniesHubspotView() {
   const clearSelection = () => setSelectedIds(new Set());
 
   const onSort = (k: SortKey) => {
-    if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
-    else {
-      setSortKey(k);
-      setSortDir("asc");
-    }
+    const nextDir: SortDir = sortKey === k ? (sortDir === "asc" ? "desc" : "asc") : "asc";
+    setSortKey(k);
+    setSortDir(nextDir);
+    persistSort(k, nextDir);
   };
+
+  /** Cabeçalho ordenável para as colunas do catálogo dinâmico ("Outros campos"). */
+  const autoSortHeader = useCallback(
+    (col: { key: string; label: string }) => (
+      <Th sortable active={sortKey === col.key} dir={sortDir} onClick={() => onSort(col.key)}>
+        {col.label}
+      </Th>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir],
+  );
 
   // ----- Columns ----------------------------------------------------------
   type CompanyRow = (typeof rows)[number];
