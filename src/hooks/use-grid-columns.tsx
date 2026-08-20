@@ -30,6 +30,11 @@ export type UseGridColumnsOptions<T> = {
   defaults: string[];
   /** When set, fetches custom properties for the given entity and appends them as `custom:<key>` columns. */
   customEntity?: CustomEntity;
+  /**
+   * When set, fetches the dynamic field catalog of the table and appends every
+   * remaining column as an optional grid column (group "Outros campos").
+   */
+  catalogEntity?: CatalogEntity;
 };
 
 export function useGridColumns<T extends object>({
