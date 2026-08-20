@@ -66,7 +66,31 @@ const VIEWS = [
   { id: "new_week" as const, label: "Criadas esta semana" },
 ];
 
-type SortKey = "name" | "created_at" | "updated_at";
+type SortKey = string;
+const DECLARED_SORT_KEYS = ["name", "created_at", "updated_at"] as const;
+
+/** Colunas sempre necessárias no grid de empresas (células, filtros e ações). */
+const BASE_COMPANY_KEYS = [
+  "id",
+  "name",
+  "domain",
+  "website",
+  "industry",
+  "size",
+  "city",
+  "state",
+  "country",
+  "phone",
+  "cnpj",
+  "is_target_account",
+  "target_account_tier",
+  "owner_id",
+  "assigned_to",
+  "assigned_user_id",
+  "hubspot_owner_id",
+  "created_at",
+  "updated_at",
+] as const;
 
 type Filters = {
   industry: string[];
