@@ -11,6 +11,7 @@ import {
   resetGridPreference,
 } from "@/lib/grid-preferences.functions";
 import { listCustomProperties, type CustomEntity } from "@/lib/custom-properties.functions";
+import { useAutoGridColumns, type CatalogEntity } from "@/hooks/use-auto-grid-columns";
 
 export type GridColumnDef<T> = ColumnDef & {
   /** Render function for the cell. Receives the row. */
@@ -29,6 +30,11 @@ export type UseGridColumnsOptions<T> = {
   defaults: string[];
   /** When set, fetches custom properties for the given entity and appends them as `custom:<key>` columns. */
   customEntity?: CustomEntity;
+  /**
+   * When set, fetches the dynamic field catalog of the table and appends every
+   * remaining column as an optional grid column (group "Outros campos").
+   */
+  catalogEntity?: CatalogEntity;
 };
 
 export function useGridColumns<T extends object>({
@@ -36,6 +42,7 @@ export function useGridColumns<T extends object>({
   columns,
   defaults,
   customEntity,
+  catalogEntity,
 }: UseGridColumnsOptions<T>) {
   const qc = useQueryClient();
   const getPrefFn = useServerFn(getGridPreference);
@@ -78,9 +85,15 @@ export function useGridColumns<T extends object>({
       }));
   }, [customEntity, customQuery.data]);
 
+  const declaredKeys = useMemo(() => columns.map((c) => c.key), [columns]);
+  const { columns: autoColumns } = useAutoGridColumns<T>({
+    entity: catalogEntity,
+    exclude: declaredKeys,
+  });
+
   const allColumns = useMemo<GridColumnDef<T>[]>(
-    () => [...columns, ...customColumns],
-    [columns, customColumns],
+    () => [...columns, ...customColumns, ...autoColumns],
+    [columns, customColumns, autoColumns],
   );
 
   const visibleKeys = useMemo(() => {
@@ -99,6 +112,15 @@ export function useGridColumns<T extends object>({
         .filter((c): c is GridColumnDef<T> => !!c),
     [visibleKeys, allColumns],
   );
+
+  /**
+   * Colunas de banco que a consulta precisa projetar por causa das colunas
+   * automáticas visíveis (as declaradas manualmente já estão no `select` da tela).
+   */
+  const selectKeys = useMemo(() => {
+    const autoKeys = new Set(autoColumns.map((c) => c.key));
+    return visibleKeys.filter((k) => autoKeys.has(k));
+  }, [visibleKeys, autoColumns]);
 
   const saveMut = useMutation({
     mutationFn: (order: string[]) => savePrefFn({ data: { gridKey, visibleColumns: order } }),
@@ -172,6 +194,7 @@ export function useGridColumns<T extends object>({
   return {
     columns: visibleColumns,
     columnKeys: visibleKeys,
+    selectKeys,
     allColumns,
     openEditor,
     ColumnsButton,

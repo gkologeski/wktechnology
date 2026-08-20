@@ -7,7 +7,14 @@ import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Plus, Play, LayoutGrid, List as ListIcon, Table as TableIcon, TrendingUp } from "lucide-react";
+import {
+  Plus,
+  Play,
+  LayoutGrid,
+  List as ListIcon,
+  Table as TableIcon,
+  TrendingUp,
+} from "lucide-react";
 import { toast } from "sonner";
 import { startFocusQueue } from "@/lib/focus-queue";
 import type { Deal, Company, Contact } from "@/lib/db-types";
@@ -42,7 +49,6 @@ function DealsPage() {
     { table: "deals", queryKeys: [["deals", "list"]] },
     { table: "activities", queryKeys: [["deals", "next-activities"]] },
   ]);
-
 
   const [filters, setFilters] = useState<DealFilters>({
     ownerId: "",
@@ -100,9 +106,8 @@ function DealsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("deals")
-        .select(
-          "id,owner_id,name,value,currency,stage,stage_id,pipeline_id,company_id,primary_contact_id,expected_close_date,created_at,updated_at,custom_fields",
-        )
+        // `*` para suportar qualquer coluna escolhida no editor de colunas.
+        .select("*")
         .order("created_at", { ascending: false })
         .range(0, 999);
       if (error) throw error;
@@ -126,7 +131,10 @@ function DealsPage() {
         .order("due_date", { ascending: true })
         .range(0, 5000);
       if (future.error) throw future.error;
-      for (const a of (future.data ?? []) as { related_deal_id: string | null; due_date: string | null }[]) {
+      for (const a of (future.data ?? []) as {
+        related_deal_id: string | null;
+        due_date: string | null;
+      }[]) {
         if (a.related_deal_id && a.due_date && !map.has(a.related_deal_id)) {
           map.set(a.related_deal_id, a.due_date);
         }
@@ -141,7 +149,10 @@ function DealsPage() {
         .order("due_date", { ascending: false })
         .range(0, 5000);
       if (overdue.error) throw overdue.error;
-      for (const a of (overdue.data ?? []) as { related_deal_id: string | null; due_date: string | null }[]) {
+      for (const a of (overdue.data ?? []) as {
+        related_deal_id: string | null;
+        due_date: string | null;
+      }[]) {
         if (a.related_deal_id && a.due_date && !map.has(a.related_deal_id)) {
           map.set(a.related_deal_id, a.due_date);
         }
@@ -150,11 +161,6 @@ function DealsPage() {
     },
     staleTime: 60_000,
   });
-
-
-
-
-
 
   const { data: companies = [] } = useQuery({
     queryKey: ["companies", "select"],
@@ -330,7 +336,14 @@ function DealsPage() {
         </TabsContent>
         <TabsContent value="board" className="mt-4">
           {selected ? (
-            <DealsBoard pipeline={selected} deals={filtered} lookups={lookups} nextActivities={nextActivities} focusMode={focusMode} onOpen={openEdit} />
+            <DealsBoard
+              pipeline={selected}
+              deals={filtered}
+              lookups={lookups}
+              nextActivities={nextActivities}
+              focusMode={focusMode}
+              onOpen={openEdit}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">Carregando pipeline…</p>
           )}

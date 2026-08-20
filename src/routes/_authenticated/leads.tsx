@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Can, usePermissions } from "@/lib/access-control/use-permissions";
 import { useServerFn } from "@tanstack/react-start";
@@ -20,7 +20,6 @@ import {
   deriveLeadStatus,
   findLeadStage,
   LEGACY_STATUS_LABELS,
-
   type LeadStage,
 } from "@/lib/leads/stages";
 
@@ -454,10 +453,9 @@ function LeadsHubspotView() {
     queryFn: async () => {
       let q = supabase
         .from("leads")
-        .select(
-          "id, first_name, last_name, email, phone, company_name, source, label, score, status, stage_id, pipeline_id, owner_id, assigned_user_id, hubspot_owner_id, created_at, updated_at, custom_fields",
-          { count: "exact" },
-        );
+        // `*` para que qualquer coluna escolhida no editor de colunas
+        // (catálogo dinâmico de campos) já venha na projeção.
+        .select("*", { count: "exact" });
 
       q = applyFilters(q);
       q = q.order(sortKey, { ascending: sortDir === "asc" });
@@ -733,6 +731,7 @@ function LeadsHubspotView() {
     columns: leadColumns,
     defaults: DEFAULT_LEAD_COLS,
     customEntity: "leads",
+    catalogEntity: "leads",
   });
 
   const hasActiveFilters =
@@ -1058,7 +1057,9 @@ function LeadsHubspotView() {
                           }))
                         }
                       />
-                      <span className="flex-1 truncate">{translateFieldValue("source", s.value) || s.value}</span>
+                      <span className="flex-1 truncate">
+                        {translateFieldValue("source", s.value) || s.value}
+                      </span>
                       <span className="text-xs text-muted-foreground">{s.count}</span>
                     </label>
                   );
@@ -1224,14 +1225,11 @@ function LeadsHubspotView() {
                       onCheckedChange={toggleAll}
                     />
                   </th>
-                  {visibleColumns.map(
-                    (col) =>
-                      col.header ?? (
-                        <Th key={col.key} className={col.headerClassName}>
-                          {col.label}
-                        </Th>
-                      ),
-                  )}
+                  {visibleColumns.map((col) => (
+                    <Fragment key={col.key}>
+                      {col.header ?? <Th className={col.headerClassName}>{col.label}</Th>}
+                    </Fragment>
+                  ))}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
