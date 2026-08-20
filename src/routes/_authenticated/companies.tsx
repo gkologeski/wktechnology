@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 import type { Company } from "@/lib/db-types";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
+import { useGridProjection } from "@/hooks/use-grid-projection";
+import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { cn } from "@/lib/utils";
 import { toE164 } from "@/lib/validators";
 import { useMyTools } from "@/lib/use-my-tools";
@@ -258,7 +260,7 @@ function CompaniesHubspotView() {
 
       const { data, error, count } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as Company[], count: count ?? 0 };
+      return { rows: (data ?? []) as unknown as Company[], count: count ?? 0 };
     },
   });
 
