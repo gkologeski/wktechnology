@@ -26,6 +26,8 @@ export type UseGridProjectionResult = {
   sortDir: SortDir | null;
   /** Colunas de banco ordenáveis do catálogo. */
   sortableKeys: string[];
+  /** Todas as colunas reais da entidade (catálogo) — valida a projeção. */
+  knownColumns: string[];
   isLoading: boolean;
 };
 
@@ -72,6 +74,7 @@ export function useGridProjection({
       sortKey: resolved || null,
       sortDir: savedKey && resolved ? normalizeSortDir(prefQuery.data?.sortDir) : null,
       sortableKeys,
+      knownColumns: Array.from(catalogNames),
       isLoading: prefQuery.isLoading || (!!entity && catalog.isLoading),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
