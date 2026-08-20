@@ -16,12 +16,21 @@ export const getGridPreference = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: row, error } = await supabase
       .from("user_grid_preferences")
-      .select("visible_columns")
+      .select("visible_columns, sort_key, sort_dir")
       .eq("user_id", userId)
       .eq("grid_key", data.gridKey)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return { visibleColumns: (row?.visible_columns as string[] | null) ?? null };
+    const r = (row ?? null) as {
+      visible_columns?: string[] | null;
+      sort_key?: string | null;
+      sort_dir?: string | null;
+    } | null;
+    return {
+      visibleColumns: r?.visible_columns ?? null,
+      sortKey: r?.sort_key ?? null,
+      sortDir: r?.sort_dir === "asc" || r?.sort_dir === "desc" ? r.sort_dir : null,
+    };
   });
 
 export const saveGridPreference = createServerFn({ method: "POST" })
@@ -30,20 +39,25 @@ export const saveGridPreference = createServerFn({ method: "POST" })
     z
       .object({
         gridKey: gridKeySchema,
-        visibleColumns: z.array(z.string().min(1).max(128)).max(200),
+        visibleColumns: z.array(z.string().min(1).max(128)).max(200).optional(),
+        sortKey: z.string().min(1).max(128).nullish(),
+        sortDir: z.enum(["asc", "desc"]).nullish(),
       })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase.from("user_grid_preferences").upsert(
-      {
-        user_id: userId,
-        grid_key: data.gridKey,
-        visible_columns: data.visibleColumns,
-      } as never,
-      { onConflict: "user_id,grid_key" },
-    );
+    const patch: Record<string, unknown> = {
+      user_id: userId,
+      grid_key: data.gridKey,
+      updated_at: new Date().toISOString(),
+    };
+    if (data.visibleColumns !== undefined) patch.visible_columns = data.visibleColumns;
+    if (data.sortKey !== undefined) patch.sort_key = data.sortKey ?? null;
+    if (data.sortDir !== undefined) patch.sort_dir = data.sortDir ?? null;
+    const { error } = await supabase
+      .from("user_grid_preferences")
+      .upsert(patch as never, { onConflict: "user_id,grid_key" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });
