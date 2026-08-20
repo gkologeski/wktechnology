@@ -173,12 +173,18 @@ export function useGridColumns<T extends object>({
     [gridKey, qc, savePrefFn],
   );
 
+  type PrefData = {
+    visibleColumns: string[] | null;
+    sortKey?: string | null;
+    sortDir?: "asc" | "desc" | null;
+  };
+
   const saveMut = useMutation({
     mutationFn: (order: string[]) => savePrefFn({ data: { gridKey, visibleColumns: order } }),
     onMutate: async (order) => {
       await qc.cancelQueries({ queryKey: ["grid-pref", gridKey] });
-      const prev = qc.getQueryData<{ visibleColumns: string[] | null }>(["grid-pref", gridKey]);
-      qc.setQueryData(["grid-pref", gridKey], { visibleColumns: order });
+      const prev = qc.getQueryData<PrefData>(["grid-pref", gridKey]);
+      qc.setQueryData(["grid-pref", gridKey], { ...(prev ?? {}), visibleColumns: order });
       return { prev };
     },
     onError: (e, _v, ctx) => {
@@ -191,7 +197,11 @@ export function useGridColumns<T extends object>({
   const resetMut = useMutation({
     mutationFn: () => resetPrefFn({ data: { gridKey } }),
     onSuccess: () => {
-      qc.setQueryData(["grid-pref", gridKey], { visibleColumns: null });
+      qc.setQueryData(["grid-pref", gridKey], {
+        visibleColumns: null,
+        sortKey: null,
+        sortDir: null,
+      });
     },
   });
 
