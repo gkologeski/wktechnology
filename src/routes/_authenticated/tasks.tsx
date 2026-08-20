@@ -436,7 +436,8 @@ function TasksHubspotView() {
     if (!(await confirmDialog(`Excluir ${ids.length} tarefa(s)?`))) return;
     const res = await deleteRowsGuarded("activities", ids);
     if (!res.ok) return toast.error(res.message);
-    if (res.deleted < res.requested) toast.warning(partialDeleteMessage(res.deleted, res.requested));
+    if (res.deleted < res.requested)
+      toast.warning(partialDeleteMessage(res.deleted, res.requested));
     else toast.success(`${res.deleted} excluída(s)`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["tasks"] });

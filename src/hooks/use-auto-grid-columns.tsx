@@ -38,7 +38,10 @@ type RefKind = NonNullable<EntityFieldDef["ref"]>;
 
 const REF_SOURCE: Record<
   Exclude<RefKind, "user">,
-  { table: "companies" | "contacts" | "pipelines" | "deals" | "contracts" | "legal_entities"; select: string }
+  {
+    table: "companies" | "contacts" | "pipelines" | "deals" | "contracts" | "legal_entities";
+    select: string;
+  }
 > = {
   company: { table: "companies", select: "id, name" },
   contact: { table: "contacts", select: "id, first_name, last_name" },
@@ -57,7 +60,9 @@ function rowLabel(r: Record<string, unknown>): string {
 
 /** Mapa id → nome para os tipos de referência realmente usados nas colunas visíveis. */
 function useRefMaps(kinds: RefKind[]) {
-  const needed = Array.from(new Set(kinds)).filter((k): k is Exclude<RefKind, "user"> => k !== "user");
+  const needed = Array.from(new Set(kinds)).filter(
+    (k): k is Exclude<RefKind, "user"> => k !== "user",
+  );
   const key = needed.slice().sort().join(",");
 
   const query = useQuery({

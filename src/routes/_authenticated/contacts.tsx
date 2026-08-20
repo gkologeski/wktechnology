@@ -64,7 +64,6 @@ import { exportRowsToCsv } from "@/lib/csv-export";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
-
 export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
 });
@@ -79,7 +78,6 @@ const LIFECYCLE_STAGES = [
   { value: "evangelist", label: "Evangelizador", tone: "fuchsia" as const },
   { value: "other", label: "Outro", tone: "slate" as const },
 ];
-
 
 type ViewId = "all" | "mine" | "unassigned" | "new_week";
 const VIEWS = [

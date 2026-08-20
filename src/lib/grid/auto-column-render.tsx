@@ -102,5 +102,12 @@ export function renderAutoCell(
 
 /** Tipos ordenáveis no servidor (JSON/array ficam de fora). */
 export function isSortableField(field: EntityFieldDef): boolean {
-  return field.type === "text" || field.type === "number" || field.type === "currency" || field.type === "date" || field.type === "boolean" || field.type === "select";
+  return (
+    field.type === "text" ||
+    field.type === "number" ||
+    field.type === "currency" ||
+    field.type === "date" ||
+    field.type === "boolean" ||
+    field.type === "select"
+  );
 }

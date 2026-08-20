@@ -427,7 +427,8 @@ function CompaniesHubspotView() {
       toast.error(res.message);
       return;
     }
-    if (res.deleted < res.requested) toast.warning(partialDeleteMessage(res.deleted, res.requested));
+    if (res.deleted < res.requested)
+      toast.warning(partialDeleteMessage(res.deleted, res.requested));
     else toast.success(`${res.deleted} excluída(s)`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["companies"] });
@@ -794,12 +795,12 @@ function CompaniesHubspotView() {
                                 Abrir
                               </DropdownMenuItem>
                               <Can
-                    any={[
-                      "techsales.companies.manage.workspace",
-                      "techsales.companies.delete.workspace",
-                      "techsales.companies.delete.own",
-                    ]}
-                  >
+                                any={[
+                                  "techsales.companies.manage.workspace",
+                                  "techsales.companies.delete.workspace",
+                                  "techsales.companies.delete.own",
+                                ]}
+                              >
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   className="text-destructive focus:text-destructive"

@@ -20,7 +20,6 @@ import {
   deriveLeadStatus,
   findLeadStage,
   LEGACY_STATUS_LABELS,
-
   type LeadStage,
 } from "@/lib/leads/stages";
 
@@ -1058,7 +1057,9 @@ function LeadsHubspotView() {
                           }))
                         }
                       />
-                      <span className="flex-1 truncate">{translateFieldValue("source", s.value) || s.value}</span>
+                      <span className="flex-1 truncate">
+                        {translateFieldValue("source", s.value) || s.value}
+                      </span>
                       <span className="text-xs text-muted-foreground">{s.count}</span>
                     </label>
                   );
