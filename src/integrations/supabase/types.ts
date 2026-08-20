@@ -17648,6 +17648,8 @@ export type Database = {
           created_at: string
           grid_key: string
           id: string
+          sort_dir: string | null
+          sort_key: string | null
           updated_at: string
           user_id: string
           visible_columns: string[]
@@ -17656,6 +17658,8 @@ export type Database = {
           created_at?: string
           grid_key: string
           id?: string
+          sort_dir?: string | null
+          sort_key?: string | null
           updated_at?: string
           user_id: string
           visible_columns?: string[]
@@ -17664,6 +17668,8 @@ export type Database = {
           created_at?: string
           grid_key?: string
           id?: string
+          sort_dir?: string | null
+          sort_key?: string | null
           updated_at?: string
           user_id?: string
           visible_columns?: string[]
