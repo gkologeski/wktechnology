@@ -22,6 +22,8 @@ export type GridColumnDef<T> = ColumnDef & {
   headerClassName?: string;
   /** Optional custom header content (replaces the default label, e.g. for sortable headers). */
   header?: React.ReactNode;
+  /** Coluna de banco ordenável (usada pelas colunas do catálogo dinâmico). */
+  sortable?: boolean;
 };
 
 export type UseGridColumnsOptions<T> = {
@@ -35,6 +37,11 @@ export type UseGridColumnsOptions<T> = {
    * remaining column as an optional grid column (group "Outros campos").
    */
   catalogEntity?: CatalogEntity;
+  /**
+   * Cabeçalho ordenável da tela (ex.: componente `Th sortable`), aplicado às
+   * colunas do catálogo dinâmico que podem ser ordenadas no banco.
+   */
+  sortHeader?: (col: { key: string; label: string }) => React.ReactNode;
 };
 
 export function useGridColumns<T extends object>({
@@ -43,6 +50,7 @@ export function useGridColumns<T extends object>({
   defaults,
   customEntity,
   catalogEntity,
+  sortHeader,
 }: UseGridColumnsOptions<T>) {
   const qc = useQueryClient();
   const getPrefFn = useServerFn(getGridPreference);
