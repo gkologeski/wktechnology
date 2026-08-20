@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Can, usePermissions } from "@/lib/access-control/use-permissions";
 import { useServerFn } from "@tanstack/react-start";
@@ -582,6 +582,17 @@ function LeadsHubspotView() {
     setSortDir(nextDir);
     persistSort(key, nextDir);
   };
+
+  /** Cabeçalho ordenável para as colunas do catálogo dinâmico ("Outros campos"). */
+  const autoSortHeader = useCallback(
+    (col: { key: string; label: string }) => (
+      <Th sortable active={sortKey === col.key} dir={sortDir} onClick={() => onSort(col.key)}>
+        {col.label}
+      </Th>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir],
+  );
 
   // ----- Columns ----------------------------------------------------------
   type LeadRow = (typeof rows)[number];
