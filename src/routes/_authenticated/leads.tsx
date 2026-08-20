@@ -1225,14 +1225,11 @@ function LeadsHubspotView() {
                       onCheckedChange={toggleAll}
                     />
                   </th>
-                  {visibleColumns.map(
-                    (col) =>
-                      col.header ?? (
-                        <Th key={col.key} className={col.headerClassName}>
-                          {col.label}
-                        </Th>
-                      ),
-                  )}
+                  {visibleColumns.map((col) => (
+                    <Fragment key={col.key}>
+                      {col.header ?? <Th className={col.headerClassName}>{col.label}</Th>}
+                    </Fragment>
+                  ))}
                   <th className="w-10 border-b px-3 py-2.5" />
                 </tr>
               </thead>
