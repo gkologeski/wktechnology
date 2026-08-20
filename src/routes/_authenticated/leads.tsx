@@ -145,12 +145,11 @@ const BASE_LEAD_KEYS = [
   "phone",
   "company_name",
   "company_id",
-  "contact_id",
   "status",
   "stage_id",
   "source",
   "score",
-  "value",
+
   "label",
   "owner_id",
   "assigned_to",
