@@ -116,15 +116,35 @@ export type ArrangedContract = {
   row: ContractRow;
   depth: number;
   linkKind: "amendment" | "purchase" | null;
+  /** Numeração hierárquica de apresentação: "1", "1.1", "1.3.1"… */
+  path: string;
 };
+
+/** Ordena irmãos: aditivos primeiro (por número), depois contratos de compra. */
+function compareSiblings(
+  a: { row: ContractRow; linkKind: ArrangedContract["linkKind"] },
+  b: { row: ContractRow; linkKind: ArrangedContract["linkKind"] },
+) {
+  if (a.linkKind !== b.linkKind) return a.linkKind === "amendment" ? -1 : 1;
+  const numOf = (r: ContractRow) => {
+    const raw = r.amendment_number ?? r.number ?? "";
+    const digits = String(raw).match(/\d+/);
+    return digits ? Number(digits[0]) : Number.POSITIVE_INFINITY;
+  };
+  const na = numOf(a.row);
+  const nb = numOf(b.row);
+  if (na !== nb) return na - nb;
+  return (a.row.created_at ?? "").localeCompare(b.row.created_at ?? "");
+}
 
 /**
  * Ordena as linhas montando a árvore de vínculos: aditivos e contratos de
  * compra ficam imediatamente abaixo do contrato ao qual estão vinculados
- * (quando ele está na lista). Retorna profundidade e tipo de vínculo.
+ * (quando ele está na lista). Retorna profundidade, tipo de vínculo e a
+ * numeração hierárquica (1, 1.1, 1.3, 1.3.1…).
  */
 export function arrangeContractLinks(rows: ContractRow[], nest: boolean): ArrangedContract[] {
-  if (!nest) return rows.map((row) => ({ row, depth: 0, linkKind: null }));
+  if (!nest) return rows.map((row) => ({ row, depth: 0, linkKind: null, path: "" }));
   const byId = new Map(rows.map((r) => [r.id, r]));
 
   const parentOf = (r: ContractRow): { id: string; kind: "amendment" | "purchase" } | null => {
@@ -139,37 +159,48 @@ export function arrangeContractLinks(rows: ContractRow[], nest: boolean): Arrang
     return null;
   };
 
-  const childrenByParent = new Map<string, ArrangedContract[]>();
+  type Child = { row: ContractRow; linkKind: ArrangedContract["linkKind"] };
+  const childrenByParent = new Map<string, Child[]>();
   for (const r of rows) {
     const parent = parentOf(r);
     if (!parent) continue;
     const list = childrenByParent.get(parent.id) ?? [];
-    list.push({ row: r, depth: 0, linkKind: parent.kind });
+    list.push({ row: r, linkKind: parent.kind });
     childrenByParent.set(parent.id, list);
   }
-  // aditivos antes dos contratos de compra
-  for (const list of childrenByParent.values()) {
-    list.sort((a, b) => (a.linkKind === b.linkKind ? 0 : a.linkKind === "amendment" ? -1 : 1));
-  }
+  for (const list of childrenByParent.values()) list.sort(compareSiblings);
 
   const out: ArrangedContract[] = [];
   const seen = new Set<string>();
-  function push(row: ContractRow, depth: number, linkKind: ArrangedContract["linkKind"]) {
+  function push(
+    row: ContractRow,
+    depth: number,
+    linkKind: ArrangedContract["linkKind"],
+    path: string,
+  ) {
     if (seen.has(row.id)) return; // guarda contra ciclos
     seen.add(row.id);
-    out.push({ row, depth, linkKind });
-    for (const child of childrenByParent.get(row.id) ?? []) {
-      push(child.row, depth + 1, child.linkKind);
-    }
+    out.push({ row, depth, linkKind, path });
+    const children = childrenByParent.get(row.id) ?? [];
+    children.forEach((child, i) => {
+      push(child.row, depth + 1, child.linkKind, `${path}.${i + 1}`);
+    });
   }
+  let rootIndex = 0;
   for (const r of rows) {
     if (parentOf(r)) continue; // entra sob o pai
-    push(r, 0, null);
+    rootIndex += 1;
+    push(r, 0, null, String(rootIndex));
   }
   // qualquer linha não visitada (ciclo) entra na raiz
-  for (const r of rows) if (!seen.has(r.id)) push(r, 0, null);
+  for (const r of rows) {
+    if (seen.has(r.id)) continue;
+    rootIndex += 1;
+    push(r, 0, null, String(rootIndex));
+  }
   return out;
 }
+
 
 export function ContractsTable({
   rows,
@@ -216,12 +247,13 @@ export function ContractsTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {arranged.map(({ row: c, depth, linkKind }) => (
+        {arranged.map(({ row: c, depth, linkKind, path }) => (
           <ContractTableRow
             key={c.id}
             contract={c}
             depth={depth}
             linkKind={linkKind}
+            path={path}
             selection={selection}
             editable={editable}
             onChanged={onChanged}
@@ -236,6 +268,7 @@ function ContractTableRow({
   contract: c,
   depth,
   linkKind,
+  path,
   selection,
   editable,
   onChanged,
@@ -243,6 +276,7 @@ function ContractTableRow({
   contract: ContractRow;
   depth: number;
   linkKind: ArrangedContract["linkKind"];
+  path?: string;
   selection?: ContractsSelection;
   editable: boolean;
   onChanged?: () => void;
@@ -295,6 +329,9 @@ function ContractTableRow({
               className="h-3.5 w-3.5 shrink-0 text-muted-foreground"
               aria-hidden="true"
             />
+          ) : null}
+          {path ? (
+            <span className="shrink-0 font-mono text-xs text-muted-foreground">{path}</span>
           ) : null}
           <Link
             to="/contracts/$id"

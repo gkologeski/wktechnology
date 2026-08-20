@@ -15,6 +15,7 @@ export type CandidateApplication = {
   ai_match_score: number | null;
   applied_at: string | null;
   moved_at: string | null;
+  assigned_to: string | null;
 };
 
 export type CandidatePoolMembership = {
@@ -74,6 +75,7 @@ export type RichJson =
 export type CandidateDetail = {
   candidate: {
     id: string;
+    assigned_to: string | null;
     full_name: string;
     email: string | null;
     phone: string | null;
@@ -138,7 +140,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     const { data: cand, error: candErr } = await supabase
       .from("ats_candidates")
       .select(
-        "id, owner_id, full_name, email, phone, linkedin_url, location, current_position, current_company, cv_url, skills, tags, source, score, notes, created_at, updated_at, last_touch_at, next_action_at, headline, about, photo_url, open_to_work, connection_degree, capture_version, captured_at, experiences, education, certifications, languages, skills_detailed, projects, publications, volunteering, external_links, available_actions, current_company_data, recent_activity, recommendations",
+        "id, owner_id, assigned_to, full_name, email, phone, linkedin_url, location, current_position, current_company, cv_url, skills, tags, source, score, notes, created_at, updated_at, last_touch_at, next_action_at, headline, about, photo_url, open_to_work, connection_degree, capture_version, captured_at, experiences, education, certifications, languages, skills_detailed, projects, publications, volunteering, external_links, available_actions, current_company_data, recent_activity, recommendations",
       )
       .eq("id", data.id)
       .maybeSingle();
@@ -148,7 +150,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     const { data: appsRaw } = await supabase
       .from("ats_applications")
       .select(
-        "id, job_id, stage_value, status, source, ai_match_score, applied_at, moved_at",
+        "id, job_id, stage_value, status, source, ai_match_score, applied_at, moved_at, assigned_to",
       )
       .eq("candidate_id", data.id)
       .order("moved_at", { ascending: false });
@@ -161,6 +163,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
       ai_match_score: number | null;
       applied_at: string | null;
       moved_at: string | null;
+      assigned_to: string | null;
     }>;
 
     const jobIds = Array.from(new Set(apps.map((a) => a.job_id).filter(Boolean)));
@@ -190,6 +193,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
       ai_match_score: a.ai_match_score,
       applied_at: a.applied_at,
       moved_at: a.moved_at,
+      assigned_to: a.assigned_to,
     }));
 
     // Pools
@@ -370,6 +374,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     const detail: CandidateDetail = {
       candidate: {
         id: cand.id as string,
+        assigned_to: (cand.assigned_to as string | null) ?? null,
         full_name: cand.full_name as string,
         email: (cand.email as string | null) ?? null,
         phone: (cand.phone as string | null) ?? null,

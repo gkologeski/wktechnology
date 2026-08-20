@@ -535,7 +535,9 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
 
     const { data: ins, error } = await supabase
       .from("ats_candidates")
-      .insert(base as never)
+      // Novos candidatos assumem o usuário atual como responsável (assigned_to);
+      // owner_id continua registrando a autoria.
+      .insert({ ...base, assigned_to: userId } as never)
       .select("id")
       .single();
     if (error) throw new Error(error.message);
@@ -584,7 +586,7 @@ export const listJobApplications = createServerFn({ method: "POST" })
     const { data: apps, error } = await supabase
       .from("ats_applications")
       .select(
-        "id, candidate_id, job_id, stage_value, status, source, applied_at, moved_at, position, ai_match_score",
+        "id, candidate_id, job_id, stage_value, status, source, applied_at, moved_at, position, ai_match_score, assigned_to",
       )
       .eq("job_id", data.jobId)
       .order("stage_value", { ascending: true })
@@ -621,6 +623,7 @@ export const listJobApplications = createServerFn({ method: "POST" })
       moved_at: string;
       position: number;
       ai_match_score: number | null;
+      assigned_to: string | null;
     };
     return (apps ?? []).map((a) => {
       const row = a as unknown as AppRow;
@@ -682,6 +685,7 @@ export const addApplication = createServerFn({ method: "POST" })
       .from("ats_applications")
       .insert({
         owner_id: userId,
+        assigned_to: userId,
         job_id: data.jobId,
         candidate_id: data.candidateId,
         stage_value: initialStage,
