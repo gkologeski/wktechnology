@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -34,6 +34,8 @@ import {
   type SortDir,
 } from "@/components/crm/hubspot-shell";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
+import { useGridProjection } from "@/hooks/use-grid-projection";
+import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { QuickCreateTaskDialog } from "@/components/record/quick-create-dialogs";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { exportRowsToCsv } from "@/lib/csv-export";
@@ -76,7 +78,30 @@ const PRIORITY_TONE: Record<string, keyof typeof TONES> = {
   HIGH: "rose",
 };
 
-type SortKey = "due_date" | "created_at" | "subject";
+type SortKey = string;
+const DECLARED_SORT_KEYS = ["due_date", "created_at", "subject"] as const;
+
+/** Colunas sempre necessárias no grid de tarefas (células, filtros e ações). */
+const BASE_TASK_KEYS = [
+  "id",
+  "subject",
+  "body",
+  "type",
+  "task_status",
+  "task_priority",
+  "due_date",
+  "completed",
+  "owner_id",
+  "assigned_to",
+  "hubspot_owner_id",
+  "related_contact_id",
+  "related_company_id",
+  "related_deal_id",
+  "related_lead_id",
+  "related_ticket_id",
+  "created_at",
+  "updated_at",
+] as const;
 
 type Filters = {
   statuses: string[];
@@ -113,6 +138,19 @@ function TasksHubspotView() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const projection = useGridProjection({
+    gridKey: "tasks",
+    entity: "activities",
+    declaredSortKeys: DECLARED_SORT_KEYS,
+  });
+  // Reaplica a ordenação salva do usuário na primeira carga da preferência.
+  const sortHydrated = useRef(false);
+  useEffect(() => {
+    if (sortHydrated.current || !projection.sortKey) return;
+    sortHydrated.current = true;
+    setSortKey(projection.sortKey);
+    setSortDir(projection.sortDir ?? "asc");
+  }, [projection.sortKey, projection.sortDir]);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -242,7 +280,12 @@ function TasksHubspotView() {
     return q;
   };
 
-  const { data: result, isLoading } = useQuery({
+  const {
+    data: result,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: [
       "tasks",
       "hubspot-list",
@@ -255,12 +298,19 @@ function TasksHubspotView() {
       page,
       pageSize,
       user?.id,
+      projection.selectSignature,
+      projection.needsCustomFields,
     ],
+    enabled: !projection.isLoading,
     queryFn: async () => {
-      let q = supabase
-        .from("activities")
-        // `*` para suportar qualquer coluna escolhida no editor de colunas.
-        .select("*", { count: "exact" });
+      let q = supabase.from("activities").select(
+        // Projeção sob demanda: colunas base + colunas visíveis do catálogo.
+        buildGridSelect(BASE_TASK_KEYS, projection.selectKeys, {
+          customFields: projection.needsCustomFields,
+          allowed: projection.knownColumns,
+        }),
+        { count: "exact" },
+      );
       q = applyTaskFilters(q);
       q =
         sortKey === "created_at"
@@ -270,7 +320,7 @@ function TasksHubspotView() {
 
       const { data, error, count } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as Activity[], count: count ?? 0 };
+      return { rows: (data ?? []) as unknown as Activity[], count: count ?? 0 };
     },
   });
 
@@ -389,12 +439,22 @@ function TasksHubspotView() {
   };
 
   const onSort = (k: SortKey) => {
-    if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
-    else {
-      setSortKey(k);
-      setSortDir("asc");
-    }
+    const nextDir: SortDir = sortKey === k ? (sortDir === "asc" ? "desc" : "asc") : "asc";
+    setSortKey(k);
+    setSortDir(nextDir);
+    persistSort(k, nextDir);
   };
+
+  /** Cabeçalho ordenável para as colunas do catálogo dinâmico ("Outros campos"). */
+  const autoSortHeader = useCallback(
+    (col: { key: string; label: string }) => (
+      <Th sortable active={sortKey === col.key} dir={sortDir} onClick={() => onSort(col.key)}>
+        {col.label}
+      </Th>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir],
+  );
 
   const hasActiveFilters =
     filters.statuses.length > 0 || filters.priorities.length > 0 || filters.duePreset !== "any";
@@ -635,12 +695,14 @@ function TasksHubspotView() {
     columns: visibleColumns,
     ColumnsButton,
     ColumnsEditor,
+    persistSort,
   } = useGridColumns<TaskRow>({
     gridKey: "tasks",
     columns: taskColumns,
     defaults: DEFAULT_TASK_COLS,
     customEntity: "activities",
     catalogEntity: "activities",
+    sortHeader: autoSortHeader,
   });
 
   return (
@@ -887,6 +949,23 @@ function TasksHubspotView() {
                       className="px-3 py-16 text-center text-sm text-muted-foreground"
                     >
                       Carregando tarefas…
+                    </td>
+                  </tr>
+                ) : isError ? (
+                  <tr>
+                    <td
+                      colSpan={visibleColumns.length + 2}
+                      className="px-3 py-16 text-center text-sm"
+                    >
+                      <p className="text-muted-foreground">Não foi possível carregar as tarefas.</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => void refetch()}
+                      >
+                        Tentar novamente
+                      </Button>
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (

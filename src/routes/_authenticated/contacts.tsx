@@ -1,13 +1,15 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import type { Contact, Company } from "@/lib/db-types";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
+import { useGridProjection } from "@/hooks/use-grid-projection";
+import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { cn } from "@/lib/utils";
 import { toE164 } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
@@ -87,7 +89,32 @@ const VIEWS = [
   { id: "new_week" as const, label: "Criados esta semana" },
 ];
 
-type SortKey = "first_name" | "created_at" | "updated_at";
+type SortKey = string;
+const DECLARED_SORT_KEYS = ["first_name", "created_at", "updated_at"] as const;
+
+/**
+ * Colunas sempre necessárias no grid de contatos (células, filtros, seleção em
+ * massa e ações de linha). As colunas escolhidas no editor entram por cima,
+ * validadas contra o catálogo real da entidade.
+ */
+const BASE_CONTACT_KEYS = [
+  "id",
+  "first_name",
+  "last_name",
+  "email",
+  "phone",
+  "mobile_phone",
+  "job_title",
+  "company_id",
+  "company_name",
+  "lifecyclestage",
+  "owner_id",
+  "assigned_to",
+  "assigned_user_id",
+  "hubspot_owner_id",
+  "created_at",
+  "updated_at",
+] as const;
 
 type Filters = {
   lifecycle: string[];
@@ -127,6 +154,19 @@ function ContactsHubspotView() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const projection = useGridProjection({
+    gridKey: "contacts",
+    entity: "contacts",
+    declaredSortKeys: DECLARED_SORT_KEYS,
+  });
+  // Reaplica a ordenação salva do usuário na primeira carga da preferência.
+  const sortHydrated = useRef(false);
+  useEffect(() => {
+    if (sortHydrated.current || !projection.sortKey) return;
+    sortHydrated.current = true;
+    setSortKey(projection.sortKey);
+    setSortDir(projection.sortDir ?? "asc");
+  }, [projection.sortKey, projection.sortDir]);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -151,7 +191,12 @@ function ContactsHubspotView() {
   });
   const companyMap = new Map(companies.map((c) => [c.id, c.name]));
 
-  const { data: result, isLoading } = useQuery({
+  const {
+    data: result,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: [
       "contacts",
       "hubspot-list",
@@ -163,12 +208,19 @@ function ContactsHubspotView() {
       page,
       pageSize,
       user?.id,
+      projection.selectSignature,
+      projection.needsCustomFields,
     ],
+    enabled: !projection.isLoading,
     queryFn: async () => {
-      let q = supabase
-        .from("contacts")
-        // `*` para suportar qualquer coluna escolhida no editor de colunas.
-        .select("*", { count: "exact" });
+      let q = supabase.from("contacts").select(
+        // Projeção sob demanda: colunas base + colunas visíveis do catálogo.
+        buildGridSelect(BASE_CONTACT_KEYS, projection.selectKeys, {
+          customFields: projection.needsCustomFields,
+          allowed: projection.knownColumns,
+        }),
+        { count: "exact" },
+      );
 
       if (activeView === "mine" && user?.id) {
         q = q.or(
@@ -226,7 +278,7 @@ function ContactsHubspotView() {
 
       const { data, error, count } = await q;
       if (error) throw error;
-      return { rows: (data ?? []) as Contact[], count: count ?? 0 };
+      return { rows: (data ?? []) as unknown as Contact[], count: count ?? 0 };
     },
   });
 
@@ -266,12 +318,22 @@ function ContactsHubspotView() {
   const clearSelection = () => setSelectedIds(new Set());
 
   const onSort = (k: SortKey) => {
-    if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
-    else {
-      setSortKey(k);
-      setSortDir("asc");
-    }
+    const nextDir: SortDir = sortKey === k ? (sortDir === "asc" ? "desc" : "asc") : "asc";
+    setSortKey(k);
+    setSortDir(nextDir);
+    persistSort(k, nextDir);
   };
+
+  /** Cabeçalho ordenável para as colunas do catálogo dinâmico ("Outros campos"). */
+  const autoSortHeader = useCallback(
+    (col: { key: string; label: string }) => (
+      <Th sortable active={sortKey === col.key} dir={sortDir} onClick={() => onSort(col.key)}>
+        {col.label}
+      </Th>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sortKey, sortDir],
+  );
 
   // ----- Columns ----------------------------------------------------------
   type ContactRow = (typeof rows)[number];
@@ -414,12 +476,14 @@ function ContactsHubspotView() {
     columns: visibleColumns,
     ColumnsButton,
     ColumnsEditor,
+    persistSort,
   } = useGridColumns<ContactRow>({
     gridKey: "contacts",
     columns: contactColumns,
     defaults: DEFAULT_CONTACT_COLS,
     customEntity: "contacts",
     catalogEntity: "contacts",
+    sortHeader: autoSortHeader,
   });
 
   const hasActiveFilters =
@@ -763,6 +827,25 @@ function ContactsHubspotView() {
                       className="px-3 py-16 text-center text-sm text-muted-foreground"
                     >
                       Carregando contatos…
+                    </td>
+                  </tr>
+                ) : isError ? (
+                  <tr>
+                    <td
+                      colSpan={visibleColumns.length + 2}
+                      className="px-3 py-16 text-center text-sm"
+                    >
+                      <p className="text-muted-foreground">
+                        Não foi possível carregar os contatos.
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => void refetch()}
+                      >
+                        Tentar novamente
+                      </Button>
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (

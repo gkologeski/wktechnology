@@ -29,6 +29,29 @@ import { DealsHubspotTable } from "@/components/deals/deals-hubspot-table";
 import { DealDetailDrawer } from "@/components/deals/deal-detail-drawer";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { Can } from "@/lib/access-control/use-permissions";
+import { useGridProjection } from "@/hooks/use-grid-projection";
+import { buildGridSelect } from "@/lib/grid/dynamic-select";
+
+/** Colunas sempre necessárias nas visões de negócios (tabela, kanban, lista, previsão). */
+const BASE_DEAL_KEYS = [
+  "id",
+  "name",
+  "value",
+  "currency",
+  "stage",
+  "stage_id",
+  "pipeline_id",
+  "company_id",
+  "primary_contact_id",
+  "owner_id",
+  "assigned_to",
+  "assigned_user_id",
+  "hubspot_owner_id",
+  "dealtype",
+  "expected_close_date",
+  "created_at",
+  "updated_at",
+] as const;
 
 export const Route = createFileRoute("/_authenticated/deals")({
   component: DealsRoute,
@@ -101,17 +124,25 @@ function DealsPage() {
     }
   }, [view]);
 
+  const projection = useGridProjection({ gridKey: "deals", entity: "deals" });
+
   const { data: deals = [] } = useQuery({
-    queryKey: ["deals", "list"],
+    queryKey: ["deals", "list", projection.selectSignature, projection.needsCustomFields],
+    enabled: !projection.isLoading,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("deals")
-        // `*` para suportar qualquer coluna escolhida no editor de colunas.
-        .select("*")
+        // Projeção sob demanda: colunas base + colunas visíveis do catálogo.
+        .select(
+          buildGridSelect(BASE_DEAL_KEYS, projection.selectKeys, {
+            customFields: projection.needsCustomFields,
+            allowed: projection.knownColumns,
+          }),
+        )
         .order("created_at", { ascending: false })
         .range(0, 999);
       if (error) throw error;
-      return (data ?? []) as Deal[];
+      return (data ?? []) as unknown as Deal[];
     },
     refetchOnMount: "always",
   });
