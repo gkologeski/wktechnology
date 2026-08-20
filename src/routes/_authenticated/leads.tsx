@@ -732,6 +732,7 @@ function LeadsHubspotView() {
     columns: leadColumns,
     defaults: DEFAULT_LEAD_COLS,
     customEntity: "leads",
+    catalogEntity: "leads",
   });
 
   const hasActiveFilters =
