@@ -21,16 +21,21 @@ export function isPlainColumn(key: string): boolean {
  * @param baseKeys colunas sempre necessárias (id, chaves de ações, kanban, filtros)
  * @param extraKeys colunas vindas das colunas automáticas visíveis
  * @param opts.customFields inclui `custom_fields` (colunas personalizadas visíveis)
+ * @param opts.allowed quando informado, colunas fora do catálogo real da
+ *   entidade são descartadas — uma chave declarada errada não derruba o grid
+ *   inteiro com `column ... does not exist`.
  */
 export function buildGridSelect(
   baseKeys: readonly string[],
   extraKeys: readonly string[] = [],
-  opts: { customFields?: boolean } = {},
+  opts: { customFields?: boolean; allowed?: Iterable<string> } = {},
 ): string {
+  const allowed = opts.allowed ? new Set(opts.allowed) : null;
+  const accept = (k: string) => !allowed || allowed.size === 0 || allowed.has(k);
   const out = new Set<string>(["id"]);
-  for (const k of baseKeys) if (k) out.add(k);
-  for (const k of extraKeys) if (isPlainColumn(k)) out.add(k);
-  if (opts.customFields) out.add("custom_fields");
+  for (const k of baseKeys) if (k && accept(k)) out.add(k);
+  for (const k of extraKeys) if (isPlainColumn(k) && accept(k)) out.add(k);
+  if (opts.customFields && accept("custom_fields")) out.add("custom_fields");
   return sel(Array.from(out).join(", "));
 }
 

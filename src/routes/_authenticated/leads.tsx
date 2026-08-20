@@ -145,12 +145,11 @@ const BASE_LEAD_KEYS = [
   "phone",
   "company_name",
   "company_id",
-  "contact_id",
   "status",
   "stage_id",
   "source",
   "score",
-  "value",
+
   "label",
   "owner_id",
   "assigned_to",
@@ -476,7 +475,13 @@ function LeadsHubspotView() {
     }
   };
 
-  const { data: result, isLoading } = useQuery({
+  const {
+    data: result,
+    isLoading,
+    isError,
+    error: listError,
+    refetch,
+  } = useQuery({
     queryKey: [
       "leads",
       "hubspot-list",
@@ -491,14 +496,17 @@ function LeadsHubspotView() {
       stagesKey,
       projection.selectSignature,
       projection.needsCustomFields,
+      projection.knownColumns.length,
     ],
     queryFn: async () => {
       let q = supabase
         .from("leads")
-        // Projeção dinâmica: colunas base + colunas escolhidas no editor.
+        // Projeção dinâmica: colunas base + colunas escolhidas no editor,
+        // sempre validadas contra o catálogo real da entidade.
         .select(
           buildGridSelect(BASE_LEAD_KEYS, projection.selectKeys, {
             customFields: projection.needsCustomFields,
+            allowed: projection.knownColumns,
           }),
           { count: "exact" },
         );
@@ -1299,6 +1307,28 @@ function LeadsHubspotView() {
                       className="px-3 py-16 text-center text-sm text-muted-foreground"
                     >
                       Carregando leads…
+                    </td>
+                  </tr>
+                ) : isError ? (
+                  <tr>
+                    <td colSpan={visibleColumns.length + 2} className="px-3 py-16 text-center">
+                      <p className="text-sm font-medium text-foreground">
+                        Não foi possível carregar os leads.
+                      </p>
+                      <p
+                        className="mx-auto mt-1 max-w-xl text-xs text-muted-foreground"
+                        aria-live="polite"
+                      >
+                        {listError instanceof Error ? listError.message : "Erro inesperado."}
+                      </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-4"
+                        onClick={() => void refetch()}
+                      >
+                        Tentar novamente
+                      </Button>
                     </td>
                   </tr>
                 ) : rows.length === 0 ? (
