@@ -71,7 +71,7 @@ export function renderAutoCell(
 
   if (field.type === "select" && typeof v === "string") {
     const fromOptions = field.options?.find((o) => o.value === v)?.label;
-    const label = fromOptions ?? translateFieldValue(field.name, v) ?? v;
+    const label = fromOptions || translateFieldValue(field.name, v) || v;
     return (
       <Badge variant="secondary" className="font-normal">
         {label}
