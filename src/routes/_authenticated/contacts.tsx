@@ -169,10 +169,8 @@ function ContactsHubspotView() {
     queryFn: async () => {
       let q = supabase
         .from("contacts")
-        .select(
-          "id, first_name, last_name, email, phone, mobile_phone, job_title, company_id, lifecyclestage, owner_id, assigned_user_id, hubspot_owner_id, created_at, updated_at, custom_fields",
-          { count: "exact" },
-        );
+        // `*` para suportar qualquer coluna escolhida no editor de colunas.
+        .select("*", { count: "exact" });
 
       if (activeView === "mine" && user?.id) {
         q = q.or(
