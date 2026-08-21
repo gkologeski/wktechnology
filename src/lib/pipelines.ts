@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { DEAL_STAGES } from "@/lib/crm";
+import {
+  defaultDealStages as seedDealStages,
+  defaultTicketStages as seedTicketStages,
+} from "@/lib/pipelines-defaults";
+import { ensureDefaultPipeline } from "@/lib/pipelines.functions";
 
 export type PipelineStage = {
   value: string;
@@ -26,42 +31,36 @@ export type Pipeline = {
   config?: PipelineConfig;
 };
 
-const DEFAULT_STAGE_COLORS = [
-  "var(--hs-stage-1)",
-  "var(--hs-stage-2)",
-  "var(--hs-stage-3)",
-  "var(--hs-stage-4)",
-  "var(--hs-stage-won)",
-  "var(--hs-stage-lost)",
-];
-const DEFAULT_PROBABILITIES = [10, 30, 50, 70, 100, 0];
-const DEFAULT_TYPES: PipelineStage["type"][] = ["open", "open", "open", "open", "won", "lost"];
-
-export function defaultDealStages(): PipelineStage[] {
-  return DEAL_STAGES.map((s, i) => ({
-    value: s.value,
-    label: s.label,
-    color: DEFAULT_STAGE_COLORS[i],
-    probability: DEFAULT_PROBABILITIES[i],
-    type: DEFAULT_TYPES[i],
-  }));
-}
-
 const LS_KEY = (entity: string) => `pipeline:selected:${entity}`;
 
+export function defaultDealStages(): PipelineStage[] {
+  return seedDealStages() as PipelineStage[];
+}
+
 export function defaultTicketStages(): PipelineStage[] {
-  return [
-    { value: "new", label: "Novo", color: "var(--hs-stage-1)", type: "open" },
-    { value: "open", label: "Em atendimento", color: "var(--hs-stage-2)", type: "open" },
-    { value: "waiting", label: "Aguardando cliente", color: "var(--hs-stage-3)", type: "open" },
-    { value: "resolved", label: "Resolvido", color: "var(--hs-stage-4)", type: "open" },
-    { value: "closed", label: "Fechado", color: "var(--hs-stage-won)", type: "won" },
-  ];
+  return seedTicketStages() as PipelineStage[];
+}
+
+/**
+ * Garante (uma única vez por entidade, no servidor) que o workspace tenha um
+ * pipeline padrão. Idempotente: nunca cria duplicatas, mesmo com várias telas
+ * montando ao mesmo tempo — a chave da query deduplica a chamada.
+ */
+export function useEnsureDefaultPipeline(entity: "deal" | "lead" | "ticket") {
+  const { user } = useAuth();
+  const ensure = useServerFn(ensureDefaultPipeline);
+  return useQuery({
+    queryKey: ["pipelines", "ensure-default", entity, user?.id],
+    enabled: !!user,
+    queryFn: () => ensure({ data: { entity } }),
+    staleTime: Infinity,
+    retry: false,
+  });
 }
 
 export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
   const { user } = useAuth();
-  const qc = useQueryClient();
+
 
   const q = useQuery({
     queryKey: ["pipelines", entity, user?.id],
@@ -101,41 +100,11 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
     },
   });
 
-  // Seed default pipeline if user has none
-  useEffect(() => {
-    if (!user || q.isLoading || q.data === undefined) return;
-    if (q.data.length > 0) return;
-    (async () => {
-      const seedStages = entity === "ticket" ? defaultTicketStages() : defaultDealStages();
-      const seedName =
-        entity === "deal"
-          ? "Pipeline padrão"
-          : entity === "lead"
-            ? "Funil de Leads"
-            : "Pipeline de Tickets";
-      // Resolve workspace ativo p/ não depender da ordem dos triggers de RLS.
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("active_workspace_id")
-        .eq("id", user.id)
-        .maybeSingle();
-      const workspaceId =
-        (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
-      const { error } = await supabase.from("pipelines").insert({
-        owner_id: user.id,
-        ...(workspaceId ? { workspace_id: workspaceId } : {}),
-        entity,
-        name: seedName,
-        is_default: true,
-        stages: seedStages as unknown as never,
-      } as never);
-      if (error) {
-        console.error("[pipelines] seed default falhou:", error);
-      } else {
-        qc.invalidateQueries({ queryKey: ["pipelines", entity] });
-      }
-    })();
-  }, [user, entity, q.isLoading, q.data, qc]);
+  // A criação do pipeline padrão é feita no servidor (useEnsureDefaultPipeline),
+  // chamada apenas pelas telas de listagem — nunca aqui, para não duplicar
+  // registros quando vários componentes usam este hook na mesma tela.
+
+
 
   const pipelines = q.data ?? [];
 
