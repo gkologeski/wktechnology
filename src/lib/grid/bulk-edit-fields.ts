@@ -2,7 +2,10 @@
 // Sem dependência de UI nem de Supabase: é compartilhado entre o diálogo
 // (cliente) e a server function que aplica o update.
 
-/** Entidades habilitadas para edição em massa (mesmas do catálogo de campos). */
+/**
+ * Entidades habilitadas para edição em massa. Deve permanecer alinhada com a
+ * lista de tabelas aceitas por `public.get_entity_field_catalog`.
+ */
 export const BULK_EDIT_ENTITIES = [
   "leads",
   "contacts",
@@ -25,10 +28,9 @@ export const BULK_EDIT_ENTITIES = [
   "proposals",
   "products",
   "services",
-  "people",
-  "people_benefits",
-  "people_incidents",
-  "people_documents",
+  "recurring_plans",
+  "subscription_invoices",
+  "customer_invoices",
 ] as const;
 
 export type BulkEditEntity = (typeof BULK_EDIT_ENTITIES)[number];
