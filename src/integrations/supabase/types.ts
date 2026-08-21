@@ -6507,6 +6507,7 @@ export type Database = {
           hs_raw: Json | null
           hubspot_owner_id: string | null
           id: string
+          lost_at: string | null
           name: string
           notes: string | null
           num_associated_contacts: number | null
@@ -6542,6 +6543,7 @@ export type Database = {
           hs_raw?: Json | null
           hubspot_owner_id?: string | null
           id?: string
+          lost_at?: string | null
           name: string
           notes?: string | null
           num_associated_contacts?: number | null
@@ -6577,6 +6579,7 @@ export type Database = {
           hs_raw?: Json | null
           hubspot_owner_id?: string | null
           id?: string
+          lost_at?: string | null
           name?: string
           notes?: string | null
           num_associated_contacts?: number | null
