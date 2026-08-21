@@ -125,7 +125,7 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
     if (enabledModules.includes("projects")) {
       const [tasksDone, activeProjects] = await Promise.all([
         safeCount(supabase, "project_tasks", (q) => q.eq("status", "done").gte("updated_at", from).lte("updated_at", to)),
-        safeCount(supabase, "project_spaces", (q) => q.eq("status", "active")),
+        safeCount(supabase, "projects", (q) => q.eq("status", "active")),
       ]);
       sections.push({
         moduleId: "projects",
