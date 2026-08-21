@@ -9,10 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BulkActionBar } from "@/components/bulk-action-bar";
 import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { BulkAssignDialog } from "@/components/bulk-assign-dialog";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
 
 export type GridBulkBarProps<T extends { id: string }> = {
   table: string;
