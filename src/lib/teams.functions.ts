@@ -825,6 +825,7 @@ export const setMemberJobRoles = createServerFn({ method: "POST" })
     const roleRows: Array<{
       user_id: string;
       owner_id: string;
+      workspace_id: string;
       role_id: string;
       is_primary: boolean;
     }> = [];
@@ -833,6 +834,7 @@ export const setMemberJobRoles = createServerFn({ method: "POST" })
       roleRows.push({
         user_id: data.member_user_id,
         owner_id: workspaceOwnerId,
+        workspace_id: workspace.id,
         role_id: data.primary_role_id,
         is_primary: true,
       });
@@ -843,6 +845,7 @@ export const setMemberJobRoles = createServerFn({ method: "POST" })
       roleRows.push({
         user_id: data.member_user_id,
         owner_id: workspaceOwnerId,
+        workspace_id: workspace.id,
         role_id: rid,
         is_primary: false,
       });
@@ -867,9 +870,11 @@ export const setMemberJobRoles = createServerFn({ method: "POST" })
       const setRows = data.extra_set_ids.map((sid) => ({
         user_id: data.member_user_id,
         owner_id: workspaceOwnerId,
+        workspace_id: workspace.id,
         set_id: sid,
       }));
       const { error: insSetsErr } = await supabaseAdmin
+
         .from("user_permission_sets")
         .insert(setRows as never);
       if (insSetsErr) throw new Error(insSetsErr.message);
