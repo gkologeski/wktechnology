@@ -527,6 +527,7 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
           "ats_candidates",
           "ats_applications",
           "ats_interviews",
+          "ats_offers",
           "projects",
           "project_tasks",
           "project_milestones",
