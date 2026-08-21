@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { startFocusQueue } from "@/lib/focus-queue";
 import type { Deal, Company, Contact } from "@/lib/db-types";
-import { usePipelines } from "@/lib/pipelines";
+import { usePipelines, useEnsureDefaultPipeline } from "@/lib/pipelines";
 import {
   DealsToolbar,
   EMPTY_DEAL_FILTERS,
@@ -72,6 +72,7 @@ function DealsRoute() {
 function DealsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  useEnsureDefaultPipeline("deal");
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
 
   useRealtimeInvalidate([

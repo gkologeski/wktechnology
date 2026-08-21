@@ -6,7 +6,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
-import { usePipelines, defaultTicketStages, type Pipeline } from "@/lib/pipelines";
+import {
+  usePipelines,
+  useEnsureDefaultPipeline,
+  defaultTicketStages,
+  type Pipeline,
+} from "@/lib/pipelines";
 import { useMyTools } from "@/lib/use-my-tools";
 import { PageHeader } from "@/components/page-header";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
@@ -113,6 +118,7 @@ function TicketsIndex() {
   useRealtimeInvalidate([{ table: "tickets", queryKeys: [["tickets"]] }]);
   const navigate = useNavigate();
   const notifyStatus = useServerFn(notifyTicketStatusChange);
+  useEnsureDefaultPipeline("ticket");
   const { pipelines, selected: pipeline, selectedId, setSelectedId } = usePipelines("ticket");
 
   const [view, setView] = useState<ViewKey>("all");
