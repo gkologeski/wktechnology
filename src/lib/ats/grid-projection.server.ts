@@ -68,7 +68,8 @@ export async function resolveAtsGridProjection(
   const wanted = (input.extraColumns ?? []).filter(
     (k) => isPlainColumn(k) && !NEVER_PROJECT.has(k),
   );
-  const wantsSort = !!input.sortKey && isPlainColumn(input.sortKey) && !NEVER_PROJECT.has(input.sortKey);
+  const wantsSort =
+    !!input.sortKey && isPlainColumn(input.sortKey) && !NEVER_PROJECT.has(input.sortKey);
   if (!wanted.length && !wantsSort) {
     return { extras: [], sortKey: null, sortDir: input.sortDir === "asc" ? "asc" : "desc" };
   }
