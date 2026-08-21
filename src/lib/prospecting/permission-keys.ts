@@ -15,14 +15,9 @@ export const QUEUE_UPDATE = [`${P}.queue.update.workspace`, `${P}.queue.update.o
 export const QUEUE_DELETE = [`${P}.queue.delete.workspace`, `${P}.queue.delete.own`] as const;
 export const QUEUE_UPDATE_WORKSPACE = `${P}.queue.update.workspace`;
 export const QUEUE_DELETE_WORKSPACE = `${P}.queue.delete.workspace`;
-export const QUEUE_VIEW_WORKSPACE = `${P}.queue.view.workspace`;
 
 /** Cadências */
-export const CADENCES_VIEW = [
-  `${P}.cadences.view`,
-  `${P}.cadences.view.team`,
-  `${P}.cadences.view.own`,
-] as const;
+export const CADENCES_VIEW = [`${P}.cadences.view`, `${P}.cadences.view.own`] as const;
 export const CADENCES_CREATE = [
   `${P}.cadences.create.workspace`,
   `${P}.cadences.create.own`,
@@ -39,7 +34,6 @@ export const CADENCES_DELETE = [
 /** Questionários */
 export const QUESTIONNAIRES_VIEW = [
   `${P}.questionnaires.view`,
-  `${P}.questionnaires.view.team`,
   `${P}.questionnaires.view.own`,
 ] as const;
 export const QUESTIONNAIRES_CREATE = [

@@ -20,11 +20,12 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 async function ensureDefaultPipeline(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   userId: string,
+  workspaceId: string,
 ): Promise<{ id: string; stages: AtsStage[] }> {
   const { data: existing, error } = await supabase
     .from("ats_pipelines")
     .select("id, stages, is_default")
-    .eq("owner_id", userId)
+    .eq("workspace_id", workspaceId)
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: true })
     .limit(1)
@@ -40,6 +41,7 @@ async function ensureDefaultPipeline(
     .from("ats_pipelines")
     .insert({
       owner_id: userId,
+      workspace_id: workspaceId,
       name: "Pipeline padrão",
       is_default: true,
       stages: DEFAULT_ATS_STAGES as never,
@@ -66,7 +68,8 @@ export const getAtsDefaultPipeline = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    return ensureDefaultPipeline(supabase, userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
+    return ensureDefaultPipeline(supabase, userId, workspaceId);
   });
 
 // ---------- jobs ------------------------------------------------------------
@@ -271,7 +274,7 @@ export const saveAtsJob = createServerFn({ method: "POST" })
       if (!pipe) throw new Error("Pipeline não encontrado ou sem permissão");
       pipelineId = pipe.id as string;
     } else {
-      const pipeline = await ensureDefaultPipeline(supabase, userId);
+      const pipeline = await ensureDefaultPipeline(supabase, userId, workspaceId);
       pipelineId = pipeline.id;
     }
     const slug = slugify(data.title) + "-" + Date.now().toString(36);
@@ -391,7 +394,7 @@ export const createJobFromDeal = createServerFn({ method: "POST" })
       .maybeSingle();
     if (dErr) throw new Error(dErr.message);
     if (!deal) throw new Error("Negócio não encontrado");
-    const pipeline = await ensureDefaultPipeline(supabase, userId);
+    const pipeline = await ensureDefaultPipeline(supabase, userId, workspaceId);
     const title = data.title ?? `Vaga para ${deal.name as string}`;
     const slug = slugify(title) + "-" + Date.now().toString(36);
     const { data: inserted, error } = await supabase

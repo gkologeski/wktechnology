@@ -332,6 +332,7 @@ type PipelineSync = {
 async function syncHubspotDealPipelines(
   supabase: SupabaseClient,
   userId: string,
+  workspaceId: string,
 ): Promise<PipelineSync> {
   const r = (await hsFetch("/crm/v3/pipelines/deals")) as { results?: HsPipeline[] };
   const pipelines = r.results ?? [];
@@ -339,7 +340,7 @@ async function syncHubspotDealPipelines(
   const { data: existing } = await supabase
     .from("pipelines")
     .select("id, name, config, is_default")
-    .eq("owner_id", userId)
+    .eq("workspace_id", workspaceId)
     .eq("entity", "deal");
 
   const existingByHsId = new Map<string, { id: string; name: string }>();
@@ -413,6 +414,7 @@ async function syncHubspotDealPipelines(
 async function syncHubspotTicketPipelines(
   supabase: SupabaseClient,
   userId: string,
+  workspaceId: string,
 ): Promise<Record<string, string>> {
   const r = (await hsFetch("/crm/v3/pipelines/tickets")) as { results?: HsPipeline[] };
   const pipelines = r.results ?? [];
@@ -420,7 +422,7 @@ async function syncHubspotTicketPipelines(
   const { data: existing } = await supabase
     .from("pipelines")
     .select("id, name, config")
-    .eq("owner_id", userId)
+    .eq("workspace_id", workspaceId)
     .eq("entity", "ticket");
 
   const existingByHsId = new Map<string, { id: string; name: string }>();
@@ -652,22 +654,22 @@ function makeProgressBumper(supabase: SupabaseClient, itemId: string, jobId: str
 // even if the item checkpoint lost its imported_hs_ids list.
 async function loadMapForStep(
   supabase: SupabaseClient,
-  userId: string,
+  workspaceId: string,
   jobId: string,
   table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   fromStep: StepName,
 ): Promise<Map<string, string>> {
-  const importedIds = await loadImportedHsIdsForStep(supabase, userId, jobId, table, fromStep);
+  const importedIds = await loadImportedHsIdsForStep(supabase, workspaceId, jobId, table, fromStep);
   if (importedIds.length > 0 && importedIds.length <= 2_000) {
-    return loadLocalMapForHsIds(supabase, userId, table, importedIds);
+    return loadLocalMapForHsIds(supabase, workspaceId, table, importedIds);
   }
 
-  return scanLocalHubspotMap(supabase, userId, table);
+  return scanLocalHubspotMap(supabase, workspaceId, table);
 }
 
 async function loadImportedHsIdsForStep(
   supabase: SupabaseClient,
-  userId: string,
+  workspaceId: string,
   jobId: string,
   table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   fromStep: StepName,
@@ -685,13 +687,13 @@ async function loadImportedHsIdsForStep(
     [];
   if (ids.length > 0) return Array.from(new Set(ids.map(String)));
 
-  const fallback = await scanLocalHubspotMap(supabase, userId, table);
+  const fallback = await scanLocalHubspotMap(supabase, workspaceId, table);
   return [...fallback.keys()];
 }
 
 async function scanLocalHubspotMap(
   supabase: SupabaseClient,
-  userId: string,
+  workspaceId: string,
   table: "companies" | "contacts" | "deals" | "leads" | "tickets",
 ): Promise<Map<string, string>> {
   const map = new Map<string, string>();
@@ -699,7 +701,7 @@ async function scanLocalHubspotMap(
     const { data } = await supabase
       .from(table)
       .select("id, external_ids")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .not("external_ids->>hubspot", "is", null)
       .range(from, from + 999);
     for (const r of data ?? []) {
@@ -713,7 +715,7 @@ async function scanLocalHubspotMap(
 
 async function loadLocalMapForHsIds(
   supabase: SupabaseClient,
-  userId: string,
+  workspaceId: string,
   table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   ids: string[],
 ): Promise<Map<string, string>> {
@@ -724,7 +726,7 @@ async function loadLocalMapForHsIds(
     const { data } = await supabase
       .from(table)
       .select("id, external_ids")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .in("external_ids->>hubspot", chunk);
     for (const r of data ?? []) {
       const hs = (r.external_ids as { hubspot?: string } | null)?.hubspot;
@@ -1263,7 +1265,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           supabase
             .from(o.localTable)
             .select("*", { count: "exact", head: true })
-            .eq("owner_id", userId),
+            .eq("workspace_id", workspaceId),
         ]);
         const local = localRes.count ?? 0;
         const diff = Math.max(0, remote - local);
@@ -1623,7 +1625,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
           ),
         );
         const companyMap = parentCompanyHsIds.length
-          ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
+          ? await loadLocalMapForHsIds(supabase, workspaceId, "companies", parentCompanyHsIds)
           : new Map<string, string>();
         const tasks: { hsId: string; payload: Record<string, unknown> }[] = [];
         for (const hsId of chunkIds) {
@@ -1676,14 +1678,14 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       // Sincroniza pipelines do HubSpot (cria os inexistentes) e importa TODOS
       // os negócios (de todos os pipelines), paginando direto em /objects/deals
       // — sem depender de associações vindas de companies.
-      const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
+      const contactMap = await loadMapForStep(supabase, workspaceId, jobId, "contacts", "contacts");
 
       let pipelineMap = resume.pipeline_map as Record<string, string> | undefined;
       let stageMap = resume.stage_map as
         | Record<string, { hsPipelineId: string; legacy: "new" | "won" | "lost" }>
         | undefined;
       if (!pipelineMap || !stageMap) {
-        const synced = await syncHubspotDealPipelines(supabase, userId);
+        const synced = await syncHubspotDealPipelines(supabase, userId, workspaceId);
         pipelineMap = synced.pipelineMap;
         stageMap = synced.stageMap;
         await patchItemBefore(supabase, itemId, { pipeline_map: pipelineMap, stage_map: stageMap });
@@ -1719,7 +1721,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             new Set(Array.from(dealCompanies.values()).flatMap((arr) => arr.slice(0, 1))),
           );
           const companyMap = parentCompanyHsIds.length
-            ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
+            ? await loadLocalMapForHsIds(supabase, workspaceId, "companies", parentCompanyHsIds)
             : new Map<string, string>();
 
           const tasks: {
@@ -1836,7 +1838,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
             new Set(Array.from(dealCompanies.values()).flatMap((arr) => arr.slice(0, 1))),
           );
           const companyMap = parentCompanyHsIds.length
-            ? await loadLocalMapForHsIds(supabase, userId, "companies", parentCompanyHsIds)
+            ? await loadLocalMapForHsIds(supabase, workspaceId, "companies", parentCompanyHsIds)
             : new Map<string, string>();
 
           await appendLog(supabase, jobId, {
@@ -2105,7 +2107,7 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       // para vincular cada ticket ao seu pipeline local.
       let ticketPipelineMap: Record<string, string> = {};
       try {
-        ticketPipelineMap = await syncHubspotTicketPipelines(supabase, userId);
+        ticketPipelineMap = await syncHubspotTicketPipelines(supabase, userId, workspaceId);
         await appendLog(supabase, jobId, {
           level: "info",
           step,
@@ -2155,9 +2157,15 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const propsParam = propsList.join(",");
 
       // Load local maps so we can fill FK columns from associations.
-      const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
-      const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
-      const dealMap = await loadMapForStep(supabase, userId, jobId, "deals", "deals");
+      const companyMap = await loadMapForStep(
+        supabase,
+        workspaceId,
+        jobId,
+        "companies",
+        "companies",
+      );
+      const contactMap = await loadMapForStep(supabase, workspaceId, jobId, "contacts", "contacts");
+      const dealMap = await loadMapForStep(supabase, workspaceId, jobId, "deals", "deals");
 
       if (resume.discovered === undefined) {
         const total = await searchTotal("tickets");
@@ -2300,10 +2308,16 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       };
       const t = TYPE_MAP[kind];
 
-      const companyMap = await loadMapForStep(supabase, userId, jobId, "companies", "companies");
-      const contactMap = await loadMapForStep(supabase, userId, jobId, "contacts", "contacts");
-      const dealMap = await loadMapForStep(supabase, userId, jobId, "deals", "deals");
-      const leadMap = await loadMapForStep(supabase, userId, jobId, "leads", "leads");
+      const companyMap = await loadMapForStep(
+        supabase,
+        workspaceId,
+        jobId,
+        "companies",
+        "companies",
+      );
+      const contactMap = await loadMapForStep(supabase, workspaceId, jobId, "contacts", "contacts");
+      const dealMap = await loadMapForStep(supabase, workspaceId, jobId, "deals", "deals");
+      const leadMap = await loadMapForStep(supabase, workspaceId, jobId, "leads", "leads");
 
       let targetIds = resume.target_ids as string[] | undefined;
       type Parents = { contactId?: string; companyId?: string; dealId?: string; leadId?: string };
