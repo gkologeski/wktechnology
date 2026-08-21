@@ -28,10 +28,11 @@ export const Route = createFileRoute("/api/public/v1/leads")({
           .select(
             "id, first_name, last_name, email, phone, company_name, status, source, created_at",
           )
-          .eq("owner_id", auth.ownerId)
+          .eq("workspace_id", auth.workspaceId)
           .order("created_at", { ascending: false })
           .limit(limit);
         return Response.json({ data: data ?? [] });
+
       },
       POST: async ({ request }) => {
         const auth = await authenticateApiKey(request);
