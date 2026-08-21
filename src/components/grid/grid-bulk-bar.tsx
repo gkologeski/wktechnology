@@ -113,7 +113,7 @@ export function GridBulkBar<T extends { id: string }>({
             Exportar selecionados
           </Button>
         )}
-        {canUpdate && bulkEditFields && bulkEditFields.length > 0 && (
+        {canBulkEdit && (
           <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
             Editar em massa
           </Button>
