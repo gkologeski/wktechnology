@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const BUCKET = "ats-async-videos";
 
@@ -13,10 +14,11 @@ export const listAsyncVideoResponses = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: rows, error } = await supabase
       .from("ats_async_video_responses")
       .select("id, question_id, storage_path, duration_sec, mime_type, size_bytes, created_at")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("interview_id", data.interview_id)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -38,10 +40,11 @@ export const deleteAsyncVideoResponse = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: row, error: rErr } = await supabase
       .from("ats_async_video_responses")
       .select("id, storage_path")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("id", data.id)
       .maybeSingle();
     if (rErr) throw new Error(rErr.message);
@@ -50,7 +53,7 @@ export const deleteAsyncVideoResponse = createServerFn({ method: "POST" })
     const { error } = await supabase
       .from("ats_async_video_responses")
       .delete()
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

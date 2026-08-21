@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export const QuestionSchema = z.object({
   id: z.string().min(1).max(40),
@@ -25,10 +26,11 @@ export const listInterviewKits = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data, error } = await supabase
       .from("ats_interview_kits")
       .select("id, name, pipeline_id, stage_value, questions, is_default, updated_at")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("is_default", { ascending: false })
       .order("name", { ascending: true });
     if (error) throw new Error(error.message);
@@ -40,10 +42,11 @@ export const getInterviewKit = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: row, error } = await supabase
       .from("ats_interview_kits")
       .select("id, name, pipeline_id, stage_value, questions, is_default, updated_at")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw new Error(error.message);
@@ -56,18 +59,20 @@ export const saveInterviewKit = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => KitSaveSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     if (data.is_default) {
       // garante 1 default por (pipeline_id, stage_value)
       let q = supabase
         .from("ats_interview_kits")
         .update({ is_default: false } as never)
-        .eq("owner_id", userId);
+        .eq("workspace_id", workspaceId);
       q = data.pipeline_id ? q.eq("pipeline_id", data.pipeline_id) : q.is("pipeline_id", null);
       q = data.stage_value ? q.eq("stage_value", data.stage_value) : q.is("stage_value", null);
       await q;
     }
     const row = {
       owner_id: userId,
+      workspace_id: workspaceId,
       name: data.name,
       pipeline_id: data.pipeline_id ?? null,
       stage_value: data.stage_value ?? null,
@@ -78,7 +83,7 @@ export const saveInterviewKit = createServerFn({ method: "POST" })
       const { error } = await supabase
         .from("ats_interview_kits")
         .update(row as never)
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .eq("id", data.id);
       if (error) throw new Error(error.message);
       return { id: data.id };
@@ -97,10 +102,11 @@ export const deleteInterviewKit = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { error } = await supabase
       .from("ats_interview_kits")
       .delete()
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -120,10 +126,11 @@ export const resolveKitForStage = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: rows, error } = await supabase
       .from("ats_interview_kits")
       .select("id, name, pipeline_id, stage_value, questions, is_default")
-      .eq("owner_id", userId);
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     const list = rows ?? [];
     const pid = data.pipeline_id ?? null;

@@ -58,6 +58,7 @@ import {
   deleteFolder,
   togglePublicLink,
   getDownloadUrl,
+  registerUploadedFile,
 } from "@/lib/files.functions";
 
 export const Route = createFileRoute("/_authenticated/files")({
@@ -190,17 +191,19 @@ function FilesPage() {
           upsert: false,
         });
         if (up.error) throw new Error(up.error.message);
-        const { error: insErr } = await supabase.from("user_files").insert({
-          owner_id: user.id,
-          folder_id: folderId,
-          name: f.name,
-          storage_path: path,
-          size_bytes: f.size,
-          mime_type: f.type || null,
-        });
-        if (insErr) {
+        try {
+          await registerUploadedFile({
+            data: {
+              folder_id: folderId,
+              name: f.name,
+              storage_path: path,
+              size_bytes: f.size,
+              mime_type: f.type || null,
+            },
+          });
+        } catch (insErr) {
           await supabase.storage.from("user-files").remove([path]);
-          throw new Error(insErr.message);
+          throw insErr;
         }
         setUploadProgress(Math.round(((i + 1) / files.length) * 100));
       }

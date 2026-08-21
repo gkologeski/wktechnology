@@ -169,11 +169,12 @@ export const runMyDueRecurrences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const today = new Date().toISOString().slice(0, 10);
     const { data: due, error } = await supabase
       .from("financial_recurrences")
       .select("*")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("active", true)
       .lte("next_run_date", today);
     if (error) throw error;

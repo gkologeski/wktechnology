@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runWebhookDispatch } from "@/lib/webhooks/dispatcher.server";
 import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const WEBHOOK_MANAGE = "system.webhooks.manage.workspace";
 
@@ -46,10 +47,11 @@ export const listWebhooks = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data } = await supabase
       .from("outbound_webhooks")
       .select("id, name, url, events, active, created_at")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false });
     return { hooks: data ?? [] };
   });
@@ -70,6 +72,7 @@ export const upsertWebhook = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
     if (data.id) {
@@ -83,13 +86,14 @@ export const upsertWebhook = createServerFn({ method: "POST" })
           active: data.active ?? true,
         })
         .eq("id", data.id)
-        .eq("owner_id", userId);
+        .eq("workspace_id", workspaceId);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
     const secret = `whsec_${randomBytes(24).toString("hex")}`;
     const { error } = await supabase.from("outbound_webhooks").insert({
       owner_id: userId,
+      workspace_id: workspaceId,
       name: data.name,
       url: data.url,
       events: data.events,
@@ -105,9 +109,10 @@ export const deleteWebhook = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
-    await supabase.from("outbound_webhooks").delete().eq("id", data.id).eq("owner_id", userId);
+    await supabase.from("outbound_webhooks").delete().eq("id", data.id).eq("workspace_id", workspaceId);
     return { ok: true };
   });
 
@@ -130,12 +135,13 @@ export const listWebhookDeliveries = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     let q = supabase
       .from("webhook_deliveries")
       .select(
         "id, webhook_id, event_type, status, attempt, response_status, response_body, payload, created_at, delivered_at, next_retry_at",
       )
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(100);
     if (data.webhook_id) q = q.eq("webhook_id", data.webhook_id);
@@ -150,6 +156,7 @@ export const retryWebhookDelivery = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
     const { error } = await supabase
@@ -164,7 +171,7 @@ export const retryWebhookDelivery = createServerFn({ method: "POST" })
         delivered_at: null,
       })
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     try {
       await runWebhookDispatch();
@@ -179,13 +186,14 @@ export const getWebhookSecret = createServerFn({ method: "GET" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // `secret` is owner-only via RLS; use admin client scoped to owner_id.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("outbound_webhooks")
       .select("secret")
       .eq("id", data.id)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     return { secret: row?.secret as string | undefined };
   });

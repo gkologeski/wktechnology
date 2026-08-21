@@ -3,16 +3,18 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { CUSTOM_ENTITIES, type CustomEntity } from "@/lib/custom-properties.functions";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export const listPropertyGroups = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ entity: z.enum(CUSTOM_ENTITIES) }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: rows, error } = await supabase
       .from("custom_properties")
       .select("group_name, position, enabled")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("entity", data.entity);
     if (error) throw new Error(error.message);
 
@@ -42,10 +44,11 @@ export const renamePropertyGroup = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { error } = await supabase
       .from("custom_properties")
       .update({ group_name: data.to.trim() } as never)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("entity", data.entity)
       .eq("group_name", data.from);
     if (error) throw new Error(error.message);
@@ -64,11 +67,12 @@ export const deletePropertyGroup = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // Não exclui as propriedades; apenas remove o agrupamento.
     const { error } = await supabase
       .from("custom_properties")
       .update({ group_name: null } as never)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("entity", data.entity)
       .eq("group_name", data.name);
     if (error) throw new Error(error.message);
@@ -88,10 +92,11 @@ export const reorderPropertyGroup = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: rows, error } = await supabase
       .from("custom_properties")
       .select("id, position")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("entity", data.entity)
       .eq("group_name", data.name)
       .order("position", { ascending: true });

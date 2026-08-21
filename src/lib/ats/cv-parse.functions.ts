@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
@@ -33,6 +34,7 @@ export const parseCv = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
@@ -87,6 +89,7 @@ Nunca invente dados. Se um campo não estiver no texto, use null ou [].`;
     if (data.apply) {
       const base = {
         owner_id: userId,
+        workspace_id: workspaceId,
         full_name: parsed.full_name ?? "(sem nome)",
         email: parsed.email,
         phone: parsed.phone,
@@ -105,7 +108,7 @@ Nunca invente dados. Se um campo não estiver no texto, use null ou [].`;
           .from("ats_candidates")
           .update(base as never)
           .eq("id", data.candidate_id)
-          .eq("owner_id", userId);
+          .eq("workspace_id", workspaceId);
         if (error) throw new Error(error.message);
         saved = { id: data.candidate_id };
       } else {

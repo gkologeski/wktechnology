@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
@@ -187,6 +188,7 @@ export const reconcileHubspotActivities = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const kind = data.type as Kind;
     const obj = KIND_TO_OBJECT[kind];
 
@@ -225,7 +227,7 @@ export const reconcileHubspotActivities = createServerFn({ method: "POST" })
       const { data: existing } = await supabase
         .from("activities")
         .select("hs_object_id")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .eq("type", kind)
         .in("hs_object_id", ids);
       const have = new Set((existing ?? []).map((x) => x.hs_object_id as string));

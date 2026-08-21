@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const WidgetTypeSchema = z.enum(["report", "kpi", "note"]);
 
@@ -31,13 +32,15 @@ export const createDashboard = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     if (data.is_default) {
-      await supabase.from("dashboards").update({ is_default: false }).eq("owner_id", userId);
+      await supabase.from("dashboards").update({ is_default: false }).eq("workspace_id", workspaceId);
     }
     const { data: row, error } = await supabase
       .from("dashboards")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         name: data.name,
         description: data.description ?? null,
         is_default: data.is_default,
@@ -63,11 +66,12 @@ export const updateDashboard = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     if (data.is_default) {
       await supabase
         .from("dashboards")
         .update({ is_default: false })
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .neq("id", data.id);
     }
     const patch: {
@@ -127,6 +131,7 @@ export const upsertWidget = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const payload = {
       dashboard_id: data.dashboard_id,
       title: data.title,

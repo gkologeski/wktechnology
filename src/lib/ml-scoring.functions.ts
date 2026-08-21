@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const MIN_SAMPLES = 100;
 
@@ -8,14 +9,16 @@ export const getMlScoringStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data } = await supabase
       .from("ml_scoring_models")
       .select("*")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     return (
       data ?? {
         owner_id: userId,
+        workspace_id: workspaceId,
         status: "untrained",
         weight_ml: 0.5,
         sample_size: 0,
@@ -29,8 +32,10 @@ export const setMlWeight = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ weight_ml: z.number().min(0).max(1) }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { error } = await supabase.from("ml_scoring_models").upsert({
       owner_id: userId,
+      workspace_id: workspaceId,
       weight_ml: data.weight_ml,
       updated_at: new Date().toISOString(),
     });
@@ -42,6 +47,7 @@ export const trainMlScoring = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // amostra: deals fechados
     const { data: closed, error } = await supabase
       .from("deals")
@@ -54,6 +60,7 @@ export const trainMlScoring = createServerFn({ method: "POST" })
     if (n < MIN_SAMPLES) {
       await supabase.from("ml_scoring_models").upsert({
         owner_id: userId,
+        workspace_id: workspaceId,
         status: "insufficient_data",
         sample_size: n,
         notes: `Necessário ${MIN_SAMPLES} deals fechados, encontrados ${n}.`,
@@ -71,6 +78,7 @@ export const trainMlScoring = createServerFn({ method: "POST" })
     ];
     await supabase.from("ml_scoring_models").upsert({
       owner_id: userId,
+      workspace_id: workspaceId,
       status: "ready",
       sample_size: n,
       accuracy: Number(accuracy.toFixed(4)),

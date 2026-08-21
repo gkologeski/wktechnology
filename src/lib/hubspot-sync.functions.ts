@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
@@ -43,17 +44,18 @@ export const pushContactsToHubspot = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: mapped } = await supabase
       .from("hubspot_sync_state")
       .select("local_id")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("entity", "contact");
     const mappedIds = new Set((mapped ?? []).map((m) => m.local_id as string));
 
     const { data: contacts } = await supabase
       .from("contacts")
       .select("id, first_name, last_name, email, phone, company_name")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .limit(data.limit);
 
     let pushed = 0;
@@ -72,7 +74,7 @@ export const pushContactsToHubspot = createServerFn({ method: "POST" })
           const { data: m } = await supabase
             .from("hubspot_sync_state")
             .select("hubspot_id")
-            .eq("owner_id", userId)
+            .eq("workspace_id", workspaceId)
             .eq("entity", "contact")
             .eq("local_id", c.id as string)
             .maybeSingle();
@@ -90,6 +92,7 @@ export const pushContactsToHubspot = createServerFn({ method: "POST" })
           });
           await supabase.from("hubspot_sync_state").insert({
             owner_id: userId,
+            workspace_id: workspaceId,
             entity: "contact",
             local_id: c.id as string,
             hubspot_id: r.id as string,
@@ -108,10 +111,11 @@ export const listHubspotSyncState = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data } = await supabase
       .from("hubspot_sync_state")
       .select("id, entity, local_id, hubspot_id, last_synced_at, direction")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("last_synced_at", { ascending: false })
       .limit(200);
     return { state: data ?? [] };

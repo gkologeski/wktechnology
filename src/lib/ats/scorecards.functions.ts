@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const CriterionSchema = z.object({
   key: z.string().min(1).max(40),
@@ -27,10 +28,11 @@ export const listScorecards = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     let q = supabase
       .from("ats_scorecards")
       .select("id, name, description, job_id, is_active, criteria, created_at")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false });
     if (data?.job_id) q = q.or(`job_id.eq.${data.job_id},job_id.is.null`);
     const { data: rows, error } = await q;
@@ -43,8 +45,10 @@ export const saveScorecard = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ScorecardSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const base = {
       owner_id: userId,
+      workspace_id: workspaceId,
       name: data.name,
       description: data.description ?? null,
       job_id: data.job_id ?? null,
@@ -56,7 +60,7 @@ export const saveScorecard = createServerFn({ method: "POST" })
         .from("ats_scorecards")
         .update(base as never)
         .eq("id", data.id)
-        .eq("owner_id", userId);
+        .eq("workspace_id", workspaceId);
       if (error) throw new Error(error.message);
       return { id: data.id };
     }
@@ -74,11 +78,12 @@ export const deleteScorecard = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { error } = await supabase
       .from("ats_scorecards")
       .delete()
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -100,13 +105,14 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ResponseSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
 
     // Buscar critérios pra computar score ponderado.
     const { data: sc, error: scErr } = await supabase
       .from("ats_scorecards")
       .select("criteria")
       .eq("id", data.scorecard_id)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .single();
     if (scErr || !sc) throw new Error("Scorecard não encontrado");
     const criteria = (sc as { criteria: Criterion[] }).criteria ?? [];
@@ -123,6 +129,7 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
 
     const base = {
       owner_id: userId,
+      workspace_id: workspaceId,
       scorecard_id: data.scorecard_id,
       application_id: data.application_id,
       evaluator_id: userId,
@@ -136,7 +143,7 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
         .from("ats_scorecard_responses")
         .update(base as never)
         .eq("id", data.id)
-        .eq("owner_id", userId);
+        .eq("workspace_id", workspaceId);
       if (error) throw new Error(error.message);
       return { id: data.id, total_score };
     }
@@ -159,6 +166,7 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
         .from("ats_application_events")
         .insert({
           owner_id: userId,
+          workspace_id: workspaceId,
           application_id: created.application_id,
           job_id: a.job_id,
           candidate_id: a.candidate_id,
@@ -179,12 +187,13 @@ export const listScorecardResponses = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: rows, error } = await supabase
       .from("ats_scorecard_responses")
       .select(
         "id, scorecard_id, scores, total_score, recommendation, notes, evaluator_id, created_at, scorecard:ats_scorecards(name, criteria)",
       )
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("application_id", data.application_id)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -199,11 +208,12 @@ export const listJobScorecardSummary = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     if (data.application_ids.length === 0) return {} as Record<string, { avg: number; count: number }>;
     const { data: rows, error } = await supabase
       .from("ats_scorecard_responses")
       .select("application_id, total_score")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .in("application_id", data.application_ids);
     if (error) throw new Error(error.message);
     const acc: Record<string, { sum: number; count: number }> = {};
