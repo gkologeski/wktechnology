@@ -729,6 +729,7 @@ export const consumeInvite = createServerFn({ method: "POST" })
       user_id: userId,
       role_id: jobRoleId,
       owner_id: workspaceOwnerId,
+      workspace_id: inv.workspace_id as string,
       is_primary: true,
     } as never);
     if (jrErr && jrErr.code !== "23505") throw new Error(jrErr.message);
@@ -741,8 +742,10 @@ export const consumeInvite = createServerFn({ method: "POST" })
         .insert({
           user_id: userId,
           owner_id: workspaceOwnerId,
+          workspace_id: inv.workspace_id as string,
           set_id: chosenSetId,
         } as never);
+
       if (upsErr && upsErr.code !== "23505") throw new Error(upsErr.message);
     }
 
