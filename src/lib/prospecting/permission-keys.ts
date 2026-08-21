@@ -17,11 +17,7 @@ export const QUEUE_UPDATE_WORKSPACE = `${P}.queue.update.workspace`;
 export const QUEUE_DELETE_WORKSPACE = `${P}.queue.delete.workspace`;
 
 /** Cadências */
-export const CADENCES_VIEW = [
-  `${P}.cadences.view`,
-  `${P}.cadences.view.team`,
-  `${P}.cadences.view.own`,
-] as const;
+export const CADENCES_VIEW = [`${P}.cadences.view`, `${P}.cadences.view.own`] as const;
 export const CADENCES_CREATE = [
   `${P}.cadences.create.workspace`,
   `${P}.cadences.create.own`,
