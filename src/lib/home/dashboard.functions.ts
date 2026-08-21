@@ -90,13 +90,14 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
         await Promise.all([
           safeCount(supabase, "leads", (q) => q.gte("created_at", from).lte("created_at", to)),
           safeCount(supabase, "deals", (q) => q.gte("created_at", from).lte("created_at", to)),
-          // `deals` não tem coluna de fechamento; usa a última atualização como janela.
+          // Janela pela data real de fechamento (preenchida por trigger em stage = 'won').
           safeCount(supabase, "deals", (q) =>
-            q.eq("stage", "won").gte("updated_at", from).lte("updated_at", to),
+            q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
           ),
           safeSum(supabase, "deals", "value", (q) =>
-            q.eq("stage", "won").gte("updated_at", from).lte("updated_at", to),
+            q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
           ),
+
 
           safeSum(supabase, "deals", "value", (q) => q.not("stage", "in", "(won,lost)")),
         ]);
