@@ -201,6 +201,43 @@ export function DealsToolbar({
           </SelectContent>
         </Select>
 
+        <Select
+          value={filters.closedPeriod}
+          onValueChange={(v) => setF("closedPeriod", v as DatePreset)}
+        >
+          <SelectTrigger className="h-9 w-[190px]" aria-label="Filtrar por data de fechamento">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DATE_PRESETS.map((k) => (
+              <SelectItem key={k} value={k}>
+                {k === "any" ? "Fechado: qualquer data" : `Fechado: ${DATE_PRESET_LABELS[k]}`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {filters.closedPeriod === "custom" && (
+          <>
+            <Input
+              type="date"
+              aria-label="Fechado a partir de"
+              value={filters.closedStart}
+              onChange={(e) => setF("closedStart", e.target.value)}
+              className="h-9 w-[150px]"
+            />
+            <Input
+              type="date"
+              aria-label="Fechado até"
+              value={filters.closedEnd}
+              onChange={(e) => setF("closedEnd", e.target.value)}
+              className="h-9 w-[150px]"
+            />
+          </>
+        )}
+
+
+
         {filters.period === "custom" && (
           <>
             <Input
