@@ -80,7 +80,6 @@ function DealsPage() {
   ]);
 
   // Parâmetros de URL vindos do dashboard (ex.: /deals?closedFrom=2026-01-01&closedTo=2026-01-31)
-  const search = location.search as unknown;
   const [filters, setFilters] = useState<DealFilters>(() => {
     const sp =
       typeof window === "undefined"
@@ -95,7 +94,6 @@ function DealsPage() {
         : {}),
     };
   });
-  void search;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
