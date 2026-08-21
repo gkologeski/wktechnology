@@ -4,11 +4,11 @@ Documentação dos endpoints HTTP públicos do TechERP para integrações extern
 
 ## 1. Base URL
 
-| Ambiente | URL |
-| --- | --- |
-| Produção | `https://app.wktechnology.com.br` |
-| Produção (URL estável) | `https://project--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app` |
-| Preview | `https://project--68dcfa85-b6da-4030-a825-b896ca621e0c-dev.lovable.app` |
+| Ambiente               | URL                                                                     |
+| ---------------------- | ----------------------------------------------------------------------- |
+| Produção               | `https://app.wktechnology.com.br`                                       |
+| Produção (URL estável) | `https://project--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app`     |
+| Preview                | `https://project--68dcfa85-b6da-4030-a825-b896ca621e0c-dev.lovable.app` |
 
 Todos os caminhos abaixo são relativos à base URL.
 
@@ -21,16 +21,18 @@ Todos os caminhos abaixo são relativos à base URL.
 ```
 Authorization: Bearer lvb_xxxxxxxxxxxxxxxx
 ```
+
 ou
+
 ```
 x-api-key: lvb_xxxxxxxxxxxxxxxx
 ```
 
 ### Escopos
 
-| Escopo | Permite |
-| --- | --- |
-| `read` | métodos `GET` |
+| Escopo  | Permite                                  |
+| ------- | ---------------------------------------- |
+| `read`  | métodos `GET`                            |
 | `write` | métodos `POST` (também habilita leitura) |
 
 Toda chave é vinculada a **um workspace**. Leituras e escritas ficam restritas
@@ -38,12 +40,12 @@ a esse workspace; não é possível acessar dados de outro.
 
 ### Erros padrão
 
-| Status | Corpo | Significado |
-| --- | --- | --- |
-| 401 | `{"error":"unauthorized"}` | chave ausente, inválida, revogada ou expirada |
-| 403 | `{"error":"insufficient_scope"}` | a chave não tem o escopo necessário |
-| 400 | `{"error":"invalid_input","details":{...}}` | payload inválido (detalhes por campo) |
-| 404 | `{"error":"lead_not_found"}` | entidade vinculada não existe no workspace |
+| Status | Corpo                                       | Significado                                   |
+| ------ | ------------------------------------------- | --------------------------------------------- |
+| 401    | `{"error":"unauthorized"}`                  | chave ausente, inválida, revogada ou expirada |
+| 403    | `{"error":"insufficient_scope"}`            | a chave não tem o escopo necessário           |
+| 400    | `{"error":"invalid_input","details":{...}}` | payload inválido (detalhes por campo)         |
+| 404    | `{"error":"lead_not_found"}`                | entidade vinculada não existe no workspace    |
 
 Todas as respostas são `application/json`.
 
@@ -55,14 +57,14 @@ Todas as respostas são `application/json`.
 
 `POST /api/public/v1/leads` — escopo `write`
 
-| Campo | Tipo | Obrigatório | Observações |
-| --- | --- | --- | --- |
-| `first_name` | string (1–120) | sim | nome |
-| `last_name` | string (≤120) | não | sobrenome |
-| `email` | string (e-mail) | não | |
-| `phone` | string (≤40) | não | |
-| `company_name` | string (≤200) | não | usado para criar/vincular a empresa |
-| `source` | string (≤80) | não | origem (ex.: `site`, `indicação`, `evento`) |
+| Campo          | Tipo            | Obrigatório | Observações                                 |
+| -------------- | --------------- | ----------- | ------------------------------------------- |
+| `first_name`   | string (1–120)  | sim         | nome                                        |
+| `last_name`    | string (≤120)   | não         | sobrenome                                   |
+| `email`        | string (e-mail) | não         |                                             |
+| `phone`        | string (≤40)    | não         |                                             |
+| `company_name` | string (≤200)   | não         | usado para criar/vincular a empresa         |
+| `source`       | string (≤80)    | não         | origem (ex.: `site`, `indicação`, `evento`) |
 
 O lead é criado com `status = "new"`. Após a criação, o sistema garante
 automaticamente a **empresa** e o **contato** correspondentes, vinculando-os ao
@@ -105,8 +107,8 @@ Resposta `200`:
 `GET /api/public/v1/leads?limit=50` — escopo `read`
 
 | Parâmetro | Padrão | Máximo |
-| --- | --- | --- |
-| `limit` | 50 | 200 |
+| --------- | ------ | ------ |
+| `limit`   | 50     | 200    |
 
 Ordenação: `created_at` decrescente.
 
@@ -122,15 +124,15 @@ curl "$BASE_URL/api/public/v1/leads?limit=20" -H "Authorization: Bearer $API_KEY
 
 `POST /api/public/v1/meetings` — escopo `write`
 
-| Campo | Tipo | Obrigatório | Observações |
-| --- | --- | --- | --- |
-| `title` | string (1–255) | não | padrão `"Reunião"` |
-| `scheduled_at` | string ISO 8601 | sim | ex.: `2026-08-25T14:30:00-03:00` |
-| `lead_id` | uuid | não | lead do workspace ao qual a reunião será vinculada |
-| `contact_id` | uuid | não | vínculo alternativo com contato |
-| `deal_id` | uuid | não | vínculo alternativo com negócio |
-| `recording_consent` | boolean | não | padrão `false` |
-| `assigned_to` | uuid | não | responsável; padrão: usuário dono da chave |
+| Campo               | Tipo            | Obrigatório | Observações                                        |
+| ------------------- | --------------- | ----------- | -------------------------------------------------- |
+| `title`             | string (1–255)  | não         | padrão `"Reunião"`                                 |
+| `scheduled_at`      | string ISO 8601 | sim         | ex.: `2026-08-25T14:30:00-03:00`                   |
+| `lead_id`           | uuid            | não         | lead do workspace ao qual a reunião será vinculada |
+| `contact_id`        | uuid            | não         | vínculo alternativo com contato                    |
+| `deal_id`           | uuid            | não         | vínculo alternativo com negócio                    |
+| `recording_consent` | boolean         | não         | padrão `false`                                     |
+| `assigned_to`       | uuid            | não         | responsável; padrão: usuário dono da chave         |
 
 Efeitos:
 
@@ -181,12 +183,12 @@ Erros específicos: `404 lead_not_found`, `404 contact_not_found`,
 
 `GET /api/public/v1/meetings` — escopo `read`
 
-| Parâmetro | Descrição |
-| --- | --- |
-| `lead_id` | filtra reuniões de um lead |
-| `from` | data ISO inicial (`scheduled_at >= from`) |
-| `to` | data ISO final (`scheduled_at <= to`) |
-| `limit` | padrão 50, máximo 200 |
+| Parâmetro | Descrição                                 |
+| --------- | ----------------------------------------- |
+| `lead_id` | filtra reuniões de um lead                |
+| `from`    | data ISO inicial (`scheduled_at >= from`) |
+| `to`      | data ISO final (`scheduled_at <= to`)     |
+| `limit`   | padrão 50, máximo 200                     |
 
 ```bash
 curl "$BASE_URL/api/public/v1/meetings?lead_id=$LEAD_ID" \

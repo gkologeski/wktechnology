@@ -32,7 +32,6 @@ export const Route = createFileRoute("/api/public/v1/leads")({
           .order("created_at", { ascending: false })
           .limit(limit);
         return Response.json({ data: data ?? [] });
-
       },
       POST: async ({ request }) => {
         const auth = await authenticateApiKey(request);

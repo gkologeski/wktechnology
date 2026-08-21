@@ -38,7 +38,6 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthConte
   };
 }
 
-
 export function requireScope(ctx: ApiAuthContext, scope: "read" | "write"): Response | null {
   if (scope === "read" && (ctx.scopes.includes("read") || ctx.scopes.includes("write")))
     return null;
