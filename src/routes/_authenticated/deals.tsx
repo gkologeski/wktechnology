@@ -19,7 +19,11 @@ import { toast } from "sonner";
 import { startFocusQueue } from "@/lib/focus-queue";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import { usePipelines } from "@/lib/pipelines";
-import { DealsToolbar, type DealFilters } from "@/components/deals/deals-toolbar";
+import {
+  DealsToolbar,
+  EMPTY_DEAL_FILTERS,
+  type DealFilters,
+} from "@/components/deals/deals-toolbar";
 import { getDateRange } from "@/lib/date-presets";
 import { DealsBoard, type DealLookups } from "@/components/deals/deals-board";
 import { computeDealSignals } from "@/lib/deals/hot-score";
@@ -49,6 +53,8 @@ const BASE_DEAL_KEYS = [
   "hubspot_owner_id",
   "dealtype",
   "expected_close_date",
+  "closed_at",
+  "lost_at",
   "created_at",
   "updated_at",
 ] as const;
@@ -73,14 +79,23 @@ function DealsPage() {
     { table: "activities", queryKeys: [["deals", "next-activities"]] },
   ]);
 
-  const [filters, setFilters] = useState<DealFilters>({
-    ownerId: "",
-    period: "any",
-    customStart: "",
-    customEnd: "",
-    minValue: "",
-    search: "",
+  // Parâmetros de URL vindos do dashboard (ex.: /deals?closedFrom=2026-01-01&closedTo=2026-01-31)
+  const search = location.search as unknown;
+  const [filters, setFilters] = useState<DealFilters>(() => {
+    const sp =
+      typeof window === "undefined"
+        ? new URLSearchParams()
+        : new URLSearchParams(window.location.search);
+    const closedFrom = sp.get("closedFrom") ?? "";
+    const closedTo = sp.get("closedTo") ?? "";
+    return {
+      ...EMPTY_DEAL_FILTERS,
+      ...(closedFrom || closedTo
+        ? { closedPeriod: "custom" as const, closedStart: closedFrom, closedEnd: closedTo }
+        : {}),
+    };
   });
+  void search;
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editing, setEditing] = useState<Deal | null>(null);
@@ -245,6 +260,14 @@ function DealsPage() {
           });
     const { start, end } = range;
 
+    const closedRange =
+      filters.closedPeriod === "any"
+        ? { start: undefined, end: undefined }
+        : getDateRange(filters.closedPeriod, new Date(), {
+            start: filters.closedStart || undefined,
+            end: filters.closedEnd || undefined,
+          });
+
     const min = Number(filters.minValue) || 0;
     const search = filters.search.trim().toLowerCase();
     return deals.filter((d) => {
@@ -261,6 +284,19 @@ function DealsPage() {
         if (!d.expected_close_date) return false;
         const t = new Date(d.expected_close_date).getTime();
         if (t < start.getTime() || t >= end.getTime()) return false;
+      }
+      if (closedRange.start || closedRange.end) {
+        // Data real de fechamento: ganhos usam closed_at, perdidos usam lost_at.
+        const raw =
+          String(d.stage) === "won"
+            ? ((d as { closed_at?: string | null }).closed_at ?? null)
+            : String(d.stage) === "lost"
+              ? ((d as { lost_at?: string | null }).lost_at ?? null)
+              : null;
+        if (!raw) return false;
+        const t = new Date(raw).getTime();
+        if (closedRange.start && t < closedRange.start.getTime()) return false;
+        if (closedRange.end && t >= closedRange.end.getTime()) return false;
       }
       if (search) {
         const hay = [
