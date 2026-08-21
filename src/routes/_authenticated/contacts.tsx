@@ -27,12 +27,14 @@ import {
   Download,
   Link2,
   MoreHorizontal,
+  Pencil,
   Play,
   Plus,
   Search,
   Sparkles,
   X,
 } from "lucide-react";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { startFocusQueue } from "@/lib/focus-queue";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 
@@ -316,6 +318,7 @@ function ContactsHubspotView() {
       return next;
     });
   const clearSelection = () => setSelectedIds(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const onSort = (k: SortKey) => {
     const nextDir: SortDir = sortKey === k ? (sortDir === "asc" ? "desc" : "asc") : "asc";
@@ -941,6 +944,18 @@ function ContactsHubspotView() {
 
         <ColumnsEditor />
       </div>
+
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="contacts"
+        ids={Array.from(selectedIds)}
+        entityLabel="contato(s)"
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["contacts"] });
+        }}
+      />
 
       <BulkEnrichDialog
         open={!!enrichIds}
