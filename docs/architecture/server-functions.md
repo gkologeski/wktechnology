@@ -120,7 +120,9 @@ customizados.
 Sob `src/routes/api/`:
 
 - `api/public/v1/**` — API pública versionada (ATS e CRM), autenticada por
-  `api_keys`.
+  `api_keys`. Referência para integradores (leads e reuniões):
+  [`docs/api-publica-v1.md`](../api-publica-v1.md).
+
 - `api/public/hooks/**` — webhooks e ticks de cron (workflows time-based,
   reschedule de cron, provedores externos).
 - Integrações inbound: e-mail, WhatsApp/Unipile, Twilio/voz, Slack, pagamentos,
