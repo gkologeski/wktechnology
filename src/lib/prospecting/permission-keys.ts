@@ -34,7 +34,6 @@ export const CADENCES_DELETE = [
 /** Questionários */
 export const QUESTIONNAIRES_VIEW = [
   `${P}.questionnaires.view`,
-  `${P}.questionnaires.view.team`,
   `${P}.questionnaires.view.own`,
 ] as const;
 export const QUESTIONNAIRES_CREATE = [
