@@ -19,7 +19,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, ChevronDown, Download, MoreHorizontal, Pencil, Plus, Search, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  Download,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  X,
+} from "lucide-react";
 import {
   CheckboxFilter,
   FilterGroup,
