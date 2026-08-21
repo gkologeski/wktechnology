@@ -15,8 +15,7 @@ const CreateMeeting = z.object({
   assigned_to: z.string().uuid().optional(),
 });
 
-const SELECT =
-  "id, title, status, scheduled_at, public_token, room_name, related_lead_id, related_contact_id, related_deal_id, assigned_to, created_at";
+const SELECT = MEETING_SELECT;
 
 function randomToken(len: number): string {
   const bytes = new Uint8Array(len);
