@@ -136,18 +136,34 @@ export function GridBulkBar<T extends { id: string }>({
         )}
       </BulkActionBar>
 
-      {bulkEditFields && bulkEditFields.length > 0 && (
-        <BulkEditDialog
+      {dynamicEntity ? (
+        <BulkEditFieldsDialog
           open={editOpen}
           setOpen={setEditOpen}
-          table={table}
+          entity={dynamicEntity}
           ids={ids}
-          fields={bulkEditFields}
+          entityLabel={entityLabel}
+          priorityFields={bulkEditFields?.map((f) => f.name)}
           onDone={() => {
             onClear();
             onDone();
           }}
         />
+      ) : (
+        bulkEditFields &&
+        bulkEditFields.length > 0 && (
+          <BulkEditDialog
+            open={editOpen}
+            setOpen={setEditOpen}
+            table={table}
+            ids={ids}
+            fields={bulkEditFields}
+            onDone={() => {
+              onClear();
+              onDone();
+            }}
+          />
+        )
       )}
 
       {assignColumn && (
