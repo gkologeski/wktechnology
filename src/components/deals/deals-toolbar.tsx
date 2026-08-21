@@ -22,6 +22,22 @@ export type DealFilters = {
   customEnd: string;
   minValue: string;
   search: string;
+  /** Filtro pela data real de fechamento (closed_at para ganhos, lost_at para perdidos). */
+  closedPeriod: DatePreset;
+  closedStart: string;
+  closedEnd: string;
+};
+
+export const EMPTY_DEAL_FILTERS: DealFilters = {
+  ownerId: "",
+  period: "any",
+  customStart: "",
+  customEnd: "",
+  minValue: "",
+  search: "",
+  closedPeriod: "any",
+  closedStart: "",
+  closedEnd: "",
 };
 
 export const PERIOD_LABELS: Record<DealPeriod, string> = {
@@ -74,6 +90,18 @@ export function DealsToolbar({
       clear: () => setF("period", "any"),
     });
   }
+  if (filters.closedPeriod !== "any") {
+    const suffix =
+      filters.closedPeriod === "custom"
+        ? `${filters.closedStart || "…"} → ${filters.closedEnd || "…"}`
+        : DATE_PRESET_LABELS[filters.closedPeriod];
+    chips.push({
+      key: "closedPeriod",
+      label: `Fechado: ${suffix}`,
+      clear: () => setFilters({ ...filters, closedPeriod: "any", closedStart: "", closedEnd: "" }),
+    });
+  }
+
   if (filters.minValue) {
     chips.push({
       key: "minValue",
@@ -171,6 +199,41 @@ export function DealsToolbar({
           </SelectContent>
         </Select>
 
+        <Select
+          value={filters.closedPeriod}
+          onValueChange={(v) => setF("closedPeriod", v as DatePreset)}
+        >
+          <SelectTrigger className="h-9 w-[190px]" aria-label="Filtrar por data de fechamento">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {DATE_PRESETS.map((k) => (
+              <SelectItem key={k} value={k}>
+                {k === "any" ? "Fechado: qualquer data" : `Fechado: ${DATE_PRESET_LABELS[k]}`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {filters.closedPeriod === "custom" && (
+          <>
+            <Input
+              type="date"
+              aria-label="Fechado a partir de"
+              value={filters.closedStart}
+              onChange={(e) => setF("closedStart", e.target.value)}
+              className="h-9 w-[150px]"
+            />
+            <Input
+              type="date"
+              aria-label="Fechado até"
+              value={filters.closedEnd}
+              onChange={(e) => setF("closedEnd", e.target.value)}
+              className="h-9 w-[150px]"
+            />
+          </>
+        )}
+
         {filters.period === "custom" && (
           <>
             <Input
@@ -210,16 +273,7 @@ export function DealsToolbar({
             variant="ghost"
             size="sm"
             className="h-6 px-2 text-xs"
-            onClick={() =>
-              setFilters({
-                ownerId: "",
-                period: "any",
-                customStart: "",
-                customEnd: "",
-                minValue: "",
-                search: filters.search,
-              })
-            }
+            onClick={() => setFilters({ ...EMPTY_DEAL_FILTERS, search: filters.search })}
           >
             Limpar
           </Button>

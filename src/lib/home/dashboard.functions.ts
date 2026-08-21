@@ -29,7 +29,7 @@ async function safeCount(sb: any, table: string, build: (q: any) => any): Promis
     return 0;
   }
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 async function safeSum(
   sb: any,
   table: string,
@@ -86,27 +86,53 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
     const sections: ModuleSection[] = [];
 
     if (enabledModules.includes("crm")) {
-      const [leadsCount, dealsCreated, dealsWonCount, dealsWonValue, pipelineOpen] =
-        await Promise.all([
-          safeCount(supabase, "leads", (q) => q.gte("created_at", from).lte("created_at", to)),
-          safeCount(supabase, "deals", (q) => q.gte("created_at", from).lte("created_at", to)),
-          // Janela pela data real de fechamento (preenchida por trigger em stage = 'won').
-          safeCount(supabase, "deals", (q) =>
-            q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
-          ),
-          safeSum(supabase, "deals", "value", (q) =>
-            q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
-          ),
-
-
-          safeSum(supabase, "deals", "value", (q) => q.not("stage", "in", "(won,lost)")),
-        ]);
+      const [
+        leadsCount,
+        dealsCreated,
+        dealsWonCount,
+        dealsWonValue,
+        dealsLostCount,
+        dealsLostValue,
+        pipelineOpen,
+      ] = await Promise.all([
+        safeCount(supabase, "leads", (q) => q.gte("created_at", from).lte("created_at", to)),
+        safeCount(supabase, "deals", (q) => q.gte("created_at", from).lte("created_at", to)),
+        // Janela pela data real de fechamento (preenchida por trigger em stage = 'won').
+        safeCount(supabase, "deals", (q) =>
+          q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
+        ),
+        safeSum(supabase, "deals", "value", (q) =>
+          q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to),
+        ),
+        // Perdidos pela data real de perda (trigger em stage = 'lost').
+        safeCount(supabase, "deals", (q) =>
+          q.eq("stage", "lost").gte("lost_at", from).lte("lost_at", to),
+        ),
+        safeSum(supabase, "deals", "value", (q) =>
+          q.eq("stage", "lost").gte("lost_at", from).lte("lost_at", to),
+        ),
+        safeSum(supabase, "deals", "value", (q) => q.not("stage", "in", "(won,lost)")),
+      ]);
+      const closedTotal = dealsWonCount + dealsLostCount;
       sections.push({
         moduleId: "crm",
         kpis: [
           { label: "Leads criados", value: String(leadsCount) },
           { label: "Negócios criados", value: String(dealsCreated) },
           { label: "Negócios ganhos", value: String(dealsWonCount), hint: fmtBRL(dealsWonValue) },
+          {
+            label: "Negócios perdidos",
+            value: String(dealsLostCount),
+            hint: fmtBRL(dealsLostValue),
+          },
+          {
+            label: "Taxa de conversão",
+            value: closedTotal > 0 ? `${((dealsWonCount / closedTotal) * 100).toFixed(1)}%` : "—",
+            hint:
+              closedTotal > 0
+                ? `${dealsWonCount} de ${closedTotal} fechados`
+                : "Sem fechamentos no período",
+          },
           { label: "Pipeline aberto", value: fmtBRL(pipelineOpen) },
         ],
       });
