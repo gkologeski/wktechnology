@@ -7,7 +7,6 @@ const P = "techsales.prospecting";
 /** Fila de prospecção */
 export const QUEUE_VIEW = [
   `${P}.queue.view`,
-  `${P}.queue.view.workspace`,
   `${P}.queue.view.team`,
   `${P}.queue.view.own`,
 ] as const;
@@ -21,6 +20,7 @@ export const QUEUE_VIEW_WORKSPACE = `${P}.queue.view.workspace`;
 /** Cadências */
 export const CADENCES_VIEW = [
   `${P}.cadences.view`,
+  `${P}.cadences.view.team`,
   `${P}.cadences.view.own`,
 ] as const;
 export const CADENCES_CREATE = [
@@ -39,6 +39,7 @@ export const CADENCES_DELETE = [
 /** Questionários */
 export const QUESTIONNAIRES_VIEW = [
   `${P}.questionnaires.view`,
+  `${P}.questionnaires.view.team`,
   `${P}.questionnaires.view.own`,
 ] as const;
 export const QUESTIONNAIRES_CREATE = [
