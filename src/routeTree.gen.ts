@@ -367,6 +367,8 @@ import { Route as ApiPublicBookingSlugSubmitRouteImport } from './routes/api/pub
 import { Route as AuthenticatedTasksQueuesQueueIdPlayRouteImport } from './routes/_authenticated/tasks.queues.$queueId.play'
 import { Route as AuthenticatedProspectingQueuesQueueIdPlayRouteImport } from './routes/_authenticated/prospecting.queues.$queueId.play'
 import { Route as AuthenticatedatsSourcingSequencesIdRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences_.$id'
+import { Route as ApiPublicV1MeetingsIdRescheduleRouteImport } from './routes/api/public/v1/meetings.$id.reschedule'
+import { Route as ApiPublicV1MeetingsIdCancelRouteImport } from './routes/api/public/v1/meetings.$id.cancel'
 import { Route as ApiPublicScimV2UsersIdRouteImport } from './routes/api/public/scim/v2/Users.$id'
 import { Route as ApiPublicV1AtsApplicationsIdHireRouteImport } from './routes/api/public/v1/ats/applications.$id.hire'
 
@@ -2414,6 +2416,18 @@ const AuthenticatedatsSourcingSequencesIdRoute =
     path: '/sourcing/sequences/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiPublicV1MeetingsIdRescheduleRoute =
+  ApiPublicV1MeetingsIdRescheduleRouteImport.update({
+    id: '/$id/reschedule',
+    path: '/$id/reschedule',
+    getParentRoute: () => ApiPublicV1MeetingsRoute,
+  } as any)
+const ApiPublicV1MeetingsIdCancelRoute =
+  ApiPublicV1MeetingsIdCancelRouteImport.update({
+    id: '/$id/cancel',
+    path: '/$id/cancel',
+    getParentRoute: () => ApiPublicV1MeetingsRoute,
+  } as any)
 const ApiPublicScimV2UsersIdRoute = ApiPublicScimV2UsersIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -2752,7 +2766,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
-  '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRoute
+  '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -2785,6 +2799,8 @@ export interface FileRoutesByFullPath {
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
+  '/api/public/v1/meetings/$id/cancel': typeof ApiPublicV1MeetingsIdCancelRoute
+  '/api/public/v1/meetings/$id/reschedule': typeof ApiPublicV1MeetingsIdRescheduleRoute
   '/api/public/v1/ats/applications/$id/hire': typeof ApiPublicV1AtsApplicationsIdHireRoute
 }
 export interface FileRoutesByTo {
@@ -3107,7 +3123,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
-  '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRoute
+  '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3140,6 +3156,8 @@ export interface FileRoutesByTo {
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
+  '/api/public/v1/meetings/$id/cancel': typeof ApiPublicV1MeetingsIdCancelRoute
+  '/api/public/v1/meetings/$id/reschedule': typeof ApiPublicV1MeetingsIdRescheduleRoute
   '/api/public/v1/ats/applications/$id/hire': typeof ApiPublicV1AtsApplicationsIdHireRoute
 }
 export interface FileRoutesById {
@@ -3470,7 +3488,7 @@ export interface FileRoutesById {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
-  '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRoute
+  '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRouteWithChildren
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3503,6 +3521,8 @@ export interface FileRoutesById {
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/api/public/scim/v2/Users/$id': typeof ApiPublicScimV2UsersIdRoute
+  '/api/public/v1/meetings/$id/cancel': typeof ApiPublicV1MeetingsIdCancelRoute
+  '/api/public/v1/meetings/$id/reschedule': typeof ApiPublicV1MeetingsIdRescheduleRoute
   '/api/public/v1/ats/applications/$id/hire': typeof ApiPublicV1AtsApplicationsIdHireRoute
 }
 export interface FileRouteTypes {
@@ -3866,6 +3886,8 @@ export interface FileRouteTypes {
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/api/public/scim/v2/Users/$id'
+    | '/api/public/v1/meetings/$id/cancel'
+    | '/api/public/v1/meetings/$id/reschedule'
     | '/api/public/v1/ats/applications/$id/hire'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -4221,6 +4243,8 @@ export interface FileRouteTypes {
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/api/public/scim/v2/Users/$id'
+    | '/api/public/v1/meetings/$id/cancel'
+    | '/api/public/v1/meetings/$id/reschedule'
     | '/api/public/v1/ats/applications/$id/hire'
   id:
     | '__root__'
@@ -4583,6 +4607,8 @@ export interface FileRouteTypes {
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/api/public/scim/v2/Users/$id'
+    | '/api/public/v1/meetings/$id/cancel'
+    | '/api/public/v1/meetings/$id/reschedule'
     | '/api/public/v1/ats/applications/$id/hire'
   fileRoutesById: FileRoutesById
 }
@@ -4683,7 +4709,7 @@ export interface RootRouteChildren {
   ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
   ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
   ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
-  ApiPublicV1MeetingsRoute: typeof ApiPublicV1MeetingsRoute
+  ApiPublicV1MeetingsRoute: typeof ApiPublicV1MeetingsRouteWithChildren
   ApiPublicWidgetMessagesRoute: typeof ApiPublicWidgetMessagesRoute
   ApiPublicWidgetScriptRoute: typeof ApiPublicWidgetScriptRoute
   ApiPublicWidgetSessionRoute: typeof ApiPublicWidgetSessionRoute
@@ -7212,6 +7238,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedatsSourcingSequencesIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/v1/meetings/$id/reschedule': {
+      id: '/api/public/v1/meetings/$id/reschedule'
+      path: '/$id/reschedule'
+      fullPath: '/api/public/v1/meetings/$id/reschedule'
+      preLoaderRoute: typeof ApiPublicV1MeetingsIdRescheduleRouteImport
+      parentRoute: typeof ApiPublicV1MeetingsRoute
+    }
+    '/api/public/v1/meetings/$id/cancel': {
+      id: '/api/public/v1/meetings/$id/cancel'
+      path: '/$id/cancel'
+      fullPath: '/api/public/v1/meetings/$id/cancel'
+      preLoaderRoute: typeof ApiPublicV1MeetingsIdCancelRouteImport
+      parentRoute: typeof ApiPublicV1MeetingsRoute
+    }
     '/api/public/scim/v2/Users/$id': {
       id: '/api/public/scim/v2/Users/$id'
       path: '/$id'
@@ -7995,6 +8035,19 @@ const ApiPublicReferSlugRouteChildren: ApiPublicReferSlugRouteChildren = {
 const ApiPublicReferSlugRouteWithChildren =
   ApiPublicReferSlugRoute._addFileChildren(ApiPublicReferSlugRouteChildren)
 
+interface ApiPublicV1MeetingsRouteChildren {
+  ApiPublicV1MeetingsIdCancelRoute: typeof ApiPublicV1MeetingsIdCancelRoute
+  ApiPublicV1MeetingsIdRescheduleRoute: typeof ApiPublicV1MeetingsIdRescheduleRoute
+}
+
+const ApiPublicV1MeetingsRouteChildren: ApiPublicV1MeetingsRouteChildren = {
+  ApiPublicV1MeetingsIdCancelRoute: ApiPublicV1MeetingsIdCancelRoute,
+  ApiPublicV1MeetingsIdRescheduleRoute: ApiPublicV1MeetingsIdRescheduleRoute,
+}
+
+const ApiPublicV1MeetingsRouteWithChildren =
+  ApiPublicV1MeetingsRoute._addFileChildren(ApiPublicV1MeetingsRouteChildren)
+
 interface ApiPublicScimV2UsersRouteChildren {
   ApiPublicScimV2UsersIdRoute: typeof ApiPublicScimV2UsersIdRoute
 }
@@ -8130,7 +8183,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
   ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,
   ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,
-  ApiPublicV1MeetingsRoute: ApiPublicV1MeetingsRoute,
+  ApiPublicV1MeetingsRoute: ApiPublicV1MeetingsRouteWithChildren,
   ApiPublicWidgetMessagesRoute: ApiPublicWidgetMessagesRoute,
   ApiPublicWidgetScriptRoute: ApiPublicWidgetScriptRoute,
   ApiPublicWidgetSessionRoute: ApiPublicWidgetSessionRoute,
