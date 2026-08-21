@@ -7,7 +7,12 @@ import { MEETING_SELECT, syncMeetingActivity } from "@/lib/api-keys/meetings.ser
 
 const RescheduleMeeting = z.object({
   scheduled_at: z.string().min(10).max(64),
-  duration_minutes: z.number().int().min(5).max(24 * 60).optional(),
+  duration_minutes: z
+    .number()
+    .int()
+    .min(5)
+    .max(24 * 60)
+    .optional(),
   reason: z.string().max(500).optional(),
 });
 
@@ -39,7 +44,7 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/reschedule")({
           .maybeSingle();
         if (!meeting) return jsonError("meeting_not_found", 404);
 
-        if (meeting.status === "canceled") return jsonError("meeting_canceled", 409);
+        if (meeting.status === "cancelled") return jsonError("meeting_canceled", 409);
         if (meeting.status === "ended" || meeting.ended_at)
           return jsonError("meeting_already_ended", 409);
 

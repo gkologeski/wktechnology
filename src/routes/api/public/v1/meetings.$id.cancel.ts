@@ -33,12 +33,12 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/cancel")({
         if (!meeting) return jsonError("meeting_not_found", 404);
 
         // Idempotente: já cancelada devolve o estado atual.
-        if (meeting.status === "canceled") return Response.json({ data: meeting });
+        if (meeting.status === "cancelled") return Response.json({ data: meeting });
 
         const now = new Date().toISOString();
         const { data: updated, error } = await supabaseAdmin
           .from("meetings")
-          .update({ status: "canceled", ended_at: meeting.ended_at ?? now })
+          .update({ status: "cancelled", ended_at: meeting.ended_at ?? now })
           .eq("id", meeting.id)
           .eq("workspace_id", auth.workspaceId)
           .select(MEETING_SELECT)
