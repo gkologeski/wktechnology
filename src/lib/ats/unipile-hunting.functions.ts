@@ -12,6 +12,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Schemas
@@ -203,6 +204,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => ImportInput.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { loadAccountCtx, fetchProfile, UnipileError } = await import(
       "@/lib/unipile/client.server"
     );
@@ -334,7 +336,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
         const { data: existing } = await supabase
           .from("ats_candidates")
           .select("id, email, phone")
-          .eq("owner_id", userId)
+          .eq("workspace_id", workspaceId)
           .ilike("linkedin_url", url)
           .maybeSingle();
 
@@ -384,6 +386,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
         } else {
           const insertRow: Record<string, unknown> = {
             owner_id: userId,
+            workspace_id: workspaceId,
             created_by: userId,
             full_name: it.full_name || "Sem nome",
             linkedin_url: url,
@@ -407,6 +410,7 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
 
         await supabase.from("ats_hunting_captures").insert({
           owner_id: userId,
+          workspace_id: workspaceId,
           candidate_id: candidateId,
           source_url: it.linkedin_url,
           raw_payload: (enrich.raw ?? it) as never,

@@ -3,6 +3,7 @@
 // entrevistas próximas, ofertas abertas e vagas mais ativas.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 type UpcomingInterview = {
   id: string;
@@ -25,6 +26,7 @@ export const getAtsDashboardExtras = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const now = new Date();
     const in7 = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -32,7 +34,7 @@ export const getAtsDashboardExtras = createServerFn({ method: "POST" })
       supabase
         .from("ats_interviews")
         .select("id, scheduled_at, status, candidate_id, job_id")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .gte("scheduled_at", now.toISOString())
         .lte("scheduled_at", in7.toISOString())
         .neq("status", "cancelled")
@@ -41,19 +43,19 @@ export const getAtsDashboardExtras = createServerFn({ method: "POST" })
       supabase
         .from("ats_offers")
         .select("id, status")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .in("status", ["draft", "sent", "viewed"]),
       supabase
         .from("ats_jobs")
         .select("id, title, status")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .eq("status", "published")
         .order("updated_at", { ascending: false })
         .limit(20),
       supabase
         .from("ats_applications")
         .select("job_id")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .eq("status", "active"),
     ]);
 

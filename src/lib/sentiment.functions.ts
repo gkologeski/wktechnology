@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export const listSentiments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -15,13 +16,14 @@ export const listSentiments = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let q = (supabase as any)
       .from("message_sentiments")
       .select(
         "id, source, source_id, contact_id, lead_id, label, score, emotion, keywords, analyzed_at",
       )
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("analyzed_at", { ascending: false })
       .limit(data.limit);
     if (data.contact_id) q = q.eq("contact_id", data.contact_id);
@@ -49,12 +51,13 @@ export const sentimentOverview = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const from = new Date(Date.now() - data.days * 86400_000).toISOString();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: rows, error } = await (supabase as any)
       .from("message_sentiments")
       .select("label, score")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .gte("analyzed_at", from);
     if (error) throw new Error(error.message);
     const list = (rows ?? []) as { label: string; score: number }[];

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import type { ProviderSlug } from "./registry";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const INTEGRATIONS_MANAGE = "system.integrations.manage.workspace";
 
@@ -77,6 +78,7 @@ export const getIntegration = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // oauth_tokens is revoked from the authenticated role at the column level;
     // read it server-side via service role, scoped explicitly by owner_id.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -86,7 +88,7 @@ export const getIntegration = createServerFn({ method: "POST" })
         "id, provider, status, config, oauth_tokens, credentials_secret_ref, last_used_at, created_at, updated_at",
       )
       .eq("provider", data.provider)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     return { integration: row };
@@ -106,6 +108,7 @@ export const upsertIntegration = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
     const { data: row, error } = await supabase
@@ -114,6 +117,7 @@ export const upsertIntegration = createServerFn({ method: "POST" })
       .upsert(
         {
           owner_id: userId,
+          workspace_id: workspaceId,
           provider: data.provider,
           status: data.status ?? "connected",
           config: (data.config ?? {}) as never,
@@ -226,12 +230,14 @@ export const setCreditLimit = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
     const { error } = await supabase.from("credit_limits").upsert(
 
       {
         owner_id: userId,
+        workspace_id: workspaceId,
         provider: data.provider,
         monthly_limit: data.monthly_limit,
         per_run_confirm_above: data.per_run_confirm_above,

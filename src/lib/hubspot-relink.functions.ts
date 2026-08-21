@@ -4,6 +4,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/hubspot";
 
@@ -83,6 +84,7 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const fromObj = ENGAGEMENT_OBJECT[data.type];
 
     // 1. Buscar atividades com hs_object_id, algum FK nulo e ainda não verificadas
@@ -95,7 +97,7 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
       .select(
         "id, hs_object_id, related_contact_id, related_company_id, related_deal_id, related_lead_id",
       )
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("type", data.type)
       .not("hs_object_id", "is", null)
       .or(
@@ -143,7 +145,7 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
         const { data: rows } = await sb
           .from(table)
           .select("id, hs_object_id")
-          .eq("owner_id", userId)
+          .eq("workspace_id", workspaceId)
           .in("hs_object_id", chunk);
         for (const r of (rows ?? []) as { id: string; hs_object_id: string | null }[]) {
           if (r.hs_object_id) out.set(String(r.hs_object_id), r.id);
@@ -194,7 +196,7 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
           .from("activities")
           .update({ ...patch, relink_checked_at: new Date().toISOString() } as never)
           .eq("id", a.id)
-          .eq("owner_id", userId);
+          .eq("workspace_id", workspaceId);
         if (!upErr) updated++;
       } else {
         // Sem associações na HubSpot — marca como verificada para não reprocessar
@@ -202,7 +204,7 @@ export const relinkHubspotActivities = createServerFn({ method: "POST" })
           .from("activities")
           .update({ relink_checked_at: new Date().toISOString() } as never)
           .eq("id", a.id)
-          .eq("owner_id", userId);
+          .eq("workspace_id", workspaceId);
       }
     }
 
@@ -218,6 +220,7 @@ export const countActivitiesToRelink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const counts: Record<string, number> = {};
     const stats: Record<string, { total: number; linked: number; pending: number }> = {};
     const CHECK_TTL_DAYS = 30;
@@ -226,7 +229,7 @@ export const countActivitiesToRelink = createServerFn({ method: "POST" })
       const base = supabase
         .from("activities")
         .select("id", { count: "exact", head: true })
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .eq("type", t)
         .not("hs_object_id", "is", null);
 
@@ -235,7 +238,7 @@ export const countActivitiesToRelink = createServerFn({ method: "POST" })
         supabase
           .from("activities")
           .select("id", { count: "exact", head: true })
-          .eq("owner_id", userId)
+          .eq("workspace_id", workspaceId)
           .eq("type", t)
           .not("hs_object_id", "is", null)
           .is("related_contact_id", null)

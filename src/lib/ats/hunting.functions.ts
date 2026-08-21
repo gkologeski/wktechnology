@@ -11,6 +11,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Capturas
@@ -46,13 +47,14 @@ export const captureCandidate = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => CapturePayload.parse(input))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const linkedinUrl = normalizeLinkedinUrl(data.linkedin_url);
 
     // 1. Dedupe por (owner_id, lower(linkedin_url))
     const { data: existing, error: findErr } = await supabase
       .from("ats_candidates")
       .select("id")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .ilike("linkedin_url", linkedinUrl)
       .maybeSingle();
     if (findErr) throw new Error(findErr.message);
@@ -76,6 +78,7 @@ export const captureCandidate = createServerFn({ method: "POST" })
         .from("ats_candidates")
         .insert({
           owner_id: userId,
+          workspace_id: workspaceId,
           created_by: userId,
           full_name: data.full_name,
           linkedin_url: linkedinUrl,
@@ -102,6 +105,7 @@ export const captureCandidate = createServerFn({ method: "POST" })
     // 2. Audit append-only
     await supabase.from("ats_hunting_captures").insert({
       owner_id: userId,
+      workspace_id: workspaceId,
       candidate_id: candidateId,
       source_url: data.source_url,
       raw_payload: (data.raw_payload ?? {}) as never,
@@ -130,6 +134,7 @@ export const linkCaptureToJob = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // upsert manual: evita duplicar candidatura ativa para a mesma vaga
     const { data: dup } = await supabase
       .from("ats_applications")
@@ -144,6 +149,7 @@ export const linkCaptureToJob = createServerFn({ method: "POST" })
       .from("ats_applications")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         job_id: data.job_id,
         candidate_id: data.candidate_id,
         stage_value: data.stage_value,
@@ -231,8 +237,10 @@ export const logOutreachSent = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     await supabase.from("activities").insert({
       owner_id: userId,
+      workspace_id: workspaceId,
       type: "outreach",
       subject: `Mensagem ${data.channel.replace("linkedin_", "LinkedIn ")} enviada`,
       body: data.body,
@@ -282,8 +290,10 @@ export const upsertHuntingTemplate = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const payload = {
       owner_id: userId,
+      workspace_id: workspaceId,
       name: data.name,
       channel: data.channel,
       subject: data.subject ?? null,

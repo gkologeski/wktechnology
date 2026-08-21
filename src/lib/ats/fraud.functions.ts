@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 type Flag = {
   candidate_id: string;
@@ -16,6 +17,7 @@ export const scanCandidateFraud = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: cands, error } = await supabase
       .from("ats_candidates")
       .select("id, email, phone, cv_parsed, full_name")
@@ -45,7 +47,7 @@ export const scanCandidateFraud = createServerFn({ method: "POST" })
     for (const [phone, ids] of byPhone) if (ids.length > 1) for (const id of ids)
       flags.push({ owner_id: userId, candidate_id: id, kind: "duplicate_phone", severity: "high", details: { phone, dup_ids: ids } as Json });
 
-    await supabase.from("ats_candidate_flags").delete().eq("owner_id", userId).neq("kind", "manual");
+    await supabase.from("ats_candidate_flags").delete().eq("workspace_id", workspaceId).neq("kind", "manual");
     if (flags.length > 0) {
       const { error: e2 } = await supabase.from("ats_candidate_flags").insert(flags);
       if (e2) throw new Error(e2.message);

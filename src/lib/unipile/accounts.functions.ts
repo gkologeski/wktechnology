@@ -7,17 +7,19 @@ import { z } from "zod";
 import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getAppUrl } from "@/lib/app-url";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export const getLinkedinAccount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data } = await supabase
       .from("unipile_accounts")
       .select(
         "id, status, unipile_account_id, display_name, connected_at, last_seen_at, daily_window, last_error",
       )
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -29,10 +31,11 @@ export const getRateUsage = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: acc } = await supabase
       .from("unipile_accounts")
       .select("id")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -85,6 +88,7 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { verifyApiKey } = await import("@/lib/unipile/client.server");
     const check = await verifyApiKey();
     if (!check.ok) {
@@ -97,7 +101,7 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
     const { data: existing } = await supabase
       .from("unipile_accounts")
       .select("id")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -111,6 +115,7 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
     } else {
       await supabase.from("unipile_accounts").insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         provider: "linkedin",
         status: "pending",
         connect_token: connectToken,
@@ -144,10 +149,11 @@ export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     await supabase
       .from("unipile_accounts")
       .update({ status: "disconnected", unipile_account_id: null })
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("provider", "linkedin");
     return { ok: true };
   });
@@ -172,10 +178,11 @@ export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: row } = await supabase
       .from("unipile_accounts")
       .select("id, status, connect_token, unipile_account_id")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -235,10 +242,11 @@ export const updateDailyWindow = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     await supabase
       .from("unipile_accounts")
       .update({ daily_window: data })
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("provider", "linkedin");
     return { ok: true };
   });

@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export const CUSTOM_ENTITIES = ["leads", "contacts", "companies", "deals", "activities"] as const;
 export type CustomEntity = (typeof CUSTOM_ENTITIES)[number];
@@ -66,12 +67,13 @@ export const listCustomProperties = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     let q = supabase
       .from("custom_properties")
       .select(
         "id, entity, key, label, type, options, position, required, enabled, ai_prompt, group_name, created_at, updated_at",
       )
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("entity", { ascending: true })
       .order("position", { ascending: true });
     if (data.entity) q = q.eq("entity", data.entity);
@@ -85,8 +87,10 @@ export const upsertCustomProperty = createServerFn({ method: "POST" })
   .inputValidator((i) => upsertSchema.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const payload = {
       owner_id: userId,
+      workspace_id: workspaceId,
       entity: data.entity,
       key: data.key,
       label: data.label,
@@ -103,7 +107,7 @@ export const upsertCustomProperty = createServerFn({ method: "POST" })
         .from("custom_properties")
         .update(payload as never)
         .eq("id", data.id)
-        .eq("owner_id", userId);
+        .eq("workspace_id", workspaceId);
       if (error) throw new Error(error.message);
       return { id: data.id };
     } else {
@@ -122,11 +126,12 @@ export const deleteCustomProperty = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { error } = await supabase
       .from("custom_properties")
       .delete()
       .eq("id", data.id)
-      .eq("owner_id", userId);
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -146,12 +151,13 @@ export const setCustomFieldValue = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // ler atual e mesclar
     const { data: row, error: selErr } = await supabase
       .from(data.entity)
       .select("custom_fields")
       .eq("id", data.entity_id)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .single();
     if (selErr) throw new Error(selErr.message);
     const current = ((row as { custom_fields?: Record<string, unknown> } | null)?.custom_fields ??
@@ -166,7 +172,7 @@ export const setCustomFieldValue = createServerFn({ method: "POST" })
       .from(data.entity)
       .update({ custom_fields: next } as never)
       .eq("id", data.entity_id)
-      .eq("owner_id", userId);
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -185,13 +191,14 @@ export const computeAiProperty = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = context.supabase as any;
     const { data: prop, error: pErr } = await sb
       .from("custom_properties")
       .select("entity, key, type, options, ai_prompt, label")
       .eq("id", data.property_id)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .single();
     if (pErr || !prop) throw new Error("Propriedade não encontrada");
     if (!prop.ai_prompt) throw new Error("Esta propriedade não tem prompt de IA");
@@ -199,7 +206,7 @@ export const computeAiProperty = createServerFn({ method: "POST" })
       .from(prop.entity)
       .select("*")
       .eq("id", data.entity_id)
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .single();
     if (rErr || !row) throw new Error("Registro não encontrado");
     const apiKey = process.env.LOVABLE_API_KEY;
@@ -257,7 +264,7 @@ export const computeAiProperty = createServerFn({ method: "POST" })
       .from(prop.entity)
       .update({ custom_fields: next })
       .eq("id", data.entity_id)
-      .eq("owner_id", userId);
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     return { value: value as string | number | boolean | string[] | null };
   });

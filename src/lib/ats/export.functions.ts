@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 function csvEscape(v: unknown): string {
   if (v === null || v === undefined) return "";
@@ -22,12 +23,13 @@ export const exportAtsCandidatesCsv = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data, error } = await supabase
       .from("ats_candidates")
       .select(
         "full_name, email, phone, linkedin_url, location, current_position, current_company, skills, tags, source, created_at",
       )
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(5000);
     if (error) throw new Error(error.message);
@@ -57,10 +59,11 @@ export const exportJobApplicationsCsv = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ jobId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: apps, error } = await supabase
       .from("ats_applications")
       .select("id, candidate_id, stage_value, status, source, applied_at, moved_at, ai_match_score")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("job_id", data.jobId);
     if (error) throw new Error(error.message);
     const candidateIds = Array.from(new Set((apps ?? []).map((a) => a.candidate_id as string)));
@@ -112,10 +115,11 @@ export const listApplicationEvents = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ applicationId: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: rows, error } = await supabase
       .from("ats_application_events")
       .select("id, event_type, from_stage, to_stage, actor_id, metadata, created_at")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("application_id", data.applicationId)
       .order("created_at", { ascending: false })
       .limit(200);

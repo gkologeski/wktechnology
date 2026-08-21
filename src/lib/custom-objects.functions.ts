@@ -2,6 +2,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const FieldSchema = z.object({
   key: z
@@ -20,10 +21,11 @@ export const listCustomObjects = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data } = await supabase
       .from("custom_objects")
       .select("id, name, slug, icon, schema, created_at")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: true });
     return { objects: data ?? [] };
   });
@@ -54,6 +56,7 @@ export const upsertCustomObject = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     if (data.id) {
       const { error } = await supabase
         .from("custom_objects")
@@ -64,12 +67,13 @@ export const upsertCustomObject = createServerFn({ method: "POST" })
           schema: data.schema as never,
         })
         .eq("id", data.id)
-        .eq("owner_id", userId);
+        .eq("workspace_id", workspaceId);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
     const { error } = await supabase.from("custom_objects").insert({
       owner_id: userId,
+      workspace_id: workspaceId,
       name: data.name,
       slug: data.slug,
       icon: data.icon ?? null,
@@ -84,7 +88,8 @@ export const deleteCustomObject = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await supabase.from("custom_objects").delete().eq("id", data.id).eq("owner_id", userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await supabase.from("custom_objects").delete().eq("id", data.id).eq("workspace_id", workspaceId);
     return { ok: true };
   });
 
@@ -93,10 +98,11 @@ export const listCustomRecords = createServerFn({ method: "GET" })
   .inputValidator((d: { object_id: string }) => z.object({ object_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: rows } = await supabase
       .from("custom_object_records")
       .select("id, data, created_at, updated_at")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("object_id", data.object_id)
       .order("created_at", { ascending: false })
       .limit(500);
@@ -116,17 +122,19 @@ export const upsertCustomRecord = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     if (data.id) {
       const { error } = await supabase
         .from("custom_object_records")
         .update({ data: data.data as never })
         .eq("id", data.id)
-        .eq("owner_id", userId);
+        .eq("workspace_id", workspaceId);
       if (error) throw new Error(error.message);
       return { ok: true };
     }
     const { error } = await supabase.from("custom_object_records").insert({
       owner_id: userId,
+      workspace_id: workspaceId,
       object_id: data.object_id,
       data: data.data as never,
     });
@@ -139,6 +147,7 @@ export const deleteCustomRecord = createServerFn({ method: "POST" })
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await supabase.from("custom_object_records").delete().eq("id", data.id).eq("owner_id", userId);
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await supabase.from("custom_object_records").delete().eq("id", data.id).eq("workspace_id", workspaceId);
     return { ok: true };
   });

@@ -13,6 +13,7 @@ import {
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import type { AtsGridInput } from "@/lib/grid/ats-grid-input";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 // ---------- helpers ---------------------------------------------------------
 
@@ -123,6 +124,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { resolveAtsGridProjection } = await import("./grid-projection.server");
     const projection = await resolveAtsGridProjection(supabase, userId, "ats_jobs", data);
 
@@ -248,6 +250,7 @@ export const saveAtsJob = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => JobSaveSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
     await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
       data.id ? "techhire.jobs.update.own" : "techhire.jobs.create.own",
@@ -285,6 +288,7 @@ export const saveAtsJob = createServerFn({ method: "POST" })
     }
     const base = {
       owner_id: userId,
+      workspace_id: workspaceId,
       pipeline_id: pipelineId,
       title: data.title,
       description: data.description ?? null,
@@ -353,6 +357,7 @@ export const deleteAtsJob = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
     await assertAnyPermission(supabase, userId, workspaceIdForCheck, ["techhire.jobs.delete.workspace"]);
     // Sem filtro por owner_id: o RLS decide (dono, admin do workspace ou
@@ -377,10 +382,11 @@ export const createJobFromDeal = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: deal, error: dErr } = await supabase
       .from("deals")
       .select("id, name, company_id, owner_id")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("id", data.dealId)
       .maybeSingle();
     if (dErr) throw new Error(dErr.message);
@@ -392,6 +398,7 @@ export const createJobFromDeal = createServerFn({ method: "POST" })
       .from("ats_jobs")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         pipeline_id: pipeline.id,
         title,
         slug,
@@ -538,6 +545,7 @@ export const listAtsCandidates = createServerFn({ method: "POST" })
   .inputValidator((d: (AtsGridInput & { search?: string }) | undefined) => d ?? {})
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { resolveAtsGridProjection } = await import("./grid-projection.server");
     const projection = await resolveAtsGridProjection(supabase, userId, "ats_candidates", data);
     // Sem filtro por owner_id: o RLS já expõe os candidatos do próprio usuário
@@ -564,6 +572,7 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CandidateSaveSchema.parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
     await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
       "techhire.candidates.create.own",
@@ -571,6 +580,7 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
     ]);
     const base = {
       owner_id: userId,
+      workspace_id: workspaceId,
       full_name: data.full_name,
       email: data.email || null,
       phone: data.phone ?? null,
@@ -748,6 +758,7 @@ export const addApplication = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // A etapa inicial vem do pipeline da vaga (nunca um slug fixo),
     // senão a candidatura não apareceria em nenhuma coluna do kanban.
     const jobStages = await loadJobPipelineStages(supabase as never, data.jobId);
@@ -756,6 +767,7 @@ export const addApplication = createServerFn({ method: "POST" })
       .from("ats_applications")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         assigned_to: userId,
         job_id: data.jobId,
         candidate_id: data.candidateId,
@@ -771,6 +783,7 @@ export const addApplication = createServerFn({ method: "POST" })
       .from("ats_application_events")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         application_id: ins.id as string,
         job_id: data.jobId,
         candidate_id: data.candidateId,
@@ -845,6 +858,7 @@ export const moveApplication = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     // Estado anterior para detectar transição.
     // Sem filtro por owner_id: o RLS libera candidaturas do workspace.
     const { data: prev } = await supabase
@@ -883,6 +897,7 @@ export const moveApplication = createServerFn({ method: "POST" })
         .from("ats_application_events")
         .insert({
           owner_id: userId,
+          workspace_id: workspaceId,
           application_id: data.applicationId,
           job_id: prev.job_id,
           candidate_id: prev.candidate_id,
@@ -941,7 +956,7 @@ export const moveApplication = createServerFn({ method: "POST" })
       const { data: tpl } = await supabase
         .from("ats_stage_emails")
         .select("subject, body, enabled")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .eq("stage_value", data.toStage)
         .maybeSingle();
       if (tpl && (tpl as { enabled: boolean }).enabled) {
@@ -956,6 +971,7 @@ export const moveApplication = createServerFn({ method: "POST" })
             .from("ats_stage_email_log")
             .insert({
               owner_id: userId,
+              workspace_id: workspaceId,
               application_id: data.applicationId,
               candidate_id: prev.candidate_id,
               job_id: prev.job_id,

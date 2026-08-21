@@ -2,11 +2,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { DEFAULT_ATS_STAGES } from "./stages";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export const getAtsAnalytics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const since = new Date();
     since.setDate(since.getDate() - 30);
 
@@ -14,15 +16,15 @@ export const getAtsAnalytics = createServerFn({ method: "POST" })
       supabase
         .from("ats_jobs")
         .select("id, status")
-        .eq("owner_id", userId),
+        .eq("workspace_id", workspaceId),
       supabase
         .from("ats_applications")
         .select("id, stage_value, status, source, applied_at, moved_at, job_id")
-        .eq("owner_id", userId),
+        .eq("workspace_id", workspaceId),
       supabase
         .from("ats_applications")
         .select("id")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .gte("applied_at", since.toISOString()),
     ]);
 

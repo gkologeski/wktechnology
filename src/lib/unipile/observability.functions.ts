@@ -2,6 +2,7 @@
 // Devolve budgets, uso do dia, últimas requisições e agregados de 24h.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export type UnipileEndpointKey =
   | "profile.fetch"
@@ -65,11 +66,12 @@ export const getObservability = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
 
     const { data: acc } = await supabase
       .from("unipile_accounts")
       .select("id, status, display_name, unipile_account_id, daily_window, last_seen_at, last_error")
-      .eq("owner_id", userId)
+      .eq("workspace_id", workspaceId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)

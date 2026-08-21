@@ -3,6 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { recordAtsEvent } from "./audit.server";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const KindEnum = z.enum(["phone", "video", "onsite", "async"]);
 const StatusEnum = z.enum([
@@ -93,6 +94,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: app, error: aErr } = await supabase
       .from("ats_applications")
       .select("id, job_id, candidate_id, stage_value")
@@ -106,7 +108,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
       const { data: kit } = await supabase
         .from("ats_interview_kits")
         .select("questions")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .eq("id", data.interview_kit_id)
         .maybeSingle();
       snapshot = kit?.questions ?? null;
@@ -116,6 +118,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
       .from("ats_interviews")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         application_id: data.application_id,
         job_id: app.job_id as string,
         candidate_id: app.candidate_id as string,
@@ -147,8 +150,6 @@ export const scheduleInterview = createServerFn({ method: "POST" })
     if (data.kind === "video") {
       try {
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-        const workspaceId = await resolveActiveWorkspace(userId);
 
         // Nome do candidato para o título da reunião
         const { data: cand } = await supabaseAdmin
@@ -246,7 +247,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
             const { data: acct } = await supabaseAdmin
               .from("calendar_accounts")
               .select("id")
-              .eq("owner_id", userId)
+              .eq("workspace_id", workspaceId)
               .eq("sync_enabled", true)
               .maybeSingle();
             if (acct?.id) {
@@ -439,6 +440,7 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: app, error: aErr } = await supabase
       .from("ats_applications")
       .select("id, job_id, candidate_id, stage_value")
@@ -451,7 +453,7 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
       const { data: kit } = await supabase
         .from("ats_interview_kits")
         .select("questions")
-        .eq("owner_id", userId)
+        .eq("workspace_id", workspaceId)
         .eq("id", data.interview_kit_id)
         .maybeSingle();
       snapshot = kit?.questions ?? null;
@@ -463,6 +465,7 @@ export const createSelfScheduleLink = createServerFn({ method: "POST" })
       .from("ats_interviews")
       .insert({
         owner_id: userId,
+        workspace_id: workspaceId,
         application_id: data.application_id,
         job_id: app.job_id as string,
         candidate_id: app.candidate_id as string,

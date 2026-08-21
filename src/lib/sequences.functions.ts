@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { tickSequences } from "@/lib/sequences/engine.server";
 import type { SequenceEntity, SequenceStep } from "@/lib/sequences/types";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const stepSchema = z.discriminatedUnion("type", [
   z.object({
@@ -33,6 +34,7 @@ export const listSequences = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: seqs, error } = await supabase
       .from("sequences")
       .select("id, name, entity, enabled, steps, updated_at")
@@ -42,7 +44,7 @@ export const listSequences = createServerFn({ method: "POST" })
     const { data: counts } = await supabase
       .from("sequence_enrollments")
       .select("sequence_id, status")
-      .eq("owner_id", userId);
+      .eq("workspace_id", workspaceId);
     const byId: Record<string, { active: number; completed: number }> = {};
     for (const r of (counts ?? []) as Array<{ sequence_id: string; status: string }>) {
       byId[r.sequence_id] ||= { active: 0, completed: 0 };
@@ -66,6 +68,7 @@ export const saveSequence = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => saveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const payload = {
       name: data.name,
       entity: data.entity,
@@ -131,6 +134,7 @@ export const enrollInSequence = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
     const { data: seq } = await supabase
       .from("sequences")
       .select("id, steps")
@@ -142,6 +146,7 @@ export const enrollInSequence = createServerFn({ method: "POST" })
     const nextRun = new Date(Date.now() + firstWait * 86_400_000).toISOString();
     const rows = data.entityIds.map((id) => ({
       owner_id: userId,
+      workspace_id: workspaceId,
       sequence_id: data.sequenceId,
       entity_id: id,
       status: "active",
