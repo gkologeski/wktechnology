@@ -162,7 +162,12 @@ function DashboardPage() {
                   <LineChart data={days} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                     <XAxis dataKey="day" stroke="var(--color-muted-foreground)" fontSize={11} />
-                    <YAxis stroke="var(--color-muted-foreground)" fontSize={12} width={32} allowDecimals={false} />
+                    <YAxis
+                      stroke="var(--color-muted-foreground)"
+                      fontSize={12}
+                      width={32}
+                      allowDecimals={false}
+                    />
                     <Tooltip />
                     <Line
                       type="monotone"
@@ -175,7 +180,6 @@ function DashboardPage() {
                 </ResponsiveContainer>
               )}
             </LazyChart>
-
           </CardContent>
         </Card>
       </div>
@@ -220,8 +224,12 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
       <CardContent className="pt-6">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide truncate">{label}</p>
-            <p className="text-2xl font-semibold mt-1 truncate" title={value}>{value}</p>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide truncate">
+              {label}
+            </p>
+            <p className="text-2xl font-semibold mt-1 truncate" title={value}>
+              {value}
+            </p>
           </div>
           <div className="h-10 w-10 shrink-0 rounded-md bg-primary/10 text-primary grid place-items-center">
             {icon}

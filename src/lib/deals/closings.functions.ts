@@ -39,9 +39,7 @@ export const getDealClosingsByMonth = createServerFn({ method: "POST" })
       order.push(key);
       buckets.set(key, {
         month: key,
-        label: d
-          .toLocaleDateString("pt-BR", { month: "short", year: "2-digit" })
-          .replace(".", ""),
+        label: d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }).replace(".", ""),
         wonCount: 0,
         lostCount: 0,
         wonValue: 0,
@@ -73,14 +71,20 @@ export const getDealClosingsByMonth = createServerFn({ method: "POST" })
     if (won.error) throw won.error;
     if (lost.error) throw lost.error;
 
-    for (const row of (won.data ?? []) as Array<{ value: number | null; closed_at: string | null }>) {
+    for (const row of (won.data ?? []) as Array<{
+      value: number | null;
+      closed_at: string | null;
+    }>) {
       if (!row.closed_at) continue;
       const b = buckets.get(keyOf(row.closed_at));
       if (!b) continue;
       b.wonCount += 1;
       b.wonValue += Number(row.value) || 0;
     }
-    for (const row of (lost.data ?? []) as Array<{ value: number | null; lost_at: string | null }>) {
+    for (const row of (lost.data ?? []) as Array<{
+      value: number | null;
+      lost_at: string | null;
+    }>) {
       if (!row.lost_at) continue;
       const b = buckets.get(keyOf(row.lost_at));
       if (!b) continue;

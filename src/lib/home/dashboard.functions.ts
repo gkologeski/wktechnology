@@ -29,7 +29,7 @@ async function safeCount(sb: any, table: string, build: (q: any) => any): Promis
     return 0;
   }
 }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 async function safeSum(
   sb: any,
   table: string,
@@ -127,8 +127,7 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
           },
           {
             label: "Taxa de conversão",
-            value:
-              closedTotal > 0 ? `${((dealsWonCount / closedTotal) * 100).toFixed(1)}%` : "—",
+            value: closedTotal > 0 ? `${((dealsWonCount / closedTotal) * 100).toFixed(1)}%` : "—",
             hint:
               closedTotal > 0
                 ? `${dealsWonCount} de ${closedTotal} fechados`
@@ -138,7 +137,6 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
         ],
       });
     }
-
 
     if (enabledModules.includes("ats")) {
       const [candidates, applications, interviews, offers] = await Promise.all([

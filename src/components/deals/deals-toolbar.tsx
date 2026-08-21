@@ -40,7 +40,6 @@ export const EMPTY_DEAL_FILTERS: DealFilters = {
   closedEnd: "",
 };
 
-
 export const PERIOD_LABELS: Record<DealPeriod, string> = {
   ...DATE_PRESET_LABELS,
   any: "Qualquer data",
@@ -99,8 +98,7 @@ export function DealsToolbar({
     chips.push({
       key: "closedPeriod",
       label: `Fechado: ${suffix}`,
-      clear: () =>
-        setFilters({ ...filters, closedPeriod: "any", closedStart: "", closedEnd: "" }),
+      clear: () => setFilters({ ...filters, closedPeriod: "any", closedStart: "", closedEnd: "" }),
     });
   }
 
@@ -236,8 +234,6 @@ export function DealsToolbar({
           </>
         )}
 
-
-
         {filters.period === "custom" && (
           <>
             <Input
@@ -277,10 +273,7 @@ export function DealsToolbar({
             variant="ghost"
             size="sm"
             className="h-6 px-2 text-xs"
-            onClick={() =>
-              setFilters({ ...EMPTY_DEAL_FILTERS, search: filters.search })
-            }
-
+            onClick={() => setFilters({ ...EMPTY_DEAL_FILTERS, search: filters.search })}
           >
             Limpar
           </Button>
