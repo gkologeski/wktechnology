@@ -60,6 +60,10 @@ export function GridBulkBar<T extends { id: string }>({
   extraActions,
 }: GridBulkBarProps<T>) {
   const [editOpen, setEditOpen] = useState(false);
+  // Quando a tabela está no catálogo dinâmico, a edição em massa passa a
+  // oferecer qualquer campo permitido da entidade; senão usa os campos fixos.
+  const dynamicEntity = isBulkEditEntity(table) ? table : null;
+  const canBulkEdit = canUpdate && (!!dynamicEntity || (bulkEditFields?.length ?? 0) > 0);
   const [assignOpen, setAssignOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
