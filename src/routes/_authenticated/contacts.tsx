@@ -750,6 +750,16 @@ function ContactsHubspotView() {
                     </Button>
                   </Can>
                 )}
+                <Can permission="techsales.contacts.update.workspace">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7"
+                    onClick={() => setBulkEditOpen(true)}
+                  >
+                    <Pencil className="mr-1 h-3.5 w-3.5" /> Editar em massa
+                  </Button>
+                </Can>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
