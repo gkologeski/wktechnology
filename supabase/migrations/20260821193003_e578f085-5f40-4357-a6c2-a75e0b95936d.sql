@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.pipelines_enforce_single_default() FROM PUBLIC, anon, authenticated;

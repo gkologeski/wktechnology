@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { DEAL_STAGES } from "@/lib/crm";
+import {
+  defaultDealStages as seedDealStages,
+  defaultTicketStages as seedTicketStages,
+} from "@/lib/pipelines-defaults";
+import { ensureDefaultPipeline } from "@/lib/pipelines.functions";
 
 export type PipelineStage = {
   value: string;
