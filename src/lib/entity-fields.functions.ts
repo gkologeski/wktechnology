@@ -127,6 +127,9 @@ const LABELS: Record<string, string> = {
   value: "Valor",
   currency: "Moeda",
   expected_close_date: "Fechamento esperado",
+  closed_at: "Fechado em",
+  lost_at: "Perdido em",
+
   dealtype: "Tipo de negócio",
   hs_priority: "Prioridade",
   hs_deal_stage_probability: "Probabilidade",
