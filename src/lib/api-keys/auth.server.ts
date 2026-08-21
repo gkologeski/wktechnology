@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type ApiAuthContext = {
   ownerId: string;
+  workspaceId: string;
   scopes: string[];
   keyId: string;
 };
@@ -19,7 +20,7 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthConte
   if (!raw.startsWith("lvb_")) return null;
   const { data } = await supabaseAdmin
     .from("api_keys")
-    .select("id, owner_id, scopes, revoked_at, expires_at")
+    .select("id, owner_id, workspace_id, scopes, revoked_at, expires_at")
     .eq("key_hash", hashKey(raw))
     .maybeSingle();
   if (!data) return null;
@@ -31,10 +32,12 @@ export async function authenticateApiKey(request: Request): Promise<ApiAuthConte
     .eq("id", data.id);
   return {
     ownerId: data.owner_id as string,
+    workspaceId: data.workspace_id as string,
     scopes: (data.scopes as string[]) ?? [],
     keyId: data.id as string,
   };
 }
+
 
 export function requireScope(ctx: ApiAuthContext, scope: "read" | "write"): Response | null {
   if (scope === "read" && (ctx.scopes.includes("read") || ctx.scopes.includes("write")))
