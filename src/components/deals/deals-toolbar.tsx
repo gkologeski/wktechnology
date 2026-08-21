@@ -91,6 +91,19 @@ export function DealsToolbar({
       clear: () => setF("period", "any"),
     });
   }
+  if (filters.closedPeriod !== "any") {
+    const suffix =
+      filters.closedPeriod === "custom"
+        ? `${filters.closedStart || "…"} → ${filters.closedEnd || "…"}`
+        : DATE_PRESET_LABELS[filters.closedPeriod];
+    chips.push({
+      key: "closedPeriod",
+      label: `Fechado: ${suffix}`,
+      clear: () =>
+        setFilters({ ...filters, closedPeriod: "any", closedStart: "", closedEnd: "" }),
+    });
+  }
+
   if (filters.minValue) {
     chips.push({
       key: "minValue",
