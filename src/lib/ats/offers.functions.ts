@@ -9,6 +9,44 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { recordAtsEvent } from "./audit.server";
+import { buildGridSelect } from "@/lib/grid/dynamic-select";
+import { atsGridInputSchema, type AtsGridInput } from "@/lib/grid/ats-grid-input";
+
+const BASE_OFFER_KEYS = [
+  "id",
+  "title",
+  "status",
+  "salary_amount",
+  "salary_currency",
+  "start_date",
+  "sent_at",
+  "signed_at",
+  "declined_at",
+  "created_at",
+  "candidate_id",
+  "job_id",
+  "application_id",
+  "esign_document_id",
+] as const;
+
+type OfferListRow = {
+  id: string;
+  title: string;
+  status: string;
+  salary_amount: number | null;
+  salary_currency: string | null;
+  start_date: string | null;
+  sent_at: string | null;
+  signed_at: string | null;
+  declined_at: string | null;
+  created_at: string;
+  candidate_id: string | null;
+  job_id: string | null;
+  application_id: string | null;
+  esign_document_id: string | null;
+  ats_candidates: { full_name: string; email: string | null } | null;
+  ats_jobs: { title: string } | null;
+};
 
 const OfferInsert = z.object({
   candidate_id: z.string().uuid(),
@@ -22,18 +60,25 @@ const OfferInsert = z.object({
   promote_to_stage: z.string().max(100).nullable().optional(),
 });
 
-export const listOffers = createServerFn({ method: "GET" })
+export const listOffers = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+  .inputValidator((d: AtsGridInput | undefined) => atsGridInputSchema.parse(d ?? {}))
+  .handler(async ({ context, data }) => {
+    const { supabase, userId } = context;
+    const { resolveAtsGridProjection } = await import("./grid-projection.server");
+    const projection = await resolveAtsGridProjection(supabase, userId, "ats_offers", data);
+    const base = buildGridSelect(BASE_OFFER_KEYS, projection.extras);
+    const { data: rows, error } = await supabase
       .from("ats_offers")
-      .select(
-        "id, title, status, salary_amount, salary_currency, start_date, sent_at, signed_at, declined_at, created_at, candidate_id, job_id, application_id, esign_document_id, ats_candidates(full_name, email), ats_jobs(title)",
-      )
-      .order("created_at", { ascending: false });
+      .select(`${base}, ats_candidates(full_name, email), ats_jobs(title)`)
+      .order(projection.sortKey ?? "created_at", {
+        ascending: projection.sortKey ? projection.sortDir === "asc" : false,
+        nullsFirst: false,
+      });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    return (rows ?? []) as unknown as OfferListRow[];
   });
+
 
 export const getOffer = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

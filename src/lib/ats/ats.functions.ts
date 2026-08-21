@@ -11,6 +11,8 @@ import {
   firstAtsStageValue,
 } from "./stages";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
+import { buildGridSelect } from "@/lib/grid/dynamic-select";
+import type { AtsGridInput } from "@/lib/grid/ats-grid-input";
 
 // ---------- helpers ---------------------------------------------------------
 
@@ -90,34 +92,67 @@ const JobSaveSchema = z.object({
   pipeline_id: z.string().uuid().optional().nullable(),
 });
 
+const BASE_JOB_KEYS = [
+  "id",
+  "title",
+  "slug",
+  "status",
+  "seniority",
+  "employment_type",
+  "location",
+  "remote_mode",
+  "salary_min",
+  "salary_max",
+  "deal_id",
+  "pipeline_id",
+  "opened_at",
+  "filled_at",
+  "updated_at",
+  "created_at",
+  "owner_id",
+  "assigned_to",
+  "hiring_manager_id",
+  "recruiter_id",
+  "metadata",
+] as const;
+
 export const listAtsJobs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { status?: string; search?: string } | undefined) => data ?? {})
+  .inputValidator(
+    (data: (AtsGridInput & { status?: string; search?: string }) | undefined) => data ?? {},
+  )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const { resolveAtsGridProjection } = await import("./grid-projection.server");
+    const projection = await resolveAtsGridProjection(supabase, userId, "ats_jobs", data);
 
     let q = supabase
       .from("ats_jobs")
-      .select(
-        "id, title, slug, status, seniority, employment_type, location, remote_mode, salary_min, salary_max, deal_id, pipeline_id, opened_at, filled_at, updated_at, created_at, owner_id, assigned_to, hiring_manager_id, recruiter_id, metadata",
-      )
+      .select(buildGridSelect(BASE_JOB_KEYS, projection.extras))
       // Sem filtro por owner_id: as políticas RLS já expõem vagas do próprio
       // usuário, das quais é hiring manager/recruiter, e as compartilhadas no
       // workspace para quem tem `techhire.jobs.view.workspace`
       // (ats_jobs_rbac_select). Filtrar por owner_id aqui escondia vagas
       // criadas por colegas do mesmo workspace.
 
-      .order("updated_at", { ascending: false })
+      .order(projection.sortKey ?? "updated_at", {
+        ascending: projection.sortKey ? projection.sortDir === "asc" : false,
+        nullsFirst: false,
+      })
       .limit(200);
+
 
     if (data.status && data.status !== "all") q = q.eq("status", data.status);
     if (data.search) q = q.ilike("title", `%${data.search}%`);
-    const { data: rows, error } = await q;
+    const { data: rowsRaw, error } = await q;
 
     if (error) throw new Error(error.message);
+    // A projeção é dinâmica (string), então o supabase-js não infere o tipo.
+    const rows = (rowsRaw ?? []) as unknown as Array<Record<string, unknown>>;
 
     // contagem de candidaturas ativas por vaga
-    const ids = (rows ?? []).map((r) => r.id as string);
+    const ids = rows.map((r) => r.id as string);
+
     let counts: Record<string, number> = {};
     if (ids.length) {
       const { data: apps } = await supabase
@@ -466,27 +501,63 @@ const CandidateSaveSchema = z.object({
   notes: z.string().max(5000).optional().nullable(),
 });
 
+const BASE_CANDIDATE_KEYS = [
+  "id",
+  "full_name",
+  "email",
+  "phone",
+  "location",
+  "current_position",
+  "current_company",
+  "skills",
+  "tags",
+  "source",
+  "score",
+  "assigned_to",
+  "updated_at",
+] as const;
+
+type CandidateListRow = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  location: string | null;
+  current_position: string | null;
+  current_company: string | null;
+  skills: string[] | null;
+  tags: string[] | null;
+  source: string | null;
+  score: number | null;
+  assigned_to: string | null;
+  updated_at: string;
+};
+
 export const listAtsCandidates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { search?: string } | undefined) => d ?? {})
+  .inputValidator((d: (AtsGridInput & { search?: string }) | undefined) => d ?? {})
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const { resolveAtsGridProjection } = await import("./grid-projection.server");
+    const projection = await resolveAtsGridProjection(supabase, userId, "ats_candidates", data);
     // Sem filtro por owner_id: o RLS já expõe os candidatos do próprio usuário
     // e os compartilhados no workspace (ats_candidates_rbac_select).
     let q = supabase
       .from("ats_candidates")
-      .select(
-        "id, full_name, email, phone, location, current_position, current_company, skills, tags, source, score, assigned_to, updated_at",
-      )
+      .select(buildGridSelect(BASE_CANDIDATE_KEYS, projection.extras))
 
-      .order("updated_at", { ascending: false })
+      .order(projection.sortKey ?? "updated_at", {
+        ascending: projection.sortKey ? projection.sortDir === "asc" : false,
+        nullsFirst: false,
+      })
       .limit(300);
     if (data.search)
       q = q.or(`full_name.ilike.%${data.search}%,email.ilike.%${data.search}%`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return rows ?? [];
+    return (rows ?? []) as unknown as CandidateListRow[];
   });
+
 
 export const saveAtsCandidate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
