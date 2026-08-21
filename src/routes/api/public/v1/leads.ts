@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
+import { buildMeta, jsonError, parseListParams } from "@/lib/api-keys/list-params.server";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 
 const CreateLead = z.object({
