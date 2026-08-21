@@ -158,7 +158,7 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
           type: "meeting",
           subject: input.title,
           body: `Reunião agendada via API pública. Link público: /meet/${token}`,
-          due_at: scheduledAt.toISOString(),
+          due_date: scheduledAt.toISOString(),
           related_lead_id: input.lead_id ?? null,
           related_contact_id: input.contact_id ?? null,
           related_deal_id: input.deal_id ?? null,
