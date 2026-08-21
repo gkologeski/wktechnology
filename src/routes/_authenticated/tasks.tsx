@@ -9,6 +9,7 @@ import type { Activity } from "@/lib/db-types";
 import { TASK_PRIORITIES, TASK_STATUSES, formatDateTime } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -18,7 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, ChevronDown, Download, MoreHorizontal, Plus, Search, X } from "lucide-react";
+import { Check, ChevronDown, Download, MoreHorizontal, Pencil, Plus, Search, X } from "lucide-react";
 import {
   CheckboxFilter,
   FilterGroup,
@@ -413,6 +414,7 @@ function TasksHubspotView() {
       return next;
     });
   const clearSelection = () => setSelectedIds(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const selectAllMatching = async () => {
     try {
@@ -897,6 +899,14 @@ function TasksHubspotView() {
                 >
                   Excluir
                 </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setBulkEditOpen(true)}
+                >
+                  <Pencil className="mr-1 h-3.5 w-3.5" /> Editar em massa
+                </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
@@ -1068,6 +1078,18 @@ function TasksHubspotView() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onCreated={() => qc.invalidateQueries({ queryKey: ["tasks"] })}
+      />
+
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="activities"
+        ids={Array.from(selectedIds)}
+        entityLabel="tarefa(s)"
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["tasks"] });
+        }}
       />
     </div>
   );

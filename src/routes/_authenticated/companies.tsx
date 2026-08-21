@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { toE164 } from "@/lib/validators";
 import { useMyTools } from "@/lib/use-my-tools";
 import { Button } from "@/components/ui/button";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -25,7 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Download, MapPin, MoreHorizontal, Play, Plus, Search, X } from "lucide-react";
+import { ChevronDown, Download, MapPin, MoreHorizontal, Play, Pencil, Plus, Search, X } from "lucide-react";
 import { startFocusQueue } from "@/lib/focus-queue";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
@@ -299,6 +300,7 @@ function CompaniesHubspotView() {
       return next;
     });
   const clearSelection = () => setSelectedIds(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const onSort = (k: SortKey) => {
     const nextDir: SortDir = sortKey === k ? (sortDir === "asc" ? "desc" : "asc") : "asc";
@@ -752,6 +754,14 @@ function CompaniesHubspotView() {
                     </Button>
                   </Can>
                 )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setBulkEditOpen(true)}
+                >
+                  <Pencil className="mr-1 h-3.5 w-3.5" /> Editar em massa
+                </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
@@ -925,6 +935,18 @@ function CompaniesHubspotView() {
         onCreated={(id) => {
           qc.invalidateQueries({ queryKey: ["companies"] });
           navigate({ to: "/companies/$id", params: { id } });
+        }}
+      />
+
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="companies"
+        ids={Array.from(selectedIds)}
+        entityLabel="empresa(s)"
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["companies"] });
         }}
       />
     </div>

@@ -27,6 +27,7 @@ import {
 import type { Lead } from "@/lib/db-types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -91,7 +92,7 @@ import {
   ChevronsUpDown,
   Download,
   MoreHorizontal,
-  Plus,
+  Pencil, Plus,
   Search,
   Sparkles,
   Upload,
@@ -560,6 +561,7 @@ function LeadsHubspotView() {
       return next;
     });
   const clearSelection = () => setSelectedIds(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const [isSelectingAll, setIsSelectingAll] = useState(false);
   const selectAllMatching = async () => {
@@ -1256,6 +1258,14 @@ function LeadsHubspotView() {
                     Excluir
                   </Button>
                 </Can>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setBulkEditOpen(true)}
+                >
+                  <Pencil className="mr-1 h-3.5 w-3.5" /> Editar em massa
+                </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
@@ -1598,6 +1608,18 @@ function ScoreCell({ score }: { score: number }) {
         <div className={cn("h-full bg-gradient-to-r", tone)} style={{ width: `${clamped}%` }} />
       </div>
       <span className="w-6 text-right text-xs font-medium tabular-nums">{clamped}</span>
+
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="leads"
+        ids={Array.from(selectedIds)}
+        entityLabel="lead(s)"
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["leads"] });
+        }}
+      />
     </div>
   );
 }
