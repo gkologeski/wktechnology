@@ -7,7 +7,12 @@ import { MEETING_SELECT, syncMeetingActivity } from "@/lib/api-keys/meetings.ser
 
 const RescheduleMeeting = z.object({
   scheduled_at: z.string().min(10).max(64),
-  duration_minutes: z.number().int().min(5).max(24 * 60).optional(),
+  duration_minutes: z
+    .number()
+    .int()
+    .min(5)
+    .max(24 * 60)
+    .optional(),
   reason: z.string().max(500).optional(),
 });
 

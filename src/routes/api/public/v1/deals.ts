@@ -9,14 +9,7 @@ import {
   parseListParams,
 } from "@/lib/api-keys/list-params.server";
 
-const DEAL_STAGES = [
-  "new",
-  "qualified",
-  "proposal",
-  "negotiation",
-  "won",
-  "lost",
-] as const;
+const DEAL_STAGES = ["new", "qualified", "proposal", "negotiation", "won", "lost"] as const;
 
 const CreateDeal = z.object({
   name: z.string().min(1).max(255),
@@ -257,7 +250,10 @@ export const Route = createFileRoute("/api/public/v1/deals")({
         });
         // A falha na timeline não invalida o negócio criado, mas precisa ser visível nos logs.
         if (activityError)
-          console.error("[api/public/v1/deals] falha ao registrar timeline:", activityError.message);
+          console.error(
+            "[api/public/v1/deals] falha ao registrar timeline:",
+            activityError.message,
+          );
 
         return Response.json({ data: deal });
       },
