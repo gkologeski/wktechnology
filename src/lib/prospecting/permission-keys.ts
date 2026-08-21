@@ -15,7 +15,6 @@ export const QUEUE_UPDATE = [`${P}.queue.update.workspace`, `${P}.queue.update.o
 export const QUEUE_DELETE = [`${P}.queue.delete.workspace`, `${P}.queue.delete.own`] as const;
 export const QUEUE_UPDATE_WORKSPACE = `${P}.queue.update.workspace`;
 export const QUEUE_DELETE_WORKSPACE = `${P}.queue.delete.workspace`;
-export const QUEUE_VIEW_WORKSPACE = `${P}.queue.view.workspace`;
 
 /** Cadências */
 export const CADENCES_VIEW = [
