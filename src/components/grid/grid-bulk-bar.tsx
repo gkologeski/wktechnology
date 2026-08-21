@@ -9,10 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BulkActionBar } from "@/components/bulk-action-bar";
 import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { BulkAssignDialog } from "@/components/bulk-assign-dialog";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
 
 export type GridBulkBarProps<T extends { id: string }> = {
   table: string;
@@ -58,6 +60,10 @@ export function GridBulkBar<T extends { id: string }>({
   extraActions,
 }: GridBulkBarProps<T>) {
   const [editOpen, setEditOpen] = useState(false);
+  // Quando a tabela está no catálogo dinâmico, a edição em massa passa a
+  // oferecer qualquer campo permitido da entidade; senão usa os campos fixos.
+  const dynamicEntity = isBulkEditEntity(table) ? table : null;
+  const canBulkEdit = canUpdate && (!!dynamicEntity || (bulkEditFields?.length ?? 0) > 0);
   const [assignOpen, setAssignOpen] = useState(false);
   const [activityOpen, setActivityOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -107,7 +113,7 @@ export function GridBulkBar<T extends { id: string }>({
             Exportar selecionados
           </Button>
         )}
-        {canUpdate && bulkEditFields && bulkEditFields.length > 0 && (
+        {canBulkEdit && (
           <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
             Editar em massa
           </Button>
@@ -130,18 +136,34 @@ export function GridBulkBar<T extends { id: string }>({
         )}
       </BulkActionBar>
 
-      {bulkEditFields && bulkEditFields.length > 0 && (
-        <BulkEditDialog
+      {dynamicEntity ? (
+        <BulkEditFieldsDialog
           open={editOpen}
           setOpen={setEditOpen}
-          table={table}
+          entity={dynamicEntity}
           ids={ids}
-          fields={bulkEditFields}
+          entityLabel={entityLabel}
+          priorityFields={bulkEditFields?.map((f) => f.name)}
           onDone={() => {
             onClear();
             onDone();
           }}
         />
+      ) : (
+        bulkEditFields &&
+        bulkEditFields.length > 0 && (
+          <BulkEditDialog
+            open={editOpen}
+            setOpen={setEditOpen}
+            table={table}
+            ids={ids}
+            fields={bulkEditFields}
+            onDone={() => {
+              onClear();
+              onDone();
+            }}
+          />
+        )
       )}
 
       {assignColumn && (

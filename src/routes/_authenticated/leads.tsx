@@ -27,6 +27,7 @@ import {
 import type { Lead } from "@/lib/db-types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -91,6 +92,7 @@ import {
   ChevronsUpDown,
   Download,
   MoreHorizontal,
+  Pencil,
   Plus,
   Search,
   Sparkles,
@@ -560,6 +562,7 @@ function LeadsHubspotView() {
       return next;
     });
   const clearSelection = () => setSelectedIds(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const [isSelectingAll, setIsSelectingAll] = useState(false);
   const selectAllMatching = async () => {
@@ -1256,6 +1259,14 @@ function LeadsHubspotView() {
                     Excluir
                   </Button>
                 </Can>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7"
+                  onClick={() => setBulkEditOpen(true)}
+                >
+                  <Pencil className="mr-1 h-3.5 w-3.5" /> Editar em massa
+                </Button>
                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
                   <X className="h-3.5 w-3.5" />
                 </Button>
@@ -1428,6 +1439,18 @@ function LeadsHubspotView() {
       </div>
 
       <ColumnsEditor />
+
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="leads"
+        ids={Array.from(selectedIds)}
+        entityLabel="lead(s)"
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["leads"] });
+        }}
+      />
 
       <BulkEnrichDialog
         open={!!enrichIds}
