@@ -659,13 +659,7 @@ async function loadMapForStep(
   table: "companies" | "contacts" | "deals" | "leads" | "tickets",
   fromStep: StepName,
 ): Promise<Map<string, string>> {
-  const importedIds = await loadImportedHsIdsForStep(
-    supabase,
-    workspaceId,
-    jobId,
-    table,
-    fromStep,
-  );
+  const importedIds = await loadImportedHsIdsForStep(supabase, workspaceId, jobId, table, fromStep);
   if (importedIds.length > 0 && importedIds.length <= 2_000) {
     return loadLocalMapForHsIds(supabase, workspaceId, table, importedIds);
   }
@@ -2163,7 +2157,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       const propsParam = propsList.join(",");
 
       // Load local maps so we can fill FK columns from associations.
-      const companyMap = await loadMapForStep(supabase, workspaceId, jobId, "companies", "companies");
+      const companyMap = await loadMapForStep(
+        supabase,
+        workspaceId,
+        jobId,
+        "companies",
+        "companies",
+      );
       const contactMap = await loadMapForStep(supabase, workspaceId, jobId, "contacts", "contacts");
       const dealMap = await loadMapForStep(supabase, workspaceId, jobId, "deals", "deals");
 
@@ -2308,7 +2308,13 @@ export async function runStep(ctx: StepCtx): Promise<StepResult> {
       };
       const t = TYPE_MAP[kind];
 
-      const companyMap = await loadMapForStep(supabase, workspaceId, jobId, "companies", "companies");
+      const companyMap = await loadMapForStep(
+        supabase,
+        workspaceId,
+        jobId,
+        "companies",
+        "companies",
+      );
       const contactMap = await loadMapForStep(supabase, workspaceId, jobId, "contacts", "contacts");
       const dealMap = await loadMapForStep(supabase, workspaceId, jobId, "deals", "deals");
       const leadMap = await loadMapForStep(supabase, workspaceId, jobId, "leads", "leads");
