@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
+import { buildMeta, jsonError, parseListParams } from "@/lib/api-keys/list-params.server";
+import { MEETING_SELECT } from "@/lib/api-keys/meetings.server";
 
 const CreateMeeting = z.object({
   title: z.string().min(1).max(255).default("Reunião"),
@@ -13,8 +15,7 @@ const CreateMeeting = z.object({
   assigned_to: z.string().uuid().optional(),
 });
 
-const SELECT =
-  "id, title, status, scheduled_at, public_token, room_name, related_lead_id, related_contact_id, related_deal_id, assigned_to, created_at";
+const SELECT = MEETING_SELECT;
 
 function randomToken(len: number): string {
   const bytes = new Uint8Array(len);
@@ -41,28 +42,30 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
         if (denied) return denied;
 
         const url = new URL(request.url);
-        const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? 50), 1), 200);
+        const params = parseListParams(url);
         let query = supabaseAdmin
           .from("meetings")
-          .select(SELECT)
-          .eq("owner_id", auth.workspaceId)
-          .order("scheduled_at", { ascending: false, nullsFirst: false })
-          .limit(limit);
+          .select(SELECT, { count: "exact" })
+          .eq("workspace_id", auth.workspaceId);
 
         const leadId = url.searchParams.get("lead_id");
         if (leadId) query = query.eq("related_lead_id", leadId);
-        const from = url.searchParams.get("from");
-        if (from) query = query.gte("scheduled_at", from);
-        const to = url.searchParams.get("to");
-        if (to) query = query.lte("scheduled_at", to);
+        const contactId = url.searchParams.get("contact_id");
+        if (contactId) query = query.eq("related_contact_id", contactId);
+        const dealId = url.searchParams.get("deal_id");
+        if (dealId) query = query.eq("related_deal_id", dealId);
+        const status = url.searchParams.get("status");
+        if (status) query = query.eq("status", status);
+        if (params.from) query = query.gte("scheduled_at", params.from);
+        if (params.to) query = query.lte("scheduled_at", params.to);
 
-        const { data, error } = await query;
-        if (error)
-          return new Response(JSON.stringify({ error: error.message }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
-        return Response.json({ data: data ?? [] });
+        const { data, error, count } = await query
+          .order("scheduled_at", { ascending: params.ascending, nullsFirst: false })
+          .range(params.offset, params.offset + params.limit - 1);
+        if (error) return jsonError(error.message, 400);
+
+        const rows = data ?? [];
+        return Response.json({ data: rows, meta: buildMeta(params, rows.length, count ?? null) });
       },
       POST: async ({ request }) => {
         const auth = await authenticateApiKey(request);

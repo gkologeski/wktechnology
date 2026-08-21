@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
+import { buildMeta, jsonError, parseListParams } from "@/lib/api-keys/list-params.server";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 
 const CreateLead = z.object({
@@ -22,16 +23,27 @@ export const Route = createFileRoute("/api/public/v1/leads")({
         const denied = requireScope(auth, "read");
         if (denied) return denied;
         const url = new URL(request.url);
-        const limit = Math.min(Number(url.searchParams.get("limit") ?? 50), 200);
-        const { data } = await supabaseAdmin
+        const params = parseListParams(url);
+        let query = supabaseAdmin
           .from("leads")
           .select(
             "id, first_name, last_name, email, phone, company_name, status, source, created_at",
+            { count: "exact" },
           )
-          .eq("workspace_id", auth.workspaceId)
-          .order("created_at", { ascending: false })
-          .limit(limit);
-        return Response.json({ data: data ?? [] });
+          .eq("workspace_id", auth.workspaceId);
+
+        const email = url.searchParams.get("email");
+        if (email) query = query.ilike("email", email.trim());
+        if (params.from) query = query.gte("created_at", params.from);
+        if (params.to) query = query.lte("created_at", params.to);
+
+        const { data, error, count } = await query
+          .order("created_at", { ascending: params.ascending })
+          .range(params.offset, params.offset + params.limit - 1);
+        if (error) return jsonError(error.message, 400);
+
+        const rows = data ?? [];
+        return Response.json({ data: rows, meta: buildMeta(params, rows.length, count ?? null) });
       },
       POST: async ({ request }) => {
         const auth = await authenticateApiKey(request);
