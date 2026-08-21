@@ -73,8 +73,10 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
       const [leadsCount, dealsCreated, dealsWonCount, dealsWonValue, pipelineOpen] = await Promise.all([
         safeCount(supabase, "leads", (q) => q.gte("created_at", from).lte("created_at", to)),
         safeCount(supabase, "deals", (q) => q.gte("created_at", from).lte("created_at", to)),
-        safeCount(supabase, "deals", (q) => q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to)),
-        safeSum(supabase, "deals", "value", (q) => q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to)),
+        // `deals` não tem coluna de fechamento; usa a última atualização como janela.
+        safeCount(supabase, "deals", (q) => q.eq("stage", "won").gte("updated_at", from).lte("updated_at", to)),
+        safeSum(supabase, "deals", "value", (q) => q.eq("stage", "won").gte("updated_at", from).lte("updated_at", to)),
+
         safeSum(supabase, "deals", "value", (q) => q.not("stage", "in", "(won,lost)")),
       ]);
       sections.push({
