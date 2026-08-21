@@ -1439,6 +1439,18 @@ function LeadsHubspotView() {
 
       <ColumnsEditor />
 
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="leads"
+        ids={Array.from(selectedIds)}
+        entityLabel="lead(s)"
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["leads"] });
+        }}
+      />
+
       <BulkEnrichDialog
         open={!!enrichIds}
         onOpenChange={(o) => !o && setEnrichIds(null)}
@@ -1608,18 +1620,6 @@ function ScoreCell({ score }: { score: number }) {
         <div className={cn("h-full bg-gradient-to-r", tone)} style={{ width: `${clamped}%` }} />
       </div>
       <span className="w-6 text-right text-xs font-medium tabular-nums">{clamped}</span>
-
-      <BulkEditFieldsDialog
-        open={bulkEditOpen}
-        setOpen={setBulkEditOpen}
-        entity="leads"
-        ids={Array.from(selectedIds)}
-        entityLabel="lead(s)"
-        onDone={() => {
-          clearSelection();
-          qc.invalidateQueries({ queryKey: ["leads"] });
-        }}
-      />
     </div>
   );
 }
