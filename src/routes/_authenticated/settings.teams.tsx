@@ -88,6 +88,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useEntitlements } from "@/lib/use-entitlements";
 import { ENT, PLAN_LABELS } from "@/lib/entitlements";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { UnlinkedAccountsCard } from "@/components/teams/unlinked-accounts-card";
 
 export const Route = createFileRoute("/_authenticated/settings/teams")({
   component: UsersPage,
@@ -1220,6 +1221,13 @@ function UsersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <UnlinkedAccountsCard
+        onLinked={() => {
+          refetch();
+          refetchInvites();
+        }}
+      />
     </div>
   );
 }
