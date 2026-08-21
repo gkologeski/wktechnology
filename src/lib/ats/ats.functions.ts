@@ -20,11 +20,12 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 async function ensureDefaultPipeline(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   userId: string,
+  workspaceId: string,
 ): Promise<{ id: string; stages: AtsStage[] }> {
   const { data: existing, error } = await supabase
     .from("ats_pipelines")
     .select("id, stages, is_default")
-    .eq("owner_id", userId)
+    .eq("workspace_id", workspaceId)
     .order("is_default", { ascending: false })
     .order("created_at", { ascending: true })
     .limit(1)
@@ -40,6 +41,7 @@ async function ensureDefaultPipeline(
     .from("ats_pipelines")
     .insert({
       owner_id: userId,
+      workspace_id: workspaceId,
       name: "Pipeline padrão",
       is_default: true,
       stages: DEFAULT_ATS_STAGES as never,
