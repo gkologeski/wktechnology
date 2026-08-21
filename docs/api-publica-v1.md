@@ -64,7 +64,7 @@ mesmos parâmetros:
 | --------- | ------ | ---------------------------------------------------------------- |
 | `limit`   | 50     | 1 a 200 registros por página                                     |
 | `offset`  | 0      | deslocamento absoluto                                            |
-| `page`    | —      | alternativa a `offset`; calcula `(page - 1) * limit`              |
+| `page`    | —      | alternativa a `offset`; calcula `(page - 1) * limit`             |
 | `from`    | —      | data inicial (ISO 8601 ou `YYYY-MM-DD`)                          |
 | `to`      | —      | data final (com `YYYY-MM-DD` inclui o dia inteiro até 23:59:59Z) |
 | `order`   | `desc` | `asc` ou `desc`                                                  |
@@ -148,9 +148,9 @@ Resposta `200`:
 
 Além dos parâmetros da seção 3:
 
-| Parâmetro | Descrição                       |
-| --------- | ------------------------------- |
-| `email`   | busca exata por e-mail (ilike)  |
+| Parâmetro | Descrição                      |
+| --------- | ------------------------------ |
+| `email`   | busca exata por e-mail (ilike) |
 
 ```bash
 curl "$BASE_URL/api/public/v1/leads?limit=20&page=2&from=2026-08-01" \
@@ -252,19 +252,19 @@ curl "$BASE_URL/api/public/v1/contacts?company_id=$COMPANY_ID&limit=50" \
 
 `POST /api/public/v1/deals` — escopo `write`
 
-| Campo                 | Tipo             | Obrigatório | Observações                                             |
-| --------------------- | ---------------- | ----------- | ------------------------------------------------------- |
-| `name`                | string (1–255)   | sim         | título do negócio                                       |
-| `value`               | number (≥0)      | não         | padrão `0`                                              |
-| `currency`            | string (3 letras)| não         | padrão `BRL`                                            |
-| `stage`               | enum             | não         | `new`, `qualified`, `proposal`, `negotiation`, `won`, `lost` (padrão `new`) |
-| `stage_id`            | string (≤80)     | não         | etapa do pipeline; validada contra o pipeline informado  |
-| `pipeline_id`         | uuid             | não         | padrão: pipeline de negócios padrão do workspace         |
-| `expected_close_date` | string ISO/data  | não         | gravada como data (`YYYY-MM-DD`)                         |
-| `notes`               | string (≤5000)   | não         | observações                                              |
-| `contact_id`          | uuid             | não         | contato principal                                        |
-| `company_id`          | uuid             | não         | empresa                                                  |
-| `lead_id`             | uuid             | não         | lead de origem                                           |
+| Campo                 | Tipo              | Obrigatório | Observações                                                                 |
+| --------------------- | ----------------- | ----------- | --------------------------------------------------------------------------- |
+| `name`                | string (1–255)    | sim         | título do negócio                                                           |
+| `value`               | number (≥0)       | não         | padrão `0`                                                                  |
+| `currency`            | string (3 letras) | não         | padrão `BRL`                                                                |
+| `stage`               | enum              | não         | `new`, `qualified`, `proposal`, `negotiation`, `won`, `lost` (padrão `new`) |
+| `stage_id`            | string (≤80)      | não         | etapa do pipeline; validada contra o pipeline informado                     |
+| `pipeline_id`         | uuid              | não         | padrão: pipeline de negócios padrão do workspace                            |
+| `expected_close_date` | string ISO/data   | não         | gravada como data (`YYYY-MM-DD`)                                            |
+| `notes`               | string (≤5000)    | não         | observações                                                                 |
+| `contact_id`          | uuid              | não         | contato principal                                                           |
+| `company_id`          | uuid              | não         | empresa                                                                     |
+| `lead_id`             | uuid              | não         | lead de origem                                                              |
 
 Regras:
 
@@ -316,14 +316,14 @@ Resposta `200`:
 
 `GET /api/public/v1/deals` — escopo `read`
 
-| Parâmetro     | Descrição                                                    |
-| ------------- | ------------------------------------------------------------ |
+| Parâmetro     | Descrição                                                     |
+| ------------- | ------------------------------------------------------------- |
 | `stage`       | filtra por etapa (mesmos valores do `POST`)                   |
 | `pipeline_id` | filtra por pipeline                                           |
 | `company_id`  | filtra por empresa                                            |
 | `contact_id`  | filtra pelo contato principal                                 |
 | `lead_id`     | devolve o negócio convertido a partir do lead                 |
-| `closed_from` | `closed_at >= closed_from` (data real de fechamento do ganho)  |
+| `closed_from` | `closed_at >= closed_from` (data real de fechamento do ganho) |
 | `closed_to`   | `closed_at <= closed_to`                                      |
 
 `closed_at` é preenchido automaticamente quando o negócio passa para `won`, e
@@ -401,12 +401,12 @@ Erros específicos: `404 lead_not_found`, `404 contact_not_found`,
 
 `GET /api/public/v1/meetings` — escopo `read`
 
-| Parâmetro    | Descrição                                    |
-| ------------ | -------------------------------------------- |
-| `lead_id`    | filtra reuniões de um lead                   |
-| `contact_id` | filtra reuniões de um contato                |
-| `deal_id`    | filtra reuniões de um negócio                |
-| `status`     | ex.: `scheduled`, `canceled`, `ended`        |
+| Parâmetro    | Descrição                             |
+| ------------ | ------------------------------------- |
+| `lead_id`    | filtra reuniões de um lead            |
+| `contact_id` | filtra reuniões de um contato         |
+| `deal_id`    | filtra reuniões de um negócio         |
+| `status`     | ex.: `scheduled`, `canceled`, `ended` |
 
 Além disso, `from`/`to`/`limit`/`offset`/`page`/`order` da seção 3 (aplicados a
 `scheduled_at`).
@@ -420,8 +420,8 @@ curl "$BASE_URL/api/public/v1/meetings?lead_id=$LEAD_ID&status=scheduled&order=a
 
 `POST /api/public/v1/meetings/{id}/cancel` — escopo `write`
 
-| Campo    | Tipo          | Obrigatório | Observações        |
-| -------- | ------------- | ----------- | ------------------ |
+| Campo    | Tipo          | Obrigatório | Observações            |
+| -------- | ------------- | ----------- | ---------------------- |
 | `reason` | string (≤500) | não         | motivo do cancelamento |
 
 Corpo vazio é aceito. Efeitos:
@@ -458,11 +458,11 @@ Erros: `404 meeting_not_found` quando o id não pertence ao workspace da chave.
 
 `POST /api/public/v1/meetings/{id}/reschedule` — escopo `write`
 
-| Campo              | Tipo             | Obrigatório | Observações                            |
-| ------------------ | ---------------- | ----------- | -------------------------------------- |
-| `scheduled_at`     | string ISO 8601  | sim         | nova data/hora                         |
-| `duration_minutes` | inteiro (5–1440) | não         | recalcula `expires_at` da sala         |
-| `reason`           | string (≤500)    | não         | motivo registrado na timeline          |
+| Campo              | Tipo             | Obrigatório | Observações                    |
+| ------------------ | ---------------- | ----------- | ------------------------------ |
+| `scheduled_at`     | string ISO 8601  | sim         | nova data/hora                 |
+| `duration_minutes` | inteiro (5–1440) | não         | recalcula `expires_at` da sala |
+| `reason`           | string (≤500)    | não         | motivo registrado na timeline  |
 
 Efeitos:
 
