@@ -25,20 +25,36 @@ async function safeCount(sb: any, table: string, build: (q: any) => any): Promis
     const { count, error } = await build(q);
     if (error) return 0;
     return count ?? 0;
-  } catch { return 0; }
+  } catch {
+    return 0;
+  }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function safeSum(sb: any, table: string, column: string, build: (q: any) => any): Promise<number> {
+async function safeSum(
+  sb: any,
+  table: string,
+  column: string,
+  build: (q: any) => any,
+): Promise<number> {
   try {
     const q = sb.from(table).select(column);
     const { data, error } = await build(q);
     if (error || !data) return 0;
-    return (data as Array<Record<string, number | null>>).reduce((acc, r) => acc + (Number(r[column]) || 0), 0);
-  } catch { return 0; }
+    return (data as Array<Record<string, number | null>>).reduce(
+      (acc, r) => acc + (Number(r[column]) || 0),
+      0,
+    );
+  } catch {
+    return 0;
+  }
 }
 
 function fmtBRL(n: number): string {
-  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+  return n.toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  });
 }
 
 export const getHomeDashboard = createServerFn({ method: "POST" })
@@ -70,13 +86,20 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
     const sections: ModuleSection[] = [];
 
     if (enabledModules.includes("crm")) {
-      const [leadsCount, dealsCreated, dealsWonCount, dealsWonValue, pipelineOpen] = await Promise.all([
-        safeCount(supabase, "leads", (q) => q.gte("created_at", from).lte("created_at", to)),
-        safeCount(supabase, "deals", (q) => q.gte("created_at", from).lte("created_at", to)),
-        safeCount(supabase, "deals", (q) => q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to)),
-        safeSum(supabase, "deals", "value", (q) => q.eq("stage", "won").gte("closed_at", from).lte("closed_at", to)),
-        safeSum(supabase, "deals", "value", (q) => q.not("stage", "in", "(won,lost)")),
-      ]);
+      const [leadsCount, dealsCreated, dealsWonCount, dealsWonValue, pipelineOpen] =
+        await Promise.all([
+          safeCount(supabase, "leads", (q) => q.gte("created_at", from).lte("created_at", to)),
+          safeCount(supabase, "deals", (q) => q.gte("created_at", from).lte("created_at", to)),
+          // `deals` não tem coluna de fechamento; usa a última atualização como janela.
+          safeCount(supabase, "deals", (q) =>
+            q.eq("stage", "won").gte("updated_at", from).lte("updated_at", to),
+          ),
+          safeSum(supabase, "deals", "value", (q) =>
+            q.eq("stage", "won").gte("updated_at", from).lte("updated_at", to),
+          ),
+
+          safeSum(supabase, "deals", "value", (q) => q.not("stage", "in", "(won,lost)")),
+        ]);
       sections.push({
         moduleId: "crm",
         kpis: [
@@ -90,9 +113,15 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
 
     if (enabledModules.includes("ats")) {
       const [candidates, applications, interviews, offers] = await Promise.all([
-        safeCount(supabase, "ats_candidates", (q) => q.gte("created_at", from).lte("created_at", to)),
-        safeCount(supabase, "ats_applications", (q) => q.gte("created_at", from).lte("created_at", to)),
-        safeCount(supabase, "ats_interviews", (q) => q.gte("created_at", from).lte("created_at", to)),
+        safeCount(supabase, "ats_candidates", (q) =>
+          q.gte("created_at", from).lte("created_at", to),
+        ),
+        safeCount(supabase, "ats_applications", (q) =>
+          q.gte("created_at", from).lte("created_at", to),
+        ),
+        safeCount(supabase, "ats_interviews", (q) =>
+          q.gte("created_at", from).lte("created_at", to),
+        ),
         safeCount(supabase, "ats_offers", (q) => q.gte("created_at", from).lte("created_at", to)),
       ]);
       sections.push({
@@ -122,8 +151,10 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
 
     if (enabledModules.includes("projects")) {
       const [tasksDone, activeProjects] = await Promise.all([
-        safeCount(supabase, "project_tasks", (q) => q.eq("status", "done").gte("updated_at", from).lte("updated_at", to)),
-        safeCount(supabase, "project_spaces", (q) => q.eq("status", "active")),
+        safeCount(supabase, "project_tasks", (q) =>
+          q.eq("status", "done").gte("updated_at", from).lte("updated_at", to),
+        ),
+        safeCount(supabase, "projects", (q) => q.eq("status", "active")),
       ]);
       sections.push({
         moduleId: "projects",
@@ -136,9 +167,15 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
 
     if (enabledModules.includes("finance")) {
       const [recvOpen, payOpen, paymentsIn] = await Promise.all([
-        safeSum(supabase, "financial_entries", "amount", (q) => q.eq("direction", "receivable").in("status", ["open", "partial", "overdue"])),
-        safeSum(supabase, "financial_entries", "amount", (q) => q.eq("direction", "payable").in("status", ["open", "partial", "overdue"])),
-        safeSum(supabase, "financial_payments", "amount", (q) => q.gte("paid_at", from).lte("paid_at", to)),
+        safeSum(supabase, "financial_entries", "amount", (q) =>
+          q.eq("direction", "receivable").in("status", ["open", "partial", "overdue"]),
+        ),
+        safeSum(supabase, "financial_entries", "amount", (q) =>
+          q.eq("direction", "payable").in("status", ["open", "partial", "overdue"]),
+        ),
+        safeSum(supabase, "financial_payments", "amount", (q) =>
+          q.gte("paid_at", from).lte("paid_at", to),
+        ),
       ]);
       sections.push({
         moduleId: "finance",
