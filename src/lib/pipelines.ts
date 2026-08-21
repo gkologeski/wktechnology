@@ -100,41 +100,11 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
     },
   });
 
-  // Seed default pipeline if user has none
-  useEffect(() => {
-    if (!user || q.isLoading || q.data === undefined) return;
-    if (q.data.length > 0) return;
-    (async () => {
-      const seedStages = entity === "ticket" ? defaultTicketStages() : defaultDealStages();
-      const seedName =
-        entity === "deal"
-          ? "Pipeline padrão"
-          : entity === "lead"
-            ? "Funil de Leads"
-            : "Pipeline de Tickets";
-      // Resolve workspace ativo p/ não depender da ordem dos triggers de RLS.
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("active_workspace_id")
-        .eq("id", user.id)
-        .maybeSingle();
-      const workspaceId =
-        (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
-      const { error } = await supabase.from("pipelines").insert({
-        owner_id: user.id,
-        ...(workspaceId ? { workspace_id: workspaceId } : {}),
-        entity,
-        name: seedName,
-        is_default: true,
-        stages: seedStages as unknown as never,
-      } as never);
-      if (error) {
-        console.error("[pipelines] seed default falhou:", error);
-      } else {
-        qc.invalidateQueries({ queryKey: ["pipelines", entity] });
-      }
-    })();
-  }, [user, entity, q.isLoading, q.data, qc]);
+  // A criação do pipeline padrão é feita no servidor (useEnsureDefaultPipeline),
+  // chamada apenas pelas telas de listagem — nunca aqui, para não duplicar
+  // registros quando vários componentes usam este hook na mesma tela.
+
+
 
   const pipelines = q.data ?? [];
 
