@@ -13,6 +13,7 @@ const PROSPECTING_MODE_QUEUE_NAME = "Modo Prospecção (rápida)";
 const PROSPECTING_MODE_LIMIT = 500;
 
 import { useAuth } from "@/lib/auth";
+import { useEnsureDefaultPipeline } from "@/lib/pipelines";
 import { toast } from "sonner";
 import {
   useLeadStages,
@@ -276,6 +277,7 @@ function LeadsHubspotView() {
   } | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
 
+  useEnsureDefaultPipeline("lead");
   const { stages } = useLeadStages();
   const stagesKey = stages.map((s) => s.value).join(",");
 
