@@ -22,7 +22,24 @@ export type DealFilters = {
   customEnd: string;
   minValue: string;
   search: string;
+  /** Filtro pela data real de fechamento (closed_at para ganhos, lost_at para perdidos). */
+  closedPeriod: DatePreset;
+  closedStart: string;
+  closedEnd: string;
 };
+
+export const EMPTY_DEAL_FILTERS: DealFilters = {
+  ownerId: "",
+  period: "any",
+  customStart: "",
+  customEnd: "",
+  minValue: "",
+  search: "",
+  closedPeriod: "any",
+  closedStart: "",
+  closedEnd: "",
+};
+
 
 export const PERIOD_LABELS: Record<DealPeriod, string> = {
   ...DATE_PRESET_LABELS,
