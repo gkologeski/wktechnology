@@ -129,6 +129,7 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
         const { data: meeting, error } = await supabaseAdmin
           .from("meetings")
           .insert({
+            // meetings.owner_id referencia workspaces (não usuários).
             owner_id: auth.workspaceId,
             workspace_id: auth.workspaceId,
             host_user_id: auth.ownerId,
@@ -153,8 +154,8 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
           });
 
         // Registra a reunião na timeline da entidade vinculada
-        await supabaseAdmin.from("activities").insert({
-          owner_id: auth.workspaceId,
+        const { error: activityError } = await supabaseAdmin.from("activities").insert({
+          owner_id: auth.ownerId,
           workspace_id: auth.workspaceId,
           created_by: auth.ownerId,
           assigned_to: input.assigned_to ?? auth.ownerId,
@@ -167,6 +168,12 @@ export const Route = createFileRoute("/api/public/v1/meetings")({
           related_deal_id: input.deal_id ?? null,
           external_ids: { meeting_id: meeting.id, provider: "jitsi", room_name: room },
         });
+        // A reunião já existe; a falha de timeline é registrada para diagnóstico.
+        if (activityError)
+          console.error(
+            "[api/public/v1/meetings] falha ao registrar timeline:",
+            activityError.message,
+          );
 
         const origin = new URL(request.url).origin;
         return Response.json({

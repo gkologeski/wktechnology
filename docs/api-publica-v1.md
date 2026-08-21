@@ -406,7 +406,7 @@ Erros específicos: `404 lead_not_found`, `404 contact_not_found`,
 | `lead_id`    | filtra reuniões de um lead            |
 | `contact_id` | filtra reuniões de um contato         |
 | `deal_id`    | filtra reuniões de um negócio         |
-| `status`     | ex.: `scheduled`, `canceled`, `ended` |
+| `status`     | ex.: `scheduled`, `live`, `ended`, `cancelled` |
 
 Além disso, `from`/`to`/`limit`/`offset`/`page`/`order` da seção 3 (aplicados a
 `scheduled_at`).
@@ -426,7 +426,7 @@ curl "$BASE_URL/api/public/v1/meetings?lead_id=$LEAD_ID&status=scheduled&order=a
 
 Corpo vazio é aceito. Efeitos:
 
-- `status` vira `canceled` e `ended_at` é preenchido quando ainda estava vazio;
+- `status` vira `cancelled` e `ended_at` é preenchido quando ainda estava vazio;
 - a atividade da timeline recebe o prefixo `[Cancelada]` e o motivo no corpo;
 - **idempotente**: reunião já cancelada devolve `200` com o estado atual.
 
@@ -444,7 +444,7 @@ Resposta `200`:
   "data": {
     "id": "c72a1d90-3f11-4a55-9d8c-2b7e5f0a1234",
     "title": "Reunião de descoberta — Empresa Exemplo",
-    "status": "canceled",
+    "status": "cancelled",
     "scheduled_at": "2026-08-25T17:30:00.000Z",
     "ended_at": "2026-08-21T13:05:00.000Z",
     "related_lead_id": "8f1c2f4e-0b52-4b0a-9f0e-6a1e2b3c4d5f"

@@ -39,7 +39,7 @@ export const Route = createFileRoute("/api/public/v1/meetings/$id/reschedule")({
           .maybeSingle();
         if (!meeting) return jsonError("meeting_not_found", 404);
 
-        if (meeting.status === "canceled") return jsonError("meeting_canceled", 409);
+        if (meeting.status === "cancelled") return jsonError("meeting_canceled", 409);
         if (meeting.status === "ended" || meeting.ended_at)
           return jsonError("meeting_already_ended", 409);
 
