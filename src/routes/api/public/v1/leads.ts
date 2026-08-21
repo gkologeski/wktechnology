@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/public/v1/leads")({
           .select(
             "id, first_name, last_name, email, phone, company_name, status, source, created_at",
           )
-          .eq("owner_id", auth.ownerId)
+          .eq("workspace_id", auth.workspaceId)
           .order("created_at", { ascending: false })
           .limit(limit);
         return Response.json({ data: data ?? [] });
@@ -51,7 +51,14 @@ export const Route = createFileRoute("/api/public/v1/leads")({
         }
         const { data, error } = await supabaseAdmin
           .from("leads")
-          .insert({ owner_id: auth.ownerId, status: "new", ...parsed.data })
+          .insert({
+            owner_id: auth.ownerId,
+            workspace_id: auth.workspaceId,
+            assigned_to: auth.ownerId,
+            status: "new",
+            ...parsed.data,
+          })
+
           .select(
             "id, first_name, last_name, email, phone, company_name, status, source, created_at",
           )

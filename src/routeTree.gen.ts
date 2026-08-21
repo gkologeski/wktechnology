@@ -268,6 +268,7 @@ import { Route as ApiPublicZapierSubscribeRouteImport } from './routes/api/publi
 import { Route as ApiPublicWidgetSessionRouteImport } from './routes/api/public/widget/session'
 import { Route as ApiPublicWidgetScriptRouteImport } from './routes/api/public/widget/script'
 import { Route as ApiPublicWidgetMessagesRouteImport } from './routes/api/public/widget/messages'
+import { Route as ApiPublicV1MeetingsRouteImport } from './routes/api/public/v1/meetings'
 import { Route as ApiPublicV1LeadsRouteImport } from './routes/api/public/v1/leads'
 import { Route as ApiPublicV1DealsRouteImport } from './routes/api/public/v1/deals'
 import { Route as ApiPublicV1ContactsRouteImport } from './routes/api/public/v1/contacts'
@@ -1840,6 +1841,11 @@ const ApiPublicWidgetMessagesRoute = ApiPublicWidgetMessagesRouteImport.update({
   path: '/api/public/widget/messages',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicV1MeetingsRoute = ApiPublicV1MeetingsRouteImport.update({
+  id: '/api/public/v1/meetings',
+  path: '/api/public/v1/meetings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicV1LeadsRoute = ApiPublicV1LeadsRouteImport.update({
   id: '/api/public/v1/leads',
   path: '/api/public/v1/leads',
@@ -2746,6 +2752,7 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
+  '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3100,6 +3107,7 @@ export interface FileRoutesByTo {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
+  '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3462,6 +3470,7 @@ export interface FileRoutesById {
   '/api/public/v1/contacts': typeof ApiPublicV1ContactsRoute
   '/api/public/v1/deals': typeof ApiPublicV1DealsRoute
   '/api/public/v1/leads': typeof ApiPublicV1LeadsRoute
+  '/api/public/v1/meetings': typeof ApiPublicV1MeetingsRoute
   '/api/public/widget/messages': typeof ApiPublicWidgetMessagesRoute
   '/api/public/widget/script': typeof ApiPublicWidgetScriptRoute
   '/api/public/widget/session': typeof ApiPublicWidgetSessionRoute
@@ -3824,6 +3833,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
+    | '/api/public/v1/meetings'
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
@@ -4178,6 +4188,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
+    | '/api/public/v1/meetings'
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
@@ -4539,6 +4550,7 @@ export interface FileRouteTypes {
     | '/api/public/v1/contacts'
     | '/api/public/v1/deals'
     | '/api/public/v1/leads'
+    | '/api/public/v1/meetings'
     | '/api/public/widget/messages'
     | '/api/public/widget/script'
     | '/api/public/widget/session'
@@ -4671,6 +4683,7 @@ export interface RootRouteChildren {
   ApiPublicV1ContactsRoute: typeof ApiPublicV1ContactsRoute
   ApiPublicV1DealsRoute: typeof ApiPublicV1DealsRoute
   ApiPublicV1LeadsRoute: typeof ApiPublicV1LeadsRoute
+  ApiPublicV1MeetingsRoute: typeof ApiPublicV1MeetingsRoute
   ApiPublicWidgetMessagesRoute: typeof ApiPublicWidgetMessagesRoute
   ApiPublicWidgetScriptRoute: typeof ApiPublicWidgetScriptRoute
   ApiPublicWidgetSessionRoute: typeof ApiPublicWidgetSessionRoute
@@ -6506,6 +6519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWidgetMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/meetings': {
+      id: '/api/public/v1/meetings'
+      path: '/api/public/v1/meetings'
+      fullPath: '/api/public/v1/meetings'
+      preLoaderRoute: typeof ApiPublicV1MeetingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/leads': {
       id: '/api/public/v1/leads'
       path: '/api/public/v1/leads'
@@ -8110,6 +8130,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1ContactsRoute: ApiPublicV1ContactsRoute,
   ApiPublicV1DealsRoute: ApiPublicV1DealsRoute,
   ApiPublicV1LeadsRoute: ApiPublicV1LeadsRoute,
+  ApiPublicV1MeetingsRoute: ApiPublicV1MeetingsRoute,
   ApiPublicWidgetMessagesRoute: ApiPublicWidgetMessagesRoute,
   ApiPublicWidgetScriptRoute: ApiPublicWidgetScriptRoute,
   ApiPublicWidgetSessionRoute: ApiPublicWidgetSessionRoute,
