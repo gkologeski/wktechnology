@@ -71,12 +71,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
     "techsales.prospecting_scripts",
     "techsales.prospecting_voice",
   ],
-  "/settings/prospecting": [
-    "techsales.prospecting_search",
-    "techsales.prospecting_enrichment",
-  ],
-
-
+  "/settings/prospecting": ["techsales.prospecting_search", "techsales.prospecting_enrichment"],
 
   // --- Sistema / workspace ---------------------------------------------------
   "/home": ["system.home"],
