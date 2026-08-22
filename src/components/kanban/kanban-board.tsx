@@ -57,6 +57,18 @@ export type KanbanBoardProps<T extends { id: string }> = {
   error?: unknown;
   emptyState?: ReactNode;
   ariaLabel?: string;
+  /** Habilita seleção de cards + ações em massa (mesma barra dos grids). */
+  selectable?: boolean;
+  /** Rótulo singular da entidade usado nos diálogos em massa. */
+  entityLabel?: string;
+  /** Coluna de responsável para atribuição em massa (`null` desabilita). */
+  assignColumn?: string | null;
+  /** Entidade CRM para criação de atividade em massa. */
+  activityEntity?: "leads" | "contacts" | "deals" | "companies";
+  /** Guarda de RBAC na UI para exclusão em massa. */
+  canDelete?: boolean;
+  /** Rótulo para cada card na seleção (acessibilidade). */
+  cardLabel?: (row: T) => string;
 };
 
 
@@ -74,10 +86,18 @@ export function KanbanBoard<T extends { id: string }>({
   error,
   emptyState,
   ariaLabel = "Quadro Kanban",
+  selectable = false,
+  entityLabel = "registro",
+  assignColumn = "assigned_to",
+  activityEntity,
+  canDelete = false,
+  cardLabel,
 }: KanbanBoardProps<T>) {
   const qc = useQueryClient();
+  const selection = useBoardSelection(rows);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
+
 
   const draggable = !readOnly && canUpdate;
 
