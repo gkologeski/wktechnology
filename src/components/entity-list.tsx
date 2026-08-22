@@ -35,6 +35,9 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { BulkActionBar } from "@/components/bulk-action-bar";
 import { BulkEditDialog, type BulkField } from "@/components/bulk-edit-dialog";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
+import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
+
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
 import { FilterBuilderDialog } from "@/components/filter-builder-dialog";
@@ -68,7 +71,6 @@ import { EmailInput } from "@/components/ui/email-input";
 import { isEmail } from "@/lib/validators";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
-
 
 type Field = {
   name: string;
@@ -345,7 +347,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     qc.invalidateQueries({ queryKey: [table] });
   };
 
-
   const exportCsv = (rowsToExport?: T[]) => {
     const out = rowsToExport ?? filtered;
     if (!out.length) return toast.error("Nada para exportar");
@@ -476,6 +477,9 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const ids = Array.from(selectedIds);
   const hasSelection = ids.length > 0;
   const hasFilter = view.filters.conditions.length > 0;
+  // Quando a tabela está no catálogo dinâmico, a edição em massa oferece
+  // qualquer campo permitido da entidade (não só a lista fixa da tela).
+  const dynamicBulkEntity = isBulkEditEntity(table) ? table : null;
 
   // Singular entity label for CTA ("Criar lead")
   const entitySingular =
@@ -587,11 +591,12 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>
             Exportar selecionados
           </Button>
-          {bulkEditFields && bulkEditFields.length > 0 && (
+          {(dynamicBulkEntity || (bulkEditFields && bulkEditFields.length > 0)) && (
             <Button variant="outline" size="sm" onClick={() => setBulkEditOpen(true)}>
               Editar em massa
             </Button>
           )}
+
           {table !== "activities" && (
             <Button variant="outline" size="sm" onClick={() => setBulkActivityOpen(true)}>
               <ListTodo className="h-4 w-4 mr-1" /> Criar atividade
@@ -925,18 +930,33 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         onSaved={() => qc.invalidateQueries({ queryKey: [table] })}
       />
 
-      {bulkEditFields && (
-        <BulkEditDialog
+      {dynamicBulkEntity ? (
+        <BulkEditFieldsDialog
           open={bulkEditOpen}
           setOpen={setBulkEditOpen}
-          table={table}
+          entity={dynamicBulkEntity}
           ids={ids}
-          fields={bulkEditFields}
+          entityLabel={entitySingular}
+          priorityFields={bulkEditFields?.map((f) => f.name)}
           onDone={() => {
             clearSel();
             qc.invalidateQueries({ queryKey: [table] });
           }}
         />
+      ) : (
+        bulkEditFields && (
+          <BulkEditDialog
+            open={bulkEditOpen}
+            setOpen={setBulkEditOpen}
+            table={table}
+            ids={ids}
+            fields={bulkEditFields}
+            onDone={() => {
+              clearSel();
+              qc.invalidateQueries({ queryKey: [table] });
+            }}
+          />
+        )
       )}
 
       <ConfirmCountDialog

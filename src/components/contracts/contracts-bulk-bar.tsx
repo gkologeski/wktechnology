@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Trash2, Type, X } from "lucide-react";
+import { Loader2, Pencil, Trash2, Type, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
 } from "@/lib/contracts.functions";
 import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
 import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import type { ContractRow } from "@/components/contracts/contracts-grouped-list";
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
@@ -59,6 +60,7 @@ export function ContractsBulkBar({
     staleTime: 60_000,
   });
   const [busy, setBusy] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const count = selected.length;
   const blocked = selected.filter((r) => !canDelete(r));
@@ -196,9 +198,30 @@ export function ContractsBulkBar({
         {!deleteAllowed ? <TooltipContent>{DELETE_NOT_ALLOWED_TITLE}</TooltipContent> : null}
       </Tooltip>
 
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={busy || count === 0}
+        onClick={() => setBulkEditOpen(true)}
+      >
+        <Pencil className="mr-1 h-4 w-4" aria-hidden="true" /> Editar em massa
+      </Button>
+
       <Button variant="ghost" size="sm" className="ml-auto" onClick={onClear} disabled={busy}>
         <X className="mr-1 h-4 w-4" aria-hidden="true" /> Limpar seleção
       </Button>
+
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="contracts"
+        ids={selected.map((r) => r.id)}
+        entityLabel="contrato"
+        onDone={() => {
+          void qc.invalidateQueries({ queryKey: ["contracts"] });
+          onClear();
+        }}
+      />
     </div>
   );
 }

@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Play, Trophy, X as XIcon } from "lucide-react";
+import { MoreHorizontal, Pencil, Play, Trophy, X as XIcon } from "lucide-react";
 import { startFocusQueue } from "@/lib/focus-queue";
 import {
   HeaderCheckbox,
@@ -33,6 +33,7 @@ import type { DealLookups } from "@/components/deals/deals-board";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 
 type SortKey = "name" | "value" | "expected_close_date" | "created_at";
 
@@ -76,6 +77,7 @@ export function DealsHubspotTable({
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const sorted = useMemo(() => {
     const copy = [...deals];
@@ -380,6 +382,9 @@ export function DealsHubspotTable({
             >
               <Play className="mr-1 h-3.5 w-3.5" /> Iniciar fila
             </Button>
+            <Button variant="ghost" size="sm" className="h-7" onClick={() => setBulkEditOpen(true)}>
+              <Pencil className="mr-1 h-3.5 w-3.5" /> Editar em massa
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -388,6 +393,7 @@ export function DealsHubspotTable({
             >
               Excluir
             </Button>
+
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
               <XIcon className="h-3.5 w-3.5" />
             </Button>
@@ -522,6 +528,18 @@ export function DealsHubspotTable({
         onOpenChange={(b) => !b && setLostTarget(null)}
         dealName={lostTarget?.name ?? null}
         onConfirm={confirmLost}
+      />
+
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="deals"
+        ids={Array.from(selectedIds)}
+        entityLabel="negócio"
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["deals"] });
+        }}
       />
     </div>
   );
