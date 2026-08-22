@@ -76,6 +76,8 @@ export function DealsHubspotTable({
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+
 
   const sorted = useMemo(() => {
     const copy = [...deals];
