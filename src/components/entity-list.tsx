@@ -479,6 +479,10 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   const ids = Array.from(selectedIds);
   const hasSelection = ids.length > 0;
   const hasFilter = view.filters.conditions.length > 0;
+  // Quando a tabela está no catálogo dinâmico, a edição em massa oferece
+  // qualquer campo permitido da entidade (não só a lista fixa da tela).
+  const dynamicBulkEntity = isBulkEditEntity(table) ? table : null;
+
 
   // Singular entity label for CTA ("Criar lead")
   const entitySingular =
