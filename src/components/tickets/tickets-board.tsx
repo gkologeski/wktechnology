@@ -23,11 +23,13 @@ function Column({
   stage,
   count,
   hotCount,
+  headerExtra,
   children,
 }: {
   stage: PipelineStage;
   count: number;
   hotCount?: number;
+  headerExtra?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value });
@@ -42,6 +44,7 @@ function Column({
     >
       <div className="px-3 pt-2.5 pb-2 border-b border-[var(--hs-divider)] sticky top-0 bg-[var(--hs-surface)] z-10 rounded-t-md">
         <div className="flex items-center gap-1.5 min-w-0">
+          {headerExtra}
           <span
             className="inline-block h-2 w-2 rounded-sm shrink-0"
             style={{ background: color }}
