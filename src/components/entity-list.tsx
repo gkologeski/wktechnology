@@ -926,19 +926,35 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
         onSaved={() => qc.invalidateQueries({ queryKey: [table] })}
       />
 
-      {bulkEditFields && (
-        <BulkEditDialog
+      {dynamicBulkEntity ? (
+        <BulkEditFieldsDialog
           open={bulkEditOpen}
           setOpen={setBulkEditOpen}
-          table={table}
+          entity={dynamicBulkEntity}
           ids={ids}
-          fields={bulkEditFields}
+          entityLabel={entitySingular}
+          priorityFields={bulkEditFields?.map((f) => f.name)}
           onDone={() => {
             clearSel();
             qc.invalidateQueries({ queryKey: [table] });
           }}
         />
+      ) : (
+        bulkEditFields && (
+          <BulkEditDialog
+            open={bulkEditOpen}
+            setOpen={setBulkEditOpen}
+            table={table}
+            ids={ids}
+            fields={bulkEditFields}
+            onDone={() => {
+              clearSel();
+              qc.invalidateQueries({ queryKey: [table] });
+            }}
+          />
+        )
       )}
+
 
       <ConfirmCountDialog
         open={bulkDeleteOpen}
