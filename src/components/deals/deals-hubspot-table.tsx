@@ -534,6 +534,19 @@ export function DealsHubspotTable({
         dealName={lostTarget?.name ?? null}
         onConfirm={confirmLost}
       />
+
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="deals"
+        ids={Array.from(selectedIds)}
+        entityLabel="negócio"
+        onDone={() => {
+          clearSelection();
+          qc.invalidateQueries({ queryKey: ["deals"] });
+        }}
+      />
+
     </div>
   );
 }
