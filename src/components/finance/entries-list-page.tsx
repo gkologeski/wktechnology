@@ -257,6 +257,7 @@ export function EntriesListPage({
           stageField="status"
           selectable
           entityLabel="lançamento"
+          canUpdate={canUpdateEntries}
           canDelete={canAny(["techfinance.entries.manage.workspace","techfinance.entries.delete.workspace","techfinance.entries.delete.own"])}
           readOnly
           isLoading={isLoading}
