@@ -729,6 +729,9 @@ function ContractsPage() {
               rows={rows as Array<ContractRow & { id: string }>}
               table="contracts"
               stageField="status"
+              selectable
+              entityLabel="contrato"
+              canDelete={false}
               readOnly
               ariaLabel="Quadro de contratos por status"
               columns={Object.entries(STATUS_LABEL).map(([value, label]) => ({

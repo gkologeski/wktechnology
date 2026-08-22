@@ -144,6 +144,9 @@ function NfseListPage() {
           rows={items}
           table="nfse_invoices"
           stageField="status"
+          selectable
+          entityLabel="NFS-e"
+          canDelete={false}
           readOnly
           isLoading={isLoading}
           error={error}

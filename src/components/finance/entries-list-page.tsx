@@ -255,6 +255,9 @@ export function EntriesListPage({
           rows={rows as Array<Entry & { id: string }>}
           table="financial_entries"
           stageField="status"
+          selectable
+          entityLabel="lançamento"
+          canDelete={canAny(["techfinance.entries.manage.workspace","techfinance.entries.delete.workspace","techfinance.entries.delete.own"])}
           readOnly
           isLoading={isLoading}
           error={error}

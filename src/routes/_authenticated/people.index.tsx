@@ -237,6 +237,9 @@ function PeoplePage() {
           rows={rows as Array<(typeof rows)[number] & { id: string }>}
           table="people"
           stageField="status"
+          selectable
+          entityLabel="pessoa"
+          canDelete={canAny(["techpeople.people.delete.workspace","techpeople.people.delete.own"])}
           canUpdate={canUpdatePerson}
           isLoading={isLoading}
           invalidateKeys={[["people"]]}

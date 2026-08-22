@@ -188,6 +188,9 @@ function ProjectsPage() {
           rows={rows as Array<{ id: string }>}
           table="projects"
           stageField="status"
+          selectable
+          entityLabel="projeto"
+          canDelete={canAny(["techprojects.projects.delete.workspace","techprojects.projects.delete.own"])}
           canUpdate={canAny([
             "techprojects.projects.update.workspace",
             "techprojects.projects.update.team",
