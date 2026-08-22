@@ -3,12 +3,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { AlertCircle, Building2, Clock, User as UserIcon } from "lucide-react";
 import type { TicketRow } from "./types";
 import type { KanbanSignals } from "@/lib/kanban/signals";
-import {
-  KanbanSignalIcons,
-  kanbanBorderStyle,
-} from "@/components/kanban/kanban-signal-indicator";
+import { KanbanSignalIcons, kanbanBorderStyle } from "@/components/kanban/kanban-signal-indicator";
 import { BoardCardCheckbox } from "@/components/kanban/board-card-checkbox";
-
 
 const PRIORITY_VAR: Record<string, string> = {
   low: "var(--priority-low)",
@@ -124,7 +120,6 @@ export function TicketCard({
           )}
         </div>
       </div>
-
 
       {(contactName || companyName) && (
         <div className="mt-1.5 space-y-0.5 pl-1">

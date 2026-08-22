@@ -89,12 +89,11 @@ export function DealsBoardCard({
     borderStyle.borderLeftColor = "var(--hs-stage-4)";
   }
 
-  const daysToClose =
-    deal.expected_close_date
-      ? Math.round(
-          (new Date(deal.expected_close_date).getTime() - Date.now()) / (24 * 60 * 60 * 1000),
-        )
-      : null;
+  const daysToClose = deal.expected_close_date
+    ? Math.round(
+        (new Date(deal.expected_close_date).getTime() - Date.now()) / (24 * 60 * 60 * 1000),
+      )
+    : null;
 
   return (
     <div
@@ -130,7 +129,10 @@ export function DealsBoardCard({
             <TooltipProvider delayDuration={150}>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="flex items-center gap-0.5" aria-label={isHot ? "Negócio quente" : "Alto valor"}>
+                  <span
+                    className="flex items-center gap-0.5"
+                    aria-label={isHot ? "Negócio quente" : "Alto valor"}
+                  >
                     {isHot && (
                       <Flame
                         className="h-3.5 w-3.5"

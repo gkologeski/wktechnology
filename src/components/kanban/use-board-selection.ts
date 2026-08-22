@@ -54,7 +54,10 @@ export function useBoardSelection<T extends { id: string }>(rows: T[]) {
   }, []);
 
   const ids = useMemo(() => Array.from(selectedIds), [selectedIds]);
-  const selectedRows = useMemo(() => rows.filter((r) => selectedIds.has(r.id)), [rows, selectedIds]);
+  const selectedRows = useMemo(
+    () => rows.filter((r) => selectedIds.has(r.id)),
+    [rows, selectedIds],
+  );
 
   return {
     selectedIds,

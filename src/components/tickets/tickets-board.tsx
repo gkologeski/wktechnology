@@ -111,11 +111,7 @@ export function TicketsBoard({
   const selection = useBoardSelection(tickets);
   const notifyStatus = useServerFn(notifyTicketStatusChange);
 
-  const signals = useMemo(
-    () => computeTicketSignals(tickets, pipeline),
-    [tickets, pipeline],
-  );
-
+  const signals = useMemo(() => computeTicketSignals(tickets, pipeline), [tickets, pipeline]);
 
   const grouped = useMemo(() => {
     const map: Record<string, TicketRow[]> = {};
@@ -159,9 +155,7 @@ export function TicketsBoard({
 
     qc.setQueryData<TicketRow[]>(["tickets"], (old = []) =>
       old.map((x) =>
-        x.id === id
-          ? { ...x, stage: overId, status: nextStatus, pipeline_id: pipeline.id }
-          : x,
+        x.id === id ? { ...x, stage: overId, status: nextStatus, pipeline_id: pipeline.id } : x,
       ),
     );
 
@@ -202,10 +196,7 @@ export function TicketsBoard({
                   return sb - sa;
                 })
               : raw;
-            const hotCount = rows.reduce(
-              (n, t) => n + (signals.get(t.id)?.isHot ? 1 : 0),
-              0,
-            );
+            const hotCount = rows.reduce((n, t) => n + (signals.get(t.id)?.isHot ? 1 : 0), 0);
             const columnIds = rows.map((t) => t.id);
             const allColumnSelected =
               columnIds.length > 0 && columnIds.every((id) => selection.isSelected(id));
@@ -266,4 +257,3 @@ export function TicketsBoard({
     </DndContext>
   );
 }
-

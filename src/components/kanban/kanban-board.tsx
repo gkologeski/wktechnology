@@ -26,7 +26,6 @@ import { useBoardSelection } from "@/components/kanban/use-board-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
-
 export type KanbanColumn = {
   value: string;
   label: string;
@@ -71,7 +70,6 @@ export type KanbanBoardProps<T extends { id: string }> = {
   cardLabel?: (row: T) => string;
 };
 
-
 export function KanbanBoard<T extends { id: string }>({
   rows,
   table,
@@ -97,7 +95,6 @@ export function KanbanBoard<T extends { id: string }>({
   const selection = useBoardSelection(rows);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
-
 
   const draggable = !readOnly && canUpdate;
 
@@ -131,7 +128,6 @@ export function KanbanBoard<T extends { id: string }>({
       if (deniedIfUnaffected(data, "mover este registro")) return;
       toast.success("Etapa atualizada");
       invalidate();
-
     } finally {
       setMovingId(null);
     }
@@ -300,4 +296,3 @@ export function KanbanBoard<T extends { id: string }>({
     </>
   );
 }
-
