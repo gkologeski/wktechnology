@@ -24,7 +24,9 @@ import {
 } from "@/lib/contracts.functions";
 import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
 import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
+import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import type { ContractRow } from "@/components/contracts/contracts-grouped-list";
+
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "draft", label: "Rascunho" },
