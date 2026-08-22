@@ -72,7 +72,6 @@ import { isEmail } from "@/lib/validators";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
-
 type Field = {
   name: string;
   label: string;
@@ -348,7 +347,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
     qc.invalidateQueries({ queryKey: [table] });
   };
 
-
   const exportCsv = (rowsToExport?: T[]) => {
     const out = rowsToExport ?? filtered;
     if (!out.length) return toast.error("Nada para exportar");
@@ -482,7 +480,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
   // Quando a tabela está no catálogo dinâmico, a edição em massa oferece
   // qualquer campo permitido da entidade (não só a lista fixa da tela).
   const dynamicBulkEntity = isBulkEditEntity(table) ? table : null;
-
 
   // Singular entity label for CTA ("Criar lead")
   const entitySingular =
@@ -961,7 +958,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           />
         )
       )}
-
 
       <ConfirmCountDialog
         open={bulkDeleteOpen}

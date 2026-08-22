@@ -27,7 +27,6 @@ import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import type { ContractRow } from "@/components/contracts/contracts-grouped-list";
 
-
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: "draft", label: "Rascunho" },
   { value: "in_review", label: "Em revisão" },
@@ -62,7 +61,6 @@ export function ContractsBulkBar({
   });
   const [busy, setBusy] = useState(false);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
-
 
   const count = selected.length;
   const blocked = selected.filter((r) => !canDelete(r));
@@ -227,4 +225,3 @@ export function ContractsBulkBar({
     </div>
   );
 }
-

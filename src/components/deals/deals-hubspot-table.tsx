@@ -35,7 +35,6 @@ import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 
-
 type SortKey = "name" | "value" | "expected_close_date" | "created_at";
 
 const STAGE_TONE: Record<string, keyof typeof TONES> = {
@@ -79,7 +78,6 @@ export function DealsHubspotTable({
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
-
 
   const sorted = useMemo(() => {
     const copy = [...deals];
@@ -384,12 +382,7 @@ export function DealsHubspotTable({
             >
               <Play className="mr-1 h-3.5 w-3.5" /> Iniciar fila
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7"
-              onClick={() => setBulkEditOpen(true)}
-            >
+            <Button variant="ghost" size="sm" className="h-7" onClick={() => setBulkEditOpen(true)}>
               <Pencil className="mr-1 h-3.5 w-3.5" /> Editar em massa
             </Button>
             <Button
@@ -548,7 +541,6 @@ export function DealsHubspotTable({
           qc.invalidateQueries({ queryKey: ["deals"] });
         }}
       />
-
     </div>
   );
 }
