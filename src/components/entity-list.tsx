@@ -587,11 +587,12 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           <Button variant="outline" size="sm" onClick={() => exportCsv(selectedRows)}>
             Exportar selecionados
           </Button>
-          {bulkEditFields && bulkEditFields.length > 0 && (
+          {(dynamicBulkEntity || (bulkEditFields && bulkEditFields.length > 0)) && (
             <Button variant="outline" size="sm" onClick={() => setBulkEditOpen(true)}>
               Editar em massa
             </Button>
           )}
+
           {table !== "activities" && (
             <Button variant="outline" size="sm" onClick={() => setBulkActivityOpen(true)}>
               <ListTodo className="h-4 w-4 mr-1" /> Criar atividade
