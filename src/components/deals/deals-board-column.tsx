@@ -9,6 +9,7 @@ export function DealsBoardColumn({
   weighted,
   count,
   hotCount,
+  headerExtra,
   children,
 }: {
   stage: PipelineStage;
@@ -16,6 +17,8 @@ export function DealsBoardColumn({
   weighted: number;
   count: number;
   hotCount?: number;
+  /** Slot no cabeçalho (ex.: checkbox de seleção da coluna). */
+  headerExtra?: ReactNode;
   children: ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: stage.value });
@@ -33,6 +36,7 @@ export function DealsBoardColumn({
       <div className="px-3 pt-2.5 pb-2 border-b border-[var(--hs-divider)] sticky top-0 bg-[var(--hs-surface)] z-10 rounded-t-md">
         <div className="flex items-baseline justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0">
+            {headerExtra}
             <span
               className="inline-block h-2 w-2 rounded-sm shrink-0"
               style={{ background: color }}

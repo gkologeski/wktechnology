@@ -738,6 +738,8 @@ function TicketsIndex() {
             tickets={filtered}
             lookups={lookups}
             focusMode={focusMode}
+            selectable
+            canDelete
             onOpen={openEdit}
           />
         </TabsContent>

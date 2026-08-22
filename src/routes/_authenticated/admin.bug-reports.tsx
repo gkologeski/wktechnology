@@ -363,6 +363,10 @@ function BugReportsAdminPage() {
           rows={rows as Array<{ id: string; status: string }>}
           table="bug_reports"
           stageField="status"
+          selectable
+          entityLabel="chamado interno"
+          assignColumn={null}
+          canDelete={false}
           ariaLabel="Quadro de chamados internos"
           columns={BUG_REPORT_STATUSES.map((s) => ({
             value: s,

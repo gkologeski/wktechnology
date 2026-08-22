@@ -231,6 +231,10 @@ function ProjectTasksPage() {
           rows={rows as Array<(typeof rows)[number] & { id: string }>}
           table="project_tasks"
           stageField="status"
+          selectable
+          entityLabel="tarefa"
+          assignColumn={"assignee_id"}
+          canDelete={canDelete}
           canUpdate={canUpdate}
           isLoading={isLoading}
           invalidateKeys={[["project_tasks"]]}

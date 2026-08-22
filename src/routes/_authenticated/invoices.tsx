@@ -230,6 +230,9 @@ function InvoicesPage() {
               rows={data?.invoices ?? []}
               table="customer_invoices"
               stageField="status"
+              selectable
+              entityLabel="fatura"
+              canDelete={false}
               readOnly
               isLoading={isLoading}
               error={error}

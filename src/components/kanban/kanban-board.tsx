@@ -20,6 +20,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BoardCardCheckbox } from "@/components/kanban/board-card-checkbox";
+import { useBoardSelection } from "@/components/kanban/use-board-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
 export type KanbanColumn = {
@@ -52,8 +56,19 @@ export type KanbanBoardProps<T extends { id: string }> = {
   error?: unknown;
   emptyState?: ReactNode;
   ariaLabel?: string;
+  /** Habilita seleção de cards + ações em massa (mesma barra dos grids). */
+  selectable?: boolean;
+  /** Rótulo singular da entidade usado nos diálogos em massa. */
+  entityLabel?: string;
+  /** Coluna de responsável para atribuição em massa (`null` desabilita). */
+  assignColumn?: string | null;
+  /** Entidade CRM para criação de atividade em massa. */
+  activityEntity?: "leads" | "contacts" | "deals" | "companies";
+  /** Guarda de RBAC na UI para exclusão em massa. */
+  canDelete?: boolean;
+  /** Rótulo para cada card na seleção (acessibilidade). */
+  cardLabel?: (row: T) => string;
 };
-
 
 export function KanbanBoard<T extends { id: string }>({
   rows,
@@ -69,8 +84,15 @@ export function KanbanBoard<T extends { id: string }>({
   error,
   emptyState,
   ariaLabel = "Quadro Kanban",
+  selectable = false,
+  entityLabel = "registro",
+  assignColumn = "assigned_to",
+  activityEntity,
+  canDelete = false,
+  cardLabel,
 }: KanbanBoardProps<T>) {
   const qc = useQueryClient();
+  const selection = useBoardSelection(rows);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
 
@@ -106,7 +128,6 @@ export function KanbanBoard<T extends { id: string }>({
       if (deniedIfUnaffected(data, "mover este registro")) return;
       toast.success("Etapa atualizada");
       invalidate();
-
     } finally {
       setMovingId(null);
     }
@@ -148,90 +169,130 @@ export function KanbanBoard<T extends { id: string }>({
   }
 
   return (
-    <KanbanScrollContainer ariaLabel={ariaLabel}>
-      <div className="flex gap-3 pb-4">
-        {columns.map((col) => {
-          const stageRows = rows.filter(
-            (r) => (r as Record<string, unknown>)[stageField] === col.value,
-          );
-          return (
-            <div
-              key={col.value}
-              data-kanban-column-root={col.value}
-              className="w-[280px] min-w-[280px] flex-shrink-0 rounded-lg border bg-muted/30 p-2"
-              onDragOver={(e) => {
-                if (draggable) e.preventDefault();
-              }}
-              onDrop={(e) => {
-                if (!draggable) return;
-                e.preventDefault();
-                if (draggingId) void moveTo(draggingId, col.value);
-                setDraggingId(null);
-              }}
-            >
-              <div className="mb-2 flex items-center justify-between px-2 py-1">
-                <span className="flex items-center gap-2 text-sm font-medium">
-                  <span
-                    aria-hidden="true"
-                    className={`h-2 w-2 rounded-full ${col.tone ?? "bg-muted-foreground/40"}`}
-                  />
-                  {col.label}
-                </span>
-                <span className="text-xs text-muted-foreground">{stageRows.length}</span>
-              </div>
-
-              <div className="space-y-2">
-                {stageRows.map((row) => (
-                  <Card
-                    key={row.id}
-                    draggable={draggable}
-                    tabIndex={0}
-                    data-kanban-card
-                    data-kanban-column={col.value}
-                    onDragStart={() => draggable && setDraggingId(row.id)}
-                    onDragEnd={() => setDraggingId(null)}
-                    className={`group relative p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                      draggable ? "cursor-grab active:cursor-grabbing" : ""
-                    } ${movingId === row.id ? "opacity-60" : ""}`}
-                  >
-                    {draggable && columns.length > 1 && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="absolute right-1 top-1 h-6 w-6 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
-                            aria-label="Mover para outra etapa"
-                          >
-                            <MoreVertical className="h-3.5 w-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Mover para</DropdownMenuLabel>
-                          {columns
-                            .filter((c) => c.value !== col.value)
-                            .map((c) => (
-                              <DropdownMenuItem
-                                key={c.value}
-                                onSelect={() => void moveTo(row.id, c.value)}
-                              >
-                                {c.label}
-                              </DropdownMenuItem>
-                            ))}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+    <>
+      <KanbanScrollContainer ariaLabel={ariaLabel}>
+        <div className="flex gap-3 pb-4">
+          {columns.map((col) => {
+            const stageRows = rows.filter(
+              (r) => (r as Record<string, unknown>)[stageField] === col.value,
+            );
+            const columnIds = stageRows.map((r) => r.id);
+            const allColumnSelected =
+              columnIds.length > 0 && columnIds.every((id) => selection.isSelected(id));
+            return (
+              <div
+                key={col.value}
+                data-kanban-column-root={col.value}
+                className="w-[280px] min-w-[280px] flex-shrink-0 rounded-lg border bg-muted/30 p-2"
+                onDragOver={(e) => {
+                  if (draggable) e.preventDefault();
+                }}
+                onDrop={(e) => {
+                  if (!draggable) return;
+                  e.preventDefault();
+                  if (draggingId) void moveTo(draggingId, col.value);
+                  setDraggingId(null);
+                }}
+              >
+                <div className="mb-2 flex items-center justify-between gap-2 px-2 py-1">
+                  <span className="flex min-w-0 items-center gap-2 text-sm font-medium">
+                    {selectable && columnIds.length > 0 && (
+                      <Checkbox
+                        checked={allColumnSelected}
+                        aria-label={`Selecionar coluna ${col.label}`}
+                        onCheckedChange={() => selection.toggleMany(columnIds)}
+                      />
                     )}
-                    {renderCard(row)}
-                  </Card>
-                ))}
-                {stageRows.length === 0 && (
-                  <p className="px-2 py-4 text-center text-xs text-muted-foreground">Vazio</p>
-                )}
+                    <span
+                      aria-hidden="true"
+                      className={`h-2 w-2 shrink-0 rounded-full ${col.tone ?? "bg-muted-foreground/40"}`}
+                    />
+                    <span className="truncate">{col.label}</span>
+                  </span>
+                  <span className="text-xs text-muted-foreground">{stageRows.length}</span>
+                </div>
+
+                <div className="space-y-2">
+                  {stageRows.map((row) => (
+                    <Card
+                      key={row.id}
+                      draggable={draggable}
+                      tabIndex={0}
+                      data-kanban-card
+                      data-kanban-column={col.value}
+                      onDragStart={() => draggable && setDraggingId(row.id)}
+                      onDragEnd={() => setDraggingId(null)}
+                      className={`group relative p-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        draggable ? "cursor-grab active:cursor-grabbing" : ""
+                      } ${movingId === row.id ? "opacity-60" : ""} ${
+                        selection.isSelected(row.id) ? "ring-2 ring-primary" : ""
+                      }`}
+                    >
+                      {draggable && columns.length > 1 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-1 top-1 h-6 w-6 opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
+                              aria-label="Mover para outra etapa"
+                            >
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Mover para</DropdownMenuLabel>
+                            {columns
+                              .filter((c) => c.value !== col.value)
+                              .map((c) => (
+                                <DropdownMenuItem
+                                  key={c.value}
+                                  onSelect={() => void moveTo(row.id, c.value)}
+                                >
+                                  {c.label}
+                                </DropdownMenuItem>
+                              ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                      {selectable ? (
+                        <div className="flex items-start gap-2">
+                          <BoardCardCheckbox
+                            selected={selection.isSelected(row.id)}
+                            label={`Selecionar ${cardLabel?.(row) ?? entityLabel}`}
+                            onToggle={(shift) => selection.toggle(row.id, { columnIds, shift })}
+                          />
+                          <div className="min-w-0 flex-1">{renderCard(row)}</div>
+                        </div>
+                      ) : (
+                        renderCard(row)
+                      )}
+                    </Card>
+                  ))}
+                  {stageRows.length === 0 && (
+                    <p className="px-2 py-4 text-center text-xs text-muted-foreground">Vazio</p>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-    </KanbanScrollContainer>
+            );
+          })}
+        </div>
+      </KanbanScrollContainer>
+
+      {selectable && selection.hasSelection && (
+        <GridBulkBar
+          table={table}
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel={entityLabel}
+          assignColumn={assignColumn}
+          activityEntity={activityEntity}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          onClear={selection.clear}
+          onDone={invalidate}
+        />
+      )}
+    </>
   );
 }

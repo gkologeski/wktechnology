@@ -202,6 +202,9 @@ function OffersPage() {
           rows={rows}
           table="ats_offers"
           stageField="status"
+          selectable
+          entityLabel="oferta"
+          canDelete={canAny(["techhire.offers.delete.workspace","techhire.offers.delete.own"])}
           readOnly
           isLoading={loading}
           ariaLabel="Quadro de ofertas"

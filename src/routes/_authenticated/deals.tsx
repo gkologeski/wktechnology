@@ -408,6 +408,8 @@ function DealsPage() {
               lookups={lookups}
               nextActivities={nextActivities}
               focusMode={focusMode}
+              selectable
+              canDelete
               onOpen={openEdit}
             />
           ) : (

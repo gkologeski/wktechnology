@@ -169,6 +169,9 @@ function IncidentsListPage() {
           rows={filtered as Array<(typeof filtered)[number] & { id: string }>}
           table="people_incidents"
           stageField="status"
+          selectable
+          entityLabel="incidente"
+          canDelete={canAny(["techpeople.wellbeing.incidents.delete.workspace","techpeople.wellbeing.incidents.delete.own","techpeople.incidents.delete.workspace","techpeople.incidents.delete.own"])}
           canUpdate={canUpdateIncident}
           isLoading={isLoading}
           invalidateKeys={[["ws-incidents"]]}
