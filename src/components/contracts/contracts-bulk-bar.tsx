@@ -196,9 +196,31 @@ export function ContractsBulkBar({
         {!deleteAllowed ? <TooltipContent>{DELETE_NOT_ALLOWED_TITLE}</TooltipContent> : null}
       </Tooltip>
 
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={busy || count === 0}
+        onClick={() => setBulkEditOpen(true)}
+      >
+        <Pencil className="mr-1 h-4 w-4" aria-hidden="true" /> Editar em massa
+      </Button>
+
       <Button variant="ghost" size="sm" className="ml-auto" onClick={onClear} disabled={busy}>
         <X className="mr-1 h-4 w-4" aria-hidden="true" /> Limpar seleção
       </Button>
+
+      <BulkEditFieldsDialog
+        open={bulkEditOpen}
+        setOpen={setBulkEditOpen}
+        entity="contracts"
+        ids={selected.map((r) => r.id)}
+        entityLabel="contrato"
+        onDone={() => {
+          void qc.invalidateQueries({ queryKey: ["contracts"] });
+          onClear();
+        }}
+      />
     </div>
   );
 }
+
