@@ -20,7 +20,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
+import { Checkbox } from "@/components/ui/checkbox";
+import { BoardCardCheckbox } from "@/components/kanban/board-card-checkbox";
+import { useBoardSelection } from "@/components/kanban/use-board-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+
 
 export type KanbanColumn = {
   value: string;
