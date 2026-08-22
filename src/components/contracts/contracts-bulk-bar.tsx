@@ -61,6 +61,8 @@ export function ContractsBulkBar({
     staleTime: 60_000,
   });
   const [busy, setBusy] = useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = useState(false);
+
 
   const count = selected.length;
   const blocked = selected.filter((r) => !canDelete(r));
