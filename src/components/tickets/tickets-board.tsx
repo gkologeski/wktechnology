@@ -18,6 +18,9 @@ import type { TicketRow, TicketStatus } from "./types";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { computeTicketSignals } from "@/lib/kanban/tickets-signals";
 import { Flame } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useBoardSelection } from "@/components/kanban/use-board-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 
 function Column({
   stage,
@@ -85,6 +88,9 @@ export function TicketsBoard({
   tickets,
   lookups,
   focusMode,
+  selectable = false,
+  canUpdate = true,
+  canDelete = false,
   onOpen,
 }: {
   pipeline: Pipeline;
@@ -95,9 +101,14 @@ export function TicketsBoard({
     owners: Map<string, string>;
   };
   focusMode?: boolean;
+  /** Habilita seleção de cards + ações em massa (mesma barra dos grids). */
+  selectable?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
   onOpen: (t: TicketRow) => void;
 }) {
   const qc = useQueryClient();
+  const selection = useBoardSelection(tickets);
   const notifyStatus = useServerFn(notifyTicketStatusChange);
 
   const signals = useMemo(
@@ -195,8 +206,25 @@ export function TicketsBoard({
               (n, t) => n + (signals.get(t.id)?.isHot ? 1 : 0),
               0,
             );
+            const columnIds = rows.map((t) => t.id);
+            const allColumnSelected =
+              columnIds.length > 0 && columnIds.every((id) => selection.isSelected(id));
             return (
-              <Column key={s.value} stage={s} count={rows.length} hotCount={hotCount}>
+              <Column
+                key={s.value}
+                stage={s}
+                count={rows.length}
+                hotCount={hotCount}
+                headerExtra={
+                  selectable && columnIds.length > 0 ? (
+                    <Checkbox
+                      checked={allColumnSelected}
+                      aria-label={`Selecionar coluna ${s.label}`}
+                      onCheckedChange={() => selection.toggleMany(columnIds)}
+                    />
+                  ) : undefined
+                }
+              >
                 {rows.map((t) => {
                   const sig = signals.get(t.id);
                   return (
@@ -209,6 +237,9 @@ export function TicketsBoard({
                       ownerName={t.assignee_id ? lookups.owners.get(t.assignee_id) : undefined}
                       signals={sig}
                       dimmed={focusMode && sig?.klass === "cold"}
+                      selectable={selectable}
+                      selected={selection.isSelected(t.id)}
+                      onToggleSelect={(shift) => selection.toggle(t.id, { columnIds, shift })}
                       onClick={() => onOpen(t)}
                     />
                   );
@@ -218,6 +249,20 @@ export function TicketsBoard({
           })}
         </div>
       </KanbanScrollContainer>
+
+      {selectable && selection.hasSelection && (
+        <GridBulkBar
+          table="tickets"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="chamado"
+          assignColumn="assignee_id"
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          onClear={selection.clear}
+          onDone={() => void qc.invalidateQueries({ queryKey: ["tickets"] })}
+        />
+      )}
     </DndContext>
   );
 }

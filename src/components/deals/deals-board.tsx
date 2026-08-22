@@ -10,6 +10,9 @@ import { DealsBoardColumn } from "./deals-board-column";
 import { DealsBoardCard } from "./deals-board-card";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useBoardSelection } from "@/components/kanban/use-board-selection";
+import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 
 export type DealLookups = {
   companies: Map<string, string>;
@@ -23,6 +26,9 @@ export function DealsBoard({
   lookups,
   nextActivities,
   focusMode,
+  selectable = false,
+  canUpdate = true,
+  canDelete = false,
   onOpen,
 }: {
   pipeline: Pipeline;
@@ -30,9 +36,14 @@ export function DealsBoard({
   lookups: DealLookups;
   nextActivities?: Map<string, string>;
   focusMode?: boolean;
+  /** Habilita seleção de cards + ações em massa (mesma barra dos grids). */
+  selectable?: boolean;
+  canUpdate?: boolean;
+  canDelete?: boolean;
   onOpen: (d: Deal) => void;
 }) {
   const qc = useQueryClient();
+  const selection = useBoardSelection(deals);
 
   const signals = useMemo(
     () => computeDealSignals(deals, pipeline, nextActivities),
@@ -138,6 +149,9 @@ export function DealsBoard({
                 0,
               );
               const hotCount = rows.reduce((n, d) => n + (signals.get(d.id)?.isHot ? 1 : 0), 0);
+              const columnIds = rows.map((d) => d.id);
+              const allColumnSelected =
+                columnIds.length > 0 && columnIds.every((id) => selection.isSelected(id));
               return (
                 <DealsBoardColumn
                   key={s.value}
@@ -146,6 +160,15 @@ export function DealsBoard({
                   weighted={weighted}
                   count={rows.length}
                   hotCount={hotCount}
+                  headerExtra={
+                    selectable && columnIds.length > 0 ? (
+                      <Checkbox
+                        checked={allColumnSelected}
+                        aria-label={`Selecionar coluna ${s.label}`}
+                        onCheckedChange={() => selection.toggleMany(columnIds)}
+                      />
+                    ) : undefined
+                  }
                 >
                   {rows.map((d) => {
                     const sig = signals.get(d.id);
@@ -165,6 +188,9 @@ export function DealsBoard({
                         nextActivityDate={nextActivities?.get(d.id) ?? null}
                         signals={sig}
                         dimmed={focusMode && sig?.klass === "cold"}
+                        selectable={selectable}
+                        selected={selection.isSelected(d.id)}
+                        onToggleSelect={(shift) => selection.toggle(d.id, { columnIds, shift })}
                         onClick={() => onOpen(d)}
                       />
                     );
@@ -175,6 +201,20 @@ export function DealsBoard({
           </div>
         </KanbanScrollContainer>
       </DndContext>
+
+      {selectable && selection.hasSelection && (
+        <GridBulkBar
+          table="deals"
+          ids={selection.ids}
+          rows={selection.selectedRows}
+          entityLabel="negócio"
+          activityEntity="deals"
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          onClear={selection.clear}
+          onDone={() => void qc.invalidateQueries({ queryKey: ["deals"] })}
+        />
+      )}
 
       <LostReasonDialog
         open={!!lostTarget}
