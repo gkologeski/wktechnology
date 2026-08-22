@@ -6,6 +6,7 @@ import { formatCurrency, formatDate } from "@/lib/crm";
 import type { Deal } from "@/lib/db-types";
 import type { DealSignals } from "@/lib/deals/hot-score";
 import { Building2, CalendarDays, Clock, Flame, Gem, User as UserIcon } from "lucide-react";
+import { BoardCardCheckbox } from "@/components/kanban/board-card-checkbox";
 
 function initials(s?: string | null) {
   if (!s) return "??";
@@ -38,6 +39,9 @@ export function DealsBoardCard({
   nextActivityDate,
   signals,
   dimmed,
+  selectable,
+  selected,
+  onToggleSelect,
   onClick,
 }: {
   deal: Deal;
@@ -49,6 +53,9 @@ export function DealsBoardCard({
   nextActivityDate?: string | null;
   signals?: DealSignals;
   dimmed?: boolean;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (shift: boolean) => void;
   onClick: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -107,9 +114,16 @@ export function DealsBoardCard({
       data-kanban-column={columnId}
       data-hot={isHot ? "1" : undefined}
       data-high-value={isHighValue ? "1" : undefined}
-      className={`group rounded-md border bg-card p-2.5 text-sm cursor-grab active:cursor-grabbing hover:border-[var(--hs-orange)] hover:shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hs-orange)] ${dimmed ? "opacity-60" : ""}`}
+      className={`group rounded-md border bg-card p-2.5 text-sm cursor-grab active:cursor-grabbing hover:border-[var(--hs-orange)] hover:shadow-sm transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hs-orange)] ${dimmed ? "opacity-60" : ""} ${selected ? "ring-2 ring-primary" : ""}`}
     >
       <div className="flex items-start justify-between gap-2">
+        {selectable && onToggleSelect && (
+          <BoardCardCheckbox
+            selected={!!selected}
+            label={`Selecionar negócio ${deal.name ?? ""}`}
+            onToggle={onToggleSelect}
+          />
+        )}
         <div className="font-medium leading-tight truncate flex-1">{deal.name}</div>
         <div className="flex items-center gap-1 shrink-0">
           {(isHot || isHighValue) && (
