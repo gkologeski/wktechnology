@@ -149,6 +149,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
 
   // --- TechContracts / TechServices -----------------------------------------
   "/contracts": ["techcontracts.contracts"],
+  "/contracts/templates": ["techcontracts.contract_templates"],
   "/services": ["techservice.services"],
 
   // --- TechProjects ----------------------------------------------------------
