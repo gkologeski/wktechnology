@@ -84,7 +84,7 @@ const LABELS: Record<string, string> = {
   phone: "Telefone",
   mobile_phone: "Celular",
   company: "Empresa",
-  company_name: "Empresa",
+  company_name: "Empresa (texto livre)",
   company_id: "Empresa",
   source: "Origem",
   status: "Status",
@@ -119,7 +119,7 @@ const LABELS: Record<string, string> = {
   twitterhandle: "Twitter",
   facebook_company_page: "Facebook da empresa",
   portal_enabled: "Portal habilitado",
-  assigned_user_id: "Responsável",
+  assigned_user_id: "Responsável (legado)",
   pipeline_id: "Pipeline",
   stage: "Etapa",
   stage_id: "Etapa (ID)",
@@ -649,6 +649,9 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       : {};
     const freeTextByEntity = isContracts ? CONTRACT_FREE_TEXT_FIELDS : new Set<string>();
     const systemFields = isContracts ? CONTRACT_SYSTEM_FIELDS : new Set<string>();
+    // Colunas legadas que duplicam um campo oficial (associação real por ID):
+    // ficam no bloco recolhido para não parecerem campos repetidos.
+    const legacySystemFields = new Set<string>(["company_name", "assigned_user_id"]);
 
     const fields: EntityFieldDef[] = [];
     for (const r of allRows) {
@@ -668,7 +671,8 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         type,
         required: r.is_nullable === "NO" && !r.has_default,
       };
-      if (systemFields.has(r.column_name)) def.system = true;
+      if (systemFields.has(r.column_name) || legacySystemFields.has(r.column_name))
+        def.system = true;
       if (isContracts && r.column_name === "body_html") def.richText = true;
 
       const ref = REF_COLUMNS[r.column_name];
