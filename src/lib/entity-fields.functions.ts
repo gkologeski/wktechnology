@@ -649,6 +649,9 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       : {};
     const freeTextByEntity = isContracts ? CONTRACT_FREE_TEXT_FIELDS : new Set<string>();
     const systemFields = isContracts ? CONTRACT_SYSTEM_FIELDS : new Set<string>();
+    // Colunas legadas que duplicam um campo oficial (associação real por ID):
+    // ficam no bloco recolhido para não parecerem campos repetidos.
+    const legacySystemFields = new Set<string>(["company_name", "assigned_user_id"]);
 
     const fields: EntityFieldDef[] = [];
     for (const r of allRows) {
