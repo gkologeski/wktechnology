@@ -89,13 +89,13 @@ export function GridBulkBar<T extends { id: string }>({
       .in("id", ids)
       .select("id");
     if (error) return toast.error(error.message);
-    if (deniedIfUnaffected(affected)) return;
-    const removed = (affected as unknown[]).length;
-    if (removed < ids.length) {
-      toast.warning(`${removed} de ${ids.length} excluído(s). Verifique suas permissões.`);
-    } else {
-      toast.success(`${removed.toLocaleString("pt-BR")} excluído(s)`);
-    }
+    const { denied } = reportBulkDelete({
+      ids,
+      affected: affected as { id: string }[] | null,
+      rows,
+      entityLabel: entityLabel,
+    });
+    if (denied) return;
     onClear();
     onDone();
   };
