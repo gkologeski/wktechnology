@@ -758,7 +758,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           entityLabel={entitySingular}
           activityEntity={table === "activities" ? undefined : table}
           canDelete
-
           renderCard={(row) => (
             <div className="space-y-1">
               {visibleColumns.slice(0, 3).map((c) => (

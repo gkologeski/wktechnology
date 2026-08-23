@@ -7,15 +7,7 @@ import { deniedIfUnaffected } from "./rls-denied";
 
 type MaybeLabeled = Record<string, unknown> & { id: string };
 
-const LABEL_KEYS = [
-  "name",
-  "full_name",
-  "title",
-  "subject",
-  "email",
-  "code",
-  "number",
-] as const;
+const LABEL_KEYS = ["name", "full_name", "title", "subject", "email", "code", "number"] as const;
 
 /** Melhor rótulo legível disponível na linha; cai no id encurtado. */
 export function rowLabel(row: MaybeLabeled | undefined, id: string): string {
