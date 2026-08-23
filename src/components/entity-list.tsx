@@ -71,6 +71,7 @@ import { EmailInput } from "@/components/ui/email-input";
 import { isEmail } from "@/lib/validators";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+import { reportBulkDelete } from "@/lib/access-control/bulk-delete-report";
 
 type Field = {
   name: string;
@@ -336,13 +337,13 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
       .in("id", ids)
       .select("id");
     if (error) return toast.error(error.message);
-    if (deniedIfUnaffected(affected)) return;
-    const removed = (affected as unknown[]).length;
-    if (removed < ids.length) {
-      toast.warning(`${removed} de ${ids.length} excluído(s). Verifique suas permissões.`);
-    } else {
-      toast.success(`${ids.length} excluído(s)`);
-    }
+    const { denied } = reportBulkDelete({
+      ids,
+      affected: affected as { id: string }[] | null,
+      rows,
+      entityLabel: entitySingular,
+    });
+    if (denied) return;
     clearSel();
     qc.invalidateQueries({ queryKey: [table] });
   };
@@ -757,7 +758,6 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
           entityLabel={entitySingular}
           activityEntity={table === "activities" ? undefined : table}
           canDelete
-
           renderCard={(row) => (
             <div className="space-y-1">
               {visibleColumns.slice(0, 3).map((c) => (

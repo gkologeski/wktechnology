@@ -14,7 +14,6 @@ import { useGridProjection } from "@/hooks/use-grid-projection";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { cn } from "@/lib/utils";
 import { toE164 } from "@/lib/validators";
-import { useMyTools } from "@/lib/use-my-tools";
 import { Button } from "@/components/ui/button";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { Input } from "@/components/ui/input";
@@ -134,7 +133,6 @@ function CompaniesPage() {
 
 function CompaniesHubspotView() {
   const { user } = useAuth();
-  const { can } = useMyTools();
   const { nameFor, initialsFor } = useWorkspaceMembers();
 
   const qc = useQueryClient();
@@ -601,11 +599,11 @@ function CompaniesHubspotView() {
           >
             <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
           </Button>
-          {can("export") && (
+          <Can permission="techsales.companies.export.workspace">
             <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
-          )}
+          </Can>
           <Can
             any={[
               "techsales.companies.manage.workspace",

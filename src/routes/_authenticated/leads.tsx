@@ -50,7 +50,6 @@ import {
 } from "@/components/ui/select";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { AddToProspectingDialog } from "@/components/prospecting/add-to-prospecting-dialog";
-import { useMyTools } from "@/lib/use-my-tools";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
@@ -229,7 +228,6 @@ function LeadsPage() {
 
 function LeadsHubspotView() {
   const { user } = useAuth();
-  const { can } = useMyTools();
   const { canAny: canAnyPermission } = usePermissions();
   const canProspectingMode =
     canAnyPermission([...QUEUE_VIEW]) && canAnyPermission([...QUEUE_CREATE, ...QUEUE_UPDATE]);
@@ -914,22 +912,24 @@ function LeadsHubspotView() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {can("import") && (
-            <Can permission="techsales.leads.create.own">
-              <Button variant="outline" size="sm" asChild>
-                <Link to="/leads/import-hubspot">
-                  <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
-                </Link>
-              </Button>
-            </Can>
-          )}
-          {can("export") && (
-            <Can permission="techsales.leads.export.workspace">
-              <Button variant="outline" size="sm" onClick={exportCsv}>
-                <Download className="mr-1.5 h-4 w-4" /> Exportar
-              </Button>
-            </Can>
-          )}
+          <Can
+            any={[
+              "system.import.export.workspace",
+              "techsales.leads.create.workspace",
+              "techsales.leads.create.own",
+            ]}
+          >
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/leads/import-hubspot">
+                <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
+              </Link>
+            </Button>
+          </Can>
+          <Can permission="techsales.leads.export.workspace">
+            <Button variant="outline" size="sm" onClick={exportCsv}>
+              <Download className="mr-1.5 h-4 w-4" /> Exportar
+            </Button>
+          </Can>
           <Button
             variant="outline"
             size="sm"
