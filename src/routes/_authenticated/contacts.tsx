@@ -38,7 +38,6 @@ import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog"
 import { startFocusQueue } from "@/lib/focus-queue";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 
-import { useMyTools } from "@/lib/use-my-tools";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { OwnerFilter, splitOwnerIds, type OwnerFilterValue } from "@/components/owner-filter";
@@ -143,7 +142,6 @@ function ContactsPage() {
 
 function ContactsHubspotView() {
   const { user } = useAuth();
-  const { can } = useMyTools();
   const { nameFor, initialsFor } = useWorkspaceMembers();
 
   const qc = useQueryClient();

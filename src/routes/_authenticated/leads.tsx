@@ -50,7 +50,6 @@ import {
 } from "@/components/ui/select";
 import { BulkEnrichDialog } from "@/components/enrichment/bulk-enrich-dialog";
 import { AddToProspectingDialog } from "@/components/prospecting/add-to-prospecting-dialog";
-import { useMyTools } from "@/lib/use-my-tools";
 import { CreateLeadDialog } from "@/components/leads/create-lead-dialog";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { OwnerFilter, type OwnerFilterValue } from "@/components/owner-filter";
@@ -229,7 +228,6 @@ function LeadsPage() {
 
 function LeadsHubspotView() {
   const { user } = useAuth();
-  const { can } = useMyTools();
   const { canAny: canAnyPermission } = usePermissions();
   const canProspectingMode =
     canAnyPermission([...QUEUE_VIEW]) && canAnyPermission([...QUEUE_CREATE, ...QUEUE_UPDATE]);
