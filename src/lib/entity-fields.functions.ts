@@ -119,7 +119,7 @@ const LABELS: Record<string, string> = {
   twitterhandle: "Twitter",
   facebook_company_page: "Facebook da empresa",
   portal_enabled: "Portal habilitado",
-  assigned_user_id: "Responsável",
+  assigned_user_id: "Responsável (legado)",
   pipeline_id: "Pipeline",
   stage: "Etapa",
   stage_id: "Etapa (ID)",
