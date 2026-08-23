@@ -71,6 +71,7 @@ import { EmailInput } from "@/components/ui/email-input";
 import { isEmail } from "@/lib/validators";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+import { reportBulkDelete } from "@/lib/access-control/bulk-delete-report";
 
 type Field = {
   name: string;

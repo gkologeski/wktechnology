@@ -35,6 +35,7 @@ import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+import { reportBulkDelete } from "@/lib/access-control/bulk-delete-report";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 
 type SortKey = "name" | "value" | "expected_close_date" | "created_at";

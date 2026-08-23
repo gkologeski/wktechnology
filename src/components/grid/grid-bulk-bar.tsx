@@ -14,6 +14,7 @@ import { BulkAssignDialog } from "@/components/bulk-assign-dialog";
 import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
 import { BulkCreateActivityDialog } from "@/components/bulk-create-activity-dialog";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+import { reportBulkDelete } from "@/lib/access-control/bulk-delete-report";
 import { isBulkEditEntity } from "@/lib/grid/bulk-edit-fields";
 
 export type GridBulkBarProps<T extends { id: string }> = {
