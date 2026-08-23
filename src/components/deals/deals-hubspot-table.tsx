@@ -179,13 +179,13 @@ export function DealsHubspotTable({
       .in("id", ids)
       .select("id");
     if (error) return toast.error(error.message);
-    if (deniedIfUnaffected(affected)) return;
-    const removed = (affected as unknown[]).length;
-    if (removed < ids.length) {
-      toast.warning(`${removed} de ${ids.length} excluído(s). Verifique suas permissões.`);
-    } else {
-      toast.success(`${removed.toLocaleString("pt-BR")} excluído(s)`);
-    }
+    const { denied } = reportBulkDelete({
+      ids,
+      affected,
+      rows: rows as { id: string }[] | undefined,
+      entityLabel: "negócios",
+    });
+    if (denied) return;
     clearSelection();
     qc.invalidateQueries({ queryKey: ["deals"] });
   };
