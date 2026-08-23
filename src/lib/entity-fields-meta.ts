@@ -415,7 +415,7 @@ export const ENTITY_LABEL_OVERRIDES: Record<string, Record<string, string>> = {
   activities: { title: "Título da atividade" },
 };
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function toLabel(col: string, entity?: string): string {
   const override = entity ? ENTITY_LABEL_OVERRIDES[entity]?.[col] : undefined;

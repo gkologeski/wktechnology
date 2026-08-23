@@ -7,7 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { REF_COLUMNS, type RefKind } from "./entity-fields-refs";
 import { isMoneyField } from "./format/money-fields";
 
-import { toLabel, LEGACY_SYSTEM_FIELDS } from "./entity-fields-meta";
+import { toLabel, UUID_RE, LEGACY_SYSTEM_FIELDS } from "./entity-fields-meta";
 import {
   CONTRACT_FIELD_OPTIONS,
   CONTRACT_FREE_TEXT_FIELDS,
