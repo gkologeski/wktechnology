@@ -337,13 +337,13 @@ export function EntityList<T extends { id: string; owner_id?: string }>(props: E
       .in("id", ids)
       .select("id");
     if (error) return toast.error(error.message);
-    if (deniedIfUnaffected(affected)) return;
-    const removed = (affected as unknown[]).length;
-    if (removed < ids.length) {
-      toast.warning(`${removed} de ${ids.length} excluído(s). Verifique suas permissões.`);
-    } else {
-      toast.success(`${ids.length} excluído(s)`);
-    }
+    const { denied } = reportBulkDelete({
+      ids,
+      affected: affected as { id: string }[] | null,
+      rows,
+      entityLabel: entitySingular,
+    });
+    if (denied) return;
     clearSel();
     qc.invalidateQueries({ queryKey: [table] });
   };
