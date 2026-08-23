@@ -84,7 +84,7 @@ const LABELS: Record<string, string> = {
   phone: "Telefone",
   mobile_phone: "Celular",
   company: "Empresa",
-  company_name: "Empresa",
+  company_name: "Empresa (texto livre)",
   company_id: "Empresa",
   source: "Origem",
   status: "Status",
