@@ -558,6 +558,14 @@ export function DealsHubspotTable({
           qc.invalidateQueries({ queryKey: ["deals"] });
         }}
       />
+
+      <ConfirmCountDialog
+        open={bulkDeleteOpen}
+        setOpen={setBulkDeleteOpen}
+        count={selectedIds.size}
+        entity="negócio"
+        onConfirm={bulkDelete}
+      />
     </div>
   );
 }
