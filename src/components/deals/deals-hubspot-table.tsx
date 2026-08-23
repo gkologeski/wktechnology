@@ -564,7 +564,9 @@ export function DealsHubspotTable({
         setOpen={setBulkDeleteOpen}
         count={selectedIds.size}
         entity="negócio"
-        onConfirm={bulkDelete}
+        onConfirm={() => {
+          void bulkDelete();
+        }}
       />
     </div>
   );
