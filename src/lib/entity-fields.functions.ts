@@ -671,7 +671,8 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
         type,
         required: r.is_nullable === "NO" && !r.has_default,
       };
-      if (systemFields.has(r.column_name)) def.system = true;
+      if (systemFields.has(r.column_name) || legacySystemFields.has(r.column_name))
+        def.system = true;
       if (isContracts && r.column_name === "body_html") def.richText = true;
 
       const ref = REF_COLUMNS[r.column_name];
