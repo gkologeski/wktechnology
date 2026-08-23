@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
 import { bulkUpdateEntity } from "@/lib/grid/bulk-edit.functions";
 import { isBulkEditDeniedColumn, type BulkEditEntity } from "@/lib/grid/bulk-edit-fields";
+import { dedupeAliasFields, findAliasConflict } from "@/lib/grid/field-alias-guard";
 import { BulkRefPicker } from "./bulk-ref-picker";
 
 const LONG_TEXT_FIELDS = new Set([
@@ -193,7 +194,11 @@ export function BulkEditFieldsDialog({
   });
 
   const allFields = useMemo(() => {
-    const fields = (catalog.data?.fields ?? []).filter((f) => !isBulkEditDeniedColumn(f.name));
+    // Alias legado (ex.: `company_name`) nunca compete com o campo canônico:
+    // fica sempre no bloco de campos de sistema, mesmo que o rótulo colida.
+    const fields = dedupeAliasFields(
+      (catalog.data?.fields ?? []).filter((f) => !isBulkEditDeniedColumn(f.name)),
+    );
     const priority = new Set(priorityFields ?? []);
     return [...fields].sort((a, b) => {
       const pa = priority.has(a.name) ? 0 : 1;
@@ -219,6 +224,13 @@ export function BulkEditFieldsDialog({
   const apply = async () => {
     if (selectedNames.length === 0) {
       toast.error("Marque ao menos um campo para alterar");
+      return;
+    }
+    const conflict = findAliasConflict(selectedNames, allFields);
+    if (conflict) {
+      toast.error(
+        `${conflict.canonicalLabel} e ${conflict.aliasLabel} apontam para o mesmo dado. Marque apenas um deles.`,
+      );
       return;
     }
     const payload: Record<string, unknown> = {};

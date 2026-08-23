@@ -133,7 +133,7 @@ export function useAutoGridColumns<T extends object>({
       fields.map((f) => ({
         key: f.name,
         label: f.label,
-        group: "Outros campos",
+        group: f.system ? "Campos de sistema" : "Outros campos",
         sortable: isSortableField(f),
         render: (row: T) => renderAutoCell(f, row as Record<string, unknown>, refLabel),
       })),
