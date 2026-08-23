@@ -50,16 +50,28 @@ export function useMyTools() {
         .eq("id", user.id)
         .maybeSingle();
       const wsId = (prof?.active_workspace_id as string | null) ?? user.id;
-      const owner = wsId === user.id;
+
+      // 2) Papel no workspace atual (modelo vigente: workspace_members).
+      //    Donos/admins do workspace mantêm todas as ferramentas.
+      const { data: wm } = await supabase
+        .from("workspace_members")
+        .select("role")
+        .eq("workspace_id", wsId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      const role = (wm?.role as string | null) ?? null;
+      const owner = wsId === user.id || role === "owner" || role === "admin";
       if (cancelled) return;
       setIsOwner(owner);
 
       if (owner) {
         setLoading(false);
-        return; // owner sempre tem tudo
+        return;
       }
 
-      // 2) Perfil de acesso do usuário no workspace ativo
+      // 3) Perfil de acesso legado (tool matrix). Quando não existir, as
+      //    ferramentas permanecem no padrão permissivo: a decisão final é do
+      //    RBAC granular (`Can`) e da RLS, não deste gate legado.
       const { data: tm } = await supabase
         .from("team_members")
         .select("access_profile_id")
@@ -68,13 +80,7 @@ export function useMyTools() {
         .maybeSingle();
       const profileId = (tm?.access_profile_id as string | null) ?? null;
       if (!profileId) {
-        if (!cancelled) {
-          setTools(
-            (t) =>
-              Object.fromEntries(Object.keys(t).map((k) => [k, false])) as Record<ToolKey, boolean>,
-          );
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
         return;
       }
 
@@ -88,6 +94,7 @@ export function useMyTools() {
         setTools((t) => ({ ...t, ...next }) as Record<ToolKey, boolean>);
         setLoading(false);
       }
+
     })();
     return () => {
       cancelled = true;
