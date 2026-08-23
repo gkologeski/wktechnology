@@ -159,18 +159,32 @@ export function DealsHubspotTable({
   };
   const removeOne = async (id: string) => {
     if (!(await confirmDialog("Excluir este negócio?"))) return;
-    const { error } = await supabase.from("deals").delete().eq("id", id);
+    const { data: affected, error } = await supabase
+      .from("deals")
+      .delete()
+      .eq("id", id)
+      .select("id");
     if (error) return toast.error(error.message);
+    if (deniedIfUnaffected(affected)) return;
     toast.success("Removido");
     qc.invalidateQueries({ queryKey: ["deals"] });
   };
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    if (!(await confirmDialog(`Excluir ${ids.length} negócio(s)?`))) return;
-    const { error } = await supabase.from("deals").delete().in("id", ids);
+    const { data: affected, error } = await supabase
+      .from("deals")
+      .delete()
+      .in("id", ids)
+      .select("id");
     if (error) return toast.error(error.message);
-    toast.success(`${ids.length} excluído(s)`);
+    if (deniedIfUnaffected(affected)) return;
+    const removed = (affected as unknown[]).length;
+    if (removed < ids.length) {
+      toast.warning(`${removed} de ${ids.length} excluído(s). Verifique suas permissões.`);
+    } else {
+      toast.success(`${removed.toLocaleString("pt-BR")} excluído(s)`);
+    }
     clearSelection();
     qc.invalidateQueries({ queryKey: ["deals"] });
   };
