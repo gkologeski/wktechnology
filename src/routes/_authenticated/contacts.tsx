@@ -741,18 +741,22 @@ function ContactsHubspotView() {
                 >
                   <Sparkles className="mr-1 h-3.5 w-3.5" /> Enriquecer
                 </Button>
-                {can("bulk_delete") && (
-                  <Can permission="techsales.contacts.delete.workspace">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-destructive hover:text-destructive"
-                      onClick={bulkDelete}
-                    >
-                      Excluir
-                    </Button>
-                  </Can>
-                )}
+                <Can
+                  any={[
+                    "techsales.contacts.delete.workspace",
+                    "techsales.contacts.delete.own",
+                  ]}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-destructive hover:text-destructive"
+                    onClick={bulkDelete}
+                  >
+                    Excluir
+                  </Button>
+                </Can>
+
                 <Can permission="techsales.contacts.update.workspace">
                   <Button
                     variant="ghost"
