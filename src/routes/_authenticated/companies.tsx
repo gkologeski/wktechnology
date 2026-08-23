@@ -601,11 +601,11 @@ function CompaniesHubspotView() {
           >
             <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
           </Button>
-          {can("export") && (
+          <Can permission="techsales.companies.export.workspace">
             <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
-          )}
+          </Can>
           <Can
             any={[
               "techsales.companies.manage.workspace",
