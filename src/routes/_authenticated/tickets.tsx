@@ -12,7 +12,6 @@ import {
   defaultTicketStages,
   type Pipeline,
 } from "@/lib/pipelines";
-import { useMyTools } from "@/lib/use-my-tools";
 import { PageHeader } from "@/components/page-header";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { Button } from "@/components/ui/button";
@@ -113,7 +112,6 @@ function TicketsPage() {
 
 function TicketsIndex() {
   const { user } = useAuth();
-  const { can } = useMyTools();
   const qc = useQueryClient();
   useRealtimeInvalidate([{ table: "tickets", queryKeys: [["tickets"]] }]);
   const navigate = useNavigate();
@@ -362,7 +360,8 @@ function TicketsIndex() {
       toast.error(res.message);
       return;
     }
-    if (res.deleted < res.requested) toast.warning(partialDeleteMessage(res.deleted, res.requested));
+    if (res.deleted < res.requested)
+      toast.warning(partialDeleteMessage(res.deleted, res.requested));
     else toast.success(`${res.deleted} ticket(s) excluído(s).`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["tickets"] });
@@ -557,19 +556,25 @@ function TicketsIndex() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              {can("bulk_delete") && (
-                <Can permission="techsales.tickets.manage.workspace">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-destructive"
-                    onClick={bulkDelete}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 mr-1" />
-                    Excluir
-                  </Button>
-                </Can>
-              )}
+              <Can
+                any={[
+                  "techservice.tickets.delete.workspace",
+                  "techsales.tickets.manage.workspace",
+                  "techsales.tickets.delete.workspace",
+                  "techsales.tickets.delete.own",
+                ]}
+              >
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-destructive"
+                  onClick={bulkDelete}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Excluir
+                </Button>
+              </Can>
+
               <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={clearSelection}>
                 <X className="h-3.5 w-3.5" />
               </Button>
