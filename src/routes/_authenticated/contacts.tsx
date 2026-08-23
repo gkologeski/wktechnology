@@ -612,11 +612,11 @@ function ContactsHubspotView() {
           >
             <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
           </Button>
-          {can("export") && (
+          <Can permission="techsales.contacts.export.workspace">
             <Button variant="outline" size="sm" onClick={exportCsv}>
               <Download className="mr-1.5 h-4 w-4" /> Exportar
             </Button>
-          )}
+          </Can>
           <Can permission="techsales.contacts.create.own">
             <Button size="sm" onClick={() => setCreateOpen(true)}>
               <Plus className="mr-1.5 h-4 w-4" /> Criar contato
