@@ -33,6 +33,8 @@ import type { DealLookups } from "@/components/deals/deals-board";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
 import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { ConfirmCountDialog } from "@/components/confirm-count-dialog";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 
 type SortKey = "name" | "value" | "expected_close_date" | "created_at";
@@ -78,6 +80,7 @@ export function DealsHubspotTable({
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 
   const sorted = useMemo(() => {
     const copy = [...deals];
@@ -157,18 +160,32 @@ export function DealsHubspotTable({
   };
   const removeOne = async (id: string) => {
     if (!(await confirmDialog("Excluir este negócio?"))) return;
-    const { error } = await supabase.from("deals").delete().eq("id", id);
+    const { data: affected, error } = await supabase
+      .from("deals")
+      .delete()
+      .eq("id", id)
+      .select("id");
     if (error) return toast.error(error.message);
+    if (deniedIfUnaffected(affected)) return;
     toast.success("Removido");
     qc.invalidateQueries({ queryKey: ["deals"] });
   };
   const bulkDelete = async () => {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
-    if (!(await confirmDialog(`Excluir ${ids.length} negócio(s)?`))) return;
-    const { error } = await supabase.from("deals").delete().in("id", ids);
+    const { data: affected, error } = await supabase
+      .from("deals")
+      .delete()
+      .in("id", ids)
+      .select("id");
     if (error) return toast.error(error.message);
-    toast.success(`${ids.length} excluído(s)`);
+    if (deniedIfUnaffected(affected)) return;
+    const removed = (affected as unknown[]).length;
+    if (removed < ids.length) {
+      toast.warning(`${removed} de ${ids.length} excluído(s). Verifique suas permissões.`);
+    } else {
+      toast.success(`${removed.toLocaleString("pt-BR")} excluído(s)`);
+    }
     clearSelection();
     qc.invalidateQueries({ queryKey: ["deals"] });
   };
@@ -389,7 +406,7 @@ export function DealsHubspotTable({
               variant="ghost"
               size="sm"
               className="h-7 text-destructive hover:text-destructive"
-              onClick={bulkDelete}
+              onClick={() => setBulkDeleteOpen(true)}
             >
               Excluir
             </Button>
@@ -539,6 +556,16 @@ export function DealsHubspotTable({
         onDone={() => {
           clearSelection();
           qc.invalidateQueries({ queryKey: ["deals"] });
+        }}
+      />
+
+      <ConfirmCountDialog
+        open={bulkDeleteOpen}
+        setOpen={setBulkDeleteOpen}
+        count={selectedIds.size}
+        entity="negócio"
+        onConfirm={() => {
+          void bulkDelete();
         }}
       />
     </div>
