@@ -406,7 +406,7 @@ export function DealsHubspotTable({
               variant="ghost"
               size="sm"
               className="h-7 text-destructive hover:text-destructive"
-              onClick={bulkDelete}
+              onClick={() => setBulkDeleteOpen(true)}
             >
               Excluir
             </Button>
