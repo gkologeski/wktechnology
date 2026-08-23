@@ -57,7 +57,6 @@ export const LABELS: Record<string, string> = {
   expected_close_date: "Fechamento esperado",
   lost_at: "Perdido em",
 
-
   dealtype: "Tipo de negócio",
   hs_priority: "Prioridade",
   hs_deal_stage_probability: "Probabilidade",

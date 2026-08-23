@@ -76,7 +76,6 @@ function isSyncColumn(col: string): boolean {
   return /^(hs_|hubspot_)/.test(col) && col !== "hs_lead_status" && col !== "hs_priority";
 }
 
-
 function inferType(dataType: string): EntityFieldType {
   if (dataType === "boolean") return "boolean";
   if (

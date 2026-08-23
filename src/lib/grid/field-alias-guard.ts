@@ -20,7 +20,8 @@ export function dedupeAliasFields<T extends Field>(fields: T[]): T[] {
   return fields.map((f) => {
     const canonical = FIELD_ALIASES[f.name];
     const isShadowedAlias = !!canonical && names.has(canonical);
-    const labelCollides = labelOwner.get(f.label) !== undefined && labelOwner.get(f.label) !== f.name;
+    const labelCollides =
+      labelOwner.get(f.label) !== undefined && labelOwner.get(f.label) !== f.name;
     if (isShadowedAlias || labelCollides) return { ...f, system: true };
     return f;
   });
@@ -37,10 +38,7 @@ export type AliasConflict = {
  * Detecta seleção simultânea de um alias e do seu campo canônico — que
  * gravaria o mesmo dado em duas colunas com valores potencialmente divergentes.
  */
-export function findAliasConflict(
-  selected: string[],
-  fields: Field[],
-): AliasConflict | null {
+export function findAliasConflict(selected: string[], fields: Field[]): AliasConflict | null {
   const set = new Set(selected);
   const labelOf = (name: string) => fields.find((f) => f.name === name)?.label ?? name;
   for (const name of selected) {
