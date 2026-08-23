@@ -81,7 +81,7 @@ describe("entity field labels", () => {
 
 describe("field alias guard", () => {
   it("marca alias como campo de sistema mesmo se o rótulo colidir", () => {
-    const fields = dedupeAliasFields([
+    const fields = dedupeAliasFields<{ name: string; label: string; system?: boolean }>([
       { name: "company_id", label: "Empresa" },
       { name: "company_name", label: "Empresa" },
     ]);
