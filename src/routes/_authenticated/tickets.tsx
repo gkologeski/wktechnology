@@ -360,7 +360,8 @@ function TicketsIndex() {
       toast.error(res.message);
       return;
     }
-    if (res.deleted < res.requested) toast.warning(partialDeleteMessage(res.deleted, res.requested));
+    if (res.deleted < res.requested)
+      toast.warning(partialDeleteMessage(res.deleted, res.requested));
     else toast.success(`${res.deleted} ticket(s) excluído(s).`);
     clearSelection();
     qc.invalidateQueries({ queryKey: ["tickets"] });

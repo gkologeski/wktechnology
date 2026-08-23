@@ -94,7 +94,6 @@ export function useMyTools() {
         setTools((t) => ({ ...t, ...next }) as Record<ToolKey, boolean>);
         setLoading(false);
       }
-
     })();
     return () => {
       cancelled = true;
