@@ -559,9 +559,10 @@ function TicketsIndex() {
               </DropdownMenu>
               <Can
                 any={[
-                  "techservice.tickets.manage.workspace",
                   "techservice.tickets.delete.workspace",
-                  "techservice.tickets.delete.own",
+                  "techsales.tickets.manage.workspace",
+                  "techsales.tickets.delete.workspace",
+                  "techsales.tickets.delete.own",
                 ]}
               >
                 <Button
