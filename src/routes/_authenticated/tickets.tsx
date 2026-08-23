@@ -12,7 +12,6 @@ import {
   defaultTicketStages,
   type Pipeline,
 } from "@/lib/pipelines";
-import { useMyTools } from "@/lib/use-my-tools";
 import { PageHeader } from "@/components/page-header";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { Button } from "@/components/ui/button";
@@ -113,7 +112,6 @@ function TicketsPage() {
 
 function TicketsIndex() {
   const { user } = useAuth();
-  const { can } = useMyTools();
   const qc = useQueryClient();
   useRealtimeInvalidate([{ table: "tickets", queryKeys: [["tickets"]] }]);
   const navigate = useNavigate();
