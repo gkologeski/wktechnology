@@ -557,19 +557,24 @@ function TicketsIndex() {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-              {can("bulk_delete") && (
-                <Can permission="techsales.tickets.manage.workspace">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-destructive"
-                    onClick={bulkDelete}
-                  >
-                    <Trash2 className="h-3.5 w-3.5 mr-1" />
-                    Excluir
-                  </Button>
-                </Can>
-              )}
+              <Can
+                any={[
+                  "techservice.tickets.manage.workspace",
+                  "techservice.tickets.delete.workspace",
+                  "techservice.tickets.delete.own",
+                ]}
+              >
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 text-destructive"
+                  onClick={bulkDelete}
+                >
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Excluir
+                </Button>
+              </Can>
+
               <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={clearSelection}>
                 <X className="h-3.5 w-3.5" />
               </Button>
