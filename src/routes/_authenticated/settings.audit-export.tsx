@@ -85,19 +85,19 @@ function AuditExportPage() {
           </p>
         </div>
         <Can any={AUDIT_EXPORT}>
-        <Button
-          onClick={() =>
-            setEditing({
-              destination: "webhook",
-              format: "json",
-              enabled: true,
-              schedule_cron: "0 2 * * *",
-              config: {},
-            })
-          }
-        >
-          <Plus className="h-4 w-4 mr-1" /> Nova exportação
-        </Button>
+          <Button
+            onClick={() =>
+              setEditing({
+                destination: "webhook",
+                format: "json",
+                enabled: true,
+                schedule_cron: "0 2 * * *",
+                config: {},
+              })
+            }
+          >
+            <Plus className="h-4 w-4 mr-1" /> Nova exportação
+          </Button>
         </Can>
       </div>
 

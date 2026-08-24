@@ -6,7 +6,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Can } from "@/lib/access-control/use-permissions";
-import { INTEGRATIONS_MANAGE, INTEGRATIONS_PERMS } from "@/lib/access-control/admin-permission-keys";
+import {
+  INTEGRATIONS_MANAGE,
+  INTEGRATIONS_PERMS,
+} from "@/lib/access-control/admin-permission-keys";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -190,9 +193,9 @@ function IntegrationDetail() {
             </a>
             {isConnected && (
               <Can any={INTEGRATIONS_PERMS.delete}>
-              <Button variant="destructive" size="sm" onClick={handleDisconnect}>
-                <Trash2 className="h-4 w-4 mr-1" /> Desconectar
-              </Button>
+                <Button variant="destructive" size="sm" onClick={handleDisconnect}>
+                  <Trash2 className="h-4 w-4 mr-1" /> Desconectar
+                </Button>
               </Can>
             )}
           </>
