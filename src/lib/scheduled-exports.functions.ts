@@ -3,7 +3,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { computeNextRun, runExportNow } from "@/lib/scheduled-exports/engine.server";
-import { requireTool } from "@/lib/permissions.server";
+import { assertReportsExport } from "@/lib/access-control/admin-gates.server";
 
 const FrequencySchema = z.enum(["daily", "weekly", "monthly"]);
 
@@ -45,7 +45,7 @@ export const upsertSchedule = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UpsertSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await requireTool(userId, "export");
+    await assertReportsExport(supabase, userId);
     const nextRun = computeNextRun({
       frequency: data.frequency,
       hour_of_day: data.hour_of_day,
@@ -106,7 +106,7 @@ export const runScheduleNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await requireTool(context.userId, "export");
+    await assertReportsExport(context.supabase, context.userId);
     // Verifica posse via RLS antes de chamar engine (que usa admin)
     const { data: row, error } = await context.supabase
       .from("report_schedules")

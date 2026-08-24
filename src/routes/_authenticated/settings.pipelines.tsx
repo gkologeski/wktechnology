@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
+import { Can } from "@/lib/access-control/use-permissions";
+import { PIPELINES_MANAGE, PIPELINES_PERMS } from "@/lib/access-control/admin-permission-keys";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -117,9 +119,11 @@ function PipelinesSettings() {
             Gerencie pipelines e estágios para Leads e Negócios.
           </p>
         </div>
-        <Button size="sm" onClick={() => setEditing("new")}>
-          <Plus className="h-4 w-4 mr-1" /> Novo
-        </Button>
+        <Can any={PIPELINES_PERMS.create}>
+          <Button size="sm" onClick={() => setEditing("new")}>
+            <Plus className="h-4 w-4 mr-1" /> Novo
+          </Button>
+        </Can>
       </div>
 
       <div className="rounded-lg border bg-card divide-y">
@@ -509,18 +513,22 @@ function PipelineEditor({
         <div className="flex items-center justify-between gap-2 pt-2">
           <div>
             {!isNew && (
-              <Button variant="outline" size="sm" onClick={remove} disabled={deleting}>
-                <Trash2 className="h-4 w-4 mr-1" /> {deleting ? "Excluindo…" : "Excluir"}
-              </Button>
+              <Can any={PIPELINES_PERMS.delete}>
+                <Button variant="outline" size="sm" onClick={remove} disabled={deleting}>
+                  <Trash2 className="h-4 w-4 mr-1" /> {deleting ? "Excluindo…" : "Excluir"}
+                </Button>
+              </Can>
             )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={onClose}>
               Cancelar
             </Button>
-            <Button size="sm" onClick={save} disabled={saving}>
-              {saving ? "Salvando…" : "Salvar"}
-            </Button>
+            <Can any={PIPELINES_MANAGE}>
+              <Button size="sm" onClick={save} disabled={saving}>
+                {saving ? "Salvando…" : "Salvar"}
+              </Button>
+            </Can>
           </div>
         </div>
       </CardContent>

@@ -4,7 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tickWorkflows, processEvent } from "@/lib/workflows/engine.server";
-import { requireTool } from "@/lib/permissions.server";
+import { assertWorkflowsManage, assertWorkflowsDelete } from "@/lib/access-control/admin-gates.server";
 import { SaveSchema } from "@/lib/workflows/schemas";
 import type { WorkflowFilter, WorkflowAction, WorkflowTrigger } from "@/lib/workflows/types";
 
@@ -109,7 +109,7 @@ export const saveWorkflow = createServerFn({ method: "POST" })
   .inputValidator((input) => SaveSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await requireTool(userId, "manage_workflows");
+    await assertWorkflowsManage(supabase, userId);
     // Fase 4: escritas do builder vão SEMPRE para o rascunho. A versão viva (actions/trigger/goal_filters)
     // só muda via publishWorkflow. Toggle de enabled/name/entity é aplicado direto, sem mexer em status.
     const updatePayload = {
@@ -148,7 +148,7 @@ export const publishWorkflow = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await requireTool(userId, "manage_workflows");
+    await assertWorkflowsManage(supabase, userId);
     const { data: wf, error: getErr } = await supabase
       .from("workflows")
       .select("id, draft_trigger, draft_actions, draft_goal_filters, published_version")
@@ -175,7 +175,7 @@ export const discardDraft = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    await requireTool(context.userId, "manage_workflows");
+    await assertWorkflowsManage(context.supabase, context.userId);
     const { data: wf, error: getErr } = await context.supabase
       .from("workflows")
       .select("trigger, actions, goal_filters")
@@ -200,7 +200,7 @@ export const deleteWorkflow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    await requireTool(context.userId, "manage_workflows");
+    await assertWorkflowsDelete(context.supabase, context.userId);
     const { error } = await context.supabase.from("workflows").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -269,7 +269,7 @@ export const testWorkflow = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    await requireTool(context.userId, "manage_workflows");
+    await assertWorkflowsManage(context.supabase, context.userId);
     const { data: wf, error: wfErr } = await context.supabase
       .from("workflows")
       .select("id, entity, trigger, actions, draft_trigger, draft_actions")
@@ -373,7 +373,7 @@ export const bulkEnrollWorkflow = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await requireTool(userId, "manage_workflows");
+    await assertWorkflowsManage(supabase, userId);
 
     const { data: wf, error: wfErr } = await supabase
       .from("workflows")

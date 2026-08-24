@@ -9,6 +9,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Can } from "@/lib/access-control/use-permissions";
+import { MEMBERS_MANAGE } from "@/lib/access-control/admin-permission-keys";
 import { Input } from "@/components/ui/input";
 import { EmailInput } from "@/components/ui/email-input";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -450,15 +452,17 @@ function UsersPage() {
               else setInviteOpen(true);
             }}
           >
-            <DialogTrigger asChild>
-              <Button
-                disabled={atLimit}
-                title={atLimit ? "Limite de usuários do plano atingido" : undefined}
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Convidar usuário
-              </Button>
-            </DialogTrigger>
+            <Can any={MEMBERS_MANAGE}>
+              <DialogTrigger asChild>
+                <Button
+                  disabled={atLimit}
+                  title={atLimit ? "Limite de usuários do plano atingido" : undefined}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Convidar usuário
+                </Button>
+              </DialogTrigger>
+            </Can>
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Convidar usuário</DialogTitle>

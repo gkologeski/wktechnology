@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Can } from "@/lib/access-control/use-permissions";
+import { PROPERTIES_MANAGE, PROPERTIES_PERMS } from "@/lib/access-control/admin-permission-keys";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -141,10 +143,12 @@ function CustomPropsPage() {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={openNew}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova propriedade
-          </Button>
+          <Can any={PROPERTIES_PERMS.create}>
+            <Button onClick={openNew}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova propriedade
+            </Button>
+          </Can>
         </div>
       </div>
 
@@ -184,22 +188,26 @@ function CustomPropsPage() {
                     </div>
                     <span className="text-xs text-muted-foreground">pos {r.position}</span>
                     <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => openEdit(r)}
-                        aria-label="Editar"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(r)}
-                        aria-label="Remover"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Can any={PROPERTIES_MANAGE}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEdit(r)}
+                          aria-label="Editar"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Can>
+                      <Can any={PROPERTIES_PERMS.delete}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(r)}
+                          aria-label="Remover"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </Can>
                     </div>
                   </div>
                 ))}
