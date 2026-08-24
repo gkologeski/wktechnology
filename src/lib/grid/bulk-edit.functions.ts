@@ -8,7 +8,9 @@ import {
   BulkEditValidationError,
   buildBulkPayload,
   chunkIds,
+  mirrorAliasColumns,
 } from "./bulk-edit-fields";
+
 
 export const bulkUpdateEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
