@@ -8,7 +8,9 @@ import {
   BulkEditValidationError,
   buildBulkPayload,
   chunkIds,
+  mirrorAliasColumns,
 } from "./bulk-edit-fields";
+
 
 export const bulkUpdateEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -41,13 +43,14 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
 
     let payload: Record<string, unknown>;
     try {
-      payload = buildBulkPayload(data.values, columnTypes);
+      payload = mirrorAliasColumns(buildBulkPayload(data.values, columnTypes), columnTypes);
     } catch (e) {
       if (e instanceof BulkEditValidationError) {
         return { ok: false as const, message: e.message, requested: data.ids.length, updated: 0 };
       }
       throw e;
     }
+
 
     const uniqueIds = Array.from(new Set(data.ids));
     let updated = 0;

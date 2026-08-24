@@ -45,15 +45,24 @@ export function BulkAssignDialog({
   const submit = async () => {
     if (ids.length === 0) return;
     setBusy(true);
+    const next = value === NONE ? null : value;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: affected, error } = await (supabase as any)
-      .from(table)
-      .update({ [column]: value === NONE ? null : value })
-      .in("id", ids)
-      .select("id");
+    const client = supabase as any;
+    const run = (payload: Record<string, unknown>) =>
+      client.from(table).update(payload).in("id", ids).select("id");
+    // Tabelas de CRM mantêm a coluna legada `assigned_user_id`, lida por telas
+    // e por RLS: quando existir, grava as duas para não gerar sucesso falso.
+    let { data: affected, error } =
+      column === "assigned_to"
+        ? await run({ assigned_to: next, assigned_user_id: next })
+        : await run({ [column]: next });
+    if (error && column === "assigned_to") {
+      ({ data: affected, error } = await run({ assigned_to: next }));
+    }
     setBusy(false);
     if (error) return toast.error(error.message);
     if (deniedIfUnaffected(affected)) return;
+
     const changed = (affected as unknown[]).length;
     if (changed < ids.length) {
       toast.warning(`${changed} de ${ids.length} atualizado(s). Verifique suas permissões.`);

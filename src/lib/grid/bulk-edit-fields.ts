@@ -162,3 +162,31 @@ export function chunkIds(ids: string[], size = BULK_EDIT_CHUNK_SIZE): string[][]
   for (let i = 0; i < ids.length; i += size) out.push(ids.slice(i, i + size));
   return out;
 }
+
+/**
+ * Pares de colunas que guardam o MESMO dado (mesmo tipo) em tabelas que
+ * carregam a coluna canônica e a legada. Telas e RLS ainda leem a legada em
+ * algumas entidades, então uma edição em massa deve gravar as duas.
+ */
+export const MIRRORED_COLUMN_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ["assigned_to", "assigned_user_id"],
+];
+
+/**
+ * Espelha o valor entre colunas equivalentes quando ambas existem na tabela,
+ * evitando "sucesso" que não altera o responsável exibido nos grids.
+ */
+export function mirrorAliasColumns(
+  payload: Record<string, unknown>,
+  columnTypes: Map<string, string>,
+): Record<string, unknown> {
+  const out = { ...payload };
+  for (const [a, b] of MIRRORED_COLUMN_PAIRS) {
+    const hasA = Object.prototype.hasOwnProperty.call(payload, a);
+    const hasB = Object.prototype.hasOwnProperty.call(payload, b);
+    if (hasA && hasB) continue; // usuário definiu ambas explicitamente
+    if (hasA && columnTypes.has(b)) out[b] = payload[a];
+    else if (hasB && columnTypes.has(a)) out[a] = payload[b];
+  }
+  return out;
+}
