@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Can } from "@/lib/access-control/use-permissions";
+import { AUDIT_EXPORT } from "@/lib/access-control/admin-permission-keys";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -82,6 +84,7 @@ function AuditExportPage() {
             Envie logs para S3, webhook ou email em intervalos regulares.
           </p>
         </div>
+        <Can any={AUDIT_EXPORT}>
         <Button
           onClick={() =>
             setEditing({
@@ -95,6 +98,7 @@ function AuditExportPage() {
         >
           <Plus className="h-4 w-4 mr-1" /> Nova exportação
         </Button>
+        </Can>
       </div>
 
       <div className="space-y-3">

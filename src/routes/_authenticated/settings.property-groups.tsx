@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Can } from "@/lib/access-control/use-permissions";
+import { PROPERTIES_MANAGE, PROPERTIES_PERMS } from "@/lib/access-control/admin-permission-keys";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -196,24 +198,28 @@ function PropertyGroupsPage() {
                     >
                       <ArrowDown className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openRename(g)}
-                      disabled={g.name === "Sem grupo"}
-                      aria-label="Renomear"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(g)}
-                      disabled={g.name === "Sem grupo"}
-                      aria-label="Remover grupo"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <Can any={PROPERTIES_MANAGE}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openRename(g)}
+                        disabled={g.name === "Sem grupo"}
+                        aria-label="Renomear"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </Can>
+                    <Can any={PROPERTIES_PERMS.delete}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(g)}
+                        disabled={g.name === "Sem grupo"}
+                        aria-label="Remover grupo"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </Can>
                   </div>
                 </div>
               ))}

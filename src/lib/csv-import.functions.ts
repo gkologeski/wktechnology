@@ -5,7 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { requireTool } from "@/lib/permissions.server";
+import { assertImportEntity } from "@/lib/access-control/admin-gates.server";
 
 export type CsvEntity = "leads" | "contacts" | "companies";
 export type DedupeStrategy = "skip" | "update" | "create_new";
@@ -188,7 +188,7 @@ export const executeCsvImport = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    await requireTool(context.userId, "import");
+    await assertImportEntity(context.supabase, context.userId, data.entity);
     const workspaceId = await getActiveWorkspaceId(context.userId);
     const { entity, rows, mapping, dedupeKey, strategy } = data;
 

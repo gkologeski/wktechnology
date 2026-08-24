@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
+import { Can } from "@/lib/access-control/use-permissions";
+import { WORKFLOWS_MANAGE, WORKFLOWS_PERMS } from "@/lib/access-control/admin-permission-keys";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -268,12 +270,16 @@ function WorkflowsPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleTick}>
-            <Zap className="h-4 w-4 mr-1" /> Rodar agora
-          </Button>
-          <Button onClick={() => setDraft({ ...EMPTY_DRAFT })}>
-            <Plus className="h-4 w-4 mr-1" /> Novo workflow
-          </Button>
+          <Can any={WORKFLOWS_MANAGE}>
+            <Button variant="outline" onClick={handleTick}>
+              <Zap className="h-4 w-4 mr-1" /> Rodar agora
+            </Button>
+          </Can>
+          <Can any={WORKFLOWS_PERMS.create}>
+            <Button onClick={() => setDraft({ ...EMPTY_DRAFT })}>
+              <Plus className="h-4 w-4 mr-1" /> Novo workflow
+            </Button>
+          </Can>
         </div>
       </div>
 
@@ -389,9 +395,11 @@ function WorkflowsPage() {
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <Can any={WORKFLOWS_PERMS.delete}>
+                      <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </Can>
                   </div>
                 </CardHeader>
               </Card>

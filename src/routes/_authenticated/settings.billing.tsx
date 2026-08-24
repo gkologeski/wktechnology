@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Check, Lock, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { Can } from "@/lib/access-control/use-permissions";
+import { BILLING_MANAGE } from "@/lib/access-control/admin-permission-keys";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -239,14 +241,25 @@ function BillingPage() {
                     <CardDescription>R$ {Number(p.price_monthly).toFixed(2)} / mês</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <Button
-                      className="w-full"
-                      variant={isCurrent ? "secondary" : "default"}
-                      disabled={isCurrent || upgrade.isPending}
-                      onClick={() => upgrade.mutate(p.code as PlanCode)}
+                    <Can
+                      any={BILLING_MANAGE}
+                      fallback={
+                        <Button className="w-full" variant="secondary" disabled>
+                          {isCurrent ? "Plano atual" : "Sem permissão"}
+                        </Button>
+                      }
                     >
-                      {isCurrent ? "Plano atual" : `Mudar para ${PLAN_LABELS[p.code as PlanCode]}`}
-                    </Button>
+                      <Button
+                        className="w-full"
+                        variant={isCurrent ? "secondary" : "default"}
+                        disabled={isCurrent || upgrade.isPending}
+                        onClick={() => upgrade.mutate(p.code as PlanCode)}
+                      >
+                        {isCurrent
+                          ? "Plano atual"
+                          : `Mudar para ${PLAN_LABELS[p.code as PlanCode]}`}
+                      </Button>
+                    </Can>
                   </CardContent>
                 </Card>
               );
