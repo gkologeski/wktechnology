@@ -2,6 +2,7 @@ import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser, unauthenticated, resolveWorkspaceId } from "../supabase";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
+import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
 export default defineTool({
   name: "create_lead",
