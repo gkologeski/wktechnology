@@ -60,7 +60,9 @@ describe("contaazul-map", () => {
   });
 
   it("classifica transações de extrato como entrada/saída", () => {
-    expect(mapStatementTx({ id: "t1", value: "-50,00", date: "2026-01-05" })!.direction).toBe("out");
+    expect(mapStatementTx({ id: "t1", value: "-50,00", date: "2026-01-05" })!.direction).toBe(
+      "out",
+    );
     expect(mapStatementTx({ id: "t2", value: "50,00", tipo: "CREDITO" })!.direction).toBe("in");
     expect(mapStatementTx({ value: 10 })).toBeNull();
   });
@@ -86,7 +88,12 @@ describe("contaazul-map", () => {
   });
 
   it("rejeita linhas sem campos obrigatórios", () => {
-    const result = fileRowToEntry(["", "", ""], { description: 0, amount: 1, due_date: 2 }, "payable", 3);
+    const result = fileRowToEntry(
+      ["", "", ""],
+      { description: 0, amount: 1, due_date: 2 },
+      "payable",
+      3,
+    );
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.errors.length).toBeGreaterThan(0);
   });
