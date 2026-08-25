@@ -119,6 +119,9 @@ import {
   denormalizeTopGroup,
 } from "./builder/conditions-editor";
 import { EntityPickerDialog } from "./builder/entity-picker-dialog";
+import { Connector, StepsList, TriggerCard } from "./builder/canvas";
+import { ActionLibraryPanel } from "./builder/action-library-panel";
+import { TriggerConfigPanel } from "./builder/trigger-config-panel";
 
 // Painel de configuração de passo: ~1.9k linhas de formulários carregados
 // somente quando o usuário abre um passo (code-splitting real).

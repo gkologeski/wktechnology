@@ -1,6 +1,7 @@
 // Canvas do workflow builder: cartão de gatilho, lista de passos, ramificações
 // (Se/Então/Senão e por valor) e conectores. Extraído de workflow-builder.tsx
 // sem mudança de comportamento.
+import * as React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
