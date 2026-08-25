@@ -9474,6 +9474,7 @@ export type Database = {
           id: string
           label: string | null
           last_name: string | null
+          mobile_phone: string | null
           notes: string | null
           nurture_started_at: string | null
           owner_id: string
@@ -9509,6 +9510,7 @@ export type Database = {
           id?: string
           label?: string | null
           last_name?: string | null
+          mobile_phone?: string | null
           notes?: string | null
           nurture_started_at?: string | null
           owner_id: string
@@ -9544,6 +9546,7 @@ export type Database = {
           id?: string
           label?: string | null
           last_name?: string | null
+          mobile_phone?: string | null
           notes?: string | null
           nurture_started_at?: string | null
           owner_id?: string
