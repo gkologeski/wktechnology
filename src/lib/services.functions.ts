@@ -98,7 +98,6 @@ const createInput = z.object({
   currency: z.string().default("BRL"),
   startsAt: z.string().nullable().optional(),
   endsAt: z.string().nullable().optional(),
-  productId: z.string().uuid().nullable().optional(),
 });
 
 export const createService = createServerFn({ method: "POST" })
@@ -141,7 +140,6 @@ export const createService = createServerFn({ method: "POST" })
         currency: data.currency || contract.currency || "BRL",
         starts_at: data.startsAt ?? null,
         ends_at: data.endsAt ?? null,
-        product_id: data.productId ?? null,
         status: "pending",
       })
       .select("*")
@@ -168,7 +166,6 @@ const patchInput = z.object({
       ends_at: z.string().nullable().optional(),
       next_billing_at: z.string().nullable().optional(),
       delivery_owner_id: z.string().uuid().nullable().optional(),
-      product_id: z.string().uuid().nullable().optional(),
       job_profile_id: z.string().uuid().nullable().optional(),
       seniority: z.string().nullable().optional(),
       competencies: z.array(z.string()).optional(),

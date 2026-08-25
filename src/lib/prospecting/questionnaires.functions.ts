@@ -29,7 +29,7 @@ export const listQuestionnaires = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("prospecting_questionnaires")
-      .select("id, name, description, framework, pipeline_id, product_id, enabled, pass_threshold, is_template, updated_at")
+      .select("id, name, description, framework, pipeline_id, enabled, pass_threshold, is_template, updated_at")
       .order("is_template", { ascending: false })
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -66,7 +66,6 @@ export const upsertQuestionnaire = createServerFn({ method: "POST" })
         description: z.string().max(500).nullable().optional(),
         framework: FRAMEWORK.default("custom"),
         pipeline_id: z.string().uuid().nullable().optional(),
-        product_id: z.string().uuid().nullable().optional(),
         enabled: z.boolean().default(true),
         pass_threshold: z.number().int().min(-100000).max(100000).default(0),
       })
@@ -81,7 +80,6 @@ export const upsertQuestionnaire = createServerFn({ method: "POST" })
       description: data.description ?? null,
       framework: data.framework,
       pipeline_id: data.pipeline_id ?? null,
-      product_id: data.product_id ?? null,
       enabled: data.enabled,
       pass_threshold: data.pass_threshold,
     } as never;
@@ -267,7 +265,7 @@ export const duplicateQuestionnaire = createServerFn({ method: "POST" })
     await assertAnyPermission(context.supabase, context.userId, ws, asKeys(QUESTIONNAIRES_CREATE));
     const { data: src, error: srcErr } = await context.supabase
       .from("prospecting_questionnaires")
-      .select("name, description, framework, pipeline_id, product_id, pass_threshold")
+      .select("name, description, framework, pipeline_id, pass_threshold")
       .eq("id", data.id)
       .maybeSingle();
     if (srcErr) throw new Error(srcErr.message);
@@ -288,7 +286,6 @@ export const duplicateQuestionnaire = createServerFn({ method: "POST" })
         description: src.description,
         framework: src.framework,
         pipeline_id: src.pipeline_id,
-        product_id: src.product_id,
         pass_threshold: src.pass_threshold,
         enabled: true,
         is_template: false,

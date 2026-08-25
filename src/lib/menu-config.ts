@@ -126,8 +126,8 @@ export const MENU_PERMISSIONS = {
     "techsales.marketing.sdr_agent.manage.workspace",
   ],
   catalog: [
-    "techsales.catalog.products.view.workspace",
-    "techsales.catalog.products.manage.workspace",
+    "techsales.catalog.services.view.workspace",
+    "techsales.catalog.services.manage.workspace",
   ],
   dashboards: [
     "system.analytics.dashboards.view.workspace",
@@ -327,13 +327,6 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
     items: [
       { title: "Negócios", url: "/deals", icon: Briefcase },
       { title: "Cotações", url: "/settings/quotes", icon: FileText },
-      {
-        title: "Produtos",
-        url: "/settings/products",
-        icon: Package,
-        need: "manager",
-        permissionAny: MENU_PERMISSIONS.catalog,
-      },
       { title: "Faturas", url: "/invoices", icon: FileText },
       {
         title: "Portal do cliente",
@@ -515,13 +508,6 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         icon: Tag,
         need: "admin",
         permissionAny: adminAny("system.custom_properties"),
-      },
-      {
-        to: "/settings/products",
-        label: "Produtos",
-        icon: Package,
-        need: "manager",
-        permissionAny: MENU_PERMISSIONS.catalog,
       },
       {
         to: "/settings/custom-objects",

@@ -32,6 +32,8 @@ export type AllocationRow = {
   ends_at: string | null;
   status: AllocationStatus;
   notes: string | null;
+  contracting_preset_id?: string | null;
+  competencies?: string[] | null;
   created_at: string;
   updated_at: string;
   // joined
@@ -85,6 +87,9 @@ const allocationSchema = z.object({
   // Senioridade não é coluna da alocação: serve para sugerir/preencher
   // people.seniority quando o cadastro da pessoa estiver vazio.
   seniority: z.string().max(60).nullable().optional(),
+  // Preset de contratação usado como base e competências acordadas.
+  contracting_preset_id: z.string().uuid().nullable().optional(),
+  competencies: z.array(z.string().max(120)).max(50).optional(),
 });
 
 export type ContractRoleSuggestion = {
@@ -94,9 +99,17 @@ export type ContractRoleSuggestion = {
   job_profile_name: string | null;
   seniority: string | null;
   competencies: string[];
+  /** Preset de contratação coerente com o cargo do serviço, quando existir. */
+  contracting_preset_id: string | null;
+  preset_name: string | null;
+  suggested_billable_rate: number | null;
+  suggested_cost_rate: number | null;
+  unit: string | null;
 };
 
-// Sugestões de cargo/senioridade a partir dos serviços associados ao contrato.
+// Sugestões de cargo/senioridade a partir dos serviços associados ao contrato,
+// enriquecidas com os presets de contratação do mesmo cargo (competências e
+// valores sugeridos).
 export const listContractRoleSuggestions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ contract_id: z.string().uuid() }).parse(i))
@@ -107,22 +120,63 @@ export const listContractRoleSuggestions = createServerFn({ method: "POST" })
       .eq("contract_id", data.contract_id)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
-    return (rows ?? []).map((r) => {
-      const row = r as unknown as {
-        id: string;
-        name: string | null;
-        seniority: string | null;
-        competencies: string[] | null;
-        job_profile_id: string | null;
-        job_profiles?: { name: string | null } | null;
-      };
+
+    const services = (rows ?? []) as unknown as Array<{
+      id: string;
+      name: string | null;
+      seniority: string | null;
+      competencies: string[] | null;
+      job_profile_id: string | null;
+      job_profiles?: { name: string | null } | null;
+    }>;
+
+    const profileIds = [...new Set(services.map((r) => r.job_profile_id).filter(Boolean))] as string[];
+    type PresetRow = {
+      id: string;
+      name: string;
+      job_profile_id: string | null;
+      seniority: string | null;
+      competencies: string[] | null;
+      unit: string | null;
+      default_unit_price: number | null;
+      default_unit_cost: number | null;
+    };
+    let presets: PresetRow[] = [];
+    if (profileIds.length) {
+      const { data: presetRows } = await context.supabase
+        .from("contracting_presets")
+        .select(
+          "id, name, job_profile_id, seniority, competencies, unit, default_unit_price, default_unit_cost",
+        )
+        .eq("active", true)
+        .in("job_profile_id", profileIds)
+        .limit(200);
+      presets = (presetRows ?? []) as unknown as PresetRow[];
+    }
+
+    return services.map((row) => {
+      const candidates = presets.filter((pr) => pr.job_profile_id === row.job_profile_id);
+      const preset =
+        candidates.find((pr) => pr.seniority && pr.seniority === row.seniority) ??
+        candidates[0] ??
+        null;
+      const competencies = [
+        ...new Set([...(row.competencies ?? []), ...((preset?.competencies ?? []) as string[])]),
+      ];
       return {
         service_id: row.id,
         service_name: row.name ?? "Serviço",
         job_profile_id: row.job_profile_id ?? null,
         job_profile_name: row.job_profiles?.name ?? null,
-        seniority: row.seniority ?? null,
-        competencies: row.competencies ?? [],
+        seniority: row.seniority ?? preset?.seniority ?? null,
+        competencies,
+        contracting_preset_id: preset?.id ?? null,
+        preset_name: preset?.name ?? null,
+        suggested_billable_rate:
+          preset?.default_unit_price != null ? Number(preset.default_unit_price) : null,
+        suggested_cost_rate:
+          preset?.default_unit_cost != null ? Number(preset.default_unit_cost) : null,
+        unit: preset?.unit ?? null,
       } satisfies ContractRoleSuggestion;
     });
   });
@@ -205,6 +259,8 @@ export const upsertAllocation = createServerFn({ method: "POST" })
       ends_at: data.ends_at || null,
       status: data.status,
       notes: data.notes ?? null,
+      contracting_preset_id: data.contracting_preset_id ?? null,
+      competencies: data.competencies ?? [],
     };
     // Preenche o cadastro da pessoa só quando os campos estão vazios —
     // nunca sobrescreve informação já cadastrada pelo RH.

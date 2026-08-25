@@ -35,7 +35,6 @@ const SIDEBAR_MANAGER_PLUS = [
 const SETTINGS_PUBLIC = ["/settings", "/settings/email", "/settings/security", "/my-bug-reports"];
 const SETTINGS_MANAGER_PLUS = [
   "/settings/calendars",
-  "/settings/products",
   "/settings/user-groups",
   "/settings/workflows",
   "/settings/sequences",

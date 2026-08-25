@@ -13,7 +13,6 @@ export const ACCESS_OBJECTS: Array<{
   { key: "leads", label: "Leads", category: "crm", module: "crm" },
   { key: "deals", label: "Negócios", category: "sales", module: "crm" },
   { key: "quotes", label: "Cotações", category: "sales", module: "crm" },
-  { key: "products", label: "Produtos", category: "sales", module: "crm" },
   { key: "tickets", label: "Tickets", category: "service", module: "crm" },
   { key: "tasks", label: "Tarefas", category: "crm", module: "crm" },
   { key: "notes", label: "Notas", category: "crm", module: "crm" },

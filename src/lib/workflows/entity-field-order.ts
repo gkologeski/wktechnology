@@ -221,16 +221,6 @@ const ORDER: OrderMap = {
     "description",
     "notes",
   ],
-  products: [
-    "name",
-    "sku",
-    "description",
-    "unit",
-    "unit_price",
-    "currency",
-    "category",
-    "status",
-  ],
   services: [
     "name",
     "description",

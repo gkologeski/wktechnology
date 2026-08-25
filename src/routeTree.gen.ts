@@ -129,7 +129,6 @@ import { Route as AuthenticatedSettingsQuoteTemplatesRouteImport } from './route
 import { Route as AuthenticatedSettingsProspectingScriptsRouteImport } from './routes/_authenticated/settings.prospecting-scripts'
 import { Route as AuthenticatedSettingsProspectingRouteImport } from './routes/_authenticated/settings.prospecting'
 import { Route as AuthenticatedSettingsPropertyGroupsRouteImport } from './routes/_authenticated/settings.property-groups'
-import { Route as AuthenticatedSettingsProductsRouteImport } from './routes/_authenticated/settings.products'
 import { Route as AuthenticatedSettingsPrivacyRouteImport } from './routes/_authenticated/settings.privacy'
 import { Route as AuthenticatedSettingsPortalRouteImport } from './routes/_authenticated/settings.portal'
 import { Route as AuthenticatedSettingsPlaybooksRouteImport } from './routes/_authenticated/settings.playbooks'
@@ -173,7 +172,6 @@ import { Route as AuthenticatedSettingsAuditExportRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsApiKeysRouteImport } from './routes/_authenticated/settings.api-keys'
 import { Route as AuthenticatedSettingsAdsSyncRouteImport } from './routes/_authenticated/settings.ads-sync'
 import { Route as AuthenticatedSettingsAccessPolicyRouteImport } from './routes/_authenticated/settings.access-policy'
-import { Route as AuthenticatedServicesProductsRouteImport } from './routes/_authenticated/services.products'
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services.$id'
 import { Route as AuthenticatedQaTestCasesRouteImport } from './routes/_authenticated/qa.test-cases'
 import { Route as AuthenticatedProposalsIdRouteImport } from './routes/_authenticated/proposals.$id'
@@ -225,7 +223,6 @@ import { Route as AuthenticatedContractsIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenticated/companies.$id'
 import { Route as AuthenticatedCatalogServicesRouteImport } from './routes/_authenticated/catalog.services'
-import { Route as AuthenticatedCatalogProductsRouteImport } from './routes/_authenticated/catalog.products'
 import { Route as AuthenticatedCatalogJobProfilesRouteImport } from './routes/_authenticated/catalog.job-profiles'
 import { Route as AuthenticatedCatalogContractingPresetsRouteImport } from './routes/_authenticated/catalog.contracting-presets'
 import { Route as AuthenticatedCampaignsWhatsappRouteImport } from './routes/_authenticated/campaigns.whatsapp'
@@ -1030,12 +1027,6 @@ const AuthenticatedSettingsPropertyGroupsRoute =
     path: '/property-groups',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
-const AuthenticatedSettingsProductsRoute =
-  AuthenticatedSettingsProductsRouteImport.update({
-    id: '/products',
-    path: '/products',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
 const AuthenticatedSettingsPrivacyRoute =
   AuthenticatedSettingsPrivacyRouteImport.update({
     id: '/privacy',
@@ -1292,12 +1283,6 @@ const AuthenticatedSettingsAccessPolicyRoute =
     id: '/access-policy',
     path: '/access-policy',
     getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedServicesProductsRoute =
-  AuthenticatedServicesProductsRouteImport.update({
-    id: '/services/products',
-    path: '/services/products',
-    getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedServicesIdRoute = AuthenticatedServicesIdRouteImport.update({
   id: '/services/$id',
@@ -1592,12 +1577,6 @@ const AuthenticatedCatalogServicesRoute =
   AuthenticatedCatalogServicesRouteImport.update({
     id: '/catalog/services',
     path: '/catalog/services',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedCatalogProductsRoute =
-  AuthenticatedCatalogProductsRouteImport.update({
-    id: '/catalog/products',
-    path: '/catalog/products',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedCatalogJobProfilesRoute =
@@ -2539,7 +2518,6 @@ export interface FileRoutesByFullPath {
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/catalog/contracting-presets': typeof AuthenticatedCatalogContractingPresetsRoute
   '/catalog/job-profiles': typeof AuthenticatedCatalogJobProfilesRoute
-  '/catalog/products': typeof AuthenticatedCatalogProductsRoute
   '/catalog/services': typeof AuthenticatedCatalogServicesRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
@@ -2591,7 +2569,6 @@ export interface FileRoutesByFullPath {
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
-  '/services/products': typeof AuthenticatedServicesProductsRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -2635,7 +2612,6 @@ export interface FileRoutesByFullPath {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
-  '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
@@ -2898,7 +2874,6 @@ export interface FileRoutesByTo {
   '/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/catalog/contracting-presets': typeof AuthenticatedCatalogContractingPresetsRoute
   '/catalog/job-profiles': typeof AuthenticatedCatalogJobProfilesRoute
-  '/catalog/products': typeof AuthenticatedCatalogProductsRoute
   '/catalog/services': typeof AuthenticatedCatalogServicesRoute
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
@@ -2950,7 +2925,6 @@ export interface FileRoutesByTo {
   '/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
-  '/services/products': typeof AuthenticatedServicesProductsRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -2994,7 +2968,6 @@ export interface FileRoutesByTo {
   '/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
-  '/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
@@ -3263,7 +3236,6 @@ export interface FileRoutesById {
   '/_authenticated/campaigns/whatsapp': typeof AuthenticatedCampaignsWhatsappRoute
   '/_authenticated/catalog/contracting-presets': typeof AuthenticatedCatalogContractingPresetsRoute
   '/_authenticated/catalog/job-profiles': typeof AuthenticatedCatalogJobProfilesRoute
-  '/_authenticated/catalog/products': typeof AuthenticatedCatalogProductsRoute
   '/_authenticated/catalog/services': typeof AuthenticatedCatalogServicesRoute
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
@@ -3315,7 +3287,6 @@ export interface FileRoutesById {
   '/_authenticated/proposals/$id': typeof AuthenticatedProposalsIdRoute
   '/_authenticated/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
-  '/_authenticated/services/products': typeof AuthenticatedServicesProductsRoute
   '/_authenticated/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/_authenticated/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
   '/_authenticated/settings/api-keys': typeof AuthenticatedSettingsApiKeysRoute
@@ -3359,7 +3330,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/playbooks': typeof AuthenticatedSettingsPlaybooksRoute
   '/_authenticated/settings/portal': typeof AuthenticatedSettingsPortalRoute
   '/_authenticated/settings/privacy': typeof AuthenticatedSettingsPrivacyRoute
-  '/_authenticated/settings/products': typeof AuthenticatedSettingsProductsRoute
   '/_authenticated/settings/property-groups': typeof AuthenticatedSettingsPropertyGroupsRoute
   '/_authenticated/settings/prospecting': typeof AuthenticatedSettingsProspectingRoute
   '/_authenticated/settings/prospecting-scripts': typeof AuthenticatedSettingsProspectingScriptsRoute
@@ -3629,7 +3599,6 @@ export interface FileRouteTypes {
     | '/campaigns/whatsapp'
     | '/catalog/contracting-presets'
     | '/catalog/job-profiles'
-    | '/catalog/products'
     | '/catalog/services'
     | '/companies/$id'
     | '/contacts/$id'
@@ -3681,7 +3650,6 @@ export interface FileRouteTypes {
     | '/proposals/$id'
     | '/qa/test-cases'
     | '/services/$id'
-    | '/services/products'
     | '/settings/access-policy'
     | '/settings/ads-sync'
     | '/settings/api-keys'
@@ -3725,7 +3693,6 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/privacy'
-    | '/settings/products'
     | '/settings/property-groups'
     | '/settings/prospecting'
     | '/settings/prospecting-scripts'
@@ -3988,7 +3955,6 @@ export interface FileRouteTypes {
     | '/campaigns/whatsapp'
     | '/catalog/contracting-presets'
     | '/catalog/job-profiles'
-    | '/catalog/products'
     | '/catalog/services'
     | '/companies/$id'
     | '/contacts/$id'
@@ -4040,7 +4006,6 @@ export interface FileRouteTypes {
     | '/proposals/$id'
     | '/qa/test-cases'
     | '/services/$id'
-    | '/services/products'
     | '/settings/access-policy'
     | '/settings/ads-sync'
     | '/settings/api-keys'
@@ -4084,7 +4049,6 @@ export interface FileRouteTypes {
     | '/settings/playbooks'
     | '/settings/portal'
     | '/settings/privacy'
-    | '/settings/products'
     | '/settings/property-groups'
     | '/settings/prospecting'
     | '/settings/prospecting-scripts'
@@ -4352,7 +4316,6 @@ export interface FileRouteTypes {
     | '/_authenticated/campaigns/whatsapp'
     | '/_authenticated/catalog/contracting-presets'
     | '/_authenticated/catalog/job-profiles'
-    | '/_authenticated/catalog/products'
     | '/_authenticated/catalog/services'
     | '/_authenticated/companies/$id'
     | '/_authenticated/contacts/$id'
@@ -4404,7 +4367,6 @@ export interface FileRouteTypes {
     | '/_authenticated/proposals/$id'
     | '/_authenticated/qa/test-cases'
     | '/_authenticated/services/$id'
-    | '/_authenticated/services/products'
     | '/_authenticated/settings/access-policy'
     | '/_authenticated/settings/ads-sync'
     | '/_authenticated/settings/api-keys'
@@ -4448,7 +4410,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/playbooks'
     | '/_authenticated/settings/portal'
     | '/_authenticated/settings/privacy'
-    | '/_authenticated/settings/products'
     | '/_authenticated/settings/property-groups'
     | '/_authenticated/settings/prospecting'
     | '/_authenticated/settings/prospecting-scripts'
@@ -5586,13 +5547,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPropertyGroupsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
-    '/_authenticated/settings/products': {
-      id: '/_authenticated/settings/products'
-      path: '/products'
-      fullPath: '/settings/products'
-      preLoaderRoute: typeof AuthenticatedSettingsProductsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
     '/_authenticated/settings/privacy': {
       id: '/_authenticated/settings/privacy'
       path: '/privacy'
@@ -5893,13 +5847,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/access-policy'
       preLoaderRoute: typeof AuthenticatedSettingsAccessPolicyRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/services/products': {
-      id: '/_authenticated/services/products'
-      path: '/services/products'
-      fullPath: '/services/products'
-      preLoaderRoute: typeof AuthenticatedServicesProductsRouteImport
-      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/services/$id': {
       id: '/_authenticated/services/$id'
@@ -6256,13 +6203,6 @@ declare module '@tanstack/react-router' {
       path: '/catalog/services'
       fullPath: '/catalog/services'
       preLoaderRoute: typeof AuthenticatedCatalogServicesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/catalog/products': {
-      id: '/_authenticated/catalog/products'
-      path: '/catalog/products'
-      fullPath: '/catalog/products'
-      preLoaderRoute: typeof AuthenticatedCatalogProductsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/catalog/job-profiles': {
@@ -7491,7 +7431,6 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsPlaybooksRoute: typeof AuthenticatedSettingsPlaybooksRoute
   AuthenticatedSettingsPortalRoute: typeof AuthenticatedSettingsPortalRoute
   AuthenticatedSettingsPrivacyRoute: typeof AuthenticatedSettingsPrivacyRoute
-  AuthenticatedSettingsProductsRoute: typeof AuthenticatedSettingsProductsRoute
   AuthenticatedSettingsPropertyGroupsRoute: typeof AuthenticatedSettingsPropertyGroupsRoute
   AuthenticatedSettingsProspectingRoute: typeof AuthenticatedSettingsProspectingRoute
   AuthenticatedSettingsProspectingScriptsRoute: typeof AuthenticatedSettingsProspectingScriptsRoute
@@ -7586,7 +7525,6 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsPlaybooksRoute: AuthenticatedSettingsPlaybooksRoute,
   AuthenticatedSettingsPortalRoute: AuthenticatedSettingsPortalRoute,
   AuthenticatedSettingsPrivacyRoute: AuthenticatedSettingsPrivacyRoute,
-  AuthenticatedSettingsProductsRoute: AuthenticatedSettingsProductsRoute,
   AuthenticatedSettingsPropertyGroupsRoute:
     AuthenticatedSettingsPropertyGroupsRoute,
   AuthenticatedSettingsProspectingRoute: AuthenticatedSettingsProspectingRoute,
@@ -7774,7 +7712,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCampaignsWhatsappRoute: typeof AuthenticatedCampaignsWhatsappRoute
   AuthenticatedCatalogContractingPresetsRoute: typeof AuthenticatedCatalogContractingPresetsRoute
   AuthenticatedCatalogJobProfilesRoute: typeof AuthenticatedCatalogJobProfilesRoute
-  AuthenticatedCatalogProductsRoute: typeof AuthenticatedCatalogProductsRoute
   AuthenticatedCatalogServicesRoute: typeof AuthenticatedCatalogServicesRoute
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
   AuthenticatedContractsLinksRoute: typeof AuthenticatedContractsLinksRoute
@@ -7818,7 +7755,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsTimesheetRoute: typeof AuthenticatedProjectsTimesheetRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
-  AuthenticatedServicesProductsRoute: typeof AuthenticatedServicesProductsRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
   AuthenticatedAtsIndexRoute: typeof AuthenticatedAtsIndexRoute
   AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
@@ -7912,7 +7848,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCatalogContractingPresetsRoute:
     AuthenticatedCatalogContractingPresetsRoute,
   AuthenticatedCatalogJobProfilesRoute: AuthenticatedCatalogJobProfilesRoute,
-  AuthenticatedCatalogProductsRoute: AuthenticatedCatalogProductsRoute,
   AuthenticatedCatalogServicesRoute: AuthenticatedCatalogServicesRoute,
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
   AuthenticatedContractsLinksRoute: AuthenticatedContractsLinksRoute,
@@ -7961,7 +7896,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsTimesheetRoute: AuthenticatedProjectsTimesheetRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
-  AuthenticatedServicesProductsRoute: AuthenticatedServicesProductsRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
   AuthenticatedAtsIndexRoute: AuthenticatedAtsIndexRoute,
   AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,

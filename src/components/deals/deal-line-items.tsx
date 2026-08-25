@@ -9,6 +9,14 @@ import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { Wrench, Plus, Trash2, Pencil } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { listPresetsForService } from "@/lib/contracting-presets.functions";
+import { PresetLinePicker } from "@/components/catalog/preset-line-picker";
+import {
+  presetToLinePatch,
+  type PresetOption,
+} from "@/lib/contracting-presets-shared";
+import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
 import {
@@ -25,8 +33,11 @@ type LineItem = {
   id: string;
   owner_id: string;
   deal_id: string;
-  product_id: string | null;
   service_catalog_id?: string | null;
+  contracting_preset_id?: string | null;
+  job_profile_id?: string | null;
+  seniority?: string | null;
+  unit?: string | null;
   name: string;
   description: string | null;
   quantity: number;
@@ -174,6 +185,7 @@ export function LineItemsEditorBody({
   const qc = useQueryClient();
   const { data: items = [], isLoading } = useLineItems(dealId);
   const currentUserId = useCurrentUserId();
+  const listPresets = useServerFn(listPresetsForService);
 
   // O item precisa herdar o workspace do negócio para passar pelas regras de acesso.
   const { data: dealScope } = useQuery({
@@ -265,10 +277,27 @@ export function LineItemsEditorBody({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: p, error: perr } = await (supabase as any)
       .from("service_catalog")
-      .select("id, name, base_price, tax_rate")
+      .select("id, name, base_price, tax_rate, unit")
       .eq("id", sid)
       .maybeSingle();
     if (perr || !p) return toast.error(perr?.message ?? "Serviço não encontrado");
+
+    // Preset de contratação: quando o serviço tem exatamente um preset ativo,
+    // aplicamos automaticamente (cargo, senioridade, unidade e preço sugerido).
+    let presetPatch: Record<string, unknown> = {};
+    let appliedPresetName: string | null = null;
+    try {
+      const presets = (await listPresets({
+        data: { serviceCatalogId: p.id },
+      })) as unknown as PresetOption[];
+      if (presets.length === 1 && presets[0]) {
+        presetPatch = presetToLinePatch(presets[0]) as unknown as Record<string, unknown>;
+        appliedPresetName = presets[0].name;
+      }
+    } catch {
+      // Presets são opcionais: falha de permissão/rede não bloqueia o item.
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
       .from("deal_line_items")
@@ -278,6 +307,8 @@ export function LineItemsEditorBody({
         name: p.name,
         quantity: 1,
         unit_price: p.base_price ?? 0,
+        unit: p.unit ?? null,
+        ...presetPatch,
         discount_pct: 0,
         discount_amount: 0,
         discount_type: "pct",
@@ -295,6 +326,7 @@ export function LineItemsEditorBody({
         ),
       );
       setProductPickerKey((k) => k + 1);
+      if (appliedPresetName) toast.success(`Preset aplicado: ${appliedPresetName}`);
     }
     notifyDealsChanged();
   }
@@ -388,6 +420,41 @@ export function LineItemsEditorBody({
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
+
+              {li.service_catalog_id ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <PresetLinePicker
+                    serviceCatalogId={li.service_catalog_id}
+                    value={li.contracting_preset_id ?? null}
+                    onApply={(preset) => {
+                      if (!preset) {
+                        update(li.id, {
+                          contracting_preset_id: null,
+                          job_profile_id: null,
+                          seniority: null,
+                        });
+                        return;
+                      }
+                      update(li.id, presetToLinePatch(preset) as Partial<LineItem>);
+                    }}
+                  />
+                  {li.job_profile_id || li.seniority ? (
+                    <div className="space-y-1">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        Cargo / senioridade
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {[
+                          li.seniority ? SENIORITY_LABEL[li.seniority] ?? li.seniority : null,
+                          li.unit ? `por ${li.unit}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "—"}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="grid grid-cols-4 gap-2">
                 <LabeledNumber
