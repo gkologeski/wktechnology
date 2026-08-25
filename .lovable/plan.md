@@ -1,28 +1,50 @@
-# Filtro "Filas de prospecção" no painel de Leads
+# Reduzir tempo de implementação — o que falta (Fases 2 a 4)
 
-Adicionar, no painel de filtros à esquerda de `/leads`, um grupo **Filas de prospecção** com multi-seleção (checkboxes, igual aos grupos Etapa/Origem). Ao marcar uma ou mais filas, o grid passa a mostrar somente os leads pertencentes a essas filas, e um botão abre esses leads direto no **modo prospecção** para qualificá-los.
+## Estado atual (verificado agora)
 
-## O que será feito
+Concluído:
+- Fase 0 (baseline medida) e Fase 1 — `typecheck` já usa `tsgo --noEmit`; build de produção em ~69s; lint com 0 erros.
+- Bibliotecas pesadas praticamente todas em import dinâmico (restam 2 arquivos com `recharts` estático e 1 com `@tiptap`).
+- `client.server` removido do escopo de módulo em todos os `*.functions.ts`.
+- `activity-timeline.tsx` quebrado (arquivo monolítico não existe mais); `leads.tsx` reduzido de 1.637 para 685 linhas.
 
-1. **Novo grupo de filtro "Filas de prospecção"** no painel esquerdo, listando as filas de prospecção de leads visíveis ao usuário (nome + contagem de itens quando disponível). Multi-seleção via checkbox; entra em "Limpar tudo" e no contador de filtros ativos.
+Pendente:
+- `workflow-builder.tsx` (1.910 linhas) e `hubspot-steps.server.ts` (2.088 linhas) continuam monolíticos.
+- `candidates.index.tsx` (1.517) e `jobs.$id.tsx` (1.467) ainda não foram quebrados.
+- 105 rotas ainda importam `*.functions.ts` estaticamente no topo.
+- Fase 3 (auditoria de `workspace_id`/RLS em lote + testes por papel) não iniciada.
+- Fase 4 (processo: sprints de polimento, regra de escopo, templates de plano) não iniciada.
 
-2. **Grid filtrado pelas filas selecionadas**: a lista de leads passa a restringir aos IDs resolvidos das filas marcadas (união das filas). Fila manual usa seus `item_ids`; fila dinâmica é resolvida aplicando os filtros salvos dela.
+## Correção bloqueante primeiro
 
-3. **Botão "Abrir no modo prospecção"** dentro do grupo do filtro (visível quando há pelo menos uma fila marcada):
-   - com **uma** fila marcada, navega direto para `/prospecting/queues/$queueId/play` dessa fila (sem criar nada);
-   - com **duas ou mais** filas marcadas, reutiliza o atalho já existente "Modo Prospecção": grava a união dos leads na fila manual reutilizável "Modo Prospecção (rápida)" e abre a tela de play dela.
-   - Nada muda na tela de prospecção (questionário, qualificação, timeline, atalhos permanecem iguais).
+`src/routes/_authenticated/leads.tsx` perdeu o import de `useAutoCreateParam` na refatoração e o build está quebrado (TS2304 na linha 108). Restaurar `import { useAutoCreateParam } from "@/hooks/use-auto-create-param";` antes de qualquer outra coisa e rodar `bun run typecheck`.
 
-4. **Estados e permissões**: o grupo só aparece para quem tem permissão de ver filas de prospecção; mostra "Nenhuma fila ainda" quando vazio, skeleton enquanto carrega e toast de erro em falha. O botão fica desabilitado durante a preparação ("Preparando…") e quando a união não retorna leads.
+## Fase 2 — concluir a redução do grafo de módulos
 
-## Detalhes técnicos
+1. Quebrar `hubspot-steps.server.ts`: extrair o `runStep` em módulos por grupo de passos (`hubspot-sync-steps.server.ts`, `hubspot-discovery.server.ts`), mantendo o arquivo original como dispatcher fino.
+2. Quebrar `workflow-builder.tsx`: extrair painel de passos, painel de condições e editor de campos para `src/components/workflows/builder/*`.
+3. Quebrar `candidates.index.tsx` e `jobs.$id.tsx` em componentes sob `src/components/ats/candidates/` e `src/components/ats/jobs/` (grid, barra de ações em massa, abas, cabeçalho).
+4. Converter os 2 usos estáticos restantes de `recharts` e o 1 de `@tiptap` em import dinâmico.
+5. Passar as rotas de maior peso (top 20 por tamanho) a chamar server functions via `useServerFn` dentro de handlers, reduzindo imports estáticos.
 
-- `src/lib/prospecting/queues.functions.ts`: nova server fn `resolveQueueLeadIds({ queue_ids })` — reaproveita a lógica de filtros/`item_ids` já usada por `listQueueItems`, restrita a `entity: "lead"`, retornando IDs únicos (teto de `PROSPECTING_MODE_LIMIT`). Permissão `QUEUE_VIEW`, RLS/workspace inalterados.
-- `src/components/leads/leads-filters-sidebar.tsx`: novo `FilterGroup` "Filas de prospecção" recebendo por props a lista de filas, `selectedQueueIds`, `onToggleQueue` e `onOpenProspecting` (componente segue presentacional, sem chamadas de dados).
-- `src/routes/_authenticated/leads.tsx`: `Filters` ganha `queueIds: string[]` (default `[]`); `useQuery` de `listQueues` filtrando `entity === "lead"`; `useQuery` de `resolveQueueLeadIds` quando há filas marcadas, aplicando `.in("id", ids)` na consulta do grid (e no `fetchFilteredLeadIds`); handler `openProspectingFromQueues()` usando o `startProspectingMode` já existente ou navegação direta quando há só uma fila.
-- Sem migration, sem mudança de schema, RLS, permissões ou regra de negócio. Nenhuma alteração em `prospecting.queues.$queueId.play.tsx`.
+Sem mudança de comportamento nesta fase.
 
-## Validação
+## Fase 3 — estabilizar dados e permissões
 
-- `bun run typecheck` e `bun run lint` nos arquivos alterados.
-- Verificação manual em `/leads`: marcar uma fila (grid reduz, botão abre a fila), marcar duas (grid mostra a união, botão abre a fila rápida), limpar filtros e conferir retorno ao estado inicial; conferir empty/erro e dark mode.
+1. Inventário SQL das tabelas em `public` sem `workspace_id` e das que têm RLS incompleta (sem policy por comando ou sem GRANT).
+2. Migration única por lote corrigindo GRANT/RLS faltantes — sem alterar regra de negócio.
+3. Testes E2E de visibilidade por papel (admin, manager, member) cobrindo Leads, Contatos, Negócios, Contratos e People.
+4. Aplicar `deleteRowGuarded` e `handle-permission-error` nos fluxos restantes de exclusão/edição.
+
+## Fase 4 — processo de entrega
+
+1. Templates de plano por tipo (bug, feature, refactor) em `docs/`.
+2. Regra escrita: plano de correção simples não expande para schema/RLS sem nova aprovação.
+3. Consolidar bugs de UI em um único plano semanal de polimento.
+4. Repriorizar `docs/backlog-pendencias.md` marcando o que está congelado até a Fase 3 terminar.
+
+## Como validar
+
+- `bun run typecheck`, `bun run lint`, `bun run test` e `bun run build` após cada item da Fase 2, comparando com a baseline (~69s de build, ~31s de typecheck).
+- Smoke manual em Workflows, HubSpot sync, Candidatos, Vaga e Leads após as quebras.
+- Fase 3: rodar o linter de banco e os novos testes E2E por papel.
