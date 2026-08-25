@@ -286,6 +286,8 @@ type ApolloPersonDetail = {
   country?: string | null;
   formatted_address?: string | null;
   phone?: string | null;
+  phone_numbers?: { sanitized_number?: string; raw_number?: string; type?: string }[];
+
   organization?: {
     name?: string;
     primary_domain?: string | null;
