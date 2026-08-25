@@ -51,7 +51,7 @@ export function CvPdfUploadButton({ onExtracted, disabled }: Props) {
         const { data: u } = await supabase.auth.getUser();
         const uid = u.user?.id;
         if (!uid) throw new Error("Não autenticado");
-        const path = `${uid}/${Date.now()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+        const path = `${uid}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
         const { error: upErr } = await supabase.storage
           .from("ats-cvs")
           .upload(path, file, { contentType: file.type || "application/pdf", upsert: false });

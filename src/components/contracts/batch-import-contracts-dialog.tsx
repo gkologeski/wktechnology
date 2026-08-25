@@ -214,7 +214,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
       if (!uid) return null;
-      const safeName = f.name.replace(/[^\w.\-]+/g, "_");
+      const safeName = f.name.replace(/[^\w.-]+/g, "_");
       const path = `${uid}/${Date.now()}-${safeName}`;
       const { error } = await supabase.storage
         .from("contract-imports")

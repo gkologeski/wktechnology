@@ -174,7 +174,6 @@ function MediaLibraryPage() {
               <div key={r.id} className="border rounded-lg overflow-hidden bg-card group">
                 <div className="aspect-square bg-muted/40 flex items-center justify-center">
                   {isImg ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={r.url} alt={r.filename} className="h-full w-full object-cover" />
                   ) : (
                     <FileText className="h-10 w-10 text-muted-foreground" />
