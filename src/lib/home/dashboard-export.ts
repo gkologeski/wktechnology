@@ -15,10 +15,7 @@ const MODULE_LABEL: Record<string, string> = {
 
 type Row = { modulo: string; indicador: string; valor: string; detalhe: string };
 
-export function exportDashboardCsv(
-  data: HomeDashboardResponse,
-  range: { from: Date; to: Date },
-) {
+export function exportDashboardCsv(data: HomeDashboardResponse, range: { from: Date; to: Date }) {
   const rows: Row[] = [];
   for (const s of data.sections) {
     for (const k of s.kpis) {

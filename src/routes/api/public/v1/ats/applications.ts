@@ -1,10 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import {
-  authenticateApiKey,
-  requireScope,
-  unauthorized,
-} from "@/lib/api-keys/auth.server";
+import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
 import { flagDisabled, isAtsPublicApiEnabled } from "@/lib/ats/public-api.server";
 
 const SELECT =
@@ -32,8 +28,7 @@ export const Route = createFileRoute("/api/public/v1/ats/applications")({
         if (jobId) q = q.eq("job_id", jobId);
         if (status) q = q.eq("status", status);
         const { data, error } = await q;
-        if (error)
-          return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
         return Response.json({ data: data ?? [] });
       },
     },

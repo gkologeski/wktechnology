@@ -51,7 +51,6 @@ export const saveEmailSignature = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-
 // Disconnect (delete) an email account.
 export const disconnectEmailAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

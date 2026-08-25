@@ -192,8 +192,7 @@ export function GlobalSearch() {
   const groups = results.data?.groups ?? [];
   const hasQuery = debouncedQ.trim().length > 0;
   const hasResults = groups.some((g) => g.items.length > 0);
-  const showEmpty =
-    hasQuery && !isCommandMode && !results.isLoading && !hasResults && !aiMode;
+  const showEmpty = hasQuery && !isCommandMode && !results.isLoading && !hasResults && !aiMode;
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -212,9 +211,7 @@ export function GlobalSearch() {
                 key={t.id}
                 type="button"
                 onClick={() =>
-                  setTypes((prev) =>
-                    active ? prev.filter((x) => x !== t.id) : [...prev, t.id],
-                  )
+                  setTypes((prev) => (active ? prev.filter((x) => x !== t.id) : [...prev, t.id]))
                 }
                 className={cn(
                   "rounded-full border px-2.5 py-0.5 text-xs transition-colors",
@@ -340,9 +337,8 @@ export function GlobalSearch() {
             {(pinneds.data?.items?.length ?? 0) === 0 &&
               (recents.data?.items?.length ?? 0) === 0 && (
                 <div className="p-6 text-center text-sm text-muted-foreground">
-                  Comece a digitar para buscar em contatos, empresas, negócios, tickets,
-                  candidatos, vagas… ou use <kbd className="rounded border px-1">/</kbd> para
-                  comandos.
+                  Comece a digitar para buscar em contatos, empresas, negócios, tickets, candidatos,
+                  vagas… ou use <kbd className="rounded border px-1">/</kbd> para comandos.
                 </div>
               )}
           </>

@@ -215,7 +215,10 @@ export const generateFinancialFromBillable = createServerFn({ method: "POST" })
     await supabase
       .from("project_time_entries")
       .update({ financial_entry_id: fin.id })
-      .in("id", eligible.map((e) => e.id));
+      .in(
+        "id",
+        eligible.map((e) => e.id),
+      );
 
     return { created: 1, amount: Number(amount.toFixed(2)), financialEntryId: fin.id };
   });

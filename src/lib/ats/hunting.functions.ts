@@ -174,20 +174,18 @@ export const addCaptureToPool = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("ats_talent_pool_members")
-      .upsert(
-        [
-          {
-            pool_id: data.pool_id,
-            candidate_id: data.candidate_id,
-            owner_id: context.userId,
-            added_by: context.userId,
-            source: "manual",
-          },
-        ] as never,
-        { onConflict: "pool_id,candidate_id", ignoreDuplicates: true },
-      );
+    const { error } = await context.supabase.from("ats_talent_pool_members").upsert(
+      [
+        {
+          pool_id: data.pool_id,
+          candidate_id: data.candidate_id,
+          owner_id: context.userId,
+          added_by: context.userId,
+          source: "manual",
+        },
+      ] as never,
+      { onConflict: "pool_id,candidate_id", ignoreDuplicates: true },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -203,22 +201,20 @@ export const enrollCaptureInSequence = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("ats_sourcing_enrollments")
-      .upsert(
-        [
-          {
-            sequence_id: data.sequence_id,
-            candidate_id: data.candidate_id,
-            owner_id: context.userId,
-            status: "active",
-            current_step: 0,
-            next_run_at: new Date().toISOString(),
-            started_by: context.userId,
-          },
-        ] as never,
-        { onConflict: "sequence_id,candidate_id", ignoreDuplicates: true },
-      );
+    const { error } = await context.supabase.from("ats_sourcing_enrollments").upsert(
+      [
+        {
+          sequence_id: data.sequence_id,
+          candidate_id: data.candidate_id,
+          owner_id: context.userId,
+          status: "active",
+          current_step: 0,
+          next_run_at: new Date().toISOString(),
+          started_by: context.userId,
+        },
+      ] as never,
+      { onConflict: "sequence_id,candidate_id", ignoreDuplicates: true },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -257,11 +253,7 @@ export const logOutreachSent = createServerFn({ method: "POST" })
 // Templates de mensagem
 // ────────────────────────────────────────────────────────────────────────────
 
-const TEMPLATE_CHANNEL = z.enum([
-  "linkedin_inmail",
-  "linkedin_connect",
-  "linkedin_message",
-]);
+const TEMPLATE_CHANNEL = z.enum(["linkedin_inmail", "linkedin_connect", "linkedin_message"]);
 
 export const listHuntingTemplates = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -368,11 +360,14 @@ export const renderHuntingTemplate = createServerFn({ method: "POST" })
       empresa_atual: (cand.current_company as string | null) ?? "",
       cargo_atual: (cand.current_position as string | null) ?? "",
       localizacao: (cand.location as string | null) ?? "",
-      vaga: ((job as { title?: string } | null)?.title) ?? "",
-      vaga_local: ((job as { location?: string } | null)?.location) ?? "",
+      vaga: (job as { title?: string } | null)?.title ?? "",
+      vaga_local: (job as { location?: string } | null)?.location ?? "",
     };
     const render = (s: string | null | undefined): string =>
-      (s ?? "").replace(/\{\{\s*([a-z_]+)\s*\}\}/gi, (_m, k: string) => vars[k.toLowerCase()] ?? "");
+      (s ?? "").replace(
+        /\{\{\s*([a-z_]+)\s*\}\}/gi,
+        (_m, k: string) => vars[k.toLowerCase()] ?? "",
+      );
 
     return {
       channel: tpl.channel as string,
@@ -403,26 +398,31 @@ export const listRecentCaptures = createServerFn({ method: "POST" })
       .limit(data.limit);
     if (error) throw new Error(error.message);
     const ids = Array.from(new Set((rows ?? []).map((r) => r.candidate_id as string)));
-    let cands: Record<string, {
-      id: string;
-      full_name: string;
-      current_company: string | null;
-      current_position: string | null;
-      linkedin_url: string | null;
-    }> = {};
+    let cands: Record<
+      string,
+      {
+        id: string;
+        full_name: string;
+        current_company: string | null;
+        current_position: string | null;
+        linkedin_url: string | null;
+      }
+    > = {};
     if (ids.length) {
       const { data: c } = await supabase
         .from("ats_candidates")
         .select("id, full_name, current_company, current_position, linkedin_url")
         .in("id", ids);
       cands = Object.fromEntries(
-        ((c ?? []) as Array<{
-          id: string;
-          full_name: string;
-          current_company: string | null;
-          current_position: string | null;
-          linkedin_url: string | null;
-        }>).map((x) => [x.id, x]),
+        (
+          (c ?? []) as Array<{
+            id: string;
+            full_name: string;
+            current_company: string | null;
+            current_position: string | null;
+            linkedin_url: string | null;
+          }>
+        ).map((x) => [x.id, x]),
       );
     }
     return {

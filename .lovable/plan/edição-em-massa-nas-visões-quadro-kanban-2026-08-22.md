@@ -15,6 +15,7 @@ Hoje a edição em massa dinâmica (`GridBulkBar` + `BulkEditFieldsDialog`) exis
 ## Cobertura
 
 Genérico (via componentes compartilhados):
+
 - `KanbanBoard` — Propostas, Contratos, Projetos, Tarefas de projeto, Serviços, Pessoas, Incidentes, Ofertas (ATS), Faturas, NFS-e, Lançamentos financeiros, Chamados internos (bug reports).
 - `EntityBoard` — quadros das listas genéricas de entidades (`entity-list`).
 - `DealsBoard` — quadro de Negócios.

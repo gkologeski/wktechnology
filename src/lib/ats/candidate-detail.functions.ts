@@ -63,14 +63,7 @@ export type CandidateEvent = {
   metadata_json: string | null;
 };
 
-export type RichJson =
-  | string
-  | number
-  | boolean
-  | null
-  | RichJson[]
-  | { [key: string]: RichJson };
-
+export type RichJson = string | number | boolean | null | RichJson[] | { [key: string]: RichJson };
 
 export type CandidateDetail = {
   candidate: {
@@ -115,13 +108,7 @@ export type CandidateDetail = {
     recent_activity: RichJson;
     recommendations: RichJson;
   };
-  derived_status:
-    | "hired"
-    | "offer"
-    | "interview"
-    | "in_process"
-    | "archived"
-    | "new";
+  derived_status: "hired" | "offer" | "interview" | "in_process" | "archived" | "new";
   applications: CandidateApplication[];
   pools: CandidatePoolMembership[];
   interviews: CandidateInterview[];
@@ -129,7 +116,6 @@ export type CandidateDetail = {
   flags: CandidateFlag[];
   events: CandidateEvent[];
 };
-
 
 export const getCandidateDetail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -238,15 +224,10 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
       kind: string | null;
       job_id: string | null;
     }>;
-    const ivJobIds = Array.from(
-      new Set(ivRows.map((r) => r.job_id).filter(Boolean) as string[]),
-    );
+    const ivJobIds = Array.from(new Set(ivRows.map((r) => r.job_id).filter(Boolean) as string[]));
     const ivJobMap = new Map<string, string | null>();
     if (ivJobIds.length) {
-      const { data: js } = await supabase
-        .from("ats_jobs")
-        .select("id, title")
-        .in("id", ivJobIds);
+      const { data: js } = await supabase.from("ats_jobs").select("id, title").in("id", ivJobIds);
       for (const j of (js ?? []) as unknown as Array<{ id: string; title: string | null }>) {
         ivJobMap.set(j.id, j.title);
       }
@@ -257,7 +238,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
       status: i.status,
       kind: i.kind,
       job_id: i.job_id,
-      job_title: i.job_id ? ivJobMap.get(i.job_id) ?? null : null,
+      job_title: i.job_id ? (ivJobMap.get(i.job_id) ?? null) : null,
     }));
 
     // Offers
@@ -280,10 +261,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     );
     const offJobMap = new Map<string, string | null>();
     if (offJobIds.length) {
-      const { data: js } = await supabase
-        .from("ats_jobs")
-        .select("id, title")
-        .in("id", offJobIds);
+      const { data: js } = await supabase.from("ats_jobs").select("id, title").in("id", offJobIds);
       for (const j of (js ?? []) as unknown as Array<{ id: string; title: string | null }>) {
         offJobMap.set(j.id, j.title);
       }
@@ -291,7 +269,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     const offers: CandidateOffer[] = offerRows.map((o) => ({
       id: o.id,
       job_id: o.job_id,
-      job_title: o.job_id ? offJobMap.get(o.job_id) ?? null : null,
+      job_title: o.job_id ? (offJobMap.get(o.job_id) ?? null) : null,
       status: o.status,
       salary_amount: o.salary_amount,
       salary_currency: o.salary_currency,
@@ -305,14 +283,16 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
       .select("id, kind, severity, details, resolved, created_at")
       .eq("candidate_id", data.id)
       .order("created_at", { ascending: false });
-    const flags: CandidateFlag[] = ((flagRowsRaw ?? []) as unknown as Array<{
-      id: string;
-      kind: string;
-      severity: string | null;
-      details: unknown;
-      resolved: boolean | null;
-      created_at: string;
-    }>).map((f) => ({
+    const flags: CandidateFlag[] = (
+      (flagRowsRaw ?? []) as unknown as Array<{
+        id: string;
+        kind: string;
+        severity: string | null;
+        details: unknown;
+        resolved: boolean | null;
+        created_at: string;
+      }>
+    ).map((f) => ({
       id: f.id,
       kind: f.kind,
       severity: f.severity,
@@ -331,14 +311,16 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
         .in("application_id", appIds)
         .order("created_at", { ascending: false })
         .limit(50);
-      events = ((evRowsRaw ?? []) as unknown as Array<{
-        id: string;
-        event_type: string;
-        from_stage: string | null;
-        to_stage: string | null;
-        created_at: string;
-        metadata: unknown;
-      }>).map((e) => ({
+      events = (
+        (evRowsRaw ?? []) as unknown as Array<{
+          id: string;
+          event_type: string;
+          from_stage: string | null;
+          to_stage: string | null;
+          created_at: string;
+          metadata: unknown;
+        }>
+      ).map((e) => ({
         id: e.id,
         event_type: e.event_type,
         from_stage: e.from_stage,
@@ -351,16 +333,12 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
     // Derived status
     const now = Date.now();
     let derived: CandidateDetail["derived_status"] = "new";
-    if (offers.some((o) => o.status === "accepted" || o.status === "signed"))
-      derived = "hired";
-    else if (offers.some((o) => o.status === "sent" || o.status === "viewed"))
-      derived = "offer";
+    if (offers.some((o) => o.status === "accepted" || o.status === "signed")) derived = "hired";
+    else if (offers.some((o) => o.status === "sent" || o.status === "viewed")) derived = "offer";
     else if (
       interviews.some(
         (i) =>
-          i.scheduled_at &&
-          new Date(i.scheduled_at).getTime() > now &&
-          i.status !== "cancelled",
+          i.scheduled_at && new Date(i.scheduled_at).getTime() > now && i.status !== "cancelled",
       )
     )
       derived = "interview";
@@ -383,8 +361,8 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
         current_position: (cand.current_position as string | null) ?? null,
         current_company: (cand.current_company as string | null) ?? null,
         cv_url: (cand.cv_url as string | null) ?? null,
-        skills: ((cand.skills as string[] | null) ?? []),
-        tags: ((cand.tags as string[] | null) ?? []),
+        skills: (cand.skills as string[] | null) ?? [],
+        tags: (cand.tags as string[] | null) ?? [],
         source: (cand.source as string | null) ?? null,
         score: (cand.score as number | null) ?? null,
         notes: (cand.notes as string | null) ?? null,
@@ -405,8 +383,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
         education: ((cand as Record<string, unknown>).education as RichJson) ?? null,
         certifications: ((cand as Record<string, unknown>).certifications as RichJson) ?? null,
         languages: ((cand as Record<string, unknown>).languages as RichJson) ?? null,
-        skills_detailed:
-          ((cand as Record<string, unknown>).skills_detailed as RichJson) ?? null,
+        skills_detailed: ((cand as Record<string, unknown>).skills_detailed as RichJson) ?? null,
         projects: ((cand as Record<string, unknown>).projects as RichJson) ?? null,
         publications: ((cand as Record<string, unknown>).publications as RichJson) ?? null,
         volunteering: ((cand as Record<string, unknown>).volunteering as RichJson) ?? null,
@@ -415,10 +392,8 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
           ((cand as Record<string, unknown>).available_actions as RichJson) ?? null,
         current_company_data:
           ((cand as Record<string, unknown>).current_company_data as RichJson) ?? null,
-        recent_activity:
-          ((cand as Record<string, unknown>).recent_activity as RichJson) ?? null,
-        recommendations:
-          ((cand as Record<string, unknown>).recommendations as RichJson) ?? null,
+        recent_activity: ((cand as Record<string, unknown>).recent_activity as RichJson) ?? null,
+        recommendations: ((cand as Record<string, unknown>).recommendations as RichJson) ?? null,
       },
       derived_status: derived,
       applications,
@@ -433,9 +408,7 @@ export const getCandidateDetail = createServerFn({ method: "POST" })
 
 export const removeCandidateFromPool = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ membership_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ membership_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
     const { error } = await supabase

@@ -148,7 +148,9 @@ function ReferralsInbox() {
     <div className="space-y-4">
       <div className="flex items-center justify-end gap-2">
         <Select value={scope} onValueChange={(v) => setScope(v as "mine" | "all")}>
-          <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas</SelectItem>
             <SelectItem value="mine">Minhas</SelectItem>
@@ -168,32 +170,57 @@ function ReferralsInbox() {
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Nome do candidato *</Label>
-                <Input value={form.candidate_name} onChange={(e) => setForm({ ...form, candidate_name: e.target.value })} />
+                <Input
+                  value={form.candidate_name}
+                  onChange={(e) => setForm({ ...form, candidate_name: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Email</Label>
-                <Input type="email" value={form.candidate_email} onChange={(e) => setForm({ ...form, candidate_email: e.target.value })} />
+                <Input
+                  type="email"
+                  value={form.candidate_email}
+                  onChange={(e) => setForm({ ...form, candidate_email: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5">
                 <Label>Telefone</Label>
-                <Input value={form.candidate_phone} onChange={(e) => setForm({ ...form, candidate_phone: e.target.value })} />
+                <Input
+                  value={form.candidate_phone}
+                  onChange={(e) => setForm({ ...form, candidate_phone: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>LinkedIn</Label>
-                <Input value={form.candidate_linkedin} onChange={(e) => setForm({ ...form, candidate_linkedin: e.target.value })} />
+                <Input
+                  value={form.candidate_linkedin}
+                  onChange={(e) => setForm({ ...form, candidate_linkedin: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Relacionamento</Label>
-                <Input value={form.relationship} onChange={(e) => setForm({ ...form, relationship: e.target.value })} />
+                <Input
+                  value={form.relationship}
+                  onChange={(e) => setForm({ ...form, relationship: e.target.value })}
+                />
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>Por que recomenda?</Label>
-                <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                <Textarea
+                  rows={3}
+                  value={form.notes}
+                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button onClick={() => submitMut.mutate()} disabled={!form.candidate_name.trim() || submitMut.isPending}>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => submitMut.mutate()}
+                disabled={!form.candidate_name.trim() || submitMut.isPending}
+              >
                 {submitMut.isPending ? "Enviando..." : "Enviar indicação"}
               </Button>
             </DialogFooter>
@@ -204,7 +231,11 @@ function ReferralsInbox() {
       {isLoading ? (
         <Skeletons.Card />
       ) : !data?.referrals.length ? (
-        <EmptyState icon={Gift} title="Nenhuma indicação ainda" description="Quando alguém indicar um candidato, aparecerá aqui." />
+        <EmptyState
+          icon={Gift}
+          title="Nenhuma indicação ainda"
+          description="Quando alguém indicar um candidato, aparecerá aqui."
+        />
       ) : (
         <div className="space-y-3">
           {data.referrals.map((r) => (
@@ -213,23 +244,43 @@ function ReferralsInbox() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium truncate">{r.candidate_name}</p>
-                    <Badge variant="outline" className="text-xs">{r.status}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {r.status}
+                    </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground truncate">
                     {r.candidate_email ?? "—"} ·{" "}
                     {(r.job as { title?: string } | null)?.title ?? "Sem vaga"}
                   </p>
                 </div>
-                <Select value={r.status} onValueChange={(v) => upd.mutate({ id: r.id, patch: { status: v } })}>
-                  <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
+                <Select
+                  value={r.status}
+                  onValueChange={(v) => upd.mutate({ id: r.id, patch: { status: v } })}
+                >
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {STATUS_OPTIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    {STATUS_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <Select value={r.bonus_status} onValueChange={(v) => upd.mutate({ id: r.id, patch: { bonus_status: v } })}>
-                  <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                <Select
+                  value={r.bonus_status}
+                  onValueChange={(v) => upd.mutate({ id: r.id, patch: { bonus_status: v } })}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {BONUS_OPTIONS.map((s) => <SelectItem key={s} value={s}>Bônus: {s}</SelectItem>)}
+                    {BONUS_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        Bônus: {s}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </CardContent>
@@ -299,14 +350,22 @@ function ReferralsPrograms() {
       <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm"><Plus className="mr-1 h-4 w-4" />Novo programa</Button>
+            <Button size="sm">
+              <Plus className="mr-1 h-4 w-4" />
+              Novo programa
+            </Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Novo programa</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Novo programa</DialogTitle>
+            </DialogHeader>
             <div className="grid gap-3">
               <div className="space-y-1.5">
                 <Label>Nome *</Label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -314,22 +373,36 @@ function ReferralsPrograms() {
                   <Input
                     type="number"
                     value={form.default_bonus_cents}
-                    onChange={(e) => setForm({ ...form, default_bonus_cents: Number(e.target.value) })}
+                    onChange={(e) =>
+                      setForm({ ...form, default_bonus_cents: Number(e.target.value) })
+                    }
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Moeda</Label>
-                  <Input value={form.currency} maxLength={3} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })} />
+                  <Input
+                    value={form.currency}
+                    maxLength={3}
+                    onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
+                  />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <Label>URL dos termos</Label>
-                <Input value={form.terms_url} onChange={(e) => setForm({ ...form, terms_url: e.target.value })} />
+                <Input
+                  value={form.terms_url}
+                  onChange={(e) => setForm({ ...form, terms_url: e.target.value })}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button disabled={!form.name.trim() || createMut.isPending} onClick={() => createMut.mutate()}>
+              <Button variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button
+                disabled={!form.name.trim() || createMut.isPending}
+                onClick={() => createMut.mutate()}
+              >
                 {createMut.isPending ? "Salvando..." : "Criar"}
               </Button>
             </DialogFooter>
@@ -340,7 +413,11 @@ function ReferralsPrograms() {
       {isLoading ? (
         <Skeletons.Card />
       ) : !data?.programs.length ? (
-        <EmptyState icon={Gift} title="Nenhum programa" description="Crie um programa para começar a receber indicações." />
+        <EmptyState
+          icon={Gift}
+          title="Nenhum programa"
+          description="Crie um programa para começar a receber indicações."
+        />
       ) : (
         <div className="space-y-3">
           {data.programs.map((p) => {
@@ -362,7 +439,11 @@ function ReferralsPrograms() {
                     <div>
                       <p className="text-sm font-medium">{prog.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        Bônus padrão: {(prog.default_bonus_cents / 100).toLocaleString("pt-BR", { style: "currency", currency: prog.currency })}
+                        Bônus padrão:{" "}
+                        {(prog.default_bonus_cents / 100).toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: prog.currency,
+                        })}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -371,8 +452,13 @@ function ReferralsPrograms() {
                       </Badge>
                       {prog.public_slug && prog.enable_public_form && (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => copyLink(prog.public_slug!)}>
-                            <Copy className="mr-1 h-3.5 w-3.5" />Copiar link
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyLink(prog.public_slug!)}
+                          >
+                            <Copy className="mr-1 h-3.5 w-3.5" />
+                            Copiar link
                           </Button>
                           <Button asChild size="sm" variant="ghost">
                             <a href={`/refer/${prog.public_slug}`} target="_blank" rel="noreferrer">
@@ -399,11 +485,15 @@ function ReferralsPrograms() {
                       />
                     </div>
                     <div className="flex items-center justify-between rounded-md border border-border-subtle bg-background p-2">
-                      <Label htmlFor={`pub-${prog.id}`} className="text-xs">Portal público ativo</Label>
+                      <Label htmlFor={`pub-${prog.id}`} className="text-xs">
+                        Portal público ativo
+                      </Label>
                       <Switch
                         id={`pub-${prog.id}`}
                         checked={!!prog.enable_public_form}
-                        onCheckedChange={(v) => portalMut.mutate({ id: prog.id, patch: { enable_public_form: v } })}
+                        onCheckedChange={(v) =>
+                          portalMut.mutate({ id: prog.id, patch: { enable_public_form: v } })
+                        }
                       />
                     </div>
                     <div className="space-y-1.5 sm:col-span-2">
@@ -412,7 +502,10 @@ function ReferralsPrograms() {
                         defaultValue={prog.landing_headline ?? ""}
                         onBlur={(e) => {
                           if ((prog.landing_headline ?? "") !== e.target.value) {
-                            portalMut.mutate({ id: prog.id, patch: { landing_headline: e.target.value || null } });
+                            portalMut.mutate({
+                              id: prog.id,
+                              patch: { landing_headline: e.target.value || null },
+                            });
                           }
                         }}
                       />
@@ -424,7 +517,10 @@ function ReferralsPrograms() {
                         defaultValue={prog.landing_body ?? ""}
                         onBlur={(e) => {
                           if ((prog.landing_body ?? "") !== e.target.value) {
-                            portalMut.mutate({ id: prog.id, patch: { landing_body: e.target.value || null } });
+                            portalMut.mutate({
+                              id: prog.id,
+                              patch: { landing_body: e.target.value || null },
+                            });
                           }
                         }}
                       />
@@ -450,7 +546,13 @@ function ReferralsLeaderboard() {
 
   if (isLoading) return <Skeletons.Card />;
   if (!data?.leaderboard.length) {
-    return <EmptyState icon={Trophy} title="Sem dados ainda" description="O ranking aparece após as primeiras indicações." />;
+    return (
+      <EmptyState
+        icon={Trophy}
+        title="Sem dados ainda"
+        description="O ranking aparece após as primeiras indicações."
+      />
+    );
   }
   return (
     <Card>

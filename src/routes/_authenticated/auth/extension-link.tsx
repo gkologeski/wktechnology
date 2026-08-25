@@ -133,8 +133,7 @@ function ExtensionLinkPage() {
                     <div>
                       <p className="font-medium">Pareado com sucesso.</p>
                       <p className="text-xs text-muted-foreground">
-                        Abra um perfil em linkedin.com/in/... — a sidebar já vai usar
-                        essa chave.
+                        Abra um perfil em linkedin.com/in/... — a sidebar já vai usar essa chave.
                       </p>
                     </div>
                   </div>

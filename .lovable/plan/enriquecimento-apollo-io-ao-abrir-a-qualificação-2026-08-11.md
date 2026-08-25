@@ -19,6 +19,7 @@ Ao abrir o modal de qualificação, o sistema busca dados no Apollo.io e sugere 
 Por que assim: `organization_name` é ambíguo (homônimos, razão social vs. nome fantasia); o domínio é chave única e eleva muito a taxa de acerto do `people/match`. Se o passo 1 falhar, ainda tentamos `people/match` por nome + nome da empresa (comportamento atual) como fallback.
 
 Melhorias sugeridas incluídas:
+
 - Se o lead/empresa tiver CNPJ, resolver razão social/site pela BrasilAPI (já integrada) antes do Apollo — melhora a busca do domínio em empresas brasileiras.
 - Se o lead tiver LinkedIn, usar direto no `people/match` (maior precisão, ignora os passos 1–2 para a pessoa).
 - Cache por lead: o resultado é gravado e reaproveitado; a abertura do modal não gasta crédito novamente. Botão "Enriquecer novamente" força nova consulta.

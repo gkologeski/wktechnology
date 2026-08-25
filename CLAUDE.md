@@ -12,15 +12,15 @@ regras invioláveis e onde cada coisa vive. Detalhes por tema estão em
 português do Brasil. Um único código-base serve sete módulos verticais sobre um
 núcleo comum (Core ERP):
 
-| Módulo | Id interno | Domínio |
-| --- | --- | --- |
-| TechSales | `crm` | Leads, prospecção, contatos, empresas, negócios, propostas, cotações |
-| TechHire | `ats` | Vagas, candidatos, candidaturas, entrevistas, ofertas, sourcing/hunting |
-| TechPeople | `people` | Pessoas, alocações, documentos, benefícios, onboarding, incidentes |
+| Módulo        | Id interno  | Domínio                                                                 |
+| ------------- | ----------- | ----------------------------------------------------------------------- |
+| TechSales     | `crm`       | Leads, prospecção, contatos, empresas, negócios, propostas, cotações    |
+| TechHire      | `ats`       | Vagas, candidatos, candidaturas, entrevistas, ofertas, sourcing/hunting |
+| TechPeople    | `people`    | Pessoas, alocações, documentos, benefícios, onboarding, incidentes      |
 | TechContracts | `contracts` | Contratos (prestação, compra, aditivos), modelos, assinatura eletrônica |
-| TechService | `service` | Tickets, SLA, base de conhecimento, chat ao vivo, macros |
-| TechFinance | `finance` | Contas a pagar/receber, NFS-e, faturas, bancos, DRE, fluxo de caixa |
-| TechProjects | `projects` | Projetos, listas, tarefas, marcos, timesheet, entregas |
+| TechService   | `service`   | Tickets, SLA, base de conhecimento, chat ao vivo, macros                |
+| TechFinance   | `finance`   | Contas a pagar/receber, NFS-e, faturas, bancos, DRE, fluxo de caixa     |
+| TechProjects  | `projects`  | Projetos, listas, tarefas, marcos, timesheet, entregas                  |
 
 Core ERP (compartilhado): Empresas, Contatos, Produtos, Catálogo de Serviços,
 Usuários/Times, Permissões, Pipelines, Arquivos, Workflows, Integrações.
@@ -154,17 +154,17 @@ bun run format        # prettier
 
 ## 9. Índice da documentação
 
-| Documento | Conteúdo |
-| --- | --- |
-| `docs/architecture/README.md` | Índice do diretório |
-| `docs/architecture/overview.md` | Módulos, rotas e fluxos ponta a ponta |
-| `docs/architecture/data-model.md` | Tabelas por módulo, isolamento, enums, funções |
-| `docs/architecture/security-rbac.md` | RLS, GRANT, RBAC granular, rotas públicas |
-| `docs/architecture/server-functions.md` | Server functions, API routes, webhooks |
-| `docs/architecture/frontend-conventions.md` | Rotas, grids, kanban, forms, i18n |
-| `docs/architecture/integrations.md` | IA, Apollo, HubSpot, Unipile, Google, MCP |
-| `docs/architecture/workflows-automation.md` | Motor de workflows, eventos, cron |
-| `docs/architecture/testing-and-ops.md` | Validação, e2e, operação |
+| Documento                                   | Conteúdo                                       |
+| ------------------------------------------- | ---------------------------------------------- |
+| `docs/architecture/README.md`               | Índice do diretório                            |
+| `docs/architecture/overview.md`             | Módulos, rotas e fluxos ponta a ponta          |
+| `docs/architecture/data-model.md`           | Tabelas por módulo, isolamento, enums, funções |
+| `docs/architecture/security-rbac.md`        | RLS, GRANT, RBAC granular, rotas públicas      |
+| `docs/architecture/server-functions.md`     | Server functions, API routes, webhooks         |
+| `docs/architecture/frontend-conventions.md` | Rotas, grids, kanban, forms, i18n              |
+| `docs/architecture/integrations.md`         | IA, Apollo, HubSpot, Unipile, Google, MCP      |
+| `docs/architecture/workflows-automation.md` | Motor de workflows, eventos, cron              |
+| `docs/architecture/testing-and-ops.md`      | Validação, e2e, operação                       |
 
 Documentos pré-existentes que continuam válidos: `docs/erp-core-architecture.md`,
 `docs/techhire-design-system.md`, `docs/new-screen-ux-ui-checklist.md`,

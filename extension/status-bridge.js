@@ -8,7 +8,7 @@
     document.documentElement.setAttribute("data-techhire-hunter", "installed");
     document.documentElement.setAttribute(
       "data-techhire-hunter-version",
-      (chrome?.runtime?.getManifest?.()?.version) || "unknown",
+      chrome?.runtime?.getManifest?.()?.version || "unknown",
     );
   } catch {}
 
@@ -47,9 +47,6 @@
   });
 
   // Anuncia presença e estado inicial.
-  window.postMessage(
-    { source: "techhire-extension-status-ready" },
-    window.location.origin,
-  );
+  window.postMessage({ source: "techhire-extension-status-ready" }, window.location.origin);
   broadcastStatus();
 })();

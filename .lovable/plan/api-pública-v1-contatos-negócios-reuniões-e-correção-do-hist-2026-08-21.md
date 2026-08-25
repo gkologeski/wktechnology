@@ -66,14 +66,14 @@ fechamento dos negócios ganhos.
 
 Aplicados em `GET /leads`, `GET /meetings`, `GET /contacts` e `GET /deals`:
 
-| Parâmetro | Efeito |
-| --- | --- |
-| `limit` | 1–200, padrão 50 |
+| Parâmetro          | Efeito                                            |
+| ------------------ | ------------------------------------------------- |
+| `limit`            | 1–200, padrão 50                                  |
 | `offset` ou `page` | deslocamento (`page` calcula a partir do `limit`) |
-| `from` / `to` | intervalo de datas |
-| `order` | `asc` \| `desc` (padrão `desc`) |
-| `lead_id` | filtra por lead vinculado (reuniões e negócios) |
-| `status` | filtra por status (leads e reuniões) |
+| `from` / `to`      | intervalo de datas                                |
+| `order`            | `asc` \| `desc` (padrão `desc`)                   |
+| `lead_id`          | filtra por lead vinculado (reuniões e negócios)   |
+| `status`           | filtra por status (leads e reuniões)              |
 
 - Campo de data por recurso: leads e contatos por `created_at`; reuniões por `scheduled_at`;
   negócios por `created_at` (com `closed_from`/`closed_to` para data real de fechamento).

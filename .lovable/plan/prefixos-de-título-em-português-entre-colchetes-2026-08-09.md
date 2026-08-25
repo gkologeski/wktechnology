@@ -10,7 +10,6 @@ Trocar os prefixos siglados (`CPS`, `CC`, `CD`, `CM`, `CCO`, `CL`, `ADT`) por r�
   `[ADITIVO 1] [PRESTAÇÃO] GRALHA IMÓVEIS X WK TECHNOLOGY — 2026`
 - O tipo de serviço não influencia mais o prefixo: todo contrato de prestação usa `[PRESTAÇÃO]`, independente de desenvolvimento, manutenção, consultoria ou licenciamento.
 
-
 O resto do padrão não muda: partes em maiúsculas, sem sufixos societários, truncadas em 40 caracteres, sufixo do ano da vigência.
 
 ## Onde aplica

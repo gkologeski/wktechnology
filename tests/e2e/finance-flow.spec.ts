@@ -33,8 +33,7 @@ async function registerPayment(
   if (pErr) throw new Error(pErr.message);
 
   const newPaid = currentPaid + amount;
-  const status =
-    newPaid >= totalAmount ? "paid" : newPaid > 0 ? "partially_paid" : "open";
+  const status = newPaid >= totalAmount ? "paid" : newPaid > 0 ? "partially_paid" : "open";
   const { error: uErr } = await supa
     .from("financial_entries")
     .update({ paid_amount: newPaid, status })

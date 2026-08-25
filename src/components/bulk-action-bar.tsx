@@ -21,8 +21,7 @@ export function BulkActionBar({
   onSelectAll,
   isSelectingAll,
 }: BulkActionBarProps) {
-  const showSelectAll =
-    typeof totalMatching === "number" && totalMatching > count && !!onSelectAll;
+  const showSelectAll = typeof totalMatching === "number" && totalMatching > count && !!onSelectAll;
   return (
     <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
       <Button variant="ghost" size="icon" onClick={onClear} aria-label="Limpar seleção">

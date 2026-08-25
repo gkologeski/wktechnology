@@ -103,7 +103,7 @@ async function resolveCandidateId(
     .select("id")
     .single();
   if (error) throw new Error(error.message);
-  return { id: (created!.id as string), created: true };
+  return { id: created!.id as string, created: true };
 }
 
 export async function syncPostingApplicants(postingId: string): Promise<SyncPostingResult> {
@@ -187,20 +187,18 @@ export async function syncPostingApplicants(postingId: string): Promise<SyncPost
 
           const appliedAt = toIsoOrNull(applicant.appliedAt) ?? new Date().toISOString();
 
-          const { error: insErr } = await supabaseAdmin
-            .from("ats_applications")
-            .insert({
-              owner_id: posting.owner_id,
-              job_id: posting.job_id,
-              candidate_id: candidateId,
-              stage_value: "applied",
-              status: "active",
-              source: "linkedin_easy_apply",
-              applied_at: appliedAt,
-              provider: "linkedin",
-              provider_applicant_id: applicant.providerApplicantId,
-              position: 0,
-            } as never);
+          const { error: insErr } = await supabaseAdmin.from("ats_applications").insert({
+            owner_id: posting.owner_id,
+            job_id: posting.job_id,
+            candidate_id: candidateId,
+            stage_value: "applied",
+            status: "active",
+            source: "linkedin_easy_apply",
+            applied_at: appliedAt,
+            provider: "linkedin",
+            provider_applicant_id: applicant.providerApplicantId,
+            position: 0,
+          } as never);
 
           if (insErr) {
             // Dedupe race — ignora se for violação de unique
@@ -236,8 +234,7 @@ export async function syncPostingApplicants(postingId: string): Promise<SyncPost
     ...meta,
     applicants_sync_cursor: cursor,
     last_applicants_sync_at: new Date().toISOString(),
-    applicants_synced_count:
-      Number(meta.applicants_synced_count ?? 0) + result.createdApplications,
+    applicants_synced_count: Number(meta.applicants_synced_count ?? 0) + result.createdApplications,
     last_applicants_sync_error: result.error,
   };
 

@@ -1,12 +1,12 @@
-import type { ComponentType } from 'react'
+import type { ComponentType } from "react";
 
 export interface TemplateEntry {
-  component: ComponentType<any>
-  subject: string | ((data: Record<string, any>) => string)
-  displayName?: string
-  previewData?: Record<string, any>
+  component: ComponentType<any>;
+  subject: string | ((data: Record<string, any>) => string);
+  displayName?: string;
+  previewData?: Record<string, any>;
   /** Fixed recipient — overrides caller-provided recipientEmail when set. */
-  to?: string
+  to?: string;
 }
 
 /**
@@ -17,14 +17,14 @@ export interface TemplateEntry {
  *   import { template as welcomeTemplate } from './welcome'
  *   // then add to TEMPLATES: 'welcome': welcomeTemplate
  */
-import { template as mentionNotification } from './mention-notification'
-import { template as workspaceInvite } from './workspace-invite'
-import { template as dunningNotice } from './dunning-notice'
-import { template as activityReminder } from './activity-reminder'
+import { template as mentionNotification } from "./mention-notification";
+import { template as workspaceInvite } from "./workspace-invite";
+import { template as dunningNotice } from "./dunning-notice";
+import { template as activityReminder } from "./activity-reminder";
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
-  'mention-notification': mentionNotification,
-  'workspace-invite': workspaceInvite,
-  'dunning-notice': dunningNotice,
-  'activity-reminder': activityReminder,
-}
+  "mention-notification": mentionNotification,
+  "workspace-invite": workspaceInvite,
+  "dunning-notice": dunningNotice,
+  "activity-reminder": activityReminder,
+};

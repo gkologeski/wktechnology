@@ -89,9 +89,7 @@ function CareersIndex() {
                     </h2>
                     <div className="flex flex-wrap items-center gap-1.5">
                       {j.seniority && <MetaPill>{j.seniority as string}</MetaPill>}
-                      {j.employment_type && (
-                        <MetaPill>{j.employment_type as string}</MetaPill>
-                      )}
+                      {j.employment_type && <MetaPill>{j.employment_type as string}</MetaPill>}
                       {j.remote_mode && <MetaPill>{j.remote_mode as string}</MetaPill>}
                       {j.location && (
                         <MetaPill>
@@ -106,7 +104,10 @@ function CareersIndex() {
                     style={primary ? { color: primary } : undefined}
                   >
                     Ver vaga
-                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" aria-hidden />
+                    <ArrowRight
+                      className="h-4 w-4 transition group-hover:translate-x-0.5"
+                      aria-hidden
+                    />
                   </span>
                 </Link>
               </li>

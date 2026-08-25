@@ -9,23 +9,25 @@ Dois fatos confirmados no projeto:
 1. **A divisão automática de código das rotas está desligada.** Em `vite.config.ts` existe `codeSplittingOptions.defaultBehavior: []`, com um comentário explicando que foi desativada de propósito para evitar um bug de duplicação do React/Router em chunks lazy. Efeito colateral: todas as 347 rotas entram no bundle principal, então o Rollup precisa transformar, tree-shakear e minificar tudo de uma vez.
 2. **Bibliotecas pesadas são importadas de forma estática**, mesmo sendo usadas em uma ou duas telas:
 
-| Biblioteca | Usada em | Import atual |
-|---|---|---|
-| `@tiptap/*` (18 pacotes) | `word-editor.tsx` (2 telas) | estático |
-| `@twilio/voice-sdk` | `voice/call-dialer.tsx` | estático, dentro de `activity-timeline` (carregado em quase todo lugar) |
-| `pdfjs-dist` | `cv-pdf-upload-button.tsx` | estático |
-| `mammoth` | 2 diálogos de importação de contrato | estático |
-| `recharts` | 5 telas de dashboard | estático |
-| `@ai-sdk/react` + `react-markdown` | `agent-drawer.tsx`, importado no `__root.tsx` | estático em **todas** as páginas |
+| Biblioteca                         | Usada em                                      | Import atual                                                            |
+| ---------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
+| `@tiptap/*` (18 pacotes)           | `word-editor.tsx` (2 telas)                   | estático                                                                |
+| `@twilio/voice-sdk`                | `voice/call-dialer.tsx`                       | estático, dentro de `activity-timeline` (carregado em quase todo lugar) |
+| `pdfjs-dist`                       | `cv-pdf-upload-button.tsx`                    | estático                                                                |
+| `mammoth`                          | 2 diálogos de importação de contrato          | estático                                                                |
+| `recharts`                         | 5 telas de dashboard                          | estático                                                                |
+| `@ai-sdk/react` + `react-markdown` | `agent-drawer.tsx`, importado no `__root.tsx` | estático em **todas** as páginas                                        |
 
 Como não há code splitting de rota, nada disso é isolado: tudo vira parte do mesmo trabalho de build (e do mesmo download no primeiro acesso do usuário).
 
 ## O que fazer
 
 ### Fase 1 — Medir (obrigatória antes de mexer)
+
 Rodar o build atual e registrar tempo total e tamanho dos chunks, para ter linha de base. Sem isso não dá pra afirmar ganho.
 
 ### Fase 2 — Lazy load das bibliotecas pesadas (baixo risco)
+
 Trocar import estático por `React.lazy` + `Suspense` (ou `await import()` dentro do handler) nos pontos acima:
 
 - `WordEditor` → lazy nas telas `settings.clauses` e `proposals.$id`.
@@ -38,9 +40,11 @@ Trocar import estático por `React.lazy` + `Suspense` (ou `await import()` dentr
 Cada componente lazy recebe fallback usando o `LoadingSkeleton` do design system, sem alterar layout final.
 
 ### Fase 3 — Reavaliar o code splitting de rota (risco médio, opcional)
+
 Testar reativar `defaultBehavior: [["component"]]` em `vite.config.ts`. Isso restaura a divisão por rota e é o ganho estrutural maior, mas foi desligado por causa de um bug real de contexto nulo do Router. Validação necessária antes de manter: build de produção + navegação por rotas críticas (login, dashboard, leads, deals, ATS, admin) verificando que não reaparece `Cannot read properties of null (reading 'useContext')`. Se reaparecer, reverter e ficar só com as Fases 1–2.
 
 ### Fase 4 — Limpezas menores
+
 - Revisar imports não usados de bibliotecas pesadas.
 - Conferir se `src/integrations/supabase/types.ts` (18.763 linhas) está sendo puxado para o bundle do cliente além do necessário (tipos devem ser apagados na compilação, mas vale confirmar que não há import de valor).
 

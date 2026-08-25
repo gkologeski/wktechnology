@@ -124,7 +124,10 @@ export function PipelineInsightsPanel({ jobId }: { jobId?: string }) {
             </div>
 
             <div>
-              <AtsSectionHeader title="Por etapa" description="Entradas, conversão para a próxima, tempo médio." />
+              <AtsSectionHeader
+                title="Por etapa"
+                description="Entradas, conversão para a próxima, tempo médio."
+              />
               <div className="mt-3 overflow-hidden rounded-lg border border-border-subtle">
                 <table className="w-full text-sm">
                   <thead className="bg-surface-2 text-[11px] uppercase tracking-wide text-text-tertiary">
@@ -140,10 +143,7 @@ export function PipelineInsightsPanel({ jobId }: { jobId?: string }) {
                     {data.stages.map((s) => {
                       const isBottleneck = s.stage === data.bottleneck_stage;
                       return (
-                        <tr
-                          key={s.stage}
-                          className={cn(isBottleneck && "bg-warning-soft/30")}
-                        >
+                        <tr key={s.stage} className={cn(isBottleneck && "bg-warning-soft/30")}>
                           <td className="px-3 py-2 text-text-primary">
                             <span className="inline-flex items-center gap-1.5">
                               {s.label}
@@ -155,8 +155,12 @@ export function PipelineInsightsPanel({ jobId }: { jobId?: string }) {
                               )}
                             </span>
                           </td>
-                          <td className="px-3 py-2 text-right tabular-nums text-text-secondary">{s.active}</td>
-                          <td className="px-3 py-2 text-right tabular-nums text-text-secondary">{s.entered}</td>
+                          <td className="px-3 py-2 text-right tabular-nums text-text-secondary">
+                            {s.active}
+                          </td>
+                          <td className="px-3 py-2 text-right tabular-nums text-text-secondary">
+                            {s.entered}
+                          </td>
                           <td className="px-3 py-2 text-right tabular-nums text-text-secondary">
                             {s.entered > 0 ? `${s.conversionToNext}%` : "—"}
                           </td>
@@ -176,8 +180,7 @@ export function PipelineInsightsPanel({ jobId }: { jobId?: string }) {
                 <AtsSectionHeader title="Gargalos" />
                 <ul className="mt-2 space-y-2">
                   {data.ai.bottlenecks.map((b, i) => {
-                    const label =
-                      data.stages.find((s) => s.stage === b.stage)?.label ?? b.stage;
+                    const label = data.stages.find((s) => s.stage === b.stage)?.label ?? b.stage;
                     return (
                       <li
                         key={i}
@@ -201,7 +204,10 @@ export function PipelineInsightsPanel({ jobId }: { jobId?: string }) {
                 <ul className="mt-2 space-y-1.5">
                   {data.ai.recommendations.map((r, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
-                      <Lightbulb className="size-3.5 text-text-tertiary mt-0.5 shrink-0" aria-hidden="true" />
+                      <Lightbulb
+                        className="size-3.5 text-text-tertiary mt-0.5 shrink-0"
+                        aria-hidden="true"
+                      />
                       <span>{r}</span>
                     </li>
                   ))}

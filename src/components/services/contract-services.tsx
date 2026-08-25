@@ -13,7 +13,6 @@ import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { LinkCatalogServiceDialog } from "@/components/services/link-catalog-service-dialog";
 
-
 const STATUS_LABEL: Record<string, string> = {
   pending: "Pendente",
   active: "Ativo",
@@ -54,7 +53,6 @@ export function ContractServices({
   const activate = useServerFn(activateService);
   const [openNew, setOpenNew] = useState(false);
   const [activatingId, setActivatingId] = useState<string | null>(null);
-
 
   const listProfiles = useServerFn(listJobProfileOptions);
 
@@ -120,12 +118,14 @@ export function ContractServices({
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : rows.length === 0 ? null : (
-
         <div className="space-y-2">
           {rows.map((s: any) => {
             const amount = Number(s.quantity) * Number(s.unit_price);
             return (
-              <div key={s.id} className="rounded-md border p-3 group hover:border-primary/40 transition-colors">
+              <div
+                key={s.id}
+                className="rounded-md border p-3 group hover:border-primary/40 transition-colors"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <Link
                     to="/services/$id"
@@ -161,7 +161,9 @@ export function ContractServices({
                   {s.cadence ? <span>· {CADENCE_LABEL[s.cadence] ?? s.cadence}</span> : null}
                   <span>· {formatCurrency(amount, s.currency)}</span>
                   {s.next_billing_at ? (
-                    <span>· Próxima: {formatDateTime(s.next_billing_at as string).split(" ")[0]}</span>
+                    <span>
+                      · Próxima: {formatDateTime(s.next_billing_at as string).split(" ")[0]}
+                    </span>
                   ) : null}
                 </div>
                 {s.status === "pending" ? (
@@ -195,7 +197,6 @@ export function ContractServices({
           }}
         />
       ) : null}
-
     </div>
   );
 }

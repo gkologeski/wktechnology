@@ -14,21 +14,25 @@ Um suspeito concreto: `authenticated` tem `statement_timeout = 8s` e o catálogo
 ## Plano
 
 ### 1. Confirmar a causa (antes de qualquer correção)
+
 - Instrumentar `usePermissions` para expor `isError`/mensagem do erro e registrar no console o resultado real de `getMyPermissions` (quantidade de chaves e workspace resolvido).
 - Abrir `/prospecting` autenticado e ler o retorno: vazio, erro de timeout, 401 ou lista truncada.
 
 ### 2. Corrigir conforme o diagnóstico
+
 - **Se for timeout/lentidão**: otimizar `user_effective_permissions` (atalho: quando o usuário é owner/admin do workspace, retornar direto `SELECT key FROM permissions` sem os UNIONs e o anti-join de deny) e/ou adicionar índices em `user_job_roles`, `permission_set_items` e `job_role_permission_overrides`.
 - **Se for erro/401 pontual**: adicionar `retry` na query de permissões.
 - **Se vier truncado**: trocar o retorno do RPC por um único array agregado, imune a limite de linhas da API.
 
 ### 3. Não confundir mais falha com falta de permissão
+
 - Em `usePermissions`, expor `isError`.
 - Em `/prospecting` (e no padrão dos demais gates), quando a consulta falhar, mostrar um **ErrorState** com "Não foi possível carregar suas permissões" + botão "Tentar novamente", em vez do card "Sem acesso".
 
 ## Detalhes técnicos
 
 Arquivos envolvidos:
+
 - `src/lib/access-control/use-permissions.tsx` — expor `isError`, `refetch` e retry.
 - `src/routes/_authenticated/prospecting.index.tsx` — separar estado de erro do estado de sem-permissão.
 - `src/lib/access-control/permissions.functions.ts` — logging temporário do diagnóstico.

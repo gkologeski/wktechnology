@@ -8,7 +8,6 @@ const PlanCodeZ = z.enum(["free", "bronze", "prata", "ouro"]);
 
 type UsageRow = { key: string; used: number };
 
-
 /** Resolve o workspace_owner_id do usuário (owner do workspace ativo). */
 async function resolveWorkspaceOwner(userId: string): Promise<string> {
   // 1) Se o usuário é dono de algum workspace (entities.owner_id = user_id), retorna ele mesmo.
@@ -92,8 +91,7 @@ export const getMyPlan = createServerFn({ method: "GET" })
         .eq("workspace_id", workspaceId);
       for (const wm of wms ?? []) {
         if (!wm.enabled) continue;
-        modulePlans[wm.module_id as string] =
-          (wm.plan_code as string | null) ?? planCode;
+        modulePlans[wm.module_id as string] = (wm.plan_code as string | null) ?? planCode;
       }
     }
     // Garante CRM como módulo ativo herdando o plano do workspace se não houver linha
@@ -180,7 +178,6 @@ export const getMyPlan = createServerFn({ method: "GET" })
       module_plans: modulePlans,
     };
   });
-
 
 /** Compara todos os planos lado a lado (para a tabela comparativa). */
 export const listPlansWithEntitlements = createServerFn({ method: "GET" })

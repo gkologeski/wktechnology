@@ -23,6 +23,7 @@ Novo fluxo em 3 etapas dentro do diálogo de importação:
 ```
 
 Regras da etapa 2:
+
 - Grid com seleção (checkbox), coluna de tipo (Prestação / Compra / Detectar automaticamente), remoção individual e adição incremental de arquivos.
 - Nada é processado antes do clique em **Processar**.
 - Processamento sequencial com limite de concorrência baixo (2 por vez) para não estourar o limite da IA; cada linha mostra seu próprio estado (na fila, extraindo, criado, erro) e é possível reprocessar só as linhas com erro.
@@ -47,7 +48,6 @@ Regras da etapa 2:
 - Sugestões automáticas na própria linha quando houver candidatos prováveis (mesma empresa/CNPJ ou período compatível), sempre exigindo confirmação humana.
 - Contadores no cabeçalho e link direto da tela de resultado da importação para essa aba.
 
-
 ## Fase 3 — Contratos de prestação e compra em pessoas
 
 - A alocação da pessoa hoje guarda **um** contrato. Passa a guardar dois: contrato de prestação e contrato de compra.
@@ -58,7 +58,6 @@ Regras da etapa 2:
 - A listagem de alocações mostra os dois contratos quando existirem.
 - Compatibilidade: alocações existentes continuam funcionando — o contrato atual é tratado como o contrato de prestação e nada é apagado.
 - As sugestões de cargo/senioridade já existentes continuam saindo do contrato de prestação.
-
 
 ## Detalhes técnicos
 

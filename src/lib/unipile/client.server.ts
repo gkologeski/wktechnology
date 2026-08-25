@@ -21,7 +21,6 @@ export type UnipileEndpoint =
   | "hosted.link"
   | "job.publish";
 
-
 export interface ThrottleBudget {
   minIntervalMs: number;
   jitterMs: [number, number]; // [min, max] uniforme
@@ -163,7 +162,6 @@ function getEnv() {
   return { baseUrl: base, key };
 }
 
-
 function hashPayload(input: unknown): string {
   return createHash("sha256")
     .update(typeof input === "string" ? input : JSON.stringify(input ?? null))
@@ -180,17 +178,10 @@ interface ThrottleCtx {
   window?: { tz?: string; start_hour?: number; end_hour?: number } | null;
 }
 
-async function enforceBudget(
-  ctx: ThrottleCtx,
-  endpoint: UnipileEndpoint,
-  budget: ThrottleBudget,
-) {
+async function enforceBudget(ctx: ThrottleCtx, endpoint: UnipileEndpoint, budget: ThrottleBudget) {
   // 1) Janela humana
   if (!isInsideWindow(ctx.window ?? null)) {
-    throw new UnipileError(
-      "Fora da janela horária permitida para esta conta.",
-      "out_of_window",
-    );
+    throw new UnipileError("Fora da janela horária permitida para esta conta.", "out_of_window");
   }
 
   // 2) Bucket diário
@@ -231,10 +222,7 @@ async function enforceBudget(
   }
 }
 
-async function incrementBucket(
-  accountId: string,
-  endpoint: UnipileEndpoint,
-) {
+async function incrementBucket(accountId: string, endpoint: UnipileEndpoint) {
   const day = todayUtc();
   const { data: existing } = await supabaseAdmin
     .from("unipile_rate_buckets")
@@ -309,7 +297,6 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
   const url = `${baseUrl}${opts.path}${buildQuery(opts.query)}`;
   const requestBody = opts.body;
 
-
   const started = Date.now();
   let status: number | null = null;
   let errorMsg: string | null = null;
@@ -365,7 +352,6 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
   }
 }
 
-
 function safeJson(text: string): any {
   try {
     return JSON.parse(text);
@@ -391,10 +377,7 @@ export async function loadAccountCtx(ownerId: string): Promise<ThrottleCtx> {
     .maybeSingle();
   if (error) throw new UnipileError(error.message, "provider_error");
   if (!data || !data.unipile_account_id || data.status !== "connected") {
-    throw new UnipileError(
-      "Nenhuma conta LinkedIn conectada via Unipile.",
-      "account_disconnected",
-    );
+    throw new UnipileError("Nenhuma conta LinkedIn conectada via Unipile.", "account_disconnected");
   }
   return {
     accountId: data.id,
@@ -427,11 +410,7 @@ export async function createHostedAuthLink(params: {
     type: "create",
     providers: [HOSTED_AUTH_PROVIDER],
     expires_on: expiresOn,
-    redirect_uri: appendQueryParam(
-      params.successRedirect,
-      "state",
-      params.connectToken,
-    ),
+    redirect_uri: appendQueryParam(params.successRedirect, "state", params.connectToken),
   };
 
   const res = await fetch(url, {
@@ -470,7 +449,6 @@ export async function createHostedAuthLink(params: {
   }
   return { url: link, raw: data };
 }
-
 
 function appendQueryParam(url: string, key: string, value: string) {
   const sep = url.includes("?") ? "&" : "?";
@@ -521,8 +499,6 @@ export async function listUnipileAccounts(
   return { ok: true, items };
 }
 
-
-
 /** Valor de filtro estruturado: texto livre (string) ou ID já resolvido. */
 export type SearchParamValue = string | { id: string };
 
@@ -543,7 +519,6 @@ export async function searchPeopleClassic(
     cursor?: string;
     offset?: number;
     limit?: number;
-
   },
 ) {
   // A busca do LinkedIn exige IDs de parâmetro para location/industry/company/school.
@@ -612,7 +587,6 @@ export async function searchPeopleClassic(
   return normalizePeopleSearchResponse(data, safeOffset);
 }
 
-
 /**
  * Normaliza a resposta de busca de pessoas da v2 para o shape que o restante
  * da aplicação já consome. A v2 devolve `data` e pagina
@@ -634,11 +608,9 @@ function normalizePeopleSearchResponse(data: any, offset = 0) {
     shared_connections_count: it.shared_relations_count ?? it.shared_connections_count,
   }));
   const nextOffset = offset + mapped.length;
-  const cursor =
-    data.next_cursor ?? (mapped.length > 0 ? String(nextOffset) : null);
+  const cursor = data.next_cursor ?? (mapped.length > 0 ? String(nextOffset) : null);
   return { ...data, items: mapped, cursor };
 }
-
 
 /**
  * Obtém o perfil completo de um usuário pelo identifier público.
@@ -708,7 +680,9 @@ export async function resolveSearchParameterItems(
     const mapped = items
       .map((it) => {
         const rawId =
-          it.id != null ? String(it.id) : ((it.entity_urn as string) ?? "").split(":").pop() ?? "";
+          it.id != null
+            ? String(it.id)
+            : (((it.entity_urn as string) ?? "").split(":").pop() ?? "");
         const id = rawId.trim();
         // v2 renomeou `title` para `name`.
         const title = String(it.name ?? it.title ?? it.text ?? "").trim();
@@ -733,8 +707,6 @@ export async function resolveSearchParameter(
   const items = await resolveSearchParameterItems(ctx, type, keywords, limit, product);
   return items.map((it) => it.id);
 }
-
-
 
 // --------- Mensageria (Fase 4) ---------
 
@@ -837,7 +809,6 @@ export function normalizeInviteResult(res: any): { invitationId: string | null }
   };
 }
 
-
 /**
  * Envia DM em uma conversa 1:1 no LinkedIn (cria a conversa se necessário).
  * `attendeeProviderId` é o id do destinatário (obtido via fetchProfile).
@@ -923,8 +894,6 @@ export async function listSentInvitations(
     },
   });
 }
-
-
 
 export type LinkedinJobWorkplace = "REMOTE" | "HYBRID" | "ON_SITE";
 
@@ -1084,17 +1053,13 @@ export async function publishLinkedinJob(
  * Se a chamada falhar, o caller deve apenas marcar a `ats_job_postings`
  * como unpublished localmente.
  */
-export async function closeLinkedinJob(
-  ctx: ThrottleCtx,
-  providerJobId: string,
-) {
+export async function closeLinkedinJob(ctx: ThrottleCtx, providerJobId: string) {
   return call(ctx, {
     endpoint: "job.publish",
     method: "POST",
     path: `/${encodeURIComponent(ctx.unipileAccountId)}/linkedin/jobs/${encodeURIComponent(providerJobId)}/close`,
   }) as Promise<{ ok?: boolean; object?: string; [k: string]: unknown }>;
 }
-
 
 /**
  * Lista aplicantes de uma vaga LinkedIn publicada via Unipile.
@@ -1109,8 +1074,7 @@ export async function listLinkedinJobApplicants(
 ) {
   const limit = params.limit ?? 50;
   const offset =
-    params.offset ??
-    (params.cursor && /^\d+$/.test(params.cursor) ? Number(params.cursor) : 0);
+    params.offset ?? (params.cursor && /^\d+$/.test(params.cursor) ? Number(params.cursor) : 0);
 
   const res = (await call(ctx, {
     endpoint: "chat.list", // budget leve — leitura
@@ -1132,15 +1096,9 @@ export async function listLinkedinJobApplicants(
     ...res,
     items,
     next_cursor:
-      (res?.next_cursor as string | null | undefined) ??
-      (hasNext ? String(offset + limit) : null),
+      (res?.next_cursor as string | null | undefined) ?? (hasNext ? String(offset + limit) : null),
   };
-
 }
-
-
-
-
 
 /**
  * Verificação leve das credenciais da API v2 (não é chamada por conta, sem
@@ -1149,7 +1107,12 @@ export async function listLinkedinJobApplicants(
  */
 export type UnipileCredentialCheck =
   | { ok: true; accounts: number }
-  | { ok: false; reason: "missing_credentials" | "invalid_credentials" | "provider_error" | "network_error"; status?: number; detail?: string };
+  | {
+      ok: false;
+      reason: "missing_credentials" | "invalid_credentials" | "provider_error" | "network_error";
+      status?: number;
+      detail?: string;
+    };
 
 export async function verifyApiKey(): Promise<UnipileCredentialCheck> {
   let env: ReturnType<typeof getEnv>;

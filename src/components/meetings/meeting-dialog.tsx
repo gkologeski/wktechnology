@@ -131,8 +131,7 @@ export function MeetingDialog({
           ...(meetingEntity ? { entity: meetingEntity, entity_id: relatedId } : {}),
         },
       });
-      const origin =
-        getPublicAppUrl();
+      const origin = getPublicAppUrl();
       const publicLink = `${origin}/meet/${meeting.public_token}`;
       const finalLocation = location.trim() || publicLink;
 
@@ -227,15 +226,13 @@ export function MeetingDialog({
           </div>
           <div>
             <Label>Descrição</Label>
-            <RichHtmlEditor
-              value={description}
-              onChange={setDescription}
-              minHeight={120}
-            />
+            <RichHtmlEditor value={description} onChange={setDescription} minHeight={120} />
           </div>
           {!accountId && (
             <div className="rounded-lg border border-amber-300/50 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs flex items-center justify-between gap-2">
-              <span>Nenhum Google Calendar conectado — um link de sala será gerado automaticamente.</span>
+              <span>
+                Nenhum Google Calendar conectado — um link de sala será gerado automaticamente.
+              </span>
               <Button
                 size="sm"
                 variant="ghost"

@@ -59,10 +59,7 @@
   function detectMode() {
     const main = document.querySelector("main") || document.body;
 
-    const messageBtn = findByAriaLabel(
-      main,
-      /^(mensagem|message)( |\b)/i,
-    );
+    const messageBtn = findByAriaLabel(main, /^(mensagem|message)( |\b)/i);
     const inmailBtn = findByAriaLabel(main, /inmail/i);
     const connectBtn =
       findByAriaLabel(main, /^(conectar|connect)$/i) ||
@@ -115,7 +112,9 @@
     const p = document.createElement("p");
     p.textContent = text;
     el.appendChild(p);
-    el.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
+    el.dispatchEvent(
+      new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }),
+    );
     el.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
@@ -176,15 +175,18 @@
     } else if (ctx.moreBtn) {
       ctx.moreBtn.click();
       await sleep(250);
-      const menuItem = await waitFor(() => {
-        const items = document.querySelectorAll(
-          '[role="menu"] [role="menuitem"], .artdeco-dropdown__content [role="button"]',
-        );
-        for (const el of items) {
-          if (/^(conectar|connect)$/i.test(clean(el.textContent))) return el;
-        }
-        return null;
-      }, { timeout: 4000 });
+      const menuItem = await waitFor(
+        () => {
+          const items = document.querySelectorAll(
+            '[role="menu"] [role="menuitem"], .artdeco-dropdown__content [role="button"]',
+          );
+          for (const el of items) {
+            if (/^(conectar|connect)$/i.test(clean(el.textContent))) return el;
+          }
+          return null;
+        },
+        { timeout: 4000 },
+      );
       if (!menuItem) throw new Error("Opção Conectar não encontrada no menu Mais.");
       menuItem.click();
       clicked = true;
@@ -221,7 +223,9 @@
     ctx.inmailBtn.click();
 
     const subjectInput = await waitFor(() =>
-      document.querySelector('input#openmail-subject, input[name="subject"], input[aria-label*="Assunto" i], input[aria-label*="Subject" i]'),
+      document.querySelector(
+        'input#openmail-subject, input[name="subject"], input[aria-label*="Assunto" i], input[aria-label*="Subject" i]',
+      ),
     );
     if (subjectInput && subj) fillTextarea(subjectInput, subj);
 
@@ -263,7 +267,9 @@
 
     // 1. Toasts globais (válido para connect e inmail)
     const toastObserver = new MutationObserver(() => {
-      const toasts = document.querySelectorAll('[role="alert"], .artdeco-toast-item__message, .Toastify__toast');
+      const toasts = document.querySelectorAll(
+        '[role="alert"], .artdeco-toast-item__message, .Toastify__toast',
+      );
       for (const t of toasts) {
         const text = norm(t.textContent);
         if (!text) continue;
@@ -298,7 +304,10 @@
       observers.push(listObserver);
     }
 
-    timeoutHandle = setTimeout(() => finish({ ok: false, detected: false, evidence: "timeout" }), timeoutMs);
+    timeoutHandle = setTimeout(
+      () => finish({ ok: false, detected: false, evidence: "timeout" }),
+      timeoutMs,
+    );
 
     return () => finish({ ok: false, detected: false, evidence: "cancelled" });
   }

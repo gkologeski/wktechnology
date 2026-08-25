@@ -121,8 +121,6 @@ function normalizeHit(it: UnipileSearchItem): NormalizedSearchHit {
   };
 }
 
-
-
 function normalizeLinkedinUrl(url: string): string {
   try {
     const u = new URL(url);
@@ -150,8 +148,12 @@ export const searchLinkedinPeople = createServerFn({ method: "POST" })
       // Resolve textos livres → IDs (URNs) que a Unipile aceita em filtros estruturados.
       // Se a resolução falhar/voltar vazia, o próprio searchPeopleClassic mescla o texto em keywords.
       const [locationIds, industryIds, companyIds, schoolIds] = await Promise.all([
-        data.location ? resolveSearchParameter(ctx, "LOCATION", data.location) : Promise.resolve([]),
-        data.industry ? resolveSearchParameter(ctx, "INDUSTRY", data.industry) : Promise.resolve([]),
+        data.location
+          ? resolveSearchParameter(ctx, "LOCATION", data.location)
+          : Promise.resolve([]),
+        data.industry
+          ? resolveSearchParameter(ctx, "INDUSTRY", data.industry)
+          : Promise.resolve([]),
         data.current_company
           ? resolveSearchParameter(ctx, "COMPANY", data.current_company)
           : Promise.resolve([]),
@@ -194,7 +196,6 @@ export const searchLinkedinPeople = createServerFn({ method: "POST" })
     }
   });
 
-
 // ────────────────────────────────────────────────────────────────────────────
 // Import (cria/atualiza ats_candidates + registra ats_hunting_captures)
 // ────────────────────────────────────────────────────────────────────────────
@@ -205,9 +206,8 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { loadAccountCtx, fetchProfile, UnipileError } = await import(
-      "@/lib/unipile/client.server"
-    );
+    const { loadAccountCtx, fetchProfile, UnipileError } =
+      await import("@/lib/unipile/client.server");
 
     let enrichCtx: Awaited<ReturnType<typeof loadAccountCtx>> | null = null;
     try {
@@ -245,9 +245,10 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
         const enrich: EnrichPayload = {};
         if (enrichCtx && it.public_identifier) {
           try {
-            const profile = (await fetchProfile(enrichCtx, it.public_identifier)) as
-              | Record<string, unknown>
-              | null;
+            const profile = (await fetchProfile(enrichCtx, it.public_identifier)) as Record<
+              string,
+              unknown
+            > | null;
             if (profile) {
               const p = profile as Record<string, any>;
               enrich.raw = profile;
@@ -417,7 +418,6 @@ export const importLinkedinSearchResults = createServerFn({ method: "POST" })
           parser_version: enrich.raw ? "unipile-search-v2-enriched" : "unipile-search-v2-fallback",
           captured_by: userId,
         } as never);
-
       } catch (e) {
         errors.push({ url: it.linkedin_url, message: (e as Error).message });
       }

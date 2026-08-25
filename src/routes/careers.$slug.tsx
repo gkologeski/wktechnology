@@ -19,7 +19,9 @@ export const Route = createFileRoute("/careers/$slug")({
     return { job };
   },
   head: ({ loaderData, params }) => {
-    const job = (loaderData as { job: { title?: string; description?: string | null } | null } | undefined)?.job;
+    const job = (
+      loaderData as { job: { title?: string; description?: string | null } | null } | undefined
+    )?.job;
     const title = job?.title ? `${job.title} — Vagas` : "Vaga";
     const desc = (job?.description ?? "Candidate-se à nossa vaga.").slice(0, 160);
     return {
@@ -40,9 +42,7 @@ export const Route = createFileRoute("/careers/$slug")({
   notFoundComponent: () => (
     <div className="mx-auto max-w-3xl px-6 py-20 text-center">
       <h1 className="text-2xl font-semibold text-text-primary">Vaga não encontrada</h1>
-      <p className="mt-2 text-text-secondary">
-        Esta vaga pode ter sido encerrada ou despublicada.
-      </p>
+      <p className="mt-2 text-text-secondary">Esta vaga pode ter sido encerrada ou despublicada.</p>
       <Link to="/careers" className="mt-4 inline-block text-primary hover:underline">
         ← Ver outras vagas
       </Link>

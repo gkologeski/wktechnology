@@ -62,7 +62,6 @@ const CREDENTIAL_MESSAGE: Record<string, string> = {
   network_error: "Não foi possível falar com a Unipile. Verifique a conexão e tente novamente.",
 };
 
-
 /**
  * Testa as credenciais da API v2 sem expor a chave.
  */
@@ -96,7 +95,6 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
     }
     const connectToken = `lvb_${randomBytes(16).toString("hex")}`;
 
-
     // Upsert pending account (mantém uma única linha por usuário)
     const { data: existing } = await supabase
       .from("unipile_accounts")
@@ -123,9 +121,7 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
     }
 
     const baseUrl = getAppUrl();
-    const { createHostedAuthLink, UnipileError } = await import(
-      "@/lib/unipile/client.server"
-    );
+    const { createHostedAuthLink, UnipileError } = await import("@/lib/unipile/client.server");
     try {
       const link = await createHostedAuthLink({
         ownerId: userId,
@@ -142,7 +138,6 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
       }
       throw e;
     }
-
   });
 
 export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
@@ -227,7 +222,6 @@ export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
     return { ok: true, account_id: match.id };
   });
 
-
 export const updateDailyWindow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { tz?: string; start_hour: number; end_hour: number }) =>
@@ -237,7 +231,9 @@ export const updateDailyWindow = createServerFn({ method: "POST" })
         start_hour: z.number().int().min(0).max(23),
         end_hour: z.number().int().min(1).max(24),
       })
-      .refine((v) => v.end_hour > v.start_hour, { message: "end_hour deve ser maior que start_hour" })
+      .refine((v) => v.end_hour > v.start_hour, {
+        message: "end_hour deve ser maior que start_hour",
+      })
       .parse(d),
   )
   .handler(async ({ data, context }) => {

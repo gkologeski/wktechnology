@@ -7,7 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Linkedin, Link2, Power, RefreshCw, Clock, KeyRound, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  Linkedin,
+  Link2,
+  Power,
+  RefreshCw,
+  Clock,
+  KeyRound,
+  CheckCircle2,
+  AlertTriangle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
@@ -20,7 +29,6 @@ import {
   checkUnipileCredentials,
 } from "@/lib/unipile/accounts.functions";
 
-
 const searchSchema = z
   .object({
     connected: z
@@ -31,7 +39,6 @@ const searchSchema = z
     state: z.string().trim().max(128).optional(),
   })
   .passthrough();
-
 
 export const Route = createFileRoute("/_authenticated/settings/integrations/linkedin")({
   validateSearch: (s: Record<string, unknown>) => searchSchema.parse(s),
@@ -82,13 +89,14 @@ function LinkedinIntegrationPage() {
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [credStatus, setCredStatus] = useState<
-    { ok: boolean; message: string; detail?: string | null } | null
-  >(null);
+  const [credStatus, setCredStatus] = useState<{
+    ok: boolean;
+    message: string;
+    detail?: string | null;
+  } | null>(null);
   const [tz, setTz] = useState("America/Sao_Paulo");
   const [startHour, setStartHour] = useState(8);
   const [endHour, setEndHour] = useState(20);
-
 
   const refresh = async () => {
     setLoading(true);
@@ -126,7 +134,6 @@ function LinkedinIntegrationPage() {
     if (search.connected === "0") toast.error("Falha ao conectar conta LinkedIn.");
   }, [search.connected, search.state]);
 
-
   const onCheckCredentials = async () => {
     setChecking(true);
     try {
@@ -157,7 +164,6 @@ function LinkedinIntegrationPage() {
       setConnecting(false);
     }
   };
-
 
   const onDisconnect = async () => {
     if (!(await confirmDialog("Desconectar conta LinkedIn?"))) return;
@@ -305,7 +311,6 @@ function LinkedinIntegrationPage() {
             )}
           </div>
         </CardContent>
-
       </Card>
 
       <Card>

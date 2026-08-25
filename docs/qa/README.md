@@ -16,11 +16,11 @@ Esta pasta contém a suíte oficial de casos de teste para o TechSales CRM.
 
 ## Ambientes sugeridos
 
-| Ambiente | URL | Uso |
-|---|---|---|
-| Dev/Preview | `https://id-preview--<project>.lovable.app` | testes durante build |
-| Staging | `project--<id>-dev.lovable.app` | regressão antes do release |
-| Produção | `https://crm.wktechnology.com.br` | smoke + monitoria |
+| Ambiente    | URL                                         | Uso                        |
+| ----------- | ------------------------------------------- | -------------------------- |
+| Dev/Preview | `https://id-preview--<project>.lovable.app` | testes durante build       |
+| Staging     | `project--<id>-dev.lovable.app`             | regressão antes do release |
+| Produção    | `https://crm.wktechnology.com.br`           | smoke + monitoria          |
 
 ## Dados de teste recomendados
 

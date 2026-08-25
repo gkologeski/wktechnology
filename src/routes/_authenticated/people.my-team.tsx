@@ -3,14 +3,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  ArrowLeft,
-  Briefcase,
-  Clock,
-  AlertTriangle,
-  Calendar,
-  Users,
-} from "lucide-react";
+import { ArrowLeft, Briefcase, Clock, AlertTriangle, Calendar, Users } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";

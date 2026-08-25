@@ -42,7 +42,10 @@ export function normalizeDateParam(value: string | null, endOfDay = false): stri
 }
 
 export function parseListParams(url: URL): ListParams {
-  const limit = Math.min(Math.max(intParam(url.searchParams.get("limit"), DEFAULT_LIMIT), 1), MAX_LIMIT);
+  const limit = Math.min(
+    Math.max(intParam(url.searchParams.get("limit"), DEFAULT_LIMIT), 1),
+    MAX_LIMIT,
+  );
 
   const offsetParam = url.searchParams.get("offset");
   const pageParam = url.searchParams.get("page");

@@ -43,8 +43,12 @@ export function QuickCreateServiceDialog({
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [type, setType] = useState<"one_time" | "recurring" | "usage_based" | "milestone">("recurring");
-  const [cadence, setCadence] = useState<"monthly" | "quarterly" | "yearly" | "on_delivery">("monthly");
+  const [type, setType] = useState<"one_time" | "recurring" | "usage_based" | "milestone">(
+    "recurring",
+  );
+  const [cadence, setCadence] = useState<"monthly" | "quarterly" | "yearly" | "on_delivery">(
+    "monthly",
+  );
   const [quantity, setQuantity] = useState<number>(1);
   const [unitPrice, setUnitPrice] = useState<number | "">("");
   const [startsAt, setStartsAt] = useState("");
@@ -101,26 +105,37 @@ export function QuickCreateServiceDialog({
         <DialogHeader>
           <DialogTitle>Novo serviço</DialogTitle>
           <DialogDescription>
-            Serviço vinculado ao contrato. Ao ativar, gera lançamentos financeiros conforme a cadência.
+            Serviço vinculado ao contrato. Ao ativar, gera lançamentos financeiros conforme a
+            cadência.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>Nome *</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Consultoria mensal" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex.: Consultoria mensal"
+            />
           </div>
 
           <div className="space-y-2">
             <Label>Descrição</Label>
-            <Textarea rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
+            <Textarea
+              rows={2}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={type} onValueChange={(v) => setType(v as typeof type)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="recurring">Recorrente</SelectItem>
                   <SelectItem value="one_time">Único</SelectItem>
@@ -133,7 +148,9 @@ export function QuickCreateServiceDialog({
               <div className="space-y-2">
                 <Label>Cadência</Label>
                 <Select value={cadence} onValueChange={(v) => setCadence(v as typeof cadence)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="monthly">Mensal</SelectItem>
                     <SelectItem value="quarterly">Trimestral</SelectItem>

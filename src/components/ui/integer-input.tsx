@@ -25,8 +25,7 @@ function sanitize(raw: string, allowNegative: boolean) {
  */
 const IntegerInput = React.forwardRef<HTMLInputElement, IntegerInputProps>(
   ({ allowNegative, min, onChange, onKeyDown, onWheel, ...props }, ref) => {
-    const negativeAllowed =
-      allowNegative ?? (min !== undefined && min !== null && Number(min) < 0);
+    const negativeAllowed = allowNegative ?? (min !== undefined && min !== null && Number(min) < 0);
 
     return (
       <Input

@@ -30,7 +30,6 @@ import type { Lead } from "@/lib/db-types";
 import { useToastCreated } from "@/lib/toast-nav";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
-
 export function CreateDealFromLeadDialog({
   open,
   onOpenChange,
@@ -68,7 +67,6 @@ export function CreateDealFromLeadDialog({
   const [currency, setCurrency] = useState("BRL");
   const [expectedClose, setExpectedClose] = useState<string>("");
   const [description, setDescription] = useState(initialDescription ?? "");
-
 
   // company / contact
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -283,8 +281,6 @@ export function CreateDealFromLeadDialog({
       // reverter a criação.
       deniedIfUnaffected(leadAffected, "atualizar o lead");
 
-
-
       toastCreated("Negócio criado e lead qualificado", "Ir para o negócio", (nav) =>
         nav({ to: "/deals/$id", params: { id: deal!.id } }),
       );
@@ -300,152 +296,150 @@ export function CreateDealFromLeadDialog({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={(v) => !saving && onOpenChange(v)}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Criar negócio</DialogTitle>
-          <DialogDescription>
-            O lead será marcado como qualificado após a criação do negócio.
-          </DialogDescription>
-        </DialogHeader>
+      <Dialog open={open} onOpenChange={(v) => !saving && onOpenChange(v)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Criar negócio</DialogTitle>
+            <DialogDescription>
+              O lead será marcado como qualificado após a criação do negócio.
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label>Pipeline</Label>
-            <Select value={pipelineId} onValueChange={setPipelineId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {pipelines.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Estágio</Label>
-            <Select value={stageId} onValueChange={setStageId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
-              </SelectTrigger>
-              <SelectContent>
-                {(pipeline?.stages ?? []).map((s) => (
-                  <SelectItem key={s.value} value={s.value}>
-                    {s.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Pipeline</Label>
+              <Select value={pipelineId} onValueChange={setPipelineId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pipelines.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Estágio</Label>
+              <Select value={stageId} onValueChange={setStageId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(pipeline?.stages ?? []).map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5 col-span-2">
+              <Label>Nome do negócio</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+
+            <div className="space-y-1.5 col-span-2">
+              <Label>Empresa</Label>
+              <EntityCombobox
+                entity="companies"
+                select="id,name"
+                searchColumns={["name", "domain"]}
+                labelFrom={(r) => String((r as { name?: string }).name ?? "")}
+                value={companyId}
+                onChange={(id, item) => {
+                  setCompanyId(id);
+                  setCompanyName(item?.label ?? "");
+                }}
+                placeholder={companyName || "Selecionar empresa…"}
+                priorityIds={related.companies.filter((id) => id !== companyId)}
+                onCreateNew={(name) => {
+                  setPendingCompanyName(name);
+                  setCreateCompanyOpen(true);
+                }}
+              />
+            </div>
+
+            <div className="space-y-1.5 col-span-2">
+              <Label>Contato</Label>
+              <EntityCombobox
+                entity="contacts"
+                select="id,first_name,last_name,email"
+                searchColumn="first_name"
+                searchColumns={["first_name", "last_name", "email", "phone"]}
+                labelFrom={(r) => {
+                  const row = r as { first_name?: string; last_name?: string; email?: string };
+                  return (
+                    `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || row.email || "—"
+                  );
+                }}
+                hintFrom={(r) => (r as { email?: string | null }).email ?? null}
+                value={contactId}
+                onChange={(id) => setContactId(id)}
+                placeholder="Selecionar contato (vazio cria a partir do lead)"
+                priorityIds={related.contacts.filter((id) => id !== contactId)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Valor</Label>
+              <CurrencyInput
+                currency={currency}
+                value={value === "" ? null : Number(value)}
+                onValueChange={(n) => setValue(n === null ? "" : String(n))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Moeda</Label>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="BRL">BRL</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="EUR">EUR</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5 col-span-2">
+              <Label>Previsão de fechamento</Label>
+              <Input
+                type="date"
+                value={expectedClose}
+                onChange={(e) => setExpectedClose(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5 col-span-2">
+              <Label>Descrição</Label>
+              <RichHtmlEditor value={description} onChange={setDescription} minHeight={140} />
+            </div>
           </div>
 
-          <div className="space-y-1.5 col-span-2">
-            <Label>Nome do negócio</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
-
-          <div className="space-y-1.5 col-span-2">
-            <Label>Empresa</Label>
-            <EntityCombobox
-              entity="companies"
-              select="id,name"
-              searchColumns={["name", "domain"]}
-              labelFrom={(r) => String((r as { name?: string }).name ?? "")}
-              value={companyId}
-              onChange={(id, item) => {
-                setCompanyId(id);
-                setCompanyName(item?.label ?? "");
-              }}
-              placeholder={companyName || "Selecionar empresa…"}
-              priorityIds={related.companies.filter((id) => id !== companyId)}
-              onCreateNew={(name) => {
-                setPendingCompanyName(name);
-                setCreateCompanyOpen(true);
-              }}
-            />
-          </div>
-
-          <div className="space-y-1.5 col-span-2">
-            <Label>Contato</Label>
-            <EntityCombobox
-              entity="contacts"
-              select="id,first_name,last_name,email"
-              searchColumn="first_name"
-              searchColumns={["first_name", "last_name", "email", "phone"]}
-              labelFrom={(r) => {
-                const row = r as { first_name?: string; last_name?: string; email?: string };
-                return `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || row.email || "—";
-              }}
-              hintFrom={(r) => (r as { email?: string | null }).email ?? null}
-              value={contactId}
-              onChange={(id) => setContactId(id)}
-              placeholder="Selecionar contato (vazio cria a partir do lead)"
-              priorityIds={related.contacts.filter((id) => id !== contactId)}
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label>Valor</Label>
-            <CurrencyInput
-              currency={currency}
-              value={value === "" ? null : Number(value)}
-              onValueChange={(n) => setValue(n === null ? "" : String(n))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Moeda</Label>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="BRL">BRL</SelectItem>
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="EUR">EUR</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5 col-span-2">
-            <Label>Previsão de fechamento</Label>
-            <Input
-              type="date"
-              value={expectedClose}
-              onChange={(e) => setExpectedClose(e.target.value)}
-            />
-          </div>
-
-          <div className="space-y-1.5 col-span-2">
-            <Label>Descrição</Label>
-            <RichHtmlEditor
-              value={description}
-              onChange={setDescription}
-              minHeight={140}
-            />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button onClick={submit} disabled={saving || !name.trim() || !pipelineId || !stageId}>
-            {saving ? "Criando…" : "Criar negócio"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-    <QuickCreateCompanyDialog
-      open={createCompanyOpen}
-      onOpenChange={setCreateCompanyOpen}
-      initialName={pendingCompanyName}
-      onCreated={(id) => {
-        setCompanyId(id);
-        setCompanyName(pendingCompanyName);
-      }}
-    />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button onClick={submit} disabled={saving || !name.trim() || !pipelineId || !stageId}>
+              {saving ? "Criando…" : "Criar negócio"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => {
+          setCompanyId(id);
+          setCompanyName(pendingCompanyName);
+        }}
+      />
     </>
   );
 }

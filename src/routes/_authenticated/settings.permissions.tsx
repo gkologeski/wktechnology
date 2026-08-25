@@ -10,7 +10,10 @@ export const Route = createFileRoute("/_authenticated/settings/permissions")({
       { title: "Permissões — TechERP" },
       { name: "description", content: "Gestão unificada de cargos e permissões por módulo." },
       { property: "og:title", content: "Permissões — TechERP" },
-      { property: "og:description", content: "Gestão unificada de cargos e permissões por módulo." },
+      {
+        property: "og:description",
+        content: "Gestão unificada de cargos e permissões por módulo.",
+      },
     ],
   }),
   component: PermissionsPage,

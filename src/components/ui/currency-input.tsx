@@ -64,7 +64,6 @@ export const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputPro
       if (!focused) {
         setDisplay(format(numeric, locale, currency, decimals));
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [numeric, locale, currency, decimals, focused]);
 
     const factor = Math.pow(10, decimals);

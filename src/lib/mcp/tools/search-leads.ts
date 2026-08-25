@@ -5,11 +5,27 @@ import { supabaseForUser, unauthenticated, resolveWorkspaceId } from "../supabas
 export default defineTool({
   name: "search_leads",
   title: "Buscar leads",
-  description: "Busca leads do workspace por nome, e-mail, telefone ou empresa, com filtro opcional por status.",
+  description:
+    "Busca leads do workspace por nome, e-mail, telefone ou empresa, com filtro opcional por status.",
   inputSchema: {
-    query: z.string().trim().min(1).optional().describe("Termo de busca (nome, e-mail, telefone ou empresa)."),
-    status: z.string().trim().optional().describe("Filtrar por status do lead (ex.: new, qualified)."),
-    limit: z.number().int().min(1).max(50).default(10).describe("Número máximo de leads retornados."),
+    query: z
+      .string()
+      .trim()
+      .min(1)
+      .optional()
+      .describe("Termo de busca (nome, e-mail, telefone ou empresa)."),
+    status: z
+      .string()
+      .trim()
+      .optional()
+      .describe("Filtrar por status do lead (ex.: new, qualified)."),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(10)
+      .describe("Número máximo de leads retornados."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ query, status, limit }, ctx) => {
@@ -18,7 +34,9 @@ export default defineTool({
     const workspaceId = await resolveWorkspaceId(supabase, ctx.getUserId()!);
     let q = supabase
       .from("leads")
-      .select("id,first_name,last_name,email,phone,company_name,company_id,status,source,score,created_at")
+      .select(
+        "id,first_name,last_name,email,phone,company_name,company_id,status,source,score,created_at",
+      )
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
       .order("created_at", { ascending: false })

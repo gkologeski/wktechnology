@@ -51,7 +51,10 @@ export const exportAtsCandidatesCsv = createServerFn({ method: "POST" })
       "source",
       "created_at",
     ];
-    return { filename: `candidatos-${new Date().toISOString().slice(0, 10)}.csv`, csv: rowsToCsv(headers, rows) };
+    return {
+      filename: `candidatos-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv: rowsToCsv(headers, rows),
+    };
   });
 
 export const exportJobApplicationsCsv = createServerFn({ method: "POST" })
@@ -67,7 +70,10 @@ export const exportJobApplicationsCsv = createServerFn({ method: "POST" })
       .eq("job_id", data.jobId);
     if (error) throw new Error(error.message);
     const candidateIds = Array.from(new Set((apps ?? []).map((a) => a.candidate_id as string)));
-    const candMap = new Map<string, { full_name: string; email: string | null; phone: string | null }>();
+    const candMap = new Map<
+      string,
+      { full_name: string; email: string | null; phone: string | null }
+    >();
     if (candidateIds.length) {
       const { data: cands } = await supabase
         .from("ats_candidates")

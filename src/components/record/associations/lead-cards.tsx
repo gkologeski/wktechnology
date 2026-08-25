@@ -9,9 +9,16 @@ import { ContactPickerPopover } from "@/components/ui/contact-picker";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
 import { usePipelines } from "@/lib/pipelines";
 import { useLeadStages, resolveLeadStageValue, findLeadStage } from "@/lib/leads/stages";
-import { AssocCard, AssocItemActions, DetailRow, Empty, EntityAvatar, ViewAllFooter, formatDealDateLong } from "./primitives";
+import {
+  AssocCard,
+  AssocItemActions,
+  DetailRow,
+  Empty,
+  EntityAvatar,
+  ViewAllFooter,
+  formatDealDateLong,
+} from "./primitives";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
-
 
 /* ───────────── Lead → Contact / Deal cards (read-only, from conversion) ───────────── */
 
@@ -37,7 +44,8 @@ export function LeadContactsCard({ entityId }: { entityId: string }) {
         .select("converted_contact_id")
         .eq("id", entityId)
         .maybeSingle();
-      const cid = (lead as { converted_contact_id?: string | null } | null)?.converted_contact_id ?? null;
+      const cid =
+        (lead as { converted_contact_id?: string | null } | null)?.converted_contact_id ?? null;
       if (!cid) {
         if (!cancelled) setContact(null);
         return;
@@ -97,7 +105,12 @@ export function LeadContactsCard({ entityId }: { entityId: string }) {
 
   return (
     <>
-      <AssocCard icon={<User className="w-4 h-4" />} title="Contatos" count={rows.length} action={action}>
+      <AssocCard
+        icon={<User className="w-4 h-4" />}
+        title="Contatos"
+        count={rows.length}
+        action={action}
+      >
         {rows.length === 0 ? (
           <Empty label="Nenhum contato vinculado." />
         ) : (
@@ -105,10 +118,15 @@ export function LeadContactsCard({ entityId }: { entityId: string }) {
             <ul className="space-y-2">
               {rows.map((c) => {
                 const fullName = `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
-                const initials = ((c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")).toUpperCase();
+                const initials = (
+                  (c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")
+                ).toUpperCase();
                 const phone = c.phone || c.mobile_phone || null;
                 return (
-                  <li key={c.id} className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
+                  <li
+                    key={c.id}
+                    className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors"
+                  >
                     <div className="flex items-start gap-3">
                       <EntityAvatar initials={initials} tone="primary" />
                       <div className="min-w-0 flex-1">
@@ -145,7 +163,6 @@ export function LeadContactsCard({ entityId }: { entityId: string }) {
                         link={{ to: "/contacts/$id", params: { id: c.id } }}
                         onUnlink={() => void unlinkContact()}
                       />
-
                     </div>
                   </li>
                 );
@@ -219,7 +236,7 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
               const pipeline = pipelines.find((p) => p.id === d.pipeline_id);
               const stages = pipeline?.stages ?? [];
               const stageLabel =
-                stages.find((s) => s.value === (d.stage_id ?? d.stage))?.label ?? (d.stage ?? "—");
+                stages.find((s) => s.value === (d.stage_id ?? d.stage))?.label ?? d.stage ?? "—";
               return (
                 <li
                   key={d.id}
@@ -240,7 +257,9 @@ export function LeadDealsCard({ entityId }: { entityId: string }) {
                       <div className="mt-2 space-y-2">
                         <DetailRow
                           label="Valor"
-                          value={d.value != null ? formatCurrency(d.value, d.currency ?? "BRL") : null}
+                          value={
+                            d.value != null ? formatCurrency(d.value, d.currency ?? "BRL") : null
+                          }
                         />
                         <DetailRow
                           label="Data de fechamento"
@@ -317,7 +336,9 @@ export function RecordLeadsCard({
           <ul className="space-y-2">
             {rows.map((l) => {
               const fullName = `${l.first_name ?? ""} ${l.last_name ?? ""}`.trim() || "Sem nome";
-              const initials = ((l.first_name?.[0] ?? "?") + (l.last_name?.[0] ?? "")).toUpperCase();
+              const initials = (
+                (l.first_name?.[0] ?? "?") + (l.last_name?.[0] ?? "")
+              ).toUpperCase();
               const stageValue = resolveLeadStageValue(l, stages);
               const stageLabel = findLeadStage(stages, stageValue)?.label ?? stageValue;
               return (

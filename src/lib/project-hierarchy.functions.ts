@@ -10,7 +10,12 @@ const categoryEnum = z.enum(["todo", "doing", "done"]);
 const priorityEnum = z.enum(["low", "normal", "high", "urgent"]);
 
 // Statuses padrão criados junto de uma nova lista.
-const DEFAULT_STATUSES: Array<{ name: string; color: string; category: "todo" | "doing" | "done"; is_default?: boolean }> = [
+const DEFAULT_STATUSES: Array<{
+  name: string;
+  color: string;
+  category: "todo" | "doing" | "done";
+  is_default?: boolean;
+}> = [
   { name: "A fazer", color: "#94a3b8", category: "todo", is_default: true },
   { name: "Em execução", color: "#0ea5e9", category: "doing" },
   { name: "Em revisão", color: "#f59e0b", category: "doing" },
@@ -35,12 +40,14 @@ export const listSpaces = createServerFn({ method: "POST" })
 export const createSpace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      name: z.string().min(1),
-      description: z.string().nullable().optional(),
-      color: z.string().nullable().optional(),
-      icon: z.string().nullable().optional(),
-    }).parse(input),
+    z
+      .object({
+        name: z.string().min(1),
+        description: z.string().nullable().optional(),
+        color: z.string().nullable().optional(),
+        icon: z.string().nullable().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -64,14 +71,16 @@ export const createSpace = createServerFn({ method: "POST" })
 export const updateSpace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      name: z.string().min(1).optional(),
-      description: z.string().nullable().optional(),
-      color: z.string().nullable().optional(),
-      icon: z.string().nullable().optional(),
-      archived: z.boolean().optional(),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().min(1).optional(),
+        description: z.string().nullable().optional(),
+        color: z.string().nullable().optional(),
+        icon: z.string().nullable().optional(),
+        archived: z.boolean().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -80,7 +89,8 @@ export const updateSpace = createServerFn({ method: "POST" })
     if (data.description !== undefined) patch.description = data.description;
     if (data.color !== undefined) patch.color = data.color;
     if (data.icon !== undefined) patch.icon = data.icon;
-    if (data.archived !== undefined) patch.archived_at = data.archived ? new Date().toISOString() : null;
+    if (data.archived !== undefined)
+      patch.archived_at = data.archived ? new Date().toISOString() : null;
     const { data: row, error } = await supabase
       .from("project_spaces")
       .update(patch)
@@ -105,10 +115,12 @@ export const deleteSpace = createServerFn({ method: "POST" })
 export const createFolder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      spaceId: z.string().uuid(),
-      name: z.string().min(1),
-    }).parse(input),
+    z
+      .object({
+        spaceId: z.string().uuid(),
+        name: z.string().min(1),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -143,8 +155,18 @@ export const listSpaceTree = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase } = context;
     const [spacesRes, foldersRes, listsRes] = await Promise.all([
-      supabase.from("project_spaces").select("*").is("archived_at", null).order("sort_order").order("created_at"),
-      supabase.from("project_folders").select("*").is("archived_at", null).order("sort_order").order("created_at"),
+      supabase
+        .from("project_spaces")
+        .select("*")
+        .is("archived_at", null)
+        .order("sort_order")
+        .order("created_at"),
+      supabase
+        .from("project_folders")
+        .select("*")
+        .is("archived_at", null)
+        .order("sort_order")
+        .order("created_at"),
       supabase
         .from("project_lists")
         .select("*, projects(id, name)")
@@ -165,14 +187,16 @@ export const listSpaceTree = createServerFn({ method: "POST" })
 export const createList = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      spaceId: z.string().uuid(),
-      folderId: z.string().uuid().nullable().optional(),
-      projectId: z.string().uuid().nullable().optional(),
-      name: z.string().min(1),
-      color: z.string().nullable().optional(),
-      icon: z.string().nullable().optional(),
-    }).parse(input),
+    z
+      .object({
+        spaceId: z.string().uuid(),
+        folderId: z.string().uuid().nullable().optional(),
+        projectId: z.string().uuid().nullable().optional(),
+        name: z.string().min(1),
+        color: z.string().nullable().optional(),
+        icon: z.string().nullable().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -211,15 +235,17 @@ export const createList = createServerFn({ method: "POST" })
 export const updateList = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      name: z.string().min(1).optional(),
-      color: z.string().nullable().optional(),
-      icon: z.string().nullable().optional(),
-      folderId: z.string().uuid().nullable().optional(),
-      projectId: z.string().uuid().nullable().optional(),
-      archived: z.boolean().optional(),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().min(1).optional(),
+        color: z.string().nullable().optional(),
+        icon: z.string().nullable().optional(),
+        folderId: z.string().uuid().nullable().optional(),
+        projectId: z.string().uuid().nullable().optional(),
+        archived: z.boolean().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -229,8 +255,14 @@ export const updateList = createServerFn({ method: "POST" })
     if (data.icon !== undefined) patch.icon = data.icon;
     if (data.folderId !== undefined) patch.folder_id = data.folderId;
     if (data.projectId !== undefined) patch.project_id = data.projectId;
-    if (data.archived !== undefined) patch.archived_at = data.archived ? new Date().toISOString() : null;
-    const { data: row, error } = await supabase.from("project_lists").update(patch).eq("id", data.id).select("*").single();
+    if (data.archived !== undefined)
+      patch.archived_at = data.archived ? new Date().toISOString() : null;
+    const { data: row, error } = await supabase
+      .from("project_lists")
+      .update(patch)
+      .eq("id", data.id)
+      .select("*")
+      .single();
     if (error) throw error;
     return row;
   });
@@ -282,12 +314,14 @@ export const getList = createServerFn({ method: "POST" })
 export const createStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      listId: z.string().uuid(),
-      name: z.string().min(1),
-      color: z.string().nullable().optional(),
-      category: categoryEnum.default("todo"),
-    }).parse(input),
+    z
+      .object({
+        listId: z.string().uuid(),
+        name: z.string().min(1),
+        color: z.string().nullable().optional(),
+        category: categoryEnum.default("todo"),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -315,13 +349,15 @@ export const createStatus = createServerFn({ method: "POST" })
 export const updateStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      name: z.string().min(1).optional(),
-      color: z.string().nullable().optional(),
-      category: categoryEnum.optional(),
-      sortOrder: z.number().int().optional(),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        name: z.string().min(1).optional(),
+        color: z.string().nullable().optional(),
+        category: categoryEnum.optional(),
+        sortOrder: z.number().int().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -354,15 +390,17 @@ export const deleteStatus = createServerFn({ method: "POST" })
 export const createListTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      listId: z.string().uuid(),
-      title: z.string().min(1),
-      customStatusId: z.string().uuid().nullable().optional(),
-      parentTaskId: z.string().uuid().nullable().optional(),
-      priority: priorityEnum.optional(),
-      dueAt: z.string().nullable().optional(),
-      estimatedHours: z.number().nonnegative().nullable().optional(),
-    }).parse(input),
+    z
+      .object({
+        listId: z.string().uuid(),
+        title: z.string().min(1),
+        customStatusId: z.string().uuid().nullable().optional(),
+        parentTaskId: z.string().uuid().nullable().optional(),
+        priority: priorityEnum.optional(),
+        dueAt: z.string().nullable().optional(),
+        estimatedHours: z.number().nonnegative().nullable().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -417,10 +455,12 @@ export const createListTask = createServerFn({ method: "POST" })
 export const moveTaskStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      taskId: z.string().uuid(),
-      customStatusId: z.string().uuid(),
-    }).parse(input),
+    z
+      .object({
+        taskId: z.string().uuid(),
+        customStatusId: z.string().uuid(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -430,8 +470,7 @@ export const moveTaskStatus = createServerFn({ method: "POST" })
       .select("category")
       .eq("id", data.customStatusId)
       .maybeSingle();
-    const legacy =
-      st?.category === "done" ? "done" : st?.category === "doing" ? "doing" : "todo";
+    const legacy = st?.category === "done" ? "done" : st?.category === "doing" ? "doing" : "todo";
     const { data: row, error } = await supabase
       .from("project_tasks")
       .update({ custom_status_id: data.customStatusId, status: legacy })
@@ -445,15 +484,17 @@ export const moveTaskStatus = createServerFn({ method: "POST" })
 export const updateListTask = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      id: z.string().uuid(),
-      title: z.string().min(1).optional(),
-      priority: priorityEnum.optional(),
-      dueAt: z.string().nullable().optional(),
-      startAt: z.string().nullable().optional(),
-      estimatedHours: z.number().nonnegative().nullable().optional(),
-      customStatusId: z.string().uuid().nullable().optional(),
-    }).parse(input),
+    z
+      .object({
+        id: z.string().uuid(),
+        title: z.string().min(1).optional(),
+        priority: priorityEnum.optional(),
+        dueAt: z.string().nullable().optional(),
+        startAt: z.string().nullable().optional(),
+        estimatedHours: z.number().nonnegative().nullable().optional(),
+        customStatusId: z.string().uuid().nullable().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;

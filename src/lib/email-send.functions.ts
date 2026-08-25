@@ -20,7 +20,11 @@ const attachmentSchema = z.object({
   path: z.string().min(1).max(500),
   filename: z.string().min(1).max(255),
   content_type: z.string().min(1).max(255),
-  size: z.number().int().nonnegative().max(25 * 1024 * 1024),
+  size: z
+    .number()
+    .int()
+    .nonnegative()
+    .max(25 * 1024 * 1024),
 });
 
 const inputSchema = z.object({
@@ -69,7 +73,8 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     // Download attachments from storage (each path must live under the user's folder)
     const attachmentInputs = data.attachments ?? [];
     const mimeAttachments: { filename: string; contentType: string; data: Buffer }[] = [];
-    const attachmentMeta: { filename: string; content_type: string; size: number; path: string }[] = [];
+    const attachmentMeta: { filename: string; content_type: string; size: number; path: string }[] =
+      [];
     let totalBytes = 0;
     for (const a of attachmentInputs) {
       if (!a.path.startsWith(`${context.userId}/`)) {
@@ -78,12 +83,20 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       const { data: file, error: dErr } = await supabaseAdmin.storage
         .from("email-attachments")
         .download(a.path);
-      if (dErr || !file) throw new Error(`Falha ao ler anexo ${a.filename}: ${dErr?.message ?? "arquivo não encontrado"}`);
+      if (dErr || !file)
+        throw new Error(
+          `Falha ao ler anexo ${a.filename}: ${dErr?.message ?? "arquivo não encontrado"}`,
+        );
       const buf = Buffer.from(await file.arrayBuffer());
       totalBytes += buf.length;
       if (totalBytes > 25 * 1024 * 1024) throw new Error("Total de anexos excede 25 MB");
       mimeAttachments.push({ filename: a.filename, contentType: a.content_type, data: buf });
-      attachmentMeta.push({ filename: a.filename, content_type: a.content_type, size: buf.length, path: a.path });
+      attachmentMeta.push({
+        filename: a.filename,
+        content_type: a.content_type,
+        size: buf.length,
+        path: a.path,
+      });
     }
 
     const raw = buildRawMime({

@@ -12,13 +12,13 @@
 
 ## 2. Observabilidade
 
-| Sinal | Onde olhar |
-|---|---|
-| Erros 5xx | Server Logs (Cloud → Logs). Wrapper SSR em `src/server.ts` faz console.error de erros catastróficos. |
-| Falhas de cron | `/admin/status` (job, schedule, last_start, status). |
-| Queue DLQ (e-mail) | `email_send_log` (rows com `status='dlq'`); `email_send_state` para throughput. |
-| Webhooks de pagamento | `payment_webhook_events` (signature_valid, processed, payload). |
-| Alertas disparados | `platform_alert_events` (lidos por `/admin/status`). |
+| Sinal                 | Onde olhar                                                                                           |
+| --------------------- | ---------------------------------------------------------------------------------------------------- |
+| Erros 5xx             | Server Logs (Cloud → Logs). Wrapper SSR em `src/server.ts` faz console.error de erros catastróficos. |
+| Falhas de cron        | `/admin/status` (job, schedule, last_start, status).                                                 |
+| Queue DLQ (e-mail)    | `email_send_log` (rows com `status='dlq'`); `email_send_state` para throughput.                      |
+| Webhooks de pagamento | `payment_webhook_events` (signature_valid, processed, payload).                                      |
+| Alertas disparados    | `platform_alert_events` (lidos por `/admin/status`).                                                 |
 
 ### Regras de alerta sugeridas (criar em `/admin/alerts`)
 
@@ -38,10 +38,10 @@ Canal padrão: e-mail para `ops@wktechnology.com.br` (configurar em cada regra).
 
 ### RPO / RTO alvos
 
-| Métrica | Alvo | Notas |
-|---|---|---|
-| RPO (perda máxima de dados) | ≤ 24 h | Limitado pelo backup diário. PITR reduz para minutos quando habilitado. |
-| RTO (tempo de restauração) | ≤ 4 h | Restaurar via Cloud → Database → Backups; reapontar app só se URL mudar. |
+| Métrica                     | Alvo   | Notas                                                                    |
+| --------------------------- | ------ | ------------------------------------------------------------------------ |
+| RPO (perda máxima de dados) | ≤ 24 h | Limitado pelo backup diário. PITR reduz para minutos quando habilitado.  |
+| RTO (tempo de restauração)  | ≤ 4 h  | Restaurar via Cloud → Database → Backups; reapontar app só se URL mudar. |
 
 ### Backups manuais antes de mudanças críticas
 
@@ -85,11 +85,11 @@ Listar: `select jobname, schedule, active from cron.job;`
 
 Críticos:
 
-| Job | Schedule | Endpoint |
-|---|---|---|
-| `process-email-queue` | `*/5 * * * * *` (a cada 5 s) | `/lovable/email/queue/process` |
-| `platform-alerts-tick` | a cada 5 min | `/api/public/hooks/platform-alerts-tick` |
-| `audit-export-tick` | de hora em hora | `/api/public/hooks/audit-export-tick` |
+| Job                    | Schedule                     | Endpoint                                 |
+| ---------------------- | ---------------------------- | ---------------------------------------- |
+| `process-email-queue`  | `*/5 * * * * *` (a cada 5 s) | `/lovable/email/queue/process`           |
+| `platform-alerts-tick` | a cada 5 min                 | `/api/public/hooks/platform-alerts-tick` |
+| `audit-export-tick`    | de hora em hora              | `/api/public/hooks/audit-export-tick`    |
 
 Autenticação de webhooks: cron usa `apikey` (anon) ou `CRON_SECRET` (rotas com `requireCronAuth`). Twilio/Stripe/Meta/gateways BR verificam assinatura HMAC.
 
@@ -103,10 +103,10 @@ Autenticação de webhooks: cron usa `apikey` (anon) ou `CRON_SECRET` (rotas com
 
 A integração LinkedIn/mensageria usa exclusivamente a **API v2** da Unipile. Apenas duas variáveis de ambiente são suportadas:
 
-| Variável | Obrigatória | Descrição |
-|---|---|---|
-| `UNIPILE_API_KEY` | Sim | Chave de API da Unipile (header `X-API-KEY`). |
-| `UNIPILE_API_BASE_URL` | Não | Override da base da API. Padrão: `https://api.unipile.com/v2`. Use somente em testes/ambientes isolados. |
+| Variável               | Obrigatória | Descrição                                                                                                |
+| ---------------------- | ----------- | -------------------------------------------------------------------------------------------------------- |
+| `UNIPILE_API_KEY`      | Sim         | Chave de API da Unipile (header `X-API-KEY`).                                                            |
+| `UNIPILE_API_BASE_URL` | Não         | Override da base da API. Padrão: `https://api.unipile.com/v2`. Use somente em testes/ambientes isolados. |
 
 Variáveis descontinuadas e **removidas** do ambiente:
 

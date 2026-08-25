@@ -24,7 +24,10 @@ export type Criterion = z.infer<typeof CriterionSchema>;
 export const listScorecards = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ job_id: z.string().uuid().optional() }).optional().parse(d ?? {}),
+    z
+      .object({ job_id: z.string().uuid().optional() })
+      .optional()
+      .parse(d ?? {}),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -93,10 +96,7 @@ const ResponseSchema = z.object({
   scorecard_id: z.string().uuid(),
   application_id: z.string().uuid(),
   scores: z.record(z.string(), z.number().min(0).max(5)),
-  recommendation: z
-    .enum(["strong_yes", "yes", "maybe", "no", "strong_no"])
-    .optional()
-    .nullable(),
+  recommendation: z.enum(["strong_yes", "yes", "maybe", "no", "strong_no"]).optional().nullable(),
   notes: z.string().max(2000).optional().nullable(),
 });
 
@@ -172,19 +172,23 @@ export const submitScorecardResponse = createServerFn({ method: "POST" })
           candidate_id: a.candidate_id,
           event_type: "scorecard_submitted",
           actor_id: userId,
-          metadata: { scorecard_id: data.scorecard_id, total_score, recommendation: data.recommendation ?? null },
+          metadata: {
+            scorecard_id: data.scorecard_id,
+            total_score,
+            recommendation: data.recommendation ?? null,
+          },
         } as never)
-        .then(() => undefined, () => undefined);
+        .then(
+          () => undefined,
+          () => undefined,
+        );
     }
     return { id: created.id, total_score };
   });
 
-
 export const listScorecardResponses = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ application_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ application_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -209,7 +213,8 @@ export const listJobScorecardSummary = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    if (data.application_ids.length === 0) return {} as Record<string, { avg: number; count: number }>;
+    if (data.application_ids.length === 0)
+      return {} as Record<string, { avg: number; count: number }>;
     const { data: rows, error } = await supabase
       .from("ats_scorecard_responses")
       .select("application_id, total_score")
@@ -232,4 +237,3 @@ export const listJobScorecardSummary = createServerFn({ method: "POST" })
     }
     return out;
   });
-

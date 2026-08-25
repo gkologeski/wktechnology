@@ -34,9 +34,7 @@ export const listPools = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: pools, error } = await supabase
       .from("ats_interviewer_pools")
-      .select(
-        "id, name, description, rotation_strategy, rotation_cursor, load_window_days",
-      )
+      .select("id, name, description, rotation_strategy, rotation_cursor, load_window_days")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     const ids = (pools ?? []).map((p) => p.id as string);
@@ -130,17 +128,15 @@ export const addPoolMember = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
-    const { error } = await supabase
-      .from("ats_interviewer_pool_members")
-      .upsert(
-        {
-          owner_id: userId,
-          pool_id: data.pool_id,
-          interviewer_id: data.interviewer_id,
-          weight: data.weight,
-        } as never,
-        { onConflict: "pool_id,interviewer_id" },
-      );
+    const { error } = await supabase.from("ats_interviewer_pool_members").upsert(
+      {
+        owner_id: userId,
+        pool_id: data.pool_id,
+        interviewer_id: data.interviewer_id,
+        weight: data.weight,
+      } as never,
+      { onConflict: "pool_id,interviewer_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -361,16 +357,11 @@ export const findCommonSlots = createServerFn({ method: "POST" })
       const wd = d.getUTCDay();
       const startMin = d.getUTCHours() * 60 + d.getUTCMinutes();
       const endMin = startMin + data.duration_min;
-      const inWindow = wins.some(
-        (w) => w.weekday === wd && startMin >= w.start && endMin <= w.end,
-      );
+      const inWindow = wins.some((w) => w.weekday === wd && startMin >= w.start && endMin <= w.end);
       if (!inWindow) return false;
       const slotEnd = slotStart + durMs;
       const collide = busy.some(
-        (b) =>
-          b.interviewer_id === id &&
-          slotStart < b.end &&
-          slotEnd > b.start,
+        (b) => b.interviewer_id === id && slotStart < b.end && slotEnd > b.start,
       );
       return !collide;
     };
@@ -438,7 +429,7 @@ export const listOpenSchedulingSlaBreaches = createServerFn({ method: "POST" })
     const hasInterview = new Set((scheduled ?? []).map((r) => r.application_id as string));
 
     const now = Date.now();
-    const breaches: Array<{ a: typeof list[number]; hours: number }> = [];
+    const breaches: Array<{ a: (typeof list)[number]; hours: number }> = [];
     for (const a of list) {
       if (hasInterview.has(a.id)) continue;
       const hours = (now - new Date(a.moved_at).getTime()) / 3_600_000;
@@ -452,8 +443,12 @@ export const listOpenSchedulingSlaBreaches = createServerFn({ method: "POST" })
       supabase.from("ats_candidates").select("id, full_name").in("id", candIds),
       supabase.from("ats_jobs").select("id, title").in("id", jobIds),
     ]);
-    const cMap = new Map((cands.data ?? []).map((c) => [c.id as string, (c.full_name as string | null) ?? null]));
-    const jMap = new Map((jobs.data ?? []).map((j) => [j.id as string, (j.title as string | null) ?? null]));
+    const cMap = new Map(
+      (cands.data ?? []).map((c) => [c.id as string, (c.full_name as string | null) ?? null]),
+    );
+    const jMap = new Map(
+      (jobs.data ?? []).map((j) => [j.id as string, (j.title as string | null) ?? null]),
+    );
 
     return breaches
       .map(({ a, hours }) => ({

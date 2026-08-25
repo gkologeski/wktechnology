@@ -23,13 +23,14 @@ No detalhe do contrato (`/contracts/{id}`, card "Serviços"), remover a criaçã
 ## Detalhes técnicos
 
 Arquivos:
+
 - `src/components/services/contract-services.tsx`: trocar `QuickCreateServiceDialog` por novo `LinkCatalogServiceDialog`; renomear a ação para "Associar serviço".
 - Novo `src/components/services/link-catalog-service-dialog.tsx`: seleção do item de `service_catalog` + parâmetros comerciais; componente apresentacional, consumindo server functions via `useServerFn`.
 - `src/lib/services.functions.ts`: nova server fn `linkCatalogServiceToContract` (middleware `requireSupabaseAuth`, mesma permissão `techservice.services.create.own`) que:
   1. carrega o item do catálogo (`service_catalog`, `active = true`) e o contrato (`role`, `currency`);
   2. insere em `services` com `name`/`description` vindos do catálogo, `quantity`/`unit_price`/`type`/`cadence`/datas vindos do formulário, `status = 'pending'`;
   3. guarda a origem em `metadata.service_catalog_id` (sem migration, pois `services.metadata` já é `jsonb`).
-  Também uma server fn de listagem `listCatalogServiceOptions` (leitura de `service_catalog` ativa, pelo cliente autenticado — RLS aplicada), espelhando `listTemplateServiceOptions`.
+     Também uma server fn de listagem `listCatalogServiceOptions` (leitura de `service_catalog` ativa, pelo cliente autenticado — RLS aplicada), espelhando `listTemplateServiceOptions`.
 - `src/components/services/quick-create-service-dialog.tsx`: removido do fluxo de contrato. `createService` permanece na API para não quebrar testes/consumidores, mas deixa de ser chamado pela UI de contrato.
 
 Validações a rodar: typecheck, lint, build e os testes de autorização (`services-kb-authorization`).

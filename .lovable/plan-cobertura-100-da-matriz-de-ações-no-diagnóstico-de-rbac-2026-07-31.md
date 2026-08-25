@@ -16,6 +16,7 @@ Completar ações faltantes em recursos que hoje só têm `view`/`manage`:
 `system.analytics.dashboards`, `system.analytics.reports`, `system.automation.sequences`, `system.automation.rotation`, `system.automation.sla`, `system.automation.macros`, `system.automation.email_templates`, `system.kb.articles`, `system.calendars`, `system.booking`, `system.onboarding_templates`, `system.user_groups`, `system.workflows`, `techsales.marketing.*`, `techsales.catalog.products`, `techfinance.banking`, `techfinance.dunning`, `techpeople.*` — adicionando `create`, `update`, `delete` e, quando pertinente, `export`/`approve`, além dos escopos `own`/`team` para `view` e `update`.
 
 Novos recursos (hoje sem nenhuma chave):
+
 - Workspace/estrutura: `system.branding`, `system.legal_entities`, `system.legal_entity_groups`, `system.language`, `system.pipelines`, `system.custom_properties`, `system.custom_objects`, `system.portal`, `system.snippets`, `system.files`, `system.marketplace`, `system.widget`, `system.import`, `system.audit` (view/create/update/delete conforme aplicável).
 - CRM/vendas: `techsales.leads`, `techsales.contacts`, `techsales.companies`, `techsales.deals`, `techsales.quotes`, `techsales.invoices`, `techsales.tickets`, `techsales.tasks`, `techsales.catalog.services`.
 - Projetos: `techprojects.projects`, `techprojects.tasks`, `techprojects.spaces`, `techprojects.timesheet`.

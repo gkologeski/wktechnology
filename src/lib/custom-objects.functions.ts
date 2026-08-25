@@ -89,7 +89,11 @@ export const deleteCustomObject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await supabase.from("custom_objects").delete().eq("id", data.id).eq("workspace_id", workspaceId);
+    await supabase
+      .from("custom_objects")
+      .delete()
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
     return { ok: true };
   });
 
@@ -148,6 +152,10 @@ export const deleteCustomRecord = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await supabase.from("custom_object_records").delete().eq("id", data.id).eq("workspace_id", workspaceId);
+    await supabase
+      .from("custom_object_records")
+      .delete()
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
     return { ok: true };
   });

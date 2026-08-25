@@ -32,7 +32,6 @@ import { CORE_SIDEBAR_GROUPS, shouldInjectCoreGroups } from "@/lib/menu-config-c
 
 import { useActiveModule, useActiveModuleDefinition } from "@/lib/modules/active-module";
 
-
 export function AppSidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager } = useMyRole();
@@ -64,11 +63,11 @@ export function AppSidebar() {
                 ? SERVICES_SIDEBAR_GROUPS
                 : effectiveModuleId === "projects"
                   ? PROJECTS_SIDEBAR_GROUPS
-                    : effectiveModuleId === "finance"
-                      ? FINANCE_SIDEBAR_GROUPS
-                      : effectiveModuleId === "people"
-                        ? PEOPLE_SIDEBAR_GROUPS
-                        : SIDEBAR_GROUPS;
+                  : effectiveModuleId === "finance"
+                    ? FINANCE_SIDEBAR_GROUPS
+                    : effectiveModuleId === "people"
+                      ? PEOPLE_SIDEBAR_GROUPS
+                      : SIDEBAR_GROUPS;
         // Prepend "Cadastros" (Core ERP) para módulos consumidores.
         return shouldInjectCoreGroups(effectiveModuleId)
           ? [...CORE_SIDEBAR_GROUPS, ...moduleGroups]
@@ -95,20 +94,21 @@ export function AppSidebar() {
   const visibleGroups = useMemo(() => {
     const q = normalizeSearch(query);
     const matches = (title: string) => !q || normalizeSearch(title).includes(q);
-    return groupsSource.map((g) => ({
-      ...g,
-      items: g.items
-        .filter((i) => canSee(i.need, perms, i.permissionAny))
-        .map((i) => ({
-          ...i,
-          children: (i.children ?? []).filter(
-            (c) => canSee(c.need, perms, c.permissionAny) && matches(c.title),
-          ),
-        }))
-        .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
-    })).filter((g) => g.items.length > 0);
+    return groupsSource
+      .map((g) => ({
+        ...g,
+        items: g.items
+          .filter((i) => canSee(i.need, perms, i.permissionAny))
+          .map((i) => ({
+            ...i,
+            children: (i.children ?? []).filter(
+              (c) => canSee(c.need, perms, c.permissionAny) && matches(c.title),
+            ),
+          }))
+          .filter((i) => matches(i.title) || (i.children && i.children.length > 0)),
+      }))
+      .filter((g) => g.items.length > 0);
   }, [query, isAdmin, isManager, isPlatformAdmin, grantedPermissions, groupsSource]);
-
 
   const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
 
@@ -118,7 +118,10 @@ export function AppSidebar() {
         <Link to={shellBrand.defaultRoute} className="flex items-center gap-2.5">
           <div
             className="h-9 w-9 shrink-0 rounded-xl text-white grid place-items-center text-sm font-bold shadow-md"
-            style={{ backgroundColor: shellBrand.defaultColor, boxShadow: `0 4px 12px ${shellBrand.defaultColor}33` }}
+            style={{
+              backgroundColor: shellBrand.defaultColor,
+              boxShadow: `0 4px 12px ${shellBrand.defaultColor}33`,
+            }}
           >
             {shellBrand.productName.slice(0, 2).toUpperCase()}
           </div>
@@ -224,7 +227,6 @@ export function AppSidebar() {
                               </Link>
                             )}
                           </SidebarMenuButton>
-
 
                           {hasChildren && (
                             <ul

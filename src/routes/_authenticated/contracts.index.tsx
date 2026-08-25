@@ -65,7 +65,6 @@ import { ViewModeToggle, type ListViewMode } from "@/components/kanban/view-mode
 
 type GroupBy = "none" | "company" | "service" | "job_profile" | "seniority";
 
-
 const GROUP_BY_VALUES: GroupBy[] = ["none", "company", "service", "job_profile", "seniority"];
 const PAGE_SIZES = [25, 50, 100, 200];
 
@@ -151,7 +150,6 @@ const CONTRACT_KANBAN_TONE: Record<string, string> = {
 };
 
 const ROLE_LABEL: Record<string, string> = { provider: "Prestação", client: "Compra" };
-
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 const plusDays = (days: number) => {
@@ -463,7 +461,6 @@ function ContractsPage() {
           onChange={(v) => navigate({ search: (prev) => ({ ...prev, view: v }) })}
         />
 
-
         <Popover open={openFilters} onOpenChange={setOpenFilters}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="gap-1">
@@ -757,8 +754,6 @@ function ContractsPage() {
                       Início {new Date(c.starts_at).toLocaleDateString("pt-BR")}
                     </p>
                   ) : null}
-
-
                 </div>
               )}
             />
@@ -766,7 +761,6 @@ function ContractsPage() {
             <div className="rounded-lg border bg-card">
               <ContractsTable rows={rows} selection={selection} editable nestLinks={nestLinks} />
             </div>
-
           ) : (
             <ContractsGroupedList
               rows={rows}

@@ -28,7 +28,6 @@ import {
   getLegalEntity,
 } from "@/lib/legal-entities.functions";
 
-
 type LE = {
   id: string;
   code: string | null;
@@ -48,7 +47,6 @@ export function LegalEntitiesPage() {
   const setDefault = useServerFn(setDefaultLegalEntity);
   const del = useServerFn(deleteLegalEntity);
   const getEntity = useServerFn(getLegalEntity);
-
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["legal-entities"],
@@ -97,7 +95,6 @@ export function LegalEntitiesPage() {
       setLoadingEdit(null);
     }
   }
-
 
   async function submit() {
     if (!form.name.trim()) {
@@ -170,7 +167,6 @@ export function LegalEntitiesPage() {
       />
 
       {cnpjFillOpen && <LegalEntityCnpjFillDialog onOpenChange={setCnpjFillOpen} />}
-
 
       <div className="rounded-lg border bg-card">
         <table className="w-full text-sm">
@@ -298,7 +294,6 @@ export function LegalEntitiesPage() {
                   inputMode="numeric"
                   onChange={(e) => setForm({ ...form, cnpj: formatCnpj(e.target.value) })}
                 />
-
               </div>
               <div className="space-y-2">
                 <Label>IE</Label>

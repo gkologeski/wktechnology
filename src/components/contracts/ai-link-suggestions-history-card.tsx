@@ -137,9 +137,7 @@ export function AiLinkSuggestionsHistoryCard({ contractId }: { contractId?: stri
                     {contractLabel(row.target)}
                   </Link>
                 </div>
-                {row.reason ? (
-                  <p className="text-xs text-muted-foreground">{row.reason}</p>
-                ) : null}
+                {row.reason ? <p className="text-xs text-muted-foreground">{row.reason}</p> : null}
                 <div className="text-[11px] text-muted-foreground">
                   Proposta em {formatDateTime(row.created_at)}
                   {row.decided_at

@@ -214,7 +214,6 @@ export function AboutBlock({ candidate }: { candidate: Candidate }) {
   );
 }
 
-
 // ---------- Experiences ----------
 export function ExperienceBlock({ candidate }: { candidate: Candidate }) {
   const items = asArray(candidate.experiences);
@@ -237,9 +236,7 @@ export function ExperienceBlock({ candidate }: { candidate: Candidate }) {
               <li key={idx} className="px-4 py-3">
                 <div className="text-sm font-medium text-text-primary">
                   {title || "—"}
-                  {company && (
-                    <span className="text-text-secondary font-normal"> · {company}</span>
-                  )}
+                  {company && <span className="text-text-secondary font-normal"> · {company}</span>}
                 </div>
                 <div className="text-xs text-text-tertiary mt-0.5 flex flex-wrap items-center gap-2">
                   <span>{periodOf(it)}</span>
@@ -360,9 +357,7 @@ export function ProjectsPublicationsBlock({ candidate }: { candidate: Candidate 
                         {title || "Publicação"}
                       </a>
                     ) : (
-                      <span className="font-medium text-text-primary">
-                        {title || "Publicação"}
-                      </span>
+                      <span className="font-medium text-text-primary">{title || "Publicação"}</span>
                     )}
                     <div className="text-xs text-text-tertiary mt-0.5">
                       {[publisher, date].filter(Boolean).join(" · ")}
@@ -400,9 +395,7 @@ export function VolunteeringBlock({ candidate }: { candidate: Candidate }) {
                 {org && <span className="text-text-secondary font-normal"> · {org}</span>}
               </div>
               <div className="text-xs text-text-tertiary mt-0.5">{periodOf(it)}</div>
-              {desc && (
-                <p className="text-xs text-text-secondary mt-1 line-clamp-3">{desc}</p>
-              )}
+              {desc && <p className="text-xs text-text-secondary mt-1 line-clamp-3">{desc}</p>}
             </li>
           );
         })}
@@ -501,9 +494,7 @@ export function SignalsBlock({ candidate }: { candidate: Candidate }) {
     .map(([k]) => k.toLowerCase())
     .filter((k) => ACTION_LABEL[k]);
   const hasSignals =
-    candidate.open_to_work === true ||
-    !!candidate.connection_degree ||
-    enabledActions.length > 0;
+    candidate.open_to_work === true || !!candidate.connection_degree || enabledActions.length > 0;
   if (!hasSignals) return null;
   return (
     <Card title="Sinais" icon={<BadgeCheck className="h-4 w-4 text-text-secondary" />}>
@@ -513,9 +504,7 @@ export function SignalsBlock({ candidate }: { candidate: Candidate }) {
             <Sparkles className="h-3 w-3" /> Open to work
           </span>
         )}
-        {candidate.connection_degree && (
-          <MetaPill>Conexão {candidate.connection_degree}</MetaPill>
-        )}
+        {candidate.connection_degree && <MetaPill>Conexão {candidate.connection_degree}</MetaPill>}
         {enabledActions.map((k) => {
           const { label, Icon } = ACTION_LABEL[k];
           return (
@@ -564,9 +553,7 @@ export function SkillsDetailedBlock({ candidate }: { candidate: Candidate }) {
               )}
             >
               {name}
-              {endorsements > 0 && (
-                <span className="text-text-tertiary">· {endorsements}</span>
-              )}
+              {endorsements > 0 && <span className="text-text-tertiary">· {endorsements}</span>}
             </span>
           );
         })}
@@ -620,9 +607,7 @@ export function CertificationsLanguagesBlock({ candidate }: { candidate: Candida
                       {name || "Certificação"}
                     </a>
                   ) : (
-                    <span className="font-medium text-text-primary">
-                      {name || "Certificação"}
-                    </span>
+                    <span className="font-medium text-text-primary">{name || "Certificação"}</span>
                   )}
                   <div className="text-xs text-text-tertiary mt-0.5">
                     {[issuer, date].filter(Boolean).join(" · ")}
@@ -675,15 +660,10 @@ export function CurrentCompanyBlock({ candidate }: { candidate: Candidate }) {
   })();
 
   return (
-    <Card
-      title="Empresa atual"
-      icon={<Building2 className="h-4 w-4 text-text-secondary" />}
-    >
+    <Card title="Empresa atual" icon={<Building2 className="h-4 w-4 text-text-secondary" />}>
       <div className="px-4 py-3 space-y-1.5">
         {candidate.current_company && (
-          <div className="text-sm font-medium text-text-primary">
-            {candidate.current_company}
-          </div>
+          <div className="text-sm font-medium text-text-primary">{candidate.current_company}</div>
         )}
         <div className="text-xs text-text-tertiary flex flex-wrap gap-2">
           {industry && <span>{industry}</span>}
@@ -710,9 +690,7 @@ export function CaptureMetaBlock({ candidate }: { candidate: Candidate }) {
           })}
         </span>
       )}
-      {candidate.capture_version && (
-        <MetaPill>Hunter v{candidate.capture_version}</MetaPill>
-      )}
+      {candidate.capture_version && <MetaPill>Hunter v{candidate.capture_version}</MetaPill>}
       {candidate.linkedin_url && (
         <a
           href={candidate.linkedin_url}

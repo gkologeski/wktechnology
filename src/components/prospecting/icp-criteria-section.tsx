@@ -280,10 +280,7 @@ export function IcpCriteriaSection() {
                 <Label className="text-xs" htmlFor="icp-op">
                   Operador
                 </Label>
-                <Select
-                  value={draft.op}
-                  onValueChange={(v) => setDraft({ ...draft, op: v as Op })}
-                >
+                <Select value={draft.op} onValueChange={(v) => setDraft({ ...draft, op: v as Op })}>
                   <SelectTrigger id="icp-op">
                     <SelectValue />
                   </SelectTrigger>

@@ -37,6 +37,7 @@ Tabelas alvo (grupo TechHire e demais módulos com política "somente dono"):
 `ats_jobs`, `ats_candidates`, `ats_applications`, `ats_application_events`, `ats_interviews`, `ats_interview_kits`, `ats_scorecards`, `ats_scorecard_responses`, `ats_offers`, `ats_pipelines`, `ats_job_postings`, `ats_talent_pools`, `ats_talent_pool_members`, `ats_sourcing_*`, `ats_hunting_*`, `ats_match_scores`, `ats_stage_emails`, `ats_candidate_*`, além de `contracts`, `contract_templates`, `macros`, `financial_entries`, `customer_invoices`, `deal_contacts`, `activities` e as tabelas de tickets/projetos/pessoas que seguem o mesmo padrão.
 
 Regras da fase:
+
 - Não mexer em tabelas de dados pessoais do próprio usuário (contas de e-mail, calendário, sessões de copilot, chaves de API, logs de auditoria) — essas continuam restritas ao dono.
 - Não alterar políticas de INSERT/UPDATE/DELETE.
 - Manter o gate por chave de permissão para que a restrição manual futura funcione apenas alterando permissões.

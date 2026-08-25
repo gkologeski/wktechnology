@@ -107,9 +107,7 @@ export function UnlinkedAccountsCard({ onLinked }: { onLinked?: () => void }) {
                       <div className="flex flex-col">
                         <span className="flex items-center gap-2 font-medium">
                           {a.full_name || a.email || a.user_id.slice(0, 8)}
-                          {a.same_domain && (
-                            <Badge variant="secondary">Mesmo domínio</Badge>
-                          )}
+                          {a.same_domain && <Badge variant="secondary">Mesmo domínio</Badge>}
                         </span>
                         <span className="text-xs text-muted-foreground">{a.email ?? "—"}</span>
                       </div>

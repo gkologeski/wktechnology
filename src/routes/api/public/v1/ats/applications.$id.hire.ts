@@ -1,15 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import {
-  authenticateApiKey,
-  requireScope,
-  unauthorized,
-} from "@/lib/api-keys/auth.server";
-import {
-  flagDisabled,
-  isAtsPublicApiEnabled,
-  notFound,
-} from "@/lib/ats/public-api.server";
+import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
+import { flagDisabled, isAtsPublicApiEnabled, notFound } from "@/lib/ats/public-api.server";
 import { recordAtsEvent } from "@/lib/ats/audit.server";
 import { wonAtsStageValue } from "@/lib/ats/stages";
 
@@ -56,8 +48,7 @@ export const Route = createFileRoute("/api/public/v1/ats/applications/$id/hire")
           .eq("owner_id", auth.ownerId)
           .select("id, job_id, candidate_id, status, stage_value, moved_at")
           .single();
-        if (error)
-          return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
         await recordAtsEvent(supabaseAdmin, {
           ownerId: auth.ownerId,
           name: "ats.candidate.hired",

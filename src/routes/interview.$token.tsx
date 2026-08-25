@@ -49,7 +49,9 @@ function InterviewPage() {
       .then(setInfo)
       .catch(() => setInfo({ ok: false, error: "Erro de rede" }));
   };
-  useEffect(() => { reload(); }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    reload();
+  }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!info) return <div className="p-8 text-center text-muted-foreground">Carregando…</div>;
   if (!info.ok) {
@@ -69,7 +71,9 @@ function InterviewPage() {
     return <AsyncInterviewView token={token} info={info} onUploaded={reload} />;
   }
 
-  return <SlotPickerView token={token} info={info} confirmed={confirmed} setConfirmed={setConfirmed} />;
+  return (
+    <SlotPickerView token={token} info={info} confirmed={confirmed} setConfirmed={setConfirmed} />
+  );
 }
 
 // ============================================================================
@@ -101,8 +105,13 @@ function SlotPickerView({
       });
       const data = (await r.json()) as { ok: boolean; error?: string };
       if (!data.ok) toast.error(data.error || "Erro ao confirmar");
-      else { setConfirmed(true); toast.success("Horário confirmado!"); }
-    } finally { setConfirming(false); }
+      else {
+        setConfirmed(true);
+        toast.success("Horário confirmado!");
+      }
+    } finally {
+      setConfirming(false);
+    }
   };
 
   if (info.status !== "pending_candidate" || confirmed) {
@@ -131,7 +140,13 @@ function SlotPickerView({
                 selected === s ? "border-primary bg-primary/5" : "hover:bg-muted/50"
               }`}
             >
-              <input type="radio" name="slot" value={s} checked={selected === s} onChange={() => setSelected(s)} />
+              <input
+                type="radio"
+                name="slot"
+                value={s}
+                checked={selected === s}
+                onChange={() => setSelected(s)}
+              />
               <span className="font-medium">
                 {d.toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short" })}
               </span>
@@ -191,7 +206,9 @@ function AsyncInterviewView({
           <li key={q.id} className="border rounded-lg p-4">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
-                <div className="text-xs text-muted-foreground">Pergunta {idx + 1} de {questions.length}</div>
+                <div className="text-xs text-muted-foreground">
+                  Pergunta {idx + 1} de {questions.length}
+                </div>
                 <h2 className="font-semibold">{q.text}</h2>
                 {q.time_limit_sec && (
                   <div className="text-xs text-muted-foreground mt-1">
@@ -237,14 +254,22 @@ function VideoRecorder({
   const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<number | null>(null);
 
-  const [state, setState] = useState<"idle" | "ready" | "recording" | "review" | "uploading">("idle");
+  const [state, setState] = useState<"idle" | "ready" | "recording" | "review" | "uploading">(
+    "idle",
+  );
   const [elapsed, setElapsed] = useState(0);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [blob, setBlob] = useState<Blob | null>(null);
 
   const cleanup = () => {
-    if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
-    if (streamRef.current) { streamRef.current.getTracks().forEach((t) => t.stop()); streamRef.current = null; }
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
   };
   useEffect(() => () => cleanup(), []);
 
@@ -252,7 +277,11 @@ function VideoRecorder({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       streamRef.current = stream;
-      if (videoRef.current) { videoRef.current.srcObject = stream; videoRef.current.muted = true; await videoRef.current.play(); }
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.muted = true;
+        await videoRef.current.play();
+      }
       setState("ready");
     } catch {
       toast.error("Não foi possível acessar câmera/microfone.");
@@ -267,7 +296,9 @@ function VideoRecorder({
       : "video/webm";
     const rec = new MediaRecorder(streamRef.current, { mimeType: mime });
     recorderRef.current = rec;
-    rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    rec.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
     rec.onstop = () => {
       const b = new Blob(chunksRef.current, { type: mime });
       setBlob(b);
@@ -280,7 +311,10 @@ function VideoRecorder({
     setElapsed(0);
     timerRef.current = window.setInterval(() => {
       setElapsed((e) => {
-        if (e + 1 >= maxSec) { stop(); return maxSec; }
+        if (e + 1 >= maxSec) {
+          stop();
+          return maxSec;
+        }
         return e + 1;
       });
     }, 1000);
@@ -288,12 +322,17 @@ function VideoRecorder({
 
   const stop = () => {
     if (recorderRef.current && recorderRef.current.state !== "inactive") recorderRef.current.stop();
-    if (timerRef.current) { window.clearInterval(timerRef.current); timerRef.current = null; }
+    if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
   };
 
   const retake = () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null); setBlob(null); setState("idle");
+    setPreviewUrl(null);
+    setBlob(null);
+    setState("idle");
   };
 
   const upload = async () => {
@@ -321,7 +360,12 @@ function VideoRecorder({
 
   return (
     <div>
-      <video ref={videoRef} src={previewUrl ?? undefined} controls={state === "review"} className="w-full aspect-video bg-black rounded mb-3" />
+      <video
+        ref={videoRef}
+        src={previewUrl ?? undefined}
+        controls={state === "review"}
+        className="w-full aspect-video bg-black rounded mb-3"
+      />
       <div className="flex flex-wrap items-center gap-2">
         {state === "idle" && (
           <Button type="button" onClick={start}>
@@ -338,12 +382,16 @@ function VideoRecorder({
             <Button type="button" variant="destructive" onClick={stop}>
               <Square className="h-4 w-4 mr-2" /> Parar
             </Button>
-            <span className="text-sm tabular-nums">{elapsed}s / {maxSec}s</span>
+            <span className="text-sm tabular-nums">
+              {elapsed}s / {maxSec}s
+            </span>
           </>
         )}
         {state === "review" && (
           <>
-            <Button type="button" variant="outline" onClick={retake}>Regravar</Button>
+            <Button type="button" variant="outline" onClick={retake}>
+              Regravar
+            </Button>
             <Button type="button" onClick={upload}>
               <Send className="h-4 w-4 mr-2" /> Enviar
             </Button>

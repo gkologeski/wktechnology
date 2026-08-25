@@ -301,7 +301,9 @@ export const syncAccountRecordings = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: row, error } = await supabaseAdmin
       .from("calendar_accounts")
-      .select("id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at")
+      .select(
+        "id, owner_id, provider, email, primary_calendar_id, access_token, refresh_token, expires_at, sync_token, sync_page_token, sync_enabled, last_synced_at",
+      )
       .eq("id", data.account_id)
       .eq("workspace_id", ws)
       .maybeSingle();
@@ -339,7 +341,6 @@ export const pushActivityToCalendar = createServerFn({ method: "POST" })
     const { pushSingleActivity } = await import("./calendar/engine.server");
     return pushSingleActivity(data.account_id, data.activity_id);
   });
-
 
 export const listCalendarEvents = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

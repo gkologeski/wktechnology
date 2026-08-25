@@ -22,7 +22,12 @@ export type HotScoreInput = {
  * Heuristic score 0-100 estimating how close a deal is to closing.
  * Won/lost deals always return 0.
  */
-export function computeHotScore({ deal, pipeline, now = Date.now(), nextActivityAt }: HotScoreInput): number {
+export function computeHotScore({
+  deal,
+  pipeline,
+  now = Date.now(),
+  nextActivityAt,
+}: HotScoreInput): number {
   const stageKey = deal.stage_id || (deal.stage as string);
   const stage = pipeline.stages.find((s) => s.value === stageKey);
   if (stage?.type === "won" || stage?.type === "lost") return 0;

@@ -9,9 +9,8 @@ export const Route = createFileRoute("/api/public/hooks/linkedin-applicants-sync
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
         const run = await runCronWithLogging("linkedin-applicants-sync", async () => {
-          const { listSyncablePostings, syncPostingApplicants } = await import(
-            "@/lib/ats/linkedin-applicants-sync.server"
-          );
+          const { listSyncablePostings, syncPostingApplicants } =
+            await import("@/lib/ats/linkedin-applicants-sync.server");
           const postings = await listSyncablePostings(100);
           const results = [];
           for (const p of postings) {
@@ -27,7 +26,8 @@ export const Route = createFileRoute("/api/public/hooks/linkedin-applicants-sync
             errors: results.filter((r) => r.error).length,
           } as unknown as Record<string, unknown>;
         });
-        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        if (run.status === "error")
+          return Response.json({ ok: false, error: run.error }, { status: 500 });
         return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
     },

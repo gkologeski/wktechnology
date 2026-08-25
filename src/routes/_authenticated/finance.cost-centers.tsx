@@ -21,9 +21,12 @@ import {
 const listCostCentersWithTotals = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    (input === undefined
-      ? { legalEntityId: undefined as string | undefined, legalEntityIds: undefined as string[] | undefined }
-      : (input as { legalEntityId?: string; legalEntityIds?: string[] })),
+    input === undefined
+      ? {
+          legalEntityId: undefined as string | undefined,
+          legalEntityIds: undefined as string[] | undefined,
+        }
+      : (input as { legalEntityId?: string; legalEntityIds?: string[] }),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -44,17 +47,13 @@ const listCostCentersWithTotals = createServerFn({ method: "POST" })
         "cost_center_id, amount, financial_entries!inner(workspace_id, direction, legal_entity_id)",
       )
       .eq("financial_entries.workspace_id", workspaceId);
-    if (legalEntityId)
-      allocQ = allocQ.eq("financial_entries.legal_entity_id", legalEntityId);
+    if (legalEntityId) allocQ = allocQ.eq("financial_entries.legal_entity_id", legalEntityId);
     if (legalEntityIds && legalEntityIds.length)
       allocQ = allocQ.in("financial_entries.legal_entity_id", legalEntityIds);
 
     const [ccRes, leRes, allocRes] = await Promise.all([
       ccQ,
-      supabase
-        .from("legal_entities")
-        .select("id, code, name")
-        .eq("workspace_id", workspaceId),
+      supabase.from("legal_entities").select("id, code, name").eq("workspace_id", workspaceId),
       allocQ,
     ]);
     if (ccRes.error) throw ccRes.error;
@@ -99,8 +98,7 @@ type CC = {
 };
 type Node = CC & { children: Node[] };
 
-const fmt = (n: number) =>
-  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const fmt = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function buildTree(rows: CC[]): Node[] {
   const byId = new Map<string, Node>();
@@ -160,7 +158,11 @@ function CostCentersPage() {
             aria-label={hasChildren ? (isOpen ? "Recolher" : "Expandir") : "Sem filhos"}
           >
             {hasChildren ? (
-              isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />
+              isOpen ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )
             ) : (
               <span className="inline-block h-4 w-4" />
             )}
@@ -191,15 +193,15 @@ function CostCentersPage() {
       <PageHeader
         title="Centros de custo"
         description="Hierarquia de centros de custo por empresa. Valores agregados dos rateios de lançamentos."
-        actions={
-          <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
-        }
+        actions={<LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />}
       />
 
       <div className="grid gap-3 md:grid-cols-3">
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs text-muted-foreground">Centros de custo</div>
-          <div className="text-2xl font-semibold tabular-nums truncate">{data?.centers.length ?? 0}</div>
+          <div className="text-2xl font-semibold tabular-nums truncate">
+            {data?.centers.length ?? 0}
+          </div>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-xs text-muted-foreground">Total receitas rateadas</div>

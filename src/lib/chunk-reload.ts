@@ -22,7 +22,7 @@ function isChunkError(err: unknown): boolean {
       : err instanceof Error
         ? err.message
         : typeof (err as { message?: unknown }).message === "string"
-          ? ((err as { message: string }).message)
+          ? (err as { message: string }).message
           : "";
   if (!msg) return false;
   return PATTERNS.some((p) => msg.includes(p));
@@ -92,4 +92,3 @@ export function installChunkReloadGuard() {
     void handleChunkError();
   });
 }
-

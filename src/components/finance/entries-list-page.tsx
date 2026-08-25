@@ -69,7 +69,6 @@ const STATUS_DOT: Record<string, string> = {
   cancelled: "bg-muted-foreground/40",
 };
 
-
 type Entry = Awaited<ReturnType<typeof listFinancialEntries>>[number];
 
 export function EntriesListPage({
@@ -92,8 +91,11 @@ export function EntriesListPage({
   const [view, setView] = useViewMode();
 
   const filterInput = useLegalEntityFilterInput(legalEntityId);
-  const { data: allRows = [], isLoading, error } = useQuery({
-
+  const {
+    data: allRows = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: [
       "finance-entries",
       direction,
@@ -218,7 +220,6 @@ export function EntriesListPage({
       </div>
 
       {view === "table" && selection.hasSelection && (
-
         <GridBulkBar
           table="financial_entries"
           ids={selection.ids}
@@ -258,7 +259,11 @@ export function EntriesListPage({
           selectable
           entityLabel="lançamento"
           canUpdate={canUpdateEntries}
-          canDelete={canAny(["techfinance.entries.manage.workspace","techfinance.entries.delete.workspace","techfinance.entries.delete.own"])}
+          canDelete={canAny([
+            "techfinance.entries.manage.workspace",
+            "techfinance.entries.delete.workspace",
+            "techfinance.entries.delete.own",
+          ])}
           readOnly
           isLoading={isLoading}
           error={error}
@@ -308,118 +313,117 @@ export function EntriesListPage({
 
       {view === "table" && (
         <div className="rounded-lg border bg-card">
-
-
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
-        ) : rows.length === 0 ? (
-          <div className="p-12 text-center">
-            <DollarSign className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">Nenhum lançamento</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Crie manualmente ou aguarde a geração automática por serviços e contratos.
-            </p>
-            <Button className="mt-4" onClick={() => setOpenNew(true)}>
-              <Plus className="h-4 w-4 mr-1" /> Novo lançamento
-            </Button>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    aria-label="Selecionar todos os lançamentos exibidos"
-                    checked={
-                      selection.allOnPageSelected
-                        ? true
-                        : selection.someOnPageSelected
-                          ? "indeterminate"
-                          : false
-                    }
-                    onCheckedChange={selection.toggleAllOnPage}
-                  />
-                </TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Contraparte</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">Em aberto</TableHead>
-                <TableHead>Vencimento</TableHead>
-                <TableHead>Responsável</TableHead>
-                <TableHead className="w-32" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((e) => {
-                const outstanding = Number(e.amount) - Number(e.paid_amount ?? 0);
-                const paid = e.status === "paid" || e.status === "cancelled";
-                return (
-                  <TableRow key={e.id}>
-                    <TableCell>
-                      <Checkbox
-                        aria-label={`Selecionar lançamento ${e.description}`}
-                        checked={selection.selectedIds.has(e.id)}
-                        onCheckedChange={() => selection.toggleOne(e.id)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Link
-                        to="/finance/entries/$id"
-                        params={{ id: e.id }}
-                        className="font-medium hover:underline"
-                      >
-                        {e.description}
-                      </Link>
-                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                        {e.installment_total && e.installment_total > 1 && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            {e.installment_number ?? "?"}/{e.installment_total}
-                          </Badge>
+          {isLoading ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
+          ) : rows.length === 0 ? (
+            <div className="p-12 text-center">
+              <DollarSign className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">Nenhum lançamento</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crie manualmente ou aguarde a geração automática por serviços e contratos.
+              </p>
+              <Button className="mt-4" onClick={() => setOpenNew(true)}>
+                <Plus className="h-4 w-4 mr-1" /> Novo lançamento
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      aria-label="Selecionar todos os lançamentos exibidos"
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={selection.toggleAllOnPage}
+                    />
+                  </TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Contraparte</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="text-right">Em aberto</TableHead>
+                  <TableHead>Vencimento</TableHead>
+                  <TableHead>Responsável</TableHead>
+                  <TableHead className="w-32" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((e) => {
+                  const outstanding = Number(e.amount) - Number(e.paid_amount ?? 0);
+                  const paid = e.status === "paid" || e.status === "cancelled";
+                  return (
+                    <TableRow key={e.id}>
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`Selecionar lançamento ${e.description}`}
+                          checked={selection.selectedIds.has(e.id)}
+                          onCheckedChange={() => selection.toggleOne(e.id)}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Link
+                          to="/finance/entries/$id"
+                          params={{ id: e.id }}
+                          className="font-medium hover:underline"
+                        >
+                          {e.description}
+                        </Link>
+                        <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                          {e.installment_total && e.installment_total > 1 && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              {e.installment_number ?? "?"}/{e.installment_total}
+                            </Badge>
+                          )}
+                          {e.contracts && (
+                            <span>Contrato {e.contracts.number ?? e.contracts.title}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{e.companies?.name ?? "—"}</TableCell>
+                      <TableCell className="text-sm">
+                        {e.financial_categories?.name ?? "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={STATUS_TONE[e.status] ?? ""}>
+                          {STATUS_LABEL[e.status] ?? e.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatCurrency(Number(e.amount), e.currency)}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatCurrency(outstanding, e.currency)}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {formatDateTime(e.due_date).split(" ")[0]}
+                      </TableCell>
+                      <TableCell>
+                        <AssigneeCell
+                          assignedTo={(e as { assigned_to?: string | null }).assigned_to}
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {!paid && (
+                          <Button size="sm" variant="outline" onClick={() => setPayFor(e)}>
+                            Baixar
+                          </Button>
                         )}
-                        {e.contracts && (
-                          <span>Contrato {e.contracts.number ?? e.contracts.title}</span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">{e.companies?.name ?? "—"}</TableCell>
-                    <TableCell className="text-sm">{e.financial_categories?.name ?? "—"}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={STATUS_TONE[e.status] ?? ""}>
-                        {STATUS_LABEL[e.status] ?? e.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(Number(e.amount), e.currency)}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(outstanding, e.currency)}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {formatDateTime(e.due_date).split(" ")[0]}
-                    </TableCell>
-                    <TableCell>
-                      <AssigneeCell
-                        assignedTo={(e as { assigned_to?: string | null }).assigned_to}
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {!paid && (
-                        <Button size="sm" variant="outline" onClick={() => setPayFor(e)}>
-                          Baixar
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </div>
       )}
-
 
       <QuickCreateEntryDialog
         open={openNew}

@@ -3,11 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope } from "@/lib/api-keys/auth.server";
-import {
-  corsPreflight,
-  jsonResponse,
-  renderTemplateString,
-} from "@/lib/ats/hunting-public.server";
+import { corsPreflight, jsonResponse, renderTemplateString } from "@/lib/ats/hunting-public.server";
 
 const Payload = z.object({
   templateId: z.string().uuid(),

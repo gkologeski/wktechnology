@@ -79,14 +79,19 @@ export const deleteStageEmail = createServerFn({ method: "POST" })
 export const listStageEmailLog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ application_id: z.string().uuid().optional() }).optional().parse(d ?? {}),
+    z
+      .object({ application_id: z.string().uuid().optional() })
+      .optional()
+      .parse(d ?? {}),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     let q = supabase
       .from("ats_stage_email_log")
-      .select("id, application_id, candidate_id, job_id, stage_value, to_email, subject, status, error, created_at, sent_at")
+      .select(
+        "id, application_id, candidate_id, job_id, stage_value, to_email, subject, status, error, created_at, sent_at",
+      )
       .eq("workspace_id", workspaceId)
       .order("created_at", { ascending: false })
       .limit(100);
@@ -99,7 +104,13 @@ export const listStageEmailLog = createServerFn({ method: "POST" })
 export const markStageEmailSent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ id: z.string().uuid(), status: z.enum(["sent", "failed"]), error: z.string().optional() }).parse(d),
+    z
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["sent", "failed"]),
+        error: z.string().optional(),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

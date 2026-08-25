@@ -49,8 +49,7 @@ function WorkspaceModules() {
   });
 
   const mut = useMutation({
-    mutationFn: (vars: { moduleId: string; enabled: boolean }) =>
-      toggleFn({ data: vars }),
+    mutationFn: (vars: { moduleId: string; enabled: boolean }) => toggleFn({ data: vars }),
     onSuccess: (_d, vars) => {
       toast.success(vars.enabled ? "Módulo ativado" : "Módulo desativado");
       qc.invalidateQueries({ queryKey: ["workspace-modules"] });
@@ -84,9 +83,7 @@ function WorkspaceModules() {
                       </div>
                       <div>
                         <CardTitle className="text-base">{product}</CardTitle>
-                        <CardDescription className="text-xs">
-                          Módulo {m.name}
-                        </CardDescription>
+                        <CardDescription className="text-xs">Módulo {m.name}</CardDescription>
                       </div>
                     </div>
                     {m.is_contracted ? (
@@ -115,9 +112,7 @@ function WorkspaceModules() {
                         <Switch
                           checked={m.enabled}
                           disabled={mut.isPending}
-                          onCheckedChange={(v) =>
-                            mut.mutate({ moduleId: m.id, enabled: v })
-                          }
+                          onCheckedChange={(v) => mut.mutate({ moduleId: m.id, enabled: v })}
                         />
                       </div>
                       <Button
@@ -133,8 +128,8 @@ function WorkspaceModules() {
                   ) : (
                     <>
                       <p className="text-sm text-muted-foreground">
-                        Desbloqueie {product} para o seu workspace. Você pode ativar agora
-                        no plano de avaliação.
+                        Desbloqueie {product} para o seu workspace. Você pode ativar agora no plano
+                        de avaliação.
                       </p>
                       <Button
                         size="sm"

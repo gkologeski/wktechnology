@@ -35,7 +35,15 @@ import {
   createWorkspaceWithAdmin,
   inviteUserToWorkspace,
 } from "@/lib/platform-admin.functions";
-import { Plus, Building2, ShieldAlert, Users, ChevronRight, UserPlus, MoreHorizontal } from "lucide-react";
+import {
+  Plus,
+  Building2,
+  ShieldAlert,
+  Users,
+  ChevronRight,
+  UserPlus,
+  MoreHorizontal,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -388,10 +396,7 @@ function WorkspacesAdminPage() {
                             {!isDeleted && (
                               <>
                                 <DropdownMenuItem asChild>
-                                  <Link
-                                    to="/admin/workspaces/$id"
-                                    params={{ id: w.id as string }}
-                                  >
+                                  <Link to="/admin/workspaces/$id" params={{ id: w.id as string }}>
                                     Abrir
                                   </Link>
                                 </DropdownMenuItem>

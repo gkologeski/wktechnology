@@ -15,14 +15,17 @@ Execução em uma única leva (conforme escolhido), organizada internamente em 6
 ## O que será feito
 
 ### 1. Responsável vira `assigned_to`
+
 Tabelas onde a UI hoje mostra `owner_id` como "Proprietário/Responsável" (deals, leads, contatos, empresas, atividades, tickets, projetos, reuniões, contratos e similares) receberão `assigned_to` quando ainda não tiverem, com backfill a partir de `owner_id`. Onde `assigned_to` já existe, o valor só é preenchido se estiver vazio.
 
 Em tabelas de escopo pessoal (notificações, sessões do copiloto, assinaturas push, papéis/permissões por usuário, cursores de workflow), `owner_id` passa a ser `user_id` — continua sendo "de quem é", mas sem papel de tenant.
 
 ### 2. Garantir `workspace_id` nas 26 tabelas faltantes
+
 Adicionar `workspace_id` (NOT NULL, FK para `workspaces`, índice), com backfill derivado do `owner_id` atual (ou da entidade pai, quando for tabela satélite) e trigger de preenchimento automático no insert. Tabelas puramente globais/plataforma (`domain_events`, `ml_scoring_models`) e de escopo pessoal são classificadas e tratadas sem `workspace_id`.
 
 ### 3. Reescrever as 535 políticas de RLS
+
 Padrão único já usado no projeto:
 
 ```text
@@ -35,12 +38,14 @@ WITH CHECK workspace_id IN (SELECT current_user_workspaces())
 Políticas duplicadas/sobrepostas herdadas do modelo antigo serão consolidadas por tabela e ação. `GRANT` de cada tabela é revalidado (sem `anon` em dados de cliente).
 
 ### 4. Limpar dependências no banco
+
 - Recriar as 3 views sem `owner_id`
 - Remover/reescrever as 46 funções e triggers que espelhavam `owner_id` (inclui `sync_workspace_owner_id`)
 - Remover os 188 índices e as constraints/uniques que envolvem `owner_id`
 - `ALTER TABLE ... DROP COLUMN owner_id` nas 223 tabelas
 
 ### 5. Refactor de código (~2.100 pontos)
+
 - Remover `owner_id` de todos os inserts, selects explícitos, filtros e tipos locais
 - Substituir por `workspace_id` (isolamento) ou `assigned_to` (responsável) conforme o caso
 - Ajustar colunas/avatares de "Proprietário" nas listas (deals, leads, contatos, empresas, tickets) para ler `assigned_to`
@@ -49,6 +54,7 @@ Políticas duplicadas/sobrepostas herdadas do modelo antigo serão consolidadas 
 - Regenerar os tipos do banco após a migration
 
 ### 6. Validação
+
 - `typecheck`, `lint` e `build`
 - Consultas de conferência: nenhuma coluna `owner_id` restante, nenhuma política citando `owner_id`, zero `workspace_id` nulo
 - Smoke manual nos fluxos críticos: criar/editar lead, qualificação, deal + itens de linha, contrato, vaga/candidato, pessoa/alocação, atividade e pesquisa

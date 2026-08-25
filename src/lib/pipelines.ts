@@ -61,7 +61,6 @@ export function useEnsureDefaultPipeline(entity: "deal" | "lead" | "ticket") {
 export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
   const { user } = useAuth();
 
-
   const q = useQuery({
     queryKey: ["pipelines", entity, user?.id],
     enabled: !!user,
@@ -103,8 +102,6 @@ export function usePipelines(entity: "deal" | "lead" | "ticket" = "deal") {
   // A criação do pipeline padrão é feita no servidor (useEnsureDefaultPipeline),
   // chamada apenas pelas telas de listagem — nunca aqui, para não duplicar
   // registros quando vários componentes usam este hook na mesma tela.
-
-
 
   const pipelines = q.data ?? [];
 

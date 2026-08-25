@@ -45,12 +45,12 @@ order by rls, tem_coluna_workspace, t;
 
 ## 2. Snapshot (18/08/2026 — após padronização final)
 
-| Indicador | Valor |
-| --- | --- |
-| Tabelas em `public` | 312 |
-| Sem RLS habilitada | 0 |
-| Sem nenhuma política | 1 (`payment_webhook_events` — fechada de propósito, gravada só pelo servidor) |
-| Pendências reais de isolamento (grupo c) | 0 |
+| Indicador                                | Valor                                                                         |
+| ---------------------------------------- | ----------------------------------------------------------------------------- |
+| Tabelas em `public`                      | 312                                                                           |
+| Sem RLS habilitada                       | 0                                                                             |
+| Sem nenhuma política                     | 1 (`payment_webhook_events` — fechada de propósito, gravada só pelo servidor) |
+| Pendências reais de isolamento (grupo c) | 0                                                                             |
 
 Órfãos de backfill verificados: `ats_jobs`, `ats_interviews`, `user_files`,
 `message_drafts`, `prospecting_questionnaires`, `people` e as 12 tabelas do

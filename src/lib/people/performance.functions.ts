@@ -11,13 +11,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // ============================================================
 export const GOAL_METRIC_TYPES = ["kpi", "okr", "task"] as const;
 export const GOAL_STATUSES = ["draft", "active", "done", "canceled"] as const;
-export const REVIEW_CADENCES = [
-  "monthly",
-  "quarterly",
-  "semiannual",
-  "annual",
-  "ad_hoc",
-] as const;
+export const REVIEW_CADENCES = ["monthly", "quarterly", "semiannual", "annual", "ad_hoc"] as const;
 export const REVIEW_STATUSES = ["draft", "submitted", "acknowledged"] as const;
 export const ONE_ON_ONE_STATUSES = ["scheduled", "held", "skipped", "canceled"] as const;
 
@@ -296,10 +290,7 @@ export const deleteOneOnOne = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_one_on_ones")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("people_one_on_ones").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -390,10 +381,7 @@ export const deleteReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_reviews")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("people_reviews").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

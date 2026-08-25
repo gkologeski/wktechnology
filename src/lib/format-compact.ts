@@ -6,9 +6,12 @@ export function compactNumber(v: number): string {
   if (!Number.isFinite(n)) return "0";
   const abs = Math.abs(n);
   const sign = n < 0 ? "-" : "";
-  if (abs >= 1_000_000_000) return `${sign}${(abs / 1_000_000_000).toFixed(abs >= 10_000_000_000 ? 0 : 1).replace(".", ",")} bi`;
-  if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1).replace(".", ",")} mi`;
-  if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(abs >= 10_000 ? 0 : 1).replace(".", ",")} mil`;
+  if (abs >= 1_000_000_000)
+    return `${sign}${(abs / 1_000_000_000).toFixed(abs >= 10_000_000_000 ? 0 : 1).replace(".", ",")} bi`;
+  if (abs >= 1_000_000)
+    return `${sign}${(abs / 1_000_000).toFixed(abs >= 10_000_000 ? 0 : 1).replace(".", ",")} mi`;
+  if (abs >= 1_000)
+    return `${sign}${(abs / 1_000).toFixed(abs >= 10_000 ? 0 : 1).replace(".", ",")} mil`;
   return `${sign}${abs.toLocaleString("pt-BR")}`;
 }
 
@@ -29,7 +32,8 @@ export function compactBRL(v: number): string {
     }
   }
   const sign = n < 0 ? "-" : "";
-  if (abs >= 1_000_000_000) return `${sign}R$ ${(abs / 1_000_000_000).toFixed(1).replace(".", ",")} bi`;
+  if (abs >= 1_000_000_000)
+    return `${sign}R$ ${(abs / 1_000_000_000).toFixed(1).replace(".", ",")} bi`;
   if (abs >= 1_000_000) return `${sign}R$ ${(abs / 1_000_000).toFixed(1).replace(".", ",")} mi`;
   return `${sign}R$ ${(abs / 1_000).toFixed(0)} mil`;
 }

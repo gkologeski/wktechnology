@@ -15,7 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -95,11 +101,15 @@ function PsychosocialListPage() {
       />
       <div className="flex gap-2">
         <Select value={risk} onValueChange={setRisk}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="Nível de risco" /></SelectTrigger>
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Nível de risco" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os níveis</SelectItem>
             {PSYCH_RISK_LEVELS.map((r) => (
-              <SelectItem key={r} value={r}>{PSYCH_RISK_LABELS[r]}</SelectItem>
+              <SelectItem key={r} value={r}>
+                {PSYCH_RISK_LABELS[r]}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -119,14 +129,20 @@ function PsychosocialListPage() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Carregando…</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                  Carregando…
+                </TableCell>
+              </TableRow>
             ) : data.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-12">
                   <div className="flex flex-col items-center gap-2">
                     <Brain className="h-8 w-8 text-muted-foreground" />
                     <div className="text-sm font-medium">Nenhuma avaliação encontrada</div>
-                    <div className="text-xs text-muted-foreground">Registre avaliações na ficha da pessoa (aba Psicossocial).</div>
+                    <div className="text-xs text-muted-foreground">
+                      Registre avaliações na ficha da pessoa (aba Psicossocial).
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>
@@ -135,26 +151,41 @@ function PsychosocialListPage() {
                 <TableRow key={a.id} className="hover:bg-muted/40">
                   <TableCell>
                     {a.people ? (
-                      <Link to="/people/$id" params={{ id: a.people.id }} className="font-medium hover:underline">
+                      <Link
+                        to="/people/$id"
+                        params={{ id: a.people.id }}
+                        className="font-medium hover:underline"
+                      >
                         {a.people.full_name}
                       </Link>
-                    ) : ("—")}
+                    ) : (
+                      "—"
+                    )}
                   </TableCell>
-                  <TableCell className="text-sm">{new Date(a.assessed_at).toLocaleDateString("pt-BR")}</TableCell>
+                  <TableCell className="text-sm">
+                    {new Date(a.assessed_at).toLocaleDateString("pt-BR")}
+                  </TableCell>
                   <TableCell>
                     <Badge className={RISK_TONE[a.risk_level]} variant="outline">
-                      {PSYCH_RISK_LABELS[a.risk_level]}{a.overall_score != null ? ` · ${a.overall_score.toFixed(1)}` : ""}
+                      {PSYCH_RISK_LABELS[a.risk_level]}
+                      {a.overall_score != null ? ` · ${a.overall_score.toFixed(1)}` : ""}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
                       {a.burnout_signals && (
-                        <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-700 border-amber-500/30">
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-amber-500/10 text-amber-700 border-amber-500/30"
+                        >
                           <AlertTriangle className="h-3 w-3 mr-1" /> Burnout
                         </Badge>
                       )}
                       {a.harassment_signals && (
-                        <Badge variant="outline" className="text-xs bg-rose-500/10 text-rose-700 border-rose-500/30">
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-rose-500/10 text-rose-700 border-rose-500/30"
+                        >
                           Assédio
                         </Badge>
                       )}

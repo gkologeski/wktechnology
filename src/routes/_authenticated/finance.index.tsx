@@ -60,13 +60,14 @@ function Metric({
         <Icon className={`h-4 w-4 shrink-0 ${toneCls}`} />
       </CardHeader>
       <CardContent className="min-w-0">
-        <div
-          title={full}
-          className={`truncate text-2xl font-semibold tabular-nums ${toneCls}`}
-        >
+        <div title={full} className={`truncate text-2xl font-semibold tabular-nums ${toneCls}`}>
           {short}
         </div>
-        {hint && <p className="mt-1 truncate text-xs text-muted-foreground" title={hint}>{hint}</p>}
+        {hint && (
+          <p className="mt-1 truncate text-xs text-muted-foreground" title={hint}>
+            {hint}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
@@ -139,7 +140,6 @@ function FinanceDashboard() {
         />
       </div>
 
-
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -180,15 +180,7 @@ function FinanceDashboard() {
   );
 }
 
-function Row({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "warning";
-}) {
+function Row({ label, value, tone }: { label: string; value: number; tone?: "warning" }) {
   return (
     <div className="flex items-center justify-between border-b py-1.5 last:border-0">
       <span className="text-muted-foreground">{label}</span>

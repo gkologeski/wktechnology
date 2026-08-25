@@ -91,7 +91,8 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
       <CardContent className="space-y-6">
         {projects.map((p) => {
           const latest = p.updates.find((u) => u.health) ?? p.updates[0] ?? null;
-          const expected = p.updates.find((u) => u.expected_delivery_date)?.expected_delivery_date ?? p.due_at;
+          const expected =
+            p.updates.find((u) => u.expected_delivery_date)?.expected_delivery_date ?? p.due_at;
           const progress = latest?.progress_pct ?? p.progress ?? 0;
           return (
             <div key={p.id} className="space-y-3">
@@ -99,7 +100,8 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
                 <div className="min-w-0">
                   <p className="text-sm font-medium break-words">{p.name}</p>
                   <p className="text-xs text-muted-foreground">
-                    Situação: {projectStatusLabel(p.status)} · Previsão: {formatDeliveryDate(expected)}
+                    Situação: {projectStatusLabel(p.status)} · Previsão:{" "}
+                    {formatDeliveryDate(expected)}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -127,7 +129,9 @@ export function DealDeliveryPanel({ dealId }: { dealId: string }) {
               </div>
               <div className="space-y-1">
                 <Progress value={progress} aria-label={`Evolução do projeto ${p.name}`} />
-                <p className="text-xs text-muted-foreground tabular-nums">{progress}% de evolução</p>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  {progress}% de evolução
+                </p>
               </div>
               <DeliveryTimeline
                 updates={p.updates}

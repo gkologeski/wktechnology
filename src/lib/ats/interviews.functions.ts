@@ -54,9 +54,7 @@ async function recordEvent(
 
 export const listInterviews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ application_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ application_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
     const { data: rows, error } = await supabase
@@ -163,17 +161,13 @@ export const scheduleInterview = createServerFn({ method: "POST" })
         // Sala Jitsi (mesmo formato do createMeeting)
         const roomBytes = new Uint8Array(20);
         crypto.getRandomValues(roomBytes);
-        const roomSuffix = Array.from(roomBytes, (b) =>
-          b.toString(36).padStart(2, "0"),
-        )
+        const roomSuffix = Array.from(roomBytes, (b) => b.toString(36).padStart(2, "0"))
           .join("")
           .slice(0, 20);
         const roomName = `wkt-${workspaceId.slice(0, 8)}-${roomSuffix}`;
         const publicTokenBytes = new Uint8Array(28);
         crypto.getRandomValues(publicTokenBytes);
-        const publicToken = Array.from(publicTokenBytes, (b) =>
-          b.toString(36).padStart(2, "0"),
-        )
+        const publicToken = Array.from(publicTokenBytes, (b) => b.toString(36).padStart(2, "0"))
           .join("")
           .slice(0, 28);
 
@@ -207,9 +201,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
 
         // Activity na timeline unificada (mesmo shape do MeetingDialog)
         const durationMs = (data.duration_min ?? 45) * 60_000;
-        const endIso = new Date(
-          new Date(data.scheduled_at).getTime() + durationMs,
-        ).toISOString();
+        const endIso = new Date(new Date(data.scheduled_at).getTime() + durationMs).toISOString();
         const attendeesPayload = [
           ...(candidateEmail ? [{ email: candidateEmail, name: candidateName }] : []),
           ...(data.panel_interviewer_ids ?? []).map((uid) => ({ user_id: uid })),
@@ -251,9 +243,7 @@ export const scheduleInterview = createServerFn({ method: "POST" })
               .eq("sync_enabled", true)
               .maybeSingle();
             if (acct?.id) {
-              const { pushSingleActivity } = await import(
-                "@/lib/calendar/engine.server"
-              );
+              const { pushSingleActivity } = await import("@/lib/calendar/engine.server");
               await pushSingleActivity(acct.id as string, actIns.id as string);
               calendarPushed = true;
             }

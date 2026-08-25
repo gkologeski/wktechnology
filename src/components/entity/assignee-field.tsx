@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { assertAffected } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
 
-
 import { supabase } from "@/integrations/supabase/client";
 import { listWorkspaceTeam } from "@/lib/workspace-invites.functions";
 import {
@@ -91,7 +90,6 @@ export function AssigneeField({
     } catch (e) {
       if (!handlePermissionError(e))
         toast.error(e instanceof Error ? e.message : "Não foi possível atualizar o responsável");
-
     } finally {
       setSaving(false);
     }
@@ -126,7 +124,10 @@ export function AssigneeField({
             </SelectContent>
           </Select>
           {saving && (
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" aria-hidden="true" />
+            <Loader2
+              className="h-3.5 w-3.5 animate-spin text-muted-foreground"
+              aria-hidden="true"
+            />
           )}
         </div>
       )}

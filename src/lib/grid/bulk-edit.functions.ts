@@ -11,7 +11,6 @@ import {
   mirrorAliasColumns,
 } from "./bulk-edit-fields";
 
-
 export const bulkUpdateEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -50,7 +49,6 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
       }
       throw e;
     }
-
 
     const uniqueIds = Array.from(new Set(data.ids));
     let updated = 0;

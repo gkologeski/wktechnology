@@ -23,7 +23,11 @@ async function callAi(systemPrompt: string, userPrompt: string) {
   if (!r.ok) throw new Error(`AI Gateway ${r.status}: ${await r.text().catch(() => "")}`);
   const j = await r.json();
   const txt = j.choices?.[0]?.message?.content ?? "{}";
-  try { return JSON.parse(txt); } catch { return {}; }
+  try {
+    return JSON.parse(txt);
+  } catch {
+    return {};
+  }
 }
 
 export const computeMatchScore = createServerFn({ method: "POST" })
@@ -34,15 +38,24 @@ export const computeMatchScore = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const [jobRes, candRes] = await Promise.all([
-      supabase.from("ats_jobs").select("title, description, requirements, seniority, location").eq("id", data.job_id).single(),
-      supabase.from("ats_candidates").select("full_name, current_position, current_company, skills, cv_parsed, notes").eq("id", data.candidate_id).single(),
+      supabase
+        .from("ats_jobs")
+        .select("title, description, requirements, seniority, location")
+        .eq("id", data.job_id)
+        .single(),
+      supabase
+        .from("ats_candidates")
+        .select("full_name, current_position, current_company, skills, cv_parsed, notes")
+        .eq("id", data.candidate_id)
+        .single(),
     ]);
     if (jobRes.error || !jobRes.data) throw new Error("Vaga não encontrada");
     if (candRes.error || !candRes.data) throw new Error("Candidato não encontrado");
     const job = jobRes.data;
     const cand = candRes.data;
 
-    const sys = "Você é um recrutador sênior. Avalie o match entre a vaga e o candidato. Responda APENAS JSON: {\"score\":0-100,\"summary\":\"...\",\"strengths\":[...],\"gaps\":[...]}";
+    const sys =
+      'Você é um recrutador sênior. Avalie o match entre a vaga e o candidato. Responda APENAS JSON: {"score":0-100,"summary":"...","strengths":[...],"gaps":[...]}';
     const usr = `VAGA:\nTítulo: ${job.title}\nSenioridade: ${job.seniority ?? "-"}\nLocal: ${job.location ?? "-"}\nDescrição: ${job.description ?? ""}\nRequisitos: ${JSON.stringify(job.requirements ?? [])}\n\nCANDIDATO:\nNome: ${cand.full_name}\nCargo atual: ${cand.current_position ?? "-"} @ ${cand.current_company ?? "-"}\nSkills: ${JSON.stringify(cand.skills ?? [])}\nCV parseado: ${JSON.stringify(cand.cv_parsed ?? {}).slice(0, 6000)}\nNotas: ${(cand.notes ?? "").slice(0, 2000)}`;
 
     const out = await callAi(sys, usr);
@@ -50,16 +63,19 @@ export const computeMatchScore = createServerFn({ method: "POST" })
 
     const { data: row, error } = await supabase
       .from("ats_match_scores")
-      .upsert({
-        owner_id: userId,
-        job_id: data.job_id,
-        candidate_id: data.candidate_id,
-        score,
-        summary: String(out.summary ?? "").slice(0, 2000),
-        strengths: Array.isArray(out.strengths) ? out.strengths : [],
-        gaps: Array.isArray(out.gaps) ? out.gaps : [],
-        model: "google/gemini-2.5-flash",
-      }, { onConflict: "job_id,candidate_id" })
+      .upsert(
+        {
+          owner_id: userId,
+          job_id: data.job_id,
+          candidate_id: data.candidate_id,
+          score,
+          summary: String(out.summary ?? "").slice(0, 2000),
+          strengths: Array.isArray(out.strengths) ? out.strengths : [],
+          gaps: Array.isArray(out.gaps) ? out.gaps : [],
+          model: "google/gemini-2.5-flash",
+        },
+        { onConflict: "job_id,candidate_id" },
+      )
       .select("*")
       .single();
     if (error) throw new Error(error.message);

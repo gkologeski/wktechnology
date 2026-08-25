@@ -12,6 +12,7 @@ Verificado no código: hoje a UI já direciona o comportamento (contrato de pres
 ## Reforço no servidor (fonte da verdade)
 
 `linkContractParent`: ao vincular, ler papel/tipo de documento do filho e do pai e recusar com mensagens em PT-BR quando:
+
 - o pai não for contrato de prestação → "Somente contratos de prestação podem receber contratos de compra aninhados.";
 - o filho não for contrato de compra → "Apenas contratos de compra podem ser aninhados sob um contrato de prestação.";
 - pai ou filho for aditivo → "Aditivos não participam do aninhamento prestação/compra; use o vínculo de aditivo.";

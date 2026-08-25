@@ -71,7 +71,10 @@ export const getDealDelivery = createServerFn({ method: "POST" })
     if (pErr) throw pErr;
     if (!projects || projects.length === 0) return { projects: [] as DeliveryProject[] };
 
-    const updates = await loadUpdates(supabase, projects.map((p) => p.id));
+    const updates = await loadUpdates(
+      supabase,
+      projects.map((p) => p.id),
+    );
 
     const result: DeliveryProject[] = projects.map((p) => ({
       id: p.id,
@@ -79,8 +82,7 @@ export const getDealDelivery = createServerFn({ method: "POST" })
       status: p.status ?? null,
       progress: p.progress ?? null,
       due_at: p.due_at ?? null,
-      contract:
-        (contracts ?? []).find((c) => c.id === p.contract_id) ?? null,
+      contract: (contracts ?? []).find((c) => c.id === p.contract_id) ?? null,
       updates: updates.filter((u) => u.project_id === p.id),
     }));
     return { projects: result };
@@ -101,9 +103,12 @@ export const getProjectDelivery = createServerFn({ method: "POST" })
     if (!project) return { project: null as DeliveryProject | null };
 
     const updates = await loadUpdates(supabase, [project.id]);
-    const contract = (project as unknown as {
-      contracts?: { id: string; number: string | null; title: string | null } | null;
-    }).contracts ?? null;
+    const contract =
+      (
+        project as unknown as {
+          contracts?: { id: string; number: string | null; title: string | null } | null;
+        }
+      ).contracts ?? null;
 
     return {
       project: {
@@ -174,7 +179,10 @@ export const createProjectUpdate = createServerFn({ method: "POST" })
 export const updateProjectUpdate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    checkpointInput.partial({ projectId: true, visibility: true }).extend({ id: z.string().uuid() }).parse(input),
+    checkpointInput
+      .partial({ projectId: true, visibility: true })
+      .extend({ id: z.string().uuid() })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

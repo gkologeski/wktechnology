@@ -20,13 +20,13 @@ falha.
 
 ## 2. O que rodar por tipo de mudança
 
-| Mudança | Rodar |
-| --- | --- |
-| Só UI/estilo | `typecheck`, `lint` |
-| Server function nova/alterada | `typecheck`, `lint`, `build:dev` |
-| Rota nova | `typecheck`, `build:dev` (pega 401 de prerender) |
-| Migration / RLS | consulta de verificação no banco + e2e afetado |
-| Fluxo crítico (lead, contrato, financeiro) | `test`, `test:e2e` do spec relacionado |
+| Mudança                                    | Rodar                                            |
+| ------------------------------------------ | ------------------------------------------------ |
+| Só UI/estilo                               | `typecheck`, `lint`                              |
+| Server function nova/alterada              | `typecheck`, `lint`, `build:dev`                 |
+| Rota nova                                  | `typecheck`, `build:dev` (pega 401 de prerender) |
+| Migration / RLS                            | consulta de verificação no banco + e2e afetado   |
+| Fluxo crítico (lead, contrato, financeiro) | `test`, `test:e2e` do spec relacionado           |
 
 ## 3. Testes existentes
 
@@ -62,17 +62,17 @@ Roteiro típico de verificação de tela:
 
 ## 5. Diagnóstico de problemas comuns
 
-| Sintoma | Causa provável | Onde olhar |
-| --- | --- | --- |
-| Registro não aparece para outro usuário do mesmo workspace | filtro manual de `owner_id` ou política RLS por owner | query da tela + `pg_policies` |
-| Exclusão "deu certo" mas o registro continua | RLS negou o delete silenciosamente | usar `deleteRowGuarded` |
-| Grid mostra vazio e detalhe mostra valor | colunas diferentes (`assigned_to` vs `owner_id`) | alinhar em `assigned_to` + backfill |
-| 401 no build/prerender | server fn protegida em loader de rota pública | mover para componente ou `_authenticated/` |
-| `ReferenceError` em runtime com typecheck verde | helper em escopo de módulo de `*.functions.ts` | mover helper para outro arquivo |
-| `Could not query the database for the schema cache` / statement timeout | erro transitório ou consulta sem índice | `withTransientRetry`, criar índice |
-| `[unenv] X is not implemented yet!` | pacote Node-only no Worker | substituir por lib compatível com edge |
-| Automação parada | fila `workflow_events` inflada ou cron desagendado | `platform_cron_status`, `cron_run_logs`, drenar fila |
-| Erro 500 esporádico em server fn | indisponibilidade transitória | retry + verificar logs da função |
+| Sintoma                                                                 | Causa provável                                        | Onde olhar                                           |
+| ----------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| Registro não aparece para outro usuário do mesmo workspace              | filtro manual de `owner_id` ou política RLS por owner | query da tela + `pg_policies`                        |
+| Exclusão "deu certo" mas o registro continua                            | RLS negou o delete silenciosamente                    | usar `deleteRowGuarded`                              |
+| Grid mostra vazio e detalhe mostra valor                                | colunas diferentes (`assigned_to` vs `owner_id`)      | alinhar em `assigned_to` + backfill                  |
+| 401 no build/prerender                                                  | server fn protegida em loader de rota pública         | mover para componente ou `_authenticated/`           |
+| `ReferenceError` em runtime com typecheck verde                         | helper em escopo de módulo de `*.functions.ts`        | mover helper para outro arquivo                      |
+| `Could not query the database for the schema cache` / statement timeout | erro transitório ou consulta sem índice               | `withTransientRetry`, criar índice                   |
+| `[unenv] X is not implemented yet!`                                     | pacote Node-only no Worker                            | substituir por lib compatível com edge               |
+| Automação parada                                                        | fila `workflow_events` inflada ou cron desagendado    | `platform_cron_status`, `cron_run_logs`, drenar fila |
+| Erro 500 esporádico em server fn                                        | indisponibilidade transitória                         | retry + verificar logs da função                     |
 
 ## 6. Observabilidade
 

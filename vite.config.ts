@@ -11,8 +11,6 @@ import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/tanstack/vite";
 const require = createRequire(import.meta.url);
 const eventsPolyfillPath = require.resolve("events/events.js");
 
-
-
 // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
 // @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
@@ -75,7 +73,6 @@ export default defineConfig({
         },
       },
     },
-
 
     // Garante uma única cópia de React/JSX-runtime no bundle do cliente.
     // Sem dedupe explícito, dependências aninhadas (radix, tiptap, etc.)

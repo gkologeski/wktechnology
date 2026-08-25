@@ -22,9 +22,7 @@ export function FormSection({ title, description, children, className }: FormSec
     >
       <div>
         <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
-        {description ? (
-          <p className="mt-1 text-xs text-text-secondary">{description}</p>
-        ) : null}
+        {description ? <p className="mt-1 text-xs text-text-secondary">{description}</p> : null}
       </div>
       <div className="space-y-4">{children}</div>
     </section>

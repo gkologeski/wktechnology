@@ -5,10 +5,17 @@ import { supabaseForUser, unauthenticated, resolveWorkspaceId } from "../supabas
 export default defineTool({
   name: "search_companies",
   title: "Buscar empresas",
-  description: "Busca empresas do CRM por nome, domínio ou CNPJ no workspace do usuário autenticado.",
+  description:
+    "Busca empresas do CRM por nome, domínio ou CNPJ no workspace do usuário autenticado.",
   inputSchema: {
     query: z.string().trim().min(1).describe("Termo de busca (nome, domínio ou CNPJ)."),
-    limit: z.number().int().min(1).max(50).default(10).describe("Número máximo de empresas retornadas."),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(10)
+      .describe("Número máximo de empresas retornadas."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ query, limit }, ctx) => {

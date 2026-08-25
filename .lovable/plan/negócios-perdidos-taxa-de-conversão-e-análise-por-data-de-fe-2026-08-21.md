@@ -58,7 +58,7 @@ Clicar num mês abre a tela de Negócios com o filtro "Fechado entre" daquele m�
 
 - Migration: `ALTER TABLE public.deals ADD COLUMN lost_at timestamptz`, índice
   parcial `(lost_at)` para `stage = 'lost'`, e `CREATE OR REPLACE FUNCTION
-  public.deals_set_closed_at()` estendida (mesma trigger, nenhuma nova).
+public.deals_set_closed_at()` estendida (mesma trigger, nenhuma nova).
 - Backfill em statement separado, lendo
   `hs_raw->'properties'->>'closedate'` com `::timestamptz`, apenas onde
   `stage = 'lost' AND lost_at IS NULL`.

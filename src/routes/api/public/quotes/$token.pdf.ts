@@ -31,7 +31,11 @@ function formatDateTimeBR(iso: string): string {
 }
 
 function safeFilename(input: string): string {
-  return String(input).replace(/[^A-Za-z0-9_-]+/g, "_").slice(0, 100) || "cotacao";
+  return (
+    String(input)
+      .replace(/[^A-Za-z0-9_-]+/g, "_")
+      .slice(0, 100) || "cotacao"
+  );
 }
 
 function buildFallbackHtml(ctx: {
@@ -360,7 +364,6 @@ async function renderPdfViaBrowserless(html: string, token: string): Promise<Arr
   return await res.arrayBuffer();
 }
 
-
 export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
   server: {
     handlers: {
@@ -471,9 +474,7 @@ export const Route = createFileRoute("/api/public/quotes/$token/pdf")({
           },
           company: { name: company?.name ?? "", domain: company?.website ?? "" },
           contact: {
-            name: contact
-              ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim()
-              : "",
+            name: contact ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() : "",
             email: contact?.email ?? "",
           },
           agent: { name: agent?.full_name ?? "", email: "" },

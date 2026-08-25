@@ -28,8 +28,8 @@ exigem confirmação humana de cada mensagem; a extensão apenas:
 Os 3 modos são: **Mensagem direta**, **Convite com nota**, **InMail**. O modo
 "Detectar automaticamente" escolhe o melhor disponível.
 
-
 ## Instalação (modo desenvolvedor)
+
 1. Clone/baixe esta pasta `extension/`.
 2. Acesse `chrome://extensions` no Chrome ou Edge.
 3. Ative **Modo do desenvolvedor**.
@@ -41,6 +41,7 @@ Ao atualizar uma versão já instalada, remova/recarregue a extensão em
 captura.
 
 ## Pareamento
+
 1. No TechHire, abra **Configurações · API keys** e gere uma chave pessoal.
 2. Clique no ícone da extensão na barra. Informe:
    - **URL do TechHire** (ex: `https://app.lovable.app` ou seu domínio próprio).
@@ -48,6 +49,7 @@ captura.
 3. Salvar. Recarregue uma aba do LinkedIn.
 
 ## Endpoints públicos consumidos
+
 - `POST /api/public/hunting/capture` — payload do perfil.
 - `POST /api/public/hunting/templates` — lista templates.
 - `POST /api/public/hunting/render-template` — renderiza template com variáveis.
@@ -56,6 +58,7 @@ captura.
 Todos exigem header `Authorization: Bearer <api_key>`.
 
 ## Limites
+
 - Respeite os Termos de Uso do LinkedIn. A extensão só lê o que **você** já vê.
 - Cada captura é deduplicada por URL canônica em `ats_hunting_captures`.
 - Mensagens não são enviadas automaticamente — você copia e cola no LinkedIn.

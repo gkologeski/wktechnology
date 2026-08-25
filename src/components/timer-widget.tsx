@@ -8,17 +8,9 @@ import { Link } from "@tanstack/react-router";
 import { Play, Square, Timer as TimerIcon, Loader2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  getRunningTimer,
-  stopTimer,
-  startTimer,
-} from "@/lib/project-timer.functions";
+import { getRunningTimer, stopTimer, startTimer } from "@/lib/project-timer.functions";
 import { listProjects, listAllProjectTasks } from "@/lib/projects.functions";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -73,8 +65,7 @@ export function TimerWidget() {
       qc.invalidateQueries({ queryKey: ["timesheet"] });
       toast.success("Timer parado");
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao parar timer"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao parar timer"),
   });
 
   const running = runningQuery.data as
@@ -109,7 +100,9 @@ export function TimerWidget() {
           variant={running ? "default" : "secondary"}
           onClick={() => setCollapsed(false)}
           aria-label="Expandir timer"
-          title={running ? `Timer ativo — ${formatElapsed(running.started_at ?? null)}` : "Abrir timer"}
+          title={
+            running ? `Timer ativo — ${formatElapsed(running.started_at ?? null)}` : "Abrir timer"
+          }
           className="h-12 w-12 rounded-full shadow-lg relative"
         >
           <TimerIcon className="h-5 w-5" />
@@ -189,8 +182,7 @@ function StartTimerPopover({
   });
   const tasksQuery = useQuery({
     queryKey: ["project-tasks", "for-timer", projectId],
-    queryFn: () =>
-      useServerFnBypass(listAllProjectTasks, projectId ? { projectId } : {}),
+    queryFn: () => useServerFnBypass(listAllProjectTasks, projectId ? { projectId } : {}),
     enabled: open && Boolean(projectId),
   });
 
@@ -209,8 +201,7 @@ function StartTimerPopover({
       setDescription("");
       onStarted();
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao iniciar timer"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao iniciar timer"),
   });
 
   const projects = (projectsQuery.data ?? []) as Array<{ id: string; name: string }>;
@@ -234,7 +225,13 @@ function StartTimerPopover({
         <div className="text-sm font-semibold">Iniciar timer</div>
         <div className="space-y-2">
           <Label className="text-xs">Projeto</Label>
-          <Select value={projectId} onValueChange={(v) => { setProjectId(v); setTaskId(""); }}>
+          <Select
+            value={projectId}
+            onValueChange={(v) => {
+              setProjectId(v);
+              setTaskId("");
+            }}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um projeto" />
             </SelectTrigger>
@@ -294,7 +291,11 @@ function StartTimerPopover({
               })
             }
           >
-            {startMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Play className="h-3 w-3" />}
+            {startMut.isPending ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Play className="h-3 w-3" />
+            )}
             Iniciar
           </Button>
         </div>

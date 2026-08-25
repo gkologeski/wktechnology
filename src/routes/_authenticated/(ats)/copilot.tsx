@@ -72,8 +72,8 @@ function CopilotPage() {
           {messages.length === 0 && (
             <div className="text-sm text-text-tertiary max-w-xl">
               Comece com uma das sugestões abaixo ou faça sua própria pergunta. O copiloto usa
-              apenas dados agregados dos últimos 90 dias (vagas, aplicações, candidatos, ofertas
-              e entrevistas) — sem inventar números.
+              apenas dados agregados dos últimos 90 dias (vagas, aplicações, candidatos, ofertas e
+              entrevistas) — sem inventar números.
             </div>
           )}
           {messages.map((m, i) => (

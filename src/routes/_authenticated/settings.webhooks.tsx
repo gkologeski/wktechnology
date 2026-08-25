@@ -88,11 +88,10 @@ const DELIVERY_STATUS = {
 } as const;
 
 function DeliveryStatusBadge({ status, http }: { status: string; http?: number | null }) {
-  const cfg =
-    (DELIVERY_STATUS as Record<string, { label: string; cls: string }>)[status] ?? {
-      label: status,
-      cls: "border-border-default bg-surface-sunken text-text-secondary",
-    };
+  const cfg = (DELIVERY_STATUS as Record<string, { label: string; cls: string }>)[status] ?? {
+    label: status,
+    cls: "border-border-default bg-surface-sunken text-text-secondary",
+  };
   return (
     <span
       className={cn(
@@ -229,10 +228,9 @@ function WebhooksPage() {
   }, [hooks]);
 
   const activeCount = hooks.filter((h) => h.active).length;
-  const description =
-    hooksLoading
-      ? "Carregando endpoints…"
-      : `${hooks.length} endpoint${hooks.length === 1 ? "" : "s"} · ${activeCount} ativo${activeCount === 1 ? "" : "s"} · POST JSON com header X-Webhook-Signature (HMAC-SHA256).`;
+  const description = hooksLoading
+    ? "Carregando endpoints…"
+    : `${hooks.length} endpoint${hooks.length === 1 ? "" : "s"} · ${activeCount} ativo${activeCount === 1 ? "" : "s"} · POST JSON com header X-Webhook-Signature (HMAC-SHA256).`;
 
   return (
     <div className="p-6 space-y-6">

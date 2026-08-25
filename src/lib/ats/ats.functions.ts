@@ -4,12 +4,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emitEvent } from "@/lib/events.server";
 import { recordAtsEvent } from "./audit.server";
-import {
-  DEFAULT_ATS_STAGES,
-  type AtsStage,
-  atsStageOutcome,
-  firstAtsStageValue,
-} from "./stages";
+import { DEFAULT_ATS_STAGES, type AtsStage, atsStageOutcome, firstAtsStageValue } from "./stages";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import type { AtsGridInput } from "@/lib/grid/ats-grid-input";
@@ -83,7 +78,10 @@ const JobSaveSchema = z.object({
     .enum(["intern", "junior", "mid", "senior", "lead", "principal"])
     .optional()
     .nullable(),
-  employment_type: z.enum(["clt", "pj", "contract", "internship", "temporary"]).optional().nullable(),
+  employment_type: z
+    .enum(["clt", "pj", "contract", "internship", "temporary"])
+    .optional()
+    .nullable(),
   location: z.string().max(120).optional().nullable(),
   remote_mode: z.enum(["onsite", "hybrid", "remote"]).optional().nullable(),
   salary_min: z.number().min(0).optional().nullable(),
@@ -146,7 +144,6 @@ export const listAtsJobs = createServerFn({ method: "POST" })
       })
       .limit(200);
 
-
     if (data.status && data.status !== "all") q = q.eq("status", data.status);
     if (data.search) q = q.ilike("title", `%${data.search}%`);
     const { data: rowsRaw, error } = await q;
@@ -158,7 +155,7 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     // contagem de candidaturas ativas por vaga
     const ids = rows.map((r) => r.id as string);
 
-    let counts: Record<string, number> = {};
+    const counts: Record<string, number> = {};
     if (ids.length) {
       const { data: apps } = await supabase
         .from("ats_applications")
@@ -171,14 +168,15 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     }
     // Hidratar nomes de negócios vinculados
     const dealIds = Array.from(
-      new Set(((rows ?? []) as Array<{ deal_id: string | null }>).map((r) => r.deal_id).filter((v): v is string => !!v)),
+      new Set(
+        ((rows ?? []) as Array<{ deal_id: string | null }>)
+          .map((r) => r.deal_id)
+          .filter((v): v is string => !!v),
+      ),
     );
-    let deals: Record<string, { id: string; name: string }> = {};
+    const deals: Record<string, { id: string; name: string }> = {};
     if (dealIds.length) {
-      const { data: dealRows } = await supabase
-        .from("deals")
-        .select("id, name")
-        .in("id", dealIds);
+      const { data: dealRows } = await supabase.from("deals").select("id, name").in("id", dealIds);
       for (const d of (dealRows ?? []) as Array<{ id: string; name: string }>) {
         deals[d.id] = { id: d.id, name: d.name };
       }
@@ -223,14 +221,12 @@ export const listAtsJobs = createServerFn({ method: "POST" })
     return ((rows ?? []) as unknown as JobRow[]).map((r) => ({
       ...r,
       metadata: undefined,
-      department: ((r.metadata as { department?: string } | null)?.department) ?? null,
+      department: (r.metadata as { department?: string } | null)?.department ?? null,
       active_applications: counts[r.id] ?? 0,
-      deal: r.deal_id ? deals[r.deal_id] ?? null : null,
-      pipeline_name: r.pipeline_id ? pipelineNames[r.pipeline_id] ?? null : null,
+      deal: r.deal_id ? (deals[r.deal_id] ?? null) : null,
+      pipeline_name: r.pipeline_id ? (pipelineNames[r.pipeline_id] ?? null) : null,
     }));
   });
-
-
 
 export const getAtsJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -362,7 +358,9 @@ export const deleteAtsJob = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceIdForCheck, ["techhire.jobs.delete.workspace"]);
+    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
+      "techhire.jobs.delete.workspace",
+    ]);
     // Sem filtro por owner_id: o RLS decide (dono, admin do workspace ou
     // permissão de delete no workspace). Filtrar aqui impedia excluir
     // registros criados por colegas do mesmo workspace.
@@ -455,8 +453,6 @@ export const searchDeals = createServerFn({ method: "POST" })
     }>;
   });
 
-
-
 // ---------- candidates -----------------------------------------------------
 
 const ExperienceEntrySchema = z.object({
@@ -484,13 +480,16 @@ const CandidateSourceSchema = z
 
 // Aceita endereços sem protocolo ("www.linkedin.com/in/x") normalizando para https.
 const LinkedinUrlSchema = z
-  .preprocess((v) => {
-    if (typeof v !== "string") return v;
-    const t = v.trim();
-    if (!t) return "";
-    if (/^https?:\/\//i.test(t)) return t;
-    return `https://${t.replace(/^\/+/, "")}`;
-  }, z.string().url({ message: "LinkedIn inválido" }).max(500).or(z.literal("")))
+  .preprocess(
+    (v) => {
+      if (typeof v !== "string") return v;
+      const t = v.trim();
+      if (!t) return "";
+      if (/^https?:\/\//i.test(t)) return t;
+      return `https://${t.replace(/^\/+/, "")}`;
+    },
+    z.string().url({ message: "LinkedIn inválido" }).max(500).or(z.literal("")),
+  )
   .optional()
   .nullable();
 
@@ -562,13 +561,11 @@ export const listAtsCandidates = createServerFn({ method: "POST" })
         nullsFirst: false,
       })
       .limit(300);
-    if (data.search)
-      q = q.or(`full_name.ilike.%${data.search}%,email.ilike.%${data.search}%`);
+    if (data.search) q = q.or(`full_name.ilike.%${data.search}%,email.ilike.%${data.search}%`);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     return (rows ?? []) as unknown as CandidateListRow[];
   });
-
 
 export const saveAtsCandidate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -645,7 +642,9 @@ export const deleteAtsCandidate = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
-    await assertAnyPermission(supabase, userId, workspaceIdForCheck, ["techhire.candidates.delete.workspace"]);
+    await assertAnyPermission(supabase, userId, workspaceIdForCheck, [
+      "techhire.candidates.delete.workspace",
+    ]);
     const { data: del, error } = await supabase
       .from("ats_candidates")
       .delete()
@@ -722,17 +721,17 @@ export const listJobApplications = createServerFn({ method: "POST" })
 type PipelineReader = {
   from: (table: string) => {
     select: (columns: string) => {
-      eq: (column: string, value: string) => {
+      eq: (
+        column: string,
+        value: string,
+      ) => {
         maybeSingle: () => Promise<{ data: unknown }>;
       };
     };
   };
 };
 
-async function loadJobPipelineStages(
-  supabase: PipelineReader,
-  jobId: string,
-): Promise<unknown> {
+async function loadJobPipelineStages(supabase: PipelineReader, jobId: string): Promise<unknown> {
   const { data: job } = await supabase
     .from("ats_jobs")
     .select("pipeline_id")
@@ -795,7 +794,10 @@ export const addApplication = createServerFn({ method: "POST" })
         actor_id: userId,
         metadata: { source: data.source },
       } as never)
-      .then(() => undefined, () => undefined);
+      .then(
+        () => undefined,
+        () => undefined,
+      );
     await emitEvent(supabase, {
       ownerId: userId,
       eventName: "ats.application.created",
@@ -809,7 +811,12 @@ export const addApplication = createServerFn({ method: "POST" })
 export const listApplicationEvents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ application_id: z.string().uuid(), limit: z.number().int().min(1).max(200).default(100) }).parse(d),
+    z
+      .object({
+        application_id: z.string().uuid(),
+        limit: z.number().int().min(1).max(200).default(100),
+      })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
@@ -821,7 +828,11 @@ export const listApplicationEvents = createServerFn({ method: "POST" })
       .limit(data.limit);
     if (error) throw new Error(error.message);
     const actorIds = Array.from(
-      new Set((rows ?? []).map((r) => (r as { actor_id: string | null }).actor_id).filter(Boolean) as string[]),
+      new Set(
+        (rows ?? [])
+          .map((r) => (r as { actor_id: string | null }).actor_id)
+          .filter(Boolean) as string[],
+      ),
     );
     let nameMap: Record<string, string> = {};
     if (actorIds.length > 0) {
@@ -829,24 +840,35 @@ export const listApplicationEvents = createServerFn({ method: "POST" })
         .from("profiles")
         .select("id, full_name")
         .in("id", actorIds);
-      nameMap = Object.fromEntries(((profs ?? []) as Array<{ id: string; full_name: string | null }>).map((p) => [p.id, p.full_name ?? ""]));
+      nameMap = Object.fromEntries(
+        ((profs ?? []) as Array<{ id: string; full_name: string | null }>).map((p) => [
+          p.id,
+          p.full_name ?? "",
+        ]),
+      );
     }
     return (rows ?? []).map((r) => {
-      const row = r as { id: string; event_type: string; from_stage: string | null; to_stage: string | null; actor_id: string | null; metadata: unknown; created_at: string };
+      const row = r as {
+        id: string;
+        event_type: string;
+        from_stage: string | null;
+        to_stage: string | null;
+        actor_id: string | null;
+        metadata: unknown;
+        created_at: string;
+      };
       return {
         id: row.id,
         event_type: row.event_type,
         from_stage: row.from_stage,
         to_stage: row.to_stage,
         actor_id: row.actor_id,
-        actor_name: row.actor_id ? (nameMap[row.actor_id] || null) : null,
+        actor_name: row.actor_id ? nameMap[row.actor_id] || null : null,
         metadata: (row.metadata ?? null) as Record<string, string | number | boolean | null> | null,
         created_at: row.created_at,
       };
     });
-
   });
-
 
 export const moveApplication = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -893,7 +915,6 @@ export const moveApplication = createServerFn({ method: "POST" })
     if (!upd || upd.length === 0)
       throw new Error("Não foi possível mover a candidatura: sem permissão.");
 
-
     if (prev.stage_value !== data.toStage) {
       // Auditoria
       await supabase
@@ -909,7 +930,10 @@ export const moveApplication = createServerFn({ method: "POST" })
           to_stage: data.toStage,
           actor_id: userId,
         } as never)
-        .then(() => undefined, () => undefined);
+        .then(
+          () => undefined,
+          () => undefined,
+        );
 
       await emitEvent(supabase, {
         ownerId: userId,
@@ -970,20 +994,18 @@ export const moveApplication = createServerFn({ method: "POST" })
           .maybeSingle();
         const c = cand as { full_name: string; email: string | null } | null;
         if (c?.email) {
-          await supabase
-            .from("ats_stage_email_log")
-            .insert({
-              owner_id: userId,
-              workspace_id: workspaceId,
-              application_id: data.applicationId,
-              candidate_id: prev.candidate_id,
-              job_id: prev.job_id,
-              stage_value: data.toStage,
-              to_email: c.email,
-              subject: (tpl as { subject: string }).subject,
-              body: (tpl as { body: string }).body,
-              status: "pending",
-            } as never);
+          await supabase.from("ats_stage_email_log").insert({
+            owner_id: userId,
+            workspace_id: workspaceId,
+            application_id: data.applicationId,
+            candidate_id: prev.candidate_id,
+            job_id: prev.job_id,
+            stage_value: data.toStage,
+            to_email: c.email,
+            subject: (tpl as { subject: string }).subject,
+            body: (tpl as { body: string }).body,
+            status: "pending",
+          } as never);
         }
       }
     } catch {
@@ -1050,7 +1072,7 @@ export const listJobEvents = createServerFn({ method: "POST" })
       to_stage: r.to_stage,
       application_id: r.application_id,
       candidate_id: r.candidate_id,
-      candidate_name: r.candidate_id ? map[r.candidate_id] ?? null : null,
+      candidate_name: r.candidate_id ? (map[r.candidate_id] ?? null) : null,
       created_at: r.created_at,
     }));
   });
@@ -1058,7 +1080,9 @@ export const listJobEvents = createServerFn({ method: "POST" })
 export const listJobInterviews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ jobId: z.string().uuid(), limit: z.number().int().min(1).max(200).default(100) }).parse(d),
+    z
+      .object({ jobId: z.string().uuid(), limit: z.number().int().min(1).max(200).default(100) })
+      .parse(d),
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
@@ -1102,7 +1126,6 @@ export const listJobInterviews = createServerFn({ method: "POST" })
       candidate_name: map[r.candidate_id] ?? null,
     }));
   });
-
 
 // ---------- patches leves (DnD nos kanbans) --------------------------------
 
@@ -1160,8 +1183,7 @@ export const setAtsJobDepartment = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .maybeSingle();
     if (readErr) throw new Error(readErr.message);
-    const metaSrc =
-      (cur?.metadata as Record<string, unknown> | null | undefined) ?? {};
+    const metaSrc = (cur?.metadata as Record<string, unknown> | null | undefined) ?? {};
     const next: Record<string, unknown> = { ...metaSrc };
     if (data.department === null) {
       delete next.department;
@@ -1178,7 +1200,6 @@ export const setAtsJobDepartment = createServerFn({ method: "POST" })
       throw new Error("Não foi possível alterar o departamento da vaga: sem permissão.");
     return { id: data.id, department: data.department };
   });
-
 
 export const setCandidateArchived = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -1198,4 +1219,3 @@ export const setCandidateArchived = createServerFn({ method: "POST" })
 
     return { id: data.id, archived: data.archived };
   });
-

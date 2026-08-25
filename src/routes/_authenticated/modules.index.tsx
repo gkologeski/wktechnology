@@ -20,19 +20,11 @@ import {
   Kanban,
   DollarSign,
 } from "lucide-react";
-import {
-  listWorkspaceModules,
-  type WorkspaceModuleRow,
-} from "@/lib/workspace/modules.functions";
+import { listWorkspaceModules, type WorkspaceModuleRow } from "@/lib/workspace/modules.functions";
 import { buildModuleUrl } from "@/lib/hosts";
 import { MODULES, type ModuleId } from "@/lib/modules/registry";
 import { setStoredActiveModule } from "@/lib/modules/active-module";
-import {
-  PageHeader,
-  SectionHeader,
-  MetricCard,
-  StatusBadge,
-} from "@/components/techhire/ui";
+import { PageHeader, SectionHeader, MetricCard, StatusBadge } from "@/components/techhire/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,8 +57,9 @@ function resolveModuleIcon(name: string | null | undefined) {
 function openModule(moduleId: ModuleId) {
   const def = MODULES[moduleId];
   if (!def) {
-    // eslint-disable-next-line no-console
-    console.warn(`[home] Módulo "${moduleId}" existe em public.modules mas não está registrado no front (src/lib/modules/registry.ts).`);
+    console.warn(
+      `[home] Módulo "${moduleId}" existe em public.modules mas não está registrado no front (src/lib/modules/registry.ts).`,
+    );
     return;
   }
   // Persiste a preferência do usuário — sidebar do módulo aparece já na 1ª tela.
@@ -114,8 +107,8 @@ function ModulesGrid() {
         const status: "Ativo" | "Disponível" | "Não contratado" = m.enabled
           ? "Ativo"
           : m.is_contracted
-          ? "Disponível"
-          : "Não contratado";
+            ? "Disponível"
+            : "Não contratado";
         const canEnter = m.enabled && isRegisteredModule;
         return (
           <Card
@@ -133,9 +126,11 @@ function ModulesGrid() {
                 <span
                   className={cn(
                     "text-[11px] font-medium rounded-full px-2 py-0.5",
-                    status === "Ativo" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                    status === "Ativo" &&
+                      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
                     status === "Disponível" && "bg-muted text-muted-foreground",
-                    status === "Não contratado" && "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                    status === "Não contratado" &&
+                      "bg-amber-500/10 text-amber-600 dark:text-amber-400",
                   )}
                 >
                   {status}
@@ -196,8 +191,18 @@ type Shortcut = {
 };
 
 const SHORTCUTS: Shortcut[] = [
-  { to: "/settings/teams", title: "Membros", desc: "Convites, papéis e acessos.", icon: UsersRound },
-  { to: "/settings/permissions", title: "Permissões", desc: "Cargos e pacotes de permissão.", icon: Shield },
+  {
+    to: "/settings/teams",
+    title: "Membros",
+    desc: "Convites, papéis e acessos.",
+    icon: UsersRound,
+  },
+  {
+    to: "/settings/permissions",
+    title: "Permissões",
+    desc: "Cargos e pacotes de permissão.",
+    icon: Shield,
+  },
   { to: "/marketplace", title: "Marketplace", desc: "Add-ons e integrações.", icon: Store },
   { to: "/invoices", title: "Faturas", desc: "Histórico de pagamentos.", icon: Receipt },
 ];
@@ -270,29 +275,15 @@ function ErpHome() {
         }
         secondaryActions={
           <Button variant="outline" asChild>
-            <Link to="/settings">
-              Todas as configurações
-            </Link>
+            <Link to="/settings">Todas as configurações</Link>
           </Button>
         }
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <MetricCard
-          label="Módulos ativos"
-          value={String(activeCount)}
-          icon={CheckCircle2}
-        />
-        <MetricCard
-          label="Módulos contratados"
-          value={String(contractedCount)}
-          icon={Boxes}
-        />
-        <MetricCard
-          label="Status"
-          value="Operacional"
-          icon={Building2}
-        />
+        <MetricCard label="Módulos ativos" value={String(activeCount)} icon={CheckCircle2} />
+        <MetricCard label="Módulos contratados" value={String(contractedCount)} icon={Boxes} />
+        <MetricCard label="Status" value="Operacional" icon={Building2} />
       </div>
 
       <section className="space-y-4">
@@ -313,10 +304,14 @@ function ErpHome() {
 
       <div className="text-xs text-muted-foreground pt-6 border-t flex items-center gap-2">
         <StatusBadge status="open" label="Workspace" />
-        <span>Configurações completas ficam em <Link to="/settings" className="underline hover:text-foreground">Configurações</Link>.</span>
+        <span>
+          Configurações completas ficam em{" "}
+          <Link to="/settings" className="underline hover:text-foreground">
+            Configurações
+          </Link>
+          .
+        </span>
       </div>
-
     </div>
   );
 }
-

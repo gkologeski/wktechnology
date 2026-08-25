@@ -13,7 +13,8 @@ export const Route = createFileRoute("/api/public/hooks/sourcing-tick")({
           const r = await processDueEnrollments(50);
           return r as unknown as Record<string, unknown>;
         });
-        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        if (run.status === "error")
+          return Response.json({ ok: false, error: run.error }, { status: 500 });
         return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
       GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),

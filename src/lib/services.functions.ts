@@ -18,7 +18,10 @@ function addMonths(iso: string, months: number): string {
   return target.toISOString().slice(0, 10);
 }
 
-function computeNextBilling(fromDate: string, cadence: z.infer<typeof cadenceEnum> | null | undefined): string | null {
+function computeNextBilling(
+  fromDate: string,
+  cadence: z.infer<typeof cadenceEnum> | null | undefined,
+): string | null {
   if (!cadence) return null;
   if (cadence === "monthly") return addMonths(fromDate, 1);
   if (cadence === "quarterly") return addMonths(fromDate, 3);
@@ -106,11 +109,7 @@ export const createService = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, [
-      "techservice.services.create.own",
-    ]);
-
-
+    await assertAnyPermission(supabase, userId, workspaceId, ["techservice.services.create.own"]);
 
     // herda role e currency do contrato
     const { data: contract, error: cErr } = await supabase
@@ -122,7 +121,11 @@ export const createService = createServerFn({ method: "POST" })
     if (!contract) throw new Error("Contrato não encontrado");
 
     const cadence =
-      data.type === "recurring" ? (data.cadence ?? "monthly") : data.type === "milestone" ? "on_delivery" : null;
+      data.type === "recurring"
+        ? (data.cadence ?? "monthly")
+        : data.type === "milestone"
+          ? "on_delivery"
+          : null;
 
     const { data: row, error } = await supabase
       .from("services")
@@ -215,7 +218,6 @@ export const deleteService = createServerFn({ method: "POST" })
       throw new Error("Você não tem permissão para excluir este registro.");
     }
     return { ok: true, deleted: deleted.length };
-
   });
 
 // ============= ACTIVATE =============
@@ -319,7 +321,7 @@ export const runServicesBillingNow = createServerFn({ method: "POST" })
     for (const svc of due ?? []) {
       const amount = Number(svc.quantity) * Number(svc.unit_price);
       const next = computeNextBilling(svc.next_billing_at as string, svc.cadence as any);
-      const stops = svc.ends_at && (next && next > (svc.ends_at as string));
+      const stops = svc.ends_at && next && next > (svc.ends_at as string);
 
       const { error: fErr } = await supabase.from("financial_entries").insert({
         workspace_id: workspaceId,
@@ -359,11 +361,7 @@ export const runServicesBillingNow = createServerFn({ method: "POST" })
 
 export const listCatalogServiceOptions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z
-      .object({ search: z.string().optional() })
-      .parse(input ?? {}),
-  )
+  .inputValidator((input) => z.object({ search: z.string().optional() }).parse(input ?? {}))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -405,9 +403,7 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, [
-      "techservice.services.create.own",
-    ]);
+    await assertAnyPermission(supabase, userId, workspaceId, ["techservice.services.create.own"]);
 
     const { data: catalog, error: catErr } = await supabase
       .from("service_catalog")
@@ -431,7 +427,6 @@ export const linkCatalogServiceToContract = createServerFn({ method: "POST" })
         "Serviços só podem ser associados a contratos de prestação de serviços (onde um dos nossos CNPJs é a CONTRATADA).",
       );
     }
-
 
     const cadence =
       data.type === "recurring"

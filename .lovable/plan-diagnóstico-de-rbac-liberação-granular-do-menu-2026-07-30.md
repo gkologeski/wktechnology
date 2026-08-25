@@ -13,6 +13,7 @@ Duas entregas: (1) uma tela de diagnóstico que mostra as permissões efetivas d
 Nova rota `/settings/rbac-diagnostics` (dentro de Controle de acesso, visível para admin/owner e platform admin).
 
 Conteúdo:
+
 - **Cabeçalho** com workspace ativo, usuário, papel efetivo (owner/admin/manager/member) e flag de platform admin.
 - **Resumo**: total de permissões efetivas, cargos atribuídos (primário e secundários) e conjuntos de permissões extras.
 - **Permissões efetivas**: lista agrupada por módulo com busca, reaproveitando o formato já usado em `/settings/my-permissions`.
@@ -31,6 +32,7 @@ Backend: nova server function autenticada que retorna, para o usuário atual ou 
 Para cada um dos 58 itens, adicionar `permissionAny` com as chaves de visualização correspondentes, mantendo `need: "manager"` como atalho (manager/admin continuam vendo tudo — nada é removido de quem já vê hoje).
 
 Mapeamento por área:
+
 - **Finanças** (`menu-config-finance.ts`): `techfinance.entries.view.*`, `payments`, `invoices`, `recurrences`, `cost_centers`, `banking`, `nfse`, `dunning` conforme a tela.
 - **Pessoas** (`menu-config-people.ts`): `techpeople.onboarding.*`, `documents`, `wellbeing.*`, `benefits`, `timesheet`, `allocations`.
 - **Serviços/Catálogo** (`menu-config-services.ts` + Produtos): nova chave de catálogo.
@@ -39,6 +41,7 @@ Mapeamento por área:
 - **Dashboards/Relatórios/Analytics**, **Base de conhecimento**, **Calendários/Agendamentos**: novas chaves.
 
 Migração SQL aditiva:
+
 - `INSERT ... ON CONFLICT DO NOTHING` das novas linhas em `public.permissions` (módulo, recurso, ação, escopo, `label_pt` em PT-BR).
 - Incluir as novas chaves nos conjuntos de permissões de sistema equivalentes (`permission_set_items`) para que perfis existentes de gestor/marketing não perderem nada.
 - Nenhuma tabela nova, nenhuma política alterada.

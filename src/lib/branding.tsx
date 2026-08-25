@@ -4,12 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useActiveModule } from "@/lib/modules/active-module";
 import type { ModuleId } from "@/lib/modules/registry";
-import {
-  mergeThemes,
-  themeToCss,
-  sanitizeTheme,
-  type BrandTheme,
-} from "@/lib/branding/tokens";
+import { mergeThemes, themeToCss, sanitizeTheme, type BrandTheme } from "@/lib/branding/tokens";
 
 export type Branding = {
   brand_name: string | null;
@@ -153,10 +148,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
           .select(BRANDING_COLUMNS)
           .eq("workspace_id", workspaceId)
           .maybeSingle(),
-        supabase
-          .from("module_branding")
-          .select("module_id, theme")
-          .eq("workspace_id", workspaceId),
+        supabase.from("module_branding").select("module_id, theme").eq("workspace_id", workspaceId),
       ]);
       if (cancelled) return;
 
@@ -193,10 +185,7 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
   }, [user?.id]);
 
   const effectiveTheme = useMemo(
-    () =>
-      sanitizeTheme(
-        mergeThemes(branding?.theme ?? null, moduleThemes[activeModule] ?? null),
-      ),
+    () => sanitizeTheme(mergeThemes(branding?.theme ?? null, moduleThemes[activeModule] ?? null)),
     [branding?.theme, moduleThemes, activeModule],
   );
 

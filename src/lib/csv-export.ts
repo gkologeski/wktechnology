@@ -14,9 +14,7 @@ export function toCsv<T>(rows: T[], columns: CsvColumn<T>[]): string {
     return s;
   };
   const header = columns.map((c) => escape(c.header)).join(";");
-  const body = rows
-    .map((r) => columns.map((c) => escape(c.value(r))).join(";"))
-    .join("\r\n");
+  const body = rows.map((r) => columns.map((c) => escape(c.value(r))).join(";")).join("\r\n");
   return `\uFEFF${header}\r\n${body}`;
 }
 
@@ -40,15 +38,18 @@ export function exportRowsToCsv(
   rows: Record<string, unknown>[],
   columns: LegacyColumn[],
 ) {
-  const csv = toCsv(rows, columns.map((c) => ({
-    header: c.label,
-    value: (row: Record<string, unknown>) => {
-      const v = row[c.key];
-      if (v === null || v === undefined) return "";
-      if (v instanceof Date) return v.toISOString();
-      if (typeof v === "object") return JSON.stringify(v);
-      return v as string | number;
-    },
-  })));
+  const csv = toCsv(
+    rows,
+    columns.map((c) => ({
+      header: c.label,
+      value: (row: Record<string, unknown>) => {
+        const v = row[c.key];
+        if (v === null || v === undefined) return "";
+        if (v instanceof Date) return v.toISOString();
+        if (typeof v === "object") return JSON.stringify(v);
+        return v as string | number;
+      },
+    })),
+  );
   downloadCsv(filename, csv);
 }

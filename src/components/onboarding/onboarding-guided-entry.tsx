@@ -6,10 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Link } from "@tanstack/react-router";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  pickOnbTemplate,
-  type OnbEntityType,
-} from "@/lib/onboarding/onboarding.functions";
+import { pickOnbTemplate, type OnbEntityType } from "@/lib/onboarding/onboarding.functions";
 
 const ENTITY_TO_ROUTE: Record<OnbEntityType, "leads" | "companies" | "contacts"> = {
   lead: "leads",

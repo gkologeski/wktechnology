@@ -12,17 +12,62 @@ type Step = { id: string; title: string; href: string; description: string };
 
 const STEPS: Record<string, Step[]> = {
   crm: [
-    { id: "crm.first_lead", title: "Criar seu primeiro lead", href: "/leads", description: "Comece capturando um lead manual ou via formulário." },
-    { id: "crm.first_deal", title: "Criar um negócio", href: "/deals", description: "Transforme um lead qualificado em oportunidade." },
-    { id: "crm.connect_email", title: "Conectar caixa de e-mail", href: "/settings/email", description: "Integre Gmail/Outlook para sincronizar mensagens." },
-    { id: "crm.invite_team", title: "Convidar equipe", href: "/settings/teams", description: "Adicione vendedores ao workspace." },
+    {
+      id: "crm.first_lead",
+      title: "Criar seu primeiro lead",
+      href: "/leads",
+      description: "Comece capturando um lead manual ou via formulário.",
+    },
+    {
+      id: "crm.first_deal",
+      title: "Criar um negócio",
+      href: "/deals",
+      description: "Transforme um lead qualificado em oportunidade.",
+    },
+    {
+      id: "crm.connect_email",
+      title: "Conectar caixa de e-mail",
+      href: "/settings/email",
+      description: "Integre Gmail/Outlook para sincronizar mensagens.",
+    },
+    {
+      id: "crm.invite_team",
+      title: "Convidar equipe",
+      href: "/settings/teams",
+      description: "Adicione vendedores ao workspace.",
+    },
   ],
   ats: [
-    { id: "ats.first_job", title: "Publicar 1ª vaga", href: "/jobs", description: "Crie uma vaga e marque como publicada." },
-    { id: "ats.first_candidate", title: "Cadastrar candidato", href: "/candidates", description: "Cadastre manualmente ou faça parsing de CV com IA." },
-    { id: "ats.stage_emails", title: "Configurar e-mails por etapa", href: "/stage-emails", description: "Automatize comunicações com candidatos." },
-    { id: "ats.scorecard", title: "Criar scorecard de entrevista", href: "/scorecards", description: "Padronize avaliação de candidatos." },
-    { id: "ats.public_page", title: "Conectar domínio público", href: "/settings/branding", description: "Configure o domínio das páginas de carreira." },
+    {
+      id: "ats.first_job",
+      title: "Publicar 1ª vaga",
+      href: "/jobs",
+      description: "Crie uma vaga e marque como publicada.",
+    },
+    {
+      id: "ats.first_candidate",
+      title: "Cadastrar candidato",
+      href: "/candidates",
+      description: "Cadastre manualmente ou faça parsing de CV com IA.",
+    },
+    {
+      id: "ats.stage_emails",
+      title: "Configurar e-mails por etapa",
+      href: "/stage-emails",
+      description: "Automatize comunicações com candidatos.",
+    },
+    {
+      id: "ats.scorecard",
+      title: "Criar scorecard de entrevista",
+      href: "/scorecards",
+      description: "Padronize avaliação de candidatos.",
+    },
+    {
+      id: "ats.public_page",
+      title: "Conectar domínio público",
+      href: "/settings/branding",
+      description: "Configure o domínio das páginas de carreira.",
+    },
   ],
 };
 
@@ -73,16 +118,29 @@ export function OnboardingChecklist() {
         {steps.map((s) => {
           const done = completed.has(s.id);
           return (
-            <div key={s.id} className="flex items-start gap-3 rounded-md border p-3 hover:border-primary/40">
+            <div
+              key={s.id}
+              className="flex items-start gap-3 rounded-md border p-3 hover:border-primary/40"
+            >
               <button onClick={() => toggle(s.id)} className="mt-0.5" aria-label="toggle">
-                {done ? <CheckCircle2 className="h-5 w-5 text-primary" /> : <Circle className="h-5 w-5 text-muted-foreground" />}
+                {done ? (
+                  <CheckCircle2 className="h-5 w-5 text-primary" />
+                ) : (
+                  <Circle className="h-5 w-5 text-muted-foreground" />
+                )}
               </button>
               <div className="flex-1 min-w-0">
-                <div className={`text-sm font-medium ${done ? "line-through text-muted-foreground" : ""}`}>{s.title}</div>
+                <div
+                  className={`text-sm font-medium ${done ? "line-through text-muted-foreground" : ""}`}
+                >
+                  {s.title}
+                </div>
                 <div className="text-xs text-muted-foreground">{s.description}</div>
               </div>
               <Link to={s.href as string}>
-                <Button size="sm" variant="ghost"><ArrowRight className="h-4 w-4" /></Button>
+                <Button size="sm" variant="ghost">
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
               </Link>
             </div>
           );

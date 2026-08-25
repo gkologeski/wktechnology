@@ -50,25 +50,37 @@ async function getActiveToken(connectionId: string) {
     .eq("connection_id", connectionId)
     .is("rotated_at", null)
     .maybeSingle();
-  return data as
-    | { id: string; access_token: string; refresh_token: string | null; expires_at: string | null }
-    | null;
+  return data as {
+    id: string;
+    access_token: string;
+    refresh_token: string | null;
+    expires_at: string | null;
+  } | null;
 }
 
 async function maybeRefreshToken(
   conn: { id: string; provider: string; mode: string; workspace_id: string },
-  tokenRow: { id: string; access_token: string; refresh_token: string | null; expires_at: string | null },
+  tokenRow: {
+    id: string;
+    access_token: string;
+    refresh_token: string | null;
+    expires_at: string | null;
+  },
 ): Promise<string> {
   if (!tokenRow.expires_at) return tokenRow.access_token;
   const expMs = new Date(tokenRow.expires_at).getTime();
   const now = Date.now();
   if (expMs - now > TOKEN_REFRESH_WINDOW_MS) return tokenRow.access_token;
   if (!tokenRow.refresh_token) {
-    await emitAlert("warning", "Token bancário expirando sem refresh_token — reautorização necessária", {
-      connection_id: conn.id,
-      workspace_id: conn.workspace_id,
-      expires_at: tokenRow.expires_at,
-    });
+    await emitAlert(
+      "warning",
+      "Token bancário expirando sem refresh_token — reautorização necessária",
+      {
+        connection_id: conn.id,
+        workspace_id: conn.workspace_id,
+        expires_at: tokenRow.expires_at,
+      },
+    );
     return tokenRow.access_token;
   }
 
@@ -200,7 +212,11 @@ async function reconcileStuckPayments(conn: any): Promise<number> {
         external_id: p.external_id,
       });
       if (status.status === "paid") {
-        await settleBankPaymentAdmin(supabaseAdmin as any, p.id, status.paid_at ?? new Date().toISOString());
+        await settleBankPaymentAdmin(
+          supabaseAdmin as any,
+          p.id,
+          status.paid_at ?? new Date().toISOString(),
+        );
         updated++;
       } else if (status.status === "failed" || status.status === "canceled") {
         await (supabaseAdmin as any)

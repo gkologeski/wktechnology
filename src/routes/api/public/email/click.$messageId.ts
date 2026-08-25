@@ -25,8 +25,7 @@ export const Route = createFileRoute("/api/public/email/click/$messageId")({
 
         const candidate = parseTarget(rawTarget);
         const isValidId = /^[0-9a-f-]{36}$/i.test(id);
-        const isSigned =
-          !!candidate && isValidId && !!sig && verifyTrackedUrl(id, candidate, sig);
+        const isSigned = !!candidate && isValidId && !!sig && verifyTrackedUrl(id, candidate, sig);
 
         // Only redirect to URLs we signed at send-time. Anything else falls
         // back to the app root so the endpoint can't be used as an open redirect.

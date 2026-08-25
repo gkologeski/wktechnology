@@ -158,7 +158,6 @@ function ServiceDetail() {
       qc.removeQueries({ queryKey: ["service", id] });
       await qc.invalidateQueries({ queryKey: ["services"] });
       navigate({ to: "/services" });
-
     } catch (e) {
       toast.error((e as Error).message);
     }

@@ -26,9 +26,7 @@ describe("association-tokens", () => {
       { index: 0, type: "create_company", label: "Criar empresa" },
       { index: 1, type: "send_email", label: "Enviar e-mail" },
     ];
-    expect(priorStepRefOptions(steps, "company").map((o) => o.token)).toEqual([
-      "{{steps.0.id}}",
-    ]);
+    expect(priorStepRefOptions(steps, "company").map((o) => o.token)).toEqual(["{{steps.0.id}}"]);
     expect(priorStepRefOptions(steps, "contact")).toEqual([]);
   });
 });

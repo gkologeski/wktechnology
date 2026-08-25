@@ -40,9 +40,7 @@ export function MultiSelectOptions({
 
   const remove = (v: string) => onChange(value.filter((x) => x !== v));
 
-  const selectedLabels = value.map(
-    (v) => options.find((o) => o.value === v)?.label ?? v,
-  );
+  const selectedLabels = value.map((v) => options.find((o) => o.value === v)?.label ?? v);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -95,16 +93,9 @@ export function MultiSelectOptions({
               {options.map((opt) => {
                 const isSelected = value.includes(opt.value);
                 return (
-                  <CommandItem
-                    key={opt.value}
-                    value={opt.label}
-                    onSelect={() => toggle(opt.value)}
-                  >
+                  <CommandItem key={opt.value} value={opt.label} onSelect={() => toggle(opt.value)}>
                     <Check
-                      className={cn(
-                        "mr-2 h-4 w-4",
-                        isSelected ? "opacity-100" : "opacity-0",
-                      )}
+                      className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
                     />
                     {opt.label}
                   </CommandItem>

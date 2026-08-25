@@ -1,9 +1,5 @@
 import { test, expect, hasE2ECredentials } from "./helpers/auth";
-import {
-  seedContract,
-  seedService,
-  safeCleanup,
-} from "./helpers/modules-seed";
+import { seedContract, seedService, safeCleanup } from "./helpers/modules-seed";
 
 test.skip(
   !hasE2ECredentials,
@@ -61,21 +57,19 @@ test("Contratos — ativação + billing tick gera cobrança única (idempotente
   if (insErr) throw new Error(insErr.message);
 
   // Idempotência: segunda tentativa com mesma (service_id, competence_date) deve falhar por unique index.
-  const dup = await (supa as any)
-    .from("financial_entries")
-    .insert({
-      owner_id: userId,
-      workspace_id: workspaceId,
-      direction: "receivable",
-      origin_type: "service",
-      service_id: service.id,
-      contract_id: contract.id,
-      description: "duplicate",
-      amount: 500,
-      currency: "BRL",
-      competence_date: today,
-      due_date: today,
-    });
+  const dup = await (supa as any).from("financial_entries").insert({
+    owner_id: userId,
+    workspace_id: workspaceId,
+    direction: "receivable",
+    origin_type: "service",
+    service_id: service.id,
+    contract_id: contract.id,
+    description: "duplicate",
+    amount: 500,
+    currency: "BRL",
+    competence_date: today,
+    due_date: today,
+  });
   expect(dup.error, "índice único deve bloquear duplicata do mesmo ciclo").not.toBeNull();
 
   try {

@@ -5,22 +5,26 @@ Quando qualquer usuário mover um lead para a etapa Qualificado, a tela de quali
 ## O que muda
 
 ### 1. Gatilho pela etapa (detalhe do Lead)
+
 - Ao clicar em uma etapa cujo tipo é "ganho" (ou valor `qualified`) na trilha de etapas, o lead **não** é gravado imediatamente: abre um modal de qualificação com o questionário ativo.
 - A etapa só é gravada (`stage_id`, `pipeline_id`, `status` derivado) depois que a qualificação é concluída com decisão "qualificar".
 - Fechar/cancelar o modal mantém o lead na etapa anterior (reversão), com aviso de que a qualificação é obrigatória.
 - Decidir "Desqualificar" ou "Enviar para nutrição" dentro do modal aplica a etapa correspondente, como já ocorre hoje na prospecção.
 
 ### 2. Fim da criação automática de negócio
+
 - O botão "Qualificar" passa a apenas registrar a qualificação (respostas + score + observações) e concluir a etapa.
 - O modal de criação de negócio deixa de abrir automaticamente na qualificação. Criar negócio continua disponível manualmente pelo botão "Criar negócio" no detalhe do lead.
 
 ### 3. Campos de entidades configuráveis antes/depois das perguntas
+
 - Botão "Configurar campos" acima do questionário (visível para quem pode editar questionários).
 - No configurador o usuário escolhe blocos: entidade (Lead, Empresa, Contato), posição (antes ou depois das perguntas), título do bloco e quais campos aparecem.
 - Os campos são **editáveis** e salvam no registro da respectiva entidade ao concluir a qualificação (ou ao salvar rascunho).
 - A configuração é salva **por questionário**.
 
 ### 4. Obrigatoriedade
+
 - Botão "Qualificar" continua bloqueado enquanto houver pergunta obrigatória sem resposta (comportamento atual) e passa a considerar também campos de entidade marcados como obrigatórios no configurador.
 
 ## Detalhes técnicos

@@ -149,9 +149,7 @@ function AcceptInviteTokenPage() {
               style={{ maxHeight: 36 }}
             />
           )}
-          <CardTitle>
-            {brandName ? `Aceitar convite — ${brandName}` : "Aceitar convite"}
-          </CardTitle>
+          <CardTitle>{brandName ? `Aceitar convite — ${brandName}` : "Aceitar convite"}</CardTitle>
           <CardDescription>
             {loading ? (
               "Validando convite…"

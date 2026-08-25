@@ -28,7 +28,6 @@ export const listNfse = createServerFn({ method: "POST" })
     return { items: rows ?? [] };
   });
 
-
 /**
  * Issue a NFS-e for an invoice via NFE.io. Without real credentials this returns
  * a deterministic sandbox stub so the UI flow can be tested.

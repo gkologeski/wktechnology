@@ -110,9 +110,10 @@ export function useLegalEntityGroups() {
  * do módulo Financeiro. Retorna `{}` para "todas", `{ legalEntityId }` para
  * um CNPJ específico ou `{ legalEntityIds }` para um grupo empresarial.
  */
-export function useLegalEntityFilterInput(
-  selection: string,
-): { legalEntityId?: string; legalEntityIds?: string[] } {
+export function useLegalEntityFilterInput(selection: string): {
+  legalEntityId?: string;
+  legalEntityIds?: string[];
+} {
   const { data: groups = [] } = useLegalEntityGroups();
   return useMemo(() => {
     if (!selection || selection === ALL_LEGAL_ENTITIES) return {};

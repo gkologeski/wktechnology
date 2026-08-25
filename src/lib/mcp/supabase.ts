@@ -45,7 +45,9 @@ function supabasePublishableKey(): string {
   }
   const legacy = configuredEnv(["SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"]);
   if (legacy) return legacy;
-  throw new Error("SUPABASE_PUBLISHABLE_KEY, SUPABASE_PUBLISHABLE_KEYS ou SUPABASE_ANON_KEY é obrigatório");
+  throw new Error(
+    "SUPABASE_PUBLISHABLE_KEY, SUPABASE_PUBLISHABLE_KEYS ou SUPABASE_ANON_KEY é obrigatório",
+  );
 }
 
 /** Encaminha o token verificado para que a RLS rode como o usuário autenticado. */

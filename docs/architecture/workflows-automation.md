@@ -2,16 +2,16 @@
 
 ## 1. Peças
 
-| Tabela | Papel |
-| --- | --- |
-| `workflows` | definição: gatilho, condições, passos |
-| `workflow_events` | fila de eventos a processar |
-| `workflow_runs` | execuções (estado, log, erro) |
-| `workflow_approvals` | passos que exigem aprovação humana |
-| `workflow_subscriptions` | inscrições/gatilhos derivados |
-| `workflow_action_templates` | modelos de ação reutilizáveis |
-| `workflow_time_cursors` | cursores de gatilhos baseados em tempo |
-| `domain_events` | barramento de eventos de domínio (auditoria + relatórios) |
+| Tabela                      | Papel                                                     |
+| --------------------------- | --------------------------------------------------------- |
+| `workflows`                 | definição: gatilho, condições, passos                     |
+| `workflow_events`           | fila de eventos a processar                               |
+| `workflow_runs`             | execuções (estado, log, erro)                             |
+| `workflow_approvals`        | passos que exigem aprovação humana                        |
+| `workflow_subscriptions`    | inscrições/gatilhos derivados                             |
+| `workflow_action_templates` | modelos de ação reutilizáveis                             |
+| `workflow_time_cursors`     | cursores de gatilhos baseados em tempo                    |
+| `domain_events`             | barramento de eventos de domínio (auditoria + relatórios) |
 
 Código em `src/lib/workflows/**` (motor em `*.server.ts`, API em
 `*.functions.ts`) e UI em `src/components/workflows/**`.
@@ -59,7 +59,7 @@ abre; nunca depender de push para correção do fluxo.
 - reordenação **drag-and-drop** de passos, inclusive entre níveis;
 - `extra-fields-editor.tsx` — edita dinamicamente todos os campos do passo
   selecionado;
-- `TokenInput` — variáveis como *pills* em campos de texto;
+- `TokenInput` — variáveis como _pills_ em campos de texto;
   `token-catalog.ts` lista tokens do gatilho e de entidades associadas
   (empresa, contato, responsável);
 - `useReferenceLabels` + `FkPicker` (busca server-side em

@@ -69,7 +69,9 @@ function CustomFieldsManagerBody({ listId }: { listId: string }) {
 
   const [label, setLabel] = useState("");
   const [key, setKey] = useState("");
-  const [type, setType] = useState<"text" | "number" | "date" | "select" | "checkbox" | "url">("text");
+  const [type, setType] = useState<"text" | "number" | "date" | "select" | "checkbox" | "url">(
+    "text",
+  );
   const [optionsInput, setOptionsInput] = useState("");
 
   const invalidate = () => {
@@ -85,9 +87,13 @@ function CustomFieldsManagerBody({ listId }: { listId: string }) {
           key: key.trim(),
           label: label.trim(),
           type,
-          options: type === "select"
-            ? optionsInput.split(",").map((o) => o.trim()).filter(Boolean)
-            : null,
+          options:
+            type === "select"
+              ? optionsInput
+                  .split(",")
+                  .map((o) => o.trim())
+                  .filter(Boolean)
+              : null,
         },
       }),
     onSuccess: () => {
@@ -111,27 +117,46 @@ function CustomFieldsManagerBody({ listId }: { listId: string }) {
 
   // Auto-slug do label para chave
   const suggestKey = (v: string) =>
-    v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
+    v
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "");
 
   return (
     <div className="space-y-4">
       {isLoading ? (
-        <div className="py-6 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
+        <div className="py-6 flex justify-center">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
       ) : (
         <div className="space-y-1.5">
           {fields.length === 0 ? (
             <p className="text-xs text-muted-foreground">Nenhum campo personalizado.</p>
           ) : (
             fields.map((f: any) => (
-              <div key={f.id} className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm">
+              <div
+                key={f.id}
+                className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-sm"
+              >
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{f.label}</div>
-                  <div className="text-[11px] text-muted-foreground">{f.key} • {TYPE_LABELS[f.type] ?? f.type}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {f.key} • {TYPE_LABELS[f.type] ?? f.type}
+                  </div>
                 </div>
                 {f.type === "select" && f.options && (
-                  <Badge variant="outline" className="text-[10px]">{(f.options as string[]).length} opções</Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {(f.options as string[]).length} opções
+                  </Badge>
                 )}
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteM.mutate(f.id)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => deleteM.mutate(f.id)}
+                >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -163,10 +188,14 @@ function CustomFieldsManagerBody({ listId }: { listId: string }) {
           <div>
             <label className="text-xs text-muted-foreground">Tipo</label>
             <Select value={type} onValueChange={(v) => setType(v as any)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                  <SelectItem key={k} value={k}>
+                    {v}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -174,11 +203,19 @@ function CustomFieldsManagerBody({ listId }: { listId: string }) {
           {type === "select" && (
             <div>
               <label className="text-xs text-muted-foreground">Opções (vírgula)</label>
-              <Input value={optionsInput} onChange={(e) => setOptionsInput(e.target.value)} placeholder="Baixo, Médio, Alto" />
+              <Input
+                value={optionsInput}
+                onChange={(e) => setOptionsInput(e.target.value)}
+                placeholder="Baixo, Médio, Alto"
+              />
             </div>
           )}
         </div>
-        <Button size="sm" onClick={() => createM.mutate()} disabled={!label.trim() || !key.trim() || createM.isPending}>
+        <Button
+          size="sm"
+          onClick={() => createM.mutate()}
+          disabled={!label.trim() || !key.trim() || createM.isPending}
+        >
           <Plus className="h-4 w-4 mr-2" /> Adicionar
         </Button>
       </div>

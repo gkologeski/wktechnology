@@ -8,9 +8,23 @@ export default defineTool({
   description:
     "Lista os negócios (pipeline de vendas) do workspace do usuário, com filtro opcional por estágio ou empresa.",
   inputSchema: {
-    stage: z.string().trim().optional().describe("Filtrar por estágio do negócio (ex.: qualification)."),
-    company_id: z.string().uuid().optional().describe("Filtrar pelos negócios de uma empresa específica."),
-    limit: z.number().int().min(1).max(50).default(10).describe("Número máximo de negócios retornados."),
+    stage: z
+      .string()
+      .trim()
+      .optional()
+      .describe("Filtrar por estágio do negócio (ex.: qualification)."),
+    company_id: z
+      .string()
+      .uuid()
+      .optional()
+      .describe("Filtrar pelos negócios de uma empresa específica."),
+    limit: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .default(10)
+      .describe("Número máximo de negócios retornados."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ stage, company_id, limit }, ctx) => {
@@ -19,7 +33,9 @@ export default defineTool({
     const workspaceId = await resolveWorkspaceId(supabase, ctx.getUserId()!);
     let q = supabase
       .from("deals")
-      .select("id,name,value,currency,stage,expected_close_date,company_id,primary_contact_id,updated_at")
+      .select(
+        "id,name,value,currency,stage,expected_close_date,company_id,primary_contact_id,updated_at",
+      )
       .eq("workspace_id", workspaceId)
       .is("deleted_at", null)
       .order("updated_at", { ascending: false })

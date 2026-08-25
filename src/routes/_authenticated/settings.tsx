@@ -138,7 +138,13 @@ const sections: Section[] = [
         need: "admin",
       },
       { to: "/settings/custom-objects", label: "Objetos custom", icon: Boxes, need: "admin" },
-      { to: "/settings/lead-sources", label: "Fontes de lead", icon: Filter, need: "manager", scope: "crm" },
+      {
+        to: "/settings/lead-sources",
+        label: "Fontes de lead",
+        icon: Filter,
+        need: "manager",
+        scope: "crm",
+      },
       { to: "/settings/segments", label: "Segmentos", icon: Filter, need: "manager" },
       { to: "/settings/products", label: "Produtos", icon: Package, need: "manager" },
     ],
@@ -193,7 +199,6 @@ const sections: Section[] = [
     tabs: [
       { to: "/settings/access-policy", label: "Política de acesso", icon: Lock, need: "admin" },
 
-      
       { to: "/settings/scim", label: "SCIM", icon: Users, need: "admin" },
       { to: "/settings/audit-log", label: "Auditoria", icon: ScrollText, need: "admin" },
       { to: "/settings/audit-export", label: "Exportar auditoria", icon: Download, need: "admin" },
@@ -265,7 +270,6 @@ export function getSettingsForScope(scope: Exclude<Scope, "global">): Tab[] {
   return out;
 }
 export type { Tab as SettingsTab };
-
 
 function SettingsLayout() {
   const path = useLocation({ select: (l) => l.pathname });
@@ -424,4 +428,3 @@ function SettingsLayout() {
     </div>
   );
 }
-

@@ -13,9 +13,11 @@
 ## Detalhes técnicos
 
 Servidor (`src/lib/message-drafts.functions.ts`)
+
 - Nova server function `hasMessageDrafts({ channel, scope_keys[] })` com `requireSupabaseAuth`: retorna as chaves que possuem rascunho do usuário atual (`owner_id = auth.uid()`), sem devolver conteúdo. Sem mudança de schema, RLS ou permissões.
 
 Cliente
+
 - Novo hook `src/hooks/use-has-message-draft.ts`: usa `useQuery` (queryKey `["message_draft_exists", channel, scopeKey]`) para saber se há rascunho; `scopeKey` derivada da mesma função `draftScopeKey` já existente.
 - Novo componente `src/components/message-draft-pin.tsx`: wrapper presentacional que posiciona um ponto (tokens semânticos, ex.: `bg-primary`/`ring-background`) sobre o ícone, com `aria-label`/`title` "Rascunho salvo".
 - `src/components/email/send-email-dialog.tsx`:
@@ -28,4 +30,5 @@ Cliente
 Fora do escopo: WhatsApp (o pedido é sobre e-mail), schema, RLS e regras de envio.
 
 ## Validações previstas
+
 typecheck, lint, build e testes unitários existentes.

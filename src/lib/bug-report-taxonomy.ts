@@ -357,7 +357,6 @@ export const BUG_CATEGORIES: BugCategory[] = [
   },
 ];
 
-
 export const BUG_KINDS = [
   { value: "existing_broken", label: "Funcionalidade existente com problema" },
   { value: "new_feature", label: "Nova funcionalidade / sugestão" },

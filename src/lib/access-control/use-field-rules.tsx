@@ -35,10 +35,7 @@ export function useFieldRules(resource: string): UseFieldRulesResult {
     staleTime: 5 * 60_000,
   });
 
-  const bucket = useMemo(
-    () => query.data?.rules?.[resource] ?? {},
-    [query.data?.rules, resource],
-  );
+  const bucket = useMemo(() => query.data?.rules?.[resource] ?? {}, [query.data?.rules, resource]);
   const isPrivileged = query.data?.is_privileged ?? false;
 
   const modeFor = useCallback(

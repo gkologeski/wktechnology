@@ -8,10 +8,23 @@ import { formatCurrency } from "@/lib/crm";
 import { AddAssociation } from "@/components/record/add-association";
 import { ContactPickerPopover } from "@/components/ui/contact-picker";
 import { CreateContactDialog } from "@/components/contacts/create-contact-dialog";
-import { QuickCreateCompanyDialog, QuickCreateDealDialog } from "@/components/record/quick-create-dialogs";
-import { AssocCard, AssocItemActions, AssocLabelAdder, DetailRow, Empty, EntityAvatar, ViewAllFooter, emitTimelineRefresh, sb, useAssociateWithPeriod } from "./primitives";
+import {
+  QuickCreateCompanyDialog,
+  QuickCreateDealDialog,
+} from "@/components/record/quick-create-dialogs";
+import {
+  AssocCard,
+  AssocItemActions,
+  AssocLabelAdder,
+  DetailRow,
+  Empty,
+  EntityAvatar,
+  ViewAllFooter,
+  emitTimelineRefresh,
+  sb,
+  useAssociateWithPeriod,
+} from "./primitives";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
-
 
 /* ───────────── Company card (entity = contact|deal) ───────────── */
 
@@ -157,14 +170,19 @@ export function CompanyCard({
                     <DetailRow
                       label="Domínio"
                       value={c.domain}
-                      href={c.domain ? `https://${c.domain.replace(/^https?:\/\//, "")}` : undefined}
+                      href={
+                        c.domain ? `https://${c.domain.replace(/^https?:\/\//, "")}` : undefined
+                      }
                       copyable
                     />
                     <DetailRow label="Telefone" value={c.phone} copyable />
                   </div>
                   <AssocLabelAdder />
                 </div>
-                <AssocItemActions link={{ to: "/companies/$id", params: { id: c.id } }} onUnlink={unlink} />
+                <AssocItemActions
+                  link={{ to: "/companies/$id", params: { id: c.id } }}
+                  onUnlink={unlink}
+                />
               </div>
             </div>
             <ViewAllFooter href="/companies" label="Exibir todas as Empresas associadas" />
@@ -183,7 +201,13 @@ export function CompanyCard({
 
 /* ───────────── Contacts card (entity = company|deal) ───────────── */
 
-export function ContactsCard({ entity, entityId }: { entity: "company" | "deal"; entityId: string }) {
+export function ContactsCard({
+  entity,
+  entityId,
+}: {
+  entity: "company" | "deal";
+  entityId: string;
+}) {
   type ContactRow = {
     id: string;
     first_name: string | null;
@@ -194,7 +218,8 @@ export function ContactsCard({ entity, entityId }: { entity: "company" | "deal";
     mobile_phone: string | null;
     company: { name: string | null } | null;
   };
-  const SELECT = "id, first_name, last_name, job_title, email, phone, mobile_phone, company:companies(name)";
+  const SELECT =
+    "id, first_name, last_name, job_title, email, phone, mobile_phone, company:companies(name)";
   const [rows, setRows] = useState<ContactRow[]>([]);
   const [primaryId, setPrimaryId] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -210,7 +235,7 @@ export function ContactsCard({ entity, entityId }: { entity: "company" | "deal";
           .select(SELECT)
           .eq("company_id", entityId)
           .limit(50);
-        setRows(((data ?? []) as never) as ContactRow[]);
+        setRows((data ?? []) as never as ContactRow[]);
         setPrimaryId(null);
       } else {
         const [dcRes, dealRes] = await Promise.all([
@@ -219,16 +244,14 @@ export function ContactsCard({ entity, entityId }: { entity: "company" | "deal";
         ]);
         const ids = new Set<string>();
         for (const r of dcRes.data ?? []) if (r.contact_id) ids.add(r.contact_id as string);
-        const primary = (dealRes.data as { primary_contact_id?: string | null } | null)
-          ?.primary_contact_id ?? null;
+        const primary =
+          (dealRes.data as { primary_contact_id?: string | null } | null)?.primary_contact_id ??
+          null;
         if (primary) ids.add(primary);
         setPrimaryId(primary);
         if (ids.size) {
-          const { data } = await supabase
-            .from("contacts")
-            .select(SELECT)
-            .in("id", Array.from(ids));
-          setRows(((data ?? []) as never) as ContactRow[]);
+          const { data } = await supabase.from("contacts").select(SELECT).in("id", Array.from(ids));
+          setRows((data ?? []) as never as ContactRow[]);
         } else {
           setRows([]);
         }
@@ -245,7 +268,6 @@ export function ContactsCard({ entity, entityId }: { entity: "company" | "deal";
         .select("id");
       if (error) return toast.error(error.message);
       if (deniedIfUnaffected(affected)) return;
-
     } else {
       const { error } = await sb
         .from("deal_contacts")
@@ -274,7 +296,6 @@ export function ContactsCard({ entity, entityId }: { entity: "company" | "deal";
         .select("id");
       if (error) return toast.error(error.message);
       if (deniedIfUnaffected(affected)) return;
-
     } else {
       // Remove vínculo many-to-many
       const { error } = await sb
@@ -320,10 +341,10 @@ export function ContactsCard({ entity, entityId }: { entity: "company" | "deal";
           <>
             <ul className="space-y-2">
               {rows.map((c) => {
-                const fullName =
-                  `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
-                const initials =
-                  ((c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")).toUpperCase();
+                const fullName = `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
+                const initials = (
+                  (c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")
+                ).toUpperCase();
                 const companyName = c.company?.name ?? null;
                 const role = c.job_title
                   ? companyName
@@ -335,7 +356,10 @@ export function ContactsCard({ entity, entityId }: { entity: "company" | "deal";
                 const phone = c.phone || c.mobile_phone || null;
                 const isPrimary = entity === "deal" && primaryId === c.id;
                 return (
-                  <li key={c.id} className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
+                  <li
+                    key={c.id}
+                    className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors"
+                  >
                     <div className="flex items-start gap-3">
                       <EntityAvatar initials={initials} tone="primary" />
                       <div className="min-w-0 flex-1">
@@ -426,7 +450,9 @@ export function SingleContactCard({
     }
     const { data } = await supabase
       .from("contacts")
-      .select("id, first_name, last_name, email, phone, mobile_phone, job_title, company:companies(name)")
+      .select(
+        "id, first_name, last_name, email, phone, mobile_phone, job_title, company:companies(name)",
+      )
       .eq("id", id)
       .maybeSingle();
     setC(data as never);
@@ -480,62 +506,67 @@ export function SingleContactCard({
       >
         {!c ? (
           <Empty label="Nenhum contato vinculado." />
-        ) : (() => {
-          const fullName =
-            `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
-          const initials =
-            ((c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")).toUpperCase();
-          const companyName = c.company?.name ?? null;
-          const role = c.job_title
-            ? companyName
-              ? `${c.job_title} na ${companyName}`
-              : c.job_title
-            : companyName;
-          const phone = c.phone || c.mobile_phone || null;
-          return (
-            <>
-              <div className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
-                <div className="flex items-start gap-3">
-                  <EntityAvatar initials={initials} tone="primary" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Link
-                        to="/contacts/$id"
-                        params={{ id: c.id }}
-                        className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
-                      >
-                        {fullName}
-                      </Link>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-foreground font-medium">
-                        Principal
-                      </span>
+        ) : (
+          (() => {
+            const fullName = `${c.first_name ?? ""} ${c.last_name ?? ""}`.trim() || "Sem nome";
+            const initials = ((c.first_name?.[0] ?? "?") + (c.last_name?.[0] ?? "")).toUpperCase();
+            const companyName = c.company?.name ?? null;
+            const role = c.job_title
+              ? companyName
+                ? `${c.job_title} na ${companyName}`
+                : c.job_title
+              : companyName;
+            const phone = c.phone || c.mobile_phone || null;
+            return (
+              <>
+                <div className="rounded-xl border border-border/60 p-3 group hover:border-border transition-colors">
+                  <div className="flex items-start gap-3">
+                    <EntityAvatar initials={initials} tone="primary" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Link
+                          to="/contacts/$id"
+                          params={{ id: c.id }}
+                          className="text-sm font-semibold text-primary hover:underline break-words min-w-0"
+                        >
+                          {fullName}
+                        </Link>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full border border-border bg-muted text-foreground font-medium">
+                          Principal
+                        </span>
+                      </div>
+                      {role && (
+                        <p className="text-[11px] text-muted-foreground mt-0.5 break-words">
+                          {role}
+                        </p>
+                      )}
+                      <div className="mt-2 space-y-1">
+                        <DetailRow
+                          label="E-mail"
+                          value={c.email}
+                          href={c.email ? `mailto:${c.email}` : undefined}
+                          copyable
+                        />
+                        <DetailRow
+                          label="Telefone"
+                          value={phone}
+                          href={phone ? `tel:${phone}` : undefined}
+                          copyable
+                        />
+                      </div>
+                      <AssocLabelAdder />
                     </div>
-                    {role && (
-                      <p className="text-[11px] text-muted-foreground mt-0.5 break-words">{role}</p>
-                    )}
-                    <div className="mt-2 space-y-1">
-                      <DetailRow
-                        label="E-mail"
-                        value={c.email}
-                        href={c.email ? `mailto:${c.email}` : undefined}
-                        copyable
-                      />
-                      <DetailRow
-                        label="Telefone"
-                        value={phone}
-                        href={phone ? `tel:${phone}` : undefined}
-                        copyable
-                      />
-                    </div>
-                    <AssocLabelAdder />
+                    <AssocItemActions
+                      link={{ to: "/contacts/$id", params: { id: c.id } }}
+                      onUnlink={unlink}
+                    />
                   </div>
-                  <AssocItemActions link={{ to: "/contacts/$id", params: { id: c.id } }} onUnlink={unlink} />
                 </div>
-              </div>
-              <ViewAllFooter href="/contacts" label="Exibir todos os Contatos associados" />
-            </>
-          );
-        })()}
+                <ViewAllFooter href="/contacts" label="Exibir todos os Contatos associados" />
+              </>
+            );
+          })()
+        )}
       </AssocCard>
       <CreateContactDialog
         open={createOpen}

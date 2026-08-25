@@ -40,8 +40,7 @@ export function FinanceAlertsPanel() {
   const entries = data?.overdueEntries ?? [];
   const projects = data?.projectsAtRisk ?? [];
   const milestones = data?.overdueMilestones ?? [];
-  const total =
-    contracts.length + entries.length + projects.length + milestones.length;
+  const total = contracts.length + entries.length + projects.length + milestones.length;
 
   return (
     <Card>
@@ -199,9 +198,7 @@ function Section({
   children: React.ReactNode;
 }) {
   const cls =
-    tone === "rose"
-      ? "text-rose-600 dark:text-rose-400"
-      : "text-amber-600 dark:text-amber-400";
+    tone === "rose" ? "text-rose-600 dark:text-rose-400" : "text-amber-600 dark:text-amber-400";
   return (
     <div>
       <div className="flex items-center gap-2 mb-2 text-sm font-medium">

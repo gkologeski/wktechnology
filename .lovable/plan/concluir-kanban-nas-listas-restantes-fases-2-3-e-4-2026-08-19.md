@@ -4,29 +4,29 @@ Continuação do plano de visualização Kanban, reutilizando `KanbanBoard` e `V
 
 ## Fase 2 (restante)
 
-| Tela | Rota | Campo de etapa | Drag |
-| --- | --- | --- | --- |
-| Pessoas | `/people` | `people.status` (ativo, banco, licença, offboarding, desligado) | sim |
-| Ofertas do ATS | `/offers` | `ats_offers.status` | sim |
+| Tela           | Rota      | Campo de etapa                                                  | Drag |
+| -------------- | --------- | --------------------------------------------------------------- | ---- |
+| Pessoas        | `/people` | `people.status` (ativo, banco, licença, offboarding, desligado) | sim  |
+| Ofertas do ATS | `/offers` | `ats_offers.status`                                             | sim  |
 
 ## Fase 3
 
-| Tela | Rota | Campo de etapa | Drag |
-| --- | --- | --- | --- |
-| Serviços do catálogo | `/catalog/services` | `services.status` | sim |
-| Chamados internos | `/admin/bug-reports` e `/my-bug-reports` | `bug_reports.status` | sim (apenas em `/admin/bug-reports`, com permissão) |
+| Tela                 | Rota                                     | Campo de etapa       | Drag                                                |
+| -------------------- | ---------------------------------------- | -------------------- | --------------------------------------------------- |
+| Serviços do catálogo | `/catalog/services`                      | `services.status`    | sim                                                 |
+| Chamados internos    | `/admin/bug-reports` e `/my-bug-reports` | `bug_reports.status` | sim (apenas em `/admin/bug-reports`, com permissão) |
 
 ## Fase 4 — boards somente leitura
 
 Status derivado de regra de negócio ou de integração externa, então o kanban entra como agrupamento + contagem, com `readOnly`:
 
-| Tela | Rota | Campo | Motivo |
-| --- | --- | --- | --- |
-| Contratos | `/contracts` | `contracts.status` | ciclo de vida controlado por ações do contrato |
-| Contas a pagar | `/finance/payable` | `financial_entries.status` | status recalculado a partir dos pagamentos |
-| Contas a receber | `/finance/receivable` | `financial_entries.status` | idem |
-| NFSe | `/finance/nfse` | `nfse_invoices.status` | status do provedor fiscal |
-| Faturas de cliente | `/invoices` | `customer_invoices.status` | status do provedor de cobrança |
+| Tela               | Rota                  | Campo                      | Motivo                                         |
+| ------------------ | --------------------- | -------------------------- | ---------------------------------------------- |
+| Contratos          | `/contracts`          | `contracts.status`         | ciclo de vida controlado por ações do contrato |
+| Contas a pagar     | `/finance/payable`    | `financial_entries.status` | status recalculado a partir dos pagamentos     |
+| Contas a receber   | `/finance/receivable` | `financial_entries.status` | idem                                           |
+| NFSe               | `/finance/nfse`       | `nfse_invoices.status`     | status do provedor fiscal                      |
+| Faturas de cliente | `/invoices`           | `customer_invoices.status` | status do provedor de cobrança                 |
 
 ## Padrão aplicado em cada tela
 

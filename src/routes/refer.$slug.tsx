@@ -139,8 +139,8 @@ function ReferPublicPage() {
               <CheckCircle2 className="h-8 w-8 text-emerald-500" />
               <h2 className="text-lg font-semibold">Indicação recebida!</h2>
               <p className="text-sm text-muted-foreground">
-                Obrigado por indicar. O time de recrutamento vai analisar e
-                entrar em contato com você sobre os próximos passos.
+                Obrigado por indicar. O time de recrutamento vai analisar e entrar em contato com
+                você sobre os próximos passos.
               </p>
             </CardContent>
           </Card>
@@ -159,18 +159,14 @@ function ReferPublicPage() {
                   aria-hidden="true"
                 />
                 <div className="sm:col-span-2">
-                  <h2 className="mb-3 text-sm font-medium text-foreground">
-                    Seus dados
-                  </h2>
+                  <h2 className="mb-3 text-sm font-medium text-foreground">Seus dados</h2>
                 </div>
                 <div className="space-y-1.5">
                   <Label>Seu nome *</Label>
                   <Input
                     required
                     value={form.referrer_name}
-                    onChange={(e) =>
-                      setForm({ ...form, referrer_name: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, referrer_name: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -179,9 +175,7 @@ function ReferPublicPage() {
                     type="email"
                     required
                     value={form.referrer_email}
-                    onChange={(e) =>
-                      setForm({ ...form, referrer_email: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, referrer_email: e.target.value })}
                   />
                 </div>
 
@@ -195,9 +189,7 @@ function ReferPublicPage() {
                   <Input
                     required
                     value={form.candidate_name}
-                    onChange={(e) =>
-                      setForm({ ...form, candidate_name: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, candidate_name: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -205,18 +197,14 @@ function ReferPublicPage() {
                   <Input
                     type="email"
                     value={form.candidate_email}
-                    onChange={(e) =>
-                      setForm({ ...form, candidate_email: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, candidate_email: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label>Telefone</Label>
                   <Input
                     value={form.candidate_phone}
-                    onChange={(e) =>
-                      setForm({ ...form, candidate_phone: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, candidate_phone: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
@@ -224,18 +212,14 @@ function ReferPublicPage() {
                   <Input
                     placeholder="https://linkedin.com/in/..."
                     value={form.candidate_linkedin}
-                    onChange={(e) =>
-                      setForm({ ...form, candidate_linkedin: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, candidate_linkedin: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label>Como vocês se conhecem?</Label>
                   <Input
                     value={form.relationship}
-                    onChange={(e) =>
-                      setForm({ ...form, relationship: e.target.value })
-                    }
+                    onChange={(e) => setForm({ ...form, relationship: e.target.value })}
                   />
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">

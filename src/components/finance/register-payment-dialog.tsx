@@ -61,7 +61,9 @@ export function RegisterPaymentDialog({
     setPaidAt(today());
     setMethod("pix");
     setBankAccountId("none");
-    listBanks().then(setBanks).catch(() => setBanks([]));
+    listBanks()
+      .then(setBanks)
+      .catch(() => setBanks([]));
   }, [open, entry, outstanding, listBanks]);
 
   async function submit() {
@@ -86,7 +88,9 @@ export function RegisterPaymentDialog({
           bank_account_id: bankAccountId === "none" ? null : bankAccountId,
         },
       });
-      toast.success(entry.direction === "receivable" ? "Recebimento registrado" : "Pagamento registrado");
+      toast.success(
+        entry.direction === "receivable" ? "Recebimento registrado" : "Pagamento registrado",
+      );
       onDone?.();
       onOpenChange(false);
     } catch (e) {

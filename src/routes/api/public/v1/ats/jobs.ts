@@ -2,16 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
-import {
-  authenticateApiKey,
-  requireScope,
-  unauthorized,
-} from "@/lib/api-keys/auth.server";
-import {
-  badRequest,
-  flagDisabled,
-  isAtsPublicApiEnabled,
-} from "@/lib/ats/public-api.server";
+import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
+import { badRequest, flagDisabled, isAtsPublicApiEnabled } from "@/lib/ats/public-api.server";
 import { recordAtsEvent } from "@/lib/ats/audit.server";
 
 const SELECT =
@@ -55,8 +47,7 @@ export const Route = createFileRoute("/api/public/v1/ats/jobs")({
           .limit(limit);
         if (status) q = q.eq("status", status);
         const { data, error } = await q;
-        if (error)
-          return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
         return Response.json({ data: data ?? [] });
       },
       POST: async ({ request }) => {
@@ -72,8 +63,7 @@ export const Route = createFileRoute("/api/public/v1/ats/jobs")({
         const insertPayload = {
           owner_id: auth.ownerId,
           workspace_id: workspaceId,
-          opened_at:
-            parsed.data.status === "open" ? new Date().toISOString() : null,
+          opened_at: parsed.data.status === "open" ? new Date().toISOString() : null,
           ...parsed.data,
         };
         const { data, error } = await supabaseAdmin
@@ -81,8 +71,7 @@ export const Route = createFileRoute("/api/public/v1/ats/jobs")({
           .insert(insertPayload)
           .select(SELECT)
           .single();
-        if (error)
-          return new Response(JSON.stringify({ error: error.message }), { status: 400 });
+        if (error) return new Response(JSON.stringify({ error: error.message }), { status: 400 });
         if (data?.status === "open") {
           await recordAtsEvent(supabaseAdmin, {
             ownerId: auth.ownerId,

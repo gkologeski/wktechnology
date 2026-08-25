@@ -16,8 +16,10 @@ async function callAi(messages: Array<{ role: string; content: string }>) {
     headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
     body: JSON.stringify({ model: MODEL, messages }),
   });
-  if (r.status === 429) throw new Error("AI Gateway: limite de requisições. Tente novamente em instantes.");
-  if (r.status === 402) throw new Error("AI Gateway: créditos esgotados. Adicione créditos no Workspace.");
+  if (r.status === 429)
+    throw new Error("AI Gateway: limite de requisições. Tente novamente em instantes.");
+  if (r.status === 402)
+    throw new Error("AI Gateway: créditos esgotados. Adicione créditos no Workspace.");
   if (!r.ok) throw new Error(`AI Gateway ${r.status}: ${await r.text().catch(() => "")}`);
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "";
@@ -42,11 +44,7 @@ async function buildWorkspaceContext(supabase: any) {
       .select("id, source, created_at")
       .gte("created_at", since)
       .limit(2000),
-    supabase
-      .from("ats_offers")
-      .select("status, created_at")
-      .gte("created_at", since)
-      .limit(500),
+    supabase.from("ats_offers").select("status, created_at").gte("created_at", since).limit(500),
     supabase
       .from("ats_interviews")
       .select("status, scheduled_at")

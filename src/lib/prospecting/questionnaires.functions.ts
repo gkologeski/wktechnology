@@ -29,7 +29,9 @@ export const listQuestionnaires = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("prospecting_questionnaires")
-      .select("id, name, description, framework, pipeline_id, enabled, pass_threshold, is_template, updated_at")
+      .select(
+        "id, name, description, framework, pipeline_id, enabled, pass_threshold, is_template, updated_at",
+      )
       .order("is_template", { ascending: false })
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -73,7 +75,12 @@ export const upsertQuestionnaire = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
-    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(data.id ? QUESTIONNAIRES_UPDATE : QUESTIONNAIRES_CREATE));
+    await assertAnyPermission(
+      context.supabase,
+      context.userId,
+      ws,
+      asKeys(data.id ? QUESTIONNAIRES_UPDATE : QUESTIONNAIRES_CREATE),
+    );
     const payload = {
       owner_id: context.userId,
       name: data.name,
@@ -126,28 +133,30 @@ export const saveQuestionnaireFieldLayout = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string().uuid(),
-        field_layout: z.array(
-          z.object({
-            id: z.string().min(1).max(80),
-            entity: z.enum(["leads", "companies", "contacts"]),
-            position: z.enum(["before", "after"]),
-            title: z.string().min(1).max(120),
-            fields: z
-              .array(
-                z.object({
-                  key: z.string().min(1).max(120),
-                  label: z.string().min(1).max(200),
-                  type: z.enum(["text", "number", "date", "select", "boolean"]),
-                  required: z.boolean().optional(),
-                  options: z
-                    .array(z.object({ value: z.string(), label: z.string() }))
-                    .max(200)
-                    .optional(),
-                }),
-              )
-              .max(60),
-          }),
-        ).max(12),
+        field_layout: z
+          .array(
+            z.object({
+              id: z.string().min(1).max(80),
+              entity: z.enum(["leads", "companies", "contacts"]),
+              position: z.enum(["before", "after"]),
+              title: z.string().min(1).max(120),
+              fields: z
+                .array(
+                  z.object({
+                    key: z.string().min(1).max(120),
+                    label: z.string().min(1).max(200),
+                    type: z.enum(["text", "number", "date", "select", "boolean"]),
+                    required: z.boolean().optional(),
+                    options: z
+                      .array(z.object({ value: z.string(), label: z.string() }))
+                      .max(200)
+                      .optional(),
+                  }),
+                )
+                .max(60),
+            }),
+          )
+          .max(12),
       })
       .parse(i),
   )
@@ -161,7 +170,6 @@ export const saveQuestionnaireFieldLayout = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-
 
 export const upsertQuestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -273,7 +281,9 @@ export const duplicateQuestionnaire = createServerFn({ method: "POST" })
 
     const { data: qs, error: qsErr } = await context.supabase
       .from("prospecting_questions")
-      .select("position, label, help_text, type, options, weight, required, text_points, text_min_chars")
+      .select(
+        "position, label, help_text, type, options, weight, required, text_points, text_min_chars",
+      )
       .eq("questionnaire_id", data.id)
       .order("position", { ascending: true });
     if (qsErr) throw new Error(qsErr.message);
@@ -431,7 +441,8 @@ const FRAMEWORK_TEMPLATES: Record<z.infer<typeof FRAMEWORK>, Template> = {
   },
   meddic: {
     name: "MEDDIC",
-    description: "Metrics, Economic buyer, Decision criteria, Decision process, Identify pain, Champion.",
+    description:
+      "Metrics, Economic buyer, Decision criteria, Decision process, Identify pain, Champion.",
     pass_threshold: 70,
     questions: [
       { label: "Metrics: quais métricas o cliente quer melhorar?", type: "text", weight: 1 },
@@ -442,7 +453,11 @@ const FRAMEWORK_TEMPLATES: Record<z.infer<typeof FRAMEWORK>, Template> = {
         weight: 2,
         required: true,
       },
-      { label: "Decision criteria: quais critérios técnicos e comerciais?", type: "text", weight: 1 },
+      {
+        label: "Decision criteria: quais critérios técnicos e comerciais?",
+        type: "text",
+        weight: 1,
+      },
       { label: "Decision process: como é o processo de decisão?", type: "text", weight: 1 },
       { label: "Identify pain: qual a dor real quantificada?", type: "text", weight: 2 },
       {
@@ -459,7 +474,12 @@ const FRAMEWORK_TEMPLATES: Record<z.infer<typeof FRAMEWORK>, Template> = {
     description: "Challenges, Authority, Money, Prioritization — foco em dor primeiro.",
     pass_threshold: 60,
     questions: [
-      { label: "Challenges: quais desafios o cliente enfrenta hoje?", type: "text", weight: 2, required: true },
+      {
+        label: "Challenges: quais desafios o cliente enfrenta hoje?",
+        type: "text",
+        weight: 2,
+        required: true,
+      },
       {
         label: "Authority: nível de autoridade do contato",
         type: "single",

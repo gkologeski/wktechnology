@@ -158,9 +158,7 @@ function pickAllocationRate(
 
 function overlapDays(start: string, end: string, aStart: string, aEnd: string | null): number {
   const s = new Date(Math.max(new Date(start).getTime(), new Date(aStart).getTime()));
-  const e = new Date(
-    Math.min(new Date(end).getTime(), new Date(aEnd ?? "2999-12-31").getTime()),
-  );
+  const e = new Date(Math.min(new Date(end).getTime(), new Date(aEnd ?? "2999-12-31").getTime()));
   if (e < s) return 0;
   return Math.floor((e.getTime() - s.getTime()) / 86_400_000) + 1;
 }
@@ -390,8 +388,7 @@ export const listPersonAllocationsInPeriod = createServerFn({ method: "POST" })
         revenue: Number(stats.revenue.toFixed(2)),
         cost: Number(stats.cost.toFixed(2)),
         margin: Number((stats.revenue - stats.cost).toFixed(2)),
-        utilization:
-          capacityHours > 0 ? Number((stats.billable / capacityHours).toFixed(4)) : 0,
+        utilization: capacityHours > 0 ? Number((stats.billable / capacityHours).toFixed(4)) : 0,
       };
     });
   });
@@ -464,8 +461,7 @@ export const upsertTimeEntry = createServerFn({ method: "POST" })
     if (pErr) throw new Error(pErr.message);
     if (!person) throw new Error("Pessoa não encontrada");
     const workspace_id = (person as { owner_id: string }).owner_id;
-    const profile_id =
-      (person as { profile_id: string | null }).profile_id ?? userId;
+    const profile_id = (person as { profile_id: string | null }).profile_id ?? userId;
 
     const payload = {
       workspace_id,
@@ -523,7 +519,7 @@ export const getAllocationRealized = createServerFn({ method: "POST" })
     };
     if (data.start) q = q.gte("entry_date", data.start);
     if (data.end) q = q.lte("entry_date", data.end);
-    const { data: rows, error } = (await (q as unknown as Promise<{
+    const { data: rows, error } = await (q as unknown as Promise<{
       data: Array<{
         hours: number | null;
         billable: boolean;
@@ -531,7 +527,7 @@ export const getAllocationRealized = createServerFn({ method: "POST" })
         approved_at: string | null;
       }> | null;
       error: { message: string } | null;
-    }>));
+    }>);
     if (error) throw new Error(error.message);
 
     let hours = 0;

@@ -78,14 +78,18 @@ export const Route = createFileRoute("/api/public/hooks/unipile-invites-sync")({
               }
             } catch (err) {
               errors.push(
-                `owner ${ownerId}: ${err instanceof Error ? err.message : String(err)}`.slice(0, 200),
+                `owner ${ownerId}: ${err instanceof Error ? err.message : String(err)}`.slice(
+                  0,
+                  200,
+                ),
               );
             }
           }
 
           return { checked, accepted, errors: errors.length } as unknown as Record<string, unknown>;
         });
-        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        if (run.status === "error")
+          return Response.json({ ok: false, error: run.error }, { status: 500 });
         return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
       GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),

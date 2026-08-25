@@ -72,8 +72,10 @@ Nunca invente dados. Se um campo não estiver no texto, use null ou [].`;
     });
     if (!res.ok) {
       const txt = await res.text();
-      if (res.status === 402) throw new Error("Créditos da IA esgotados. Recarregue para continuar.");
-      if (res.status === 429) throw new Error("Limite da IA atingido. Tente novamente em instantes.");
+      if (res.status === 402)
+        throw new Error("Créditos da IA esgotados. Recarregue para continuar.");
+      if (res.status === 429)
+        throw new Error("Limite da IA atingido. Tente novamente em instantes.");
       throw new Error(`Falha na IA: ${txt.slice(0, 200)}`);
     }
     const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };

@@ -47,15 +47,19 @@ export function PipelineSelectNotice({ error, onRetry, showManageLink = true }: 
       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
       <div className="min-w-0 flex-1 space-y-1">
         <p>
-          Nenhum pipeline visível para você. Suas permissões atuais não permitem
-          ver os pipelines deste workspace.
+          Nenhum pipeline visível para você. Suas permissões atuais não permitem ver os pipelines
+          deste workspace.
         </p>
         <p className="text-text-tertiary">
           Peça a um administrador acesso de visualização de pipelines
           {showManageLink ? (
             <>
-              {" "}ou defina um pipeline em{" "}
-              <Link to="/pipelines" className="font-medium text-primary underline-offset-2 hover:underline">
+              {" "}
+              ou defina um pipeline em{" "}
+              <Link
+                to="/pipelines"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+              >
                 Configurações de pipelines
               </Link>
               .

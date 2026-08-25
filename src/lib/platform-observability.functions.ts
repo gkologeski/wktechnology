@@ -51,7 +51,10 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
       .limit(500);
 
     const norm = (n: string) => n.replace(/-tick$/, "");
-    const appByJob = new Map<string, { started_at: string; status: string; error: string | null }>();
+    const appByJob = new Map<
+      string,
+      { started_at: string; status: string; error: string | null }
+    >();
     for (const r of (appRuns ?? []) as Array<{
       job_name: string;
       started_at: string;
@@ -81,7 +84,6 @@ export const getPlatformStatus = createServerFn({ method: "GET" })
         ),
       };
     });
-
 
     // Integrações: contagens simples
     const [emailAcc, waba, twilio, twoFa] = await Promise.all([

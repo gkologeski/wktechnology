@@ -6,12 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2, X, ListChecks, Link2, Tag as TagIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +63,11 @@ export function TaskDetailsSheet({
           {task.list_id && (
             <>
               <Separator />
-              <CustomFieldsSection taskId={task.id} listId={task.list_id} initialValues={task.custom_field_values ?? {}} />
+              <CustomFieldsSection
+                taskId={task.id}
+                listId={task.list_id}
+                initialValues={task.custom_field_values ?? {}}
+              />
             </>
           )}
           <Separator />
@@ -82,7 +81,15 @@ export function TaskDetailsSheet({
 }
 
 // ============= CUSTOM FIELDS =============
-function CustomFieldsSection({ taskId, listId, initialValues }: { taskId: string; listId: string; initialValues: Record<string, any> }) {
+function CustomFieldsSection({
+  taskId,
+  listId,
+  initialValues,
+}: {
+  taskId: string;
+  listId: string;
+  initialValues: Record<string, any>;
+}) {
   const listFn = useServerFn(listCustomFields);
   const updateFn = useServerFn(updateTaskCustomFieldValues);
   const qc = useQueryClient();
@@ -108,33 +115,71 @@ function CustomFieldsSection({ taskId, listId, initialValues }: { taskId: string
   if (fields.length === 0) return null;
   return (
     <section className="space-y-2">
-      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Campos personalizados</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        Campos personalizados
+      </div>
       <div className="space-y-2">
         {fields.map((f: any) => (
           <div key={f.id} className="grid grid-cols-3 items-center gap-2">
-            <label className="text-xs text-muted-foreground truncate col-span-1" title={f.label}>{f.label}</label>
+            <label className="text-xs text-muted-foreground truncate col-span-1" title={f.label}>
+              {f.label}
+            </label>
             <div className="col-span-2">
               {f.type === "text" && (
-                <Input value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} onBlur={() => m.mutate(values)} />
+                <Input
+                  value={values[f.key] ?? ""}
+                  onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+                  onBlur={() => m.mutate(values)}
+                />
               )}
               {f.type === "number" && (
-                <Input type="number" value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value === "" ? null : Number(e.target.value) })} onBlur={() => m.mutate(values)} />
+                <Input
+                  type="number"
+                  value={values[f.key] ?? ""}
+                  onChange={(e) =>
+                    setValues({
+                      ...values,
+                      [f.key]: e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                  onBlur={() => m.mutate(values)}
+                />
               )}
               {f.type === "date" && (
-                <Input type="date" value={values[f.key] ?? ""} onChange={(e) => setAndSave(f.key, e.target.value || null)} />
+                <Input
+                  type="date"
+                  value={values[f.key] ?? ""}
+                  onChange={(e) => setAndSave(f.key, e.target.value || null)}
+                />
               )}
               {f.type === "url" && (
-                <Input type="url" value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} onBlur={() => m.mutate(values)} placeholder="https://..." />
+                <Input
+                  type="url"
+                  value={values[f.key] ?? ""}
+                  onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}
+                  onBlur={() => m.mutate(values)}
+                  placeholder="https://..."
+                />
               )}
               {f.type === "checkbox" && (
-                <Checkbox checked={!!values[f.key]} onCheckedChange={(v) => setAndSave(f.key, !!v)} />
+                <Checkbox
+                  checked={!!values[f.key]}
+                  onCheckedChange={(v) => setAndSave(f.key, !!v)}
+                />
               )}
               {f.type === "select" && (
-                <Select value={values[f.key] ?? ""} onValueChange={(v) => setAndSave(f.key, v || null)}>
-                  <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+                <Select
+                  value={values[f.key] ?? ""}
+                  onValueChange={(v) => setAndSave(f.key, v || null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecionar…" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {(f.options as string[] | null ?? []).map((o) => (
-                      <SelectItem key={o} value={o}>{o}</SelectItem>
+                    {((f.options as string[] | null) ?? []).map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -201,9 +246,7 @@ function TagsSection({ task }: { task: TaskLite }) {
             </button>
           </Badge>
         ))}
-        {current.length === 0 && (
-          <span className="text-xs text-muted-foreground">Sem tags</span>
-        )}
+        {current.length === 0 && <span className="text-xs text-muted-foreground">Sem tags</span>}
       </div>
       <div className="flex gap-2">
         <Input
@@ -267,8 +310,7 @@ function ChecklistSection({ taskId }: { taskId: string }) {
     },
   });
   const toggleMut = useMutation({
-    mutationFn: (v: { id: string; isDone: boolean }) =>
-      toggleFn({ data: v }),
+    mutationFn: (v: { id: string; isDone: boolean }) => toggleFn({ data: v }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["task-checklist", taskId] }),
   });
   const removeMut = useMutation({
@@ -296,7 +338,9 @@ function ChecklistSection({ taskId }: { taskId: string }) {
               checked={i.is_done}
               onCheckedChange={(v) => toggleMut.mutate({ id: i.id, isDone: Boolean(v) })}
             />
-            <span className={`text-sm flex-1 ${i.is_done ? "line-through text-muted-foreground" : ""}`}>
+            <span
+              className={`text-sm flex-1 ${i.is_done ? "line-through text-muted-foreground" : ""}`}
+            >
               {i.title}
             </span>
             <button
@@ -324,8 +368,16 @@ function ChecklistSection({ taskId }: { taskId: string }) {
             }
           }}
         />
-        <Button size="sm" disabled={!title.trim() || addMut.isPending} onClick={() => addMut.mutate()}>
-          {addMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+        <Button
+          size="sm"
+          disabled={!title.trim() || addMut.isPending}
+          onClick={() => addMut.mutate()}
+        >
+          {addMut.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Plus className="h-3 w-3" />
+          )}
         </Button>
       </div>
     </section>
@@ -347,8 +399,7 @@ function DependenciesSection({ task }: { task: TaskLite }) {
   });
   const tasksQuery = useQuery({
     queryKey: ["project-tasks-for-dep", task.project_id],
-    queryFn: () =>
-      tasksFn({ data: task.project_id ? { projectId: task.project_id } : {} }),
+    queryFn: () => tasksFn({ data: task.project_id ? { projectId: task.project_id } : {} }),
   });
 
   const deps = (depsQuery.data ?? []) as Array<{
@@ -361,8 +412,7 @@ function DependenciesSection({ task }: { task: TaskLite }) {
   );
 
   const addMut = useMutation({
-    mutationFn: (dependsOnTaskId: string) =>
-      addFn({ data: { taskId: task.id, dependsOnTaskId } }),
+    mutationFn: (dependsOnTaskId: string) => addFn({ data: { taskId: task.id, dependsOnTaskId } }),
     onSuccess: () => {
       setPick("");
       qc.invalidateQueries({ queryKey: ["task-deps", task.id] });
@@ -394,9 +444,7 @@ function DependenciesSection({ task }: { task: TaskLite }) {
             </button>
           </div>
         ))}
-        {deps.length === 0 && (
-          <p className="text-xs text-muted-foreground">Sem dependências.</p>
-        )}
+        {deps.length === 0 && <p className="text-xs text-muted-foreground">Sem dependências.</p>}
       </div>
       <div className="flex gap-2 mt-3">
         <Select value={pick} onValueChange={setPick}>
@@ -412,7 +460,11 @@ function DependenciesSection({ task }: { task: TaskLite }) {
           </SelectContent>
         </Select>
         <Button size="sm" disabled={!pick || addMut.isPending} onClick={() => addMut.mutate(pick)}>
-          {addMut.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+          {addMut.isPending ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Plus className="h-3 w-3" />
+          )}
         </Button>
       </div>
     </section>

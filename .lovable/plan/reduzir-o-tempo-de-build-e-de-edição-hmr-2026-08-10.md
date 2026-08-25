@@ -17,31 +17,36 @@ Ainda **não confirmado** (primeiro passo do plano): quanto do tempo é transfor
 ## Plano
 
 ### Fase 0 — Medir antes de mexer (obrigatória)
+
 - Rodar o build com timings por etapa e com `DEBUG` do Vite, registrando: tempo de transform, tempo de bundling client, bundling SSR/Worker, prerender e número de chunks emitidos.
 - Guardar a linha de base num arquivo curto de referência para comparar depois de cada fase.
 - Verificar se a etapa de prerender está ativa e quantas páginas ela gera (rotas públicas como `careers`, `kb`, `lp`, `sitemap` podem estar puxando dados no build).
 
 ### Fase 1 — Ganhos rápidos e seguros (sem mudar comportamento)
+
 1. Remover os 8 `export` de componentes de página nas rotas (mantendo o componente no arquivo, sem export) — devolve essas telas ao code-splitting e reduz o chunk principal.
 2. Tornar `recharts` lazy (`React.lazy` + `Suspense`) nos 6 pontos de uso, e confirmar que `@twilio/voice-sdk` só entra via import dinâmico.
 3. Ajustes de build no `vite.config.ts`: desativar sourcemaps de produção se estiverem ligados, `modulePreload.polyfill: false`, e aumentar `rollupOptions.maxParallelFileOps` para usar melhor a CPU.
 4. Se o prerender estiver percorrendo rotas dinâmicas/de dados, limitar a lista de páginas prerenderizadas às realmente estáticas.
 
 ### Fase 2 — Reduzir o grafo de módulos (maior impacto no build)
+
 1. Quebrar os monolitos que dominam o transform em módulos menores e focados: `workflow-builder.tsx`, `activity-timeline.tsx`, `associations-panel.tsx`, `hubspot.functions.ts`/`hubspot-steps.server.ts`. Puramente estrutural, sem mudança funcional.
 2. Nas rotas, trocar imports estáticos de `*.functions` por import dentro do handler/`useServerFn` onde a função só é usada em ação do usuário — corta dezenas de arestas do grafo por rota.
 3. Consolidar server functions muito fragmentadas por domínio (menos arquivos = menos passagens do compilador), sem mudar assinaturas nem rotas.
 
 ### Fase 3 — Velocidade de edição (HMR / “codificação lenta”)
+
 1. Revisar `optimizeDeps.include` para pré-bundlar os pacotes de UI usados em quase toda tela (`lucide-react`, `date-fns`, `cmdk`, Radix, `react-hook-form`), mantendo intactas as exclusões TanStack que existem para evitar React duplicado.
 2. Reduzir o efeito do `routeTree.gen.ts`: evitar imports de rota que forcem `program reload` do ambiente SSR a cada salvamento.
 3. Padronizar o typecheck rápido (`tsgo`) em vez de `tsc` completo durante o desenvolvimento; `skipLibCheck` já está ativo.
 4. Corrigir o erro recorrente nos logs `Invalid server function ID: ... project-timer.functions.ts` — server fn órfã que faz o dev server recompilar/errar em loop.
 
 ### Fase 4 — Validar e comparar
+
 - Rodar `build` e `build:dev`, comparar com a linha de base da Fase 0 e reportar ganho real por fase.
 - Rodar `vitest run` e `lint` para garantir zero regressão.
-- Smoke test manual das telas tocadas (settings.*, prospecting, workflows, timeline, associações) em light/dark e com estados de loading/empty/error.
+- Smoke test manual das telas tocadas (settings.\*, prospecting, workflows, timeline, associações) em light/dark e com estados de loading/empty/error.
 
 ## Expectativa realista
 

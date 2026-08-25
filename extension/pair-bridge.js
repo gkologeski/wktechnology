@@ -16,19 +16,16 @@
       return;
     }
     try {
-      chrome.runtime.sendMessage(
-        { type: "PAIR_FROM_WEB", apiBase, apiKey },
-        (resp) => {
-          window.postMessage(
-            {
-              source: "techhire-extension-link-ack",
-              ok: Boolean(resp?.ok),
-              error: resp?.error,
-            },
-            window.location.origin,
-          );
-        },
-      );
+      chrome.runtime.sendMessage({ type: "PAIR_FROM_WEB", apiBase, apiKey }, (resp) => {
+        window.postMessage(
+          {
+            source: "techhire-extension-link-ack",
+            ok: Boolean(resp?.ok),
+            error: resp?.error,
+          },
+          window.location.origin,
+        );
+      });
     } catch (e) {
       window.postMessage(
         { source: "techhire-extension-link-ack", ok: false, error: String(e?.message || e) },

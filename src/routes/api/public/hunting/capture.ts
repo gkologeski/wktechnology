@@ -3,11 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope } from "@/lib/api-keys/auth.server";
-import {
-  corsPreflight,
-  jsonResponse,
-  normalizeLinkedinUrl,
-} from "@/lib/ats/hunting-public.server";
+import { corsPreflight, jsonResponse, normalizeLinkedinUrl } from "@/lib/ats/hunting-public.server";
 import { recordAtsEvent } from "@/lib/ats/audit.server";
 
 const coerceObject = (v: unknown): unknown => {
@@ -68,28 +64,23 @@ const Payload = z.object({
     }, z.boolean().nullable())
     .optional(),
   connection_degree: z.string().max(10).optional().nullable(),
-  available_actions: z
-    .preprocess(coerceObject, z.record(z.any()).nullable())
-    .optional(),
+  available_actions: z.preprocess(coerceObject, z.record(z.any()).nullable()).optional(),
   // Links/empresa/atividade
-  external_links: z
-    .preprocess(coerceObject, z.record(z.any()).nullable())
-    .optional(),
-  current_company_data: z
-    .preprocess(coerceObject, z.record(z.any()).nullable())
-    .optional(),
+  external_links: z.preprocess(coerceObject, z.record(z.any()).nullable()).optional(),
+  current_company_data: z.preprocess(coerceObject, z.record(z.any()).nullable()).optional(),
   recent_activity: z.array(z.any()).max(20).optional().nullable(),
   recommendations: z.array(z.any()).max(20).optional().nullable(),
-  parser_diagnostics: z
-    .preprocess(coerceObject, z.record(z.any()).nullable())
-    .optional(),
+  parser_diagnostics: z.preprocess(coerceObject, z.record(z.any()).nullable()).optional(),
   // Metadados
   capture_version: z.string().max(20).optional(),
 });
 
 type PayloadData = z.infer<typeof Payload>;
 
-const cleanText = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
+const cleanText = (v: unknown) =>
+  String(v ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
 
 function uniqueStrings(values: string[]) {
   const seen = new Set<string>();
@@ -107,7 +98,9 @@ function sliceProfileSection(text: string, start: RegExp, end: RegExp) {
   const from = startMatch.index + startMatch[0].length;
   const rest = text.slice(from);
   const endMatch = rest.match(end);
-  return cleanText((endMatch?.index != null ? rest.slice(0, endMatch.index) : rest).replace(/…\s*mais/gi, ""));
+  return cleanText(
+    (endMatch?.index != null ? rest.slice(0, endMatch.index) : rest).replace(/…\s*mais/gi, ""),
+  );
 }
 
 function sanitizeAbout(raw: string | null | undefined) {
@@ -115,10 +108,15 @@ function sanitizeAbout(raw: string | null | undefined) {
   if (!text) return null;
   const looksLikeWholePage =
     text.length > 1800 ||
-    /\b(dados de contato|contact info|enviar mensagem|send message|mais de \d+ conex|connections|atividade|activity|publica[çc][õo]es|comments|coment[áa]rios|imagens)\b/i.test(text);
+    /\b(dados de contato|contact info|enviar mensagem|send message|mais de \d+ conex|connections|atividade|activity|publica[çc][õo]es|comments|coment[áa]rios|imagens)\b/i.test(
+      text,
+    );
   if (!looksLikeWholePage)
     return cleanText(
-      text.replace(/\s+\b(key skills and technologies|principais compet[êe]ncias|atividade|activity|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b.*$/i, ""),
+      text.replace(
+        /\s+\b(key skills and technologies|principais compet[êe]ncias|atividade|activity|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b.*$/i,
+        "",
+      ),
     ).slice(0, 8000);
   const section = sliceProfileSection(
     text,
@@ -132,14 +130,23 @@ function skillsFromText(text: string | null | undefined) {
   const raw = cleanText(text);
   if (!raw) return [];
   const chunks = [
-    sliceProfileSection(raw, /\b(key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills)\s*:?\s*/i, /\b(atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|publica[çc][õo]es|comments|coment[áa]rios)\b/i),
+    sliceProfileSection(
+      raw,
+      /\b(key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills)\s*:?\s*/i,
+      /\b(atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|publica[çc][õo]es|comments|coment[áa]rios)\b/i,
+    ),
   ].filter(Boolean);
   return uniqueStrings(
     chunks
       .join(" · ")
       .split(/[·•,;|]/)
       .map((s) => cleanText(s.replace(/…\s*mais/gi, "")))
-      .filter((s) => s.length >= 2 && s.length <= 80 && !/^(key skills and technologies|principais compet[êe]ncias|skills)$/i.test(s)),
+      .filter(
+        (s) =>
+          s.length >= 2 &&
+          s.length <= 80 &&
+          !/^(key skills and technologies|principais compet[êe]ncias|skills)$/i.test(s),
+      ),
   ).slice(0, 100);
 }
 
@@ -175,18 +182,22 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
         const warnings: string[] = [];
         if (body && typeof body === "object") {
           const checks: Array<[string, number]> = [
-            ["about", 8000], ["headline", 500], ["current_position", 400],
-            ["current_company", 200], ["location", 200], ["photo_url", 1000],
+            ["about", 8000],
+            ["headline", 500],
+            ["current_position", 400],
+            ["current_company", 200],
+            ["location", 200],
+            ["photo_url", 1000],
           ];
           for (const [k, max] of checks) {
             const v = (body as Record<string, unknown>)[k];
-            if (typeof v === "string" && v.length > max) warnings.push(`${k}_truncated_${v.length}_to_${max}`);
+            if (typeof v === "string" && v.length > max)
+              warnings.push(`${k}_truncated_${v.length}_to_${max}`);
           }
         }
         const parsed = Payload.safeParse(body);
         if (!parsed.success)
           return jsonResponse({ error: parsed.error.flatten(), warnings }, { status: 400 });
-
 
         const payload = normalizePayload(parsed.data);
         const linkedinUrl = normalizeLinkedinUrl(payload.linkedin_url);
@@ -237,10 +248,8 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
             captured_at: new Date().toISOString(),
             capture_version: payload.capture_version ?? "2.0",
           };
-          if (payload.current_position)
-            patch.current_position = payload.current_position;
-          if (payload.current_company)
-            patch.current_company = payload.current_company;
+          if (payload.current_position) patch.current_position = payload.current_position;
+          if (payload.current_company) patch.current_company = payload.current_company;
           if (payload.location) patch.location = payload.location;
           if (payload.legacySkills?.length) patch.skills = payload.legacySkills;
           await supabaseAdmin
@@ -287,7 +296,12 @@ export const Route = createFileRoute("/api/public/hunting/capture")({
           captured_by: null,
         } as never);
 
-        return jsonResponse({ capture_id: candidateId, candidate_id: candidateId, created, warnings });
+        return jsonResponse({
+          capture_id: candidateId,
+          candidate_id: candidateId,
+          created,
+          warnings,
+        });
       },
     },
   },

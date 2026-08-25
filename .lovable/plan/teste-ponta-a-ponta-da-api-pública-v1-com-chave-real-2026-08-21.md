@@ -28,14 +28,16 @@ Duas opções — escolho a (A) se você não informar a chave:
 ## Bateria de testes (contra o preview em execução, via `curl`)
 
 ### Autenticação e escopo
-| Caso | Esperado |
-| --- | --- |
-| Sem header | `401 { "error": "unauthorized" }` |
-| Chave inválida / prefixo errado | `401 unauthorized` |
-| Chave revogada (após revogar no fim) | `401 unauthorized` |
-| Chave somente `read` em `POST` | `403 insufficient_scope` |
+
+| Caso                                 | Esperado                          |
+| ------------------------------------ | --------------------------------- |
+| Sem header                           | `401 { "error": "unauthorized" }` |
+| Chave inválida / prefixo errado      | `401 unauthorized`                |
+| Chave revogada (após revogar no fim) | `401 unauthorized`                |
+| Chave somente `read` em `POST`       | `403 insufficient_scope`          |
 
 ### Leads e contatos
+
 - `POST /api/public/v1/leads` com payload válido → `200`, lead criado com
   `workspace_id` da chave; confere criação automática de empresa/contato.
 - `POST /leads` sem `first_name` → `400 invalid_input` + `details`.
@@ -45,6 +47,7 @@ Duas opções — escolho a (A) se você não informar a chave:
   (sem duplicar); com `company_id` inexistente → `404 company_not_found`.
 
 ### Negócios
+
 - `POST /deals` com `lead_id` do lead criado → `200`, negócio vinculado, lead com
   `converted_deal_id`, atividade na timeline.
 - `POST /deals` com `contact_id`/`company_id`/`pipeline_id` de outro workspace →
@@ -53,6 +56,7 @@ Duas opções — escolho a (A) se você não informar a chave:
   e paginação.
 
 ### Reuniões
+
 - `POST /meetings` com `lead_id` → `200` com `join_url`; `lead_id` inexistente →
   `404 lead_not_found`; `scheduled_at` inválido → `400 invalid_input`.
 - `POST /meetings/{id}/reschedule` → `200`, nova `scheduled_at`, `public_token` e

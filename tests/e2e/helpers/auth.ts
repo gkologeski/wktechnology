@@ -33,10 +33,10 @@ export async function loginViaUI(page: Page) {
   }
   // Precisa estabelecer origin localhost/prod antes do localStorage.setItem
   await page.goto("/login");
-  await page.evaluate(
-    ([key, value]) => window.localStorage.setItem(key, value),
-    [STORAGE_KEY, JSON.stringify(data.session)] as const,
-  );
+  await page.evaluate(([key, value]) => window.localStorage.setItem(key, value), [
+    STORAGE_KEY,
+    JSON.stringify(data.session),
+  ] as const);
   await page.goto("/home");
   await page.waitForURL((url) => !/\/(login|auth)/.test(url.pathname), { timeout: 20_000 });
 }

@@ -12,11 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Dialog,
   DialogContent,
@@ -89,7 +85,6 @@ function EvidenceSide({ title, side }: { title: string; side: LinkEvidenceSide }
     </div>
   );
 }
-
 
 export function AiLinkSuggestionsDialog({
   role,
@@ -294,8 +289,6 @@ export function AiLinkSuggestionsDialog({
               </div>
             ) : null}
 
-
-
             <div className="rounded-lg border divide-y">
               {suggestions.map((s) => (
                 <div key={s.pending_id} className="flex items-start gap-3 p-3">
@@ -379,9 +372,7 @@ export function AiLinkSuggestionsDialog({
                           </div>
                           <ul className="space-y-1 text-[11px] text-muted-foreground">
                             {s.evidence.referenced_number ? (
-                              <li>
-                                Número citado no documento: {s.evidence.referenced_number}
-                              </li>
+                              <li>Número citado no documento: {s.evidence.referenced_number}</li>
                             ) : null}
                             <li>
                               Vigências:{" "}

@@ -21,17 +21,17 @@ Este documento institucionaliza a **Design Foundation** como padrão visual e de
 
 Definidos em `:root` (light) e `.dark`, expostos como classes Tailwind via `@theme inline`.
 
-| Família       | Tokens (resumo)                                                                                  | Classe exemplo                  |
-| ------------- | ------------------------------------------------------------------------------------------------ | ------------------------------- |
-| Superfícies   | `--surface-1`, `--surface-2`, `--surface-3`, `--surface-sunken`                                  | `bg-surface-2`                  |
-| Bordas        | `--border-subtle`, `--border-default`, `--border-strong`                                         | `border-border-subtle`          |
-| Texto         | `--text-primary`, `--text-secondary`, `--text-tertiary`, `--text-disabled`                       | `text-text-secondary`           |
-| Status        | `--status-open`, `--status-onhold`, `--status-closed`, `--status-draft`                          | `bg-status-open`                |
-| Stage         | `--stage-sourced/screen/interview/offer/hired/rejected`                                          | `text-stage-interview`          |
-| Score         | `--score-strong (≥80)`, `--score-good (60–79)`, `--score-mixed (40–59)`, `--score-weak (<40)`    | `bg-score-strong`               |
-| Risco         | `--risk-low`, `--risk-medium`, `--risk-high`                                                     | `bg-risk-high`                  |
-| IA            | `--ai-accent`, `--ai-surface`, `--ai-border`                                                     | `border-ai-border`              |
-| DEI           | `--dei-accent`, `--dei-surface`                                                                  | `bg-dei`                        |
+| Família     | Tokens (resumo)                                                                               | Classe exemplo         |
+| ----------- | --------------------------------------------------------------------------------------------- | ---------------------- |
+| Superfícies | `--surface-1`, `--surface-2`, `--surface-3`, `--surface-sunken`                               | `bg-surface-2`         |
+| Bordas      | `--border-subtle`, `--border-default`, `--border-strong`                                      | `border-border-subtle` |
+| Texto       | `--text-primary`, `--text-secondary`, `--text-tertiary`, `--text-disabled`                    | `text-text-secondary`  |
+| Status      | `--status-open`, `--status-onhold`, `--status-closed`, `--status-draft`                       | `bg-status-open`       |
+| Stage       | `--stage-sourced/screen/interview/offer/hired/rejected`                                       | `text-stage-interview` |
+| Score       | `--score-strong (≥80)`, `--score-good (60–79)`, `--score-mixed (40–59)`, `--score-weak (<40)` | `bg-score-strong`      |
+| Risco       | `--risk-low`, `--risk-medium`, `--risk-high`                                                  | `bg-risk-high`         |
+| IA          | `--ai-accent`, `--ai-surface`, `--ai-border`                                                  | `border-ai-border`     |
+| DEI         | `--dei-accent`, `--dei-surface`                                                               | `bg-dei`               |
 
 **Regra de ouro:** se existe token semântico, **nunca** use cor arbitrária (`text-gray-400`, `bg-[#fafafa]`). Tokens garantem dark mode e consistência.
 
@@ -51,18 +51,18 @@ A camada **global** vive em `@/components/techhire/ui` (fachada estável). Compo
 
 ### Globais (`@/components/techhire/ui`)
 
-| Componente       | Quando usar                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| `PageHeader`     | Topo de **toda** rota. Título + descrição + ação primária + ações secundárias + tabs opcional. |
-| `SectionHeader`  | Cabeçalho de seções dentro de páginas e drawers.                                           |
-| `MetricCard`     | KPI individual. Aceita `tone`, `delta`, `icon`, `hint`, `loading`.                         |
-| `FilterBar`      | Busca + filtros + ações em qualquer lista.                                                 |
-| `FormSection`    | Agrupador de formulário com título/descrição à esquerda e campos à direita.                |
-| `EmptyState`     | Toda lista/painel vazio, com CTA acionável.                                                |
-| `Skeletons.*`    | Loading **fiel ao layout final**. Nunca "Carregando…" solto.                               |
-| `StatusBadge`    | Status de domínio (open/onhold/closed/draft).                                              |
-| `MetaPill`       | Chip neutro para metadados densos (senioridade, modalidade, contadores).                   |
-| `AIInsightCard`  | Insight de IA ou DEI, sempre com explicabilidade visível.                                  |
+| Componente      | Quando usar                                                                                    |
+| --------------- | ---------------------------------------------------------------------------------------------- |
+| `PageHeader`    | Topo de **toda** rota. Título + descrição + ação primária + ações secundárias + tabs opcional. |
+| `SectionHeader` | Cabeçalho de seções dentro de páginas e drawers.                                               |
+| `MetricCard`    | KPI individual. Aceita `tone`, `delta`, `icon`, `hint`, `loading`.                             |
+| `FilterBar`     | Busca + filtros + ações em qualquer lista.                                                     |
+| `FormSection`   | Agrupador de formulário com título/descrição à esquerda e campos à direita.                    |
+| `EmptyState`    | Toda lista/painel vazio, com CTA acionável.                                                    |
+| `Skeletons.*`   | Loading **fiel ao layout final**. Nunca "Carregando…" solto.                                   |
+| `StatusBadge`   | Status de domínio (open/onhold/closed/draft).                                                  |
+| `MetaPill`      | Chip neutro para metadados densos (senioridade, modalidade, contadores).                       |
+| `AIInsightCard` | Insight de IA ou DEI, sempre com explicabilidade visível.                                      |
 
 ### Específicos do ATS (`@/components/ats/ui`)
 
@@ -118,13 +118,13 @@ Conteúdo principal
 
 ## 5. Padrões de estado
 
-| Estado    | Componente / regra                                                                |
-| --------- | --------------------------------------------------------------------------------- |
-| Loading   | `Skeletons.*` fiel ao layout final. Para refresh silencioso: indicador `Atualizando…` sem trocar o conteúdo. |
-| Empty     | `EmptyState` com ícone, título, descrição curta e **CTA acionável**.              |
-| Error     | Mensagem clara + botão "Tentar novamente" que chama `refetch()` / `invalidate()`. |
-| Sucesso   | Toast curto (`sonner`), nunca modal de confirmação.                               |
-| Destrutivo| `AlertDialog` com confirmação explícita do nome do recurso, quando aplicável.     |
+| Estado     | Componente / regra                                                                                           |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| Loading    | `Skeletons.*` fiel ao layout final. Para refresh silencioso: indicador `Atualizando…` sem trocar o conteúdo. |
+| Empty      | `EmptyState` com ícone, título, descrição curta e **CTA acionável**.                                         |
+| Error      | Mensagem clara + botão "Tentar novamente" que chama `refetch()` / `invalidate()`.                            |
+| Sucesso    | Toast curto (`sonner`), nunca modal de confirmação.                                                          |
+| Destrutivo | `AlertDialog` com confirmação explícita do nome do recurso, quando aplicável.                                |
 
 ---
 
@@ -174,21 +174,21 @@ Conteúdo principal
 
 ## 10. Quando usar cada componente
 
-| Caso                                            | Componente              |
-| ----------------------------------------------- | ----------------------- |
-| Topo de qualquer rota                           | `PageHeader`            |
-| Cabeçalho de seção dentro de página/drawer      | `SectionHeader`         |
-| KPI numérico com tendência                      | `MetricCard`            |
-| Tela com lista → busca + filtros                | `FilterBar`             |
-| Tabela densa de registros                       | `DataTable` (shadcn `Table` + padrões deste doc) |
-| Card grid de registros (vagas, candidatos)      | Grid + componente de domínio (`JobCard`, etc) |
-| Drawer de preview                               | `Sheet` (shadcn) + `SectionHeader` internos |
-| Formulário com múltiplas seções                 | `FormSection`           |
-| Lista vazia / filtro sem resultado              | `EmptyState`            |
-| Carregamento inicial                            | `Skeletons.*`           |
-| Bloco de insight de IA ou DEI                   | `AIInsightCard`         |
-| Status semântico do domínio                     | `StatusBadge` / `StageBadge` / `ScoreBadge` / `RiskBadge` |
-| Metadado neutro (senioridade, modalidade)       | `MetaPill`              |
+| Caso                                       | Componente                                                |
+| ------------------------------------------ | --------------------------------------------------------- |
+| Topo de qualquer rota                      | `PageHeader`                                              |
+| Cabeçalho de seção dentro de página/drawer | `SectionHeader`                                           |
+| KPI numérico com tendência                 | `MetricCard`                                              |
+| Tela com lista → busca + filtros           | `FilterBar`                                               |
+| Tabela densa de registros                  | `DataTable` (shadcn `Table` + padrões deste doc)          |
+| Card grid de registros (vagas, candidatos) | Grid + componente de domínio (`JobCard`, etc)             |
+| Drawer de preview                          | `Sheet` (shadcn) + `SectionHeader` internos               |
+| Formulário com múltiplas seções            | `FormSection`                                             |
+| Lista vazia / filtro sem resultado         | `EmptyState`                                              |
+| Carregamento inicial                       | `Skeletons.*`                                             |
+| Bloco de insight de IA ou DEI              | `AIInsightCard`                                           |
+| Status semântico do domínio                | `StatusBadge` / `StageBadge` / `ScoreBadge` / `RiskBadge` |
+| Metadado neutro (senioridade, modalidade)  | `MetaPill`                                                |
 
 ---
 

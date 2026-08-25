@@ -49,11 +49,7 @@
     return (el.innerText || el.textContent || "").replace(/\u00a0/g, " ").trim();
   };
 
-  const getLines = (el) =>
-    getVisibleText(el)
-      .split(/\n+/)
-      .map(clean)
-      .filter(Boolean);
+  const getLines = (el) => getVisibleText(el).split(/\n+/).map(clean).filter(Boolean);
 
   const uniqueLines = (lines) => {
     const seen = new Set();
@@ -70,7 +66,9 @@
   function setStatus(message, warn) {
     const status = document.getElementById("thh-status");
     if (!status) return;
-    status.innerHTML = warn ? `<span class="thh-warn">${escapeHtml(message)}</span>` : escapeHtml(message);
+    status.innerHTML = warn
+      ? `<span class="thh-warn">${escapeHtml(message)}</span>`
+      : escapeHtml(message);
   }
 
   function sendRuntimeMessage(message, callback) {
@@ -87,7 +85,11 @@
             ? CONTEXT_INVALIDATED
             : err.message || "Erro na extensão";
           setStatus(text, true);
-          callback?.({ ok: false, error: text, contextInvalidated: /context invalidated/i.test(text) });
+          callback?.({
+            ok: false,
+            error: text,
+            contextInvalidated: /context invalidated/i.test(text),
+          });
           return;
         }
         callback?.(resp);
@@ -97,13 +99,18 @@
         ? CONTEXT_INVALIDATED
         : e?.message || "Erro na extensão";
       setStatus(messageText, true);
-      callback?.({ ok: false, error: messageText, contextInvalidated: /context invalidated/i.test(messageText) });
+      callback?.({
+        ok: false,
+        error: messageText,
+        contextInvalidated: /context invalidated/i.test(messageText),
+      });
     }
   }
 
   // v3.1: junk patterns do rodapé/anúncios do LinkedIn que contaminam fallback
   // de texto quando /details/* vem sem SSR renderizado.
-  const LINKEDIN_JUNK_RE = /(op[çc][õo]es de an[úu]ncios|por que estou vendo este an[úu]ncio|ocultar ou denunciar|n[ãa]o quero ver|j[áa] vi este mesmo an[úu]ncio|seu feedback nos ajudar[áa]|denunciar este an[úu]ncio|solu[çc][õo]es de marketing|solu[çc][õo]es de vendas|solu[çc][õo]es de talentos|prefer[êe]ncias de an[úu]ncios|termos e privacidade|diretrizes da comunidade|central de ajuda|central de seguran[çc]a|acesse suas configura[çc][õo]es|visibilidade da recomenda[çc][ãa]o|linked\s*in corporation|©\s*20\d{2}|dispositivo m[óo]vel|pequenas empresas|pol[íi]ticas para comunidades|gerencie sua conta|gerencie suas prefer[êe]ncias|d[úu]vidas\?|comunidades profissionais|servi[çc]os ao consumidor)/i;
+  const LINKEDIN_JUNK_RE =
+    /(op[çc][õo]es de an[úu]ncios|por que estou vendo este an[úu]ncio|ocultar ou denunciar|n[ãa]o quero ver|j[áa] vi este mesmo an[úu]ncio|seu feedback nos ajudar[áa]|denunciar este an[úu]ncio|solu[çc][õo]es de marketing|solu[çc][õo]es de vendas|solu[çc][õo]es de talentos|prefer[êe]ncias de an[úu]ncios|termos e privacidade|diretrizes da comunidade|central de ajuda|central de seguran[çc]a|acesse suas configura[çc][õo]es|visibilidade da recomenda[çc][ãa]o|linked\s*in corporation|©\s*20\d{2}|dispositivo m[óo]vel|pequenas empresas|pol[íi]ticas para comunidades|gerencie sua conta|gerencie suas prefer[êe]ncias|d[úu]vidas\?|comunidades profissionais|servi[çc]os ao consumidor)/i;
 
   const isLinkedInUiLine = (line) => {
     const value = lower(line);
@@ -227,9 +234,19 @@
     if (el.matches?.(".pv-top-card, .ph5, .ph5.pb5, .mt2.relative, section")) score += 5;
     if (lines.some(looksLikeHeadline)) score += 8;
     if (lines.some(looksLikeLocation)) score += 8;
-    if (el.querySelector('a[href*="/company/"], button[aria-label*="Empresa atual"], button[aria-label*="Current company"]')) score += 5;
+    if (
+      el.querySelector(
+        'a[href*="/company/"], button[aria-label*="Empresa atual"], button[aria-label*="Current company"]',
+      )
+    )
+      score += 5;
     if (/dados de contato|contact info/i.test(text)) score += 2;
-    if (/destaques|highlights|atividade|activity|experiência|experience|mais perfis|people also viewed/i.test(text)) score -= 10;
+    if (
+      /destaques|highlights|atividade|activity|experiência|experience|mais perfis|people also viewed/i.test(
+        text,
+      )
+    )
+      score -= 10;
     score -= Math.max(0, lines.length - 14);
     return score;
   }
@@ -253,7 +270,11 @@
 
     let node = h1.parentElement;
     const main = document.querySelector("main");
-    for (let i = 0; node && node !== document.body && node !== main?.parentElement && i < 12; i += 1) {
+    for (
+      let i = 0;
+      node && node !== document.body && node !== main?.parentElement && i < 12;
+      i += 1
+    ) {
       candidates.push(node);
       node = node.parentElement;
     }
@@ -286,7 +307,9 @@
     const name = clean(fullName).replace(/\s*[·•]\s*\d+º?.*$/i, "");
     return uniqueLines([...cardLines, ...windowLines]).filter((line) => {
       const comparable = clean(line).replace(/\s*[·•]\s*\d+º?.*$/i, "");
-      return comparable && lower(comparable) !== lower(name) && lower(comparable) !== lower(fullName);
+      return (
+        comparable && lower(comparable) !== lower(name) && lower(comparable) !== lower(fullName)
+      );
     });
   }
 
@@ -323,12 +346,15 @@
         const json = JSON.parse(raw);
         if (Array.isArray(json?.included)) items.push(...json.included);
         collectSsrObjects(json, items);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     const deduped = [];
     const seen = new Set();
     for (const item of items) {
-      const key = item?.entityUrn || item?.urn || item?.trackingId || JSON.stringify(item).slice(0, 300);
+      const key =
+        item?.entityUrn || item?.urn || item?.trackingId || JSON.stringify(item).slice(0, 300);
       if (seen.has(key)) continue;
       seen.add(key);
       deduped.push(item);
@@ -343,7 +369,12 @@
     const seen = new Set();
     items.forEach((item, index) => {
       if (!item || typeof item !== "object") return;
-      const key = item.entityUrn || item.urn || item.objectUrn || item.trackingId || `${item.$type || "unknown"}:${index}:${JSON.stringify(item).slice(0, 220)}`;
+      const key =
+        item.entityUrn ||
+        item.urn ||
+        item.objectUrn ||
+        item.trackingId ||
+        `${item.$type || "unknown"}:${index}:${JSON.stringify(item).slice(0, 220)}`;
       if (seen.has(key)) return;
       seen.add(key);
       deduped.push(item);
@@ -374,11 +405,23 @@
     if (!it || typeof it !== "object") return false;
     const t = String(it.$type || it["$type"] || it.entityUrn || it.urn || it.objectUrn || "");
     if (SSR_TYPES[kind]?.test(t)) return true;
-    if (kind === "position") return Boolean((it.title || it.profilePosition || it.position) && (it.companyName || it.company || it.companyUrn || it.dateRange || it.timePeriod));
-    if (kind === "education") return Boolean(it.schoolName || it.school || it.schoolUrn || it.degreeName || it.fieldOfStudy);
+    if (kind === "position")
+      return Boolean(
+        (it.title || it.profilePosition || it.position) &&
+        (it.companyName || it.company || it.companyUrn || it.dateRange || it.timePeriod),
+      );
+    if (kind === "education")
+      return Boolean(
+        it.schoolName || it.school || it.schoolUrn || it.degreeName || it.fieldOfStudy,
+      );
     if (kind === "skill") return Boolean((it.name || it.skillName) && /skill/i.test(t));
-    if (kind === "certification") return Boolean((it.name || it.title) && (it.authority || it.issuer || it.licenseNumber || /certif|license/i.test(t)));
-    if (kind === "language") return Boolean((it.name || it.language) && (it.proficiency || /language/i.test(t)));
+    if (kind === "certification")
+      return Boolean(
+        (it.name || it.title) &&
+        (it.authority || it.issuer || it.licenseNumber || /certif|license/i.test(t)),
+      );
+    if (kind === "language")
+      return Boolean((it.name || it.language) && (it.proficiency || /language/i.test(t)));
     return false;
   }
 
@@ -410,7 +453,10 @@
       );
       if (direct) return direct;
       if (Array.isArray(node.attributes)) {
-        const joined = node.attributes.map((a) => ssrText(a, depth + 1)).filter(Boolean).join(" ");
+        const joined = node.attributes
+          .map((a) => ssrText(a, depth + 1))
+          .filter(Boolean)
+          .join(" ");
         if (joined) return clean(joined);
       }
       for (const [key, value] of Object.entries(node)) {
@@ -434,10 +480,19 @@
       return out;
     }
     if (typeof node === "object") {
-      const direct = firstScalar(node.text, node.localizedName, node.value, node.name, node.title, node.headline, node.description);
+      const direct = firstScalar(
+        node.text,
+        node.localizedName,
+        node.value,
+        node.name,
+        node.title,
+        node.headline,
+        node.description,
+      );
       if (direct) out.push(direct);
       for (const [key, value] of Object.entries(node)) {
-        if (/urn|tracking|control|navigation|image|logo|vector|paging|dash|video|entity/i.test(key)) continue;
+        if (/urn|tracking|control|navigation|image|logo|vector|paging|dash|video|entity/i.test(key))
+          continue;
         ssrTextLines(value, depth + 1, out);
       }
     }
@@ -464,16 +519,27 @@
 
   function ssrTopCard(fullName = "") {
     const arr = ssrFind("topCard");
-    const slug = decodeURIComponent((location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "")).toLowerCase();
+    const slug = decodeURIComponent(
+      location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "",
+    ).toLowerCase();
     let best = null;
     let bestScore = -999;
     for (const it of arr) {
       const first = ssrText(it.firstName);
       const last = ssrText(it.lastName);
-      const name = clean(ssrText(it.fullName) || ssrText(it.name) || [first, last].filter(Boolean).join(" "));
-      const publicIdentifier = clean(it.publicIdentifier || it.publicProfileUrl || "").toLowerCase();
-      const headline = ssrText(it.headline) || ssrText(it.occupation) || ssrText(it.subline) || ssrText(it.summary);
-      const location = ssrText(it.geoLocationName) || ssrText(it.locationName) || ssrText(it.address);
+      const name = clean(
+        ssrText(it.fullName) || ssrText(it.name) || [first, last].filter(Boolean).join(" "),
+      );
+      const publicIdentifier = clean(
+        it.publicIdentifier || it.publicProfileUrl || "",
+      ).toLowerCase();
+      const headline =
+        ssrText(it.headline) ||
+        ssrText(it.occupation) ||
+        ssrText(it.subline) ||
+        ssrText(it.summary);
+      const location =
+        ssrText(it.geoLocationName) || ssrText(it.locationName) || ssrText(it.address);
       let score = 0;
       if (headline) score += 8;
       if (location) score += 4;
@@ -494,7 +560,9 @@
   // ele DEVE sobrescrever qualquer about extraído do DOM.
   function ssrProfileSummary(fullName = "") {
     const items = ssrIncluded();
-    const slug = decodeURIComponent((location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "")).toLowerCase();
+    const slug = decodeURIComponent(
+      location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "",
+    ).toLowerCase();
     let best = "";
     let bestScore = -999;
     for (const it of items) {
@@ -503,7 +571,9 @@
       if (!/\.Profile($|[^A-Za-z])/i.test(type) && !/MiniProfile/i.test(type)) continue;
       const summary = ssrText(it.summary) || ssrText(it.about) || "";
       if (!summary || summary.length < 12) continue;
-      const publicIdentifier = clean(it.publicIdentifier || it.publicProfileUrl || "").toLowerCase();
+      const publicIdentifier = clean(
+        it.publicIdentifier || it.publicProfileUrl || "",
+      ).toLowerCase();
       const name = clean(ssrText(it.fullName) || ssrText(it.name) || "");
       let score = summary.length > 60 ? 4 : 1;
       if (slug && publicIdentifier.includes(slug)) score += 30;
@@ -523,51 +593,77 @@
     const t = clean(text);
     if (!t) return true;
     if (t.length > 1800) return true;
-    return /(mais perfis para voc|people also viewed|atividade\s+\d|activity\s+\d|publica[çc][õo]es?\s+do\s+|posts?\s+de\s+|dados de contato|contact info|enviar mensagem|send message|seguidores?\b|followers?\b|conex[õo]es?\s+m[úu]tuas?|mutual connections?|abrir menu|open menu|languages?\s*$|portugu[êe]s\s*\(brasil\)|english\s*\(us\)|para neg[óo]cios|for business|principais compet[êe]ncias|key skills and technologies)/i.test(t);
+    return /(mais perfis para voc|people also viewed|atividade\s+\d|activity\s+\d|publica[çc][õo]es?\s+do\s+|posts?\s+de\s+|dados de contato|contact info|enviar mensagem|send message|seguidores?\b|followers?\b|conex[õo]es?\s+m[úu]tuas?|mutual connections?|abrir menu|open menu|languages?\s*$|portugu[êe]s\s*\(brasil\)|english\s*\(us\)|para neg[óo]cios|for business|principais compet[êe]ncias|key skills and technologies)/i.test(
+      t,
+    );
   }
 
   function ssrExperiences(doc = document) {
-    return ssrFind("position", doc).map((it) => {
-      const title = ssrText(it.title) || ssrText(it.profilePosition?.title) || ssrText(it.position?.title) || ssrFirstLine(it);
-      const company = ssrText(it.companyName) || ssrText(it.company) || ssrText(it.company?.name) || ssrText(it.profilePosition?.companyName) || ssrFirstLine(it, [title]);
-      return {
-      title: title || null,
-      company: company || null,
-      period: ssrDateRange(it.dateRange) || ssrText(it.timePeriod) || null,
-      location: ssrText(it.locationName) || null,
-      description: ssrText(it.description) || null,
-    };
-    }).filter((x) => x.title || x.company);
+    return ssrFind("position", doc)
+      .map((it) => {
+        const title =
+          ssrText(it.title) ||
+          ssrText(it.profilePosition?.title) ||
+          ssrText(it.position?.title) ||
+          ssrFirstLine(it);
+        const company =
+          ssrText(it.companyName) ||
+          ssrText(it.company) ||
+          ssrText(it.company?.name) ||
+          ssrText(it.profilePosition?.companyName) ||
+          ssrFirstLine(it, [title]);
+        return {
+          title: title || null,
+          company: company || null,
+          period: ssrDateRange(it.dateRange) || ssrText(it.timePeriod) || null,
+          location: ssrText(it.locationName) || null,
+          description: ssrText(it.description) || null,
+        };
+      })
+      .filter((x) => x.title || x.company);
   }
   function ssrEducation(doc = document) {
-    return ssrFind("education", doc).map((it) => {
-      const school = ssrText(it.schoolName) || ssrText(it.school) || ssrText(it.school?.name) || ssrFirstLine(it);
-      return {
-      school: school || null,
-      degree: [ssrText(it.degreeName), ssrText(it.fieldOfStudy)].filter(Boolean).join(" · ") || null,
-      period: ssrDateRange(it.dateRange) || null,
-      description: ssrText(it.description) || null,
-    };
-    }).filter((x) => x.school);
+    return ssrFind("education", doc)
+      .map((it) => {
+        const school =
+          ssrText(it.schoolName) ||
+          ssrText(it.school) ||
+          ssrText(it.school?.name) ||
+          ssrFirstLine(it);
+        return {
+          school: school || null,
+          degree:
+            [ssrText(it.degreeName), ssrText(it.fieldOfStudy)].filter(Boolean).join(" · ") || null,
+          period: ssrDateRange(it.dateRange) || null,
+          description: ssrText(it.description) || null,
+        };
+      })
+      .filter((x) => x.school);
   }
   function ssrSkills(doc = document) {
-    return ssrFind("skill", doc).map((it) => ({
-      name: ssrText(it.name) || ssrText(it.skillName) || ssrFirstLine(it) || null,
-      endorsements: null,
-    })).filter((x) => x.name);
+    return ssrFind("skill", doc)
+      .map((it) => ({
+        name: ssrText(it.name) || ssrText(it.skillName) || ssrFirstLine(it) || null,
+        endorsements: null,
+      }))
+      .filter((x) => x.name);
   }
   function ssrCertifications(doc = document) {
-    return ssrFind("certification", doc).map((it) => ({
-      name: ssrText(it.name) || ssrText(it.title) || ssrFirstLine(it) || null,
-      issuer: ssrText(it.authority) || ssrText(it.issuer) || null,
-      issued: ssrDateRange(it.timePeriod) || ssrText(it.issueDate) || null,
-    })).filter((x) => x.name);
+    return ssrFind("certification", doc)
+      .map((it) => ({
+        name: ssrText(it.name) || ssrText(it.title) || ssrFirstLine(it) || null,
+        issuer: ssrText(it.authority) || ssrText(it.issuer) || null,
+        issued: ssrDateRange(it.timePeriod) || ssrText(it.issueDate) || null,
+      }))
+      .filter((x) => x.name);
   }
   function ssrLanguages(doc = document) {
-    return ssrFind("language", doc).map((it) => ({
-      name: ssrText(it.name) || ssrText(it.language) || ssrFirstLine(it) || null,
-      proficiency: ssrText(it.proficiency) || null,
-    })).filter((x) => x.name);
+    return ssrFind("language", doc)
+      .map((it) => ({
+        name: ssrText(it.name) || ssrText(it.language) || ssrFirstLine(it) || null,
+        proficiency: ssrText(it.proficiency) || null,
+      }))
+      .filter((x) => x.name);
   }
 
   function extractHeadline(card, person, fullName) {
@@ -641,7 +737,6 @@
     return "";
   }
 
-
   function companyFromHeadline(headline) {
     if (!headline) return "";
     const patterns = [
@@ -707,7 +802,7 @@
 
     if (card) {
       const spans = card.querySelectorAll(
-        'span.text-body-small.inline.t-black--light, span.text-body-small, .pv-text-details__left-panel .text-body-small',
+        "span.text-body-small.inline.t-black--light, span.text-body-small, .pv-text-details__left-panel .text-body-small",
       );
       for (const el of spans) {
         const txt = clean(el.textContent);
@@ -715,7 +810,9 @@
       }
     }
 
-    const line = extractProfileLines(card, fullName).find((candidate) => looksLikeLocation(candidate));
+    const line = extractProfileLines(card, fullName).find((candidate) =>
+      looksLikeLocation(candidate),
+    );
     return line || "";
   }
 
@@ -802,18 +899,27 @@
     return findSectionByAnchor(ANCHOR_IDS[kind] || []) || findSectionByTitle(titleRegex);
   }
 
-  const SECTION_BOUNDARY_RE = /^(destaques|highlights|atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|licen[çc]as|certifica|licenses|certifications|compet[êe]ncias|skills|principais compet[êe]ncias|idiomas|languages|recomenda|recommendations|publica[çc][õo]es|publications|projetos|projects|voluntariado|volunteering|mais perfis|people also viewed)\b/i;
+  const SECTION_BOUNDARY_RE =
+    /^(destaques|highlights|atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|licen[çc]as|certifica|licenses|certifications|compet[êe]ncias|skills|principais compet[êe]ncias|idiomas|languages|recomenda|recommendations|publica[çc][õo]es|publications|projetos|projects|voluntariado|volunteering|mais perfis|people also viewed)\b/i;
 
   function cleanAboutCandidate(value, fullName = "") {
     const text = clean(value)
       .replace(/^(sobre|about)\s+/i, "")
-      .replace(/\s+\b(key skills and technologies|principais compet[êe]ncias|atividade|activity|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b.*$/i, "")
+      .replace(
+        /\s+\b(key skills and technologies|principais compet[êe]ncias|atividade|activity|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b.*$/i,
+        "",
+      )
       .replace(/\s*…\s*mais\s*$/i, "")
       .trim();
     if (!text) return "";
     if (looksLikeNameLine(text, fullName)) return "";
     if (text.length > 1800) return "";
-    if (/\b(dados de contato|contact info|mais de \d+ conex|connections|enviar mensagem|send message|conectar|connect|atividade|activity|publica[çc][õo]es|posts)\b/i.test(text)) return "";
+    if (
+      /\b(dados de contato|contact info|mais de \d+ conex|connections|enviar mensagem|send message|conectar|connect|atividade|activity|publica[çc][õo]es|posts)\b/i.test(
+        text,
+      )
+    )
+      return "";
     return text;
   }
 
@@ -864,14 +970,25 @@
       /^(sobre|about)$/i,
       /^(atividade|activity|experi[êe]ncia|experience|forma[çc][ãa]o|education|publica[çc][õo]es|posts|coment[áa]rios|comments|imagens|images)\b/i,
     );
-    const aboutSkillLine = aboutLines.find((line) => /key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills/i.test(line));
-    if (aboutSkillLine) skillLines.push(aboutSkillLine.replace(/.*?(key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills)\s*:*/i, ""));
+    const aboutSkillLine = aboutLines.find((line) =>
+      /key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills/i.test(line),
+    );
+    if (aboutSkillLine)
+      skillLines.push(
+        aboutSkillLine.replace(
+          /.*?(key skills and technologies|principais compet[êe]ncias|compet[êe]ncias|skills)\s*:*/i,
+          "",
+        ),
+      );
     return uniqueLines(
       skillLines
         .join(" · ")
         .split(/[·•,;|]/)
         .map((s) => clean(s.replace(/…\s*mais/gi, "")))
-        .filter((s) => s.length >= 2 && s.length <= 80 && !SECTION_BOUNDARY_RE.test(s) && !isLinkedInUiLine(s)),
+        .filter(
+          (s) =>
+            s.length >= 2 && s.length <= 80 && !SECTION_BOUNDARY_RE.test(s) && !isLinkedInUiLine(s),
+        ),
     )
       .slice(0, 100)
       .map((name) => ({ name, endorsements: null }));
@@ -916,7 +1033,10 @@
       "Imagens",
       "Images",
     ];
-    const markerRe = new RegExp(`\\b(${markers.map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`, "gi");
+    const markerRe = new RegExp(
+      `\\b(${markers.map((m) => m.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`,
+      "gi",
+    );
     return uniqueLines(
       raw
         .replace(/([a-zá-ú0-9])([A-ZÁ-Ú][a-zá-ú])/g, "$1\n$2")
@@ -965,7 +1085,9 @@
     );
     const out = [];
     for (const li of items) {
-      const spans = li.querySelectorAll('span[aria-hidden="true"], span[dir="ltr"], .visually-hidden, time, a[href]');
+      const spans = li.querySelectorAll(
+        'span[aria-hidden="true"], span[dir="ltr"], .visually-hidden, time, a[href]',
+      );
       const lines = [];
       spans.forEach((s) => {
         const t = clean(s.textContent || "");
@@ -1026,7 +1148,11 @@
       if (SECTION_BOUNDARY_RE.test(line) && current.length) break;
       const beginsNew =
         current.length >= 2 &&
-        (kind === "experience" ? looksLikeHeadline(line) : kind === "education" ? /universidade|university|faculdade|college|instituto|school|escola/i.test(line) : false);
+        (kind === "experience"
+          ? looksLikeHeadline(line)
+          : kind === "education"
+            ? /universidade|university|faculdade|college|instituto|school|escola/i.test(line)
+            : false);
       if (beginsNew) {
         groups.push(current);
         current = [];
@@ -1047,15 +1173,14 @@
   async function triggerLazyLoad() {
     return safe(async () => {
       const origin = window.scrollY;
-      const totalHeight = () => Math.max(
-        document.body.scrollHeight,
-        document.documentElement.scrollHeight,
-      );
+      const totalHeight = () =>
+        Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
       const hasItems = (id) => {
         const el = document.getElementById(id);
-        return !!el?.closest("section")?.querySelectorAll(
-          "li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity"
-        ).length;
+        return !!el
+          ?.closest("section")
+          ?.querySelectorAll("li.artdeco-list__item, li.pvs-list__paged-list-item, .pvs-entity")
+          .length;
       };
       // Sweep 1: step-scroll through the whole page so every section's
       // IntersectionObserver fires and hydrates (about, experience, education, skills, ...).
@@ -1100,17 +1225,36 @@
       const raw = c.textContent || "";
       if (raw.length < 50 || !raw.includes("{")) continue;
       let json;
-      try { json = JSON.parse(raw); } catch { continue; }
+      try {
+        json = JSON.parse(raw);
+      } catch {
+        continue;
+      }
       const included = Array.isArray(json?.included) ? json.included : [];
       for (const it of included) {
         const t = it?.$type || it?.["$type"] || "";
         if (!re.test(t)) continue;
         const lines = [];
-        const push = (v) => { const s = clean(v); if (s) lines.push(s); };
+        const push = (v) => {
+          const s = clean(v);
+          if (s) lines.push(s);
+        };
         // Coletar campos textuais comuns, incluindo objetos nested do Voyager.
         push(ssrText(it.title) || ssrText(it.name) || ssrText(it.schoolName));
-        push(ssrText(it.companyName) || ssrText(it.subtitle) || ssrText(it.degreeName) || ssrText(it.fieldOfStudy) || ssrText(it.issuer) || ssrText(it.publisher));
-        push(ssrDateRange(it.dateRange) || ssrText(it.timePeriod) || ssrText(it.issuedOn) || ssrText(it.publishedOn));
+        push(
+          ssrText(it.companyName) ||
+            ssrText(it.subtitle) ||
+            ssrText(it.degreeName) ||
+            ssrText(it.fieldOfStudy) ||
+            ssrText(it.issuer) ||
+            ssrText(it.publisher),
+        );
+        push(
+          ssrDateRange(it.dateRange) ||
+            ssrText(it.timePeriod) ||
+            ssrText(it.issuedOn) ||
+            ssrText(it.publishedOn),
+        );
         push(ssrText(it.locationName));
         push(ssrText(it.description));
         if (lines.length) out.push(lines);
@@ -1128,7 +1272,10 @@
       const t = setTimeout(() => ctrl.abort(), 8000);
       const resp = await fetch(url, { credentials: "include", signal: ctrl.signal });
       clearTimeout(t);
-      pushDiagnosticStatus(parserDiagnostics.details, { section: sectionPath, status: resp.status });
+      pushDiagnosticStatus(parserDiagnostics.details, {
+        section: sectionPath,
+        status: resp.status,
+      });
       if (!resp.ok) {
         parserDiagnostics.details.failed += 1;
         return null;
@@ -1148,21 +1295,36 @@
 
   function discoverVoyagerRequests() {
     const urls = [];
-    const slug = decodeURIComponent((location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "")).toLowerCase();
-    document.querySelectorAll('code[id^="datalet-bpr-guid"], code[id^="bpr-guid"], code[style*="display: none"], code[style*="display:none"]').forEach((c) => {
-      const raw = (c.textContent || "").trim();
-      if (!raw.startsWith("{")) return;
-      try {
-        const json = JSON.parse(raw);
-        const req = clean(json?.request || json?.url || "");
-        if (!req || !/voyager\/api/i.test(req)) return;
-        if (!/(profile|skill|education|position|experience)/i.test(req)) return;
-        if (slug && !decodeURIComponent(req).toLowerCase().includes(slug) && /profiles\//i.test(req)) return;
-        urls.push(req.startsWith("http") ? req : `https://www.linkedin.com${req.startsWith("/") ? "" : "/"}${req}`);
-      } catch {
-        /* ignore */
-      }
-    });
+    const slug = decodeURIComponent(
+      location.pathname.match(/\/in\/([^/?#]+)/i)?.[1] || "",
+    ).toLowerCase();
+    document
+      .querySelectorAll(
+        'code[id^="datalet-bpr-guid"], code[id^="bpr-guid"], code[style*="display: none"], code[style*="display:none"]',
+      )
+      .forEach((c) => {
+        const raw = (c.textContent || "").trim();
+        if (!raw.startsWith("{")) return;
+        try {
+          const json = JSON.parse(raw);
+          const req = clean(json?.request || json?.url || "");
+          if (!req || !/voyager\/api/i.test(req)) return;
+          if (!/(profile|skill|education|position|experience)/i.test(req)) return;
+          if (
+            slug &&
+            !decodeURIComponent(req).toLowerCase().includes(slug) &&
+            /profiles\//i.test(req)
+          )
+            return;
+          urls.push(
+            req.startsWith("http")
+              ? req
+              : `https://www.linkedin.com${req.startsWith("/") ? "" : "/"}${req}`,
+          );
+        } catch {
+          /* ignore */
+        }
+      });
     return uniqueLines(urls);
   }
 
@@ -1183,7 +1345,10 @@
         signal: ctrl.signal,
       });
       clearTimeout(t);
-      pushDiagnosticStatus(parserDiagnostics.voyager, { status: resp.status, path: url.replace(/^https:\/\/www\.linkedin\.com/i, "").slice(0, 160) });
+      pushDiagnosticStatus(parserDiagnostics.voyager, {
+        status: resp.status,
+        path: url.replace(/^https:\/\/www\.linkedin\.com/i, "").slice(0, 160),
+      });
       if (!resp.ok) {
         parserDiagnostics.voyager.failed += 1;
         return null;
@@ -1234,18 +1399,22 @@
 
     const exp = ssrExperiences();
     if (!profile.current_company && exp[0]?.company) profile.current_company = exp[0].company;
-    if (!Array.isArray(profile.experiences) || !profile.experiences.length) profile.experiences = exp.slice(0, 20);
+    if (!Array.isArray(profile.experiences) || !profile.experiences.length)
+      profile.experiences = exp.slice(0, 20);
     const edu = ssrEducation();
-    if (!Array.isArray(profile.education) || !profile.education.length) profile.education = edu.slice(0, 20);
+    if (!Array.isArray(profile.education) || !profile.education.length)
+      profile.education = edu.slice(0, 20);
     const skills = ssrSkills();
-    if (!Array.isArray(profile.skills_detailed) || !profile.skills_detailed.length) profile.skills_detailed = skills.slice(0, 100);
+    if (!Array.isArray(profile.skills_detailed) || !profile.skills_detailed.length)
+      profile.skills_detailed = skills.slice(0, 100);
     const certs = ssrCertifications();
-    if (!Array.isArray(profile.certifications) || !profile.certifications.length) profile.certifications = certs.slice(0, 30);
+    if (!Array.isArray(profile.certifications) || !profile.certifications.length)
+      profile.certifications = certs.slice(0, 30);
     const langs = ssrLanguages();
-    if (!Array.isArray(profile.languages) || !profile.languages.length) profile.languages = langs.slice(0, 20);
+    if (!Array.isArray(profile.languages) || !profile.languages.length)
+      profile.languages = langs.slice(0, 20);
     return profile;
   }
-
 
   function extractAbout(fullName = "") {
     return safe(() => {
@@ -1257,76 +1426,98 @@
   function extractExperiences() {
     const ssr = ssrExperiences();
     if (ssr.length) return ssr.slice(0, 20);
-    return safe(() => {
-      const sec = findSection("experience", /^(experiência|experiencia|experience)/i);
-      const items = extractListItems(sec);
-      return items.slice(0, 20).map(mapExperience);
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSection("experience", /^(experiência|experiencia|experience)/i);
+        const items = extractListItems(sec);
+        return items.slice(0, 20).map(mapExperience);
+      }) || []
+    );
   }
 
   function extractEducation() {
     const ssr = ssrEducation();
     if (ssr.length) return ssr.slice(0, 20);
-    return safe(() => {
-      const sec = findSection("education", /^(formação|formacao|educação|educacao|education)/i);
-      const items = extractListItems(sec);
-      return items.slice(0, 20).map(mapEducation);
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSection("education", /^(formação|formacao|educação|educacao|education)/i);
+        const items = extractListItems(sec);
+        return items.slice(0, 20).map(mapEducation);
+      }) || []
+    );
   }
 
   function extractCertifications() {
     const ssr = ssrCertifications();
     if (ssr.length) return ssr.slice(0, 30);
-    return safe(() => {
-      const sec = findSection("certifications", /(licen[çc]as|certifica|licenses|certifications)/i);
-      const items = extractListItems(sec);
-      return items.slice(0, 30).map(mapCertification);
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSection(
+          "certifications",
+          /(licen[çc]as|certifica|licenses|certifications)/i,
+        );
+        const items = extractListItems(sec);
+        return items.slice(0, 30).map(mapCertification);
+      }) || []
+    );
   }
 
   function extractLanguages() {
     const ssr = ssrLanguages();
     if (ssr.length) return ssr.slice(0, 20);
-    return safe(() => {
-      const sec = findSection("languages", /^(idiomas|languages)/i);
-      const items = extractListItems(sec);
-      return items.slice(0, 20).map(mapLanguage);
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSection("languages", /^(idiomas|languages)/i);
+        const items = extractListItems(sec);
+        return items.slice(0, 20).map(mapLanguage);
+      }) || []
+    );
   }
 
   function extractSkills() {
     const ssr = ssrSkills();
     if (ssr.length) return ssr.slice(0, 100);
-    return safe(() => {
-      const sec = findSection("skills", /^(compet[êe]ncias|skills|habilidades)/i);
-      const items = extractListItems(sec);
-      const fromSection = items.slice(0, 100).map(mapSkill).filter((s) => s.name);
-      return fromSection.length ? fromSection : extractSkillsFromMainText();
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSection("skills", /^(compet[êe]ncias|skills|habilidades)/i);
+        const items = extractListItems(sec);
+        const fromSection = items
+          .slice(0, 100)
+          .map(mapSkill)
+          .filter((s) => s.name);
+        return fromSection.length ? fromSection : extractSkillsFromMainText();
+      }) || []
+    );
   }
 
   function extractProjects() {
-    return safe(() => {
-      const sec = findSection("projects", /^(projetos|projects)/i);
-      const items = extractListItems(sec);
-      return items.slice(0, 30).map(mapProject);
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSection("projects", /^(projetos|projects)/i);
+        const items = extractListItems(sec);
+        return items.slice(0, 30).map(mapProject);
+      }) || []
+    );
   }
 
   function extractPublications() {
-    return safe(() => {
-      const sec = findSection("publications", /^(publica[çc][õo]es|publications)/i);
-      const items = extractListItems(sec);
-      return items.slice(0, 30).map(mapPublication);
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSection("publications", /^(publica[çc][õo]es|publications)/i);
+        const items = extractListItems(sec);
+        return items.slice(0, 30).map(mapPublication);
+      }) || []
+    );
   }
 
   function extractVolunteering() {
-    return safe(() => {
-      const sec = findSection("volunteering", /(volunt|volunteer)/i);
-      const items = extractListItems(sec);
-      return items.slice(0, 20).map(mapVolunteering);
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSection("volunteering", /(volunt|volunteer)/i);
+        const items = extractListItems(sec);
+        return items.slice(0, 20).map(mapVolunteering);
+      }) || []
+    );
   }
 
   // ───── Mappers reutilizados pelo enrichment via /details/* ─────
@@ -1354,8 +1545,7 @@
   });
   const mapSkill = (lines) => ({
     name: lines[0] || null,
-    endorsements:
-      lines.slice(1).find((l) => /\d+\s*(endosso|endorsement)/i.test(l)) || null,
+    endorsements: lines.slice(1).find((l) => /\d+\s*(endosso|endorsement)/i.test(l)) || null,
   });
   const mapProject = (lines) => ({
     name: lines[0] || null,
@@ -1412,15 +1602,10 @@
     return profile;
   }
 
-
-
-
   function extractOpenToWork(card) {
     return safe(() => {
       const text =
-        (card ? getVisibleText(card) : "") +
-        " " +
-        getVisibleText(document.querySelector("main"));
+        (card ? getVisibleText(card) : "") + " " + getVisibleText(document.querySelector("main"));
       if (/#OpenToWork|aberto a oportunidades|open to work/i.test(text)) return true;
       const selectors = [
         'img[alt*="OpenToWork" i]',
@@ -1428,7 +1613,7 @@
         '[data-test-icon*="open-to-work" i]',
         '[aria-label*="Open to work" i]',
         '[aria-label*="aberto a oportunidades" i]',
-        '.pv-open-to-frame',
+        ".pv-open-to-frame",
         '[data-test-id*="OPEN_TO_WORK" i]',
       ];
       for (const sel of selectors) {
@@ -1438,10 +1623,11 @@
     });
   }
 
-
   function extractConnectionDegree(card) {
     return safe(() => {
-      const span = card?.querySelector(".dist-value, .distance-badge, .pv-text-details__distance-text");
+      const span = card?.querySelector(
+        ".dist-value, .distance-badge, .pv-text-details__distance-text",
+      );
       const txt = clean(span?.textContent || "");
       const m = txt.match(/(1|2|3)\s*(?:st|nd|rd|º)/i);
       if (m) return `${m[1]}${m[1] === "1" ? "st" : m[1] === "2" ? "nd" : "rd"}`;
@@ -1457,10 +1643,18 @@
       if (!scope) return null;
       const text = getVisibleText(scope);
       return {
-        message: /\b(message|mensagem)\b/i.test(text) && !!scope.querySelector('button[aria-label*="Message" i], a[aria-label*="Message" i], button[aria-label*="Mensagem" i]'),
-        connect: !!scope.querySelector('button[aria-label*="Connect" i], button[aria-label*="Conectar" i]'),
+        message:
+          /\b(message|mensagem)\b/i.test(text) &&
+          !!scope.querySelector(
+            'button[aria-label*="Message" i], a[aria-label*="Message" i], button[aria-label*="Mensagem" i]',
+          ),
+        connect: !!scope.querySelector(
+          'button[aria-label*="Connect" i], button[aria-label*="Conectar" i]',
+        ),
         inmail: /\bInMail\b/.test(text),
-        follow: !!scope.querySelector('button[aria-label*="Follow" i], button[aria-label*="Seguir" i]'),
+        follow: !!scope.querySelector(
+          'button[aria-label*="Follow" i], button[aria-label*="Seguir" i]',
+        ),
       };
     });
   }
@@ -1468,7 +1662,7 @@
   function extractExternalLinks() {
     return safe(() => {
       const links = {};
-      const anchors = document.querySelectorAll('main a[href]');
+      const anchors = document.querySelectorAll("main a[href]");
       for (const a of anchors) {
         const href = a.getAttribute("href") || "";
         if (!/^https?:/i.test(href)) continue;
@@ -1479,7 +1673,8 @@
         else if (/dribbble\.com/i.test(href) && !links.dribbble) links.dribbble = href;
         else if (/medium\.com/i.test(href) && !links.medium) links.medium = href;
         else if (/(youtube\.com|youtu\.be)/i.test(href) && !links.youtube) links.youtube = href;
-        else if (!links.website && /(portfolio|\.dev|\.io|\.me|\.com|\.com\.br)/i.test(href)) links.website = href;
+        else if (!links.website && /(portfolio|\.dev|\.io|\.me|\.com|\.com\.br)/i.test(href))
+          links.website = href;
       }
       return Object.keys(links).length ? links : null;
     });
@@ -1512,37 +1707,43 @@
     });
   }
 
-
   function extractRecentActivity() {
-    return safe(() => {
-      const sec = findSectionByTitle(/(atividade|activity)/i);
-      if (!sec) return [];
-      const posts = sec.querySelectorAll(".feed-shared-update-v2, .occludable-update, .pvs-list__item--line-separated");
-      const out = [];
-      for (const p of posts) {
-        if (out.length >= 5) break;
-        const txt = clean(getVisibleText(p)).slice(0, 280);
-        const link = p.querySelector('a[href*="/posts/"], a[href*="/feed/update/"]');
-        if (txt) out.push({
-          excerpt: txt,
-          url: link?.href || null,
-          type: /comment|comentou/i.test(txt) ? "comment" : "post",
-        });
-      }
-      return out;
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSectionByTitle(/(atividade|activity)/i);
+        if (!sec) return [];
+        const posts = sec.querySelectorAll(
+          ".feed-shared-update-v2, .occludable-update, .pvs-list__item--line-separated",
+        );
+        const out = [];
+        for (const p of posts) {
+          if (out.length >= 5) break;
+          const txt = clean(getVisibleText(p)).slice(0, 280);
+          const link = p.querySelector('a[href*="/posts/"], a[href*="/feed/update/"]');
+          if (txt)
+            out.push({
+              excerpt: txt,
+              url: link?.href || null,
+              type: /comment|comentou/i.test(txt) ? "comment" : "post",
+            });
+        }
+        return out;
+      }) || []
+    );
   }
 
   function extractRecommendations() {
-    return safe(() => {
-      const sec = findSectionByTitle(/(recomenda|recommendation)/i);
-      const items = extractListItems(sec);
-      return items.slice(0, 10).map((lines) => ({
-        author: lines[0] || null,
-        relationship: lines[1] || null,
-        text: lines.slice(2).join(" ") || null,
-      }));
-    }) || [];
+    return (
+      safe(() => {
+        const sec = findSectionByTitle(/(recomenda|recommendation)/i);
+        const items = extractListItems(sec);
+        return items.slice(0, 10).map((lines) => ({
+          author: lines[0] || null,
+          relationship: lines[1] || null,
+          text: lines.slice(2).join(" ") || null,
+        }));
+      }) || []
+    );
   }
 
   function extractProfile() {
@@ -1600,13 +1801,18 @@
   }
 
   function buildParserDiagnostics(profile) {
-    const codes = Array.from(document.querySelectorAll('code[id^="bpr-guid"], code[id^="datalet-bpr-guid"], code[style*="display"]'));
+    const codes = Array.from(
+      document.querySelectorAll(
+        'code[id^="bpr-guid"], code[id^="datalet-bpr-guid"], code[style*="display"]',
+      ),
+    );
     return {
       url_path: location.pathname,
       title: document.title || "",
       has_main: Boolean(document.querySelector("main")),
       ssr_code_count: codes.length,
-      ssr_code_with_included_count: codes.filter((c) => /"included"\s*:/.test(c.textContent || "")).length,
+      ssr_code_with_included_count: codes.filter((c) => /"included"\s*:/.test(c.textContent || ""))
+        .length,
       ssr_object_count: ssrIncluded().length,
       extracted_counts: {
         experiences: Array.isArray(profile.experiences) ? profile.experiences.length : 0,
@@ -1638,7 +1844,9 @@
     }
     const complete = isComplete(profile);
     if (status && !opts?.captured) {
-      status.textContent = complete ? "Detalhes detectados · pronto para capturar." : "Detectando detalhes do perfil…";
+      status.textContent = complete
+        ? "Detalhes detectados · pronto para capturar."
+        : "Detectando detalhes do perfil…";
     }
     const missing = missingFields(profile).filter((field) => field !== "nome");
     const partial = opts?.partial
@@ -1670,19 +1878,31 @@
 
   function fieldRow(label, value, opts) {
     const status = opts?.status;
-    const detail = opts?.detail ? ` <span class="thh-muted" style="color:#94a3b8">${escapeHtml(opts.detail)}</span>` : "";
+    const detail = opts?.detail
+      ? ` <span class="thh-muted" style="color:#94a3b8">${escapeHtml(opts.detail)}</span>`
+      : "";
     let cls = "thh-debug-ok";
     let text = "ok";
-    if (status === "missing") { cls = "thh-debug-miss"; text = "vazio"; }
-    else if (status === "warn") { cls = "thh-debug-warn"; text = opts?.text || "parcial"; }
-    else if (status === "ok") { cls = "thh-debug-ok"; text = opts?.text || "ok"; }
+    if (status === "missing") {
+      cls = "thh-debug-miss";
+      text = "vazio";
+    } else if (status === "warn") {
+      cls = "thh-debug-warn";
+      text = opts?.text || "parcial";
+    } else if (status === "ok") {
+      cls = "thh-debug-ok";
+      text = opts?.text || "ok";
+    }
     return `<div class="thh-debug-row"><span class="thh-debug-key">${escapeHtml(label)}${detail}</span><span class="${cls}">${escapeHtml(String(value ?? text))}</span></div>`;
   }
 
   function renderDebug(profile) {
     const panel = document.getElementById("thh-debug-panel");
     if (!panel) return;
-    if (!debugEnabled()) { panel.style.display = "none"; return; }
+    if (!debugEnabled()) {
+      panel.style.display = "none";
+      return;
+    }
     panel.style.display = "block";
 
     const d = profile?.parser_diagnostics || {};
@@ -1693,8 +1913,12 @@
       education: !!document.querySelector('#education, [id="education"]'),
       skills: !!document.querySelector('#skills, [id="skills"]'),
       languages: !!document.querySelector('#languages, [id="languages"]'),
-      certifications: !!document.querySelector('#licenses_and_certifications, [id="licenses_and_certifications"]'),
-      activity: !!document.querySelector('#content_collections, [id="content_collections"], section[data-section="recent-activity"]'),
+      certifications: !!document.querySelector(
+        '#licenses_and_certifications, [id="licenses_and_certifications"]',
+      ),
+      activity: !!document.querySelector(
+        '#content_collections, [id="content_collections"], section[data-section="recent-activity"]',
+      ),
     };
 
     const coreFields = [
@@ -1717,30 +1941,38 @@
     ];
 
     const renderFields = (rows, kind) =>
-      rows.map(([k, v]) => {
-        if (kind === "core") {
-          const status = v ? "ok" : "missing";
-          return fieldRow(k, v || "—", { status });
-        }
-        const n = Number(v) || 0;
-        const anchorKey = k === "skills_detailed" ? "skills" : k === "recent_activity" ? "activity" : k;
-        const anchorOk = anchors[anchorKey];
-        const detail = anchorKey in anchors ? `anchor#${anchorKey}: ${anchorOk ? "✓" : "✗"}` : "";
-        const status = n > 0 ? "ok" : (anchorOk ? "warn" : "missing");
-        const text = n > 0 ? `${n} itens` : (anchorOk ? "anchor visto, 0 extraídos" : "sem anchor / 0");
-        return fieldRow(k, "", { status, text, detail });
-      }).join("");
+      rows
+        .map(([k, v]) => {
+          if (kind === "core") {
+            const status = v ? "ok" : "missing";
+            return fieldRow(k, v || "—", { status });
+          }
+          const n = Number(v) || 0;
+          const anchorKey =
+            k === "skills_detailed" ? "skills" : k === "recent_activity" ? "activity" : k;
+          const anchorOk = anchors[anchorKey];
+          const detail = anchorKey in anchors ? `anchor#${anchorKey}: ${anchorOk ? "✓" : "✗"}` : "";
+          const status = n > 0 ? "ok" : anchorOk ? "warn" : "missing";
+          const text =
+            n > 0 ? `${n} itens` : anchorOk ? "anchor visto, 0 extraídos" : "sem anchor / 0";
+          return fieldRow(k, "", { status, text, detail });
+        })
+        .join("");
 
     const voyager = d.voyager || { attempted: 0, ok: 0, failed: 0, status: [] };
     const details = d.details || { attempted: 0, ok: 0, failed: 0, status: [] };
     const fetchStatus = (b) => `${b.ok}/${b.attempted} ok · ${b.failed} fail`;
-    const lastStatus = (arr) => (arr && arr.length
-      ? arr.slice(-6).map((s) => {
-          const code = s.code ?? s.status ?? "?";
-          const name = s.url || s.endpoint || s.target || "";
-          return `<div class="thh-debug-row"><span class="thh-debug-key">${escapeHtml(String(name).slice(0, 48))}</span><span class="${code === 200 ? "thh-debug-ok" : "thh-debug-miss"}">${escapeHtml(String(code))}</span></div>`;
-        }).join("")
-      : `<div class="thh-muted" style="color:#94a3b8">sem tentativas</div>`);
+    const lastStatus = (arr) =>
+      arr && arr.length
+        ? arr
+            .slice(-6)
+            .map((s) => {
+              const code = s.code ?? s.status ?? "?";
+              const name = s.url || s.endpoint || s.target || "";
+              return `<div class="thh-debug-row"><span class="thh-debug-key">${escapeHtml(String(name).slice(0, 48))}</span><span class="${code === 200 ? "thh-debug-ok" : "thh-debug-miss"}">${escapeHtml(String(code))}</span></div>`;
+            })
+            .join("")
+        : `<div class="thh-muted" style="color:#94a3b8">sem tentativas</div>`;
 
     panel.innerHTML = `
       <h4>Página</h4>
@@ -1764,14 +1996,15 @@
 
     document.getElementById("thh-debug-copy").onclick = async () => {
       try {
-        await navigator.clipboard.writeText(JSON.stringify({ profile, diagnostics: d, anchors }, null, 2));
+        await navigator.clipboard.writeText(
+          JSON.stringify({ profile, diagnostics: d, anchors }, null, 2),
+        );
         setStatus("Diagnóstico copiado para a área de transferência.");
       } catch (e) {
         setStatus("Não foi possível copiar: " + (e?.message || e), true);
       }
     };
     document.getElementById("thh-debug-log").onclick = () => {
-      // eslint-disable-next-line no-console
       console.log("[TechHire Hunter] debug", { profile, diagnostics: d, anchors });
       setStatus("Diagnóstico enviado para o console (DevTools).");
     };
@@ -1905,14 +2138,17 @@
         if (debugToggle && res && res["thh:debug"]) debugToggle.checked = true;
         renderDebug(latestProfile);
       });
-    } catch { /* storage indisponível */ }
+    } catch {
+      /* storage indisponível */
+    }
     debugToggle?.addEventListener("change", () => {
-      try { chrome.storage?.local?.set?.({ "thh:debug": debugToggle.checked }); } catch { /* ignore */ }
+      try {
+        chrome.storage?.local?.set?.({ "thh:debug": debugToggle.checked });
+      } catch {
+        /* ignore */
+      }
       renderDebug(latestProfile);
     });
-
-
-
 
     document.getElementById("thh-recheck").onclick = () => {
       allowPartialOnce = false;
@@ -1984,32 +2220,42 @@
             skills: latestProfile.skills_detailed?.length || 0,
           };
         }
-      } catch { /* não bloquear captura por falha do filtro */ }
+      } catch {
+        /* não bloquear captura por falha do filtro */
+      }
       // v3.0 — Guard rígido: aborta se não temos sinal estruturado real
       // (about do SSR, experiências OU educação). Sem isso o parser
       // está pegando shell/footer e mandando lixo pro TechHire.
       const d = latestProfile?.parser_diagnostics || {};
-      const anchorsOk =
-        d.anchors && Object.values(d.anchors).some((v) => v === true);
+      const anchorsOk = d.anchors && Object.values(d.anchors).some((v) => v === true);
       const richCount =
         (latestProfile?.experiences?.length || 0) +
         (latestProfile?.education?.length || 0) +
         (latestProfile?.skills_detailed?.length || 0);
       const aboutFromSsr = latestProfile?.__about_source === "voyager_ssr";
-      const structuredOk = aboutFromSsr || (latestProfile?.experiences?.length || 0) > 0 || (latestProfile?.education?.length || 0) > 0;
+      const structuredOk =
+        aboutFromSsr ||
+        (latestProfile?.experiences?.length || 0) > 0 ||
+        (latestProfile?.education?.length || 0) > 0;
       const ssrOk = (d.ssr_code_count || 0) > 0;
       if (!structuredOk && !allowPartialOnce) {
         allowPartialOnce = true;
         btn.disabled = false;
         btn.textContent = "Salvar candidato";
-        setStatus("Sem dados estruturados (Voyager não retornou Profile/Position/Education). Role a página inteira, aguarde 3-5s e clique em Re-detectar. Para gravar mesmo assim parcial, clique em Salvar novamente.", true);
+        setStatus(
+          "Sem dados estruturados (Voyager não retornou Profile/Position/Education). Role a página inteira, aguarde 3-5s e clique em Re-detectar. Para gravar mesmo assim parcial, clique em Salvar novamente.",
+          true,
+        );
         return;
       }
       if (!ssrOk && !anchorsOk && richCount === 0 && !allowPartialOnce) {
         allowPartialOnce = true;
         btn.disabled = false;
         btn.textContent = "Salvar candidato";
-        setStatus("Perfil sem dados estruturados (LinkedIn não hidratou as seções). Role a página até o fim, aguarde 3-5s e clique em Re-detectar. Para gravar mesmo assim, clique em Salvar de novo.", true);
+        setStatus(
+          "Perfil sem dados estruturados (LinkedIn não hidratou as seções). Role a página até o fim, aguarde 3-5s e clique em Re-detectar. Para gravar mesmo assim, clique em Salvar de novo.",
+          true,
+        );
         return;
       }
       if (!isComplete(latestProfile) && !allowPartialOnce) {
@@ -2017,7 +2263,10 @@
         btn.disabled = false;
         btn.textContent = "Salvar candidato";
         const missing = missingFields(latestProfile).filter((field) => field !== "nome");
-        setStatus(`Perfil incompleto (${missing.join(", ") || "detalhes"}). Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.`, true);
+        setStatus(
+          `Perfil incompleto (${missing.join(", ") || "detalhes"}). Clique em Re-detectar ou clique em Salvar novamente para gravar parcial.`,
+          true,
+        );
         return;
       }
       // Sanity final: nunca deixa "about lixo" sair pro backend.
@@ -2041,7 +2290,6 @@
       });
     };
 
-
     function loadTemplates() {
       sendRuntimeMessage({ type: "LIST_TEMPLATES" }, (resp) => {
         if (!resp?.ok) return;
@@ -2059,19 +2307,26 @@
     function renderTemplate(templateId) {
       if (!templateId) return;
       lastTemplateId = templateId;
-      sendRuntimeMessage({ type: "RENDER_TEMPLATE", payload: { templateId, profile: latestProfile } }, (resp) => {
-        if (resp?.ok) {
-          document.getElementById("thh-message").value = resp.data?.body || "";
-          updateCounter?.();
-        }
-      });
+      sendRuntimeMessage(
+        { type: "RENDER_TEMPLATE", payload: { templateId, profile: latestProfile } },
+        (resp) => {
+          if (resp?.ok) {
+            document.getElementById("thh-message").value = resp.data?.body || "";
+            updateCounter?.();
+          }
+        },
+      );
     }
 
     // ──────────────────────────────────────────────────────────────
     // Envio assistido via window.__thhMessenger (v0.3.0)
     // ──────────────────────────────────────────────────────────────
 
-    const LIMITS = window.__thhMessenger?.LIMITS || { connect: 300, direct: 1900, inmail_body: 1900 };
+    const LIMITS = window.__thhMessenger?.LIMITS || {
+      connect: 300,
+      direct: 1900,
+      inmail_body: 1900,
+    };
     const messageEl = document.getElementById("thh-message");
     const counterEl = document.getElementById("thh-counter");
     const pillEl = document.getElementById("thh-pill");

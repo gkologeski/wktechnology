@@ -12,11 +12,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
 
-const SIGNATURE_HEADERS = [
-  "x-unipile-signature",
-  "x-webhook-signature",
-  "x-signature",
-];
+const SIGNATURE_HEADERS = ["x-unipile-signature", "x-webhook-signature", "x-signature"];
 
 function verifySignature(body: string, headerValue: string | null, secret: string): boolean {
   if (!headerValue) return false;
@@ -65,9 +61,8 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { parseUnipileWebhook, hydrateV2Message } = await import(
-          "@/lib/unipile/webhook-events.server"
-        );
+        const { parseUnipileWebhook, hydrateV2Message } =
+          await import("@/lib/unipile/webhook-events.server");
 
         const event = parseUnipileWebhook(payload);
         const unipileAccountId = event.unipileAccountId;
@@ -163,10 +158,7 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
         }
 
         // Busca o registro pelo connect_token/state (preferência) ou unipile_account_id
-        let query = supabaseAdmin
-          .from("unipile_accounts")
-          .select("id, owner_id")
-          .limit(1);
+        let query = supabaseAdmin.from("unipile_accounts").select("id, owner_id").limit(1);
         if (connectToken) {
           query = query.eq("connect_token", connectToken);
         } else if (unipileAccountId) {
@@ -195,8 +187,7 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
                 : {}),
               ...(status === "error" || status === "disconnected"
                 ? {
-                    last_error:
-                      event.error ?? (status === "error" ? "Falha na conexão" : null),
+                    last_error: event.error ?? (status === "error" ? "Falha na conexão" : null),
                   }
                 : {}),
             })

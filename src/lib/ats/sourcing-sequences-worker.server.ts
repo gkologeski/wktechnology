@@ -384,9 +384,8 @@ export async function processDueEnrollments(limit = 50): Promise<{
             const publicId = m ? decodeURIComponent(m[1]).replace(/\/$/, "") : null;
             if (!publicId) throw new UnipileError("linkedin_url inválido", "provider_error");
             const profile: any = await fetchProfile(ctx, publicId);
-            const { extractProfileProviderId, normalizeInviteResult } = await import(
-              "@/lib/unipile/client.server"
-            );
+            const { extractProfileProviderId, normalizeInviteResult } =
+              await import("@/lib/unipile/client.server");
             const providerId = extractProfileProviderId(profile);
             if (!providerId) throw new UnipileError("provider_id não resolvido", "provider_error");
             const body = (next.body ?? next.task_instructions ?? "").slice(0, 8000);

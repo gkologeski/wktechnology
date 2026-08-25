@@ -111,10 +111,8 @@ export const financeAuditReport = createServerFn({ method: "POST" })
     const byEntityRows = Array.from(byEntity.entries()).map(([id, v]) => ({
       legal_entity_id: id === "__none" ? null : id,
       name:
-        id === "__none"
-          ? "Sem empresa vinculada"
-          : nameById.get(id)?.name ?? "(desconhecida)",
-      code: id === "__none" ? null : nameById.get(id)?.code ?? null,
+        id === "__none" ? "Sem empresa vinculada" : (nameById.get(id)?.name ?? "(desconhecida)"),
+      code: id === "__none" ? null : (nameById.get(id)?.code ?? null),
       ...v,
     }));
 

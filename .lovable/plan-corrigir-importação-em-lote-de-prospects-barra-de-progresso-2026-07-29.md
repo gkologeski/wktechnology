@@ -9,15 +9,18 @@
 ## O que será feito
 
 **Correção da importação**
+
 - Na função de importação de prospect, gravar `owner_id` com o id do usuário autenticado e incluir `workspace_id` do workspace ativo.
 - Sem mudança de schema, políticas ou regras de negócio.
 
 **Barra de progresso**
+
 - Exibir uma barra de progresso no topo do painel de resultados enquanto o lote roda, com contador "X de Y" e o nome do prospect em processamento.
 - Os botões de lote e as ações por card continuam desabilitados durante o processamento.
 - Ao terminar, a barra some e o resumo (importados / já existentes / falhas) continua no toast.
 
 **Mensagens de erro mais úteis**
+
 - Guardar a primeira mensagem de erro real do lote e mostrá-la no toast de falha, em vez de apenas a contagem.
 - Se a importação falhar para todos no fluxo de fila, informar explicitamente que o modal não foi aberto por causa das falhas.
 

@@ -59,13 +59,10 @@ async function resolveProviderId(
   ctx: any,
   publicIdentifier: string,
 ): Promise<{ providerId: string | null; raw: any }> {
-  const { fetchProfile, extractProfileProviderId } = await import(
-    "@/lib/unipile/client.server"
-  );
+  const { fetchProfile, extractProfileProviderId } = await import("@/lib/unipile/client.server");
   const profile = (await fetchProfile(ctx, publicIdentifier)) as any;
   return { providerId: extractProfileProviderId(profile), raw: profile };
 }
-
 
 // ---------- send message ----------
 
@@ -83,19 +80,15 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const {
-      loadAccountCtx,
-      sendLinkedinMessage,
-      UnipileError,
-    } = await import("@/lib/unipile/client.server");
+    const { loadAccountCtx, sendLinkedinMessage, UnipileError } =
+      await import("@/lib/unipile/client.server");
 
     const ctx = await loadAccountCtx(userId);
 
     let providerId = data.providerId ?? null;
     let profileRaw: any = null;
     if (!providerId) {
-      const publicId =
-        data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
+      const publicId = data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
       if (!publicId) {
         return {
           ok: false as const,
@@ -175,7 +168,6 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
         })
         .eq("id", logRow!.id);
       return { ok: true as const, providerMessageId: messageId, chatId };
-
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const code = err instanceof UnipileError ? err.code : "provider_error";
@@ -207,19 +199,15 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const {
-      loadAccountCtx,
-      sendLinkedinInvite,
-      UnipileError,
-    } = await import("@/lib/unipile/client.server");
+    const { loadAccountCtx, sendLinkedinInvite, UnipileError } =
+      await import("@/lib/unipile/client.server");
 
     const ctx = await loadAccountCtx(userId);
 
     let providerId = data.providerId ?? null;
     let profileRaw: any = null;
     if (!providerId) {
-      const publicId =
-        data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
+      const publicId = data.publicIdentifier ?? extractPublicIdentifier(data.linkedinUrl ?? null);
       if (!publicId) {
         return { ok: false as const, error: "Sem identificador do destinatário." };
       }
@@ -290,7 +278,6 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
         })
         .eq("id", logRow!.id);
       return { ok: true as const, invitationId };
-
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const code = err instanceof UnipileError ? err.code : "provider_error";

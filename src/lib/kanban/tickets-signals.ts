@@ -47,7 +47,10 @@ export function computeTicketSignal(
     if (h < 0) {
       dueScore = 1;
       const overdueH = Math.round(-h);
-      reason = overdueH >= 24 ? `SLA vencido há ${Math.round(overdueH / 24)}d` : `SLA vencido há ${overdueH}h`;
+      reason =
+        overdueH >= 24
+          ? `SLA vencido há ${Math.round(overdueH / 24)}d`
+          : `SLA vencido há ${overdueH}h`;
     } else if (h <= 2) {
       dueScore = 1;
       reason = `SLA em ${Math.max(1, Math.round(h))}h`;

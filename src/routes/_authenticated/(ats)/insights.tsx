@@ -129,9 +129,7 @@ function InsightsContent({
           title="Funil de candidaturas"
           description="Distribuição dos candidatos pelas etapas do pipeline."
           action={
-            refreshing ? (
-              <span className="text-xs text-text-tertiary">Atualizando…</span>
-            ) : null
+            refreshing ? <span className="text-xs text-text-tertiary">Atualizando…</span> : null
           }
         />
         {data.funnel.length === 0 ? (
@@ -178,10 +176,7 @@ function InsightsContent({
             ) : (
               <ul className="divide-y divide-border-subtle">
                 {data.sources.map((s) => (
-                  <li
-                    key={s.source}
-                    className="flex items-center justify-between py-2 text-sm"
-                  >
+                  <li key={s.source} className="flex items-center justify-between py-2 text-sm">
                     <SourceBadge source={s.source} />
                     <span className="text-text-primary tabular-nums">{s.count}</span>
                   </li>

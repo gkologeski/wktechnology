@@ -151,7 +151,6 @@ export function ChatThread({
     addFiles(picked);
   };
 
-
   const onKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();

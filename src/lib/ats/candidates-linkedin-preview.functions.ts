@@ -84,9 +84,8 @@ export const previewLinkedinProfile = createServerFn({ method: "POST" })
 
     const normalizedUrl = normalizeLinkedinUrl(data.url);
 
-    const { loadAccountCtx, fetchProfile, UnipileError } = await import(
-      "@/lib/unipile/client.server"
-    );
+    const { loadAccountCtx, fetchProfile, UnipileError } =
+      await import("@/lib/unipile/client.server");
 
     let ctx: Awaited<ReturnType<typeof loadAccountCtx>>;
     try {
@@ -208,17 +207,35 @@ export const previewLinkedinProfile = createServerFn({ method: "POST" })
 
     // Structured experiences/education DTOs for the form.
     const experiencesDTO: LinkedinExperienceDTO[] = exps.slice(0, 20).map((e: any) => ({
-      title: String(e.position ?? e.role ?? e.title ?? "").trim().slice(0, 200),
-      company: String(e.company ?? e.company_name ?? "").trim().slice(0, 200),
-      start: String(e.start ?? e.date_start ?? e.start_date ?? "").trim().slice(0, 40),
-      end: String(e.end ?? e.date_end ?? e.end_date ?? "").trim().slice(0, 40),
-      description: String(e.description ?? e.summary ?? "").trim().slice(0, 1000),
+      title: String(e.position ?? e.role ?? e.title ?? "")
+        .trim()
+        .slice(0, 200),
+      company: String(e.company ?? e.company_name ?? "")
+        .trim()
+        .slice(0, 200),
+      start: String(e.start ?? e.date_start ?? e.start_date ?? "")
+        .trim()
+        .slice(0, 40),
+      end: String(e.end ?? e.date_end ?? e.end_date ?? "")
+        .trim()
+        .slice(0, 40),
+      description: String(e.description ?? e.summary ?? "")
+        .trim()
+        .slice(0, 1000),
     }));
     const educationDTO: LinkedinEducationDTO[] = edu.slice(0, 20).map((e: any) => ({
-      school: String(e.school ?? e.institution ?? e.school_name ?? "").trim().slice(0, 200),
-      degree: String(e.degree ?? e.field_of_study ?? e.field ?? "").trim().slice(0, 200),
-      start: String(e.start ?? e.date_start ?? e.start_date ?? "").trim().slice(0, 40),
-      end: String(e.end ?? e.date_end ?? e.end_date ?? "").trim().slice(0, 40),
+      school: String(e.school ?? e.institution ?? e.school_name ?? "")
+        .trim()
+        .slice(0, 200),
+      degree: String(e.degree ?? e.field_of_study ?? e.field ?? "")
+        .trim()
+        .slice(0, 200),
+      start: String(e.start ?? e.date_start ?? e.start_date ?? "")
+        .trim()
+        .slice(0, 40),
+      end: String(e.end ?? e.date_end ?? e.end_date ?? "")
+        .trim()
+        .slice(0, 40),
     }));
 
     // Notes seed: fallback resumo formatado (mantido para compatibilidade).

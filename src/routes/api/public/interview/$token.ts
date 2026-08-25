@@ -68,7 +68,9 @@ export const Route = createFileRoute("/api/public/interview/$token")({
           job_title: job?.title ?? null,
           candidate_name: cand?.full_name ?? null,
           questions,
-          submitted_question_ids: (responses ?? []).map((r: { question_id: string }) => r.question_id),
+          submitted_question_ids: (responses ?? []).map(
+            (r: { question_id: string }) => r.question_id,
+          ),
         });
       },
       POST: async ({ params, request }) => {
@@ -80,7 +82,9 @@ export const Route = createFileRoute("/api/public/interview/$token")({
         if (ct.includes("multipart/form-data")) {
           const { data: row } = await admin
             .from("ats_interviews")
-            .select("id, owner_id, kind, self_schedule_expires_at, async_questions_snapshot, interview_kit_id")
+            .select(
+              "id, owner_id, kind, self_schedule_expires_at, async_questions_snapshot, interview_kit_id",
+            )
             .eq("self_schedule_token", token)
             .maybeSingle();
           if (!row) return new Response("not found", { status: 404 });
@@ -116,12 +120,10 @@ export const Route = createFileRoute("/api/public/interview/$token")({
           const ext = (file.type.split("/")[1] || "webm").split(";")[0];
           const path = `${row.owner_id}/${row.id}/${questionId}-${Date.now()}.${ext}`;
           const bytes = new Uint8Array(await file.arrayBuffer());
-          const { error: upErr } = await admin.storage
-            .from(BUCKET)
-            .upload(path, bytes, {
-              contentType: file.type || "video/webm",
-              upsert: false,
-            });
+          const { error: upErr } = await admin.storage.from(BUCKET).upload(path, bytes, {
+            contentType: file.type || "video/webm",
+            upsert: false,
+          });
           if (upErr) return Response.json({ ok: false, error: upErr.message }, { status: 500 });
 
           const { error: insErr } = await admin.from("ats_async_video_responses").insert({

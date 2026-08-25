@@ -64,6 +64,7 @@ continua sem acesso a marcos, tarefas, horas e custos.
 ## Detalhes técnicos
 
 **Migração**
+
 - `public.project_updates`: `id`, `workspace_id`, `project_id`, `kind`
   (`checkpoint` | `auto`), `title`, `summary`, `health`
   (`green` | `yellow` | `red`), `progress_pct`, `expected_delivery_date`,
@@ -86,6 +87,7 @@ continua sem acesso a marcos, tarefas, horas e custos.
   `techsales.deal_delivery.view.own` aos cargos de vendedor.
 
 **Código**
+
 - `src/lib/projects/delivery.functions.ts`: `getDealDelivery` (por `deal_id`),
   `getProjectDelivery` (por `project_id`), `createProjectUpdate`,
   `updateProjectUpdate`, `deleteProjectUpdate` — todas com
@@ -104,6 +106,7 @@ continua sem acesso a marcos, tarefas, horas e custos.
   para aparecerem em `/settings/permissions` e no diagnóstico RBAC.
 
 **Fora de escopo**
+
 - Não altera RLS de `projects`, `project_tasks` ou `project_milestones`.
 - Não cria automação de criação de projeto no ganho do negócio.
 - Não expõe nada ao cliente final (portal externo) nesta etapa.

@@ -4,7 +4,25 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Landmark, Loader2, RefreshCw, ShieldCheck, Unplug, Zap, Plus, Copy, CheckCircle2, X, Send, ArrowUpRight, Activity, AlertTriangle, AlertCircle, Info, Clock } from "lucide-react";
+import {
+  Landmark,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  Unplug,
+  Zap,
+  Plus,
+  Copy,
+  CheckCircle2,
+  X,
+  Send,
+  ArrowUpRight,
+  Activity,
+  AlertTriangle,
+  AlertCircle,
+  Info,
+  Clock,
+} from "lucide-react";
 
 import {
   getBankConnection,
@@ -29,13 +47,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -44,12 +56,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table,
   TableBody,
@@ -61,7 +68,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { formatCurrency } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/finance/banking")({
@@ -124,14 +137,14 @@ function BankingPage() {
   const stmt = useQuery({
     queryKey: ["banking", "statement", conn?.id],
     enabled: !!conn?.id && status === "connected",
-    queryFn: () =>
-      listStmt({ data: { connection_id: conn!.id, status: "all", limit: 200 } }),
+    queryFn: () => listStmt({ data: { connection_id: conn!.id, status: "all", limit: 200 } }),
   });
 
-  const [mockDialog, setMockDialog] = useState<
-    | null
-    | { connection_id: string; state: string; message?: string }
-  >(null);
+  const [mockDialog, setMockDialog] = useState<null | {
+    connection_id: string;
+    state: string;
+    message?: string;
+  }>(null);
 
   const startMut = useMutation({
     mutationFn: () => startFn({ data: { provider: "inter", mode: "mock" } }),
@@ -174,8 +187,7 @@ function BankingPage() {
       toast.success("Conexão removida");
       qc.invalidateQueries({ queryKey: ["banking"] });
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao desconectar"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao desconectar"),
   });
 
   const syncMut = useMutation({
@@ -184,8 +196,7 @@ function BankingPage() {
       toast.success(`Sincronizado — ${res.count} movimentações`);
       qc.invalidateQueries({ queryKey: ["banking"] });
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao sincronizar"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao sincronizar"),
   });
 
   const reconMut = useMutation({
@@ -314,7 +325,13 @@ function BankingPage() {
     onSuccess: () => {
       toast.success("Pagamento criado (rascunho)");
       setPaymentDialogOpen(false);
-      setPaymentForm((f) => ({ ...f, amount: "", description: "", pix_key: "", boleto_digitable_line: "" }));
+      setPaymentForm((f) => ({
+        ...f,
+        amount: "",
+        description: "",
+        pix_key: "",
+        boleto_digitable_line: "",
+      }));
       qc.invalidateQueries({ queryKey: ["banking", "payments"] });
       qc.invalidateQueries({ queryKey: ["banking", "payments-summary"] });
     },
@@ -347,9 +364,6 @@ function BankingPage() {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Falha ao liquidar"),
   });
-
-
-
 
   return (
     <div className="flex flex-col gap-6 p-6">
@@ -453,9 +467,7 @@ function BankingPage() {
             <div className="mt-1 text-sm">
               {(conn?.scopes ?? []).length
                 ? (conn?.scopes ?? []).slice(0, 3).join(", ") +
-                  ((conn?.scopes ?? []).length > 3
-                    ? ` +${(conn?.scopes ?? []).length - 3}`
-                    : "")
+                  ((conn?.scopes ?? []).length > 3 ? ` +${(conn?.scopes ?? []).length - 3}` : "")
                 : "—"}
             </div>
           </div>
@@ -465,7 +477,6 @@ function BankingPage() {
       <BankingHealthCard providerConnected={status === "connected"} />
 
       <Tabs defaultValue="statement">
-
         <TabsList>
           <TabsTrigger value="statement">Extrato</TabsTrigger>
           <TabsTrigger value="charges">Cobranças</TabsTrigger>
@@ -506,10 +517,7 @@ function BankingPage() {
                   processamento → pago (conciliação automática com AP).
                 </CardDescription>
               </div>
-              <Button
-                onClick={() => setPaymentDialogOpen(true)}
-                disabled={status !== "connected"}
-              >
+              <Button onClick={() => setPaymentDialogOpen(true)} disabled={status !== "connected"}>
                 <Plus className="h-4 w-4" /> Novo pagamento
               </Button>
             </CardHeader>
@@ -550,7 +558,9 @@ function BankingPage() {
                         <TableCell className="text-sm">
                           <div>{p.favored_name ?? "—"}</div>
                           {p.favored_document && (
-                            <div className="text-xs text-muted-foreground">{p.favored_document}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {p.favored_document}
+                            </div>
                           )}
                         </TableCell>
                         <TableCell className="text-sm">{p.description ?? "—"}</TableCell>
@@ -640,8 +650,6 @@ function BankingPage() {
           </Card>
         </TabsContent>
 
-
-
         <TabsContent value="charges" className="mt-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -652,10 +660,7 @@ function BankingPage() {
                   automaticamente no lançamento financeiro associado.
                 </CardDescription>
               </div>
-              <Button
-                onClick={() => setChargeDialogOpen(true)}
-                disabled={status !== "connected"}
-              >
+              <Button onClick={() => setChargeDialogOpen(true)} disabled={status !== "connected"}>
                 <Plus className="h-4 w-4" /> Nova cobrança
               </Button>
             </CardHeader>
@@ -850,7 +855,9 @@ function BankingPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Histórico de eventos</CardTitle>
-              <CardDescription>Trilha de auditoria da conexão (últimos 10 eventos).</CardDescription>
+              <CardDescription>
+                Trilha de auditoria da conexão (últimos 10 eventos).
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {events.length === 0 ? (
@@ -927,7 +934,9 @@ function BankingPage() {
                   value={chargeForm.type}
                   onValueChange={(v) => setChargeForm((f) => ({ ...f, type: v as any }))}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="pix">Pix</SelectItem>
                     <SelectItem value="boleto">Boleto</SelectItem>
@@ -981,10 +990,14 @@ function BankingPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setChargeDialogOpen(false)}>Cancelar</Button>
+            <Button variant="ghost" onClick={() => setChargeDialogOpen(false)}>
+              Cancelar
+            </Button>
             <Button
               onClick={() => createChargeMut.mutate()}
-              disabled={createChargeMut.isPending || !chargeForm.amount || Number(chargeForm.amount) <= 0}
+              disabled={
+                createChargeMut.isPending || !chargeForm.amount || Number(chargeForm.amount) <= 0
+              }
             >
               {createChargeMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               Emitir cobrança
@@ -1016,7 +1029,11 @@ function BankingPage() {
                 <div>
                   <Label className="text-xs">Copia e cola</Label>
                   <div className="flex gap-2">
-                    <Input readOnly value={showCharge.pix_copy_paste} className="font-mono text-xs" />
+                    <Input
+                      readOnly
+                      value={showCharge.pix_copy_paste}
+                      className="font-mono text-xs"
+                    />
                     <Button
                       variant="outline"
                       size="icon"
@@ -1037,7 +1054,11 @@ function BankingPage() {
                 <div>
                   <Label className="text-xs">Linha digitável</Label>
                   <div className="flex gap-2">
-                    <Input readOnly value={showCharge.boleto_digitable_line} className="font-mono text-xs" />
+                    <Input
+                      readOnly
+                      value={showCharge.boleto_digitable_line}
+                      className="font-mono text-xs"
+                    />
                     <Button
                       variant="outline"
                       size="icon"
@@ -1061,7 +1082,9 @@ function BankingPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setShowCharge(null)}>Fechar</Button>
+            <Button variant="ghost" onClick={() => setShowCharge(null)}>
+              Fechar
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1083,9 +1106,7 @@ function BankingPage() {
                 <select
                   className="w-full h-9 rounded-md border bg-background px-2 text-sm"
                   value={paymentForm.type}
-                  onChange={(e) =>
-                    setPaymentForm((f) => ({ ...f, type: e.target.value as any }))
-                  }
+                  onChange={(e) => setPaymentForm((f) => ({ ...f, type: e.target.value as any }))}
                 >
                   <option value="pix">Pix</option>
                   <option value="ted">TED</option>
@@ -1108,9 +1129,7 @@ function BankingPage() {
               <Input
                 type="date"
                 value={paymentForm.scheduled_for}
-                onChange={(e) =>
-                  setPaymentForm((f) => ({ ...f, scheduled_for: e.target.value }))
-                }
+                onChange={(e) => setPaymentForm((f) => ({ ...f, scheduled_for: e.target.value }))}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -1118,9 +1137,7 @@ function BankingPage() {
                 <Label className="text-xs">Beneficiário</Label>
                 <Input
                   value={paymentForm.favored_name}
-                  onChange={(e) =>
-                    setPaymentForm((f) => ({ ...f, favored_name: e.target.value }))
-                  }
+                  onChange={(e) => setPaymentForm((f) => ({ ...f, favored_name: e.target.value }))}
                 />
               </div>
               <div>
@@ -1186,9 +1203,7 @@ function BankingPage() {
             <Button
               onClick={() => createPaymentMut.mutate()}
               disabled={
-                createPaymentMut.isPending ||
-                !paymentForm.amount ||
-                Number(paymentForm.amount) <= 0
+                createPaymentMut.isPending || !paymentForm.amount || Number(paymentForm.amount) <= 0
               }
             >
               {createPaymentMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -1277,9 +1292,7 @@ function BankingHealthCard({ providerConnected }: { providerConnected: boolean }
             <div className="text-xs uppercase text-muted-foreground">Última execução</div>
             <div className="mt-1 flex items-center gap-1.5 text-sm">
               <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              {lastRun?.started_at
-                ? new Date(lastRun.started_at).toLocaleString("pt-BR")
-                : "—"}
+              {lastRun?.started_at ? new Date(lastRun.started_at).toLocaleString("pt-BR") : "—"}
             </div>
             <div className="mt-1 text-xs text-muted-foreground">
               {lastRun
@@ -1290,14 +1303,9 @@ function BankingHealthCard({ providerConnected }: { providerConnected: boolean }
           <div className="rounded-md border p-3">
             <div className="text-xs uppercase text-muted-foreground">Últimas 24 execuções</div>
             <div className="mt-1 text-sm tabular-nums">
-              <span className="text-emerald-600 dark:text-emerald-400">{h?.runs_ok ?? 0} ok</span>{" "}
-              ·{" "}
+              <span className="text-emerald-600 dark:text-emerald-400">{h?.runs_ok ?? 0} ok</span> ·{" "}
               <span
-                className={
-                  (h?.runs_failed ?? 0) > 0
-                    ? "text-destructive"
-                    : "text-muted-foreground"
-                }
+                className={(h?.runs_failed ?? 0) > 0 ? "text-destructive" : "text-muted-foreground"}
               >
                 {h?.runs_failed ?? 0} falhas
               </span>
@@ -1305,9 +1313,7 @@ function BankingHealthCard({ providerConnected }: { providerConnected: boolean }
           </div>
           <div className="rounded-md border p-3">
             <div className="text-xs uppercase text-muted-foreground">Pagamentos parados</div>
-            <div className="mt-1 text-xl font-semibold tabular-nums">
-              {h?.stuck_payments ?? 0}
-            </div>
+            <div className="mt-1 text-xl font-semibold tabular-nums">{h?.stuck_payments ?? 0}</div>
             <div className="mt-1 text-xs text-muted-foreground">Em processamento há &gt;6h</div>
           </div>
           <div className="rounded-md border p-3">
@@ -1355,10 +1361,7 @@ function BankingHealthCard({ providerConnected }: { providerConnected: boolean }
                     ? "text-amber-600 dark:text-amber-400"
                     : "text-muted-foreground";
               return (
-                <div
-                  key={a.id}
-                  className="flex items-start gap-2 rounded-md border p-2 text-sm"
-                >
+                <div key={a.id} className="flex items-start gap-2 rounded-md border p-2 text-sm">
                   <Icon className={"mt-0.5 h-4 w-4 shrink-0 " + tint} />
                   <div className="min-w-0 flex-1">
                     <div className="truncate">{a.message}</div>
@@ -1375,4 +1378,3 @@ function BankingHealthCard({ providerConnected }: { providerConnected: boolean }
     </Card>
   );
 }
-

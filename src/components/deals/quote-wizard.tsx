@@ -4,11 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, ChevronLeft, ChevronRight, ExternalLink, Loader2, Slash } from "lucide-react";
 import { toast } from "sonner";
-import {
-  createQuoteFromDeal,
-  updateQuote,
-  resyncQuoteLineItems,
-} from "@/lib/quotes.functions";
+import { createQuoteFromDeal, updateQuote, resyncQuoteLineItems } from "@/lib/quotes.functions";
 import { listQuoteTemplates } from "@/lib/quote-templates.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -116,9 +112,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
 
   const [draft, setDraft] = useState({
     title: existingQuote?.title ?? "",
-    validUntil: existingQuote?.valid_until
-      ? String(existingQuote.valid_until).slice(0, 10)
-      : "",
+    validUntil: existingQuote?.valid_until ? String(existingQuote.valid_until).slice(0, 10) : "",
     notes: existingQuote?.notes ?? "",
     terms: existingQuote?.terms ?? "",
     templateId: existingQuote?.template_id ?? "",
@@ -135,9 +129,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     setQuoteNumber(existingQuote?.number ?? null);
     setDraft({
       title: existingQuote?.title ?? "",
-      validUntil: existingQuote?.valid_until
-        ? String(existingQuote.valid_until).slice(0, 10)
-        : "",
+      validUntil: existingQuote?.valid_until ? String(existingQuote.valid_until).slice(0, 10) : "",
       notes: existingQuote?.notes ?? "",
       terms: existingQuote?.terms ?? "",
       templateId: existingQuote?.template_id ?? "",
@@ -184,7 +176,12 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
         .eq("id", deal.primary_contact_id)
         .maybeSingle();
       if (error) throw error;
-      return data as { id: string; first_name: string | null; last_name: string | null; email: string | null } | null;
+      return data as {
+        id: string;
+        first_name: string | null;
+        last_name: string | null;
+        email: string | null;
+      } | null;
     },
     enabled: open && Boolean(deal?.primary_contact_id),
   });
@@ -388,9 +385,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     const body = [
       `<p>${greeting}</p>`,
       `<p>Segue nossa cotação <strong>${title}</strong>${quoteNumber ? ` (${quoteNumber})` : ""}.</p>`,
-      publicUrl
-        ? `<p>Acesse pelo link: <a href="${publicUrl}">${publicUrl}</a></p>`
-        : "",
+      publicUrl ? `<p>Acesse pelo link: <a href="${publicUrl}">${publicUrl}</a></p>` : "",
       `<p>Qualquer dúvida, estou à disposição.</p>`,
     ]
       .filter(Boolean)
@@ -430,7 +425,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                     className={cn(
                       "flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs",
                       active && "border-primary bg-primary/5 text-primary",
-                      done && "border-emerald-500/50 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400",
+                      done &&
+                        "border-emerald-500/50 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400",
                       !active && !done && "text-muted-foreground",
                     )}
                   >
@@ -493,8 +489,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
               </div>
               {!hasLineItems && (
                 <p className="text-xs text-amber-600">
-                  Este negócio ainda não possui itens de linha. Você poderá adicioná-los na próxima etapa,
-                  mas será necessário ter ao menos um item para publicar.
+                  Este negócio ainda não possui itens de linha. Você poderá adicioná-los na próxima
+                  etapa, mas será necessário ter ao menos um item para publicar.
                 </p>
               )}
             </div>
@@ -503,13 +499,10 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
           {step === 1 && deal && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground">
-                Edite os itens do negócio. Ao avançar, a cotação será re-snapshot com os itens atuais.
+                Edite os itens do negócio. Ao avançar, a cotação será re-snapshot com os itens
+                atuais.
               </p>
-              <LineItemsEditorBody
-                dealId={dealId}
-                ownerId={deal.owner_id}
-                currency={currency}
-              />
+              <LineItemsEditorBody dealId={dealId} ownerId={deal.owner_id} currency={currency} />
             </div>
           )}
 
@@ -577,9 +570,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                     </div>
                     <div className="flex justify-between text-base font-semibold pt-1 border-t">
                       <span>Total</span>
-                      <span className="tabular-nums">
-                        {formatCurrency(totals.total, currency)}
-                      </span>
+                      <span className="tabular-nums">{formatCurrency(totals.total, currency)}</span>
                     </div>
                   </>
                 )}
@@ -598,7 +589,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
               </div>
               {!contact?.email && (
                 <p className="text-xs text-amber-600">
-                  Sem e-mail no contato principal — a cotação será publicada; você poderá enviá-la por e-mail depois de cadastrar o e-mail do contato.
+                  Sem e-mail no contato principal — a cotação será publicada; você poderá enviá-la
+                  por e-mail depois de cadastrar o e-mail do contato.
                 </p>
               )}
             </div>
@@ -623,11 +615,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                 </Button>
               ) : (
                 <>
-                  <Button
-                    variant="secondary"
-                    onClick={handlePublish}
-                    disabled={isBusy || !quoteId}
-                  >
+                  <Button variant="secondary" onClick={handlePublish} disabled={isBusy || !quoteId}>
                     Publicar
                   </Button>
                   <Button
@@ -658,7 +646,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
           companyId={deal.company_id ?? undefined}
           contactName={
             contact
-              ? [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() || undefined
+              ? [contact.first_name, contact.last_name].filter(Boolean).join(" ").trim() ||
+                undefined
               : undefined
           }
           onSent={async () => {

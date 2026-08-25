@@ -63,13 +63,18 @@ export const materializePeoplePayroll = createServerFn({ method: "POST" })
     const dryRun = data.dryRun ?? false;
 
     // Pessoas ativas
-    const peopleQ = await (supabase.from("people") as unknown as {
-      select: (c: string) => {
-        eq: (k: string, v: boolean) => {
-          neq: (k: string, v: string) => Promise<{ data: PersonMini[] | null; error: unknown }>;
+    const peopleQ = await (
+      supabase.from("people") as unknown as {
+        select: (c: string) => {
+          eq: (
+            k: string,
+            v: boolean,
+          ) => {
+            neq: (k: string, v: string) => Promise<{ data: PersonMini[] | null; error: unknown }>;
+          };
         };
-      };
-    })
+      }
+    )
       .select("id, full_name, status, monthly_cost, archived, currency")
       .eq("archived", false)
       .neq("status", "terminated");
@@ -78,11 +83,13 @@ export const materializePeoplePayroll = createServerFn({ method: "POST" })
 
     // Benefícios ativos vigentes
     const today = new Date().toISOString().slice(0, 10);
-    const benQ = await (supabase.from("people_benefits") as unknown as {
-      select: (c: string) => {
-        eq: (k: string, v: boolean) => Promise<{ data: BenefitMini[] | null; error: unknown }>;
-      };
-    })
+    const benQ = await (
+      supabase.from("people_benefits") as unknown as {
+        select: (c: string) => {
+          eq: (k: string, v: boolean) => Promise<{ data: BenefitMini[] | null; error: unknown }>;
+        };
+      }
+    )
       .select("person_id, monthly_value, active, starts_on, ends_on")
       .eq("active", true);
     const benefits: BenefitMini[] = (benQ.data ?? []).filter(
@@ -97,11 +104,13 @@ export const materializePeoplePayroll = createServerFn({ method: "POST" })
     }
 
     // Recorrências existentes (payable) do workspace
-    const recQ = await (supabase.from("financial_recurrences") as unknown as {
-      select: (c: string) => {
-        eq: (k: string, v: string) => Promise<{ data: RecurrenceRow[] | null; error: unknown }>;
-      };
-    })
+    const recQ = await (
+      supabase.from("financial_recurrences") as unknown as {
+        select: (c: string) => {
+          eq: (k: string, v: string) => Promise<{ data: RecurrenceRow[] | null; error: unknown }>;
+        };
+      }
+    )
       .select("id, active, template")
       .eq("direction", "payable");
     const recs: RecurrenceRow[] = recQ.data ?? [];
@@ -156,11 +165,13 @@ export const materializePeoplePayroll = createServerFn({ method: "POST" })
         );
         const needsUpdate = Math.abs(prevAmount - amount) > 0.001 || !existing.active;
         if (needsUpdate && !dryRun) {
-          const upd = await (supabase.from("financial_recurrences") as unknown as {
-            update: (v: Record<string, unknown>) => {
-              eq: (k: string, v: string) => Promise<{ error: unknown }>;
-            };
-          })
+          const upd = await (
+            supabase.from("financial_recurrences") as unknown as {
+              update: (v: Record<string, unknown>) => {
+                eq: (k: string, v: string) => Promise<{ error: unknown }>;
+              };
+            }
+          )
             .update({ template, active: true })
             .eq("id", existing.id);
           if ((upd as { error?: unknown }).error) throw (upd as { error: Error }).error;
@@ -175,9 +186,11 @@ export const materializePeoplePayroll = createServerFn({ method: "POST" })
         else skipped++;
       } else {
         if (!dryRun) {
-          const ins = await (supabase.from("financial_recurrences") as unknown as {
-            insert: (v: Record<string, unknown>) => Promise<{ error: unknown }>;
-          }).insert({
+          const ins = await (
+            supabase.from("financial_recurrences") as unknown as {
+              insert: (v: Record<string, unknown>) => Promise<{ error: unknown }>;
+            }
+          ).insert({
             workspace_id: workspaceId,
             owner_id: userId,
             direction: "payable",
@@ -209,11 +222,13 @@ export const materializePeoplePayroll = createServerFn({ method: "POST" })
       if (activeIds.has(personId)) continue;
       if (!rec.active) continue;
       if (!dryRun) {
-        const upd = await (supabase.from("financial_recurrences") as unknown as {
-          update: (v: Record<string, unknown>) => {
-            eq: (k: string, v: string) => Promise<{ error: unknown }>;
-          };
-        })
+        const upd = await (
+          supabase.from("financial_recurrences") as unknown as {
+            update: (v: Record<string, unknown>) => {
+              eq: (k: string, v: string) => Promise<{ error: unknown }>;
+            };
+          }
+        )
           .update({ active: false })
           .eq("id", rec.id);
         if ((upd as { error?: unknown }).error) throw (upd as { error: Error }).error;

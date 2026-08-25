@@ -25,7 +25,8 @@ export function CvPdfUploadButton({ onExtracted, disabled }: Props) {
       try {
         const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
         const workerUrl = (await import("pdfjs-dist/legacy/build/pdf.worker.mjs?url")).default;
-        (pdfjs as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = workerUrl;
+        (pdfjs as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc =
+          workerUrl;
         const buf = await file.arrayBuffer();
         const doc = await pdfjs.getDocument({ data: buf }).promise;
         const parts: string[] = [];
@@ -90,7 +91,11 @@ export function CvPdfUploadButton({ onExtracted, disabled }: Props) {
         onClick={() => ref.current?.click()}
         disabled={busy || disabled}
       >
-        {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+        {busy ? (
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        ) : (
+          <Upload className="h-4 w-4 mr-2" />
+        )}
         {busy ? "Processando…" : "Enviar PDF"}
       </Button>
       <Button

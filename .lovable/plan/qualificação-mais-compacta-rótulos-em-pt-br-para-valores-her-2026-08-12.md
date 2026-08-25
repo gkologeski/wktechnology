@@ -7,6 +7,7 @@ Duas frentes independentes, ambas apenas de apresentação (nenhuma mudança de 
 Alvo: blocos de campos de entidade exibidos antes (e depois) das perguntas, em `src/components/prospecting/qualification-entity-fields.tsx`.
 
 Ajustes de densidade (mantendo tokens semânticos, foco visível e labels):
+
 - container dos blocos: `space-y-4` → `space-y-2`
 - cada bloco (`section`): `p-3 space-y-3` → `p-2 space-y-1.5`
 - grid de campos: `gap-3` → `gap-x-3 gap-y-1.5`
@@ -22,6 +23,7 @@ Preservado: obrigatoriedade, selo "Apollo", sugestões clicáveis, máscara de m
 Confirmado no banco: os valores vêm do HubSpot em código (`COMPUTER_SOFTWARE`, `NEW`, `OFFLINE`, `lead`, `PROSPECT`, `non-marketing`) e ainda são sincronizados de volta para o HubSpot (`hubspot-push.server.ts` envia `industry`). Por isso os dados permanecem intactos e a tradução acontece só na exibição.
 
 Novo dicionário `src/lib/i18n/hubspot-values.ts`:
+
 - `INDUSTRY_LABELS` — catálogo completo dos setores HubSpot/LinkedIn (ex.: `COMPUTER_SOFTWARE` = "Software de Computador", `INFORMATION_TECHNOLOGY_AND_SERVICES` = "Tecnologia da Informação e Serviços", `HOSPITAL_HEALTH_CARE` = "Hospitais e Saúde", …)
 - `COMPANY_TYPE_LABELS` — `PROSPECT`, `PARTNER`, `RESELLER`, `VENDOR`, `OTHER`
 - `LIFECYCLE_LABELS` — `subscriber`, `lead`, `marketingqualifiedlead`, `salesqualifiedlead`, `opportunity`, `customer`, `evangelist`, `other`
@@ -31,6 +33,7 @@ Novo dicionário `src/lib/i18n/hubspot-values.ts`:
 - `translateFieldValue(fieldKey, value)` — resolve pelo nome da coluna (`industry`, `type`, `lifecyclestage`, `hs_lead_status`, `marketing_status`, `source`), com fallback: valores já em português ou IDs numéricos de estágio customizado são exibidos como estão; código desconhecido em MAIÚSCULA_COM_UNDERSCORE vira Capitalizado legível.
 
 Aplicação nos pontos de exibição, sem alterar as consultas nem os valores gravados/filtrados:
+
 - lista de Empresas (coluna Setor e facetas de filtro) e detalhe da empresa
 - lista de Contatos (estágio do ciclo de vida) e detalhe
 - Leads (origem) e painel de qualificação

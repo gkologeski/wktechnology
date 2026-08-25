@@ -29,8 +29,8 @@ function HuntingInstallPage() {
             >
               <ol className="ml-4 list-decimal space-y-3 text-sm text-text-secondary">
                 <li>
-                  <span className="font-medium text-text-primary">Baixe o pacote</span>{" "}
-                  da extensão (.zip) e descompacte numa pasta local.
+                  <span className="font-medium text-text-primary">Baixe o pacote</span> da extensão
+                  (.zip) e descompacte numa pasta local.
                   <div className="mt-2">
                     <Button
                       size="sm"
@@ -65,30 +65,26 @@ function HuntingInstallPage() {
                 </li>
                 <li>
                   Abra o Chrome/Edge em{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                    chrome://extensions
-                  </code>{" "}
+                  <code className="rounded bg-muted px-1 py-0.5 text-xs">chrome://extensions</code>{" "}
                   e ative o <span className="font-medium">Modo do desenvolvedor</span>.
                 </li>
                 <li>
-                  Clique em{" "}
-                  <span className="font-medium">"Carregar sem compactação"</span> e
+                  Clique em <span className="font-medium">"Carregar sem compactação"</span> e
                   selecione a pasta descompactada.
                 </li>
                 <li>
                   Fixe a extensão na barra do navegador. Abra qualquer perfil em{" "}
-                  <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                    linkedin.com/in/...
-                  </code>{" "}
+                  <code className="rounded bg-muted px-1 py-0.5 text-xs">linkedin.com/in/...</code>{" "}
                   — a sidebar aparece à direita.
                 </li>
                 <li>
-                  Clique em <span className="font-medium">"Parear com TechHire"</span> na
-                  sidebar. Você será levado pra esta janela pra autorizar.
+                  Clique em <span className="font-medium">"Parear com TechHire"</span> na sidebar.
+                  Você será levado pra esta janela pra autorizar.
                 </li>
                 <li>
-                  Pronto. Em cada perfil, use <span className="font-medium">"Salvar candidato"</span>
-                  , vincule a uma vaga e dispare a mensagem direto do template.
+                  Pronto. Em cada perfil, use{" "}
+                  <span className="font-medium">"Salvar candidato"</span>, vincule a uma vaga e
+                  dispare a mensagem direto do template.
                 </li>
               </ol>
             </FormSection>
@@ -109,8 +105,8 @@ function HuntingInstallPage() {
                 <Badge variant="outline">Brave</Badge>
               </div>
               <p className="text-xs text-muted-foreground">
-                Manifest V3. Não usa APIs oficiais do LinkedIn — toda captura é local,
-                no contexto da sua sessão autenticada.
+                Manifest V3. Não usa APIs oficiais do LinkedIn — toda captura é local, no contexto
+                da sua sessão autenticada.
               </p>
             </CardContent>
           </Card>
@@ -122,7 +118,9 @@ function HuntingInstallPage() {
                 <p className="text-sm font-semibold">Privacidade & limites</p>
               </div>
               <ul className="ml-4 list-disc space-y-1.5 text-xs text-muted-foreground">
-                <li>Cada captura é registrada em <code>ats_hunting_captures</code>.</li>
+                <li>
+                  Cada captura é registrada em <code>ats_hunting_captures</code>.
+                </li>
                 <li>Deduplicação por URL canônica do LinkedIn.</li>
                 <li>Sem scraping em background — só quando você abre o perfil.</li>
                 <li>Respeite os Termos de Uso do LinkedIn.</li>

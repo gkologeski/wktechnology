@@ -216,7 +216,9 @@ function PeopleBillingPage() {
                         <div className="flex flex-col">
                           <span className="text-sm">{g.contract_number ?? g.contract_title}</span>
                           {g.contract_number && g.contract_title && (
-                            <span className="text-xs text-muted-foreground">{g.contract_title}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {g.contract_title}
+                            </span>
                           )}
                         </div>
                       ) : (

@@ -81,7 +81,6 @@ type QueueItem = {
   linkError?: boolean;
 };
 
-
 const MAX_PDF_BYTES = 15 * 1024 * 1024;
 const MAX_DOCX_BYTES = 10 * 1024 * 1024;
 
@@ -306,8 +305,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                   amendmentId: result.id,
                   mainContractId: mainId,
                   amendmentNumber: item.amendmentNumber?.trim() || null,
-                  effectiveAt:
-                    item.amendmentEffectiveAt?.trim() || extracted.starts_at || null,
+                  effectiveAt: item.amendmentEffectiveAt?.trim() || extracted.starts_at || null,
                 },
               });
               patchItem(item.key, {
@@ -316,8 +314,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
               });
             } catch (err) {
               patchItem(item.key, {
-                linkMessage:
-                  err instanceof Error ? err.message : "Falha ao vincular o aditivo.",
+                linkMessage: err instanceof Error ? err.message : "Falha ao vincular o aditivo.",
                 linkError: true,
               });
             }
@@ -362,9 +359,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
   );
   const missingMain = useMemo(
     () =>
-      pendingItems.filter(
-        (i) => i.docKind === "amendment" && !i.mainContract && !i.mainFromKey,
-      ).length,
+      pendingItems.filter((i) => i.docKind === "amendment" && !i.mainContract && !i.mainFromKey)
+        .length,
     [pendingItems],
   );
   const canProcess = pendingItems.length > 0 && missingMain === 0;
@@ -438,215 +434,217 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
                 <tbody>
                   {items.map((i) => (
                     <Fragment key={i.key}>
-                    <tr className="border-t">
-                      <td className="p-2">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <span className="truncate">{i.title ?? i.file.name}</span>
-                          <Badge variant="outline" className="uppercase shrink-0">
-                            {i.kind}
-                          </Badge>
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        <Select
-                          value={i.roleHint}
-                          onValueChange={(v) => setRoleHint(i.key, v as RoleHint)}
-                          disabled={processing || i.status === "done"}
-                        >
-                          <SelectTrigger aria-label={`Tipo do contrato ${i.file.name}`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="auto">Detectar com IA</SelectItem>
-                            <SelectItem value="provider">Prestação (cliente final)</SelectItem>
-                            <SelectItem value="client">Compra (prestador)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="p-2">
-                        <Select
-                          value={i.docKind}
-                          onValueChange={(v) => setDocKind(i.key, v as DocKind)}
-                          disabled={processing || i.status === "done"}
-                        >
-                          <SelectTrigger aria-label={`Tipo de documento de ${i.file.name}`}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="main">Principal</SelectItem>
-                            <SelectItem value="amendment">Aditivo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-
-                      <td className="p-2">
-                        {i.status === "queued" && (
-                          <span className="text-xs text-muted-foreground">Na fila</span>
-                        )}
-                        {i.status === "processing" && (
-                          <span className="text-xs flex items-center gap-1">
-                            <Loader2 className="h-3 w-3 animate-spin" /> {i.message}
-                          </span>
-                        )}
-                        {i.status === "done" && (
-                          <span className="text-xs flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-                            <CheckCircle2 className="h-3 w-3" />
-                            {i.detectedRole ? ROLE_LABEL[i.detectedRole] : "Rascunho"} criado
-                          </span>
-                        )}
-                        {i.status === "error" && (
-                          <span className="text-xs flex items-start gap-1 text-destructive">
-                            <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
-                            <span className="break-words">{i.message}</span>
-                          </span>
-                        )}
-                        {i.linkMessage ? (
-                          <span
-                            className={`mt-1 text-xs flex items-start gap-1 ${
-                              i.linkError ? "text-destructive" : "text-muted-foreground"
-                            }`}
-                          >
-                            <Link2 className="h-3 w-3 mt-0.5 shrink-0" />
-                            <span className="break-words">{i.linkMessage}</span>
-                          </span>
-                        ) : null}
-                      </td>
-                      <td className="p-2 text-right">
-                        {i.status === "done" && i.contractId ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              handleClose(false);
-                              navigate({
-                                to: "/contracts/$id",
-                                params: { id: i.contractId as string },
-                              });
-                            }}
-                          >
-                            Abrir
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={processing}
-                            onClick={() => removeItem(i.key)}
-                            aria-label={`Remover ${i.file.name}`}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                    {i.docKind === "amendment" && i.status !== "done" ? (
-                      <tr className="bg-muted/20">
-                        <td colSpan={5} className="p-2">
-                          <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
-                            <div className="space-y-1">
-                              <span className="text-xs font-medium text-muted-foreground">
-                                Contrato principal
-                              </span>
-                              {i.mainFromKey ? (
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="truncate">
-                                    Neste lote:{" "}
-                                    {items.find((x) => x.key === i.mainFromKey)?.file.name ?? "—"}
-                                  </Badge>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    disabled={processing}
-                                    onClick={() => patchItem(i.key, { mainFromKey: undefined })}
-                                  >
-                                    Trocar
-                                  </Button>
-                                </div>
-                              ) : (
-                                <MainContractPicker
-                                  value={i.mainContract}
-                                  onChange={(next) =>
-                                    patchItem(i.key, { mainContract: next, mainFromKey: undefined })
-                                  }
-                                  disabled={processing}
-                                  ariaLabel={`Contrato principal de ${i.file.name}`}
-                                />
-                              )}
-                              {items.some((x) => x.docKind === "main" && x.key !== i.key) &&
-                              !i.mainFromKey ? (
-                                <Select
-                                  value=""
-                                  onValueChange={(v) =>
-                                    patchItem(i.key, { mainFromKey: v, mainContract: null })
-                                  }
-                                  disabled={processing}
-                                >
-                                  <SelectTrigger
-                                    aria-label={`Usar arquivo do lote como principal de ${i.file.name}`}
-                                    className="h-8 text-xs"
-                                  >
-                                    <SelectValue placeholder="Ou usar um arquivo deste lote…" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {items
-                                      .filter((x) => x.docKind === "main" && x.key !== i.key)
-                                      .map((x) => (
-                                        <SelectItem key={x.key} value={x.key}>
-                                          {x.title ?? x.file.name}
-                                        </SelectItem>
-                                      ))}
-                                  </SelectContent>
-                                </Select>
-                              ) : null}
-                              {!i.mainContract && !i.mainFromKey ? (
-                                <span className="text-xs text-destructive">
-                                  Escolha o contrato principal para processar este aditivo.
-                                </span>
-                              ) : null}
-                            </div>
-                            <div className="space-y-1">
-                              <label
-                                className="text-xs font-medium text-muted-foreground"
-                                htmlFor={`amd-num-${i.key}`}
-                              >
-                                Nº do aditivo (opcional)
-                              </label>
-                              <Input
-                                id={`amd-num-${i.key}`}
-                                value={i.amendmentNumber ?? ""}
-                                disabled={processing}
-                                placeholder="Ex.: 1"
-                                onChange={(e) =>
-                                  patchItem(i.key, { amendmentNumber: e.target.value })
-                                }
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label
-                                className="text-xs font-medium text-muted-foreground"
-                                htmlFor={`amd-date-${i.key}`}
-                              >
-                                Vigência (opcional)
-                              </label>
-                              <Input
-                                id={`amd-date-${i.key}`}
-                                type="date"
-                                value={i.amendmentEffectiveAt ?? ""}
-                                disabled={processing}
-                                onChange={(e) =>
-                                  patchItem(i.key, { amendmentEffectiveAt: e.target.value })
-                                }
-                              />
-                            </div>
+                      <tr className="border-t">
+                        <td className="p-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="truncate">{i.title ?? i.file.name}</span>
+                            <Badge variant="outline" className="uppercase shrink-0">
+                              {i.kind}
+                            </Badge>
                           </div>
                         </td>
+                        <td className="p-2">
+                          <Select
+                            value={i.roleHint}
+                            onValueChange={(v) => setRoleHint(i.key, v as RoleHint)}
+                            disabled={processing || i.status === "done"}
+                          >
+                            <SelectTrigger aria-label={`Tipo do contrato ${i.file.name}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="auto">Detectar com IA</SelectItem>
+                              <SelectItem value="provider">Prestação (cliente final)</SelectItem>
+                              <SelectItem value="client">Compra (prestador)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+                        <td className="p-2">
+                          <Select
+                            value={i.docKind}
+                            onValueChange={(v) => setDocKind(i.key, v as DocKind)}
+                            disabled={processing || i.status === "done"}
+                          >
+                            <SelectTrigger aria-label={`Tipo de documento de ${i.file.name}`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="main">Principal</SelectItem>
+                              <SelectItem value="amendment">Aditivo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </td>
+
+                        <td className="p-2">
+                          {i.status === "queued" && (
+                            <span className="text-xs text-muted-foreground">Na fila</span>
+                          )}
+                          {i.status === "processing" && (
+                            <span className="text-xs flex items-center gap-1">
+                              <Loader2 className="h-3 w-3 animate-spin" /> {i.message}
+                            </span>
+                          )}
+                          {i.status === "done" && (
+                            <span className="text-xs flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle2 className="h-3 w-3" />
+                              {i.detectedRole ? ROLE_LABEL[i.detectedRole] : "Rascunho"} criado
+                            </span>
+                          )}
+                          {i.status === "error" && (
+                            <span className="text-xs flex items-start gap-1 text-destructive">
+                              <AlertTriangle className="h-3 w-3 mt-0.5 shrink-0" />
+                              <span className="break-words">{i.message}</span>
+                            </span>
+                          )}
+                          {i.linkMessage ? (
+                            <span
+                              className={`mt-1 text-xs flex items-start gap-1 ${
+                                i.linkError ? "text-destructive" : "text-muted-foreground"
+                              }`}
+                            >
+                              <Link2 className="h-3 w-3 mt-0.5 shrink-0" />
+                              <span className="break-words">{i.linkMessage}</span>
+                            </span>
+                          ) : null}
+                        </td>
+                        <td className="p-2 text-right">
+                          {i.status === "done" && i.contractId ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                handleClose(false);
+                                navigate({
+                                  to: "/contracts/$id",
+                                  params: { id: i.contractId as string },
+                                });
+                              }}
+                            >
+                              Abrir
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={processing}
+                              onClick={() => removeItem(i.key)}
+                              aria-label={`Remover ${i.file.name}`}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </td>
                       </tr>
-                    ) : null}
+                      {i.docKind === "amendment" && i.status !== "done" ? (
+                        <tr className="bg-muted/20">
+                          <td colSpan={5} className="p-2">
+                            <div className="grid gap-2 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                              <div className="space-y-1">
+                                <span className="text-xs font-medium text-muted-foreground">
+                                  Contrato principal
+                                </span>
+                                {i.mainFromKey ? (
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="truncate">
+                                      Neste lote:{" "}
+                                      {items.find((x) => x.key === i.mainFromKey)?.file.name ?? "—"}
+                                    </Badge>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      disabled={processing}
+                                      onClick={() => patchItem(i.key, { mainFromKey: undefined })}
+                                    >
+                                      Trocar
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <MainContractPicker
+                                    value={i.mainContract}
+                                    onChange={(next) =>
+                                      patchItem(i.key, {
+                                        mainContract: next,
+                                        mainFromKey: undefined,
+                                      })
+                                    }
+                                    disabled={processing}
+                                    ariaLabel={`Contrato principal de ${i.file.name}`}
+                                  />
+                                )}
+                                {items.some((x) => x.docKind === "main" && x.key !== i.key) &&
+                                !i.mainFromKey ? (
+                                  <Select
+                                    value=""
+                                    onValueChange={(v) =>
+                                      patchItem(i.key, { mainFromKey: v, mainContract: null })
+                                    }
+                                    disabled={processing}
+                                  >
+                                    <SelectTrigger
+                                      aria-label={`Usar arquivo do lote como principal de ${i.file.name}`}
+                                      className="h-8 text-xs"
+                                    >
+                                      <SelectValue placeholder="Ou usar um arquivo deste lote…" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {items
+                                        .filter((x) => x.docKind === "main" && x.key !== i.key)
+                                        .map((x) => (
+                                          <SelectItem key={x.key} value={x.key}>
+                                            {x.title ?? x.file.name}
+                                          </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : null}
+                                {!i.mainContract && !i.mainFromKey ? (
+                                  <span className="text-xs text-destructive">
+                                    Escolha o contrato principal para processar este aditivo.
+                                  </span>
+                                ) : null}
+                              </div>
+                              <div className="space-y-1">
+                                <label
+                                  className="text-xs font-medium text-muted-foreground"
+                                  htmlFor={`amd-num-${i.key}`}
+                                >
+                                  Nº do aditivo (opcional)
+                                </label>
+                                <Input
+                                  id={`amd-num-${i.key}`}
+                                  value={i.amendmentNumber ?? ""}
+                                  disabled={processing}
+                                  placeholder="Ex.: 1"
+                                  onChange={(e) =>
+                                    patchItem(i.key, { amendmentNumber: e.target.value })
+                                  }
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label
+                                  className="text-xs font-medium text-muted-foreground"
+                                  htmlFor={`amd-date-${i.key}`}
+                                >
+                                  Vigência (opcional)
+                                </label>
+                                <Input
+                                  id={`amd-date-${i.key}`}
+                                  type="date"
+                                  value={i.amendmentEffectiveAt ?? ""}
+                                  disabled={processing}
+                                  onChange={(e) =>
+                                    patchItem(i.key, { amendmentEffectiveAt: e.target.value })
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
                     </Fragment>
                   ))}
-
                 </tbody>
               </table>
             </div>
@@ -662,8 +660,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
               {linkSummary ? (
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Link2 className="h-3 w-3" />
-                  {linkSummary.linked} vínculo(s) automático(s) ·{" "}
-                  {linkSummary.pending} pendente(s) de vinculação manual
+                  {linkSummary.linked} vínculo(s) automático(s) · {linkSummary.pending} pendente(s)
+                  de vinculação manual
                 </p>
               ) : null}
             </div>

@@ -219,9 +219,7 @@ export function RichHtmlEditor({
     const needle = snipQuery.toLowerCase();
     const filteredSnips = needle
       ? items.filter(
-          (s) =>
-            s.shortcut.toLowerCase().includes(needle) ||
-            s.name.toLowerCase().includes(needle),
+          (s) => s.shortcut.toLowerCase().includes(needle) || s.name.toLowerCase().includes(needle),
         )
       : items;
     return filteredSnips.slice(0, 8);
@@ -390,8 +388,6 @@ export function RichHtmlEditor({
     });
     closeSnippets();
   };
-
-
 
   const filtered =
     mentionQuery !== null && mentions

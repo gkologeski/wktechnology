@@ -40,15 +40,13 @@ type AllocationJoinRow = {
   person_id: string;
   contract_id: string | null;
   people: { id: string; full_name: string | null } | null;
-  contracts:
-    | {
-        id: string;
-        contract_number: string | null;
-        title: string | null;
-        company_id: string | null;
-        companies: { id: string; name: string | null } | null;
-      }
-    | null;
+  contracts: {
+    id: string;
+    contract_number: string | null;
+    title: string | null;
+    company_id: string | null;
+    companies: { id: string; name: string | null } | null;
+  } | null;
 };
 
 const listSchema = z.object({
@@ -145,13 +143,19 @@ const generateSchema = z.object({
   description: z.string().max(2000).optional(),
 });
 
-async function nextInvoiceNumber(supabase: {
-  from: (t: string) => {
-    select: (c: string, o?: { count: "exact"; head: true }) => {
-      eq: (k: string, v: string) => Promise<{ count: number | null }>;
+async function nextInvoiceNumber(
+  supabase: {
+    from: (t: string) => {
+      select: (
+        c: string,
+        o?: { count: "exact"; head: true },
+      ) => {
+        eq: (k: string, v: string) => Promise<{ count: number | null }>;
+      };
     };
-  };
-}, workspaceId: string): Promise<string> {
+  },
+  workspaceId: string,
+): Promise<string> {
   const year = new Date().getUTCFullYear();
   const { count } = await supabase
     .from("customer_invoices")
@@ -179,19 +183,31 @@ export const generateInvoiceFromTimesheet = createServerFn({ method: "POST" })
       gte: (k: string, v: string) => typeof q;
       lte: (k: string, v: string) => typeof q;
       then: Promise<{
-        data: Array<{ id: string; entry_date: string | null; hours: number | null; hourly_rate: number | null }> | null;
+        data: Array<{
+          id: string;
+          entry_date: string | null;
+          hours: number | null;
+          hourly_rate: number | null;
+        }> | null;
         error: { message: string } | null;
       }>["then"];
     };
     if (data.start) q = q.gte("entry_date", data.start);
     if (data.end) q = q.lte("entry_date", data.end);
     const { data: entries, error: eErr } = await (q as unknown as Promise<{
-      data: Array<{ id: string; entry_date: string | null; hours: number | null; hourly_rate: number | null }> | null;
+      data: Array<{
+        id: string;
+        entry_date: string | null;
+        hours: number | null;
+        hourly_rate: number | null;
+      }> | null;
       error: { message: string } | null;
     }>);
     if (eErr) throw new Error(eErr.message);
     if (!entries || entries.length === 0) {
-      throw new Error("Nenhuma hora aprovada e billable pendente de faturamento para essa alocação.");
+      throw new Error(
+        "Nenhuma hora aprovada e billable pendente de faturamento para essa alocação.",
+      );
     }
 
     // Dados da alocação para descobrir company_id/contract_id/moeda.
@@ -210,7 +226,12 @@ export const generateInvoiceFromTimesheet = createServerFn({ method: "POST" })
       person_id: string;
       contract_id: string | null;
       role_title: string | null;
-      contracts: { id: string; company_id: string | null; contract_number: string | null; title: string | null } | null;
+      contracts: {
+        id: string;
+        company_id: string | null;
+        contract_number: string | null;
+        title: string | null;
+      } | null;
     };
 
     let totalHours = 0;
@@ -224,7 +245,10 @@ export const generateInvoiceFromTimesheet = createServerFn({ method: "POST" })
     totalAmount = Number(totalAmount.toFixed(2));
     if (totalAmount <= 0) throw new Error("Total a faturar é zero — verifique as taxas horárias.");
 
-    const number = await nextInvoiceNumber(supabase as unknown as Parameters<typeof nextInvoiceNumber>[0], workspaceId);
+    const number = await nextInvoiceNumber(
+      supabase as unknown as Parameters<typeof nextInvoiceNumber>[0],
+      workspaceId,
+    );
     const desc =
       data.description ??
       `Faturamento de horas — ${a.contracts?.contract_number ?? a.contracts?.title ?? "sem contrato"} · ${totalHours.toFixed(2)}h`;

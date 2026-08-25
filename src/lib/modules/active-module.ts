@@ -57,7 +57,15 @@ export function detectModuleFromPath(pathname: string): ModuleId | null {
 // ────────────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = "erp.activeModule";
-const VALID_IDS: readonly ModuleId[] = ["crm", "ats", "contracts", "services", "projects", "finance", "people"];
+const VALID_IDS: readonly ModuleId[] = [
+  "crm",
+  "ats",
+  "contracts",
+  "services",
+  "projects",
+  "finance",
+  "people",
+];
 
 function isValidModuleId(v: unknown): v is ModuleId {
   return typeof v === "string" && (VALID_IDS as readonly string[]).includes(v);

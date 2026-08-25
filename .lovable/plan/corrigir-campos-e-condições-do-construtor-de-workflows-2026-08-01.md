@@ -36,7 +36,7 @@ Regra: o construtor espelha o cadastro de origem.
 ## 6. Passo "criar Contrato": rótulos e obrigatórios corretos
 
 - O rótulo "Cargo" vem de um dicionário global que traduz `title` como cargo. Passa a haver rótulo por entidade: em Contratos, `title` = "Título do contrato"; em Contatos permanece "Cargo".
-- A marcação de obrigatório (*) e a lista de pendências passam a considerar apenas os campos realmente exigidos pela entidade do passo, eliminando a pendência falsa em "Cargo".
+- A marcação de obrigatório (\*) e a lista de pendências passam a considerar apenas os campos realmente exigidos pela entidade do passo, eliminando a pendência falsa em "Cargo".
 - O campo de título volta a ser texto com suporte a token, sem sugestão de valores de outros contratos.
 
 ## Detalhes técnicos

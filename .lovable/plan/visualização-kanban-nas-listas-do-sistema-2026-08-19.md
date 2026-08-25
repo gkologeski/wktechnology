@@ -12,19 +12,19 @@ Adicionar alternância "Tabela | Kanban" nas telas de lista que possuem uma colu
 
 Com coluna de status/etapa e grid já padronizado:
 
-| Tela | Tabela | Campo de etapa | Arrastar |
-| --- | --- | --- | --- |
-| Tarefas de projetos | `project_tasks` | `status` (todo/doing/review/done) | sim |
-| Projetos | `projects` | `status` (planning/active/on_hold/done/cancelled) | sim |
-| Pessoas | `people` | `status` (active/bench/on_leave/offboarding/terminated) | sim |
-| Incidentes | `people_incidents` | `status` (texto) | sim |
-| Propostas | `proposals` | `status` (enum `proposal_status`) | sim |
-| Ofertas (ATS) | `ats_offers` | `status` (texto) | sim |
-| Serviços do catálogo | `services` | `status` (enum `service_status`) | sim |
-| Contratos | `contracts` | `status` (enum `contract_status`) | não (ciclo de vida controlado) |
-| Contas a pagar / receber | `financial_entries` | `status` | não (status derivado de pagamentos) |
-| NFSe e Faturas de cliente | `nfse_invoices`, `customer_invoices` | `status` | não (status do provedor) |
-| Chamados internos | `bug_reports` | `status` | sim |
+| Tela                      | Tabela                               | Campo de etapa                                          | Arrastar                            |
+| ------------------------- | ------------------------------------ | ------------------------------------------------------- | ----------------------------------- |
+| Tarefas de projetos       | `project_tasks`                      | `status` (todo/doing/review/done)                       | sim                                 |
+| Projetos                  | `projects`                           | `status` (planning/active/on_hold/done/cancelled)       | sim                                 |
+| Pessoas                   | `people`                             | `status` (active/bench/on_leave/offboarding/terminated) | sim                                 |
+| Incidentes                | `people_incidents`                   | `status` (texto)                                        | sim                                 |
+| Propostas                 | `proposals`                          | `status` (enum `proposal_status`)                       | sim                                 |
+| Ofertas (ATS)             | `ats_offers`                         | `status` (texto)                                        | sim                                 |
+| Serviços do catálogo      | `services`                           | `status` (enum `service_status`)                        | sim                                 |
+| Contratos                 | `contracts`                          | `status` (enum `contract_status`)                       | não (ciclo de vida controlado)      |
+| Contas a pagar / receber  | `financial_entries`                  | `status`                                                | não (status derivado de pagamentos) |
+| NFSe e Faturas de cliente | `nfse_invoices`, `customer_invoices` | `status`                                                | não (status do provedor)            |
+| Chamados internos         | `bug_reports`                        | `status`                                                | sim                                 |
 
 Onde "arrastar: não", o kanban entra como visualização de leitura (agrupamento + contagem), porque o status é calculado por regra de negócio (ex.: `recalc_financial_entry`) ou por integração externa — mudar por drag criaria inconsistência silenciosa.
 

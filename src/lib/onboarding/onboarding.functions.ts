@@ -200,8 +200,7 @@ export const pickOnbTemplate = createServerFn({ method: "POST" })
     if (data.segment_value) {
       const seg = list.find(
         (t) =>
-          t.segment_value &&
-          t.segment_value.toLowerCase() === data.segment_value!.toLowerCase(),
+          t.segment_value && t.segment_value.toLowerCase() === data.segment_value!.toLowerCase(),
       );
       if (seg) return { template: seg };
     }
@@ -310,7 +309,9 @@ export const completeOnbRun = createServerFn({ method: "POST" })
         });
         const { error: aErr } = await (
           supabase as unknown as {
-            from: (t: string) => { insert: (r: unknown) => Promise<{ error: { message: string } | null }> };
+            from: (t: string) => {
+              insert: (r: unknown) => Promise<{ error: { message: string } | null }>;
+            };
           }
         )
           .from("activities")
@@ -321,7 +322,12 @@ export const completeOnbRun = createServerFn({ method: "POST" })
       if (tpl?.workflow_id) {
         const { error: evErr } = await supabase.from("workflow_events").insert({
           owner_id: userId,
-          entity: run.entity_type === "lead" ? "leads" : run.entity_type === "company" ? "companies" : "contacts",
+          entity:
+            run.entity_type === "lead"
+              ? "leads"
+              : run.entity_type === "company"
+                ? "companies"
+                : "contacts",
           entity_id: data.entity_id,
           event_type: "created",
           after: { onboarded_via: run.template_id } as never,
@@ -357,7 +363,10 @@ export const cancelOnbRun = createServerFn({ method: "POST" })
   });
 
 /** Presets padrão exibidos ao criar um template do zero. */
-export const ONB_PRESETS: Record<OnbEntityType, { name: string; steps: OnbStep[]; tasks: OnbTaskTemplate[] }> = {
+export const ONB_PRESETS: Record<
+  OnbEntityType,
+  { name: string; steps: OnbStep[]; tasks: OnbTaskTemplate[] }
+> = {
   lead: {
     name: "Onboarding padrão de Lead",
     steps: [
@@ -366,7 +375,13 @@ export const ONB_PRESETS: Record<OnbEntityType, { name: string; steps: OnbStep[]
         title: "Identificação",
         description: "Dados básicos para contato",
         fields: [
-          { name: "first_name", label: "Nome", type: "text", required: true, target_column: "first_name" },
+          {
+            name: "first_name",
+            label: "Nome",
+            type: "text",
+            required: true,
+            target_column: "first_name",
+          },
           { name: "last_name", label: "Sobrenome", type: "text", target_column: "last_name" },
           { name: "email", label: "E-mail", type: "email", target_column: "email" },
           { name: "phone", label: "Telefone", type: "phone", target_column: "phone" },
@@ -408,7 +423,13 @@ export const ONB_PRESETS: Record<OnbEntityType, { name: string; steps: OnbStep[]
         id: "identity",
         title: "Identificação",
         fields: [
-          { name: "name", label: "Razão social / Nome", type: "text", required: true, target_column: "name" },
+          {
+            name: "name",
+            label: "Razão social / Nome",
+            type: "text",
+            required: true,
+            target_column: "name",
+          },
           { name: "cnpj", label: "CNPJ", type: "text", target_column: "cnpj" },
           { name: "website", label: "Website", type: "text", target_column: "website" },
         ],
@@ -418,8 +439,18 @@ export const ONB_PRESETS: Record<OnbEntityType, { name: string; steps: OnbStep[]
         title: "Contexto",
         fields: [
           { name: "industry", label: "Setor", type: "text", target_column: "industry" },
-          { name: "employees", label: "Nº de funcionários", type: "number", target_column: "employees" },
-          { name: "annual_revenue", label: "Faturamento anual", type: "number", target_column: "annual_revenue" },
+          {
+            name: "employees",
+            label: "Nº de funcionários",
+            type: "number",
+            target_column: "employees",
+          },
+          {
+            name: "annual_revenue",
+            label: "Faturamento anual",
+            type: "number",
+            target_column: "annual_revenue",
+          },
         ],
       },
     ],
@@ -435,7 +466,13 @@ export const ONB_PRESETS: Record<OnbEntityType, { name: string; steps: OnbStep[]
         id: "identity",
         title: "Identificação",
         fields: [
-          { name: "first_name", label: "Nome", type: "text", required: true, target_column: "first_name" },
+          {
+            name: "first_name",
+            label: "Nome",
+            type: "text",
+            required: true,
+            target_column: "first_name",
+          },
           { name: "last_name", label: "Sobrenome", type: "text", target_column: "last_name" },
           { name: "email", label: "E-mail", type: "email", target_column: "email" },
           { name: "phone", label: "Telefone", type: "phone", target_column: "phone" },

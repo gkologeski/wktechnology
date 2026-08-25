@@ -1,6 +1,15 @@
 // Refinos Sprint E: views alternativas de listas (Calendar, Timeline, Workload).
 import { useMemo, useState } from "react";
-import { addDays, endOfWeek, format, isSameDay, isWithinInterval, startOfMonth, startOfWeek, subDays } from "date-fns";
+import {
+  addDays,
+  endOfWeek,
+  format,
+  isSameDay,
+  isWithinInterval,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -55,22 +64,41 @@ export function CalendarView({ tasks, onOpen }: { tasks: Task[]; onOpen: (t: Tas
   return (
     <div className="rounded-lg border bg-card overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2 border-b">
-        <div className="text-sm font-medium capitalize">{format(cursor, "MMMM yyyy", { locale: ptBR })}</div>
+        <div className="text-sm font-medium capitalize">
+          {format(cursor, "MMMM yyyy", { locale: ptBR })}
+        </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCursor(subDays(monthStart, 1))}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setCursor(subDays(monthStart, 1))}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7" onClick={() => setCursor(startOfMonth(new Date()))}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7"
+            onClick={() => setCursor(startOfMonth(new Date()))}
+          >
             Hoje
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCursor(addDays(endOfWeek(monthStart), 1))}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setCursor(addDays(endOfWeek(monthStart), 1))}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>
       <div className="grid grid-cols-7 border-b bg-muted/40 text-xs text-muted-foreground">
         {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
-          <div key={d} className="px-2 py-1.5 text-center font-medium">{d}</div>
+          <div key={d} className="px-2 py-1.5 text-center font-medium">
+            {d}
+          </div>
         ))}
       </div>
       <div className="grid grid-cols-7">
@@ -84,7 +112,9 @@ export function CalendarView({ tasks, onOpen }: { tasks: Task[]; onOpen: (t: Tas
               key={key}
               className={`min-h-[90px] border-b border-r p-1.5 text-xs ${!isCurrentMonth ? "bg-muted/20 text-muted-foreground" : ""}`}
             >
-              <div className={`mb-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] ${isToday ? "bg-primary text-primary-foreground font-semibold" : ""}`}>
+              <div
+                className={`mb-1 flex h-5 w-5 items-center justify-center rounded-full text-[11px] ${isToday ? "bg-primary text-primary-foreground font-semibold" : ""}`}
+              >
                 {format(day, "d")}
               </div>
               <div className="space-y-1">
@@ -111,7 +141,15 @@ export function CalendarView({ tasks, onOpen }: { tasks: Task[]; onOpen: (t: Tas
 }
 
 // ============ TIMELINE / GANTT VIEW ============
-export function TimelineView({ tasks, statuses, onOpen }: { tasks: Task[]; statuses: Status[]; onOpen: (t: Task) => void }) {
+export function TimelineView({
+  tasks,
+  statuses,
+  onOpen,
+}: {
+  tasks: Task[];
+  statuses: Status[];
+  onOpen: (t: Task) => void;
+}) {
   const statusById = useMemo(() => new Map(statuses.map((s) => [s.id, s])), [statuses]);
 
   // Janela: menor start/due até maior, com pad de 3 dias.
@@ -173,8 +211,14 @@ export function TimelineView({ tasks, statuses, onOpen }: { tasks: Task[]; statu
         {withDates.map((t) => {
           const s = t.start_at ? new Date(t.start_at) : new Date(t.due_at!);
           const e = t.due_at ? new Date(t.due_at) : s;
-          const startOffset = Math.max(0, Math.floor((s.getTime() - rangeStart.getTime()) / 86400000));
-          const endOffset = Math.max(startOffset + 1, Math.ceil((e.getTime() - rangeStart.getTime()) / 86400000) + 1);
+          const startOffset = Math.max(
+            0,
+            Math.floor((s.getTime() - rangeStart.getTime()) / 86400000),
+          );
+          const endOffset = Math.max(
+            startOffset + 1,
+            Math.ceil((e.getTime() - rangeStart.getTime()) / 86400000) + 1,
+          );
           const startCol = Math.floor(startOffset / cellDays) + 2; // +2 (grid start + label col)
           const endCol = Math.ceil(endOffset / cellDays) + 2;
           const st = t.custom_status_id ? statusById.get(t.custom_status_id) : undefined;
@@ -191,7 +235,13 @@ export function TimelineView({ tasks, statuses, onOpen }: { tasks: Task[]; statu
               >
                 {t.title}
               </button>
-              <div className="relative col-span-full grid" style={{ gridTemplateColumns: `240px repeat(${cellCount}, minmax(28px, 1fr))`, gridColumn: "1 / -1" }}>
+              <div
+                className="relative col-span-full grid"
+                style={{
+                  gridTemplateColumns: `240px repeat(${cellCount}, minmax(28px, 1fr))`,
+                  gridColumn: "1 / -1",
+                }}
+              >
                 <div />
                 <div
                   onClick={() => onOpen(t)}
@@ -227,9 +277,12 @@ export function WorkloadView({ tasks }: { tasks: Task[] }) {
       if (!t.due_at) continue;
       const due = new Date(t.due_at);
       if (!isWithinInterval(due, { start: weekStart, end: weekEnd })) continue;
-      const assignees = (t.assignee_ids && t.assignee_ids.length > 0)
-        ? t.assignee_ids
-        : t.assignee_id ? [t.assignee_id] : ["__unassigned__"];
+      const assignees =
+        t.assignee_ids && t.assignee_ids.length > 0
+          ? t.assignee_ids
+          : t.assignee_id
+            ? [t.assignee_id]
+            : ["__unassigned__"];
       const hours = (t.estimated_hours ?? 0) / assignees.length;
       for (const a of assignees) {
         const entry = map.get(a) ?? { hours: 0, tasks: [] };
@@ -250,13 +303,28 @@ export function WorkloadView({ tasks }: { tasks: Task[] }) {
           Semana de {format(weekStart, "dd/MM")} a {format(weekEnd, "dd/MM/yyyy")}
         </div>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekStart(subDays(weekStart, 7))}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setWeekStart(subDays(weekStart, 7))}
+          >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" className="h-7" onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7"
+            onClick={() => setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+          >
             Esta semana
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setWeekStart(addDays(weekStart, 7))}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={() => setWeekStart(addDays(weekStart, 7))}
+          >
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
@@ -285,10 +353,14 @@ export function WorkloadView({ tasks }: { tasks: Task[] }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`tabular-nums ${overload ? "text-rose-600 font-semibold" : "text-muted-foreground"}`}>
+                    <span
+                      className={`tabular-nums ${overload ? "text-rose-600 font-semibold" : "text-muted-foreground"}`}
+                    >
                       {entry.hours.toFixed(1)}h / {CAPACITY}h
                     </span>
-                    <Badge variant="outline" className="text-[10px]">{entry.tasks.length} tarefas</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {entry.tasks.length} tarefas
+                    </Badge>
                   </div>
                 </div>
                 <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
@@ -299,12 +371,18 @@ export function WorkloadView({ tasks }: { tasks: Task[] }) {
                 </div>
                 <div className="flex flex-wrap gap-1 pt-1">
                   {entry.tasks.slice(0, 6).map((t) => (
-                    <Badge key={t.id} variant="outline" className={`text-[10px] ${PRIORITY_TONE[t.priority]}`}>
+                    <Badge
+                      key={t.id}
+                      variant="outline"
+                      className={`text-[10px] ${PRIORITY_TONE[t.priority]}`}
+                    >
                       {t.title}
                     </Badge>
                   ))}
                   {entry.tasks.length > 6 && (
-                    <Badge variant="outline" className="text-[10px]">+{entry.tasks.length - 6}</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      +{entry.tasks.length - 6}
+                    </Badge>
                   )}
                 </div>
               </div>

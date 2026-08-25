@@ -13,7 +13,10 @@ type Resp = {
   created_at: string;
 };
 
-export function AsyncVideoResponses({ interviewId, snapshot }: {
+export function AsyncVideoResponses({
+  interviewId,
+  snapshot,
+}: {
   interviewId: string;
   snapshot?: Array<{ id: string; text: string }> | null;
 }) {
@@ -28,8 +31,7 @@ export function AsyncVideoResponses({ interviewId, snapshot }: {
       .catch(() => setRows([]));
   }, [open, rows, fetchFn, interviewId]);
 
-  const labelFor = (qid: string) =>
-    snapshot?.find((q) => q.id === qid)?.text ?? `Pergunta ${qid}`;
+  const labelFor = (qid: string) => snapshot?.find((q) => q.id === qid)?.text ?? `Pergunta ${qid}`;
 
   return (
     <div className="mt-2">

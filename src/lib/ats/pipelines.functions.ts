@@ -85,8 +85,6 @@ export const ensureDefaultAtsPipeline = createServerFn({ method: "POST" })
     return created ?? null;
   });
 
-
-
 export const savePipeline = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => PipelineSaveSchema.parse(d))
@@ -130,7 +128,6 @@ export const savePipeline = createServerFn({ method: "POST" })
 
     // exclusividade do padrão por workspace é garantida por gatilho no banco
     return row;
-
   });
 
 export const deletePipeline = createServerFn({ method: "POST" })
@@ -145,9 +142,7 @@ export const deletePipeline = createServerFn({ method: "POST" })
       .select("id", { count: "exact", head: true })
       .eq("pipeline_id", data.id);
     if ((count ?? 0) > 0) {
-      throw new Error(
-        `Existem ${count} vaga(s) usando este pipeline. Migre-as antes de excluir.`,
-      );
+      throw new Error(`Existem ${count} vaga(s) usando este pipeline. Migre-as antes de excluir.`);
     }
 
     const { data: row } = await supabase
@@ -188,5 +183,4 @@ export const setDefaultPipeline = createServerFn({ method: "POST" })
       throw new Error("Você não tem permissão para alterar este pipeline.");
     }
     return { ok: true };
-
   });

@@ -87,10 +87,8 @@ function SchedulingPage() {
     queryFn: () => fetchAvail({ data: {} }),
   });
 
-  const invalidatePools = () =>
-    qc.invalidateQueries({ queryKey: ["ats-pools"] });
-  const invalidateAvail = () =>
-    qc.invalidateQueries({ queryKey: ["ats-availability"] });
+  const invalidatePools = () => qc.invalidateQueries({ queryKey: ["ats-pools"] });
+  const invalidateAvail = () => qc.invalidateQueries({ queryKey: ["ats-availability"] });
 
   const upsertPoolFn = useServerFn(upsertPool);
   const deletePoolFn = useServerFn(deletePool);
@@ -103,9 +101,9 @@ function SchedulingPage() {
 
   // --- new pool form ---
   const [newPoolName, setNewPoolName] = useState("");
-  const [newPoolStrategy, setNewPoolStrategy] = useState<
-    "round_robin" | "load_balanced"
-  >("round_robin");
+  const [newPoolStrategy, setNewPoolStrategy] = useState<"round_robin" | "load_balanced">(
+    "round_robin",
+  );
 
   const createPool = useMutation({
     mutationFn: async () => {
@@ -145,8 +143,6 @@ function SchedulingPage() {
 
       <SlaMonitorSection />
 
-
-
       {/* ----- Pools ----- */}
       <section className="space-y-3">
         <AtsSectionHeader
@@ -169,25 +165,18 @@ function SchedulingPage() {
                 <Label>Estratégia</Label>
                 <Select
                   value={newPoolStrategy}
-                  onValueChange={(v) =>
-                    setNewPoolStrategy(v as "round_robin" | "load_balanced")
-                  }
+                  onValueChange={(v) => setNewPoolStrategy(v as "round_robin" | "load_balanced")}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="round_robin">Round-robin</SelectItem>
-                    <SelectItem value="load_balanced">
-                      Balanceada (por carga)
-                    </SelectItem>
+                    <SelectItem value="load_balanced">Balanceada (por carga)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <Button
-                onClick={() => createPool.mutate()}
-                disabled={createPool.isPending}
-              >
+              <Button onClick={() => createPool.mutate()} disabled={createPool.isPending}>
                 <Plus className="mr-1.5 h-4 w-4" />
                 Criar pool
               </Button>
@@ -264,10 +253,7 @@ function SchedulingPage() {
           title="Encontrar slots em comum"
           description="Calcule horários onde todos os entrevistadores selecionados estão disponíveis."
         />
-        <CommonSlotsFinder
-          members={members}
-          onFind={(payload) => findSlotsFn({ data: payload })}
-        />
+        <CommonSlotsFinder members={members} onFind={(payload) => findSlotsFn({ data: payload })} />
       </section>
     </div>
   );
@@ -299,13 +285,9 @@ function PoolCard({
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-text-primary truncate">
-              {pool.name}
-            </h3>
+            <h3 className="text-sm font-semibold text-text-primary truncate">{pool.name}</h3>
             <Badge variant="outline" className="text-[10px]">
-              {pool.rotation_strategy === "round_robin"
-                ? "Round-robin"
-                : "Balanceada"}
+              {pool.rotation_strategy === "round_robin" ? "Round-robin" : "Balanceada"}
             </Badge>
             <span className="text-[11px] text-text-tertiary">
               {pool.members.length} {pool.members.length === 1 ? "membro" : "membros"}
@@ -356,9 +338,7 @@ function PoolCard({
           </SelectTrigger>
           <SelectContent>
             {available.length === 0 ? (
-              <div className="px-2 py-1.5 text-xs text-text-tertiary">
-                Nenhum disponível
-              </div>
+              <div className="px-2 py-1.5 text-xs text-text-tertiary">Nenhum disponível</div>
             ) : (
               available.map((m) => (
                 <SelectItem key={m.user_id} value={m.user_id}>
@@ -392,7 +372,14 @@ function AvailabilityEditor({
   onCreate,
   onDelete,
 }: {
-  rows: { id: string; interviewer_id: string; weekday: number; start_minute: number; end_minute: number; timezone: string }[];
+  rows: {
+    id: string;
+    interviewer_id: string;
+    weekday: number;
+    start_minute: number;
+    end_minute: number;
+    timezone: string;
+  }[];
   members: ReturnType<typeof useWorkspaceMembers>;
   onCreate: (p: {
     interviewer_id: string;
@@ -441,10 +428,7 @@ function AvailabilityEditor({
             </div>
             <div className="space-y-1.5">
               <Label>Dia</Label>
-              <Select
-                value={String(weekday)}
-                onValueChange={(v) => setWeekday(Number(v))}
-              >
+              <Select value={String(weekday)} onValueChange={(v) => setWeekday(Number(v))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -496,10 +480,7 @@ function AvailabilityEditor({
         ) : (
           <div className="space-y-3">
             {grouped.map(([id, list]) => (
-              <div
-                key={id}
-                className="rounded-lg border border-border-subtle bg-surface-1 p-3"
-              >
+              <div key={id} className="rounded-lg border border-border-subtle bg-surface-1 p-3">
                 <div className="text-sm font-medium text-text-primary mb-2">
                   {members.nameFor(id)}
                 </div>
@@ -509,8 +490,7 @@ function AvailabilityEditor({
                       key={w.id}
                       className="inline-flex items-center gap-1 rounded bg-surface-sunken px-2 py-0.5 text-xs"
                     >
-                      {WEEKDAYS[w.weekday]} · {fmtMin(w.start_minute)}–
-                      {fmtMin(w.end_minute)}
+                      {WEEKDAYS[w.weekday]} · {fmtMin(w.start_minute)}–{fmtMin(w.end_minute)}
                       <button
                         type="button"
                         aria-label="Remover"
@@ -684,10 +664,7 @@ function CommonSlotsFinder({
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {slots.map((s) => (
-                <span
-                  key={s}
-                  className="rounded bg-surface-sunken px-2 py-1 text-xs tabular-nums"
-                >
+                <span key={s} className="rounded bg-surface-sunken px-2 py-1 text-xs tabular-nums">
                   {new Date(s).toLocaleString("pt-BR", {
                     weekday: "short",
                     day: "2-digit",
@@ -749,9 +726,7 @@ function SlaMonitorSection() {
                 min={1}
                 max={720}
                 value={threshold}
-                onChange={(e) =>
-                  setThreshold(Math.max(1, Number(e.target.value) || 48))
-                }
+                onChange={(e) => setThreshold(Math.max(1, Number(e.target.value) || 48))}
                 className="h-7 w-20"
               />
               <span className="text-xs text-text-tertiary">horas</span>

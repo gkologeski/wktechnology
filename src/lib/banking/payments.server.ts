@@ -1,11 +1,7 @@
 // Server-only helper para liquidar um pagamento de saída (AP) — chamado pelo webhook público.
 // Marca bank_payments como paid, cria financial_payments no lançamento AP vinculado
 // e concilia com a transação de débito correspondente do extrato.
-export async function settleBankPaymentAdmin(
-  supabase: any,
-  paymentId: string,
-  paidAtIso: string,
-) {
+export async function settleBankPaymentAdmin(supabase: any, paymentId: string, paidAtIso: string) {
   const { data: p, error } = await supabase
     .from("bank_payments")
     .select(
@@ -80,11 +76,7 @@ export async function settleBankPaymentAdmin(
   return { ok: true, payment_id: financialPaymentId };
 }
 
-export async function failBankPaymentAdmin(
-  supabase: any,
-  paymentId: string,
-  reason: string,
-) {
+export async function failBankPaymentAdmin(supabase: any, paymentId: string, reason: string) {
   await supabase
     .from("bank_payments")
     .update({ status: "failed", failure_reason: reason })

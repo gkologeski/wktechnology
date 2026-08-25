@@ -401,11 +401,11 @@ Erros específicos: `404 lead_not_found`, `404 contact_not_found`,
 
 `GET /api/public/v1/meetings` — escopo `read`
 
-| Parâmetro    | Descrição                             |
-| ------------ | ------------------------------------- |
-| `lead_id`    | filtra reuniões de um lead            |
-| `contact_id` | filtra reuniões de um contato         |
-| `deal_id`    | filtra reuniões de um negócio         |
+| Parâmetro    | Descrição                                      |
+| ------------ | ---------------------------------------------- |
+| `lead_id`    | filtra reuniões de um lead                     |
+| `contact_id` | filtra reuniões de um contato                  |
+| `deal_id`    | filtra reuniões de um negócio                  |
 | `status`     | ex.: `scheduled`, `live`, `ended`, `cancelled` |
 
 Além disso, `from`/`to`/`limit`/`offset`/`page`/`order` da seção 3 (aplicados a

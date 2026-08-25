@@ -41,9 +41,7 @@ const DunningNoticeEmail = ({
   return (
     <Html lang="pt-BR" dir="ltr">
       <Head />
-      <Preview>
-        {subject || `Cobrança${invoiceNumber ? ` — Fatura ${invoiceNumber}` : ""}`}
-      </Preview>
+      <Preview>{subject || `Cobrança${invoiceNumber ? ` — Fatura ${invoiceNumber}` : ""}`}</Preview>
       <Body style={main}>
         <Container style={container}>
           <Heading style={heading}>

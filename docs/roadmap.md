@@ -80,7 +80,7 @@
 
 ## 🔴 Onda 8 — Calendário & Booking (2 semanas)
 
-35. **Sync Google/Outlook Calendar (G)** ✅ (Google) — tabelas `calendar_accounts` (provider, email, tokens, primary_calendar_id, sync_enabled, sync_token, last_synced_at, last_status/error) e `calendar_events` (espelho de eventos com provider_event_id único, attendees jsonb, html_link, related_activity_id) com RLS por owner. OAuth Google reaproveita o mesmo callback (`/api/public/oauth/google-callback`) com `state.mode=calendar` e escopos `calendar` + `calendar.events`. Engine `src/lib/calendar/engine.server.ts` faz pull incremental usando `syncToken` (fallback 410 → full re-sync), upsert/delete de eventos cancelados; e push das `activities` tipo=meeting com `due_date` (cria/atualiza no Google e guarda `gcal_{accountId}` em `external_ids`). Server fns em `src/lib/calendar.functions.ts` (start/list/disconnect/toggle/syncNow/listEvents). Hook `/api/public/hooks/calendar-tick` agendado via pg_cron `*/15 * * * *`. Página `/settings/calendars` com botão "Conectar Google", lista de contas (status, último sync, toggle sync, sync agora, desconectar) e próximos eventos. Entrada "Calendários" no grupo Análises da sidebar. **Outlook:** infra preparada (campo `provider='microsoft'` na tabela), aguardando secrets `MICROSOFT_OAUTH_CLIENT_ID/SECRET` para liberar o fluxo.
+35. **Sync Google/Outlook Calendar (G)** ✅ (Google) — tabelas `calendar_accounts` (provider, email, tokens, primary*calendar_id, sync_enabled, sync_token, last_synced_at, last_status/error) e `calendar_events` (espelho de eventos com provider_event_id único, attendees jsonb, html_link, related_activity_id) com RLS por owner. OAuth Google reaproveita o mesmo callback (`/api/public/oauth/google-callback`) com `state.mode=calendar` e escopos `calendar` + `calendar.events`. Engine `src/lib/calendar/engine.server.ts` faz pull incremental usando `syncToken` (fallback 410 → full re-sync), upsert/delete de eventos cancelados; e push das `activities` tipo=meeting com `due_date` (cria/atualiza no Google e guarda `gcal*{accountId}`em`external_ids`). Server fns em `src/lib/calendar.functions.ts`(start/list/disconnect/toggle/syncNow/listEvents). Hook`/api/public/hooks/calendar-tick`agendado via pg_cron`_/15 _ \* \* \*`. Página `/settings/calendars`com botão "Conectar Google", lista de contas (status, último sync, toggle sync, sync agora, desconectar) e próximos eventos. Entrada "Calendários" no grupo Análises da sidebar. **Outlook:** infra preparada (campo`provider='microsoft'`na tabela), aguardando secrets`MICROSOFT_OAUTH_CLIENT_ID/SECRET` para liberar o fluxo.
 36. **Booking pages públicas (G)** ✅ — enum `booking_status` (confirmed/canceled). Tabela `booking_pages` (slug público único, título, descrição, duração 5–480 min, buffer antes/depois, vínculo opcional com `calendar_account_id`, agenda semanal jsonb `{mon:[{start,end}],...}`, fuso horário, antecedência mínima em horas, antecedência máxima em dias, ativo, target lead/contact, cor, local). Tabela `bookings` (page_id, owner_id, start/end, dados do convidado, status, gcal_event_id, vínculos lead/contact/activity, fuso do convidado, motivo de cancelamento). RLS owner/admin nas duas. Engine `src/lib/booking/engine.server.ts`: `computeAvailableSlots` resolve slots respeitando agenda semanal por dia em IANA tz (DST via `Intl.DateTimeFormat`), duração, buffers, antecedência mínima/máxima e busy de bookings + `calendar_events`; `createPublicBooking` revalida slot, encontra/cria lead ou contato por email, cria atividade `meeting` e empurra evento no Google (sendUpdates=all com refresh de token). Server fns autenticadas em `src/lib/booking.functions.ts` (list/upsert/delete pages, list/cancel bookings). Endpoints públicos com CORS: GET `/api/public/booking/$slug` (info + slots em janela) e POST `/api/public/booking/$slug/submit` (Zod + honeypot). Rota pública `/book/$slug` em TSS com seleção de horários agrupados por dia, formulário do convidado e tela de confirmação. Página `/settings/booking` com builder completo (slug, duração, buffers, fuso, calendário busy lookup, antecedência, target, cor, local, janelas por dia da semana com adicionar/remover), copiar link público, abrir e Sheet de reservas. Entrada "Agendamentos" no grupo Análises da sidebar.
 
 ## 🟨 Onda 9 — IA / Breeze (rolling)
@@ -93,7 +93,7 @@
 
 ## ⚫ Onda 10 — Plataforma (sob demanda)
 
-42. **API pública REST + API keys (G)** ✅ — tabela `api_keys` (prefix, key_hash sha256, scopes read/write, expires_at, revoked_at) com RLS owner/admin. `src/lib/api-keys.functions.ts` (list/create/revoke/delete) gera segredo `lvb_<hex>` exibido uma única vez. Validador `authenticateApiKey` em `src/lib/api-keys/auth.server.ts` resolve owner via header Bearer/x-api-key. Rotas REST públicas em `/api/public/v1/contacts`, `/leads`, `/deals` (GET+POST). Página `/settings/api-keys` com criação, revogação e cópia do segredo.
+42. **API pública REST + API keys (G)** ✅ — tabela `api_keys` (prefix, key*hash sha256, scopes read/write, expires_at, revoked_at) com RLS owner/admin. `src/lib/api-keys.functions.ts` (list/create/revoke/delete) gera segredo `lvb*<hex>`exibido uma única vez. Validador`authenticateApiKey`em`src/lib/api-keys/auth.server.ts`resolve owner via header Bearer/x-api-key. Rotas REST públicas em`/api/public/v1/contacts`, `/leads`, `/deals`(GET+POST). Página`/settings/api-keys` com criação, revogação e cópia do segredo.
 43. **Webhooks de saída (M)** ✅ — tabelas `outbound_webhooks` (url, secret, events, active) e `webhook_deliveries` (status pending/success/failed/dead, attempt, response_status, next_retry_at). Dispatcher `src/lib/webhooks/dispatcher.server.ts` assina body com HMAC-SHA256 (header `X-Webhook-Signature`), retry exponencial até 5 tentativas. Helper `enqueueWebhookEvent`. Endpoint `/api/public/hooks/webhook-tick` agendado por pg_cron a cada 5 min. Página `/settings/webhooks` para gerenciar endpoints, copiar secret e visualizar entregas.
 44. **Two-way sync HubSpot (G)** ✅ — tabela `hubspot_sync_state` (entity, local_id ↔ hubspot_id, direction, last_synced_at). `src/lib/hubspot-sync.functions.ts` (`pushContactsToHubspot`, `listHubspotSyncState`) cria/atualiza contatos via connector gateway. Página `/settings/hubspot-sync`.
 45. **Custom Objects (G)** ✅ — tabelas `custom_objects` (slug, schema jsonb) e `custom_object_records` (data jsonb). Server fns CRUD em `src/lib/custom-objects.functions.ts`. Página `/settings/custom-objects` com builder de schema (text/number/date/boolean/select/url/email) e Sheet para registros.
@@ -108,6 +108,7 @@
 > Backlog priorizado de evoluções pós-Onda 10. Itens **pendentes** — sugerir antes de implementar.
 
 ### Release 12 — Vídeo & Reuniões ✅
+
 - **Vídeo embutido (Jitsi Meet)** com criação de sala 1-clique a partir de contato/lead/deal/ticket (`StartVideoButton`), link público `/meet/$token` para convidados (sem login, com consentimento de gravação), iframe do Jitsi (`meet.jit.si`) e registro automático em `activities` (type=`meeting`).
 - **Gravação + transcrição IA** — upload da gravação para bucket privado `meeting-recordings` (signed URLs), `generateMeetingSummary` envia o áudio em base64 para o Lovable AI Gateway (`google/gemini-2.5-flash`) e persiste `transcript`, `summary`, `decisions[]`, `action_items[]`, `sentiment` em `meeting_summaries` (com `tsvector` gerado para busca full-text).
 - **Action items → tasks** — `createTasksFromActionItems` cria `activities` (type=`task`, prazo D+3) vinculadas ao mesmo contato/lead/deal/ticket da reunião.
@@ -115,38 +116,43 @@
 - **Painel "Reuniões"** (`MeetingsPanel`) embutido em Contato, Lead, Ticket e na aba Atividades do drawer de Deal, ao lado de `CallHistoryPanel`.
 - **`/settings/video`** — provider (Jitsi), política de consentimento, retenção das gravações (dias) e modelo de transcrição configuráveis por workspace (coluna `meeting_settings jsonb` em `workspaces`).
 
-
 ### Release 13 — WhatsApp Business avançado
+
 - **Catálogo de produtos** sincronizado com `products` e enviado como Interactive Message (`list` / `product_list`).
 - **Botões de resposta rápida** (`quick_reply` / `cta_url`) no editor de templates e no broadcast.
 - **Click-to-WhatsApp Ads** — landing `/wa/$slug` com pixel + atribuição da campanha de origem no lead criado.
 - **Multi-número** por workspace (vários `twilio_numbers`) com roteamento por equipe/segmento.
 
 ### Release 14 — Documentos & Contratos
+
 - **Editor de propostas** (rich text + variáveis `{{deal.amount}}`, `{{contact.name}}`) com versionamento e templates por pipeline.
 - **Biblioteca de cláusulas** reutilizáveis e aprovação interna (workflow: rascunho → revisão → enviado).
 - **Anexos no e-sign** (PDFs adicionais, anexo I/II) no mesmo envelope da `esign_documents`.
 - **Selo de validade** com hash SHA-256 do documento + trilha imutável (estende `esign_audit`).
 
 ### Release 15 — Cobrança & Financeiro
+
 - **Boleto + Pix (Brasil)** via gateway (Asaas / Pagar.me / Mercado Pago) — emissão a partir de `subscription_invoices` e `quotes`.
 - **Conciliação automática** — webhook de pagamento marca fatura como `paid` e dispara workflow.
 - **Régua de cobrança** (dunning) — sequência automática por email/WhatsApp para faturas vencidas, com pause em caso de pagamento.
 - **Notas fiscais** (NFS-e municipal via integradores como NFE.io) atreladas à fatura paga.
 
 ### Release 16 — Marketplace & Integrações
+
 - **App marketplace interno** — catálogo de connectors (Slack, Teams, Zapier, Make, Mailchimp, RD Station, Pipefy) com instalação 1-clique.
 - **OAuth multi-tenant** padronizado (estende `standard_connectors`).
 - **Slack/Teams bidirecional** — notificações de deals/tickets + comandos slash (`/lovable deal "Acme"`).
 - **Zapier / Make** publisher com triggers (novo lead, deal won) e actions (criar contato, enviar WhatsApp).
 
 ### Release 17 — Mobile nativo
+
 - **App React Native (iOS/Android)** consumindo a API pública v1 (token via deep-link de login).
 - **Push notifications** nativas (substitui Web Push do PWA em mobile) com badge counts.
 - **Click-to-call nativo** (intent do sistema) + log automático.
 - **Modo offline** para visualização e criação de notas/tasks com sync diferido.
 
 ### Release 18 — Segurança Enterprise
+
 - **SSO SAML / OIDC** (Okta, Azure AD, Google Workspace) para login do workspace.
 - **SCIM** para provisionamento automático de usuários e papéis.
 - **Audit log exportável** (S3 / Splunk / Datadog) com retenção configurável.
@@ -154,6 +160,7 @@
 - **Data residency** (US/EU/BR) configurável por workspace.
 
 ### Release 19 — IA Avançada
+
 - **Copilot lateral persistente** (Cmd+K) — pergunta em linguagem natural sobre qualquer dado do CRM, com RAG sobre activities/notes/messages.
 - **Agente autônomo de SDR** — qualifica leads frios em background (chamadas + WhatsApp) sob limites configuráveis.
 - **Forecast com ML** — previsão de fechamento por deal usando histórico (substitui a heurística do `analytics`).
@@ -161,12 +168,14 @@
 - **Voice agent** em chamadas inbound (atendimento 24/7 com handoff humano).
 
 ### Release 20 — Marketing Automation completo
+
 - **Landing pages builder** (drag-and-drop) hospedadas em `crm.wktechnology.com.br/lp/$slug`.
 - **A/B testing** em emails (`email_broadcasts`) e landing pages com vencedor automático.
 - **Attribution multi-touch** (first / last / linear / U-shaped) por deal won — relatório de ROI por canal.
 - **Ads sync** (Meta / Google) — sincroniza segmentos como Custom Audiences e importa leads de Lead Ads.
 
 ### Release 21 — Observabilidade & Admin
+
 - **Status page interna** (`/admin/status`) com health de cron jobs, Twilio, Gmail OAuth, AI Gateway.
 - **Alertas operacionais** (email / Slack) quando cron job atrasa, broadcast falha em massa ou taxa de erro Twilio sobe.
 - **Quotas & billing interno** — limites por workspace (chamadas/mês, emails/mês, MB de storage) com cobrança no Stripe.

@@ -13,10 +13,7 @@ export const getAtsAnalytics = createServerFn({ method: "POST" })
     since.setDate(since.getDate() - 30);
 
     const [jobsRes, appsRes, recentRes] = await Promise.all([
-      supabase
-        .from("ats_jobs")
-        .select("id, status")
-        .eq("workspace_id", workspaceId),
+      supabase.from("ats_jobs").select("id, status").eq("workspace_id", workspaceId),
       supabase
         .from("ats_applications")
         .select("id, stage_value, status, source, applied_at, moved_at, job_id")

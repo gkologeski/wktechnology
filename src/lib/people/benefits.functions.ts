@@ -160,14 +160,9 @@ export const upsertPeopleBenefit = createServerFn({ method: "POST" })
 // ============================================================
 export const deletePeopleBenefit = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { id: string }) =>
-    z.object({ id: z.string().uuid() }).parse(data),
-  )
+  .inputValidator((data: { id: string }) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_benefits")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("people_benefits").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });

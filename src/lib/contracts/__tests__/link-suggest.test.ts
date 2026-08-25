@@ -11,7 +11,6 @@ import {
   type LinkSuggestion,
 } from "@/lib/contracts/link-suggest";
 
-
 function meta(over: Partial<ContractLinkMeta> & { id: string }): ContractLinkMeta {
   return {
     role: "provider",

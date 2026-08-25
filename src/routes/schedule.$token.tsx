@@ -3,20 +3,14 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { CalendarCheck2, Clock3, CheckCircle2 } from "lucide-react";
-import {
-  getSelfScheduleByToken,
-  confirmSelfSchedule,
-} from "@/lib/ats/self-schedule.functions";
+import { getSelfScheduleByToken, confirmSelfSchedule } from "@/lib/ats/self-schedule.functions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/schedule/$token")({
   head: () => ({
-    meta: [
-      { title: "Agendar entrevista" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
+    meta: [{ title: "Agendar entrevista" }, { name: "robots", content: "noindex, nofollow" }],
   }),
   component: SchedulePage,
 });
@@ -64,10 +58,7 @@ function SchedulePage() {
     onSuccess: () => q.refetch(),
   });
 
-  const slots = useMemo(
-    () => (q.data?.offered_slots as string[] | undefined) ?? [],
-    [q.data],
-  );
+  const slots = useMemo(() => (q.data?.offered_slots as string[] | undefined) ?? [], [q.data]);
   const grouped = useMemo(() => groupByDay(slots), [slots]);
 
   return (
@@ -87,9 +78,7 @@ function SchedulePage() {
         ) : q.error ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <p className="text-sm font-medium text-destructive">
-                {(q.error as Error).message}
-              </p>
+              <p className="text-sm font-medium text-destructive">{(q.error as Error).message}</p>
               <p className="mt-2 text-xs text-text-tertiary">
                 Verifique o link recebido por e-mail ou entre em contato com a empresa.
               </p>
@@ -102,9 +91,7 @@ function SchedulePage() {
               <h1 className="mt-4 text-xl font-semibold tracking-tight text-text-primary">
                 Entrevista confirmada
               </h1>
-              <p className="mt-2 text-sm text-text-secondary">
-                {fmtSlot(q.data.scheduled_at!)}
-              </p>
+              <p className="mt-2 text-sm text-text-secondary">{fmtSlot(q.data.scheduled_at!)}</p>
               <p className="mt-4 text-xs text-text-tertiary">
                 Você receberá um e-mail com os detalhes e o link da reunião.
               </p>
@@ -166,17 +153,13 @@ function SchedulePage() {
                 {m.isPending ? "Confirmando…" : "Confirmar horário"}
               </Button>
               {m.error ? (
-                <p className="text-center text-sm text-destructive">
-                  {(m.error as Error).message}
-                </p>
+                <p className="text-center text-sm text-destructive">{(m.error as Error).message}</p>
               ) : null}
             </CardContent>
           </Card>
         )}
 
-        <p className="mt-6 text-center text-[11px] text-text-tertiary">
-          Powered by TechHire
-        </p>
+        <p className="mt-6 text-center text-[11px] text-text-tertiary">Powered by TechHire</p>
       </div>
     </div>
   );

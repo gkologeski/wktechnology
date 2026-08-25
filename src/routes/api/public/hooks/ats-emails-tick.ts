@@ -1,9 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireCronAuth } from "@/lib/cron-auth.server";
-import {
-  tickAtsCandidateEmails,
-  tickAtsStageEmails,
-} from "@/lib/ats/email-engine.server";
+import { tickAtsCandidateEmails, tickAtsStageEmails } from "@/lib/ats/email-engine.server";
 import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 export const Route = createFileRoute("/api/public/hooks/ats-emails-tick")({
@@ -19,7 +16,8 @@ export const Route = createFileRoute("/api/public/hooks/ats-emails-tick")({
           ]);
           return { candidate, stage } as unknown as Record<string, unknown>;
         });
-        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        if (run.status === "error")
+          return Response.json({ ok: false, error: run.error }, { status: 500 });
         return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
       GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),

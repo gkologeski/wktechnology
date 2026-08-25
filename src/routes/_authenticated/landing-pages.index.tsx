@@ -58,9 +58,7 @@ function StatusPill({ status }: { status: string }) {
       }`}
     >
       <span
-        className={`w-1.5 h-1.5 rounded-full ${
-          published ? "bg-primary" : "bg-muted-foreground"
-        }`}
+        className={`w-1.5 h-1.5 rounded-full ${published ? "bg-primary" : "bg-muted-foreground"}`}
       />
       {published ? "Publicada" : "Rascunho"}
     </span>
@@ -218,9 +216,7 @@ function FeaturedCard({ page, onDelete }: { page: LP; onDelete: () => void }) {
             <h2 className="text-2xl font-bold text-card-foreground leading-tight truncate">
               {page.title}
             </h2>
-            <p className="text-sm text-muted-foreground font-mono mt-1 truncate">
-              /lp/{page.slug}
-            </p>
+            <p className="text-sm text-muted-foreground font-mono mt-1 truncate">/lp/{page.slug}</p>
           </div>
           <div className="text-right shrink-0">
             <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
@@ -245,9 +241,7 @@ function FeaturedCard({ page, onDelete }: { page: LP; onDelete: () => void }) {
         </div>
 
         <div className="mt-6 flex items-center justify-between gap-2 flex-wrap">
-          <div className="text-xs text-muted-foreground">
-            Atualizada {timeAgo(page.updated_at)}
-          </div>
+          <div className="text-xs text-muted-foreground">Atualizada {timeAgo(page.updated_at)}</div>
           <div className="flex gap-2">
             {published && (
               <Button asChild size="sm" variant="outline">
@@ -306,9 +300,7 @@ function SecondaryCard({ page, onDelete }: { page: LP; onDelete: () => void }) {
           <div className="flex gap-4">
             <div>
               <div className="text-[10px] text-muted-foreground uppercase">Views</div>
-              <div className="text-sm font-bold tabular-nums">
-                {views.toLocaleString("pt-BR")}
-              </div>
+              <div className="text-sm font-bold tabular-nums">{views.toLocaleString("pt-BR")}</div>
             </div>
             <div>
               <div className="text-[10px] text-muted-foreground uppercase">Conv.</div>
@@ -367,10 +359,7 @@ function LoadingSkeleton() {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="md:col-span-2 h-[480px] rounded-xl border border-border bg-card animate-pulse" />
       {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="h-[300px] rounded-xl border border-border bg-card animate-pulse"
-        />
+        <div key={i} className="h-[300px] rounded-xl border border-border bg-card animate-pulse" />
       ))}
     </div>
   );

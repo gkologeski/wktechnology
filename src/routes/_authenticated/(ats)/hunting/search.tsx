@@ -4,7 +4,16 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
-import { Search, Download, ExternalLink, Loader2, AlertCircle, X, CheckCircle2, Sparkles } from "lucide-react";
+import {
+  Search,
+  Download,
+  ExternalLink,
+  Loader2,
+  AlertCircle,
+  X,
+  CheckCircle2,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 import { formatErrorMessage, handleForceReload } from "@/lib/errors/format";
 import { AtsPageHeader, EmptyState } from "@/components/ats/ui";
@@ -132,9 +141,7 @@ function HuntingSearchPage() {
     for (let i = 0; i < items.length; i++) {
       if (cancelRef.current) break;
       const h = items[i];
-      setProgress((p) =>
-        p ? { ...p, current: h.full_name } : p,
-      );
+      setProgress((p) => (p ? { ...p, current: h.full_name } : p));
       try {
         const r = await importFn({
           data: {
@@ -173,9 +180,7 @@ function HuntingSearchPage() {
       });
     }
 
-    setProgress((p) =>
-      p ? { ...p, finished: true, current: undefined } : p,
-    );
+    setProgress((p) => (p ? { ...p, finished: true, current: undefined } : p));
     toast.success(
       `Importação concluída · ${created} novos · ${deduped} já existiam · ${enriched} enriquecidos${errors ? ` · ${errors} falhas` : ""}`,
     );
@@ -203,8 +208,6 @@ function HuntingSearchPage() {
 
   const importing = !!progress && !progress.finished;
 
-
-
   return (
     <div className="flex flex-col gap-6 pb-10">
       <AtsPageHeader
@@ -216,17 +219,54 @@ function HuntingSearchPage() {
       {/* Filtros */}
       <Card>
         <CardContent className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
-          <Field label="Palavras-chave" value={form.keywords} onChange={(v) => setForm({ ...form, keywords: v })} placeholder='ex.: "engenheiro de dados sênior"' />
-          <Field label="Localização" value={form.location} onChange={(v) => setForm({ ...form, location: v })} placeholder="São Paulo, Brasil" />
-          <Field label="Empresa atual" value={form.current_company} onChange={(v) => setForm({ ...form, current_company: v })} placeholder="Nubank" />
-          <Field label="Setor" value={form.industry} onChange={(v) => setForm({ ...form, industry: v })} placeholder="Software" />
-          <Field label="Escola" value={form.school} onChange={(v) => setForm({ ...form, school: v })} placeholder="USP" />
+          <Field
+            label="Palavras-chave"
+            value={form.keywords}
+            onChange={(v) => setForm({ ...form, keywords: v })}
+            placeholder='ex.: "engenheiro de dados sênior"'
+          />
+          <Field
+            label="Localização"
+            value={form.location}
+            onChange={(v) => setForm({ ...form, location: v })}
+            placeholder="São Paulo, Brasil"
+          />
+          <Field
+            label="Empresa atual"
+            value={form.current_company}
+            onChange={(v) => setForm({ ...form, current_company: v })}
+            placeholder="Nubank"
+          />
+          <Field
+            label="Setor"
+            value={form.industry}
+            onChange={(v) => setForm({ ...form, industry: v })}
+            placeholder="Software"
+          />
+          <Field
+            label="Escola"
+            value={form.school}
+            onChange={(v) => setForm({ ...form, school: v })}
+            placeholder="USP"
+          />
           <div className="flex flex-col gap-2">
             <Label className="text-xs">Rede</Label>
             <div className="flex items-center gap-4 pt-1.5">
-              <NetCheckbox label="1º" checked={form.network_F} onChange={(v) => setForm({ ...form, network_F: v })} />
-              <NetCheckbox label="2º" checked={form.network_S} onChange={(v) => setForm({ ...form, network_S: v })} />
-              <NetCheckbox label="3º+" checked={form.network_O} onChange={(v) => setForm({ ...form, network_O: v })} />
+              <NetCheckbox
+                label="1º"
+                checked={form.network_F}
+                onChange={(v) => setForm({ ...form, network_F: v })}
+              />
+              <NetCheckbox
+                label="2º"
+                checked={form.network_S}
+                onChange={(v) => setForm({ ...form, network_S: v })}
+              />
+              <NetCheckbox
+                label="3º+"
+                checked={form.network_O}
+                onChange={(v) => setForm({ ...form, network_O: v })}
+              />
             </div>
           </div>
           <div className="flex items-end justify-end gap-2 sm:col-span-2 lg:col-span-3">
@@ -241,7 +281,11 @@ function HuntingSearchPage() {
               }}
               disabled={searchMut.isPending}
             >
-              {searchMut.isPending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Search className="mr-1 h-4 w-4" />}
+              {searchMut.isPending ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="mr-1 h-4 w-4" />
+              )}
               Buscar
             </Button>
           </div>
@@ -263,7 +307,13 @@ function HuntingSearchPage() {
         </Alert>
       )}
 
-      {progress && <ImportProgressCard progress={progress} onCancel={cancelImport} onDismiss={() => setProgress(null)} />}
+      {progress && (
+        <ImportProgressCard
+          progress={progress}
+          onCancel={cancelImport}
+          onDismiss={() => setProgress(null)}
+        />
+      )}
 
       {/* Resultados */}
       {hits.length === 0 && !searchMut.isPending ? (
@@ -289,7 +339,11 @@ function HuntingSearchPage() {
                 </span>
               </div>
               <Button size="sm" onClick={runImport} disabled={selected.size === 0 || importing}>
-                {importing ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Download className="mr-1 h-4 w-4" />}
+                {importing ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-1 h-4 w-4" />
+                )}
                 Importar selecionados
               </Button>
             </div>
@@ -403,12 +457,13 @@ function ImportProgressCard({
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <Badge variant="secondary">Novos: {progress.created}</Badge>
           <Badge variant="outline">Já existiam: {progress.deduped}</Badge>
-          <Badge variant="outline" className="border-emerald-300 text-emerald-700 dark:text-emerald-400">
+          <Badge
+            variant="outline"
+            className="border-emerald-300 text-emerald-700 dark:text-emerald-400"
+          >
             <Sparkles className="mr-1 h-3 w-3" /> Enriquecidos: {progress.enriched}
           </Badge>
-          {progress.errors > 0 && (
-            <Badge variant="destructive">Falhas: {progress.errors}</Badge>
-          )}
+          {progress.errors > 0 && <Badge variant="destructive">Falhas: {progress.errors}</Badge>}
           <span className="ml-auto text-muted-foreground">{pct}%</span>
         </div>
       </CardContent>
@@ -416,11 +471,20 @@ function ImportProgressCard({
   );
 }
 
-function Field(props: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+function Field(props: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       <Label className="text-xs">{props.label}</Label>
-      <Input value={props.value} onChange={(e) => props.onChange(e.target.value)} placeholder={props.placeholder} />
+      <Input
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+        placeholder={props.placeholder}
+      />
     </div>
   );
 }

@@ -203,7 +203,9 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
               <Label className="text-xs text-text-tertiary">Modalidade</Label>
               <Select
                 value={cfg.linkedin_workplace ?? ""}
-                onValueChange={(v) => update({ linkedin_workplace: v as Config["linkedin_workplace"] })}
+                onValueChange={(v) =>
+                  update({ linkedin_workplace: v as Config["linkedin_workplace"] })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="—" />
@@ -245,9 +247,7 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
             <Label className="text-xs text-text-tertiary">Método de candidatura</Label>
             <RadioGroup
               value={cfg.linkedin_apply_type ?? "linkedin"}
-              onValueChange={(v) =>
-                update({ linkedin_apply_type: v as "linkedin" | "external" })
-              }
+              onValueChange={(v) => update({ linkedin_apply_type: v as "linkedin" | "external" })}
               className="flex gap-4 mt-1"
             >
               <label className="flex items-center gap-2 text-sm">
@@ -261,7 +261,9 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
 
           {(cfg.linkedin_apply_type ?? "linkedin") === "linkedin" ? (
             <div>
-              <Label className="text-xs text-text-tertiary">Email para notificar candidaturas</Label>
+              <Label className="text-xs text-text-tertiary">
+                Email para notificar candidaturas
+              </Label>
               <Input
                 type="email"
                 value={cfg.linkedin_notification_email ?? ""}
@@ -351,8 +353,7 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
                   value={cfg.linkedin_budget_amount ?? ""}
                   onChange={(e) =>
                     update({
-                      linkedin_budget_amount:
-                        e.target.value === "" ? null : Number(e.target.value),
+                      linkedin_budget_amount: e.target.value === "" ? null : Number(e.target.value),
                     })
                   }
                   placeholder="Ex.: 500"
@@ -388,7 +389,11 @@ export function LinkedinJobConfigPanel({ jobId }: { jobId: string }) {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={onSave} disabled={!dirty || saving || (promoted && !cfg.linkedin_budget_amount)} size="sm">
+            <Button
+              onClick={onSave}
+              disabled={!dirty || saving || (promoted && !cfg.linkedin_budget_amount)}
+              size="sm"
+            >
               {saving ? (
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
@@ -463,8 +468,18 @@ function DirectoryPicker({
             }
           }}
         />
-        <Button type="button" variant="outline" size="sm" onClick={doSearch} disabled={loading || !q.trim()}>
-          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={doSearch}
+          disabled={loading || !q.trim()}
+        >
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Search className="h-3.5 w-3.5" />
+          )}
         </Button>
       </div>
       {notConnected && (

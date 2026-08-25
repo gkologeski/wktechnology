@@ -45,8 +45,6 @@ export const getCandidateStatuses = createServerFn({ method: "POST" })
         .map((r) => r.id),
     );
 
-
-
     // Offers (hired/offer)
     const { data: offers } = await supabase
       .from("ats_offers")
@@ -71,11 +69,7 @@ export const getCandidateStatuses = createServerFn({ method: "POST" })
     }>) {
       const cur = result[i.candidate_id];
       if (cur === "hired" || cur === "offer") continue;
-      if (
-        i.scheduled_at &&
-        new Date(i.scheduled_at).getTime() > now &&
-        i.status !== "cancelled"
-      ) {
+      if (i.scheduled_at && new Date(i.scheduled_at).getTime() > now && i.status !== "cancelled") {
         result[i.candidate_id] = "interview";
       }
     }
@@ -103,4 +97,3 @@ export const getCandidateStatuses = createServerFn({ method: "POST" })
 
     return result;
   });
-

@@ -20,13 +20,33 @@ export const Route = createFileRoute("/_authenticated/settings/notifications")({
 });
 
 const CATS: { key: NotificationCategory; label: string; help: string }[] = [
-  { key: "mention", label: "Menções", help: "Quando alguém te marca com @ em uma nota, tarefa ou comentário." },
-  { key: "assignment", label: "Atribuições", help: "Quando uma tarefa, ticket ou negócio é atribuído a você." },
-  { key: "deal_stage", label: "Mudança de fase", help: "Avanço/retrocesso de fase em negócios que você acompanha." },
-  { key: "ticket", label: "Tickets", help: "Novos tickets ou atualizações em tickets atribuídos a você." },
+  {
+    key: "mention",
+    label: "Menções",
+    help: "Quando alguém te marca com @ em uma nota, tarefa ou comentário.",
+  },
+  {
+    key: "assignment",
+    label: "Atribuições",
+    help: "Quando uma tarefa, ticket ou negócio é atribuído a você.",
+  },
+  {
+    key: "deal_stage",
+    label: "Mudança de fase",
+    help: "Avanço/retrocesso de fase em negócios que você acompanha.",
+  },
+  {
+    key: "ticket",
+    label: "Tickets",
+    help: "Novos tickets ou atualizações em tickets atribuídos a você.",
+  },
   { key: "task", label: "Tarefas", help: "Tarefas vencendo ou criadas para você." },
   { key: "sla", label: "SLA", help: "Alertas de SLA prestes a estourar." },
-  { key: "message", label: "Mensagens", help: "Novas mensagens em conversas (WhatsApp, chat, e-mail)." },
+  {
+    key: "message",
+    label: "Mensagens",
+    help: "Novas mensagens em conversas (WhatsApp, chat, e-mail).",
+  },
 ];
 
 const CHANNELS: { key: keyof NotificationPrefs[NotificationCategory]; label: string }[] = [

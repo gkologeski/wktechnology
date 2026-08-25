@@ -161,11 +161,7 @@ export async function runIcpScan(
 
   let lastId: string | null = null;
   for (;;) {
-    let q = supabase
-      .from("leads")
-      .select("*")
-      .order("id", { ascending: true })
-      .limit(pageSize);
+    let q = supabase.from("leads").select("*").order("id", { ascending: true }).limit(pageSize);
     if (lastId) q = q.gt("id", lastId);
     const { data: leads, error: lErr } = await q;
     if (lErr) throw new Error(lErr.message);
@@ -187,7 +183,7 @@ export async function runIcpScan(
     for (const lead of leads as AnyRow[]) {
       result.scanned += 1;
       lastId = (lead.id as string) ?? lastId;
-      const company = lead.company_id ? companies.get(lead.company_id as string) ?? null : null;
+      const company = lead.company_id ? (companies.get(lead.company_id as string) ?? null) : null;
       const fit = computeIcpFit(criteria, lead, company);
       const { delta } = await applyScoreContribution(supabase, {
         ownerId: opts.ownerId,
@@ -221,7 +217,11 @@ export async function getLeadIcpFit(
   let company: AnyRow | null = null;
   const companyId = (lead as AnyRow | null)?.company_id as string | null | undefined;
   if (companyId) {
-    const { data: c } = await supabase.from("companies").select("*").eq("id", companyId).maybeSingle();
+    const { data: c } = await supabase
+      .from("companies")
+      .select("*")
+      .eq("id", companyId)
+      .maybeSingle();
     company = (c as AnyRow | null) ?? null;
   }
   const fit = computeIcpFit(criteria, (lead as AnyRow | null) ?? null, company);

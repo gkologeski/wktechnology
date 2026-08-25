@@ -80,10 +80,7 @@ export const deleteFeatureFlag = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ key: FLAG_KEY }).parse(input))
   .handler(async ({ context, data }) => {
-    const { error } = await context.supabase
-      .from("feature_flags")
-      .delete()
-      .eq("key", data.key);
+    const { error } = await context.supabase.from("feature_flags").delete().eq("key", data.key);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

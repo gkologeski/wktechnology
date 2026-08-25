@@ -201,7 +201,6 @@ export function arrangeContractLinks(rows: ContractRow[], nest: boolean): Arrang
   return out;
 }
 
-
 export function ContractsTable({
   rows,
   selection,

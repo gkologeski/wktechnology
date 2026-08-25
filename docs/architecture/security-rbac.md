@@ -89,7 +89,7 @@ Antipadrões já corrigidos no projeto — não reintroduzir:
 - leitura cross-tenant de conteúdo "publicado" sem checar `workspace_id`
   (caso `kb_articles` / `kb_categories`);
 - objetos de storage sensíveis (`people_documents`) acessíveis por `public`;
-- gate de RBAC que falha aberto (*fail-open*) quando a checagem de permissão
+- gate de RBAC que falha aberto (_fail-open_) quando a checagem de permissão
   dá erro — deve falhar fechado.
 
 ## 5. Exclusão barrada por RLS

@@ -40,7 +40,10 @@ export const ensureDefaultPipeline = createServerFn({ method: "POST" })
         .eq("id", first.id)
         .select("id")
         .maybeSingle();
-      return { id: ((promoted as { id?: string } | null)?.id ?? first.id) as string, created: false };
+      return {
+        id: ((promoted as { id?: string } | null)?.id ?? first.id) as string,
+        created: false,
+      };
     }
 
     // Sem nenhum pipeline visível: cria o padrão no workspace ativo.

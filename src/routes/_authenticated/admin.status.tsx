@@ -55,7 +55,6 @@ function AdminStatusPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   if (loading) return <div className="p-6">Carregando…</div>;
   if (!isPlatformAdmin) return <div className="p-6">Acesso restrito a super-admins.</div>;
 
@@ -112,14 +111,12 @@ function AdminStatusPage() {
             onClick={() => backfillMut.mutate()}
             disabled={backfillMut.isPending}
           >
-            {backfillMut.isPending
-              ? "Executando…"
-              : "Backfill de qualificações na timeline"}
+            {backfillMut.isPending ? "Executando…" : "Backfill de qualificações na timeline"}
           </Button>
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Cria a atividade "Pesquisa" na timeline para qualificações concluídas antes do
-          registro automático. A ação é idempotente: executar de novo não duplica registros.
+          Cria a atividade "Pesquisa" na timeline para qualificações concluídas antes do registro
+          automático. A ação é idempotente: executar de novo não duplica registros.
         </CardContent>
       </Card>
 
@@ -183,7 +180,9 @@ function AdminStatusPage() {
                         ) : unhealthy ? (
                           <Badge
                             className="bg-destructive text-destructive-foreground hover:bg-destructive"
-                            title={c.app_last_error ?? "A aplicação não respondeu à chamada agendada."}
+                            title={
+                              c.app_last_error ?? "A aplicação não respondeu à chamada agendada."
+                            }
                           >
                             não respondeu
                           </Badge>
@@ -205,7 +204,6 @@ function AdminStatusPage() {
                     </TableRow>
                   );
                 })}
-
               </TableBody>
             </Table>
           )}
@@ -231,7 +229,17 @@ function AdminStatusPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {((data?.recentCronRuns ?? []) as Array<{ id: string; job_name: string; started_at: string; duration_ms: number | null; status: string; metrics: string; error: string | null }>).map((r) => {
+                {(
+                  (data?.recentCronRuns ?? []) as Array<{
+                    id: string;
+                    job_name: string;
+                    started_at: string;
+                    duration_ms: number | null;
+                    status: string;
+                    metrics: string;
+                    error: string | null;
+                  }>
+                ).map((r) => {
                   const badgeClass =
                     r.status === "error"
                       ? "bg-destructive text-destructive-foreground hover:bg-destructive"
@@ -264,8 +272,6 @@ function AdminStatusPage() {
           )}
         </CardContent>
       </Card>
-
-
 
       <Card>
         <CardHeader>

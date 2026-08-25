@@ -236,10 +236,9 @@ export const updateAccessProfile = createServerFn({ method: "POST" })
         const module_id = objDef?.module ?? null;
         const { error } = await supabase
           .from("access_profile_permissions")
-          .upsert(
-            { profile_id: data.id, module_id, ...p } as never,
-            { onConflict: "profile_id,object_key" },
-          );
+          .upsert({ profile_id: data.id, module_id, ...p } as never, {
+            onConflict: "profile_id,object_key",
+          });
         if (error) throw new Error(error.message);
       }
     }

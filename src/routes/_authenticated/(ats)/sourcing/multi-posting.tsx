@@ -7,12 +7,7 @@ import { Globe, ExternalLink, RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  AtsPageHeader,
-  EmptyState,
-  RowSkeleton,
-  MetricCard,
-} from "@/components/ats/ui";
+import { AtsPageHeader, EmptyState, RowSkeleton, MetricCard } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

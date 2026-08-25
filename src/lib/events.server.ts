@@ -44,9 +44,7 @@ function getPath(obj: RenderCtx, path: string): unknown {
 
 function renderTokens(input: unknown, ctx: RenderCtx): unknown {
   if (typeof input !== "string") return input;
-  return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key) =>
-    toStr(getPath(ctx, String(key))),
-  );
+  return input.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, key) => toStr(getPath(ctx, String(key))));
 }
 
 /** Converte glob (`*`) em RegExp segura. */
@@ -70,7 +68,9 @@ async function executeSubscriptionAction(
   };
 
   if (type === "create_ticket") {
-    const subject = String(renderTokens((action as { subject?: unknown }).subject, ctx) ?? "").trim();
+    const subject = String(
+      renderTokens((action as { subject?: unknown }).subject, ctx) ?? "",
+    ).trim();
     if (!subject) return;
     const description = renderTokens((action as { description?: unknown }).description, ctx) as
       | string
@@ -106,10 +106,7 @@ async function executeSubscriptionAction(
   // outros tipos podem ser adicionados no futuro
 }
 
-async function fanoutSubscriptions(
-  supabase: SupabaseClient,
-  event: EmitEventInput,
-): Promise<void> {
+async function fanoutSubscriptions(supabase: SupabaseClient, event: EmitEventInput): Promise<void> {
   const { data, error } = await supabase
     .from("workflow_subscriptions")
     .select("id,owner_id,event_pattern,action,enabled")

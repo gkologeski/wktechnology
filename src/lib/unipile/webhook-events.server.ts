@@ -10,7 +10,6 @@
 //
 // Server-only.
 
-
 export type UnipileWebhookKind =
   | "account_connected"
   | "account_failed"
@@ -83,12 +82,7 @@ function classify(eventType: string): UnipileWebhookKind {
   if (e.includes("fail") || e.includes("invalid") || e.includes("error")) {
     return "account_failed";
   }
-  if (
-    e.includes("success") ||
-    e.includes("connected") ||
-    e === "account.created" ||
-    e === "ok"
-  ) {
+  if (e.includes("success") || e.includes("connected") || e === "account.created" || e === "ok") {
     return "account_connected";
   }
   return "unknown";
@@ -138,9 +132,7 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
     payload?.error,
     payload?.error_message,
     payload?.reason,
-    kind === "account_failed" || kind === "account_disconnected"
-      ? payload?.message
-      : undefined,
+    kind === "account_failed" || kind === "account_disconnected" ? payload?.message : undefined,
   );
 
   let message: NormalizedUnipileEvent["message"] = null;
@@ -163,11 +155,7 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
       typeof node?.text === "string" ? node.text : undefined,
       typeof node?.body === "string" ? node.body : undefined,
     );
-    const messageId = firstString(
-      payload?.message_id,
-      node?.id,
-      payload?.data?.message_id,
-    );
+    const messageId = firstString(payload?.message_id, node?.id, payload?.data?.message_id);
     const chatId = firstString(payload?.chat_id, node?.chat_id, payload?.data?.chat_id);
 
     message = {
@@ -199,9 +187,10 @@ export async function hydrateV2Message(
 } | null> {
   const key = process.env.UNIPILE_API_KEY;
   if (!key) return null;
-  const base = (
-    process.env.UNIPILE_API_BASE_URL?.trim() || "https://api.unipile.com/v2"
-  ).replace(/\/$/, "");
+  const base = (process.env.UNIPILE_API_BASE_URL?.trim() || "https://api.unipile.com/v2").replace(
+    /\/$/,
+    "",
+  );
 
   try {
     const res = await fetch(

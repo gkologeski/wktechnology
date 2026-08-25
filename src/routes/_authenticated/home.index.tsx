@@ -15,11 +15,7 @@ import {
 } from "@/lib/home/dashboard.functions";
 import { exportDashboardCsv } from "@/lib/home/dashboard-export";
 import { MODULES } from "@/lib/modules/registry";
-import {
-  PageHeader,
-  SectionHeader,
-  MetricCard,
-} from "@/components/techhire/ui";
+import { PageHeader, SectionHeader, MetricCard } from "@/components/techhire/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,12 +30,27 @@ export const Route = createFileRoute("/_authenticated/home/")({
   component: ErpHomeDashboard,
 });
 
-const MODULE_TITLES: Record<string, { title: string; product: string; icon: React.ComponentType<{ className?: string }> }> = {
+const MODULE_TITLES: Record<
+  string,
+  { title: string; product: string; icon: React.ComponentType<{ className?: string }> }
+> = {
   crm: { title: "CRM", product: MODULES.crm.productName, icon: MODULES.crm.icon },
   ats: { title: "ATS", product: MODULES.ats.productName, icon: MODULES.ats.icon },
-  contracts: { title: "Contratos", product: MODULES.contracts.productName, icon: MODULES.contracts.icon },
-  projects: { title: "Projetos", product: MODULES.projects.productName, icon: MODULES.projects.icon },
-  finance: { title: "Financeiro", product: MODULES.finance.productName, icon: MODULES.finance.icon },
+  contracts: {
+    title: "Contratos",
+    product: MODULES.contracts.productName,
+    icon: MODULES.contracts.icon,
+  },
+  projects: {
+    title: "Projetos",
+    product: MODULES.projects.productName,
+    icon: MODULES.projects.icon,
+  },
+  finance: {
+    title: "Financeiro",
+    product: MODULES.finance.productName,
+    icon: MODULES.finance.icon,
+  },
   people: { title: "Pessoas", product: MODULES.people.productName, icon: MODULES.people.icon },
 };
 
@@ -53,10 +64,10 @@ function drillDownFor(moduleId: string, label: string): string | null {
       "Pipeline aberto": "/deals",
     },
     ats: {
-      "Candidatos": "/ats/candidates",
-      "Aplicações": "/ats/applications",
-      "Entrevistas": "/ats/interviews",
-      "Ofertas": "/ats/offers",
+      Candidatos: "/ats/candidates",
+      Aplicações: "/ats/applications",
+      Entrevistas: "/ats/interviews",
+      Ofertas: "/ats/offers",
     },
     contracts: {
       "Contratos criados": "/contracts",
@@ -131,7 +142,9 @@ function ModuleKpiSection({
         </div>
         {def ? (
           <Button variant="ghost" size="sm" asChild>
-            <a href={`${def.defaultRoute}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`}>
+            <a
+              href={`${def.defaultRoute}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`}
+            >
               Abrir módulo
               <ArrowRight className="ml-1 h-3.5 w-3.5" />
             </a>

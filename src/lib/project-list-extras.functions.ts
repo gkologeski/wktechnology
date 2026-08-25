@@ -24,13 +24,18 @@ export const listCustomFields = createServerFn({ method: "POST" })
 export const createCustomField = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      listId: z.string().uuid(),
-      key: z.string().min(1).regex(/^[a-z0-9_]+$/, "Use apenas letras minúsculas, números e _"),
-      label: z.string().min(1),
-      type: fieldTypeEnum,
-      options: z.array(z.string()).nullable().optional(),
-    }).parse(input),
+    z
+      .object({
+        listId: z.string().uuid(),
+        key: z
+          .string()
+          .min(1)
+          .regex(/^[a-z0-9_]+$/, "Use apenas letras minúsculas, números e _"),
+        label: z.string().min(1),
+        type: fieldTypeEnum,
+        options: z.array(z.string()).nullable().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -69,10 +74,12 @@ export const deleteCustomField = createServerFn({ method: "POST" })
 export const updateTaskCustomFieldValues = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      taskId: z.string().uuid(),
-      values: z.record(z.string(), z.any()),
-    }).parse(input),
+    z
+      .object({
+        taskId: z.string().uuid(),
+        values: z.record(z.string(), z.any()),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -102,11 +109,13 @@ export const listTemplates = createServerFn({ method: "POST" })
 export const saveListAsTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      listId: z.string().uuid(),
-      name: z.string().min(1),
-      description: z.string().nullable().optional(),
-    }).parse(input),
+    z
+      .object({
+        listId: z.string().uuid(),
+        name: z.string().min(1),
+        description: z.string().nullable().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -154,13 +163,15 @@ export const deleteTemplate = createServerFn({ method: "POST" })
 export const createListFromTemplate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      templateId: z.string().uuid(),
-      name: z.string().min(1),
-      spaceId: z.string().uuid(),
-      folderId: z.string().uuid().nullable().optional(),
-      projectId: z.string().uuid().nullable().optional(),
-    }).parse(input),
+    z
+      .object({
+        templateId: z.string().uuid(),
+        name: z.string().min(1),
+        spaceId: z.string().uuid(),
+        folderId: z.string().uuid().nullable().optional(),
+        projectId: z.string().uuid().nullable().optional(),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

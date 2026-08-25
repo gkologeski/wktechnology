@@ -3,6 +3,7 @@
 > **Como usar:** marque `[x]` ao lado do que quiser incorporar. Depois me envie o arquivo (ou só a lista marcada) que eu abro tarefas de implementação.
 >
 > **Legenda de status:**
+>
 > - ✅ pronto — já existe e funciona razoavelmente
 > - 🟡 parcial — existe esqueleto, falta polimento / features
 > - ❌ não existe
@@ -13,29 +14,30 @@
 
 ## Sumário por módulo
 
-| # | Módulo | ✅ | 🟡 | ❌ |
-|---|---|---|---|---|
-| 1 | Objetos CRM | 6 | 1 | 5 |
-| 2 | Engajamento / Activities | 6 | 1 | 8 |
-| 3 | Pipelines & Automação | 7 | 0 | 6 |
-| 4 | Inbox & Conversations | 0 | 0 | 7 |
-| 5 | Relatórios & Dashboards | 2 | 0 | 8 |
-| 6 | Importação & Sync | 3 | 2 | 4 |
-| 7 | Listas & Segmentação | 3 | 1 | 2 |
-| 8 | Propriedades | 4 | 1 | 4 |
-| 9 | Permissões & Times | 1 | 1 | 6 |
-| 10 | Email outbound | 1 | 0 | 9 |
-| 11 | Calling | 0 | 0 | 6 |
-| 12 | Meetings & Calendário | 0 | 0 | 6 |
-| 13 | Marketing core | 0 | 0 | 7 |
-| 14 | Service / Tickets | 0 | 0 | 6 |
-| 15 | Payments & Quotes | 0 | 0 | 7 |
-| 16 | AI / Breeze | 1 | 1 | 7 |
-| 17 | Integrações & API | 1 | 1 | 5 |
-| 18 | Mobile | 0 | 0 | 4 |
-| 19 | Customização | 1 | 2 | 5 |
+| #   | Módulo                   | ✅  | 🟡  | ❌  |
+| --- | ------------------------ | --- | --- | --- |
+| 1   | Objetos CRM              | 6   | 1   | 5   |
+| 2   | Engajamento / Activities | 6   | 1   | 8   |
+| 3   | Pipelines & Automação    | 7   | 0   | 6   |
+| 4   | Inbox & Conversations    | 0   | 0   | 7   |
+| 5   | Relatórios & Dashboards  | 2   | 0   | 8   |
+| 6   | Importação & Sync        | 3   | 2   | 4   |
+| 7   | Listas & Segmentação     | 3   | 1   | 2   |
+| 8   | Propriedades             | 4   | 1   | 4   |
+| 9   | Permissões & Times       | 1   | 1   | 6   |
+| 10  | Email outbound           | 1   | 0   | 9   |
+| 11  | Calling                  | 0   | 0   | 6   |
+| 12  | Meetings & Calendário    | 0   | 0   | 6   |
+| 13  | Marketing core           | 0   | 0   | 7   |
+| 14  | Service / Tickets        | 0   | 0   | 6   |
+| 15  | Payments & Quotes        | 0   | 0   | 7   |
+| 16  | AI / Breeze              | 1   | 1   | 7   |
+| 17  | Integrações & API        | 1   | 1   | 5   |
+| 18  | Mobile                   | 0   | 0   | 4   |
+| 19  | Customização             | 1   | 2   | 5   |
 
 > **Release 4 (2026-06-05) — fechada.** Os 8 parciais da auditoria anterior foram endereçados. Itens entregues nesta release:
+>
 > 1. ✅ Companies — schema parent/child + UI de árvore (`company-hierarchy.tsx`)
 > 2. ✅ Card layout por pipeline — `card_fields` em `pipelines.config` + editor em settings
 > 3. ✅ Custom properties — render dinâmico no `properties-panel`
@@ -275,13 +277,13 @@
 
 Após Release 4, restam estes parciais (todos pequenos/médios):
 
-| # | Item | Esforço | Onde mexer |
-|---|---|---|---|
-| 1 | Filter builder OR aninhado real | P | `src/lib/filters.ts` — recursão verdadeira em `or()` (ou mover para PostgREST `.or(...)` com subgrupos) |
-| 2 | Record sidebar layout (UI) | M | UI sobre `record_layouts` em `/settings/properties` para arrastar campos em grupos |
-| 3 | CSV wizard com dedupe | M | passo "match by email/phone" no wizard de import |
-| 4 | Grupos de propriedades | P | usar `record_layouts.groups` no `properties-panel` |
-| 5 | Teams UI | P | tela CRUD sobre `team_members` |
+| #   | Item                            | Esforço | Onde mexer                                                                                              |
+| --- | ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------- |
+| 1   | Filter builder OR aninhado real | P       | `src/lib/filters.ts` — recursão verdadeira em `or()` (ou mover para PostgREST `.or(...)` com subgrupos) |
+| 2   | Record sidebar layout (UI)      | M       | UI sobre `record_layouts` em `/settings/properties` para arrastar campos em grupos                      |
+| 3   | CSV wizard com dedupe           | M       | passo "match by email/phone" no wizard de import                                                        |
+| 4   | Grupos de propriedades          | P       | usar `record_layouts.groups` no `properties-panel`                                                      |
+| 5   | Teams UI                        | P       | tela CRUD sobre `team_members`                                                                          |
 
 ## Próximos grandes (❌ → ✅) por prioridade de negócio
 
@@ -292,4 +294,3 @@ Após Release 4, restam estes parciais (todos pequenos/médios):
 5. Custom reports builder (G) — relatórios ad-hoc.
 6. Roles & permissões granulares (M) — necessário antes de escalar usuários.
 7. Two-way sync HubSpot (G) — migração suave.
-

@@ -1,4 +1,35 @@
-import { Zap, Clock, GitBranch, Mail, Bell, Webhook, Users, UserPlus, Briefcase, ArrowRight, X, Sparkles, Building2, Handshake, Ticket, CheckSquare, Contact, Copy, Link2, Link2Off, Eraser, PlusIcon, MessageCircle, SplitSquareHorizontal, GitFork, CalendarClock, Wand2, Hash, MessageSquare, ClipboardList } from "lucide-react";
+import {
+  Zap,
+  Clock,
+  GitBranch,
+  Mail,
+  Bell,
+  Webhook,
+  Users,
+  UserPlus,
+  Briefcase,
+  ArrowRight,
+  X,
+  Sparkles,
+  Building2,
+  Handshake,
+  Ticket,
+  CheckSquare,
+  Contact,
+  Copy,
+  Link2,
+  Link2Off,
+  Eraser,
+  PlusIcon,
+  MessageCircle,
+  SplitSquareHorizontal,
+  GitFork,
+  CalendarClock,
+  Wand2,
+  Hash,
+  MessageSquare,
+  ClipboardList,
+} from "lucide-react";
 import { ACTION_LABELS, type WorkflowAction, type WorkflowActionType } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
 
@@ -173,7 +204,11 @@ export function getBranchList(a: WorkflowAction, key: BranchKey): WorkflowAction
 }
 
 /** Substitui a lista de ações filhas de um ramo, preservando o restante da ação. */
-export function setBranchList(a: WorkflowAction, key: BranchKey, list: WorkflowAction[]): WorkflowAction {
+export function setBranchList(
+  a: WorkflowAction,
+  key: BranchKey,
+  list: WorkflowAction[],
+): WorkflowAction {
   if (a.type === "branch_if" && (key === "then" || key === "else")) {
     return { ...a, [key]: list };
   }
@@ -194,7 +229,9 @@ export function setBranchList(a: WorkflowAction, key: BranchKey, list: WorkflowA
 // Saídas registradas por passo (espelha `detail` de cada ação em engine.server).
 // Usadas para oferecer, nas condições, valores de passos anteriores.
 // ---------------------------------------------------------------------------
-export const STEP_OUTPUT_KEYS: Partial<Record<WorkflowActionType, { key: string; label: string }[]>> = {
+export const STEP_OUTPUT_KEYS: Partial<
+  Record<WorkflowActionType, { key: string; label: string }[]>
+> = {
   create_lead: [
     { key: "id", label: "ID do lead criado" },
     { key: "first_name", label: "Nome" },
@@ -307,7 +344,10 @@ export function collectFlowVarNames(actions: WorkflowAction[]): string[] {
 }
 
 /** Opções de campo referenciando saídas de passos anteriores (`steps.N.campo`). */
-export function priorStepFieldOptions(actions: WorkflowAction[], path: StepPath | null): FieldOpt[] {
+export function priorStepFieldOptions(
+  actions: WorkflowAction[],
+  path: StepPath | null,
+): FieldOpt[] {
   if (!path) return [];
   const { list, index } = siblingsOfPath(actions, path);
   if (index <= 0) return [];
@@ -542,7 +582,7 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
     case "create_activity":
       return `${a.activity_type ?? "task"}: ${a.subject}`;
     case "create_survey_activity":
-      return a.source_id ? (a.subject || "Pesquisa pendente") : "Selecione a pesquisa";
+      return a.source_id ? a.subject || "Pesquisa pendente" : "Selecione a pesquisa";
     case "open_deal_dialog":
       return a.pipeline_id ? L.labelForPipeline(a.pipeline_id) : "pipeline padrão de negócios";
     case "assign_to":

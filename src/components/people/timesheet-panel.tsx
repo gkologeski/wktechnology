@@ -113,8 +113,7 @@ function computePreset(key: PresetKey): { start: string; end: string } | null {
 
 // ============ helpers ============
 
-const brl = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const pct = (v: number) => `${(v * 100).toFixed(0)}%`;
 
 function toCsv(rows: TimesheetEntry[]): string {
@@ -244,8 +243,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
     return Array.from(map.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
   }, [filtered]);
 
-  const allSelected =
-    filtered.length > 0 && filtered.every((e) => selected.has(e.id));
+  const allSelected = filtered.length > 0 && filtered.every((e) => selected.has(e.id));
 
   const toggleAll = () => {
     setSelected(allSelected ? new Set() : new Set(filtered.map((e) => e.id)));
@@ -395,10 +393,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
           </div>
           <div className="grid gap-1.5">
             <Label className="text-xs">Tipo</Label>
-            <Select
-              value={typeFilter}
-              onValueChange={(v) => setTypeFilter(v as typeof typeFilter)}
-            >
+            <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as typeof typeFilter)}>
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>
@@ -440,10 +435,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
               Utilização
             </div>
             <div className="mt-1.5 text-2xl font-semibold">{pct(totals.utilization)}</div>
-            <Progress
-              value={Math.min(100, totals.utilization * 100)}
-              className="mt-2 h-1.5"
-            />
+            <Progress value={Math.min(100, totals.utilization * 100)} className="mt-2 h-1.5" />
             <p className="mt-1 text-[11px] text-muted-foreground">
               {totals.billableHours.toFixed(2)}h / {totals.capacityHours.toFixed(2)}h
             </p>
@@ -454,11 +446,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
           label="Receita"
           value={brl(totals.revenue)}
         />
-        <KpiCard
-          icon={<Wallet className="h-4 w-4" />}
-          label="Custo"
-          value={brl(totals.cost)}
-        />
+        <KpiCard icon={<Wallet className="h-4 w-4" />} label="Custo" value={brl(totals.cost)} />
         <KpiCard
           icon={<TrendingUp className="h-4 w-4" />}
           label="Margem"
@@ -495,24 +483,15 @@ export function TimesheetPanel({ personId }: { personId: string }) {
                   <TableRow key={a.id}>
                     <TableCell>
                       <div className="font-medium">
-                        {a.contract_title ??
-                          a.project_name ??
-                          a.contract_number ??
-                          "—"}
+                        {a.contract_title ?? a.project_name ?? a.contract_number ?? "—"}
                       </div>
                       {a.contract_number && a.contract_title && (
-                        <div className="text-xs text-muted-foreground">
-                          #{a.contract_number}
-                        </div>
+                        <div className="text-xs text-muted-foreground">#{a.contract_number}</div>
                       )}
                     </TableCell>
                     <TableCell className="text-sm">{a.role_title ?? "—"}</TableCell>
-                    <TableCell className="text-right">
-                      {a.capacityHours.toFixed(1)}h
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {a.billableHours.toFixed(1)}h
-                    </TableCell>
+                    <TableCell className="text-right">{a.capacityHours.toFixed(1)}h</TableCell>
+                    <TableCell className="text-right">{a.billableHours.toFixed(1)}h</TableCell>
                     <TableCell className="text-right">{pct(a.utilization)}</TableCell>
                     <TableCell className="text-right">{brl(a.revenue)}</TableCell>
                     <TableCell
@@ -535,9 +514,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
       {/* Barra de seleção */}
       {selected.size > 0 && (
         <div className="sticky top-2 z-10 flex items-center justify-between rounded-md border bg-background p-2 shadow-sm">
-          <span className="text-sm">
-            {selected.size} apontamento(s) selecionado(s)
-          </span>
+          <span className="text-sm">{selected.size} apontamento(s) selecionado(s)</span>
           <div className="flex gap-2">
             <Button
               size="sm"
@@ -591,9 +568,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
           {isLoading ? (
             <div className="p-6 text-sm text-muted-foreground">Carregando...</div>
           ) : entriesByDay.length === 0 ? (
-            <div className="p-6 text-sm text-muted-foreground">
-              Nenhum apontamento no período.
-            </div>
+            <div className="p-6 text-sm text-muted-foreground">Nenhum apontamento no período.</div>
           ) : (
             <Table>
               <TableHeader>
@@ -618,8 +593,7 @@ export function TimesheetPanel({ personId }: { personId: string }) {
                 {entriesByDay.flatMap(([day, items]) => {
                   const dayHours = items.reduce((s, e) => s + (e.hours ?? 0), 0);
                   const dayValue = items.reduce(
-                    (s, e) =>
-                      s + (e.billable ? (e.hours ?? 0) * (e.effective_rate ?? 0) : 0),
+                    (s, e) => s + (e.billable ? (e.hours ?? 0) * (e.effective_rate ?? 0) : 0),
                     0,
                   );
                   return [
@@ -637,11 +611,12 @@ export function TimesheetPanel({ personId }: { personId: string }) {
                     </TableRow>,
                     ...items.map((e) => {
                       const value =
-                        e.billable && e.effective_rate
-                          ? (e.hours ?? 0) * e.effective_rate
-                          : 0;
+                        e.billable && e.effective_rate ? (e.hours ?? 0) * e.effective_rate : 0;
                       return (
-                        <TableRow key={e.id} data-state={selected.has(e.id) ? "selected" : undefined}>
+                        <TableRow
+                          key={e.id}
+                          data-state={selected.has(e.id) ? "selected" : undefined}
+                        >
                           <TableCell>
                             <Checkbox
                               checked={selected.has(e.id)}
@@ -738,22 +713,15 @@ export function TimesheetPanel({ personId }: { personId: string }) {
         initial={editing}
       />
 
-      <AlertDialog
-        open={confirmDelete !== null}
-        onOpenChange={(v) => !v && setConfirmDelete(null)}
-      >
+      <AlertDialog open={confirmDelete !== null} onOpenChange={(v) => !v && setConfirmDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir apontamento?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => confirmDelete && deleteMut.mutate(confirmDelete)}
-            >
+            <AlertDialogAction onClick={() => confirmDelete && deleteMut.mutate(confirmDelete)}>
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>

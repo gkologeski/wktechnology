@@ -87,10 +87,16 @@ export const getAtsDashboardExtras = createServerFn({ method: "POST" })
     ]);
 
     const candMap = new Map<string, string | null>(
-      ((candNames.data ?? []) as Array<{ id: string; full_name: string | null }>).map((c) => [c.id, c.full_name]),
+      ((candNames.data ?? []) as Array<{ id: string; full_name: string | null }>).map((c) => [
+        c.id,
+        c.full_name,
+      ]),
     );
     const jobMap = new Map<string, string | null>(
-      ((jobNames.data ?? []) as Array<{ id: string; title: string | null }>).map((j) => [j.id, j.title]),
+      ((jobNames.data ?? []) as Array<{ id: string; title: string | null }>).map((j) => [
+        j.id,
+        j.title,
+      ]),
     );
 
     const upcomingInterviews: UpcomingInterview[] = interviewsRaw.map((i) => ({
@@ -109,11 +115,13 @@ export const getAtsDashboardExtras = createServerFn({ method: "POST" })
       if (!a.job_id) continue;
       appsByJob.set(a.job_id, (appsByJob.get(a.job_id) ?? 0) + 1);
     }
-    const activeJobs: ActiveJob[] = ((jobsRes.data ?? []) as Array<{
-      id: string;
-      title: string;
-      status: string;
-    }>)
+    const activeJobs: ActiveJob[] = (
+      (jobsRes.data ?? []) as Array<{
+        id: string;
+        title: string;
+        status: string;
+      }>
+    )
       .map((j) => ({
         id: j.id,
         title: j.title,

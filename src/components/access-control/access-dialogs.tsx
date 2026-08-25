@@ -223,10 +223,7 @@ export function RoleEditorDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button
-            onClick={() => mut.mutate()}
-            disabled={isSystem || !name.trim() || mut.isPending}
-          >
+          <Button onClick={() => mut.mutate()} disabled={isSystem || !name.trim() || mut.isPending}>
             {mut.isPending ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
@@ -395,10 +392,7 @@ export function PermissionSetEditorDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button
-            onClick={() => mut.mutate()}
-            disabled={isSystem || !name.trim() || mut.isPending}
-          >
+          <Button onClick={() => mut.mutate()} disabled={isSystem || !name.trim() || mut.isPending}>
             {mut.isPending ? "Salvando..." : "Salvar"}
           </Button>
         </DialogFooter>
@@ -503,7 +497,11 @@ export function FieldRuleEditorDialog({
           </div>
           <div>
             <Label>Modo</Label>
-            <Select value={mode} onValueChange={(v) => setMode(v as typeof mode)} disabled={isSystem}>
+            <Select
+              value={mode}
+              onValueChange={(v) => setMode(v as typeof mode)}
+              disabled={isSystem}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -624,7 +622,10 @@ export function MemberAssignmentDialog({
         <div className="space-y-4">
           <div>
             <Label>Cargo principal</Label>
-            <Select value={primary || "__none"} onValueChange={(v) => setPrimary(v === "__none" ? "" : v)}>
+            <Select
+              value={primary || "__none"}
+              onValueChange={(v) => setPrimary(v === "__none" ? "" : v)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -666,10 +667,7 @@ export function MemberAssignmentDialog({
             <Label>Pacotes extras (avulsos)</Label>
             <ScrollArea className="mt-2 h-40 rounded-md border p-2">
               {data.permission_sets.map((s) => (
-                <label
-                  key={s.id}
-                  className="flex items-center gap-2 rounded p-1 hover:bg-muted/50"
-                >
+                <label key={s.id} className="flex items-center gap-2 rounded p-1 hover:bg-muted/50">
                   <Checkbox
                     checked={extraSets.has(s.id)}
                     onCheckedChange={(v) => {

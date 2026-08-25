@@ -21,7 +21,7 @@ A lista da prévia também rola dentro do modal (por isso o print mostra 4 dos 7
 2. **Nada mais é omitido em silêncio**: a prévia passa a devolver também os contratos analisados sem alteração, separados em dois grupos visíveis no modal:
    - "Já padronizados" (contagem, expansível);
    - "Não foi possível calcular" — com o título atual, o motivo (ex.: "faltam as partes do contrato", "sem contrato principal vinculado") e link para abrir o contrato e corrigir.
-   Só o grupo com alteração continua selecionável para gravar.
+     Só o grupo com alteração continua selecionável para gravar.
 
 3. **Contagem e rolagem mais claras**: resumo "X analisados · Y com alteração · Z já padronizados · W sem cálculo" e a lista com altura/rolagem própria, deixando explícito quando há mais itens abaixo.
 

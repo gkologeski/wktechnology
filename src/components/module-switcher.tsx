@@ -6,11 +6,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, LayoutGrid, Home } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { MODULE_LIST } from "@/lib/modules/registry";
 import { useModuleLicenses } from "@/hooks/use-module-licenses";
 import { useActiveModule, setStoredActiveModule } from "@/lib/modules/active-module";
@@ -22,9 +18,7 @@ const EXTRA_WORKSPACE_PREFIXES = ["/integrations"];
 
 function isWorkspaceRoute(pathname: string): boolean {
   if (isWorkspacePathname(pathname)) return true;
-  return EXTRA_WORKSPACE_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + "/"),
-  );
+  return EXTRA_WORKSPACE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }
 
 export function ModuleSwitcher({ className }: { className?: string }) {
@@ -39,7 +33,6 @@ export function ModuleSwitcher({ className }: { className?: string }) {
   // TechSales, que não possui prefixos de path mapeados.
   const isWorkspaceContext = isWorkspaceRoute(pathname);
 
-
   const handleSelect = (moduleId: typeof active) => {
     setOpen(false);
     if (!isWorkspaceContext && moduleId === active) return;
@@ -48,7 +41,6 @@ export function ModuleSwitcher({ className }: { className?: string }) {
     setStoredActiveModule(moduleId);
     navigate({ to: target.defaultRoute });
   };
-
 
   const activeDef = MODULE_LIST.find((m) => m.id === active) ?? MODULE_LIST[0];
 
@@ -61,8 +53,14 @@ export function ModuleSwitcher({ className }: { className?: string }) {
           className={cn("h-9 min-w-0 shrink gap-2 justify-between xl:min-w-[140px]", className)}
         >
           <span className="flex items-center gap-2 min-w-0">
-            {isWorkspaceContext ? <Home className="h-4 w-4 shrink-0" /> : <LayoutGrid className="h-4 w-4 shrink-0" />}
-            <span className="truncate">{isWorkspaceContext ? "ERP Home" : activeDef.productName}</span>
+            {isWorkspaceContext ? (
+              <Home className="h-4 w-4 shrink-0" />
+            ) : (
+              <LayoutGrid className="h-4 w-4 shrink-0" />
+            )}
+            <span className="truncate">
+              {isWorkspaceContext ? "ERP Home" : activeDef.productName}
+            </span>
           </span>
           <ChevronsUpDown className="h-3.5 w-3.5 opacity-50 shrink-0" />
         </Button>
@@ -105,7 +103,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
               onClick={() => handleSelect(m.id)}
               className={cn(
                 "w-full flex items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-accent transition-colors",
-                isActive && "bg-accent"
+                isActive && "bg-accent",
               )}
             >
               <span
@@ -115,9 +113,7 @@ export function ModuleSwitcher({ className }: { className?: string }) {
                 <Icon className="h-4 w-4" />
               </span>
               <span className="flex-1 min-w-0">
-                <div className="font-medium leading-tight truncate">
-                  {m.productName}
-                </div>
+                <div className="font-medium leading-tight truncate">{m.productName}</div>
                 <div className="text-[11px] text-muted-foreground truncate">
                   {m.shortDescription}
                 </div>
@@ -130,4 +126,3 @@ export function ModuleSwitcher({ className }: { className?: string }) {
     </Popover>
   );
 }
-

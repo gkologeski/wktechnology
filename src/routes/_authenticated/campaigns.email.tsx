@@ -311,7 +311,11 @@ function EmailBroadcastsPage() {
                   minHeight={220}
                   placeholder="Conteúdo do email…"
                 />
-                <TokenPills className="mt-2" tokens={CAMPAIGN_TOKENS} onInsert={insertBodyHtmlToken} />
+                <TokenPills
+                  className="mt-2"
+                  tokens={CAMPAIGN_TOKENS}
+                  onInsert={insertBodyHtmlToken}
+                />
               </div>
               <div>
                 <Label>Corpo texto (fallback)</Label>

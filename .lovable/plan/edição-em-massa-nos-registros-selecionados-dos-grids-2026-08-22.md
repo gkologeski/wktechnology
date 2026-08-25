@@ -18,22 +18,26 @@
 ## O que será feito
 
 ### 1. Negócios ganham seleção e edição em massa
+
 Adicionar seleção por linha (com "selecionar todos" e "selecionar todos os
 resultados do filtro", como nos outros grids) e usar a `GridBulkBar` padrão, que
 já traz exportar, editar em massa, responsável, criar atividade e excluir com
 confirmação por contagem. Sem remover nenhuma ação atual da tela.
 
 ### 2. Contratos ganham "Editar em massa"
+
 Incluir o botão na `ContractsBulkBar` existente, abrindo o diálogo dinâmico com
 os campos permitidos de contratos. As ações atuais da barra permanecem
 intactas, e o botão só aparece para quem tem permissão de atualizar.
 
 ### 3. Notas e Comunicações passam a usar o diálogo dinâmico
+
 `entity-list.tsx` passa a abrir o diálogo por catálogo quando a tabela é
 suportada, mantendo os campos hoje declarados no topo da lista; tabelas fora do
 catálogo continuam com o diálogo antigo (nada quebra).
 
 ### 4. Consistência pós-edição
+
 Toast com a contagem realmente alterada, aviso quando a permissão bloquear
 parte da seleção, limpeza da seleção e atualização automática do grid — o mesmo
 comportamento já usado nas exclusões.

@@ -87,8 +87,6 @@ function ProjectsPage() {
   const setView = (v: "table" | "kanban") =>
     void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
 
-
-
   const { data: allRows = [], isLoading } = useQuery({
     queryKey: ["projects", { status, search }],
     queryFn: () =>
@@ -190,7 +188,10 @@ function ProjectsPage() {
           stageField="status"
           selectable
           entityLabel="projeto"
-          canDelete={canAny(["techprojects.projects.delete.workspace","techprojects.projects.delete.own"])}
+          canDelete={canAny([
+            "techprojects.projects.delete.workspace",
+            "techprojects.projects.delete.own",
+          ])}
           canUpdate={canAny([
             "techprojects.projects.update.workspace",
             "techprojects.projects.update.team",
@@ -239,95 +240,95 @@ function ProjectsPage() {
           }}
         />
       ) : (
-      <div className="rounded-lg border bg-card">
-        {isLoading ? (
-          <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
-        ) : rows.length === 0 ? (
-          <div className="p-12 text-center">
-            <Kanban className="mx-auto h-10 w-10 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-medium">Nenhum projeto ainda</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Crie um projeto avulso ou a partir de um contrato/serviço.
-            </p>
-            <Button className="mt-4" size="sm" onClick={() => setOpenCreate(true)}>
-              <Plus className="h-4 w-4 mr-2" /> Novo projeto
-            </Button>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-10">
-                  <Checkbox
-                    aria-label="Selecionar todos os projetos exibidos"
-                    checked={
-                      selection.allOnPageSelected
-                        ? true
-                        : selection.someOnPageSelected
-                          ? "indeterminate"
-                          : false
-                    }
-                    onCheckedChange={selection.toggleAllOnPage}
-                  />
-                </TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Contrato</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Progresso</TableHead>
-                <TableHead>Prazo</TableHead>
-                <TableHead>Responsável</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((p: any) => (
-                <TableRow key={p.id}>
-                  <TableCell>
+        <div className="rounded-lg border bg-card">
+          {isLoading ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">Carregando…</div>
+          ) : rows.length === 0 ? (
+            <div className="p-12 text-center">
+              <Kanban className="mx-auto h-10 w-10 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-medium">Nenhum projeto ainda</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crie um projeto avulso ou a partir de um contrato/serviço.
+              </p>
+              <Button className="mt-4" size="sm" onClick={() => setOpenCreate(true)}>
+                <Plus className="h-4 w-4 mr-2" /> Novo projeto
+              </Button>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-10">
                     <Checkbox
-                      aria-label={`Selecionar projeto ${p.name}`}
-                      checked={selection.selectedIds.has(p.id)}
-                      onCheckedChange={() => selection.toggleOne(p.id)}
+                      aria-label="Selecionar todos os projetos exibidos"
+                      checked={
+                        selection.allOnPageSelected
+                          ? true
+                          : selection.someOnPageSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={selection.toggleAllOnPage}
                     />
-                  </TableCell>
-                  <TableCell>
-                    <Link
-                      to="/projects/$id"
-                      params={{ id: p.id }}
-                      className="font-medium hover:underline"
-                    >
-                      {p.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {p.contracts ? (
-                      <Link
-                        to="/contracts/$id"
-                        params={{ id: p.contracts.id }}
-                        className="hover:underline"
-                      >
-                        {p.contracts.number ?? p.contracts.title}
-                      </Link>
-                    ) : (
-                      "—"
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className={STATUS_TONE[p.status] ?? ""}>
-                      {STATUS_LABEL[p.status] ?? p.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">{p.progress ?? 0}%</TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "—"}
-                  </TableCell>
-                  <TableCell>
-                    <AssigneeCell assignedTo={p.assigned_to} />
-                  </TableCell>
+                  </TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Contrato</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Progresso</TableHead>
+                  <TableHead>Prazo</TableHead>
+                  <TableHead>Responsável</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+              </TableHeader>
+              <TableBody>
+                {rows.map((p: any) => (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                      <Checkbox
+                        aria-label={`Selecionar projeto ${p.name}`}
+                        checked={selection.selectedIds.has(p.id)}
+                        onCheckedChange={() => selection.toggleOne(p.id)}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Link
+                        to="/projects/$id"
+                        params={{ id: p.id }}
+                        className="font-medium hover:underline"
+                      >
+                        {p.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {p.contracts ? (
+                        <Link
+                          to="/contracts/$id"
+                          params={{ id: p.contracts.id }}
+                          className="hover:underline"
+                        >
+                          {p.contracts.number ?? p.contracts.title}
+                        </Link>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={STATUS_TONE[p.status] ?? ""}>
+                        {STATUS_LABEL[p.status] ?? p.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{p.progress ?? 0}%</TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {p.due_at ? formatDateTime(p.due_at).split(" ")[0] : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <AssigneeCell assignedTo={p.assigned_to} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
       )}
 
       <QuickCreateProjectDialog

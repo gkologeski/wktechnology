@@ -228,7 +228,10 @@ function ProposalsPage() {
               stageField="status"
               selectable
               entityLabel="proposta"
-              canDelete={canAny(["techcontracts.contracts.delete.workspace","techcontracts.contracts.delete.own"])}
+              canDelete={canAny([
+                "techcontracts.contracts.delete.workspace",
+                "techcontracts.contracts.delete.own",
+              ])}
               canUpdate={canUpdateProposal}
               invalidateKeys={[["proposals"]]}
               ariaLabel="Quadro de propostas"

@@ -5,6 +5,7 @@
 Causa confirmada: o editor de itens grava `owner_id` com o dono do negócio (`deal.owner_id`) e **não envia** `workspace_id`. Se o negócio pertence a outro usuário, nenhuma das políticas de inserção permite a gravação (uma exige `owner_id = usuário atual`, a outra exige `workspace_id` do usuário com permissão de atualizar negócios).
 
 Correção (sem alterar RLS nem schema):
+
 - `deal_line_items` passa a ser gravado com `owner_id` = usuário autenticado e `workspace_id` = workspace do negócio, em criação a partir de produto, criação em branco e duplicação.
 - Mesma verificação nos demais pontos que gravam itens (assistente de cotação), garantindo `workspace_id` presente.
 - Mensagem de erro amigável em pt-BR quando o usuário realmente não tem permissão de atualizar o negócio.
@@ -24,6 +25,7 @@ Tarefas/atividades já possuem `due_date`, e o sistema já tem tabela de notific
 O diálogo "Criar negócio" já cria/reutiliza contato e grava `primary_contact_id`, porém **não** registra a associação em `deal_contacts` — por isso o contato não aparece na aba de contatos do negócio nem nas associações.
 
 Correção:
+
 - Ao criar o negócio, além de `primary_contact_id`, gravar a associação do contato no negócio.
 - Vincular também a empresa resolvida ao lead quando o lead ainda não tiver empresa.
 - Se a criação do contato falhar, exibir o motivo real em pt-BR em vez de seguir sem contato.

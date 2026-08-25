@@ -67,9 +67,7 @@ export function useSnippetTrigger({
     const needle = query.trim().toLowerCase();
     const filtered = needle
       ? items.filter(
-          (s) =>
-            s.shortcut.toLowerCase().includes(needle) ||
-            s.name.toLowerCase().includes(needle),
+          (s) => s.shortcut.toLowerCase().includes(needle) || s.name.toLowerCase().includes(needle),
         )
       : items;
     return filtered.slice(0, 8);
@@ -141,9 +139,7 @@ export function useSnippetTrigger({
     if (s) pick(s);
   }, [results, activeIdx, pick]);
 
-  const onKeyDown = useCallback<
-    React.KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement>
-  >(
+  const onKeyDown = useCallback<React.KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement>>(
     (e) => {
       if (!active || results.length === 0) return;
       if (e.key === "ArrowDown") {

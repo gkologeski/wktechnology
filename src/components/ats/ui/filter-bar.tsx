@@ -39,7 +39,9 @@ export function FilterBar({ search, chips, actions, className }: FilterBarProps)
         </label>
       ) : null}
       {chips ? <div className="flex flex-wrap items-center gap-1.5">{chips}</div> : null}
-      {actions ? <div className="flex flex-wrap items-center gap-2 sm:ml-auto">{actions}</div> : null}
+      {actions ? (
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">{actions}</div>
+      ) : null}
     </div>
   );
 }

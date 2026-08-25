@@ -66,17 +66,11 @@ export async function advanceRecurrenceOnce(
   if (!row.active) return null;
   if (row.next_run_date > today) return null;
   if (row.max_occurrences && row.occurrences_generated >= row.max_occurrences) {
-    await supabase
-      .from("financial_recurrences")
-      .update({ active: false })
-      .eq("id", row.id);
+    await supabase.from("financial_recurrences").update({ active: false }).eq("id", row.id);
     return null;
   }
   if (row.end_date && row.next_run_date > row.end_date) {
-    await supabase
-      .from("financial_recurrences")
-      .update({ active: false })
-      .eq("id", row.id);
+    await supabase.from("financial_recurrences").update({ active: false }).eq("id", row.id);
     return null;
   }
 

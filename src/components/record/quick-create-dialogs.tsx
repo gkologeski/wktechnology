@@ -337,11 +337,7 @@ export function QuickCreateDealDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="qc-d-stage">Etapa</Label>
-              <Select
-                value={stageId}
-                onValueChange={setStageId}
-                disabled={!activePipeline}
-              >
+              <Select value={stageId} onValueChange={setStageId} disabled={!activePipeline}>
                 <SelectTrigger id="qc-d-stage" className="h-9">
                   <SelectValue placeholder="Selecionar" />
                 </SelectTrigger>
@@ -604,8 +600,7 @@ export function QuickCreateTaskDialog({
           task_status: "NOT_STARTED",
           task_priority: priority,
           due_date: dueDate ? new Date(dueDate).toISOString() : null,
-          remind_before_minutes:
-            dueDate && remindBefore !== "none" ? Number(remindBefore) : null,
+          remind_before_minutes: dueDate && remindBefore !== "none" ? Number(remindBefore) : null,
           completed: false,
           related_contact_id: defaultContactId ?? null,
           related_company_id: defaultCompanyId ?? null,

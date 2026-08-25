@@ -1,9 +1,11 @@
 # Timeline com atualização imediata de atividades e pesquisas
 
 ## Objetivo
+
 Quando uma atividade for registrada (nota, tarefa, e-mail, ligação, reunião, pesquisa, qualificação), a timeline do registro deve atualizar sozinha, sem depender de recarregar a página — inclusive quando a atividade foi criada por outro usuário, por automação ou por um fluxo assíncrono (ex.: qualificação que grava a atividade no servidor depois do modal fechar).
 
 ## Situação atual (verificada)
+
 - `src/components/activity-timeline.tsx` mantém a lista em `useState` e recarrega via `load()`:
   - no mount / troca de registro e filtros de data;
   - quando um modal fecha ou a janela volta ao foco (`useRefreshCallback`);
@@ -29,11 +31,13 @@ Quando uma atividade for registrada (nota, tarefa, e-mail, ligação, reunião, 
    - Manter todos os callbacks atuais (`onSaved`, `onCreated`, `onSent`) — a mudança é aditiva.
 
 ## Detalhes técnicos
+
 - Arquivos previstos: `src/components/activity-timeline.tsx`, `src/components/surveys/survey-activity-dialog.tsx`, `src/components/prospecting/qualification-panel.tsx`, e uma nova migration de publicação de realtime.
 - Sem alteração de schema, RLS, permissões ou regras de negócio; a migration apenas adiciona a tabela à publicação de realtime.
 - Cuidados: um único canal por timeline (evitar vazamento de conexões), debounce nas invalidações, e nenhuma mudança nos filtros/ordenação existentes.
 
 ## Como validar
+
 - Abrir um lead em duas abas; registrar uma nota/tarefa em uma e ver aparecer na outra sem recarregar.
 - Qualificar um lead e confirmar que a atividade "Qualificação" aparece na timeline logo após salvar, já com o card de pesquisa preenchido.
 - Registrar uma atividade de Pesquisa (NPS/CSAT) e confirmar que o card com respostas e score aparece imediatamente.

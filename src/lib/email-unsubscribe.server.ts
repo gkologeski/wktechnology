@@ -26,17 +26,18 @@ export async function getOrCreateEmailUnsubscribeToken(email: string): Promise<s
     .select("token, used_at")
     .eq("email", normalizedEmail)
     .maybeSingle();
-  if (lookupError) throw new Error(`Falha ao consultar token de descadastro: ${lookupError.message}`);
+  if (lookupError)
+    throw new Error(`Falha ao consultar token de descadastro: ${lookupError.message}`);
   if (existing?.used_at) throw new Error("E-mail descadastrado.");
   if (existing?.token) return existing.token as string;
 
   const token = randomHexToken();
   const { error: insertError } = await supabaseAdmin
     .from("email_unsubscribe_tokens")
-    .upsert(
-      { email: normalizedEmail, token } as never,
-      { onConflict: "email", ignoreDuplicates: true },
-    );
+    .upsert({ email: normalizedEmail, token } as never, {
+      onConflict: "email",
+      ignoreDuplicates: true,
+    });
   if (insertError) throw new Error(`Falha ao criar token de descadastro: ${insertError.message}`);
 
   const { data: stored, error: readError } = await supabaseAdmin

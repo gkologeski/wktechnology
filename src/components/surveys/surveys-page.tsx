@@ -195,7 +195,6 @@ export function SurveysPage() {
           )}
 
           {isResults && (
-
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
               <Stat label="Convites" value={String(stats.total)} />
               <Stat label="Respondidas" value={String(stats.answered)} />

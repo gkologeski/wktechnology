@@ -4,7 +4,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertPermission } from "@/lib/access-control/enforce.server";
 
-
 const SecuritySchema = z.object({
   ip_allowlist: z.array(z.string().min(1).max(64)).max(50).optional(),
   ip_allowlist_enabled: z.boolean().optional(),

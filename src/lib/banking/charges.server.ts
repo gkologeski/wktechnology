@@ -1,11 +1,7 @@
 // Server-only helper para liquidar uma cobrança (chamado pelo webhook público).
 // Recebe um cliente Supabase (tipicamente supabaseAdmin — RLS bypass) e o workspace_id
 // derivado da própria cobrança, para evitar depender do contexto de auth.
-export async function settleChargePaymentAdmin(
-  supabase: any,
-  chargeId: string,
-  paidAtIso: string,
-) {
+export async function settleChargePaymentAdmin(supabase: any, chargeId: string, paidAtIso: string) {
   const { data: charge, error } = await supabase
     .from("bank_charges")
     .select(

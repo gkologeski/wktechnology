@@ -87,7 +87,7 @@ export const upsertRecurrence = createServerFn({ method: "POST" })
       direction: data.direction,
       template: data.template,
       cadence: data.cadence,
-      interval_days: data.cadence === "custom_days" ? data.interval_days ?? 30 : null,
+      interval_days: data.cadence === "custom_days" ? (data.interval_days ?? 30) : null,
       day_of_month: data.day_of_month ?? null,
       start_date: data.start_date,
       end_date: data.end_date ?? null,
@@ -124,9 +124,7 @@ export const upsertRecurrence = createServerFn({ method: "POST" })
 
 export const toggleRecurrence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ id: z.string().uuid(), active: z.boolean() }).parse(input),
-  )
+  .inputValidator((input) => z.object({ id: z.string().uuid(), active: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
       .from("financial_recurrences")

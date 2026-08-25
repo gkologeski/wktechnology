@@ -24,7 +24,7 @@ Tabelas que recebem `assigned_to` (as que já têm responsável real permanecem 
 - **Financeiro**: financial_entries, financial_recurrences, customer_invoices, customer_payments, nfse_invoices, bank_charges, bank_payments, legal_entities.
 - **Operacional / Marketing**: email_broadcasts, landing_pages, campaigns, dashboards, custom_reports, custom_object_records, media_assets/arquivos, bookings, kb_articles, macros.
 
-Fora do escopo: tabelas de log e auditoria (audit_logs, domain_events, *_events, *_log), tabelas de junção sem entidade própria, tabelas de configuração de plataforma (plans, feature_flags, modules, permissions, job_roles), integrações e filas técnicas.
+Fora do escopo: tabelas de log e auditoria (audit_logs, domain_events, _\_events, _\_log), tabelas de junção sem entidade própria, tabelas de configuração de plataforma (plans, feature_flags, modules, permissions, job_roles), integrações e filas técnicas.
 
 ## Trabalho a executar
 

@@ -16,9 +16,7 @@ describe("computeProjectFinancials", () => {
   });
 
   it("calcula custo, receita billable e margem por hora", () => {
-    const members = [
-      { user_id: "u1", cost_rate_hour: 100, bill_rate_hour: 250 },
-    ];
+    const members = [{ user_id: "u1", cost_rate_hour: 100, bill_rate_hour: 250 }];
     const entries = [
       { user_id: "u1", hours: 10, billable: true },
       { user_id: "u1", hours: 5, billable: false }, // não gera receita, gera custo
@@ -56,13 +54,9 @@ describe("computeProjectFinancials", () => {
   });
 
   it("aceita strings numéricas (postgres numeric)", () => {
-    const members = [
-      { user_id: "u1", cost_rate_hour: "80.50", bill_rate_hour: "200.00" },
-    ];
+    const members = [{ user_id: "u1", cost_rate_hour: "80.50", bill_rate_hour: "200.00" }];
     const entries = [{ user_id: "u1", hours: "2", billable: true }];
-    const milestones = [
-      { bill_amount: "150.25", billable: true, status: "done" },
-    ];
+    const milestones = [{ bill_amount: "150.25", billable: true, status: "done" }];
     const r = computeProjectFinancials(entries, members, milestones);
     expect(r.realizedCost).toBeCloseTo(161);
     expect(r.billableRevenue).toBeCloseTo(400);

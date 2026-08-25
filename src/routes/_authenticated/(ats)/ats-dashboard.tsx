@@ -227,7 +227,10 @@ function DashboardContent({
                     minute: "2-digit",
                   });
                   return (
-                    <li key={iv.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                    <li
+                      key={iv.id}
+                      className="flex items-center justify-between gap-3 py-2.5 text-sm"
+                    >
                       <div className="min-w-0">
                         <div className="truncate text-text-primary">
                           {iv.candidate_name ?? "Candidato"}

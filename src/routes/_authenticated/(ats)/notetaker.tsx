@@ -172,9 +172,7 @@ function NotetakerPage() {
               <SelectContent>
                 {rows.map((r) => (
                   <SelectItem key={r.id} value={r.id}>
-                    {r.scheduled_at
-                      ? new Date(r.scheduled_at).toLocaleString("pt-BR")
-                      : "Sem data"}{" "}
+                    {r.scheduled_at ? new Date(r.scheduled_at).toLocaleString("pt-BR") : "Sem data"}{" "}
                     · {r.kind} · {r.status}
                     {r.ai_generated_at ? " · IA ✓" : ""}
                   </SelectItem>
@@ -237,9 +235,7 @@ function NotetakerPage() {
                     {REC_MAP[notes.ai_recommendation]?.label ?? notes.ai_recommendation}
                   </MetaPill>
                 )}
-                {typeof notes.ai_score === "number" && (
-                  <MetaPill>Score {notes.ai_score}</MetaPill>
-                )}
+                {typeof notes.ai_score === "number" && <MetaPill>Score {notes.ai_score}</MetaPill>}
               </div>
             }
           />

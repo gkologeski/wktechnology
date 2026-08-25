@@ -284,15 +284,11 @@ export const listPendingTeamInvites = createServerFn({ method: "GET" })
       expires_at: i.expires_at as string,
       created_at: i.created_at as string,
       permission_set_id: (i as { permission_set_id: string | null }).permission_set_id ?? null,
-      permission_set_name:
-        (i as { permission_set_id: string | null }).permission_set_id
-          ? setNameById.get(
-              (i as { permission_set_id: string }).permission_set_id,
-            ) ?? null
-          : null,
+      permission_set_name: (i as { permission_set_id: string | null }).permission_set_id
+        ? (setNameById.get((i as { permission_set_id: string }).permission_set_id) ?? null)
+        : null,
     }));
   });
-
 
 const ASSIGNED_TABLES = ["contacts", "companies", "leads", "deals"] as const;
 
@@ -695,9 +691,7 @@ export const removeTeamMember = createServerFn({ method: "POST" })
     // Reatribui (ou zera) registros com assigned_user_id apontando para o membro removido.
     let reassigned = 0;
     for (const t of ASSIGNED_TABLES) {
-      const update = reassignTo
-        ? { assigned_user_id: reassignTo }
-        : { assigned_user_id: null };
+      const update = reassignTo ? { assigned_user_id: reassignTo } : { assigned_user_id: null };
       const { count, error: uErr } = await supabaseAdmin
         .from(t)
         .update(update as never, { count: "exact" })

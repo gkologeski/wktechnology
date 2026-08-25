@@ -126,9 +126,7 @@ export function SnippetFormDialog({ open, onOpenChange, editing, canShare, onSav
                   <RadioGroupItem value="personal" /> Pessoal
                 </label>
                 <label
-                  className={`flex items-center gap-2 text-sm ${
-                    canShare ? "" : "opacity-50"
-                  }`}
+                  className={`flex items-center gap-2 text-sm ${canShare ? "" : "opacity-50"}`}
                   title={canShare ? undefined : "Apenas administradores"}
                 >
                   <RadioGroupItem value="shared" disabled={!canShare} /> Compartilhado
@@ -141,8 +139,8 @@ export function SnippetFormDialog({ open, onOpenChange, editing, canShare, onSav
             <Label>Conteúdo</Label>
             <RichHtmlEditor value={bodyHtml} onChange={setBodyHtml} minHeight={160} />
             <p className="text-xs text-muted-foreground">
-              O texto será inserido no lugar do atalho. Em campos sem formatação (chat, WhatsApp),
-              a versão em texto puro é usada automaticamente.
+              O texto será inserido no lugar do atalho. Em campos sem formatação (chat, WhatsApp), a
+              versão em texto puro é usada automaticamente.
             </p>
           </div>
         </div>
@@ -151,10 +149,7 @@ export function SnippetFormDialog({ open, onOpenChange, editing, canShare, onSav
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button
-            onClick={() => saveMut.mutate()}
-            disabled={!canSubmit || saveMut.isPending}
-          >
+          <Button onClick={() => saveMut.mutate()} disabled={!canSubmit || saveMut.isPending}>
             {saveMut.isPending ? "Salvando…" : "Salvar"}
           </Button>
         </DialogFooter>

@@ -17,7 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -76,8 +75,7 @@ export function AddToProspectingDialog({
   });
 
   const leadQueues = useMemo(
-    () =>
-      (queuesQ.data ?? []).filter((q) => (q as { entity: string }).entity === entity),
+    () => (queuesQ.data ?? []).filter((q) => (q as { entity: string }).entity === entity),
     [queuesQ.data],
   );
   const manualQueues = useMemo(
@@ -88,7 +86,6 @@ export function AddToProspectingDialog({
     () => leadQueues.filter((q) => (q as { kind?: string }).kind !== "manual"),
     [leadQueues],
   );
-
 
   const addMut = useMutation({
     mutationFn: async () => {
@@ -114,8 +111,7 @@ export function AddToProspectingDialog({
     },
     onSuccess: (r) => {
       const queueName =
-        newQueueName.trim() ||
-        (manualQueues.find((q) => q.id === r.id)?.name ?? "fila");
+        newQueueName.trim() || (manualQueues.find((q) => q.id === r.id)?.name ?? "fila");
       toast.success(
         r.created
           ? `Fila "${queueName}" criada com ${ids.length} item(ns).`
@@ -132,8 +128,7 @@ export function AddToProspectingDialog({
   });
 
   const enrollMut = useMutation({
-    mutationFn: () =>
-      enroll({ data: { cadence_id: cadenceId, entity, ids } }),
+    mutationFn: () => enroll({ data: { cadence_id: cadenceId, entity, ids } }),
     onSuccess: (r) => {
       toast.success(
         `${r.enrolled} inscrito(s)${r.skipped ? ` · ${r.skipped} já existia(m)` : ""}.`,
@@ -166,15 +161,23 @@ export function AddToProspectingDialog({
           <TabsContent value="queue" className="space-y-3 pt-3">
             <div className="space-y-1">
               <Label>Fila existente</Label>
-              <Select value={queueId} onValueChange={(v) => { setQueueId(v); setNewQueueName(""); }}>
+              <Select
+                value={queueId}
+                onValueChange={(v) => {
+                  setQueueId(v);
+                  setNewQueueName("");
+                }}
+              >
                 <SelectTrigger>
-                  <SelectValue placeholder={
-                    queuesQ.isLoading
-                      ? "Carregando filas..."
-                      : manualQueues.length
-                        ? "Selecione uma fila manual"
-                        : "Nenhuma fila manual"
-                  } />
+                  <SelectValue
+                    placeholder={
+                      queuesQ.isLoading
+                        ? "Carregando filas..."
+                        : manualQueues.length
+                          ? "Selecione uma fila manual"
+                          : "Nenhuma fila manual"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {manualQueues.map((q) => (
@@ -203,9 +206,11 @@ export function AddToProspectingDialog({
               <Input
                 placeholder="Nome da nova fila"
                 value={newQueueName}
-                onChange={(e) => { setNewQueueName(e.target.value); setQueueId(""); }}
+                onChange={(e) => {
+                  setNewQueueName(e.target.value);
+                  setQueueId("");
+                }}
               />
-
             </div>
           </TabsContent>
           <TabsContent value="cadence" className="space-y-3 pt-3">
@@ -243,10 +248,7 @@ export function AddToProspectingDialog({
               {addMut.isPending ? "Adicionando..." : "Adicionar à fila"}
             </Button>
           ) : (
-            <Button
-              disabled={enrollMut.isPending || !cadenceId}
-              onClick={() => enrollMut.mutate()}
-            >
+            <Button disabled={enrollMut.isPending || !cadenceId} onClick={() => enrollMut.mutate()}>
               {enrollMut.isPending ? "Inscrevendo..." : "Inscrever na cadência"}
             </Button>
           )}

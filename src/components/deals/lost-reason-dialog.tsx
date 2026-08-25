@@ -58,7 +58,6 @@ export function LostReasonDialog({
     }
   }, [open]);
 
-
   const options = data?.options ?? [];
 
   const confirm = async () => {

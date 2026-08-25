@@ -39,18 +39,10 @@ export function KanbanSignalIcons({ signals }: { signals?: KanbanSignals | null 
             aria-label={isHot ? "Item quente" : "Alta prioridade"}
           >
             {isHot && (
-              <Flame
-                className="h-3.5 w-3.5"
-                style={{ color: "var(--hs-orange)" }}
-                aria-hidden
-              />
+              <Flame className="h-3.5 w-3.5" style={{ color: "var(--hs-orange)" }} aria-hidden />
             )}
             {isHighValue && (
-              <Gem
-                className="h-3.5 w-3.5"
-                style={{ color: "var(--hs-stage-4)" }}
-                aria-hidden
-              />
+              <Gem className="h-3.5 w-3.5" style={{ color: "var(--hs-stage-4)" }} aria-hidden />
             )}
           </span>
         </TooltipTrigger>

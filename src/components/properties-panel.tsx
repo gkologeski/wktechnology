@@ -121,7 +121,6 @@ export type PropDef = {
     | "datetime";
 };
 
-
 // Heurísticas para auto-detectar tipo de exibição quando o caller não definir.
 function inferDisplayType(key: string): PropDef["type"] | undefined {
   const k = key.toLowerCase();
@@ -147,7 +146,6 @@ function formatDisplayValue(
   if (type === "number" && typeof raw === "number") return raw.toLocaleString("pt-BR");
   return String(raw);
 }
-
 
 type CustomProp = Awaited<ReturnType<typeof listCustomProperties>>[number];
 
@@ -217,7 +215,6 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     setPendingCompanyField(null);
     onSaved?.();
   };
-
 
   useEffect(() => {
     if (!isCustomEntity) return;
@@ -327,55 +324,72 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
     // para que leitura e edição usem o mesmo tratamento.
     const p: PropDef = { ...raw0, type: raw0.type ?? inferDisplayType(raw0.key) };
     return (
-    <div key={p.key} className="group">
-
-      <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-        {p.label}
-      </label>
-      {editing === p.key ? (
-        p.options ? (
-          <div className="flex gap-1">
-            <Select
-              value={value}
-              onValueChange={async (v) => {
-                setValue(v);
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const { error } = await (supabase as any)
-                  .from(table)
-                  .update({ [p.key]: v })
-                  .eq("id", row.id);
-                if (error) toast.error(error.message);
-                else {
-                  toast.success("Atualizado");
-                  setEditing(null);
-                  onSaved?.();
-                }
-              }}
-            >
-              <SelectTrigger className="h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {p.options.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>
-              Cancelar
-            </Button>
-          </div>
-        ) : p.type === "company" ? (
-
-          <div className="space-y-2">
-            <CompanyPicker
-              value={{ id: null, name: value }}
-              onChange={(v: CompanyPickerValue) => setValue(v.name)}
-              onCreateNew={(name) => openCreateCompany(p.key, name)}
-            />
+      <div key={p.key} className="group">
+        <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
+          {p.label}
+        </label>
+        {editing === p.key ? (
+          p.options ? (
             <div className="flex gap-1">
+              <Select
+                value={value}
+                onValueChange={async (v) => {
+                  setValue(v);
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const { error } = await (supabase as any)
+                    .from(table)
+                    .update({ [p.key]: v })
+                    .eq("id", row.id);
+                  if (error) toast.error(error.message);
+                  else {
+                    toast.success("Atualizado");
+                    setEditing(null);
+                    onSaved?.();
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {p.options.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>
+                Cancelar
+              </Button>
+            </div>
+          ) : p.type === "company" ? (
+            <div className="space-y-2">
+              <CompanyPicker
+                value={{ id: null, name: value }}
+                onChange={(v: CompanyPickerValue) => setValue(v.name)}
+                onCreateNew={(name) => openCreateCompany(p.key, name)}
+              />
+              <div className="flex gap-1">
+                <Button size="sm" className="h-8" onClick={() => save(p.key)}>
+                  OK
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          ) : p.type === "currency" ? (
+            <div className="flex gap-1">
+              <CurrencyInput
+                autoFocus
+                aria-label={p.label}
+                currency={resolveCurrency(row)}
+                value={value === "" ? null : value}
+                onValueChange={(n) => setValue(n === null ? "" : String(n))}
+                onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+                className="h-8 text-right"
+              />
               <Button size="sm" className="h-8" onClick={() => save(p.key)}>
                 OK
               </Button>
@@ -383,136 +397,114 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
                 Cancelar
               </Button>
             </div>
-          </div>
-        ) : p.type === "currency" ? (
-          <div className="flex gap-1">
-            <CurrencyInput
-              autoFocus
-              aria-label={p.label}
-              currency={resolveCurrency(row)}
-              value={value === "" ? null : value}
-              onValueChange={(n) => setValue(n === null ? "" : String(n))}
-              onKeyDown={(e) => e.key === "Enter" && save(p.key)}
-              className="h-8 text-right"
-            />
-            <Button size="sm" className="h-8" onClick={() => save(p.key)}>
-              OK
-            </Button>
-            <Button size="sm" variant="ghost" className="h-8" onClick={() => setEditing(null)}>
-              Cancelar
-            </Button>
-          </div>
-        ) : (
-
-          <div className="flex gap-1">
-            <Input
-              autoFocus
-              type={
-                p.type === "cep" || p.type === "cnpj"
-                  ? "text"
-                  : p.type === "datetime"
-                    ? "datetime-local"
-                    : (p.type ?? "text")
-              }
-
-              inputMode={
-                p.type === "tel"
-                  ? "tel"
-                  : p.type === "cep" || p.type === "cnpj"
-                    ? "numeric"
-                    : undefined
-              }
-              maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
-              placeholder={
-                p.type === "cep"
-                  ? "99999-999"
-                  : p.type === "cnpj"
-                    ? "00.000.000/0000-00"
-                    : p.type === "tel"
-                      ? "(11) 99999-8888"
-                      : undefined
-              }
-              value={value}
-              onChange={(e) =>
-                setValue(
+          ) : (
+            <div className="flex gap-1">
+              <Input
+                autoFocus
+                type={
+                  p.type === "cep" || p.type === "cnpj"
+                    ? "text"
+                    : p.type === "datetime"
+                      ? "datetime-local"
+                      : (p.type ?? "text")
+                }
+                inputMode={
                   p.type === "tel"
-                    ? formatPhoneInput(e.target.value)
-                    : p.type === "email"
-                      ? sanitizeEmailInput(e.target.value)
-                      : p.type === "cep"
-                        ? formatCep(e.target.value)
-                        : p.type === "cnpj"
-                          ? formatCnpjInput(e.target.value)
-                          : e.target.value,
-                )
-              }
-              onKeyDown={(e) => e.key === "Enter" && save(p.key)}
-              className="h-8"
-            />
-            <Button size="sm" className="h-8" onClick={() => save(p.key)}>
-              OK
+                    ? "tel"
+                    : p.type === "cep" || p.type === "cnpj"
+                      ? "numeric"
+                      : undefined
+                }
+                maxLength={p.type === "cep" ? 9 : p.type === "cnpj" ? 18 : undefined}
+                placeholder={
+                  p.type === "cep"
+                    ? "99999-999"
+                    : p.type === "cnpj"
+                      ? "00.000.000/0000-00"
+                      : p.type === "tel"
+                        ? "(11) 99999-8888"
+                        : undefined
+                }
+                value={value}
+                onChange={(e) =>
+                  setValue(
+                    p.type === "tel"
+                      ? formatPhoneInput(e.target.value)
+                      : p.type === "email"
+                        ? sanitizeEmailInput(e.target.value)
+                        : p.type === "cep"
+                          ? formatCep(e.target.value)
+                          : p.type === "cnpj"
+                            ? formatCnpjInput(e.target.value)
+                            : e.target.value,
+                  )
+                }
+                onKeyDown={(e) => e.key === "Enter" && save(p.key)}
+                className="h-8"
+              />
+              <Button size="sm" className="h-8" onClick={() => save(p.key)}>
+                OK
+              </Button>
+            </div>
+          )
+        ) : (
+          <div className="flex items-start justify-between gap-2 min-w-0">
+            <span
+              className="text-sm text-foreground break-words min-w-0 flex-1"
+              title={(() => {
+                const dt = p.type ?? inferDisplayType(p.key);
+                if (dt !== "currency") return undefined;
+                return (
+                  formatMoney(row[p.key], resolveCurrency(row as Record<string, unknown>)) ??
+                  undefined
+                );
+              })()}
+            >
+              {(() => {
+                const v = row[p.key];
+                if (p.options && v != null && v !== "") {
+                  const optLabel = p.options.find((o) => o.value === String(v))?.label;
+                  return translateFieldValue(p.key, optLabel ?? v) || String(v);
+                }
+                if (p.type === "tel" && v) return formatBrPhone(String(v));
+                if (p.type === "cep" && v) return formatCep(String(v));
+                if (p.type === "cnpj" && v) return formatCNPJ(String(v));
+                const displayType = p.type ?? inferDisplayType(p.key);
+                if (
+                  (displayType === undefined || displayType === "text") &&
+                  v != null &&
+                  v !== ""
+                ) {
+                  const translated = translateFieldValue(p.key, v);
+                  if (translated) return translated;
+                }
+                return formatDisplayValue(displayType, v, row as Record<string, unknown>);
+              })()}
+            </span>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 opacity-0 group-hover:opacity-100"
+              onClick={() => {
+                setEditing(p.key);
+                const raw = String(row[p.key] ?? "");
+                setValue(
+                  p.type === "cnpj"
+                    ? formatCNPJ(raw)
+                    : p.type === "currency"
+                      ? raw
+                      : formatBrPhone(raw) || raw,
+                );
+              }}
+            >
+              <Pencil className="h-3 w-3" />
             </Button>
           </div>
-        )
-      ) : (
-        <div className="flex items-start justify-between gap-2 min-w-0">
-          <span
-            className="text-sm text-foreground break-words min-w-0 flex-1"
-            title={(() => {
-              const dt = p.type ?? inferDisplayType(p.key);
-              if (dt !== "currency") return undefined;
-              return formatMoney(row[p.key], resolveCurrency(row as Record<string, unknown>)) ?? undefined;
-            })()}
-          >
-            {(() => {
-              const v = row[p.key];
-              if (p.options && v != null && v !== "") {
-                const optLabel = p.options.find((o) => o.value === String(v))?.label;
-                return translateFieldValue(p.key, optLabel ?? v) || String(v);
-              }
-              if (p.type === "tel" && v) return formatBrPhone(String(v));
-              if (p.type === "cep" && v) return formatCep(String(v));
-              if (p.type === "cnpj" && v) return formatCNPJ(String(v));
-              const displayType = p.type ?? inferDisplayType(p.key);
-              if (
-                (displayType === undefined || displayType === "text") &&
-                v != null &&
-                v !== ""
-              ) {
-                const translated = translateFieldValue(p.key, v);
-                if (translated) return translated;
-              }
-              return formatDisplayValue(displayType, v, row as Record<string, unknown>);
-            })()}
-
-          </span>
-
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 opacity-0 group-hover:opacity-100"
-            onClick={() => {
-              setEditing(p.key);
-              const raw = String(row[p.key] ?? "");
-              setValue(
-                p.type === "cnpj"
-                  ? formatCNPJ(raw)
-                  : p.type === "currency"
-                    ? raw
-                    : formatBrPhone(raw) || raw,
-              );
-
-            }}
-          >
-            <Pencil className="h-3 w-3" />
-          </Button>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
     );
   };
-
 
   const hasOwner = Object.prototype.hasOwnProperty.call(row, "owner_id");
   return (
@@ -818,7 +810,6 @@ function CompanyFieldAll({
       toast.success("Atualizado");
       onSaved?.();
     }
-
   };
   return (
     <div onBlur={save}>
@@ -826,7 +817,6 @@ function CompanyFieldAll({
     </div>
   );
 }
-
 
 function CustomFieldRow({
   def,

@@ -101,7 +101,8 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
         const r = await fetch(url);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const raw = await r.blob();
-        const blob = raw.type === "application/pdf" ? raw : raw.slice(0, raw.size, "application/pdf");
+        const blob =
+          raw.type === "application/pdf" ? raw : raw.slice(0, raw.size, "application/pdf");
         createdUrl = URL.createObjectURL(blob);
         if (!cancelled) setPdfBlobUrl(createdUrl);
         else URL.revokeObjectURL(createdUrl);
@@ -115,7 +116,6 @@ export function AttachmentPreview({ attachment, signRecording }: Props) {
       setPdfBlobUrl(null);
     };
   }, [url, kind]);
-
 
   const canExpand = kind === "pdf" || kind === "office" || kind === "image" || kind === "text";
 

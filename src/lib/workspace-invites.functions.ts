@@ -151,7 +151,6 @@ async function loadInviteContext(workspaceId: string, inviterId: string) {
   };
 }
 
-
 const Role = z.enum(["admin", "manager", "member"]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -371,7 +370,6 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
     return { ok: true, url, token, email, emailed: true };
   });
 
-
 /** Reenvia o e-mail de um convite pendente (sem regenerar o token). */
 export const resendWorkspaceInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -460,7 +458,6 @@ export const revokeWorkspaceInvite = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-
 const ASSIGNED_TABLES = ["contacts", "companies", "leads", "deals"] as const;
 
 /** Conta registros atribuídos a um membro no workspace ativo. */
@@ -503,8 +500,7 @@ export const removeWorkspaceMemberFn = createServerFn({ method: "POST" })
 
     const reassignTo = data.reassign_to ?? null;
     if (reassignTo) {
-      if (reassignTo === data.user_id)
-        throw new Error("Reatribua para um membro diferente.");
+      if (reassignTo === data.user_id) throw new Error("Reatribua para um membro diferente.");
       const { data: target } = await supabaseAdmin
         .from("workspace_members")
         .select("user_id")
@@ -516,9 +512,7 @@ export const removeWorkspaceMemberFn = createServerFn({ method: "POST" })
 
     let reassigned = 0;
     for (const t of ASSIGNED_TABLES) {
-      const update = reassignTo
-        ? { assigned_user_id: reassignTo }
-        : { assigned_user_id: null };
+      const update = reassignTo ? { assigned_user_id: reassignTo } : { assigned_user_id: null };
       const { count, error: uErr } = await supabaseAdmin
         .from(t)
         .update(update as never, { count: "exact" })
@@ -737,18 +731,15 @@ export const consumeInvite = createServerFn({ method: "POST" })
     // Aplica o conjunto de permissões escolhido no convite (se houver).
     const chosenSetId = (inv as { permission_set_id?: string | null }).permission_set_id ?? null;
     if (chosenSetId) {
-      const { error: upsErr } = await supabaseAdmin
-        .from("user_permission_sets")
-        .insert({
-          user_id: userId,
-          owner_id: workspaceOwnerId,
-          workspace_id: inv.workspace_id as string,
-          set_id: chosenSetId,
-        } as never);
+      const { error: upsErr } = await supabaseAdmin.from("user_permission_sets").insert({
+        user_id: userId,
+        owner_id: workspaceOwnerId,
+        workspace_id: inv.workspace_id as string,
+        set_id: chosenSetId,
+      } as never);
 
       if (upsErr && upsErr.code !== "23505") throw new Error(upsErr.message);
     }
-
 
     // Marca convite como aceito
     await supabaseAdmin
@@ -777,10 +768,7 @@ export const bulkRevokeInvalidWorkspaceInvites = createServerFn({ method: "POST"
     const ids = ((rows ?? []) as Array<{ id: string }>).map((r) => r.id);
     if (ids.length === 0) return { ok: true, revoked: 0 };
 
-    const { error: delErr } = await supabaseAdmin
-      .from("workspace_invites")
-      .delete()
-      .in("id", ids);
+    const { error: delErr } = await supabaseAdmin.from("workspace_invites").delete().in("id", ids);
     if (delErr) throw new Error(delErr.message);
 
     await supabaseAdmin.from("audit_logs").insert({
@@ -794,4 +782,3 @@ export const bulkRevokeInvalidWorkspaceInvites = createServerFn({ method: "POST"
 
     return { ok: true, revoked: ids.length };
   });
-

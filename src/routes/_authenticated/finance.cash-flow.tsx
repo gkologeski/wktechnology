@@ -11,12 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatCurrency } from "@/lib/crm";
 import { getCashFlowProjection } from "@/lib/finance.functions";
 import {
@@ -76,58 +71,56 @@ function CashFlowPage() {
           <div className="flex flex-wrap items-center gap-2">
             <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
             <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline">
-                <Settings2 className="h-4 w-4 mr-1" /> Cenários
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end" className="w-[360px] space-y-4">
-              <div>
-                <p className="text-sm font-semibold mb-1">% de recebimento</p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Ajuste a taxa esperada de conversão de contas a receber em cada cenário.
-                </p>
-                <FactorSlider
-                  label="Pessimista"
-                  value={factors.pessimistic}
-                  onChange={(v) => setFactors((f) => ({ ...f, pessimistic: v }))}
-                />
-                <FactorSlider
-                  label="Realista"
-                  value={factors.realistic}
-                  onChange={(v) => setFactors((f) => ({ ...f, realistic: v }))}
-                />
-                <FactorSlider
-                  label="Otimista"
-                  value={factors.optimistic}
-                  onChange={(v) => setFactors((f) => ({ ...f, optimistic: v }))}
-                />
-              </div>
-              <div>
-                <p className="text-sm font-semibold mb-1">% de despesas mantidas</p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  Simule cortes ou aumentos de despesas por cenário.
-                </p>
-                <FactorSlider
-                  label="Pessimista"
-                  value={factors.expenseFactorPessimistic}
-                  onChange={(v) =>
-                    setFactors((f) => ({ ...f, expenseFactorPessimistic: v }))
-                  }
-                />
-                <FactorSlider
-                  label="Realista"
-                  value={factors.expenseFactorRealistic}
-                  onChange={(v) => setFactors((f) => ({ ...f, expenseFactorRealistic: v }))}
-                />
-                <FactorSlider
-                  label="Otimista"
-                  value={factors.expenseFactorOptimistic}
-                  onChange={(v) => setFactors((f) => ({ ...f, expenseFactorOptimistic: v }))}
-                />
-              </div>
-            </PopoverContent>
-          </Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  <Settings2 className="h-4 w-4 mr-1" /> Cenários
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-[360px] space-y-4">
+                <div>
+                  <p className="text-sm font-semibold mb-1">% de recebimento</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Ajuste a taxa esperada de conversão de contas a receber em cada cenário.
+                  </p>
+                  <FactorSlider
+                    label="Pessimista"
+                    value={factors.pessimistic}
+                    onChange={(v) => setFactors((f) => ({ ...f, pessimistic: v }))}
+                  />
+                  <FactorSlider
+                    label="Realista"
+                    value={factors.realistic}
+                    onChange={(v) => setFactors((f) => ({ ...f, realistic: v }))}
+                  />
+                  <FactorSlider
+                    label="Otimista"
+                    value={factors.optimistic}
+                    onChange={(v) => setFactors((f) => ({ ...f, optimistic: v }))}
+                  />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold mb-1">% de despesas mantidas</p>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Simule cortes ou aumentos de despesas por cenário.
+                  </p>
+                  <FactorSlider
+                    label="Pessimista"
+                    value={factors.expenseFactorPessimistic}
+                    onChange={(v) => setFactors((f) => ({ ...f, expenseFactorPessimistic: v }))}
+                  />
+                  <FactorSlider
+                    label="Realista"
+                    value={factors.expenseFactorRealistic}
+                    onChange={(v) => setFactors((f) => ({ ...f, expenseFactorRealistic: v }))}
+                  />
+                  <FactorSlider
+                    label="Otimista"
+                    value={factors.expenseFactorOptimistic}
+                    onChange={(v) => setFactors((f) => ({ ...f, expenseFactorOptimistic: v }))}
+                  />
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         }
       />
@@ -142,12 +135,14 @@ function CashFlowPage() {
                   <strong>Consolidado</strong> — {data.consolidation.groupSize} CNPJs do grupo
                 </span>
                 <span className="text-muted-foreground text-xs">
-                  {data.consolidation.intercompanyEliminated} lançamento(s) intercompany eliminado(s)
+                  {data.consolidation.intercompanyEliminated} lançamento(s) intercompany
+                  eliminado(s)
                 </span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-sm">
-              Transações entre CNPJs do grupo são eliminadas para não inflar entradas e saídas na projeção consolidada.
+              Transações entre CNPJs do grupo são eliminadas para não inflar entradas e saídas na
+              projeção consolidada.
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -158,11 +153,12 @@ function CashFlowPage() {
           <Info className="h-4 w-4" />
           <AlertTitle>Como funciona a eliminação intercompany</AlertTitle>
           <AlertDescription>
-            Quando um grupo empresarial é selecionado, lançamentos cuja empresa e contra-parte pertencem ao mesmo grupo são excluídos da projeção. Isso evita que transferências internas entre CNPJs do grupo sejam contadas como entrada ou saída de caixa real.
+            Quando um grupo empresarial é selecionado, lançamentos cuja empresa e contra-parte
+            pertencem ao mesmo grupo são excluídos da projeção. Isso evita que transferências
+            internas entre CNPJs do grupo sejam contadas como entrada ou saída de caixa real.
           </AlertDescription>
         </Alert>
       )}
-
 
       <Card>
         <CardHeader className="pb-2">
@@ -177,9 +173,7 @@ function CashFlowPage() {
         </CardContent>
       </Card>
 
-      {isLoading && (
-        <p className="text-sm text-muted-foreground">Calculando projeção…</p>
-      )}
+      {isLoading && <p className="text-sm text-muted-foreground">Calculando projeção…</p>}
 
       {data && (
         <div className="grid gap-4 lg:grid-cols-3">

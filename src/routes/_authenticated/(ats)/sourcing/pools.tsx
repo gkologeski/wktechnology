@@ -37,7 +37,11 @@ function TalentPoolsPage() {
   const fetchPools = useServerFn(listPools);
   const create = useServerFn(createPool);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", type: "static" as "static" | "smart" });
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    type: "static" as "static" | "smart",
+  });
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["ats-pools"],
@@ -103,7 +107,9 @@ function TalentPoolsPage() {
                     value={form.type}
                     onValueChange={(v) => setForm({ ...form, type: v as "static" | "smart" })}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="static">Estático — adicionar manualmente</SelectItem>
                       <SelectItem value="smart">Smart — atualiza por filtros (em breve)</SelectItem>
@@ -112,11 +118,10 @@ function TalentPoolsPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                <Button
-                  onClick={() => mut.mutate()}
-                  disabled={!form.name.trim() || mut.isPending}
-                >
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={() => mut.mutate()} disabled={!form.name.trim() || mut.isPending}>
                   {mut.isPending ? "Criando..." : "Criar pool"}
                 </Button>
               </DialogFooter>
