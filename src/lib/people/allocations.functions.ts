@@ -46,7 +46,6 @@ export type AllocationRow = {
   project_name?: string | null;
 };
 
-
 type MinimalClient = { from: (t: string) => unknown };
 async function resolveWorkspaceId(supabase: MinimalClient, userId: string): Promise<string> {
   const q = supabase.from("profiles") as {
@@ -130,7 +129,9 @@ export const listContractRoleSuggestions = createServerFn({ method: "POST" })
       job_profiles?: { name: string | null } | null;
     }>;
 
-    const profileIds = [...new Set(services.map((r) => r.job_profile_id).filter(Boolean))] as string[];
+    const profileIds = [
+      ...new Set(services.map((r) => r.job_profile_id).filter(Boolean)),
+    ] as string[];
     type PresetRow = {
       id: string;
       name: string;
@@ -210,7 +211,6 @@ export const listAllocationsByPerson = createServerFn({ method: "POST" })
         manager_name: row.manager?.full_name ?? null,
       } as AllocationRow;
     });
-
   });
 
 export const listAllocationsByContract = createServerFn({ method: "POST" })

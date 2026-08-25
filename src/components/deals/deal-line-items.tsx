@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useCurrentUserId } from "@/hooks/use-current-user-id";
 
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CurrencyInput } from "@/components/ui/currency-input";
@@ -12,10 +11,7 @@ import { Wrench, Plus, Trash2, Pencil } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { listPresetsForService } from "@/lib/contracting-presets.functions";
 import { PresetLinePicker } from "@/components/catalog/preset-line-picker";
-import {
-  presetToLinePatch,
-  type PresetOption,
-} from "@/lib/contracting-presets-shared";
+import { presetToLinePatch, type PresetOption } from "@/lib/contracting-presets-shared";
 import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
@@ -220,7 +216,6 @@ export function LineItemsEditorBody({
     return message;
   }
 
-
   const setItemsCache = (updater: (current: LineItem[]) => LineItem[]) => {
     qc.setQueryData<LineItem[]>(lineItemsQueryKey(dealId), (current = []) => updater(current));
   };
@@ -392,7 +387,6 @@ export function LineItemsEditorBody({
             icon={Wrench}
             clearable={false}
           />
-
         </div>
         <Button size="sm" variant="outline" onClick={addBlank}>
           <Plus className="h-4 w-4 mr-1" /> Item em branco
@@ -445,7 +439,7 @@ export function LineItemsEditorBody({
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
                         {[
-                          li.seniority ? SENIORITY_LABEL[li.seniority] ?? li.seniority : null,
+                          li.seniority ? (SENIORITY_LABEL[li.seniority] ?? li.seniority) : null,
                           li.unit ? `por ${li.unit}` : null,
                         ]
                           .filter(Boolean)

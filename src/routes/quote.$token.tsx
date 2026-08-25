@@ -31,7 +31,6 @@ function lineRoleHint(li: { seniority?: string | null; unit?: string | null }) {
     .join(" · ");
 }
 
-
 export const Route = createFileRoute("/quote/$token")({
   component: PublicQuotePage,
 });
@@ -89,7 +88,6 @@ function PublicQuotePage() {
     triggerDownload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, error, data]);
-
 
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
   if (error || !data)

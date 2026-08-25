@@ -345,7 +345,8 @@ function AllocationDialog({
     setPresetId(s.contracting_preset_id ?? null);
     if (s.competencies.length) setCompetencies(s.competencies);
     // Taxas do preset só entram quando o usuário ainda não digitou nada.
-    if (s.suggested_billable_rate != null && !billable) setBillable(String(s.suggested_billable_rate));
+    if (s.suggested_billable_rate != null && !billable)
+      setBillable(String(s.suggested_billable_rate));
     if (s.suggested_cost_rate != null && !cost) setCost(String(s.suggested_cost_rate));
   };
 
