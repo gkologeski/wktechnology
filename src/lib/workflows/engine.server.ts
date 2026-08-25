@@ -896,6 +896,20 @@ async function runAction(
             ? (renderTokens(action.source, ctx.after) as string) || null
             : "workflow",
         };
+        const dup = await checkLeadDuplicate(supabase, {
+          workspaceId: ctx.workspaceId,
+          email: (base.email as string | null) ?? null,
+          phone: (base.phone as string | null) ?? null,
+        });
+        if (dup.duplicate) {
+          return {
+            at,
+            ok: false,
+            action: "create_lead",
+            error: dup.message ?? "Lead duplicado",
+            detail: { existing_id: dup.existingId },
+          };
+        }
         const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
         const { data, error } = await supabase
           .from("leads")
