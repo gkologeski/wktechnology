@@ -8,6 +8,7 @@ import {
   toFriendlyDbError,
   withTransientRetry,
 } from "@/lib/db/transient-retry";
+import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
 const APOLLO_GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
 
