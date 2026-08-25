@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 // ============= ADMIN (autenticado) =============
@@ -11,6 +10,7 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 // dono do workspace gerencie tokens dos próprios contatos.
 
 async function assertContactOwned(contactId: string, workspaceId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("contacts")
     .select("id")
@@ -24,6 +24,7 @@ async function assertContactOwned(contactId: string, workspaceId: string) {
 export const listPortalContacts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const { data, error } = await supabaseAdmin
@@ -47,6 +48,7 @@ export const togglePortalAccess = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertContactOwned(data.contactId, userId);
@@ -76,6 +78,7 @@ export const regeneratePortalToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ contactId: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertContactOwned(data.contactId, userId);
@@ -94,6 +97,7 @@ export const regeneratePortalToken = createServerFn({ method: "POST" })
 const tokenSchema = z.string().min(16).max(128);
 
 async function loadContactByToken(token: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("contacts")
     .select("id, first_name, last_name, email, owner_id, portal_enabled")
@@ -121,6 +125,7 @@ export const getPortalSession = createServerFn({ method: "GET" })
 export const listPortalTickets = createServerFn({ method: "GET" })
   .inputValidator((input) => z.object({ token: tokenSchema }).parse(input))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const contact = await loadContactByToken(data.token);
     const { data: tickets, error } = await supabaseAdmin
       .from("tickets")
@@ -144,6 +149,7 @@ export const createPortalTicket = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const contact = await loadContactByToken(data.token);
     const { data: ticket, error } = await supabaseAdmin
       .from("tickets")

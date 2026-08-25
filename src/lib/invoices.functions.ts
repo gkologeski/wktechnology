@@ -2,7 +2,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const GatewayZ = z.enum(["asaas", "pagarme", "mercadopago", "manual"]);
@@ -10,6 +9,7 @@ const MethodZ = z.enum(["boleto", "pix", "credit_card", "manual"]);
 const StatusZ = z.enum(["draft", "open", "paid", "overdue", "cancelled", "refunded"]);
 
 async function nextInvoiceNumber(workspaceId: string): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const year = new Date().getUTCFullYear();
   const { count } = await supabaseAdmin
     .from("customer_invoices")
@@ -155,6 +155,7 @@ export const generateCharge = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: inv, error: e1 } = await context.supabase
       .from("customer_invoices")
       .select("*")

@@ -2,7 +2,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const TeamRole = z.enum(["admin", "manager", "member"]);
 export type TeamRole = z.infer<typeof TeamRole>;
@@ -41,6 +40,7 @@ export const TEAM_ROLE_LABELS: Record<TeamRole, string> = {
 };
 
 async function isPlatformAdmin(userId: string): Promise<boolean> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("platform_admins")
     .select("user_id")
@@ -51,6 +51,7 @@ async function isPlatformAdmin(userId: string): Promise<boolean> {
 }
 
 async function resolveActiveWorkspace(userId: string): Promise<ActiveWorkspace> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const admin = await isPlatformAdmin(userId);
   const { data: profile } = await supabaseAdmin
     .from("profiles")
@@ -106,6 +107,7 @@ async function resolveActiveWorkspace(userId: string): Promise<ActiveWorkspace> 
 }
 
 async function assertCanManageWorkspace(workspaceId: string, userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   if (await isPlatformAdmin(userId)) return;
   const { data, error } = await supabaseAdmin
     .from("workspace_members")
@@ -119,6 +121,7 @@ async function assertCanManageWorkspace(workspaceId: string, userId: string) {
 }
 
 async function assertTargetMember(workspaceId: string, userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("workspace_members")
     .select("workspace_id")
@@ -130,6 +133,7 @@ async function assertTargetMember(workspaceId: string, userId: string) {
 }
 
 async function syncLegacyRole(workspaceId: string, userId: string, role: TeamRole) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   await supabaseAdmin.from("team_members").upsert(
     {
       workspace_owner_id: workspaceId,
@@ -144,6 +148,7 @@ async function syncLegacyRole(workspaceId: string, userId: string, role: TeamRol
 export const listTeamMembers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -247,6 +252,7 @@ export const listTeamMembers = createServerFn({ method: "GET" })
 export const listPendingTeamInvites = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -297,6 +303,7 @@ export const countAssignedToTeamMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ member_user_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -328,6 +335,7 @@ export const inviteTeamMember = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -442,6 +450,7 @@ export const resendTeamInvite = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -483,6 +492,7 @@ export const completeInviteProfile = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
 
     // 1) Garante nome/telefone no profile
@@ -571,6 +581,7 @@ export const updateTeamMemberRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ member_user_id: z.string().uuid(), role: TeamRole }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -612,6 +623,7 @@ export const updateTeamMember = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -670,6 +682,7 @@ export const removeTeamMember = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -725,6 +738,7 @@ export const removeTeamMember = createServerFn({ method: "POST" })
 export const listWorkspaceJobRoles = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -751,6 +765,7 @@ export const listWorkspaceJobRoles = createServerFn({ method: "GET" })
 export const listWorkspacePermissionSets = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);
@@ -801,6 +816,7 @@ export const setMemberJobRoles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => SetMemberJobRolesInput.parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
     const workspace = await resolveActiveWorkspace(userId);
     await assertCanManageWorkspace(workspace.id, userId);

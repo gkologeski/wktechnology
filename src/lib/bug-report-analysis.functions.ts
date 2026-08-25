@@ -2,9 +2,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 async function assertPlatformAdmin(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("platform_admins")
     .select("user_id")
@@ -30,6 +30,7 @@ export const listBugReportAnalyses = createServerFn({ method: "POST" })
     z.object({ bug_report_ids: z.array(z.string().uuid()).max(500) }).parse(input),
   )
   .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertPlatformAdmin(context.userId);
     if (data.bug_report_ids.length === 0) return [];
     const { data: rows, error } = await supabaseAdmin

@@ -2,7 +2,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const PlanCodeZ = z.enum(["free", "bronze", "prata", "ouro"]);
 
@@ -10,6 +9,7 @@ type UsageRow = { key: string; used: number };
 
 /** Resolve o workspace_owner_id do usuário (owner do workspace ativo). */
 async function resolveWorkspaceOwner(userId: string): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   // 1) Se o usuário é dono de algum workspace (entities.owner_id = user_id), retorna ele mesmo.
   // No modelo atual, owner_id de entidades = user_id do dono. Para membros, descobrimos o owner
   // do workspace via workspace_members → workspaces.created_by (ou primeiro admin).
@@ -47,6 +47,7 @@ function periodMonth(): string {
 export const getMyPlan = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const owner = await resolveWorkspaceOwner(context.userId);
 
     // Garante linha de assinatura (plano "guarda-chuva" do workspace)
@@ -183,6 +184,7 @@ export const getMyPlan = createServerFn({ method: "GET" })
 export const listPlansWithEntitlements = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: plans } = await supabaseAdmin
       .from("plans")
       .select("code, name, tier_rank, price_monthly, price_yearly")
@@ -220,6 +222,7 @@ export const setWorkspacePlan = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: admin } = await supabaseAdmin
       .from("platform_admins")
       .select("user_id")
@@ -245,6 +248,7 @@ export const requestSelfUpgrade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ plan_code: PlanCodeZ }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const owner = await resolveWorkspaceOwner(context.userId);
     if (owner !== context.userId) {
       throw new Error("Apenas o dono do workspace pode alterar o plano.");

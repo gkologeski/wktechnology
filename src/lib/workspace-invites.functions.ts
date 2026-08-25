@@ -5,7 +5,6 @@ import { sendLovableEmail } from "@lovable.dev/email-js";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { TEMPLATES } from "@/lib/email-templates/registry";
 import { getOrCreateEmailUnsubscribeToken } from "@/lib/email-unsubscribe.server";
 
@@ -36,6 +35,7 @@ async function sendWorkspaceInviteEmail(args: {
     product_name?: string | null;
   } | null;
 }) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const messageId = crypto.randomUUID();
   const templateName = "workspace-invite";
   const template = TEMPLATES[templateName];
@@ -117,6 +117,7 @@ async function sendWorkspaceInviteEmail(args: {
 }
 
 async function loadInviteContext(workspaceId: string, inviterId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const [{ data: ws }, { data: prof }, { data: branding }, { data: settings }] = await Promise.all([
     supabaseAdmin.from("workspaces").select("name").eq("id", workspaceId).maybeSingle(),
     supabaseAdmin.from("profiles").select("full_name").eq("id", inviterId).maybeSingle(),
@@ -172,6 +173,7 @@ async function resolveActiveWorkspace(supabase: any, userId: string): Promise<st
 }
 
 async function assertWorkspaceAdmin(workspaceId: string, userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("workspace_members")
     .select("role")
@@ -198,6 +200,7 @@ function randomToken(): string {
 export const listWorkspaceTeam = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
 
@@ -275,6 +278,7 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(workspaceId, userId);
@@ -382,6 +386,7 @@ export const resendWorkspaceInvite = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(workspaceId, userId);
@@ -432,6 +437,7 @@ export const revokeWorkspaceInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ invite_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(workspaceId, userId);
@@ -465,6 +471,7 @@ export const countAssignedToMember = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ user_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(workspaceId, userId);
@@ -493,6 +500,7 @@ export const removeWorkspaceMemberFn = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(workspaceId, userId);
@@ -536,6 +544,7 @@ export const updateWorkspaceMemberRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ user_id: z.string().uuid(), role: Role }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(workspaceId, userId);
@@ -552,6 +561,7 @@ export const updateWorkspaceMemberRole = createServerFn({ method: "POST" })
 export const lookupInviteByToken = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ token: z.string().min(10).max(200) }).parse(i))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: inv } = await supabaseAdmin
       .from("workspace_invites")
       .select("id, workspace_id, email, role, expires_at, accepted_at")
@@ -630,6 +640,7 @@ export const consumeInvite = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: inv } = await supabaseAdmin
       .from("workspace_invites")
       .select("id, workspace_id, email, role, expires_at, accepted_at, permission_set_id")
@@ -754,6 +765,7 @@ export const consumeInvite = createServerFn({ method: "POST" })
 export const bulkRevokeInvalidWorkspaceInvites = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
     await assertWorkspaceAdmin(workspaceId, userId);
