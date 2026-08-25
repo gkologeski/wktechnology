@@ -75,7 +75,11 @@ export function CandidatesFilterBar({
       }
       actions={
         <div className="flex items-center gap-2">
-          <AssigneeFilter value={assignee} onChange={onAssigneeChange} className="h-8 w-44 text-xs" />
+          <AssigneeFilter
+            value={assignee}
+            onChange={onAssigneeChange}
+            className="h-8 w-44 text-xs"
+          />
           <Tabs value={view} onValueChange={(v) => onViewChange(v as "cards" | "table" | "kanban")}>
             <TabsList className="h-8">
               <TabsTrigger value="cards" className="h-7 px-2 text-xs gap-1">

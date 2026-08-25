@@ -1,14 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  Plus,
-  Sparkles,
-  Linkedin,
-  FileText,
-  UserPlus,
-  ArrowLeft,
-  Loader2,
-} from "lucide-react";
+import { Plus, Sparkles, Linkedin, FileText, UserPlus, ArrowLeft, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -295,9 +287,7 @@ export function CreateCandidateDialog({
                 <UserPlus className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-text-primary">
-                  Preencher manualmente
-                </div>
+                <div className="text-sm font-semibold text-text-primary">Preencher manualmente</div>
                 <p className="mt-1 text-xs text-text-secondary">
                   Formulário rápido com nome, contatos e cargo.
                 </p>
@@ -313,9 +303,7 @@ export function CreateCandidateDialog({
                 <Linkedin className="h-5 w-5" aria-hidden="true" />
               </div>
               <div>
-                <div className="text-sm font-semibold text-text-primary">
-                  Importar do LinkedIn
-                </div>
+                <div className="text-sm font-semibold text-text-primary">Importar do LinkedIn</div>
                 <p className="mt-1 text-xs text-text-secondary">
                   Cole a URL do perfil e o ATS baixa via Unipile.
                 </p>
@@ -375,7 +363,10 @@ export function CreateCandidateDialog({
                 <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
                 Voltar
               </Button>
-              <Button onClick={handleImportLinkedin} disabled={!canSearchLinkedin || linkedinLoading}>
+              <Button
+                onClick={handleImportLinkedin}
+                disabled={!canSearchLinkedin || linkedinLoading}
+              >
                 {linkedinLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" aria-hidden="true" />
@@ -417,8 +408,7 @@ export function CreateCandidateDialog({
               </p>
             )}
             <p className="text-xs text-text-tertiary">
-              A IA extrai nome, contatos, skills, experiência e formação, e cria um novo
-              candidato.
+              A IA extrai nome, contatos, skills, experiência e formação, e cria um novo candidato.
             </p>
             <DialogFooter>
               <Button variant="outline" onClick={() => setCreateMode("chooser")} disabled={parsing}>
@@ -541,9 +531,7 @@ export function CreateCandidateDialog({
                   </Button>
                 </div>
                 {form.experiences.length === 0 ? (
-                  <p className="text-xs text-text-secondary">
-                    Nenhuma experiência adicionada.
-                  </p>
+                  <p className="text-xs text-text-secondary">Nenhuma experiência adicionada.</p>
                 ) : (
                   <div className="space-y-3">
                     {form.experiences.map((exp, idx) => (
