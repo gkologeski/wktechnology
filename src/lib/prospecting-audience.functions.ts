@@ -6,8 +6,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { applyFilters, type FilterGroup } from "@/lib/filters";
 
+// Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sb = supabaseAdmin as any;
+async function sbAdmin(): Promise<any> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 export type AudienceSource = "leads" | "contacts" | "companies" | "deals" | "manual" | "segment";
 
@@ -66,6 +70,7 @@ export async function resolveAudienceServer(
   workspaceId: string,
   rules: AudienceRule[],
 ): Promise<ResolvedAudience> {
+  const sb = await sbAdmin();
   const collected = new Map<
     string,
     { name: string; phone: string | null; source: AudienceSource }
