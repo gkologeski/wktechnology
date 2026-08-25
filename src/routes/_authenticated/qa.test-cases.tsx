@@ -89,14 +89,18 @@ function useLocalMap(key: string) {
     try {
       const raw = localStorage.getItem(key);
       if (raw) setMap(JSON.parse(raw));
-    } catch {}
+    } catch {
+      /* ignora */
+    }
   }, [key]);
   const set = (id: string, value: string) => {
     setMap((prev) => {
       const next = { ...prev, [id]: value };
       try {
         localStorage.setItem(key, JSON.stringify(next));
-      } catch {}
+      } catch {
+        /* ignora */
+      }
       return next;
     });
   };
@@ -104,7 +108,9 @@ function useLocalMap(key: string) {
     setMap({});
     try {
       localStorage.removeItem(key);
-    } catch {}
+    } catch {
+      /* ignora */
+    }
   };
   return { map, set, reset };
 }

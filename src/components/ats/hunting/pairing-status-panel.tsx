@@ -26,6 +26,7 @@ export function PairingStatusPanel() {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line prefer-const -- atribuído depois, no fim do effect
     let intervalId: ReturnType<typeof setInterval>;
 
     function onMessage(event: MessageEvent) {

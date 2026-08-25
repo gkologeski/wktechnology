@@ -46,7 +46,7 @@ function norm(value: string | null | undefined) {
 export function extractAmendmentNumber(text: string | null | undefined): string | null {
   const t = norm(text);
   if (!t) return null;
-  const numeric = t.match(/(\d{1,2})\s*[ºoª°.\-]?\s*(?:termo\s+)?aditiv/);
+  const numeric = t.match(/(\d{1,2})\s*[ºoª°.-]?\s*(?:termo\s+)?aditiv/);
   if (numeric?.[1]) return String(Number(numeric[1]));
   const after = t.match(/aditiv\w*\s*(?:n[ºo°.]?\s*)?(\d{1,2})\b/);
   if (after?.[1]) return String(Number(after[1]));

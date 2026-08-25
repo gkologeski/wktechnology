@@ -98,6 +98,7 @@ function escapeHtml(value: string): string {
 }
 
 function isSafeUrl(value: string): boolean {
+  // eslint-disable-next-line no-control-regex -- remoção intencional de caracteres de controle
   const trimmed = value.trim().replace(/[\u0000-\u001F\u007F\s]+/g, "");
   return /^(https?:|mailto:|tel:|\/|#)/i.test(trimmed);
 }
