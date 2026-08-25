@@ -323,6 +323,8 @@ function LeadDetail() {
               { key: "last_name", label: "Sobrenome", primary: true },
               { key: "email", label: "Email", type: "email", primary: true },
               { key: "phone", label: "Telefone", type: "tel", primary: true },
+              { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
+
               { key: "company_name", label: "Empresa", type: "company", primary: true },
               { key: "source", label: "Fonte", primary: true },
               { key: "label", label: "Label" },
