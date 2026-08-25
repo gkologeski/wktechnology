@@ -127,7 +127,9 @@ function LinkedinIntegrationPage() {
       (async () => {
         try {
           await reconcile({ data: search.state ? { state: search.state } : {} });
-        } catch {}
+        } catch {
+      /* ignora */
+    }
         await refresh();
       })();
     }
