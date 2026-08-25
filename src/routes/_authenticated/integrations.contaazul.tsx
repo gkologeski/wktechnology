@@ -24,6 +24,10 @@ import {
   contaAzulStatus,
 } from "@/lib/integrations/contaazul.functions";
 import { ContaAzulFileImportDialog } from "@/components/contaazul/contaazul-file-import-dialog";
+import {
+  ContaAzulSyncProgress,
+  type CaSyncStateRow,
+} from "@/components/contaazul/contaazul-sync-progress";
 
 export const Route = createFileRoute("/_authenticated/integrations/contaazul")({
   head: () => ({
@@ -296,12 +300,18 @@ function ContaAzulIntegrationPage() {
                     {busy ? "Sincronizando..." : "Sincronizar agora"}
                   </Button>
                   <span className="text-xs text-muted-foreground">
-                    A sincronização incremental automática roda periodicamente pelo agendador.
+                    A sincronização incremental automática roda a cada 6 horas pelo agendador.
                   </span>
                 </div>
               </Can>
             </CardContent>
           </Card>
+
+          <ContaAzulSyncProgress
+            syncState={(data?.syncState ?? []) as CaSyncStateRow[]}
+            cronRuns={data?.cronRuns ?? []}
+            running={busy}
+          />
         </>
       )}
     </div>

@@ -29,6 +29,15 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
     const integration = await api.loadIntegration(supabaseAdmin, workspaceId);
     const state = await steps.loadSyncState(supabaseAdmin, workspaceId);
     const tokens = integration?.oauth_tokens ?? null;
+
+    // Últimas execuções do agendador (job "contaazul-tick", a cada 6 horas).
+    const { data: runs } = await supabaseAdmin
+      .from("cron_run_logs")
+      .select("id, started_at, finished_at, duration_ms, status, metrics, error")
+      .eq("job_name", "contaazul-tick")
+      .order("started_at", { ascending: false })
+      .limit(5);
+
     return {
       configured: api.contaAzulConfigured(),
       connected: !!tokens?.access_token,
@@ -37,6 +46,23 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
       expiresAt: tokens?.expires_at ?? null,
       entities: CA_ENTITIES,
       syncState: state,
+      cronSchedule: "0 */6 * * *",
+      cronRuns: ((runs ?? []) as Array<Record<string, unknown>>).map((r) => {
+        const m = (r["metrics"] ?? {}) as Record<string, unknown>;
+        const num = (v: unknown) => (typeof v === "number" ? v : 0);
+        return {
+          id: String(r["id"] ?? ""),
+          startedAt: (r["started_at"] as string | null) ?? null,
+          finishedAt: (r["finished_at"] as string | null) ?? null,
+          durationMs: (r["duration_ms"] as number | null) ?? null,
+          status: (r["status"] as string | null) ?? null,
+          error: (r["error"] as string | null) ?? null,
+          workspaces: num(m["workspaces"]),
+          imported: num(m["imported"]),
+          updated: num(m["updated"]),
+          failed: num(m["failed"]),
+        };
+      }),
     };
   });
 
