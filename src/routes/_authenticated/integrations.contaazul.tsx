@@ -224,10 +224,7 @@ function ContaAzulIntegrationPage() {
 
               <Can any={INTEGRATIONS_MANAGE} fallback={null}>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    onClick={() => void handleConnect()}
-                    disabled={busy || !data?.configured}
-                  >
+                  <Button onClick={() => void handleConnect()} disabled={busy || !data?.configured}>
                     <Link2 className="mr-2 h-4 w-4" />
                     {data?.connected ? "Reautorizar" : "Conectar Conta Azul"}
                   </Button>
@@ -265,7 +262,9 @@ function ContaAzulIntegrationPage() {
                         checked={selected.includes(entity)}
                         onCheckedChange={(checked) =>
                           setSelected((prev) =>
-                            checked ? [...new Set([...prev, entity])] : prev.filter((e) => e !== entity),
+                            checked
+                              ? [...new Set([...prev, entity])]
+                              : prev.filter((e) => e !== entity),
                           )
                         }
                       />

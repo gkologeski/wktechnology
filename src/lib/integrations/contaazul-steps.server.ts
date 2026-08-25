@@ -375,12 +375,10 @@ export async function persistEntries(
         .from("financial_entry_allocations")
         .insert({ entry_id: entryId, cost_center_id: costCenterId, amount: entry.amount });
       if (error) pushError(result, `Alocação ${entry.externalId}: ${error.message}`);
-
     }
   }
   return result;
 }
-
 
 async function syncFinancialEvents(
   ctx: StepCtx,
@@ -510,10 +508,7 @@ export const STEP_ORDER: CaEntity[] = [
   "statements",
 ];
 
-export async function runContaAzulSteps(
-  ctx: StepCtx,
-  entities: CaEntity[],
-): Promise<StepResult[]> {
+export async function runContaAzulSteps(ctx: StepCtx, entities: CaEntity[]): Promise<StepResult[]> {
   const ordered = STEP_ORDER.filter((e) => entities.includes(e));
   const results: StepResult[] = [];
   for (const entity of ordered) {
