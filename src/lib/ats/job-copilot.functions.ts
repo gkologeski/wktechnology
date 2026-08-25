@@ -32,7 +32,7 @@ async function callAi(messages: Array<{ role: string; content: string }>, json =
 async function buildJobContext(supabase: any, jobId: string, userId?: string) {
   const cols =
     "title, seniority, remote_mode, employment_type, location, description, requirements, metadata, owner_id, hiring_manager_id, recruiter_id";
-  let { data: job, error } = await supabase
+  const { data: job, error } = await supabase
     .from("ats_jobs")
     .select(cols)
     .eq("id", jobId)

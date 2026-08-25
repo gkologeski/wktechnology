@@ -26,7 +26,7 @@ export function PairingStatusPanel() {
   }, []);
 
   useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval>;
+    const intervalId: ReturnType<typeof setInterval>;
 
     function onMessage(event: MessageEvent) {
       if (event.source !== window) return;
