@@ -4,12 +4,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type LayoutSection = { title: string; keys: string[] };
 export type RecordEntity = "leads" | "contacts" | "companies" | "deals";
 
 async function getActiveWorkspaceId(userId: string): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("active_workspace_id")
@@ -30,6 +30,7 @@ async function getActiveWorkspaceId(userId: string): Promise<string> {
 }
 
 async function assertAdmin(workspaceId: string, userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("workspace_members")
     .select("role")

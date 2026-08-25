@@ -2,7 +2,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /** Lista os workspaces dos quais o usuário logado é membro + workspace ativo.
  *  Platform admins enxergam TODOS os workspaces (mesmo sem serem membros), para
@@ -10,6 +9,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 export const listMyWorkspaces = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Platform admin?
     const { data: pa } = await supabaseAdmin
       .from("platform_admins")
@@ -71,6 +71,7 @@ export const setActiveWorkspace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ workspace_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Platform admins podem alternar para qualquer workspace.
     const { data: pa } = await supabaseAdmin
       .from("platform_admins")

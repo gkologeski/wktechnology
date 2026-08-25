@@ -3,13 +3,16 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ELEVEN_BASE = "https://api.elevenlabs.io";
 const VAPI_BASE = "https://api.vapi.ai";
 
+// Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sb = supabaseAdmin as any;
+async function sbAdmin(): Promise<any> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 export const CURATED_VOICES = [
   { id: "EXAVITQu4vr4xnSDxMaL", name: "Sarah" },
@@ -40,6 +43,7 @@ export type VoiceAgentSettings = {
 export const getVoiceAgentSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<VoiceAgentSettings> => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { data } = await sb
       .from("voice_agent_settings")
@@ -66,6 +70,7 @@ export const saveVoiceAgentSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => SettingsSchema.parse(i))
   .handler(async ({ data, context }) => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const payload = { workspace_id: ws, owner_id: ws, ...data };
     const { error } = await sb

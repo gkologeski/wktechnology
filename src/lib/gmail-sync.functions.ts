@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { syncAccount, type SyncResult } from "@/lib/gmail-sync.server";
 import type { EmailAccountRow } from "@/lib/gmail.server";
 
@@ -15,6 +14,7 @@ export const syncMyEmailAccounts = createServerFn({ method: "POST" })
     z.object({ account_id: z.string().uuid().optional() }).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Inclui contas em "error" para permitir auto-recuperação manual
     // (ex.: historyId expirado → FAILED_PRECONDITION). syncAccount restaura
     // status="connected" ao concluir com sucesso.
@@ -70,6 +70,7 @@ export async function runAllAccountsSync(): Promise<{
   inserted: number;
   errors: number;
 }> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: rows, error } = await supabaseAdmin
     .from("email_accounts")
     .select(ACCOUNT_COLUMNS)

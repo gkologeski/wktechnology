@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   AudienceRulesSchema,
   resolveAudienceServer,
@@ -12,8 +11,12 @@ import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
 
 const VAPI_BASE = "https://api.vapi.ai";
 
+// Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sb = supabaseAdmin as any;
+async function sbAdmin(): Promise<any> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 export type Campaign = {
   id: string;
@@ -65,6 +68,7 @@ type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } |
 const ACTIVE_ATTEMPT_STATUSES = ["queued", "ringing", "in_progress"];
 
 async function reconcileCampaignIfIdle(campaign: Campaign, workspaceId: string): Promise<Campaign> {
+  const sb = await sbAdmin();
   if (campaign.status !== "running") return campaign;
 
   const { count } = await sb
@@ -137,6 +141,7 @@ const CampaignInput = z.object({
 export const listCampaigns = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Campaign[]> => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { data, error } = await sb
       .from("prospecting_campaigns")
@@ -151,6 +156,7 @@ export const getCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<{ campaign: Campaign; variants: Variant[] }> => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: c, error } = await sb
       .from("prospecting_campaigns")
@@ -173,6 +179,7 @@ export const upsertCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => CampaignInput.parse(i))
   .handler(async ({ data, context }) => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
 
     // Em modo estático, resolve as regras AGORA (snapshot) e usa esses ids.
@@ -242,6 +249,7 @@ export const deleteCampaign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await sb
       .from("prospecting_campaigns")
@@ -260,6 +268,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     if (data.status === "running") {
       const staleStartedBefore = new Date(Date.now() - 15 * 60 * 1000).toISOString();
@@ -339,6 +348,7 @@ export const listCampaignAttempts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ campaign_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<Attempt[]> => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: rows, error } = await sb
       .from("prospecting_call_attempts")
@@ -365,6 +375,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ campaign_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<LeadAudit[]> => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: c } = await sb
       .from("prospecting_campaigns")
@@ -493,6 +504,7 @@ export async function startVapiCall(opts: {
   attemptNumber?: number;
   attemptId?: string | null;
 }): Promise<{ ok: boolean; call_id?: string; error?: string }> {
+  const sb = await sbAdmin();
   const persistDiag = async (patch: Record<string, unknown>) => {
     if (!opts.attemptId) return;
     await sb.from("prospecting_call_attempts").update(patch).eq("id", opts.attemptId);

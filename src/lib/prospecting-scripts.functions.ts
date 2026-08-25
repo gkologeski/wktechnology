@@ -2,10 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
+// Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const sb = supabaseAdmin as any;
+async function sbAdmin(): Promise<any> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 export type ProspectingScript = {
   id: string;
@@ -34,6 +37,7 @@ const ScriptInput = z.object({
 export const listScripts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ProspectingScript[]> => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { data, error } = await sb
       .from("prospecting_scripts")
@@ -48,6 +52,7 @@ export const upsertScript = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => ScriptInput.parse(i))
   .handler(async ({ data, context }) => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const payload = {
       workspace_id: ws,
@@ -82,6 +87,7 @@ export const deleteScript = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const sb = await sbAdmin();
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await sb
       .from("prospecting_scripts")

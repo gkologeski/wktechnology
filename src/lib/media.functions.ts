@@ -2,12 +2,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const BUCKET = "media";
 const SIGNED_TTL = 60 * 60 * 24 * 365 * 5; // 5 years
 
 async function getActiveWorkspaceId(userId: string): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("active_workspace_id")
@@ -82,6 +82,7 @@ export const createMediaUploadUrl = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     if (data.mime && !ALLOWED_MIMES.includes(data.mime.toLowerCase())) {
       throw new Error(`Tipo de arquivo não permitido: ${data.mime}`);
@@ -131,6 +132,7 @@ export const registerMediaAsset = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     const workspaceId = await getActiveWorkspaceId(userId);
     if (!data.path.startsWith(`${workspaceId}/`)) {
@@ -190,6 +192,7 @@ export const listMediaAssets = createServerFn({ method: "POST" })
         .parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     const workspaceId = await getActiveWorkspaceId(userId);
     const limit = data.limit ?? 48;
@@ -257,6 +260,7 @@ export const deleteMediaAsset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     const workspaceId = await getActiveWorkspaceId(userId);
     const { data: row, error: selErr } = await supabaseAdmin

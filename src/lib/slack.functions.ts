@@ -6,7 +6,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const SLACK_EVENT_TYPES = [
   "lead.created",
@@ -141,6 +140,7 @@ export const deleteSlackRoute = createServerFn({ method: "POST" })
 export const sendSlackTest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: si } = await supabaseAdmin
       .from("slack_integrations")

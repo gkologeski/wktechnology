@@ -2,12 +2,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const STATUSES = ["open", "triaged", "in_progress", "resolved", "wont_fix"] as const;
 export type BugReportStatus = (typeof STATUSES)[number];
 
 async function assertPlatformAdmin(userId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("platform_admins")
     .select("user_id")
@@ -28,6 +28,7 @@ export const listBugReports = createServerFn({ method: "GET" })
       .parse(input ?? {}),
   )
   .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertPlatformAdmin(context.userId);
 
     let q = supabaseAdmin
@@ -91,6 +92,7 @@ export const updateBugReportStatus = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertPlatformAdmin(context.userId);
     const patch: Record<string, unknown> = { status: data.status };
     if (data.status === "resolved") {
@@ -110,6 +112,7 @@ export const deleteBugReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertPlatformAdmin(context.userId);
 
     const { data: row } = await supabaseAdmin
@@ -136,6 +139,7 @@ export const getBugReportRecordingUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ path: z.string().min(1) }).parse(input))
   .handler(async ({ context, data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await assertPlatformAdmin(context.userId);
     const { data: signed, error } = await supabaseAdmin.storage
       .from("bug-reports")

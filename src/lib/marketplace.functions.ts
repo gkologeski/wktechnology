@@ -3,7 +3,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const listMarketplaceApps = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -109,6 +108,7 @@ export const testMarketplaceConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { slug: string }) => z.object({ slug: z.string().min(1).max(80) }).parse(d))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
     let ok = true;
     let error_text: string | null = null;

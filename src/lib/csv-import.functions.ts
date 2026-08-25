@@ -4,7 +4,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { assertImportEntity } from "@/lib/access-control/admin-gates.server";
 
 export type CsvEntity = "leads" | "contacts" | "companies";
@@ -58,6 +57,7 @@ export const DEDUPE_KEYS: Record<CsvEntity, string[]> = {
 };
 
 async function getActiveWorkspaceId(userId: string): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: profile } = await supabaseAdmin
     .from("profiles")
     .select("active_workspace_id")

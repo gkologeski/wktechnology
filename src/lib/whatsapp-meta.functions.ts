@@ -4,9 +4,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 async function loadWabaTokenByPhoneNumberId(workspaceId: string, phoneNumberId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: pn } = await supabaseAdmin
     .from("wa_phone_numbers")
     .select("waba_id")
@@ -50,6 +50,7 @@ async function metaFetch(token: string, path: string, init: RequestInit = {}) {
 }
 
 async function loadWabaToken(_supabase: any, workspaceId: string, wabaRowId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("wa_business_accounts")
     .select("id, waba_id, access_token, workspace_id")

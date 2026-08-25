@@ -2,7 +2,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { TOOL_REQUIRED_ENTITLEMENT } from "@/lib/entitlements";
 
 import { ACCESS_OBJECTS, ACCESS_TOOLS } from "./access-profiles.constants";
@@ -348,6 +347,7 @@ export const assignProfileToUser = createServerFn({ method: "POST" })
 export const listProfileAssignments = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const { data: members } = await supabase
       .from("team_members")

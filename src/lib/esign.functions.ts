@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
@@ -225,6 +224,7 @@ export const getEsignSession = createServerFn({ method: "GET" })
     z.object({ token: z.string().min(10).max(100) }).parse(d),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: signer, error } = await supabaseAdmin
       .from("esign_signers")
       .select("*")
@@ -288,6 +288,7 @@ export const submitEsignSignature = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ip = getRequestHeader("x-forwarded-for") ?? getRequestHeader("cf-connecting-ip") ?? null;
     const ua = getRequestHeader("user-agent") ?? null;
 
@@ -364,6 +365,7 @@ export const declineEsign = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ip = getRequestHeader("x-forwarded-for") ?? null;
     const ua = getRequestHeader("user-agent") ?? null;
     const { data: signer, error } = await supabaseAdmin

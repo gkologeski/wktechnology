@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin as _supabaseAdmin } from "@/integrations/supabase/client.server";
-const supabaseAdmin = _supabaseAdmin as any;
+// Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function sbAdmin(): Promise<any> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
+}
 
 /**
  * Public lookup — no auth. Validates token + expiry, returns the room name
@@ -10,6 +14,7 @@ const supabaseAdmin = _supabaseAdmin as any;
 export const getPublicMeeting = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ token: z.string().min(8).max(64) }).parse(input))
   .handler(async ({ data }) => {
+    const supabaseAdmin = await sbAdmin();
     const { data: m, error } = await supabaseAdmin
       .from("meetings")
       .select("id, title, room_name, recording_consent, expires_at, status")
@@ -44,6 +49,7 @@ export const registerPublicParticipant = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    const supabaseAdmin = await sbAdmin();
     const { data: m } = await supabaseAdmin
       .from("meetings")
       .select("id, owner_id, expires_at, status")

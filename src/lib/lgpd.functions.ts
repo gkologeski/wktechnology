@@ -4,12 +4,12 @@
 //   Workspace owners must cancel their subscription / transfer ownership first.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 /** Snapshot of the user's personal data across the app. */
 export const exportMyData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
 
     const tables = [
@@ -80,6 +80,7 @@ export const requestAccountDeletion = createServerFn({ method: "POST" })
     return input;
   })
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { userId } = context;
 
     // Owner check: blocks deletion if any workspace_subscription points at this user.
