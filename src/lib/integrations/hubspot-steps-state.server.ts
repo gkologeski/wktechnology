@@ -77,7 +77,7 @@ export async function loadMapForStep(
   return scanLocalHubspotMap(supabase, workspaceId, table);
 }
 
-async function loadImportedHsIdsForStep(
+export async function loadImportedHsIdsForStep(
   supabase: SupabaseClient,
   workspaceId: string,
   jobId: string,
@@ -123,7 +123,7 @@ async function scanLocalHubspotMap(
   return map;
 }
 
-async function loadLocalMapForHsIds(
+export async function loadLocalMapForHsIds(
   supabase: SupabaseClient,
   workspaceId: string,
   table: HsTable,

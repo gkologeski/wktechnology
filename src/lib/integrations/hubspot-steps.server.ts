@@ -28,7 +28,10 @@ import { syncHubspotDealPipelines, syncHubspotTicketPipelines } from "./hubspot-
 
 import {
   appendLog,
+  loadImportedHsIdsForStep,
+  loadLocalMapForHsIds,
   loadMapForStep,
+
   loadResume,
   makeProgressBumper,
   patchItemBefore,

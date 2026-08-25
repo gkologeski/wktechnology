@@ -4812,6 +4812,45 @@ export type Database = {
           },
         ]
       }
+      contaazul_sync_state: {
+        Row: {
+          created_at: string
+          cursor: string | null
+          entity: string
+          failed_count: number
+          id: string
+          imported_count: number
+          last_error: string | null
+          last_synced_at: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          cursor?: string | null
+          entity: string
+          failed_count?: number
+          id?: string
+          imported_count?: number
+          last_error?: string | null
+          last_synced_at?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          cursor?: string | null
+          entity?: string
+          failed_count?: number
+          id?: string
+          imported_count?: number
+          last_error?: string | null
+          last_synced_at?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       contact_subscriptions: {
         Row: {
           contact_id: string
@@ -8102,6 +8141,7 @@ export type Database = {
         Row: {
           code: string | null
           created_at: string
+          external_ids: Json
           id: string
           kind: Database["public"]["Enums"]["financial_category_kind"]
           legal_entity_id: string | null
@@ -8113,6 +8153,7 @@ export type Database = {
         Insert: {
           code?: string | null
           created_at?: string
+          external_ids?: Json
           id?: string
           kind: Database["public"]["Enums"]["financial_category_kind"]
           legal_entity_id?: string | null
@@ -8124,6 +8165,7 @@ export type Database = {
         Update: {
           code?: string | null
           created_at?: string
+          external_ids?: Json
           id?: string
           kind?: Database["public"]["Enums"]["financial_category_kind"]
           legal_entity_id?: string | null
@@ -8161,6 +8203,7 @@ export type Database = {
           active: boolean
           code: string | null
           created_at: string
+          external_ids: Json
           id: string
           legal_entity_id: string | null
           metadata: Json
@@ -8173,6 +8216,7 @@ export type Database = {
           active?: boolean
           code?: string | null
           created_at?: string
+          external_ids?: Json
           id?: string
           legal_entity_id?: string | null
           metadata?: Json
@@ -8185,6 +8229,7 @@ export type Database = {
           active?: boolean
           code?: string | null
           created_at?: string
+          external_ids?: Json
           id?: string
           legal_entity_id?: string | null
           metadata?: Json
