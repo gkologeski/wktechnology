@@ -31,7 +31,6 @@ import {
   loadImportedHsIdsForStep,
   loadLocalMapForHsIds,
   loadMapForStep,
-
   loadResume,
   makeProgressBumper,
   patchItemBefore,

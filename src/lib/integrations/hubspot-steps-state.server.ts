@@ -4,7 +4,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { hsPost } from "./hubspot-api.server";
 import type { HsTable, LogEntry, ResumeState, StepName } from "./hubspot-steps-types";
 
-export async function appendLog(supabase: SupabaseClient, jobId: string, entry: Omit<LogEntry, "ts">) {
+export async function appendLog(
+  supabase: SupabaseClient,
+  jobId: string,
+  entry: Omit<LogEntry, "ts">,
+) {
   const full: LogEntry = { ...entry, ts: new Date().toISOString() };
   const { data: cur } = await supabase
     .from("enrichment_jobs")
