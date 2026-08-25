@@ -3,76 +3,16 @@ import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+
 import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Plus,
-  Trash2,
-  Braces,
-  List,
-  Zap,
-  Filter,
-  Clock,
-  GitBranch,
-  Mail,
-  Bell,
-  Webhook,
-  Users,
-  UserPlus,
-  Briefcase,
-  ArrowRight,
-  X,
-  Sparkles,
-  ChevronLeft,
-  Repeat,
-  Building2,
-  Handshake,
-  Ticket,
-  CheckSquare,
-  Contact,
-  Copy,
-  Link2,
-  Link2Off,
-  Eraser,
-  Plus as PlusIcon,
-  MessageCircle,
-  SplitSquareHorizontal,
-  GitFork,
-  CalendarClock,
-  Target,
-  Wand2,
-  Hash,
-  MessageSquare,
-  GripVertical,
-  ArrowUp,
-  ArrowDown,
-  Upload,
-  Info,
-} from "lucide-react";
 
-import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
-import { getEntityFieldCatalog } from "@/lib/entity-fields.functions";
-import { ExtraFieldsEditor, FkPicker } from "./extra-fields-editor";
-import { GenericRecordForm } from "./generic-record-form";
-import { TokenInput, TokenTextarea, WorkflowTokensProvider } from "./token-input";
+import { X, ChevronLeft, Upload, Info } from "lucide-react";
+
+import { WorkflowTokensProvider } from "./token-input";
 import { buildIdTokens, buildTextTokens, buildVarTokens } from "@/lib/workflows/token-catalog";
 import {
   buildAssociationTextTokens,
@@ -80,44 +20,26 @@ import {
   triggerRefOptions,
 } from "@/lib/workflows/association-tokens";
 import type { RefKind } from "@/lib/entity-fields-refs";
-import { useReferenceLabels } from "./use-reference-labels";
-import { ActionTemplatesBar } from "./action-templates-bar";
 
-import { lazy, Suspense } from "react";
-import type { FieldOpt } from "./builder/step-tree";
+import { Suspense } from "react";
+
 import {
-  ACTION_ICONS,
   countSteps,
   defaultActionOfType,
-  describeAction,
-  getBranchList,
   getStep,
   insertStep,
-  insertStepAt,
-  isBranchKey,
   isDescendantOrSelf,
   listAt,
   moveStepTo,
   priorStepFieldOptions,
   priorStepMeta,
   removeStep,
-  setBranchList,
-  siblingsOfPath,
   updateStep,
   collectFlowVarNames,
-  STEP_OUTPUT_KEYS,
-  type BranchKey,
   type StepPath,
-  type DescribeLabels,
 } from "./builder/step-tree";
 import { useEntityFieldOptions } from "./builder/use-entity-field-options";
-import {
-  ConditionListEditor,
-  conditionsIncludeField,
-  newLeafCondition,
-  normalizeTopGroup,
-  denormalizeTopGroup,
-} from "./builder/conditions-editor";
+
 import { EntityPickerDialog } from "./builder/entity-picker-dialog";
 import { Connector, StepsList, TriggerCard } from "./builder/canvas";
 import { ActionLibraryPanel } from "./builder/action-library-panel";
@@ -130,25 +52,12 @@ const StepConfigPanel = lazy(() =>
 );
 
 import {
-  ENTITY_FIELDS,
   ENTITY_LABELS,
-  ENTITY_GROUPS,
   EVENT_LABELS,
-  ACTION_LABELS,
-  ACTION_CATEGORIES,
-  RECORD_ACTION_MODULES,
-  type WorkflowWritableTable,
-  FILTER_OPS,
   type WorkflowEntity,
-  type WorkflowEventType,
   type WorkflowTrigger,
-  type WorkflowFilter,
-  type WorkflowCondition,
-  type WorkflowFilterGroup,
   type WorkflowAction,
   type WorkflowActionType,
-  type FilterOp,
-  isFilterGroup,
 } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
