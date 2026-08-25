@@ -137,3 +137,30 @@ cenário multi-cliente não pode ser observado com dados reais. Para validar:
 
 Rode a consulta da seção 1 e atualize a tabela da seção 2. A meta é que o
 grupo (c) chegue a zero; os grupos (a) e (b) permanecem por definição.
+
+## 6. Auditoria de GRANT/RLS (Fase 3 — 2026-08-25)
+
+Consulta executada em `pg_class`/`pg_policies`/`has_table_privilege` para todas as
+tabelas de `public`:
+
+- **RLS habilitada em 100% das tabelas** (`relrowsecurity = false` → 0 linhas).
+- Quatro tabelas tinham políticas para `authenticated` mas **nenhum GRANT**, o que
+  as tornava inalcançáveis pela Data API: `calendar_accounts`, `email_accounts`,
+  `outbound_webhooks` e `profiles`. Corrigido por migration (GRANT alinhado às
+  políticas existentes, sem alteração de política).
+- `payment_webhook_events` permanece **sem política e sem acesso para
+  `authenticated`/`anon`** de forma intencional: é gravada apenas por webhooks
+  server-side com `service_role`. O aviso "RLS enabled, no policy" do linter é
+  postura aceita para essa tabela.
+
+Avisos de `SECURITY DEFINER` executável por `anon`/`authenticated` reportados pelo
+linter são pré-existentes e correspondem às funções de RBAC (`has_role`,
+`user_can_act`, `current_user_permissions`), que **precisam** ser chamáveis pelo
+usuário logado; as demais são helpers internos usados por policies.
+
+### Pendente da Fase 3
+
+- Testes E2E de visibilidade por papel (admin/manager/member) além do já
+  existente `tests/e2e/permission-visibility.spec.ts`.
+- Revisão final dos fluxos de exclusão/edição que ainda não usam
+  `deleteRowGuarded` / `handle-permission-error`.

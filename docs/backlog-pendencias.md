@@ -101,3 +101,11 @@ Após triagem, agrupar ✅ em Releases 22+ por tema, com esforço alvo de ~2 sem
 - HubSpot parciais 🟡: **4**
 - HubSpot ❌ não cobertos: **32**
 - **Total para avaliar: 49 itens**
+
+## Congelamento até o fim da Fase 3 (2026-08-25)
+
+Enquanto a Fase 3 do plano de redução de tempo de implementação não terminar
+(testes E2E por papel + varredura de `deleteRowGuarded`), novas features amplas
+ficam congeladas. Itens de paridade HubSpot permanecem no backlog sem
+priorização. Correções de bug e polimento de UI seguem, agrupados em um plano
+semanal único (ver `docs/plan-templates.md`).
