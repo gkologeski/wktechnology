@@ -3,14 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type SearchHit = {
-  entity_type:
-    | "contact"
-    | "company"
-    | "deal"
-    | "ticket"
-    | "activity"
-    | "candidate"
-    | "job";
+  entity_type: "contact" | "company" | "deal" | "ticket" | "activity" | "candidate" | "job";
   entity_id: string;
   title: string;
   subtitle?: string;
@@ -36,11 +29,10 @@ export const globalSearch = createServerFn({ method: "POST" })
     const allow = (t: string) => !data.types || data.types.length === 0 || data.types.includes(t);
     const t0 = Date.now();
 
-    const run = async <T,>(builder: PromiseLike<{ data: T | null }> | null) => {
+    const run = async <T>(builder: PromiseLike<{ data: T | null }> | null) => {
       if (!builder) return { data: null as T | null };
       return await builder;
     };
-
 
     const [contacts, companies, deals, tickets, activities, candidates, jobs] = await Promise.all([
       allow("contact")
@@ -48,9 +40,7 @@ export const globalSearch = createServerFn({ method: "POST" })
             supabase
               .from("contacts")
               .select("id, first_name, last_name, email, job_title")
-              .or(
-                `first_name.ilike.${pattern},last_name.ilike.${pattern},email.ilike.${pattern}`,
-              )
+              .or(`first_name.ilike.${pattern},last_name.ilike.${pattern},email.ilike.${pattern}`)
               .limit(limit),
           )
         : run(null),
@@ -122,7 +112,8 @@ export const globalSearch = createServerFn({ method: "POST" })
       ((contacts.data ?? []) as Array<Record<string, unknown>>).map((r) => ({
         entity_type: "contact" as const,
         entity_id: String(r.id),
-        title: [r.first_name, r.last_name].filter(Boolean).join(" ") || String(r.email ?? "Contato"),
+        title:
+          [r.first_name, r.last_name].filter(Boolean).join(" ") || String(r.email ?? "Contato"),
         subtitle: [r.email, r.job_title].filter(Boolean).join(" · ") || undefined,
         url: `/contacts/${r.id}`,
       })),

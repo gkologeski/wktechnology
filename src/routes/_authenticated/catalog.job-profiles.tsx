@@ -119,10 +119,7 @@ function JobProfilesPage() {
     staleTime: 60_000,
   });
 
-  const catalogName = useMemo(
-    () => new Map(catalog.map((c) => [c.id, c.name])),
-    [catalog],
-  );
+  const catalogName = useMemo(() => new Map(catalog.map((c) => [c.id, c.name])), [catalog]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();

@@ -22,7 +22,12 @@ function next(current: string, cadence: Cadence | null): string | null {
 export async function tickServicesBilling(
   admin: SupabaseClient<Database>,
   batch = 200,
-): Promise<{ generated: number; scanned: number; skippedDuplicates: number; updateErrors: number }> {
+): Promise<{
+  generated: number;
+  scanned: number;
+  skippedDuplicates: number;
+  updateErrors: number;
+}> {
   const today = new Date().toISOString().slice(0, 10);
 
   const { data: due, error } = await admin

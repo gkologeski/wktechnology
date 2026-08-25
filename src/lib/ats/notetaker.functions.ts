@@ -51,8 +51,10 @@ async function callAi(prompt: string, model: string): Promise<AiNotes> {
       temperature: 0.2,
     }),
   });
-  if (res.status === 429) throw new Error("Limite de uso da IA atingido. Tente novamente em alguns minutos.");
-  if (res.status === 402) throw new Error("Créditos da IA esgotados. Adicione créditos em Workspace → Uso.");
+  if (res.status === 429)
+    throw new Error("Limite de uso da IA atingido. Tente novamente em alguns minutos.");
+  if (res.status === 402)
+    throw new Error("Créditos da IA esgotados. Adicione créditos em Workspace → Uso.");
   if (!res.ok) {
     const t = await res.text();
     throw new Error(`AI Gateway ${res.status}: ${t.slice(0, 200)}`);

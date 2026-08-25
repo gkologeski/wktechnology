@@ -59,9 +59,7 @@ export function EditWorkspaceDialog({
     slug: workspace.slug,
     custom_domain: workspace.custom_domain ?? "",
     primary_color: workspace.primary_color ?? "",
-    status: (workspace.status === "suspended" ? "suspended" : "active") as
-      | "active"
-      | "suspended",
+    status: (workspace.status === "suspended" ? "suspended" : "active") as "active" | "suspended",
   });
 
   const mut = useMutation({
@@ -140,9 +138,7 @@ export function EditWorkspaceDialog({
             <Label>Status</Label>
             <Select
               value={form.status}
-              onValueChange={(v) =>
-                setForm((f) => ({ ...f, status: v as "active" | "suspended" }))
-              }
+              onValueChange={(v) => setForm((f) => ({ ...f, status: v as "active" | "suspended" }))}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -197,8 +193,8 @@ export function SoftDeleteWorkspaceDialog({
             Excluir workspace
           </DialogTitle>
           <DialogDescription>
-            O workspace <strong>{workspace.name}</strong> será marcado como excluído. Membros
-            perdem o acesso imediatamente, mas os dados são preservados e podem ser restaurados.
+            O workspace <strong>{workspace.name}</strong> será marcado como excluído. Membros perdem
+            o acesso imediatamente, mas os dados são preservados e podem ser restaurados.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
@@ -271,8 +267,7 @@ export function PurgeWorkspaceDialog({
   const fn = useServerFn(purgeWorkspaceAdmin);
   const [confirm, setConfirm] = useState("");
   const mut = useMutation({
-    mutationFn: () =>
-      fn({ data: { workspace_id: workspace.id, confirm_name: confirm.trim() } }),
+    mutationFn: () => fn({ data: { workspace_id: workspace.id, confirm_name: confirm.trim() } }),
     onSuccess: () => {
       toast.success("Workspace excluído definitivamente.");
       qc.invalidateQueries({ queryKey: ["admin-workspaces"] });
@@ -300,8 +295,8 @@ export function PurgeWorkspaceDialog({
           </DialogTitle>
           <DialogDescription>
             Esta ação é <strong>irreversível</strong>. Todos os dados de{" "}
-            <strong>{workspace.name}</strong> (contatos, negócios, contratos, arquivos, etc.)
-            serão apagados em cascata. Para confirmar, digite o nome do workspace abaixo.
+            <strong>{workspace.name}</strong> (contatos, negócios, contratos, arquivos, etc.) serão
+            apagados em cascata. Para confirmar, digite o nome do workspace abaixo.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
@@ -320,11 +315,7 @@ export function PurgeWorkspaceDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button
-            variant="destructive"
-            onClick={() => mut.mutate()}
-            disabled={!canSubmit}
-          >
+          <Button variant="destructive" onClick={() => mut.mutate()} disabled={!canSubmit}>
             {mut.isPending ? "Excluindo…" : "Excluir definitivamente"}
           </Button>
         </DialogFooter>

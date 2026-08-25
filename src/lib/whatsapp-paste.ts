@@ -82,8 +82,7 @@ export function renderWhatsAppHtml(messages: WhatsAppMessage[]): string {
 export function maybeConvertWhatsAppPaste(input: string): string | null {
   // Aceita input já com tags HTML — converte qualquer bloco em quebra de linha
   // antes de remover as demais tags.
-  const BLOCK_CLOSE =
-    /<\/(p|div|li|ul|ol|h[1-6]|tr|table|section|article|blockquote|pre)>/gi;
+  const BLOCK_CLOSE = /<\/(p|div|li|ul|ol|h[1-6]|tr|table|section|article|blockquote|pre)>/gi;
   const text = (input || "")
     .replace(/<br\s*\/?\s*>/gi, "\n")
     .replace(BLOCK_CLOSE, "\n")

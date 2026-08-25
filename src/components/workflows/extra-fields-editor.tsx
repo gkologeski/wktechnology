@@ -195,7 +195,6 @@ function FieldInput({
   /** Outros valores do mesmo passo — usados em regras entre campos. */
   siblingValues?: Record<string, unknown>;
 }) {
-
   const strVal = value == null ? "" : String(value);
 
   if (field.name === "custom_fields") {
@@ -294,7 +293,6 @@ function FieldInput({
     );
   }
 
-
   // Texto rico (ex.: corpo do contrato) → editor WYSIWYG, sem HTML cru.
   if (field.richText) {
     return (
@@ -342,7 +340,6 @@ export function FkPicker({
   /** Aviso curto explicando por que a lista de registros está oculta. */
   hideRecordsHint?: string;
 }) {
-
   const isToken = /^\s*\{\{.+\}\}\s*$/.test(value);
   // Opções pré-carregadas (gatilho + passos anteriores) compatíveis com o campo.
   const refOptions = useWorkflowRefOptions(kind);
@@ -610,7 +607,6 @@ export function FkPicker({
               </CommandList>
             </Command>
           )}
-
         </PopoverContent>
       </Popover>
       <button
@@ -770,7 +766,6 @@ export function ExtraFieldsEditor({
   const orphanKeys = Object.keys(values).filter(
     (k) => !hidden.has(k) && !visibleFields.some((f) => f.name === k),
   );
-
 
   const filledCount =
     filled.length +
@@ -989,7 +984,6 @@ export function ExtraFieldsEditor({
                 onChange={(v) => setKey(key, v)}
                 siblingValues={values}
               />
-
             ) : (
               <Input
                 value={typeof value === "string" ? value : value == null ? "" : String(value)}

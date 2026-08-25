@@ -15,7 +15,6 @@ import { toast } from "sonner";
 import { assertAffected } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
 
-
 /**
  * Campo Proprietário reutilizável para telas de detalhe de qualquer entidade
  * que tenha a coluna owner_id (contatos, empresas, deals, leads, tickets,
@@ -66,7 +65,10 @@ export function OwnerField({
     [members, meId],
   );
   const canEdit =
-    meRole === "admin" || meRole === "manager" || (meId != null && current === meId) || current == null;
+    meRole === "admin" ||
+    meRole === "manager" ||
+    (meId != null && current === meId) ||
+    current == null;
 
   const ownerName = useMemo(() => {
     const m = members.find((x) => x.user_id === current);
@@ -93,7 +95,6 @@ export function OwnerField({
     } catch (e) {
       if (!handlePermissionError(e))
         toast.error(e instanceof Error ? e.message : "Não foi possível atualizar");
-
     } finally {
       setSaving(false);
     }

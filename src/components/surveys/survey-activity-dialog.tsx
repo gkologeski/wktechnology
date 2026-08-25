@@ -536,20 +536,20 @@ export function SurveyActivityDialog({
             {useQualificationScreen ? "Fechar" : "Cancelar"}
           </Button>
           {useQualificationScreen ? null : (
-          <Button
-            onClick={() => {
-              if (missing.length > 0) {
-                setShowErrors(true);
-                toast.error("Responda as perguntas obrigatórias.");
-                return;
-              }
-              save.mutate();
-            }}
-            disabled={!selection || form.isLoading || save.isPending}
-          >
-            {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-            Registrar pesquisa
-          </Button>
+            <Button
+              onClick={() => {
+                if (missing.length > 0) {
+                  setShowErrors(true);
+                  toast.error("Responda as perguntas obrigatórias.");
+                  return;
+                }
+                save.mutate();
+              }}
+              disabled={!selection || form.isLoading || save.isPending}
+            >
+              {save.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
+              Registrar pesquisa
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

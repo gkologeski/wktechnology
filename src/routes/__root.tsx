@@ -185,7 +185,6 @@ function RootComponent() {
             <AgentTrigger />
             <ConfirmDialogHost />
             <Toaster richColors position="top-right" />
-
           </BrandingProvider>
         </I18nProvider>
       </AuthProvider>

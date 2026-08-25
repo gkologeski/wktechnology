@@ -8,18 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/ui/tabs";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -117,17 +107,14 @@ export function LandingPageEditor({ id }: { id: string }) {
   }, [data, state]);
 
   // commit state change with history push
-  const commit = useCallback(
-    (next: PageData) => {
-      setState((prev) => {
-        if (prev) history.current.push(prev);
-        if (history.current.length > 50) history.current.shift();
-        future.current = [];
-        return next;
-      });
-    },
-    [],
-  );
+  const commit = useCallback((next: PageData) => {
+    setState((prev) => {
+      if (prev) history.current.push(prev);
+      if (history.current.length > 50) history.current.shift();
+      future.current = [];
+      return next;
+    });
+  }, []);
 
   const undo = () => {
     setState((prev) => {
@@ -265,34 +252,69 @@ export function LandingPageEditor({ id }: { id: string }) {
           value={state.title}
           onChange={(e) => commit({ ...state, title: e.target.value })}
         />
-        <Badge variant={state.status === "published" ? "default" : "secondary"} className="capitalize">
-          {state.status === "draft" ? "Rascunho" : state.status === "published" ? "Publicada" : "Arquivada"}
+        <Badge
+          variant={state.status === "published" ? "default" : "secondary"}
+          className="capitalize"
+        >
+          {state.status === "draft"
+            ? "Rascunho"
+            : state.status === "published"
+              ? "Publicada"
+              : "Arquivada"}
         </Badge>
 
         <div className="flex-1 flex items-center justify-center gap-1">
-          <Button size="sm" variant={device === "desktop" ? "secondary" : "ghost"} onClick={() => setDevice("desktop")}>
+          <Button
+            size="sm"
+            variant={device === "desktop" ? "secondary" : "ghost"}
+            onClick={() => setDevice("desktop")}
+          >
             <Monitor className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant={device === "tablet" ? "secondary" : "ghost"} onClick={() => setDevice("tablet")}>
+          <Button
+            size="sm"
+            variant={device === "tablet" ? "secondary" : "ghost"}
+            onClick={() => setDevice("tablet")}
+          >
             <Tablet className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant={device === "mobile" ? "secondary" : "ghost"} onClick={() => setDevice("mobile")}>
+          <Button
+            size="sm"
+            variant={device === "mobile" ? "secondary" : "ghost"}
+            onClick={() => setDevice("mobile")}
+          >
             <Smartphone className="h-4 w-4" />
           </Button>
         </div>
 
-        <Button size="sm" variant="ghost" onClick={undo} disabled={history.current.length === 0} title="Desfazer (Ctrl+Z)">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={undo}
+          disabled={history.current.length === 0}
+          title="Desfazer (Ctrl+Z)"
+        >
           <Undo2 className="h-4 w-4" />
         </Button>
-        <Button size="sm" variant="ghost" onClick={redo} disabled={future.current.length === 0} title="Refazer (Ctrl+Y)">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={redo}
+          disabled={future.current.length === 0}
+          title="Refazer (Ctrl+Y)"
+        >
           <Redo2 className="h-4 w-4" />
         </Button>
 
         <div className="text-xs text-muted-foreground min-w-20 text-center">
           {saveStatus === "saving" ? (
-            <span className="flex items-center gap-1 justify-center"><Loader2 className="h-3 w-3 animate-spin" /> Salvando…</span>
+            <span className="flex items-center gap-1 justify-center">
+              <Loader2 className="h-3 w-3 animate-spin" /> Salvando…
+            </span>
           ) : saveStatus === "saved" ? (
-            <span className="flex items-center gap-1 justify-center text-green-600"><Check className="h-3 w-3" /> Salvo</span>
+            <span className="flex items-center gap-1 justify-center text-green-600">
+              <Check className="h-3 w-3" /> Salvo
+            </span>
           ) : null}
         </div>
 
@@ -320,7 +342,9 @@ export function LandingPageEditor({ id }: { id: string }) {
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT: MODULES */}
         <aside className="w-56 border-r border-border bg-background overflow-y-auto p-3 shrink-0">
-          <div className="text-xs font-semibold text-muted-foreground uppercase mb-2 px-1">Módulos</div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase mb-2 px-1">
+            Módulos
+          </div>
           <div className="grid grid-cols-2 gap-2">
             {BLOCKS.map((b) => {
               const Icon = b.icon;
@@ -353,8 +377,15 @@ export function LandingPageEditor({ id }: { id: string }) {
                 </Button>
               </div>
             ) : (
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-                <SortableContext items={state.blocks.map((_, i) => String(i))} strategy={verticalListSortingStrategy}>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={onDragEnd}
+              >
+                <SortableContext
+                  items={state.blocks.map((_, i) => String(i))}
+                  strategy={verticalListSortingStrategy}
+                >
                   {state.blocks.map((block, i) => (
                     <SortableBlock
                       key={i}
@@ -394,7 +425,9 @@ export function LandingPageEditor({ id }: { id: string }) {
                   <div className="text-xs text-muted-foreground uppercase">Bloco</div>
                   <div className="font-semibold">{REGISTRY[selectedBlock.type].label}</div>
                 </div>
-                <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>×</Button>
+                <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>
+                  ×
+                </Button>
               </div>
               <div className="space-y-4">
                 <SelectedProps
@@ -450,11 +483,22 @@ export function LandingPageEditor({ id }: { id: string }) {
             <TabsContent value="seo" className="space-y-3 mt-4">
               <div>
                 <Label>Título da página</Label>
-                <Input value={state.title} onChange={(e) => commit({ ...state, title: e.target.value })} />
+                <Input
+                  value={state.title}
+                  onChange={(e) => commit({ ...state, title: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Slug (URL)</Label>
-                <Input value={state.slug} onChange={(e) => commit({ ...state, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })} />
+                <Input
+                  value={state.slug}
+                  onChange={(e) =>
+                    commit({
+                      ...state,
+                      slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                    })
+                  }
+                />
                 <p className="text-xs text-muted-foreground mt-1">URL pública: /lp/{state.slug}</p>
               </div>
               <div>
@@ -472,7 +516,9 @@ export function LandingPageEditor({ id }: { id: string }) {
                 <Input
                   type="color"
                   value={String((state.theme.primaryColor as string) ?? "#3b82f6")}
-                  onChange={(e) => commit({ ...state, theme: { ...state.theme, primaryColor: e.target.value } })}
+                  onChange={(e) =>
+                    commit({ ...state, theme: { ...state.theme, primaryColor: e.target.value } })
+                  }
                   className="h-10 w-20"
                 />
               </div>
@@ -481,7 +527,9 @@ export function LandingPageEditor({ id }: { id: string }) {
                 <Input
                   type="color"
                   value={String((state.theme.bgColor as string) ?? "#ffffff")}
-                  onChange={(e) => commit({ ...state, theme: { ...state.theme, bgColor: e.target.value } })}
+                  onChange={(e) =>
+                    commit({ ...state, theme: { ...state.theme, bgColor: e.target.value } })
+                  }
                   className="h-10 w-20"
                 />
               </div>
@@ -491,7 +539,9 @@ export function LandingPageEditor({ id }: { id: string }) {
                   value={String((state.theme.font as string) ?? "system")}
                   onValueChange={(v) => commit({ ...state, theme: { ...state.theme, font: v } })}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="system">Sistema</SelectItem>
                     <SelectItem value="serif">Serifa (elegante)</SelectItem>
@@ -503,8 +553,13 @@ export function LandingPageEditor({ id }: { id: string }) {
             <TabsContent value="advanced" className="space-y-3 mt-4">
               <div>
                 <Label>Status</Label>
-                <Select value={state.status} onValueChange={(v) => commit({ ...state, status: v as Status })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={state.status}
+                  onValueChange={(v) => commit({ ...state, status: v as Status })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Rascunho</SelectItem>
                     <SelectItem value="published">Publicada</SelectItem>
@@ -545,7 +600,9 @@ function SortableBlock({
   canMoveUp: boolean;
   canMoveDown: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id,
+  });
   const def = REGISTRY[block.type];
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -555,7 +612,11 @@ function SortableBlock({
 
   if (!def) {
     return (
-      <div ref={setNodeRef} style={style} className="p-4 border border-dashed border-destructive text-destructive text-sm">
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="p-4 border border-dashed border-destructive text-destructive text-sm"
+      >
         Tipo de bloco desconhecido: {block.type}
       </div>
     );
@@ -579,19 +640,38 @@ function SortableBlock({
         } transition`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button {...attributes} {...listeners} className="p-1 cursor-grab hover:bg-muted rounded" title="Arrastar">
+        <button
+          {...attributes}
+          {...listeners}
+          className="p-1 cursor-grab hover:bg-muted rounded"
+          title="Arrastar"
+        >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
-        <button onClick={onMoveUp} disabled={!canMoveUp} className="p-1 hover:bg-muted rounded disabled:opacity-30" title="Mover acima">
+        <button
+          onClick={onMoveUp}
+          disabled={!canMoveUp}
+          className="p-1 hover:bg-muted rounded disabled:opacity-30"
+          title="Mover acima"
+        >
           <ChevronUp className="h-3.5 w-3.5" />
         </button>
-        <button onClick={onMoveDown} disabled={!canMoveDown} className="p-1 hover:bg-muted rounded disabled:opacity-30" title="Mover abaixo">
+        <button
+          onClick={onMoveDown}
+          disabled={!canMoveDown}
+          className="p-1 hover:bg-muted rounded disabled:opacity-30"
+          title="Mover abaixo"
+        >
           <ChevronDown className="h-3.5 w-3.5" />
         </button>
         <button onClick={onDuplicate} className="p-1 hover:bg-muted rounded" title="Duplicar">
           <Copy className="h-3.5 w-3.5" />
         </button>
-        <button onClick={onRemove} className="p-1 hover:bg-destructive/10 hover:text-destructive rounded" title="Remover">
+        <button
+          onClick={onRemove}
+          className="p-1 hover:bg-destructive/10 hover:text-destructive rounded"
+          title="Remover"
+        >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </div>

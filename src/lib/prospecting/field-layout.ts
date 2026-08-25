@@ -85,7 +85,10 @@ export function parseFieldLayout(raw: unknown): QualificationFieldBlock[] {
       id: typeof b.id === "string" && b.id ? b.id : `${entity}-${position}-${blocks.length}`,
       entity: entity as QualificationFieldEntity,
       position,
-      title: typeof b.title === "string" && b.title ? b.title : entityLabel(entity as QualificationFieldEntity),
+      title:
+        typeof b.title === "string" && b.title
+          ? b.title
+          : entityLabel(entity as QualificationFieldEntity),
       fields,
     });
   }

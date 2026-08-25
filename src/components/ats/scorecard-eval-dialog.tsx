@@ -37,7 +37,6 @@ import { AsyncVideoResponses } from "./async-video-responses";
 import { CreateOfferDialog } from "./create-offer-dialog";
 import { CalendarPlus, FileSignature } from "lucide-react";
 
-
 type Criterion = { key: string; label: string; weight: number };
 type Scorecard = {
   id: string;
@@ -55,7 +54,15 @@ type Props = {
   onSaved?: () => void;
 };
 
-export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, candidateId, candidateName, onSaved }: Props) {
+export function ScorecardEvalDialog({
+  open,
+  onOpenChange,
+  applicationId,
+  jobId,
+  candidateId,
+  candidateName,
+  onSaved,
+}: Props) {
   const fetchScs = useServerFn(listScorecards);
   const fetchRes = useServerFn(listScorecardResponses);
   const fetchEvents = useServerFn(listApplicationEvents);
@@ -70,10 +77,27 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
   const [recommendation, setRecommendation] = useState<string>("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
-  const [history, setHistory] = useState<Array<{ id: string; total_score: number | null; recommendation: string | null }>>([]);
-  type Event = { id: string; event_type: string; from_stage: string | null; to_stage: string | null; actor_name: string | null; created_at: string };
+  const [history, setHistory] = useState<
+    Array<{ id: string; total_score: number | null; recommendation: string | null }>
+  >([]);
+  type Event = {
+    id: string;
+    event_type: string;
+    from_stage: string | null;
+    to_stage: string | null;
+    actor_name: string | null;
+    created_at: string;
+  };
   const [events, setEvents] = useState<Event[]>([]);
-  type Interview = { id: string; kind: string; status: string; scheduled_at: string | null; duration_min: number; meet_url: string | null; location: string | null };
+  type Interview = {
+    id: string;
+    kind: string;
+    status: string;
+    scheduled_at: string | null;
+    duration_min: number;
+    meet_url: string | null;
+    location: string | null;
+  };
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [showSchedule, setShowSchedule] = useState(false);
   const [showOffer, setShowOffer] = useState(false);
@@ -108,7 +132,6 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
     })();
   }, [open, jobId, applicationId, fetchScs, fetchRes, fetchEvents, fetchInterviews]);
 
-
   const current = useMemo(() => scs.find((s) => s.id === selected) ?? null, [scs, selected]);
 
   // reset scores quando muda scorecard
@@ -128,7 +151,13 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
           scorecard_id: current.id,
           application_id: applicationId,
           scores,
-          recommendation: (recommendation || null) as "strong_yes" | "yes" | "maybe" | "no" | "strong_no" | null,
+          recommendation: (recommendation || null) as
+            | "strong_yes"
+            | "yes"
+            | "maybe"
+            | "no"
+            | "strong_no"
+            | null,
           notes: notes || null,
         },
       });
@@ -183,7 +212,9 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
               {interviews.map((iv) => (
                 <li key={iv.id} className="flex items-center justify-between gap-2">
                   <div className="truncate">
-                    <Badge variant="outline" className="mr-1 capitalize">{iv.kind}</Badge>
+                    <Badge variant="outline" className="mr-1 capitalize">
+                      {iv.kind}
+                    </Badge>
                     <Badge
                       variant={
                         iv.status === "scheduled"
@@ -252,12 +283,16 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
               <AsyncVideoResponses
                 key={`vids-${iv.id}`}
                 interviewId={iv.id}
-                snapshot={(iv as unknown as { async_questions_snapshot?: Array<{ id: string; text: string }> }).async_questions_snapshot ?? null}
+                snapshot={
+                  (
+                    iv as unknown as {
+                      async_questions_snapshot?: Array<{ id: string; text: string }>;
+                    }
+                  ).async_questions_snapshot ?? null
+                }
               />
             ))}
         </div>
-
-
 
         {scs.length === 0 ? (
           <div className="text-sm text-muted-foreground py-6 text-center">
@@ -268,10 +303,14 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
             <div className="space-y-2">
               <Label>Template</Label>
               <Select value={selected} onValueChange={setSelected}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {scs.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -282,7 +321,10 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
                 {current.criteria.map((c) => (
                   <div key={c.key} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
-                      <span>{c.label} <span className="text-xs text-muted-foreground">(peso {c.weight})</span></span>
+                      <span>
+                        {c.label}{" "}
+                        <span className="text-xs text-muted-foreground">(peso {c.weight})</span>
+                      </span>
                       <span className="font-medium">{scores[c.key] ?? 0}/5</span>
                     </div>
                     <Slider
@@ -298,7 +340,9 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
                 <div className="space-y-2">
                   <Label>Recomendação</Label>
                   <Select value={recommendation} onValueChange={setRecommendation}>
-                    <SelectTrigger><SelectValue placeholder="Selecionar…" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecionar…" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="strong_yes">Strong yes</SelectItem>
                       <SelectItem value="yes">Yes</SelectItem>
@@ -320,7 +364,9 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
 
         {events.length > 0 && (
           <div className="mt-4 border-t pt-3">
-            <div className="text-xs font-medium text-muted-foreground mb-2">Histórico da candidatura</div>
+            <div className="text-xs font-medium text-muted-foreground mb-2">
+              Histórico da candidatura
+            </div>
             <ul className="space-y-1 max-h-40 overflow-y-auto text-xs">
               {events.map((e) => (
                 <li key={e.id} className="flex justify-between gap-2">
@@ -334,7 +380,9 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
                           : e.event_type}
                     {e.actor_name ? ` · ${e.actor_name}` : ""}
                   </span>
-                  <span className="text-muted-foreground whitespace-nowrap">{new Date(e.created_at).toLocaleString("pt-BR")}</span>
+                  <span className="text-muted-foreground whitespace-nowrap">
+                    {new Date(e.created_at).toLocaleString("pt-BR")}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -342,12 +390,13 @@ export function ScorecardEvalDialog({ open, onOpenChange, applicationId, jobId, 
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
           <Button onClick={handleSubmit} disabled={saving || !current}>
             {saving ? "Salvando…" : "Salvar avaliação"}
           </Button>
         </DialogFooter>
-
       </DialogContent>
       <ScheduleInterviewDialog
         open={showSchedule}

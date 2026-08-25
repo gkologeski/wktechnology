@@ -32,7 +32,8 @@ export function SaveAsTemplateButton({ listId, listName }: { listId: string; lis
   const qc = useQueryClient();
   const saveFn = useServerFn(saveListAsTemplate);
   const m = useMutation({
-    mutationFn: () => saveFn({ data: { listId, name: name.trim(), description: description || null } }),
+    mutationFn: () =>
+      saveFn({ data: { listId, name: name.trim(), description: description || null } }),
     onSuccess: () => {
       toast.success("Template salvo");
       setOpen(false);
@@ -43,7 +44,13 @@ export function SaveAsTemplateButton({ listId, listName }: { listId: string; lis
     onError: (e: Error) => toast.error(e.message),
   });
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (v && !name) setName(`${listName} — template`); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (v && !name) setName(`${listName} — template`);
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <BookmarkPlus className="h-4 w-4 mr-2" /> Salvar como template
@@ -60,15 +67,23 @@ export function SaveAsTemplateButton({ listId, listName }: { listId: string; lis
           </div>
           <div>
             <label className="text-sm font-medium">Descrição</label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
           </div>
           <p className="text-xs text-muted-foreground">
             Salvamos os status e campos personalizados desta lista. Tarefas não são copiadas.
           </p>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => m.mutate()} disabled={!name.trim() || m.isPending}>Salvar</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button onClick={() => m.mutate()} disabled={!name.trim() || m.isPending}>
+            Salvar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -146,9 +161,13 @@ export function CreateListFromTemplateButton({
           <div>
             <label className="text-sm font-medium">Escolha um template</label>
             {isLoading ? (
-              <div className="py-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin" /></div>
+              <div className="py-4 flex justify-center">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
             ) : templates.length === 0 ? (
-              <p className="text-xs text-muted-foreground mt-1">Nenhum template salvo ainda. Salve uma lista como template a partir da tela dela.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Nenhum template salvo ainda. Salve uma lista como template a partir da tela dela.
+              </p>
             ) : (
               <div className="mt-1 space-y-1.5 max-h-56 overflow-auto">
                 {templates.map((t: any) => (
@@ -161,16 +180,25 @@ export function CreateListFromTemplateButton({
                       <div className="font-medium">{t.name}</div>
                       <span
                         role="button"
-                        onClick={(e) => { e.stopPropagation(); deleteM.mutate(t.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteM.mutate(t.id);
+                        }}
                         className="text-muted-foreground hover:text-destructive"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </span>
                     </div>
-                    {t.description && <div className="text-xs text-muted-foreground truncate">{t.description}</div>}
+                    {t.description && (
+                      <div className="text-xs text-muted-foreground truncate">{t.description}</div>
+                    )}
                     <div className="mt-1 flex gap-1.5">
-                      <Badge variant="outline" className="text-[10px]">{(t.statuses ?? []).length} status</Badge>
-                      <Badge variant="outline" className="text-[10px]">{(t.custom_fields ?? []).length} campos</Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        {(t.statuses ?? []).length} status
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        {(t.custom_fields ?? []).length} campos
+                      </Badge>
                     </div>
                   </button>
                 ))}
@@ -186,8 +214,13 @@ export function CreateListFromTemplateButton({
           )}
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => createM.mutate()} disabled={!selectedId || !name.trim() || createM.isPending}>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => createM.mutate()}
+            disabled={!selectedId || !name.trim() || createM.isPending}
+          >
             Criar lista
           </Button>
         </DialogFooter>

@@ -36,7 +36,6 @@ function UnipileConnectedPage() {
     };
   }, [ok, state]);
 
-
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="max-w-md w-full text-center space-y-4 border rounded-lg p-8 bg-card">

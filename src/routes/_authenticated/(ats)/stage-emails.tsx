@@ -62,7 +62,6 @@ function StageEmailsPage() {
     (v) => setForm((f) => ({ ...f, body: v })),
   );
 
-
   const onSelectStage = (v: string) => {
     setStage(v);
     const found = rows.find((r) => r.stage_value === v);
@@ -112,8 +111,7 @@ function StageEmailsPage() {
         title="E-mails automáticos por etapa"
         description={
           <>
-            Quando uma candidatura entrar nesta etapa, um e-mail é enfileirado
-            para o candidato. Use{" "}
+            Quando uma candidatura entrar nesta etapa, um e-mail é enfileirado para o candidato. Use{" "}
             <code className="rounded bg-surface-sunken px-1 py-0.5 text-[11px]">
               {"{{candidate_name}}"}
             </code>
@@ -122,11 +120,8 @@ function StageEmailsPage() {
               {"{{job_title}}"}
             </code>{" "}
             e{" "}
-            <code className="rounded bg-surface-sunken px-1 py-0.5 text-[11px]">
-              {"{{stage}}"}
-            </code>{" "}
-            como variáveis. {configuredCount} de {DEFAULT_ATS_STAGES.length}{" "}
-            etapas configuradas.
+            <code className="rounded bg-surface-sunken px-1 py-0.5 text-[11px]">{"{{stage}}"}</code>{" "}
+            como variáveis. {configuredCount} de {DEFAULT_ATS_STAGES.length} etapas configuradas.
           </>
         }
         descriptionLive
@@ -151,8 +146,7 @@ function StageEmailsPage() {
               <SelectContent>
                 {DEFAULT_ATS_STAGES.map((s) => (
                   <SelectItem key={s.value} value={s.value}>
-                    {s.label}{" "}
-                    {rows.some((r) => r.stage_value === s.value) ? "·  ✓" : ""}
+                    {s.label} {rows.some((r) => r.stage_value === s.value) ? "·  ✓" : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -200,7 +194,6 @@ function StageEmailsPage() {
               onInsert={bodyInserter.insert}
             />
           </div>
-
 
           <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-border-subtle">
             {current && (

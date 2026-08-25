@@ -5,21 +5,25 @@ Hoje o upload real só existe em parte da tela de branding: o painel principal e
 ## O que muda
 
 ### 1. Upload em todos os campos de imagem do branding
+
 - Branding por módulo: "Logotipo (URL)" e "Favicon (URL)" passam a usar o mesmo controle de imagem com abas Upload / URL / Biblioteca (arrastar-e-soltar, prévia, remover).
 - Branding do e-mail de convite: o campo de logo também passa a aceitar upload.
 - O editor de tema (logo claro, logo escuro, símbolo, arte de login, ilustração de estado vazio) continua como está, apenas com validações melhores.
 
 ### 2. Validação por tipo de campo
+
 - Logos e ilustrações: PNG, JPG, WEBP, SVG, AVIF.
 - Favicon: PNG, SVG e ICO.
 - Limite por arquivo: 2 MB para logos/favicons, 5 MB para ilustrações e arte de login (mensagem clara ao exceder).
 - Aviso (não bloqueante) quando a imagem tem proporção ruim para o uso: favicon não quadrado, símbolo reduzido muito largo.
 
 ### 3. Assets organizados e URLs que não expiram na prática
+
 - Os arquivos de branding continuam no bucket de mídia já existente, isolados por workspace, agora sob um prefixo próprio de branding para ficarem identificáveis.
 - Ao carregar o branding, URLs de assets do próprio bucket que estejam perto de vencer são renovadas automaticamente e regravadas — o mesmo comportamento que a biblioteca de mídia já aplica.
 
 ### 4. Herança visível no módulo
+
 - Nos campos de imagem do módulo, quando não há upload próprio, o controle mostra a prévia herdada do workspace com a marcação "herdado" e um botão para voltar a herdar.
 
 ## Detalhes técnicos

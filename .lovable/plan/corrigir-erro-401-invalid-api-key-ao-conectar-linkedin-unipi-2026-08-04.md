@@ -69,8 +69,8 @@ registrar a chave em log.
   `checkUnipileCredentials` com `requireSupabaseAuth`, import dinâmico do
   `*.server`, retornando `{ ok, status, reason }` — nunca a chave.
 - Tela `/settings/integrations/linkedin`: botão secundário "Testar credenciais"
-  + bloco de estado usando os componentes oficiais do design system, com
-  loading/erro. Sem alteração de RLS, schema ou lógica de negócio.
+  - bloco de estado usando os componentes oficiais do design system, com
+    loading/erro. Sem alteração de RLS, schema ou lógica de negócio.
 - Nenhuma migration.
 
 ## Riscos e pendências

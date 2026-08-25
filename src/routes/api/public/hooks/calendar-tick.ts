@@ -13,7 +13,8 @@ export const Route = createFileRoute("/api/public/hooks/calendar-tick")({
           const r = await tickAllCalendars();
           return r as unknown as Record<string, unknown>;
         });
-        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        if (run.status === "error")
+          return Response.json({ ok: false, error: run.error }, { status: 500 });
         return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
       GET: async () => Response.json({ ok: true, hint: "POST with Bearer CRON_SECRET to run" }),

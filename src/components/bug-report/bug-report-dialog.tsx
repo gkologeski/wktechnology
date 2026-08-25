@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { Check, ChevronsUpDown, ImagePlus, Loader2, Maximize2, Mic, MicOff, Square, Video, X } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  ImagePlus,
+  Loader2,
+  Maximize2,
+  Mic,
+  MicOff,
+  Square,
+  Video,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -36,7 +47,6 @@ import { useAuth } from "@/lib/auth";
 import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 import { useScreenRecorder } from "./use-screen-recorder";
 
-
 export type BugReportQaContext = {
   testCaseId: string;
   testCaseTitle: string;
@@ -48,7 +58,10 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   qaContext?: BugReportQaContext | null;
-  onSubmitted?: (info: { bugReportId: string | null; qaContext?: BugReportQaContext | null }) => void;
+  onSubmitted?: (info: {
+    bugReportId: string | null;
+    qaContext?: BugReportQaContext | null;
+  }) => void;
 };
 
 const schema = z.object({
@@ -93,10 +106,7 @@ function SearchableSelect({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className={cn(
-            "w-full justify-between font-normal",
-            !current && "text-muted-foreground",
-          )}
+          className={cn("w-full justify-between font-normal", !current && "text-muted-foreground")}
         >
           <span className="truncate">{current?.label ?? placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -108,7 +118,6 @@ function SearchableSelect({
         onWheel={(e) => e.stopPropagation()}
         onTouchMove={(e) => e.stopPropagation()}
       >
-
         <Command
           filter={(itemValue, search) => {
             const opt = options.find((o) => o.value === itemValue);
@@ -130,10 +139,7 @@ function SearchableSelect({
                   }}
                 >
                   <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === o.value ? "opacity-100" : "opacity-0",
-                    )}
+                    className={cn("mr-2 h-4 w-4", value === o.value ? "opacity-100" : "opacity-0")}
                   />
                   {o.label}
                 </CommandItem>
@@ -145,7 +151,6 @@ function SearchableSelect({
     </Popover>
   );
 }
-
 
 export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: Props) {
   const { user } = useAuth();
@@ -219,7 +224,12 @@ export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: 
       toast.error("Você precisa estar autenticado.");
       return;
     }
-    const parsed = schema.safeParse({ kind, category, subtype, description: htmlToPlain(description) });
+    const parsed = schema.safeParse({
+      kind,
+      category,
+      subtype,
+      description: htmlToPlain(description),
+    });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Preencha todos os campos");
       return;
@@ -371,7 +381,6 @@ export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: 
               </div>
             </div>
 
-
             <div className="space-y-2">
               <Label>Descrição</Label>
               <RichHtmlEditor
@@ -380,7 +389,9 @@ export function BugReportDialog({ open, onOpenChange, qaContext, onSubmitted }: 
                 minHeight={160}
                 placeholder="O que você esperava? O que aconteceu? Em qual tela?"
               />
-              <p className="text-xs text-muted-foreground text-right">{htmlToPlain(description).length}/4000</p>
+              <p className="text-xs text-muted-foreground text-right">
+                {htmlToPlain(description).length}/4000
+              </p>
             </div>
 
             <div className="rounded-lg border p-3 space-y-3">

@@ -31,11 +31,7 @@ export function useAutoCreateParam(open: () => void) {
     // Remove o parâmetro da URL sem disparar navegação adicional.
     const url = new URL(window.location.href);
     url.searchParams.delete("create");
-    window.history.replaceState(
-      {},
-      "",
-      url.pathname + (url.search ? url.search : "") + url.hash,
-    );
+    window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + url.hash);
     setTimeout(() => openRef.current(), 0);
   }, [search]);
 }

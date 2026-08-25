@@ -8,14 +8,16 @@ const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 export const generateJobDescription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({
-      title: z.string().min(2),
-      seniority: z.string().optional(),
-      location: z.string().optional(),
-      modality: z.string().optional(),
-      notes: z.string().optional(),
-      language: z.string().default("pt-BR"),
-    }).parse(d),
+    z
+      .object({
+        title: z.string().min(2),
+        seniority: z.string().optional(),
+        location: z.string().optional(),
+        modality: z.string().optional(),
+        notes: z.string().optional(),
+        language: z.string().default("pt-BR"),
+      })
+      .parse(d),
   )
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
@@ -27,11 +29,18 @@ export const generateJobDescription = createServerFn({ method: "POST" })
       headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
-        messages: [{ role: "system", content: sys }, { role: "user", content: usr }],
+        messages: [
+          { role: "system", content: sys },
+          { role: "user", content: usr },
+        ],
         response_format: { type: "json_object" },
       }),
     });
     if (!r.ok) throw new Error(`AI Gateway ${r.status}`);
     const j = await r.json();
-    try { return JSON.parse(j.choices?.[0]?.message?.content ?? "{}"); } catch { return {}; }
+    try {
+      return JSON.parse(j.choices?.[0]?.message?.content ?? "{}");
+    } catch {
+      return {};
+    }
   });

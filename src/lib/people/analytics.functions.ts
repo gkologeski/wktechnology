@@ -64,25 +64,29 @@ export const getPeopleAnalytics = createServerFn({ method: "POST" })
   .handler(async ({ context }): Promise<PeopleAnalyticsRow> => {
     const { supabase } = context;
 
-    const peopleRes = await (supabase.from("people") as unknown as {
-      select: (c: string) => {
-        eq: (k: string, v: boolean) => Promise<{ data: PersonMini[] | null; error: unknown }>;
-      };
-    })
-      .select(
-        "id, status, employment_type, hire_date, termination_date, monthly_cost, archived",
-      )
+    const peopleRes = await (
+      supabase.from("people") as unknown as {
+        select: (c: string) => {
+          eq: (k: string, v: boolean) => Promise<{ data: PersonMini[] | null; error: unknown }>;
+        };
+      }
+    )
+      .select("id, status, employment_type, hire_date, termination_date, monthly_cost, archived")
       .eq("archived", false);
     const people: PersonMini[] = peopleRes.data ?? [];
 
-    const benRes = await (supabase.from("people_benefits") as unknown as {
-      select: (c: string) => Promise<{ data: BenefitMini[] | null; error: unknown }>;
-    }).select("monthly_value, active, starts_on, ends_on");
+    const benRes = await (
+      supabase.from("people_benefits") as unknown as {
+        select: (c: string) => Promise<{ data: BenefitMini[] | null; error: unknown }>;
+      }
+    ).select("monthly_value, active, starts_on, ends_on");
     const benefits: BenefitMini[] = benRes.data ?? [];
 
-    const allocRes = await (supabase.from("people_allocations") as unknown as {
-      select: (c: string) => Promise<{ data: AllocMini[] | null; error: unknown }>;
-    }).select("status, allocation_pct, billable_rate, cost_rate");
+    const allocRes = await (
+      supabase.from("people_allocations") as unknown as {
+        select: (c: string) => Promise<{ data: AllocMini[] | null; error: unknown }>;
+      }
+    ).select("status, allocation_pct, billable_rate, cost_rate");
     const allocations: AllocMini[] = allocRes.data ?? [];
 
     // Headcount ativo = status != terminated
@@ -122,17 +126,12 @@ export const getPeopleAnalytics = createServerFn({ method: "POST" })
     const turnover_rate_12m = (totalTerms / avgHeadcount) * 100;
 
     // Custos: apenas pessoas ativas
-    const monthly_cost_total = activePeople.reduce(
-      (s, p) => s + Number(p.monthly_cost ?? 0),
-      0,
-    );
+    const monthly_cost_total = activePeople.reduce((s, p) => s + Number(p.monthly_cost ?? 0), 0);
     const today = new Date().toISOString().slice(0, 10);
     const benefits_total = benefits
       .filter(
         (b) =>
-          b.active &&
-          (!b.starts_on || b.starts_on <= today) &&
-          (!b.ends_on || b.ends_on >= today),
+          b.active && (!b.starts_on || b.starts_on <= today) && (!b.ends_on || b.ends_on >= today),
       )
       .reduce((s, b) => s + Number(b.monthly_value ?? 0), 0);
     const total_cost_monthly = monthly_cost_total + benefits_total;

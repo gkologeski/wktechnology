@@ -110,10 +110,7 @@ export const deletePersonDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_documents")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("people_documents").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -121,7 +118,8 @@ export const deletePersonDocument = createServerFn({ method: "POST" })
 export const listPersonTimeline = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z.object({ person_id: z.string().uuid(), limit: z.number().int().min(1).max(200).default(50) })
+    z
+      .object({ person_id: z.string().uuid(), limit: z.number().int().min(1).max(200).default(50) })
       .parse(i),
   )
   .handler(async ({ data, context }) => {

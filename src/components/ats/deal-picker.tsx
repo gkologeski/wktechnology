@@ -2,11 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Briefcase, Check, ChevronDown, Loader2, X } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
   CommandEmpty,
@@ -159,9 +155,7 @@ export function DealPicker({
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-sm">{d.name}</div>
                             {priceLabel ? (
-                              <div className="text-[11px] text-text-tertiary">
-                                {priceLabel}
-                              </div>
+                              <div className="text-[11px] text-text-tertiary">{priceLabel}</div>
                             ) : null}
                           </div>
                         </CommandItem>

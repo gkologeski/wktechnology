@@ -7,7 +7,6 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const INTEGRATIONS_MANAGE = "system.integrations.manage.workspace";
 
-
 const TRANSIENT_DB_MESSAGES = [
   "could not query the database for the schema cache",
   "statement timeout",
@@ -234,7 +233,6 @@ export const setCreditLimit = createServerFn({ method: "POST" })
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, INTEGRATIONS_MANAGE);
     const { error } = await supabase.from("credit_limits").upsert(
-
       {
         owner_id: userId,
         workspace_id: workspaceId,

@@ -57,4 +57,3 @@ export function TokenPills({ tokens, onInsert, label = "Variáveis", className }
     </div>
   );
 }
-

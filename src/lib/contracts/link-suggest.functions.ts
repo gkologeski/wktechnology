@@ -46,7 +46,6 @@ export type SuggestLinksResult = {
   run_id: string;
 };
 
-
 export type SuggestionHistoryRow = {
   id: string;
   run_id: string;
@@ -62,7 +61,6 @@ export type SuggestionHistoryRow = {
   pending: { id: string; number: string | null; title: string; role: string };
   target: { id: string; number: string | null; title: string; role: string };
 };
-
 
 export const suggestContractLinks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -127,7 +125,6 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
     const ruleSuggestions: LinkSuggestion[] = [];
     const referencedByPending = new Map<string, string>();
 
-
     for (const p of pendingRows) {
       const pending = metaById.get(p.id);
       if (!pending) continue;
@@ -155,7 +152,6 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
 
       // 2) Compra → prestação pelo número citado no documento.
       if (pendingRole === "client") {
-
         const hit = resolveReferencedContract(
           p.referenced_numbers,
           providers.map((c) => ({ id: c.id, number: c.number, selfNumber: c.self_number })),
@@ -164,7 +160,6 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
           const isOurs = isOwnParty(own, pending.contracting_cnpj, pending.contracting_name);
           referencedByPending.set(pending.id, hit.matchedNumber);
           ruleSuggestions.push({
-
             pending_id: pending.id,
             target_id: hit.id,
             kind: "parent",
@@ -327,9 +322,6 @@ export const suggestContractLinks = createServerFn({ method: "POST" })
         `${roleConflicts.length} contrato(s) com papel gravado divergente dos CNPJs extraídos. Revise o papel antes de aplicar os vínculos.`,
       );
     }
-
-
-
 
     // Histórico: propostas anteriores ainda não decididas passam a "reavaliadas".
     if (suggestions.length > 0) {
@@ -505,4 +497,3 @@ export const decideContractLinkSuggestion = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-

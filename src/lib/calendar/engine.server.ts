@@ -248,7 +248,10 @@ async function resolveDealForCalendarContact(
     .limit(1)
     .maybeSingle();
   if (primaryDeal?.id) {
-    return { id: primaryDeal.id as string, company_id: (primaryDeal.company_id as string | null) ?? null };
+    return {
+      id: primaryDeal.id as string,
+      company_id: (primaryDeal.company_id as string | null) ?? null,
+    };
   }
 
   const { data: dealLinks } = await supabaseAdmin
@@ -290,10 +293,7 @@ function computeMeetingKey(input: {
   return null;
 }
 
-async function propagateRecordingToActivity(
-  eventId: string,
-  recordingUrl: string,
-): Promise<void> {
+async function propagateRecordingToActivity(eventId: string, recordingUrl: string): Promise<void> {
   const { data: ev } = await supabaseAdmin
     .from("calendar_events")
     .select("related_activity_id")
@@ -329,7 +329,6 @@ async function propagateRecordingToActivity(
     } as never)
     .eq("id", activityId);
 }
-
 
 async function ensureActivityForCalendarEvent(event: {
   id: string;
@@ -392,7 +391,9 @@ async function ensureActivityForCalendarEvent(event: {
       .limit(25);
     const found = (legacy ?? []).find((activity) => {
       const ext = (activity.external_ids ?? {}) as Record<string, unknown>;
-      return ext.calendar_event_id === event.id || ext.provider_event_id === event.provider_event_id;
+      return (
+        ext.calendar_event_id === event.id || ext.provider_event_id === event.provider_event_id
+      );
     });
     if (found?.id) {
       matchingActivity = {
@@ -477,7 +478,6 @@ async function ensureActivityForCalendarEvent(event: {
 
   return { activityId: (inserted?.id as string | null) ?? null, created: true };
 }
-
 
 export async function reconcileCalendarActivityLinks(
   ownerId: string,
@@ -571,8 +571,7 @@ async function driveListVideos(
 ): Promise<DriveListPage> {
   const params = new URLSearchParams({
     q,
-    fields:
-      "nextPageToken,files(id,name,mimeType,webViewLink,createdTime,modifiedTime)",
+    fields: "nextPageToken,files(id,name,mimeType,webViewLink,createdTime,modifiedTime)",
     pageSize: "200",
     orderBy: "modifiedTime desc",
     includeItemsFromAllDrives: "true",
@@ -636,21 +635,19 @@ export async function indexMeetRecordings(
       if (!code) continue;
 
       const url = file.webViewLink ?? `https://drive.google.com/file/d/${file.id}/view`;
-      const { error: upErr } = await supabaseAdmin
-        .from("meet_recording_index")
-        .upsert(
-          {
-            owner_id: account.owner_id,
-            meet_code: code,
-            drive_file_id: file.id,
-            drive_url: url,
-            mime_type: file.mimeType,
-            file_name: file.name,
-            file_created_at: file.createdTime ?? null,
-            discovered_by: account.id,
-          } as never,
-          { onConflict: "owner_id,meet_code" },
-        );
+      const { error: upErr } = await supabaseAdmin.from("meet_recording_index").upsert(
+        {
+          owner_id: account.owner_id,
+          meet_code: code,
+          drive_file_id: file.id,
+          drive_url: url,
+          mime_type: file.mimeType,
+          file_name: file.name,
+          file_created_at: file.createdTime ?? null,
+          discovered_by: account.id,
+        } as never,
+        { onConflict: "owner_id,meet_code" },
+      );
       if (upErr) {
         console.warn("[meet-index] upsert falhou", {
           code,
@@ -693,7 +690,10 @@ async function matchRecordingByCode(
 > {
   const code = (conferenceId ?? "").trim().toLowerCase();
   if (!code) {
-    return { ok: false, reason: "evento sem código do Meet — não é possível casar gravação com segurança" };
+    return {
+      ok: false,
+      reason: "evento sem código do Meet — não é possível casar gravação com segurança",
+    };
   }
   const { data, error } = await supabaseAdmin
     .from("meet_recording_index")
@@ -711,7 +711,6 @@ async function matchRecordingByCode(
     matched_by: "meet-code-index",
   };
 }
-
 
 // (removido) cap de tentativas — o lookup é O(1) contra o índice, então
 // re-tentar em cada tick é barato e cobre o caso "MP4 publicado depois".
@@ -764,10 +763,7 @@ export async function syncPastRecordings(
   for (const ev of events ?? []) {
     const attempts = ((ev as { recording_attempts?: number }).recording_attempts ?? 0) + 1;
     try {
-      const rec = await matchRecordingByCode(
-        account.owner_id,
-        ev.conference_id as string | null,
-      );
+      const rec = await matchRecordingByCode(account.owner_id, ev.conference_id as string | null);
       if (rec.ok) {
         const { error: upErr } = await supabaseAdmin
           .from("calendar_events")
@@ -804,7 +800,6 @@ export async function syncPastRecordings(
             });
           }
         }
-
       } else {
         missing++;
         console.warn("[drive recording] não encontrada", {
@@ -1334,7 +1329,6 @@ export async function syncRecordingForEvent(
       });
     }
     return { ok: true, recording_url: rec.url, recording_status: "available" };
-
   }
   await supabaseAdmin
     .from("calendar_events")

@@ -40,11 +40,11 @@ Registro central: tabela `integrations`, tela `/integrations`, marketplace em
 
 ## 3. Enriquecimento e dados de mercado
 
-| Provedor | Uso | Notas |
-| --- | --- | --- |
-| **Apollo.io** | busca de prospects, enriquecimento de lead/empresa/contato | usado na qualificação e no hunting; jobs em `enrichment_jobs` |
-| **Lusha** | enriquecimento alternativo de contato | opcional |
-| **BrasilAPI / ViaCEP** | CNPJ, endereço, CEP | gratuito, sem credencial |
+| Provedor               | Uso                                                        | Notas                                                         |
+| ---------------------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
+| **Apollo.io**          | busca de prospects, enriquecimento de lead/empresa/contato | usado na qualificação e no hunting; jobs em `enrichment_jobs` |
+| **Lusha**              | enriquecimento alternativo de contato                      | opcional                                                      |
+| **BrasilAPI / ViaCEP** | CNPJ, endereço, CEP                                        | gratuito, sem credencial                                      |
 
 Enriquecimento é assíncrono e idempotente (há proteção contra race condition na
 gravação do resultado).

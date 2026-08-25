@@ -99,7 +99,6 @@ function readConfig(providerConfig: unknown): LinkedinJobConfig | null {
   };
 }
 
-
 function mockPost(input: JobPostPayload, reason: string): AdapterResult<JobPostResult> {
   const externalId = `mock-li-${input.jobId.slice(0, 8)}-${Date.now().toString(36)}`;
   return {
@@ -165,8 +164,7 @@ export const LinkedInJobBoardAdapter: JobBoardAdapter = {
       }
 
       let url =
-        (res?.url as string | undefined) ??
-        `https://www.linkedin.com/jobs/view/${externalId}`;
+        (res?.url as string | undefined) ?? `https://www.linkedin.com/jobs/view/${externalId}`;
 
       // Passo 2 — publicar o rascunho.
       const mode: "FREE" | "PROMOTED" = cfg.publishMode;
@@ -209,9 +207,8 @@ export const LinkedInJobBoardAdapter: JobBoardAdapter = {
       }
 
       const published = await publishLinkedinJob(upCtx, externalId, { mode, budget });
-      const publishedUrl = (published?.url ?? (published?.job as Record<string, unknown> | undefined)?.url) as
-        | string
-        | undefined;
+      const publishedUrl = (published?.url ??
+        (published?.job as Record<string, unknown> | undefined)?.url) as string | undefined;
       if (publishedUrl) url = publishedUrl;
 
       return { ok: true, data: { externalId, url } };
@@ -222,7 +219,6 @@ export const LinkedInJobBoardAdapter: JobBoardAdapter = {
         retriable: true,
       };
     }
-
   },
 
   async updateJob(_ctx, input) {
@@ -241,9 +237,7 @@ export const LinkedInJobBoardAdapter: JobBoardAdapter = {
     const connected = await hasConnectedAccount(ctx.ownerId);
     if (!connected) return { ok: true, data: { closed: true } };
     try {
-      const { loadAccountCtx, closeLinkedinJob } = await import(
-        "@/lib/unipile/client.server"
-      );
+      const { loadAccountCtx, closeLinkedinJob } = await import("@/lib/unipile/client.server");
       const upCtx = await loadAccountCtx(ctx.ownerId);
       await closeLinkedinJob(upCtx, externalId);
       return { ok: true, data: { closed: true } };
@@ -264,9 +258,8 @@ export const LinkedInJobBoardAdapter: JobBoardAdapter = {
       return { ok: false, error: "no_unipile_account", retriable: false };
     }
     try {
-      const { loadAccountCtx, listLinkedinJobApplicants } = await import(
-        "@/lib/unipile/client.server"
-      );
+      const { loadAccountCtx, listLinkedinJobApplicants } =
+        await import("@/lib/unipile/client.server");
       const upCtx = await loadAccountCtx(ctx.ownerId);
       const res = await listLinkedinJobApplicants(upCtx, {
         providerJobId: input.externalId,
@@ -308,8 +301,14 @@ function normalizeApplicant(raw: Record<string, unknown>): JobApplicantRecord | 
 
   const profile = (raw.profile ?? raw.applicant ?? raw.candidate ?? raw) as Record<string, unknown>;
 
-  const firstName = pickString(profile.first_name, (profile.name as Record<string, unknown> | undefined)?.first);
-  const lastName = pickString(profile.last_name, (profile.name as Record<string, unknown> | undefined)?.last);
+  const firstName = pickString(
+    profile.first_name,
+    (profile.name as Record<string, unknown> | undefined)?.first,
+  );
+  const lastName = pickString(
+    profile.last_name,
+    (profile.name as Record<string, unknown> | undefined)?.last,
+  );
   const fullName =
     pickString(profile.full_name, profile.name, raw.name) ??
     ([firstName, lastName].filter(Boolean).join(" ").trim() || null);
@@ -338,7 +337,11 @@ function normalizeApplicant(raw: Record<string, unknown>): JobApplicantRecord | 
     profile.city,
   );
   const headline = pickString(profile.headline, profile.title, profile.occupation);
-  const resumeUrl = pickString(raw.resume_url, raw.cv_url, (raw.resume as Record<string, unknown> | undefined)?.url);
+  const resumeUrl = pickString(
+    raw.resume_url,
+    raw.cv_url,
+    (raw.resume as Record<string, unknown> | undefined)?.url,
+  );
   const appliedAt = pickString(raw.applied_at, raw.created_at, raw.timestamp);
 
   return {

@@ -75,7 +75,6 @@ export const getFolderPath = createServerFn({ method: "GET" })
       if (res.error || !row) break;
       trail.unshift({ id: row.id, name: row.name });
       current = row.parent_id;
-
     }
     return trail;
   });
@@ -141,7 +140,11 @@ export const deleteFile = createServerFn({ method: "POST" })
     if (row?.storage_path) {
       await supabase.storage.from("user-files").remove([row.storage_path]);
     }
-    const { error } = await supabase.from("user_files").delete().eq("id", data.id).eq("workspace_id", workspaceId);
+    const { error } = await supabase
+      .from("user_files")
+      .delete()
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -158,8 +161,16 @@ export const deleteFolder = createServerFn({ method: "POST" })
     while (stack.length) {
       const cur = stack.pop()!;
       const [{ data: children }, { data: files }] = await Promise.all([
-        supabase.from("user_file_folders").select("id").eq("workspace_id", workspaceId).eq("parent_id", cur),
-        supabase.from("user_files").select("storage_path").eq("workspace_id", workspaceId).eq("folder_id", cur),
+        supabase
+          .from("user_file_folders")
+          .select("id")
+          .eq("workspace_id", workspaceId)
+          .eq("parent_id", cur),
+        supabase
+          .from("user_files")
+          .select("storage_path")
+          .eq("workspace_id", workspaceId)
+          .eq("folder_id", cur),
       ]);
       (children ?? []).forEach((c: { id: string }) => stack.push(c.id));
       (files ?? []).forEach((f: { storage_path: string }) => paths.push(f.storage_path));

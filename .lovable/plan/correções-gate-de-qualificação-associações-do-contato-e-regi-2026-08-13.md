@@ -19,6 +19,7 @@ Tarefas, E-mails e Anexos — **não existe card de Leads**. Por isso o lead de 
 nunca aparece no contato.
 
 Correção:
+
 - Novo card "Leads" nas associações de Contato (leads cujo `converted_contact_id`
   é o contato) e de Empresa (leads com `company_id` da empresa), com link para o
   lead, etapa atual e empty state padrão.
@@ -36,6 +37,7 @@ retorna vazia porque não há atividade correspondente.
 
 Correção: ao concluir a qualificação (decisão diferente de pendente), registrar uma
 atividade do tipo pesquisa vinculada ao lead/contato, com:
+
 - assunto "Qualificação — <nome do questionário>";
 - corpo com decisão (Qualificado / Desqualificado / Nutrição / Agendado), score e
   percentual do máximo, e motivo quando houver;

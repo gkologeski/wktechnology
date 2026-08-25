@@ -55,7 +55,9 @@ export const getCadence = createServerFn({ method: "POST" })
         .order("step_order", { ascending: true }),
       context.supabase
         .from("prospecting_enrollments")
-        .select("id, entity, entity_id, status, current_step, next_run_at, started_at, finished_at, last_error")
+        .select(
+          "id, entity, entity_id, status, current_step, next_run_at, started_at, finished_at, last_error",
+        )
         .eq("cadence_id", data.id)
         .order("started_at", { ascending: false })
         .limit(200),
@@ -85,7 +87,12 @@ export const upsertCadence = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
-    await assertAnyPermission(context.supabase, context.userId, ws, asKeys(data.id ? CADENCES_UPDATE : CADENCES_CREATE));
+    await assertAnyPermission(
+      context.supabase,
+      context.userId,
+      ws,
+      asKeys(data.id ? CADENCES_UPDATE : CADENCES_CREATE),
+    );
     const payload = {
       owner_id: context.userId,
       name: data.name,

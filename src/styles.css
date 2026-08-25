@@ -134,9 +134,9 @@
   --hs-stage-1: oklch(0.72 0.04 250); /* slate */
   --hs-stage-2: oklch(0.68 0.12 230); /* blue */
   --hs-stage-3: oklch(0.72 0.13 200); /* teal */
-  --hs-stage-4: oklch(0.74 0.14 90);  /* amber */
+  --hs-stage-4: oklch(0.74 0.14 90); /* amber */
   --hs-stage-won: oklch(0.65 0.16 150); /* green */
-  --hs-stage-lost: oklch(0.62 0.2 27);  /* red */
+  --hs-stage-lost: oklch(0.62 0.2 27); /* red */
 
   /* Ticket priority */
   --priority-low: oklch(0.72 0.04 250);
@@ -278,28 +278,51 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-feature-settings: "cv11", "ss01";
-    font-family: var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+    font-family: var(
+      --font-body,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      "Segoe UI",
+      Roboto,
+      sans-serif
+    );
   }
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: var(--font-heading, var(--font-body, ui-sans-serif, system-ui));
   }
-  :root[data-density="compact"] { --density-scale: 0.875; }
-  :root[data-density="comfortable"] { --density-scale: 1.05; }
+  :root[data-density="compact"] {
+    --density-scale: 0.875;
+  }
+  :root[data-density="comfortable"] {
+    --density-scale: 1.05;
+  }
 
   /* Ícones (white-label): espessura e tamanho base configuráveis */
-  :root { --icon-stroke: 2; --icon-size: 16px; }
-  svg.lucide { stroke-width: var(--icon-stroke); }
+  :root {
+    --icon-stroke: 2;
+    --icon-size: 16px;
+  }
+  svg.lucide {
+    stroke-width: var(--icon-stroke);
+  }
   svg.lucide:not([class*="h-"]):not([class*="size-"]):not([width]) {
     width: var(--icon-size);
     height: var(--icon-size);
   }
 }
-
 
 /* react-phone-number-input — theme bridge */
 .phone-input-wrapper .PhoneInputCountry {
@@ -317,7 +340,10 @@
   opacity: 0.5;
   margin-left: 2px;
 }
-.phone-input-wrapper input:disabled { cursor: not-allowed; opacity: 0.6; }
+.phone-input-wrapper input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
 
 /* Garantir legibilidade de qualquer texto selecionado em todo o sistema */
 ::selection {
@@ -329,36 +355,71 @@
   color: #000;
 }
 
-
 /* Kanban: persistent top scrollbar that mirrors the board's horizontal scroll */
-.kanban-scroll-wrapper { outline: none; }
-.kanban-scroll-wrapper:focus-visible { box-shadow: 0 0 0 2px var(--ring); border-radius: 6px; }
+.kanban-scroll-wrapper {
+  outline: none;
+}
+.kanban-scroll-wrapper:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+  border-radius: 6px;
+}
 .kanban-top-scroll {
   height: 14px;
   scrollbar-width: thin;
   scrollbar-gutter: stable;
   overscroll-behavior-x: contain;
 }
-.kanban-top-scroll::-webkit-scrollbar { height: 12px; width: 12px; -webkit-appearance: none; display: block; }
-.kanban-top-scroll::-webkit-scrollbar-track { background: color-mix(in oklab, var(--muted) 60%, transparent); border-radius: 8px; }
-.kanban-top-scroll::-webkit-scrollbar-thumb { background: color-mix(in oklab, var(--foreground) 35%, transparent); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; min-width: 40px; }
-.kanban-top-scroll::-webkit-scrollbar-thumb:hover { background: color-mix(in oklab, var(--foreground) 55%, transparent); background-clip: padding-box; border: 2px solid transparent; }
+.kanban-top-scroll::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+  -webkit-appearance: none;
+  display: block;
+}
+.kanban-top-scroll::-webkit-scrollbar-track {
+  background: color-mix(in oklab, var(--muted) 60%, transparent);
+  border-radius: 8px;
+}
+.kanban-top-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--foreground) 35%, transparent);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  min-width: 40px;
+}
+.kanban-top-scroll::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--foreground) 55%, transparent);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
 /* Hide the bottom (content) horizontal scrollbar — top one is the source of truth */
-.kanban-content-scroll { scrollbar-width: none; overscroll-behavior-x: contain; }
-.kanban-content-scroll::-webkit-scrollbar { height: 0; display: none; }
+.kanban-content-scroll {
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.kanban-content-scroll::-webkit-scrollbar {
+  height: 0;
+  display: none;
+}
 
 /* Utility: prevent horizontal overscroll from triggering browser back/forward
    navigation on trackpad swipes. Apply to any horizontally scrollable container. */
-[class*="overflow-x-auto"], [class*="overflow-x-scroll"] { overscroll-behavior-x: contain; }
-
+[class*="overflow-x-auto"],
+[class*="overflow-x-scroll"] {
+  overscroll-behavior-x: contain;
+}
 
 /* Globally enable custom scrollbar styling so the arrow-button hide rule
    actually takes effect (Webkit only matches ::-webkit-scrollbar-* pseudo
    rules when ::-webkit-scrollbar itself is styled). Without this, classic
    Windows Chrome shows tiny up/down arrows at the ends of every vertical
    scrollbar, which look like dead controls next to toolbars. */
-*::-webkit-scrollbar { width: 10px; height: 10px; }
-*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
 *::-webkit-scrollbar-thumb {
   background: color-mix(in oklab, var(--foreground) 22%, transparent);
   border-radius: 8px;
@@ -377,31 +438,85 @@
   height: 0;
 }
 
-
 @keyframes bell-shake {
-  0%, 100% { transform: rotate(0deg); }
-  15% { transform: rotate(-14deg); }
-  30% { transform: rotate(12deg); }
-  45% { transform: rotate(-10deg); }
-  60% { transform: rotate(8deg); }
-  75% { transform: rotate(-4deg); }
-  90% { transform: rotate(2deg); }
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(-14deg);
+  }
+  30% {
+    transform: rotate(12deg);
+  }
+  45% {
+    transform: rotate(-10deg);
+  }
+  60% {
+    transform: rotate(8deg);
+  }
+  75% {
+    transform: rotate(-4deg);
+  }
+  90% {
+    transform: rotate(2deg);
+  }
 }
-.animate-bell-shake { animation: bell-shake 0.8s ease-in-out 1; transform-origin: top center; }
+.animate-bell-shake {
+  animation: bell-shake 0.8s ease-in-out 1;
+  transform-origin: top center;
+}
 
 /* Rich HTML content (HtmlContent) — minimal typography without @tailwindcss/typography */
-.prose { color: var(--foreground); line-height: 1.55; }
-.prose p { margin-block: 0.5em; }
-.prose ul { list-style: disc; padding-inline-start: 1.4em; margin-block: 0.5em; }
-.prose ol { list-style: decimal; padding-inline-start: 1.4em; margin-block: 0.5em; }
-.prose li { margin-block: 0.2em; }
-.prose li > p { margin-block: 0.2em; }
-.prose h1 { font-size: 1.25em; font-weight: 700; margin-block: 0.6em 0.3em; }
-.prose h2 { font-size: 1.15em; font-weight: 700; margin-block: 0.6em 0.3em; }
-.prose h3 { font-size: 1.05em; font-weight: 600; margin-block: 0.5em 0.25em; }
-.prose a { color: var(--primary); text-decoration: underline; text-underline-offset: 2px; }
-.prose strong { font-weight: 600; }
-.prose em { font-style: italic; }
+.prose {
+  color: var(--foreground);
+  line-height: 1.55;
+}
+.prose p {
+  margin-block: 0.5em;
+}
+.prose ul {
+  list-style: disc;
+  padding-inline-start: 1.4em;
+  margin-block: 0.5em;
+}
+.prose ol {
+  list-style: decimal;
+  padding-inline-start: 1.4em;
+  margin-block: 0.5em;
+}
+.prose li {
+  margin-block: 0.2em;
+}
+.prose li > p {
+  margin-block: 0.2em;
+}
+.prose h1 {
+  font-size: 1.25em;
+  font-weight: 700;
+  margin-block: 0.6em 0.3em;
+}
+.prose h2 {
+  font-size: 1.15em;
+  font-weight: 700;
+  margin-block: 0.6em 0.3em;
+}
+.prose h3 {
+  font-size: 1.05em;
+  font-weight: 600;
+  margin-block: 0.5em 0.25em;
+}
+.prose a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose strong {
+  font-weight: 600;
+}
+.prose em {
+  font-style: italic;
+}
 .prose blockquote {
   border-left: 3px solid var(--border);
   padding-inline-start: 0.75em;
@@ -422,14 +537,28 @@
   overflow-x: auto;
   margin-block: 0.6em;
 }
-.prose pre code { background: transparent; padding: 0; }
-.prose hr { border-color: var(--border); margin-block: 0.8em; }
+.prose pre code {
+  background: transparent;
+  padding: 0;
+}
+.prose hr {
+  border-color: var(--border);
+  margin-block: 0.8em;
+}
 
 /* Impressão — dashboard exportado em PDF via window.print(). */
 @media print {
-  @page { size: A4; margin: 12mm; }
-  body > * { visibility: hidden !important; }
-  .print-root, .print-root * { visibility: visible !important; }
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  body > * {
+    visibility: hidden !important;
+  }
+  .print-root,
+  .print-root * {
+    visibility: visible !important;
+  }
   .print-root {
     position: absolute !important;
     inset: 0 !important;
@@ -437,6 +566,11 @@
     background: white !important;
     color: black !important;
   }
-  .print-root .text-muted-foreground { color: #555 !important; }
-  .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
+  .print-root .text-muted-foreground {
+    color: #555 !important;
+  }
+  .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }

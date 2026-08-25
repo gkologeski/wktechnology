@@ -419,10 +419,7 @@ export const syncBankStatement = createServerFn({ method: "POST" })
       return { ok: true, count: rows.length, inserted, balance };
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      await supabase
-        .from("bank_connections")
-        .update({ last_error: msg })
-        .eq("id", conn.id);
+      await supabase.from("bank_connections").update({ last_error: msg }).eq("id", conn.id);
       await supabase.from("bank_connection_events").insert({
         connection_id: conn.id,
         workspace_id: workspaceId,
@@ -524,15 +521,14 @@ export const setStatementReconciliation = createServerFn({ method: "POST" })
 // -------------------------------------------------------------------
 export const suggestReconciliationMatches = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (data: { connection_id: string; window_days?: number; limit?: number }) =>
-      z
-        .object({
-          connection_id: z.string().uuid(),
-          window_days: z.number().int().min(0).max(30).default(5),
-          limit: z.number().int().min(1).max(200).default(50),
-        })
-        .parse(data),
+  .inputValidator((data: { connection_id: string; window_days?: number; limit?: number }) =>
+    z
+      .object({
+        connection_id: z.string().uuid(),
+        window_days: z.number().int().min(0).max(30).default(5),
+        limit: z.number().int().min(1).max(200).default(50),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -565,9 +561,7 @@ export const suggestReconciliationMatches = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId)
       .eq("reconciliation_status", "matched")
       .not("matched_payment_id", "is", null);
-    const usedIds = new Set(
-      (usedRows ?? []).map((r: any) => r.matched_payment_id).filter(Boolean),
-    );
+    const usedIds = new Set((usedRows ?? []).map((r: any) => r.matched_payment_id).filter(Boolean));
 
     const { data: pays, error: pErr } = await supabase
       .from("financial_payments")
@@ -614,11 +608,7 @@ export const suggestReconciliationMatches = createServerFn({ method: "POST" })
 export const listReconciliationHistory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (data: {
-      connection_id: string;
-      status?: "matched" | "ignored" | "all";
-      limit?: number;
-    }) =>
+    (data: { connection_id: string; status?: "matched" | "ignored" | "all"; limit?: number }) =>
       z
         .object({
           connection_id: z.string().uuid(),
@@ -632,26 +622,21 @@ export const listReconciliationHistory = createServerFn({ method: "POST" })
     const workspaceId = await getCurrentWorkspace(supabase, userId);
     await assertAdmin(supabase, workspaceId, userId);
 
-    let q = supabase
+    const q = supabase
       .from("bank_statement_transactions")
       .select(
         "id, posted_at, amount, direction, description, counterparty, reconciliation_status, matched_payment_id, updated_at",
       )
       .eq("workspace_id", workspaceId)
       .eq("connection_id", data.connection_id)
-      .in(
-        "reconciliation_status",
-        data.status === "all" ? ["matched", "ignored"] : [data.status],
-      )
+      .in("reconciliation_status", data.status === "all" ? ["matched", "ignored"] : [data.status])
       .order("updated_at", { ascending: false })
       .limit(data.limit);
 
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
 
-    const paymentIds = (rows ?? [])
-      .map((r: any) => r.matched_payment_id)
-      .filter(Boolean);
+    const paymentIds = (rows ?? []).map((r: any) => r.matched_payment_id).filter(Boolean);
     let paymentsById: Record<string, any> = {};
     if (paymentIds.length) {
       const { data: pays } = await supabase
@@ -663,9 +648,7 @@ export const listReconciliationHistory = createServerFn({ method: "POST" })
 
     return (rows ?? []).map((r: any) => ({
       ...r,
-      matched_payment: r.matched_payment_id
-        ? paymentsById[r.matched_payment_id] ?? null
-        : null,
+      matched_payment: r.matched_payment_id ? (paymentsById[r.matched_payment_id] ?? null) : null,
     }));
   });
 
@@ -689,10 +672,7 @@ export const bulkIgnoreTransactions = createServerFn({ method: "POST" })
 
     const { error, count } = await supabase
       .from("bank_statement_transactions")
-      .update(
-        { reconciliation_status: "ignored", matched_payment_id: null },
-        { count: "exact" },
-      )
+      .update({ reconciliation_status: "ignored", matched_payment_id: null }, { count: "exact" })
       .in("id", data.transaction_ids)
       .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
@@ -702,11 +682,7 @@ export const bulkIgnoreTransactions = createServerFn({ method: "POST" })
 export const bulkLinkBestMatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (data: {
-      connection_id: string;
-      window_days?: number;
-      transaction_ids?: string[];
-    }) =>
+    (data: { connection_id: string; window_days?: number; transaction_ids?: string[] }) =>
       z
         .object({
           connection_id: z.string().uuid(),
@@ -746,9 +722,7 @@ export const bulkLinkBestMatch = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId)
       .eq("reconciliation_status", "matched")
       .not("matched_payment_id", "is", null);
-    const used = new Set(
-      (usedRows ?? []).map((r: any) => r.matched_payment_id).filter(Boolean),
-    );
+    const used = new Set((usedRows ?? []).map((r: any) => r.matched_payment_id).filter(Boolean));
 
     const { data: pays, error: pErr } = await supabase
       .from("financial_payments")
@@ -898,23 +872,20 @@ export const bulkCreateEntries = createServerFn({ method: "POST" })
     return { ok: true, created, errors };
   });
 
-
-
 // -------------------------------------------------------------------
 // Sprint G — Fase 4: Cobranças (Pix + Boleto)
 // -------------------------------------------------------------------
 
 export const listBankCharges = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (data: { connection_id: string; status?: string; limit?: number }) =>
-      z
-        .object({
-          connection_id: z.string().uuid(),
-          status: z.enum(["pending", "paid", "canceled", "expired", "all"]).default("all"),
-          limit: z.number().int().min(1).max(500).default(100),
-        })
-        .parse(data),
+  .inputValidator((data: { connection_id: string; status?: string; limit?: number }) =>
+    z
+      .object({
+        connection_id: z.string().uuid(),
+        status: z.enum(["pending", "paid", "canceled", "expired", "all"]).default("all"),
+        limit: z.number().int().min(1).max(500).default(100),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -1051,7 +1022,8 @@ export const cancelBankCharge = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (!charge) throw new Error("Cobrança não encontrada");
-    if (charge.status !== "pending") throw new Error("Somente cobranças pendentes podem ser canceladas");
+    if (charge.status !== "pending")
+      throw new Error("Somente cobranças pendentes podem ser canceladas");
 
     const { error } = await supabase
       .from("bank_charges")
@@ -1151,7 +1123,13 @@ export const simulateChargePayment = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await getCurrentWorkspace(supabase, userId);
     await assertAdmin(supabase, workspaceId, userId);
-    return settleChargePayment(supabase, workspaceId, data.charge_id, new Date().toISOString(), userId);
+    return settleChargePayment(
+      supabase,
+      workspaceId,
+      data.charge_id,
+      new Date().toISOString(),
+      userId,
+    );
   });
 
 // -------------------------------------------------------------------
@@ -1160,17 +1138,16 @@ export const simulateChargePayment = createServerFn({ method: "POST" })
 
 export const listBankPayments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (data: { connection_id: string; status?: string; limit?: number }) =>
-      z
-        .object({
-          connection_id: z.string().uuid(),
-          status: z
-            .enum(["draft", "approved", "processing", "paid", "failed", "canceled", "all"])
-            .default("all"),
-          limit: z.number().int().min(1).max(500).default(100),
-        })
-        .parse(data),
+  .inputValidator((data: { connection_id: string; status?: string; limit?: number }) =>
+    z
+      .object({
+        connection_id: z.string().uuid(),
+        status: z
+          .enum(["draft", "approved", "processing", "paid", "failed", "canceled", "all"])
+          .default("all"),
+        limit: z.number().int().min(1).max(500).default(100),
+      })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -1219,10 +1196,7 @@ export const createBankPayment = createServerFn({ method: "POST" })
           favored_name: z.string().max(200).nullable().optional(),
           favored_document: z.string().max(32).nullable().optional(),
           pix_key: z.string().max(200).nullable().optional(),
-          pix_key_type: z
-            .enum(["cpf", "cnpj", "email", "phone", "random"])
-            .nullable()
-            .optional(),
+          pix_key_type: z.enum(["cpf", "cnpj", "email", "phone", "random"]).nullable().optional(),
           boleto_barcode: z.string().max(64).nullable().optional(),
           boleto_digitable_line: z.string().max(64).nullable().optional(),
           description: z.string().max(500).nullable().optional(),
@@ -1288,13 +1262,16 @@ export const approveBankPayment = createServerFn({ method: "POST" })
 
     const { data: p, error: pErr } = await supabase
       .from("bank_payments")
-      .select("id, connection_id, type, amount, favored_name, favored_document, pix_key, pix_key_type, boleto_barcode, boleto_digitable_line, description, status, created_by")
+      .select(
+        "id, connection_id, type, amount, favored_name, favored_document, pix_key, pix_key_type, boleto_barcode, boleto_digitable_line, description, status, created_by",
+      )
       .eq("id", data.payment_id)
       .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (pErr) throw new Error(pErr.message);
     if (!p) throw new Error("Pagamento não encontrado");
-    if (p.status !== "draft") throw new Error(`Somente rascunhos podem ser aprovados (status: ${p.status})`);
+    if (p.status !== "draft")
+      throw new Error(`Somente rascunhos podem ser aprovados (status: ${p.status})`);
     if (p.created_by && p.created_by === userId) {
       // Nota: dupla custódia opcional — permitir por enquanto, apenas registrar
     }
@@ -1549,10 +1526,3 @@ export const getBankingHealth = createServerFn({ method: "GET" })
       token_has_refresh: tokenHasRefresh,
     };
   });
-
-
-
-
-
-
-

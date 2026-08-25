@@ -32,9 +32,8 @@ export const backfillQualificationActivities = createServerFn({ method: "POST" }
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { logQualificationActivity } = await import(
-      "@/lib/prospecting/qualification-activity.server"
-    );
+    const { logQualificationActivity } =
+      await import("@/lib/prospecting/qualification-activity.server");
 
     const { data: admin, error: adminErr } = await supabaseAdmin
       .from("platform_admins")

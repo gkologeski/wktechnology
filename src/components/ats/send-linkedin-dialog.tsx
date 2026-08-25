@@ -16,16 +16,11 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  sendLinkedinMessageFn,
-  sendLinkedinInviteFn,
-} from "@/lib/unipile/messaging.functions";
+import { sendLinkedinMessageFn, sendLinkedinInviteFn } from "@/lib/unipile/messaging.functions";
 import { formatErrorMessage, handleForceReload } from "@/lib/errors/format";
 import { TokenPills } from "@/components/ui/token-pills";
 import { LINKEDIN_TOKENS } from "@/lib/message-tokens-catalog";
 import { useTokenInserter } from "@/lib/token-insert";
-
-
 
 interface Props {
   candidateId?: string;
@@ -45,7 +40,6 @@ export function SendLinkedinDialog({ candidateId, linkedinUrl, candidateName, tr
 
   const send = useServerFn(sendLinkedinMessageFn);
   const invite = useServerFn(sendLinkedinInviteFn);
-
 
   const sendMut = useMutation({
     mutationFn: async () =>
@@ -138,7 +132,6 @@ export function SendLinkedinDialog({ candidateId, linkedinUrl, candidateName, tr
               />
               <TokenPills tokens={LINKEDIN_TOKENS} onInsert={msgInserter.insert} />
               <p className="text-xs text-text-tertiary">{text.length}/8000</p>
-
             </div>
             <DialogFooter>
               <Button
@@ -170,7 +163,6 @@ export function SendLinkedinDialog({ candidateId, linkedinUrl, candidateName, tr
               />
               <TokenPills tokens={LINKEDIN_TOKENS} onInsert={inviteInserter.insert} />
               <p className="text-xs text-text-tertiary">{inviteMsg.length}/300</p>
-
             </div>
             <DialogFooter>
               <Button

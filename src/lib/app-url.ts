@@ -21,7 +21,8 @@ export function getAppUrl(): string {
     return window.location.origin;
   }
   const envUrl =
-    (typeof import.meta !== "undefined" && (import.meta as { env?: { VITE_APP_URL?: string } }).env?.VITE_APP_URL) ||
+    (typeof import.meta !== "undefined" &&
+      (import.meta as { env?: { VITE_APP_URL?: string } }).env?.VITE_APP_URL) ||
     (typeof process !== "undefined" && process.env?.VITE_APP_URL) ||
     (typeof process !== "undefined" && process.env?.APP_URL);
   return envUrl || FALLBACK;

@@ -168,22 +168,19 @@ function JobDetailPage() {
   const listPipelinesFn = useServerFn(listAtsPipelines);
   const [pipelineNames, setPipelineNames] = useState<Record<string, string>>({});
 
-
   const [job, setJob] = useState<Job | null>(null);
   const [apps, setApps] = useState<App[]>([]);
   const [events, setEvents] = useState<Awaited<ReturnType<typeof listJobEvents>>>([]);
-  const [interviews, setInterviews] = useState<Awaited<ReturnType<typeof listJobInterviews>>>(
-    [],
-  );
+  const [interviews, setInterviews] = useState<Awaited<ReturnType<typeof listJobInterviews>>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCand, setSelectedCand] = useState<string>("");
-  const [scoreSummary, setScoreSummary] = useState<
-    Record<string, { avg: number; count: number }>
-  >({});
+  const [scoreSummary, setScoreSummary] = useState<Record<string, { avg: number; count: number }>>(
+    {},
+  );
   const [evalApp, setEvalApp] = useState<App | null>(null);
   const [tab, setTab] = useState<string>("pipeline");
   const [schedSearch, setSchedSearch] = useState("");
@@ -284,7 +281,6 @@ function JobDetailPage() {
     return rows;
   }, [visibleApps, assigneeNameFor, appsSortDir]);
 
-
   const openAdd = async () => {
     setAddOpen(true);
     try {
@@ -313,9 +309,7 @@ function JobDetailPage() {
     const app = apps.find((a) => a.id === dragging);
     setDragging(null);
     if (!app || app.stage_value === toStage) return;
-    setApps((prev) =>
-      prev.map((a) => (a.id === app.id ? { ...a, stage_value: toStage } : a)),
-    );
+    setApps((prev) => prev.map((a) => (a.id === app.id ? { ...a, stage_value: toStage } : a)));
     try {
       await moveApp({ data: { applicationId: app.id, toStage, position: 0 } });
     } catch (e) {
@@ -414,7 +408,10 @@ function JobDetailPage() {
             <ArrowLeft className="h-3 w-3" aria-hidden />
             Voltar
           </Link>
-          <StatusBadge status={statusVariant} label={STATUS_LABEL[jobAny.status] ?? jobAny.status} />
+          <StatusBadge
+            status={statusVariant}
+            label={STATUS_LABEL[jobAny.status] ?? jobAny.status}
+          />
           {metaItems.map((m) => (
             <MetaPill key={m.key}>{m.label}</MetaPill>
           ))}
@@ -592,115 +589,115 @@ function JobDetailPage() {
       </div>
     );
 
-  const pipelineSection = totalApps === 0 ? (
-    <EmptyState
-      icon={Users}
-      title="Nenhum candidato nesta vaga"
-      description="Adicione candidatos manualmente ou compartilhe a página de carreiras para receber aplicações."
-      action={
-        <Button onClick={openAdd}>
-          <Plus className="h-4 w-4 mr-2" aria-hidden />
-          Adicionar candidato
-        </Button>
-      }
-    />
-  ) : (
-    <div className="overflow-x-auto -mx-1 px-1">
-      <div className="flex gap-3 min-w-max pb-2">
-        {stages.map((s) => {
-          const items = byStage[s.value] ?? [];
-          return (
-            <div
-              key={s.value}
-              className="w-72 flex-shrink-0"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => onDrop(s.value)}
-            >
-              <div className="rounded-lg border border-border-subtle bg-surface-sunken h-full flex flex-col">
-                <div className="px-3 py-2.5 border-b border-border-subtle flex items-center justify-between">
-                  <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
-                    {s.label}
-                  </span>
-                  <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-md bg-surface-1 border border-border-subtle text-[11px] font-medium text-text-secondary tabular-nums">
-                    {items.length}
-                  </span>
-                </div>
-                <div className="space-y-2 p-2 min-h-[200px] flex-1">
-                  {items.length === 0 ? (
-                    <div className="h-full min-h-[180px] flex items-center justify-center text-[11px] text-text-tertiary">
-                      Solte aqui
-                    </div>
-                  ) : (
-                    items.map((a) => (
-                      <div
-                        key={a.id}
-                        draggable
-                        onDragStart={() => setDragging(a.id)}
-                        onDragEnd={() => setDragging(null)}
-                        className={cn(
-                          "bg-surface-1 border border-border-subtle rounded-md p-3 text-sm",
-                          "cursor-grab active:cursor-grabbing",
-                          "hover:border-border-strong hover:shadow-xs transition-all",
-                        )}
-                      >
-                        <Link
-                          to="/candidates/$id"
-                          params={{ id: a.candidate_id as string }}
-                          onClick={(e) => e.stopPropagation()}
-                          draggable={false}
-                          onDragStart={(e) => e.stopPropagation()}
-                          className="font-medium text-text-primary truncate hover:underline block"
+  const pipelineSection =
+    totalApps === 0 ? (
+      <EmptyState
+        icon={Users}
+        title="Nenhum candidato nesta vaga"
+        description="Adicione candidatos manualmente ou compartilhe a página de carreiras para receber aplicações."
+        action={
+          <Button onClick={openAdd}>
+            <Plus className="h-4 w-4 mr-2" aria-hidden />
+            Adicionar candidato
+          </Button>
+        }
+      />
+    ) : (
+      <div className="overflow-x-auto -mx-1 px-1">
+        <div className="flex gap-3 min-w-max pb-2">
+          {stages.map((s) => {
+            const items = byStage[s.value] ?? [];
+            return (
+              <div
+                key={s.value}
+                className="w-72 flex-shrink-0"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => onDrop(s.value)}
+              >
+                <div className="rounded-lg border border-border-subtle bg-surface-sunken h-full flex flex-col">
+                  <div className="px-3 py-2.5 border-b border-border-subtle flex items-center justify-between">
+                    <span className="text-xs font-semibold text-text-primary uppercase tracking-wide">
+                      {s.label}
+                    </span>
+                    <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-md bg-surface-1 border border-border-subtle text-[11px] font-medium text-text-secondary tabular-nums">
+                      {items.length}
+                    </span>
+                  </div>
+                  <div className="space-y-2 p-2 min-h-[200px] flex-1">
+                    {items.length === 0 ? (
+                      <div className="h-full min-h-[180px] flex items-center justify-center text-[11px] text-text-tertiary">
+                        Solte aqui
+                      </div>
+                    ) : (
+                      items.map((a) => (
+                        <div
+                          key={a.id}
+                          draggable
+                          onDragStart={() => setDragging(a.id)}
+                          onDragEnd={() => setDragging(null)}
+                          className={cn(
+                            "bg-surface-1 border border-border-subtle rounded-md p-3 text-sm",
+                            "cursor-grab active:cursor-grabbing",
+                            "hover:border-border-strong hover:shadow-xs transition-all",
+                          )}
                         >
-                          {a.candidate?.full_name ?? "Candidato"}
-                        </Link>
-                        {a.candidate?.current_position && (
-                          <div className="text-xs text-text-tertiary truncate mt-0.5">
-                            {a.candidate.current_position}
-                            {a.candidate.current_company && ` @ ${a.candidate.current_company}`}
-                          </div>
-                        )}
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                          {a.ai_match_score != null && (
-                            <ScoreBadge score={Number(a.ai_match_score)} />
-                          )}
-                          {scoreSummary[a.id] && (
-                            <MetaPill>
-                              Avaliação {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
-                            </MetaPill>
-                          )}
-                        </div>
-                        <AssigneeCell
-                          assignedTo={(a as { assigned_to?: string | null }).assigned_to}
-                          className="mt-2 text-xs"
-                        />
-                        <div className="mt-2 flex justify-end">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-7 px-2 text-[11px]"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEvalApp(a);
-                            }}
+                          <Link
+                            to="/candidates/$id"
+                            params={{ id: a.candidate_id as string }}
+                            onClick={(e) => e.stopPropagation()}
                             draggable={false}
                             onDragStart={(e) => e.stopPropagation()}
+                            className="font-medium text-text-primary truncate hover:underline block"
                           >
-                            <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden />
-                            Avaliar
-                          </Button>
+                            {a.candidate?.full_name ?? "Candidato"}
+                          </Link>
+                          {a.candidate?.current_position && (
+                            <div className="text-xs text-text-tertiary truncate mt-0.5">
+                              {a.candidate.current_position}
+                              {a.candidate.current_company && ` @ ${a.candidate.current_company}`}
+                            </div>
+                          )}
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                            {a.ai_match_score != null && (
+                              <ScoreBadge score={Number(a.ai_match_score)} />
+                            )}
+                            {scoreSummary[a.id] && (
+                              <MetaPill>
+                                Avaliação {scoreSummary[a.id].avg} · {scoreSummary[a.id].count}×
+                              </MetaPill>
+                            )}
+                          </div>
+                          <AssigneeCell
+                            assignedTo={(a as { assigned_to?: string | null }).assigned_to}
+                            className="mt-2 text-xs"
+                          />
+                          <div className="mt-2 flex justify-end">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2 text-[11px]"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEvalApp(a);
+                              }}
+                              draggable={false}
+                              onDragStart={(e) => e.stopPropagation()}
+                            >
+                              <ClipboardCheck className="h-3 w-3 mr-1" aria-hidden />
+                              Avaliar
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ))
-                  )}
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
-
+    );
 
   const applicantsForScheduling = apps.filter((a) => {
     if (schedActiveOnly && (a.status ?? "active") !== "active") return false;
@@ -742,7 +739,8 @@ function JobDetailPage() {
         </div>
         {applicantsForScheduling.length === 0 ? (
           <p className="text-xs text-text-tertiary">
-            Nenhum candidato encontrado. Assim que aparecerem na aba Pipeline, você poderá agendar entrevistas aqui.
+            Nenhum candidato encontrado. Assim que aparecerem na aba Pipeline, você poderá agendar
+            entrevistas aqui.
           </p>
         ) : (
           <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3 max-h-[420px] overflow-y-auto pr-1">
@@ -770,7 +768,6 @@ function JobDetailPage() {
           </div>
         )}
       </div>
-
 
       {interviews.length === 0 ? (
         <EmptyState
@@ -811,47 +808,48 @@ function JobDetailPage() {
     </div>
   );
 
-  const eventsSection = events.length === 0 ? (
-    <EmptyState
-      icon={Calendar}
-      title="Sem atividade ainda"
-      description="Movimentações no pipeline e eventos da vaga aparecerão aqui."
-    />
-  ) : (
-    <ol className="space-y-2">
-      {events.map((ev) => (
-        <li
-          key={ev.id}
-          className="flex items-start gap-3 rounded-md border border-border-subtle bg-surface-1 p-3 text-sm"
-        >
-          <div className="mt-1 h-2 w-2 rounded-full bg-primary/70 shrink-0" />
-          <div className="min-w-0 flex-1">
-            <div className="text-text-primary">
-              <span className="font-medium">{ev.candidate_name ?? "Candidato"}</span>{" "}
-              <span className="text-text-tertiary">— {ev.event_type}</span>
-            </div>
-            {(ev.from_stage || ev.to_stage) && (
-              <div className="mt-0.5 text-xs text-text-tertiary">
-                {ev.from_stage ?? "—"} → {ev.to_stage ?? "—"}
+  const eventsSection =
+    events.length === 0 ? (
+      <EmptyState
+        icon={Calendar}
+        title="Sem atividade ainda"
+        description="Movimentações no pipeline e eventos da vaga aparecerão aqui."
+      />
+    ) : (
+      <ol className="space-y-2">
+        {events.map((ev) => (
+          <li
+            key={ev.id}
+            className="flex items-start gap-3 rounded-md border border-border-subtle bg-surface-1 p-3 text-sm"
+          >
+            <div className="mt-1 h-2 w-2 rounded-full bg-primary/70 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="text-text-primary">
+                <span className="font-medium">{ev.candidate_name ?? "Candidato"}</span>{" "}
+                <span className="text-text-tertiary">— {ev.event_type}</span>
               </div>
-            )}
-          </div>
-          <span className="text-xs text-text-tertiary tabular-nums shrink-0">
-            {new Date(ev.created_at).toLocaleString("pt-BR", {
-              day: "2-digit",
-              month: "short",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </span>
-        </li>
-      ))}
-    </ol>
-  );
+              {(ev.from_stage || ev.to_stage) && (
+                <div className="mt-0.5 text-xs text-text-tertiary">
+                  {ev.from_stage ?? "—"} → {ev.to_stage ?? "—"}
+                </div>
+              )}
+            </div>
+            <span className="text-xs text-text-tertiary tabular-nums shrink-0">
+              {new Date(ev.created_at).toLocaleString("pt-BR", {
+                day: "2-digit",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </li>
+        ))}
+      </ol>
+    );
 
   const overviewSection = (
     <div className="space-y-4">
-      {(jobAny.description || jobAny.requirements) ? (
+      {jobAny.description || jobAny.requirements ? (
         <section className="rounded-lg border border-border-subtle bg-surface-1 shadow-xs">
           <div className="grid md:grid-cols-2 gap-6 p-5 text-sm">
             {jobAny.description && (
@@ -906,7 +904,7 @@ function JobDetailPage() {
                   salary_max: patch.salary_max ?? jobAny.salary_max ?? null,
                   status: (patch.status ?? jobAny.status) as never,
                   pipeline_id: patch.pipeline_id ?? jobAny.pipeline_id ?? null,
-                  deal_id: patch.deal_id !== undefined ? patch.deal_id : jobAny.deal_id ?? null,
+                  deal_id: patch.deal_id !== undefined ? patch.deal_id : (jobAny.deal_id ?? null),
                 },
               });
             }}
@@ -917,15 +915,12 @@ function JobDetailPage() {
             <TabsList>
               <TabsTrigger value="overview">Visão geral</TabsTrigger>
               <TabsTrigger value="pipeline">
-                Pipeline{" "}
-                <span className="ml-1 text-[10px] text-text-tertiary">({totalApps})</span>
+                Pipeline <span className="ml-1 text-[10px] text-text-tertiary">({totalApps})</span>
               </TabsTrigger>
-              
+
               <TabsTrigger value="interviews">
                 Entrevistas{" "}
-                <span className="ml-1 text-[10px] text-text-tertiary">
-                  ({interviews.length})
-                </span>
+                <span className="ml-1 text-[10px] text-text-tertiary">({interviews.length})</span>
               </TabsTrigger>
               <TabsTrigger value="postings">Postagens</TabsTrigger>
               <TabsTrigger value="activity">Atividade</TabsTrigger>
@@ -1012,7 +1007,6 @@ function JobDetailPage() {
   );
 }
 
-
 /* ---------- Left: Properties (inline editor) ---------- */
 type JobPatch = {
   title?: string;
@@ -1069,7 +1063,9 @@ function JobPropertiesPanel({
     deal_id: j.deal_id ?? null,
   });
   const [saving, setSaving] = useState(false);
-  const [pipelines, setPipelines] = useState<Array<{ id: string; name: string; is_default: boolean }>>([]);
+  const [pipelines, setPipelines] = useState<
+    Array<{ id: string; name: string; is_default: boolean }>
+  >([]);
   const [pipelinesError, setPipelinesError] = useState<string | null>(null);
   const [pipelinesLoading, setPipelinesLoading] = useState(true);
   const [confirmPipeline, setConfirmPipeline] = useState<string | null>(null);
@@ -1098,7 +1094,6 @@ function JobPropertiesPanel({
     void loadPipelines();
   }, [loadPipelines]);
 
-
   // Garante que o pipeline atual da vaga sempre apareça no seletor,
   // mesmo que ainda não esteja na lista carregada.
   const pipelineOptions = useMemo(() => {
@@ -1106,8 +1101,6 @@ function JobPropertiesPanel({
     if (!current || pipelines.some((p) => p.id === current)) return pipelines;
     return [{ id: current, name: "Pipeline atual da vaga", is_default: false }, ...pipelines];
   }, [pipelines, j.pipeline_id]);
-
-
 
   useEffect(() => {
     setForm({
@@ -1124,7 +1117,20 @@ function JobPropertiesPanel({
       pipeline_id: j.pipeline_id ?? "",
       deal_id: j.deal_id ?? null,
     });
-  }, [j.title, j.seniority, j.employment_type, j.remote_mode, j.location, j.description, j.requirements, j.status, j.salary_min, j.salary_max, j.pipeline_id, j.deal_id]);
+  }, [
+    j.title,
+    j.seniority,
+    j.employment_type,
+    j.remote_mode,
+    j.location,
+    j.description,
+    j.requirements,
+    j.status,
+    j.salary_min,
+    j.salary_max,
+    j.pipeline_id,
+    j.deal_id,
+  ]);
 
   const dirty =
     form.title !== j.title ||
@@ -1176,7 +1182,6 @@ function JobPropertiesPanel({
     await persist();
   };
 
-
   const jobRow = job as unknown as {
     id: string;
     owner_id: string | null;
@@ -1200,7 +1205,6 @@ function JobPropertiesPanel({
         />
       </div>
       <div className="space-y-2 text-sm">
-
         <div>
           <Label htmlFor="prop-title" className="text-xs text-text-tertiary">
             Título
@@ -1215,10 +1219,7 @@ function JobPropertiesPanel({
           <Label htmlFor="prop-status" className="text-xs text-text-tertiary">
             Status
           </Label>
-          <Select
-            value={form.status}
-            onValueChange={(v) => setForm({ ...form, status: v })}
-          >
+          <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
             <SelectTrigger id="prop-status">
               <SelectValue />
             </SelectTrigger>
@@ -1255,16 +1256,12 @@ function JobPropertiesPanel({
             </SelectContent>
           </Select>
           {!pipelinesLoading && (pipelinesError || pipelines.length === 0) ? (
-            <PipelineSelectNotice
-              error={pipelinesError}
-              onRetry={() => void loadPipelines()}
-            />
+            <PipelineSelectNotice error={pipelinesError} onRetry={() => void loadPipelines()} />
           ) : (
             <p className="mt-1 text-[11px] text-text-tertiary">
               Define as etapas pelas quais as candidaturas desta vaga vão passar.
             </p>
           )}
-
         </div>
         <div>
           <div className="flex items-center justify-between">
@@ -1424,9 +1421,9 @@ function JobPropertiesPanel({
             <AlertDialogTitle>Alterar pipeline desta vaga?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta vaga tem {applicationCount}{" "}
-              {applicationCount === 1 ? "candidatura" : "candidaturas"} em andamento.
-              As etapas atuais dos candidatos podem não existir no novo pipeline e
-              precisarão ser reajustadas manualmente.
+              {applicationCount === 1 ? "candidatura" : "candidaturas"} em andamento. As etapas
+              atuais dos candidatos podem não existir no novo pipeline e precisarão ser reajustadas
+              manualmente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

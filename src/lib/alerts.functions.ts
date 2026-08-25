@@ -32,7 +32,9 @@ export const getOperationalAlerts = createServerFn({ method: "POST" })
     // Lançamentos vencidos
     const { data: overdueEntries } = await supabase
       .from("financial_entries")
-      .select("id, direction, description, amount, paid_amount, due_date, currency, companies:counterparty_company_id(name)")
+      .select(
+        "id, direction, description, amount, paid_amount, due_date, currency, companies:counterparty_company_id(name)",
+      )
       .in("status", ["open", "partial", "overdue"])
       .lt("due_date", todayIso)
       .order("due_date", { ascending: true })

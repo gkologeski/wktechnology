@@ -2,7 +2,7 @@
 
 ## Situação atual (verificada)
 
-- As tabelas principais do ATS (`ats_pipelines`, `ats_jobs`, `ats_applications`, `ats_candidates`) **não têm `workspace_id`**. O workspace é derivado depois pela função `public.resolve_workspace_id(owner_id)`, que retorna apenas o workspace *criado* pelo owner, não o workspace do qual ele é membro.
+- As tabelas principais do ATS (`ats_pipelines`, `ats_jobs`, `ats_applications`, `ats_candidates`) **não têm `workspace_id`**. O workspace é derivado depois pela função `public.resolve_workspace_id(owner_id)`, que retorna apenas o workspace _criado_ pelo owner, não o workspace do qual ele é membro.
 - Consequência: 4 vagas criadas por `Priscila (5946...)` — que é membro do workspace `WK Technology (184b...)` — estão sem workspace, apesar de pertencerem ao mesmo workspace de `RH - Seleção`.
 - Dados atuais:
   - 10 vagas: 6 no workspace `184b...` + 4 em pipelines "Pipeline padrão" do owner `5946...`

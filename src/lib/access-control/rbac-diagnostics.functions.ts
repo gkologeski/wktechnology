@@ -68,7 +68,6 @@ function computeWarnings(permissions: string[], roles: RbacRoleInfo[]): RbacWarn
   return warnings;
 }
 
-
 export type WorkspaceMemberOption = { user_id: string; full_name: string | null };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

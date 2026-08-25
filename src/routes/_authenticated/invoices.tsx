@@ -56,14 +56,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
-const INVOICE_STATUSES = [
-  "draft",
-  "open",
-  "paid",
-  "overdue",
-  "cancelled",
-  "refunded",
-] as const;
+const INVOICE_STATUSES = ["draft", "open", "paid", "overdue", "cancelled", "refunded"] as const;
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Rascunho",
@@ -267,130 +260,130 @@ function InvoicesPage() {
             />
           ) : (
             <>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : !data?.invoices?.length ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Nenhuma fatura encontrada.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Número</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                  <TableHead>Gateway</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.invoices.map((inv) => (
-                  <TableRow key={inv.id}>
-                    <TableCell className="font-medium">{inv.invoice_number}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          (statusColor[inv.status] ?? "secondary") as
-                            | "default"
-                            | "secondary"
-                            | "destructive"
-                            | "outline"
-                        }
-                      >
-                        {inv.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {Number(inv.amount).toLocaleString("pt-BR", {
-                        style: "currency",
-                        currency: inv.currency || "BRL",
-                      })}
-                    </TableCell>
-                    <TableCell>{formatDateTime(inv.due_date)}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {inv.gateway ?? "—"}{" "}
-                      {inv.gateway_mode === "sandbox" && (
-                        <Badge variant="outline" className="ml-1">
-                          sandbox
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {inv.payment_url && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              navigator.clipboard.writeText(inv.payment_url!);
-                              toast.success("Link copiado");
-                            }}
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : !data?.invoices?.length ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  Nenhuma fatura encontrada.
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Número</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead>Gateway</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.invoices.map((inv) => (
+                      <TableRow key={inv.id}>
+                        <TableCell className="font-medium">{inv.invoice_number}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              (statusColor[inv.status] ?? "secondary") as
+                                | "default"
+                                | "secondary"
+                                | "destructive"
+                                | "outline"
+                            }
                           >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {inv.payment_url && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => window.open(inv.payment_url!, "_blank")}
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {!inv.payment_url && inv.status !== "paid" && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onGenerate(inv.id, "pix")}
-                            >
-                              Pix
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onGenerate(inv.id, "boleto")}
-                            >
-                              Boleto
-                            </Button>
-                          </>
-                        )}
-                        {inv.status !== "paid" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onPaid(inv.id)}
-                            title="Marcar como paga"
-                          >
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          </Button>
-                        )}
-                        {inv.status === "paid" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => onIssueNfse(inv.id)}
-                            title="Emitir NFS-e"
-                          >
-                            NFS-e
-                          </Button>
-                        )}
+                            {inv.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {Number(inv.amount).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: inv.currency || "BRL",
+                          })}
+                        </TableCell>
+                        <TableCell>{formatDateTime(inv.due_date)}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {inv.gateway ?? "—"}{" "}
+                          {inv.gateway_mode === "sandbox" && (
+                            <Badge variant="outline" className="ml-1">
+                              sandbox
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1">
+                            {inv.payment_url && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(inv.payment_url!);
+                                  toast.success("Link copiado");
+                                }}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {inv.payment_url && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => window.open(inv.payment_url!, "_blank")}
+                              >
+                                <ExternalLink className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {!inv.payment_url && inv.status !== "paid" && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => onGenerate(inv.id, "pix")}
+                                >
+                                  Pix
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => onGenerate(inv.id, "boleto")}
+                                >
+                                  Boleto
+                                </Button>
+                              </>
+                            )}
+                            {inv.status !== "paid" && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => onPaid(inv.id)}
+                                title="Marcar como paga"
+                              >
+                                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                              </Button>
+                            )}
+                            {inv.status === "paid" && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onIssueNfse(inv.id)}
+                                title="Emitir NFS-e"
+                              >
+                                NFS-e
+                              </Button>
+                            )}
 
-                        <Button variant="ghost" size="icon" onClick={() => onDelete(inv.id)}>
-                          <Trash2 className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+                            <Button variant="ghost" size="icon" onClick={() => onDelete(inv.id)}>
+                              <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </>
           )}
         </CardContent>

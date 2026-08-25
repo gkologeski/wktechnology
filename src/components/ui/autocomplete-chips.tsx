@@ -77,7 +77,9 @@ export function AutocompleteChips({
       setActiveIdx((i) => (suggestions.length ? (i + 1) % suggestions.length : 0));
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setActiveIdx((i) => (suggestions.length ? (i - 1 + suggestions.length) % suggestions.length : 0));
+      setActiveIdx((i) =>
+        suggestions.length ? (i - 1 + suggestions.length) % suggestions.length : 0,
+      );
     } else if (e.key === "Enter" || e.key === "Tab") {
       const picked = open ? suggestions[activeIdx] : undefined;
       if (picked) {
@@ -95,7 +97,10 @@ export function AutocompleteChips({
   };
 
   return (
-    <Popover open={open && (suggestions.length > 0 || (!allowCustom && !!draft))} onOpenChange={setOpen}>
+    <Popover
+      open={open && (suggestions.length > 0 || (!allowCustom && !!draft))}
+      onOpenChange={setOpen}
+    >
       <PopoverAnchor asChild>
         <div
           className={cn(

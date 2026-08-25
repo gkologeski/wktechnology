@@ -38,7 +38,10 @@ export const recordRecent = createServerFn({ method: "POST" })
       await supabase
         .from("search_recent")
         .delete()
-        .in("id", rows.map((r) => (r as { id: string }).id));
+        .in(
+          "id",
+          rows.map((r) => (r as { id: string }).id),
+        );
     }
     return { ok: true };
   });
@@ -82,7 +85,10 @@ export const togglePin = createServerFn({ method: "POST" })
       .eq("entity_id", data.entity_id)
       .maybeSingle();
     if (existing) {
-      await supabase.from("search_pinned").delete().eq("id", (existing as { id: string }).id);
+      await supabase
+        .from("search_pinned")
+        .delete()
+        .eq("id", (existing as { id: string }).id);
       return { pinned: false };
     }
     // Enforce 10-item cap

@@ -144,9 +144,7 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
               (posting && (busy === posting.id || busy === `sync:${posting.id}`));
             const isSyncing = posting && busy === `sync:${posting.id}`;
             const canSync =
-              p.slug === "linkedin" &&
-              posting?.status === "published" &&
-              !posting.is_mock;
+              p.slug === "linkedin" && posting?.status === "published" && !posting.is_mock;
             const syncMeta = (posting?.metadata ?? {}) as Record<string, unknown>;
             const lastSyncAt = syncMeta.last_applicants_sync_at as string | undefined;
             const syncedCount = Number(syncMeta.applicants_synced_count ?? 0);
@@ -222,7 +220,6 @@ export function JobPostingsPanel({ jobId }: { jobId: string }) {
                     <span className="truncate font-mono">{posting.external_url}</span>
                   </a>
                 )}
-
 
                 <div className="flex gap-2 mt-auto">
                   {posting?.status === "published" ? (

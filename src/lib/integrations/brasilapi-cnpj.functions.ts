@@ -84,7 +84,11 @@ async function lookupBrasilApi(cnpj: string): Promise<NormalizedCnpj | null> {
     email: d.email || undefined,
     industry: d.cnae_fiscal_descricao || undefined,
     size:
-      typeof d.porte === "object" ? d.porte?.descricao : typeof d.porte === "string" ? d.porte : undefined,
+      typeof d.porte === "object"
+        ? d.porte?.descricao
+        : typeof d.porte === "string"
+          ? d.porte
+          : undefined,
   };
 }
 
@@ -164,10 +168,7 @@ export const enrichCompanyByCNPJ = createServerFn({ method: "POST" })
     if ((overwrite || !c.cep) && r.cep) update.cep = r.cep;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: uerr } = await (supabase as any)
-      .from("companies")
-      .update(update)
-      .eq("id", c.id);
+    const { error: uerr } = await (supabase as any).from("companies").update(update).eq("id", c.id);
     if (uerr) throw new Error(uerr.message);
     return { ok: true, applied: Object.keys(update).length - 1 };
   });

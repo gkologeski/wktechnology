@@ -10,6 +10,7 @@ O que anula esse ganho: em `ats_jobs` e `ats_candidates` existe uma política de
 - `ats_candidates_perm_select` (RESTRICTIVE): mesma forma, com a permissão de candidatos.
 
 Para as linhas da Priscila os três ramos falham:
+
 - `owner_id = auth.uid()` → falso (dona é a Priscila);
 - `is_workspace_admin_of(owner_id, …)` interpreta `owner_id` como id de workspace → falso;
 - `resolve_workspace_id(priscila)` = `NULL` (ela não criou workspace), então `user_has_permission(…, NULL, …)` → falso.
@@ -32,6 +33,7 @@ OR techhire_rbac_gate(auth.uid(), owner_id, '<perm>')
 ```
 
 Aplicado a:
+
 - `ats_jobs_perm_select` / `ats_candidates_perm_select` → permissão `…view.workspace`
 - `ats_jobs_perm_update` / `ats_candidates_perm_update` → `…update.workspace` (mantendo o ramo `update.own` já existente)
 - `ats_jobs_perm_delete` / `ats_candidates_perm_delete` → `…delete.workspace`

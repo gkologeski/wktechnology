@@ -31,13 +31,13 @@ Estado após as Ondas 3–8 de endurecimento RBAC.
 
 ## Papéis considerados
 
-| Sigla | Papel | Como é identificado |
-|-------|-------|---------------------|
-| **P** | Platform admin | `is_platform_admin(auth.uid())` — equipe WK Technology |
-| **A** | Workspace admin | `is_workspace_admin_of(owner, uid)` — dono do workspace ou admin definido em `user_roles` |
-| **L** | Líder de time / com escopo team/workspace/custom | `can_write_owner(owner, uid)` — mesmo grupo em `user_groups` + `data_scope` ≥ team |
-| **M** | Membro comum do workspace | `is_workspace_member(ws, uid)` / `current_user_workspaces()` |
-| **O** | Dono do registro (`owner_id = auth.uid()`) ou responsável (`assigned_user_id = auth.uid()`) | |
+| Sigla | Papel                                                                                       | Como é identificado                                                                       |
+| ----- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **P** | Platform admin                                                                              | `is_platform_admin(auth.uid())` — equipe WK Technology                                    |
+| **A** | Workspace admin                                                                             | `is_workspace_admin_of(owner, uid)` — dono do workspace ou admin definido em `user_roles` |
+| **L** | Líder de time / com escopo team/workspace/custom                                            | `can_write_owner(owner, uid)` — mesmo grupo em `user_groups` + `data_scope` ≥ team        |
+| **M** | Membro comum do workspace                                                                   | `is_workspace_member(ws, uid)` / `current_user_workspaces()`                              |
+| **O** | Dono do registro (`owner_id = auth.uid()`) ou responsável (`assigned_user_id = auth.uid()`) |                                                                                           |
 
 ## Legenda dos verbos
 
@@ -63,57 +63,57 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 
 ### 1.1 Contatos, Empresas, Negócios, Leads
 
-| Tabela | Verbo | O | M | L | A | P | Regra RLS resumida |
-|--------|-------|---|---|---|---|---|--------------------|
-| `contacts` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Todo membro do workspace vê **todos** os contatos. |
-| `contacts` | Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Basta pertencer ao workspace. |
-| `contacts` | Editar | 🔐 | 🔐 | 🔐 | 🔐 | 🔐 | Workspace + `user_can_act('contacts','edit', owner, assigned)`. |
-| `contacts` | Excluir | 🔐 | 🔐 | 🔐 | 🔐 | 🔐 | Workspace + `user_can_act('contacts','delete', owner, assigned)`. |
-| `companies` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Todo membro vê tudo. |
-| `companies` | Editar / Excluir | 🔐 | 🔐 | 🔐 | 🔐 | 🔐 | `user_can_act('companies', ...)`. |
-| `deals` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Todo membro vê tudo. |
-| `deals` | Editar / Excluir | 🔐 | 🔐 | 🔐 | 🔐 | 🔐 | `user_can_act('deals', ...)`. |
-| `leads` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Todo membro vê tudo. |
-| `leads` | Editar / Excluir | 🔐 | 🔐 | 🔐 | 🔐 | 🔐 | `user_can_act('leads', ...)`. |
-| `deal_contacts` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Herda visibilidade do `deal` (workspace inteiro). |
+| Tabela          | Verbo            | O   | M   | L   | A   | P   | Regra RLS resumida                                                |
+| --------------- | ---------------- | --- | --- | --- | --- | --- | ----------------------------------------------------------------- |
+| `contacts`      | Ver              | ✅  | ✅  | ✅  | ✅  | ✅  | Todo membro do workspace vê **todos** os contatos.                |
+| `contacts`      | Criar            | ✅  | ✅  | ✅  | ✅  | ✅  | Basta pertencer ao workspace.                                     |
+| `contacts`      | Editar           | 🔐  | 🔐  | 🔐  | 🔐  | 🔐  | Workspace + `user_can_act('contacts','edit', owner, assigned)`.   |
+| `contacts`      | Excluir          | 🔐  | 🔐  | 🔐  | 🔐  | 🔐  | Workspace + `user_can_act('contacts','delete', owner, assigned)`. |
+| `companies`     | Ver              | ✅  | ✅  | ✅  | ✅  | ✅  | Todo membro vê tudo.                                              |
+| `companies`     | Editar / Excluir | 🔐  | 🔐  | 🔐  | 🔐  | 🔐  | `user_can_act('companies', ...)`.                                 |
+| `deals`         | Ver              | ✅  | ✅  | ✅  | ✅  | ✅  | Todo membro vê tudo.                                              |
+| `deals`         | Editar / Excluir | 🔐  | 🔐  | 🔐  | 🔐  | 🔐  | `user_can_act('deals', ...)`.                                     |
+| `leads`         | Ver              | ✅  | ✅  | ✅  | ✅  | ✅  | Todo membro vê tudo.                                              |
+| `leads`         | Editar / Excluir | 🔐  | 🔐  | 🔐  | 🔐  | 🔐  | `user_can_act('leads', ...)`.                                     |
+| `deal_contacts` | Todos            | ✅  | ✅  | ✅  | ✅  | ✅  | Herda visibilidade do `deal` (workspace inteiro).                 |
 
 **Alerta 1** — SELECT dos 4 objetos centrais do CRM (`contacts`, `companies`, `deals`, `leads`) **não** passa por `user_can_act`. Qualquer membro do workspace vê todos os registros, mesmo os de outros donos. Só a **escrita** é filtrada pelo perfil de acesso.
 
 ### 1.2 Cotações, itens, produtos, pipeline
 
-| Tabela | Verbo | O | M | L | A | P | Regra |
-|--------|-------|---|---|---|---|---|-------|
-| `quotes` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `quote_line_items` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (duplicado com `*_admin_*` e `*_team_*`, mas o OR libera). |
-| `quote_templates` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `deal_line_items` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `products` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `pipelines` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `deal_loss_reasons` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Qualquer membro. |
-| `deal_loss_reasons` | Criar/Editar/Excluir | ✅ | ⛔ | ⛔ | ✅ | ✅ | Só dono do workspace, admin ou platform admin. |
-| `lead_sources` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | `owner_id = uid` OU `shares_workspace_with(owner_id)`. |
+| Tabela              | Verbo                | O   | M   | L   | A   | P   | Regra                                                                        |
+| ------------------- | -------------------- | --- | --- | --- | --- | --- | ---------------------------------------------------------------------------- |
+| `quotes`            | Todos                | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                           |
+| `quote_line_items`  | Todos                | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro (duplicado com `*_admin_*` e `*_team_*`, mas o OR libera). |
+| `quote_templates`   | Todos                | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                           |
+| `deal_line_items`   | Todos                | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                           |
+| `products`          | Todos                | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                           |
+| `pipelines`         | Todos                | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                           |
+| `deal_loss_reasons` | Ver                  | ✅  | ✅  | ✅  | ✅  | ✅  | Qualquer membro.                                                             |
+| `deal_loss_reasons` | Criar/Editar/Excluir | ✅  | ⛔  | ⛔  | ✅  | ✅  | Só dono do workspace, admin ou platform admin.                               |
+| `lead_sources`      | Todos                | ✅  | ✅  | ✅  | ✅  | ✅  | `owner_id = uid` OU `shares_workspace_with(owner_id)`.                       |
 
 ---
 
 ## 2. Atividades e Tarefas
 
-| Tabela | Verbo | O | M | L | A | P | Regra |
-|--------|-------|---|---|---|---|---|-------|
-| `activities` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. **Não há filtro por dono ou assigned.** |
-| `calendar_events` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (via `ws_select_calendar_events`). |
-| `calendar_events` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado: admin do workspace **ou** `can_write_owner` (dono / mesmo `user_group` com `data_scope`≥team). |
-| `meetings` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `meetings` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
-| `meeting_participants` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `meeting_summaries` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `task_queues` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `task_queue_items` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `tickets` | Ver | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `tickets` | Editar / Excluir | 🔐 | 🔐 | 🔐 | 🔐 | 🔐 | Workspace + `user_can_act('tickets', ..., owner_id, assignee_id)`. |
-| `bug_reports` (chamado interno) | Ver / Editar | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | **Só o autor** (`owner_id = uid`). Ninguém mais vê. Página `/admin/bug-reports` usa `supabaseAdmin` no server function. |
-| `bug_reports` | Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Qualquer autenticado cria o **próprio** chamado. |
-| `notifications` | Todos | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | Só o destinatário (`user_id = uid`). |
-| `timeline_pins` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Qualquer membro do workspace. |
+| Tabela                          | Verbo            | O   | M   | L   | A   | P   | Regra                                                                                                                   |
+| ------------------------------- | ---------------- | --- | --- | --- | --- | --- | ----------------------------------------------------------------------------------------------------------------------- |
+| `activities`                    | Todos            | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro. **Não há filtro por dono ou assigned.**                                                              |
+| `calendar_events`               | Ver              | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro (via `ws_select_calendar_events`).                                                                    |
+| `calendar_events`               | Editar / Excluir | ✅  | ⛔  | 🟡  | ✅  | ✅  | Consolidado: admin do workspace **ou** `can_write_owner` (dono / mesmo `user_group` com `data_scope`≥team).             |
+| `meetings`                      | Ver / Criar      | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                                                                      |
+| `meetings`                      | Editar / Excluir | ✅  | ⛔  | 🟡  | ✅  | ✅  | Consolidado admin+team.                                                                                                 |
+| `meeting_participants`          | Todos            | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                                                                      |
+| `meeting_summaries`             | Todos            | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                                                                      |
+| `task_queues`                   | Todos            | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                                                                      |
+| `task_queue_items`              | Todos            | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                                                                      |
+| `tickets`                       | Ver              | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                                                                      |
+| `tickets`                       | Editar / Excluir | 🔐  | 🔐  | 🔐  | 🔐  | 🔐  | Workspace + `user_can_act('tickets', ..., owner_id, assignee_id)`.                                                      |
+| `bug_reports` (chamado interno) | Ver / Editar     | ✅  | ⛔  | ⛔  | ⛔  | ⛔  | **Só o autor** (`owner_id = uid`). Ninguém mais vê. Página `/admin/bug-reports` usa `supabaseAdmin` no server function. |
+| `bug_reports`                   | Criar            | ✅  | ✅  | ✅  | ✅  | ✅  | Qualquer autenticado cria o **próprio** chamado.                                                                        |
+| `notifications`                 | Todos            | ✅  | ⛔  | ⛔  | ⛔  | ⛔  | Só o destinatário (`user_id = uid`).                                                                                    |
+| `timeline_pins`                 | Todos            | ✅  | ✅  | ✅  | ✅  | ✅  | Qualquer membro do workspace.                                                                                           |
 
 **Alerta 2** — `activities` continua liberando **UPDATE/DELETE** para qualquer membro do workspace (fora do escopo desta consolidação). `calendar_events` foi ajustado (jul/2026): só dono, admin ou líder de time editam/apagam.
 
@@ -123,43 +123,43 @@ Todas as tabelas abaixo são filtradas por `workspace_id IN current_user_workspa
 
 ### 3.1 E-mail
 
-| Tabela | Verbo | O | M | L | A | P | Regra |
-|--------|-------|---|---|---|---|---|-------|
-| `email_threads` | Ver | ✅ | 🟡 | 🟡 | ✅ | ✅ | Membro do workspace vê **apenas** threads com `contact_id` preenchido. Threads sem contato só o dono da `email_accounts` vê. |
-| `email_threads` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team (jul/2026). |
-| `email_messages` | Ver | ✅ | 🟡 | 🟡 | ✅ | ✅ | Herda do thread: com `contact_id` vazam para o workspace; sem contato só o dono da conta. |
-| `email_messages` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
-| `email_broadcasts` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `email_broadcasts` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
-| `email_tracking_events` | Todos | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro (abertos, cliques). |
-| `email_send_log` | Todos | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | Só `service_role` (jobs internos). |
+| Tabela                  | Verbo            | O   | M   | L   | A   | P   | Regra                                                                                                                        |
+| ----------------------- | ---------------- | --- | --- | --- | --- | --- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `email_threads`         | Ver              | ✅  | 🟡  | 🟡  | ✅  | ✅  | Membro do workspace vê **apenas** threads com `contact_id` preenchido. Threads sem contato só o dono da `email_accounts` vê. |
+| `email_threads`         | Editar / Excluir | ✅  | ⛔  | 🟡  | ✅  | ✅  | Consolidado admin+team (jul/2026).                                                                                           |
+| `email_messages`        | Ver              | ✅  | 🟡  | 🟡  | ✅  | ✅  | Herda do thread: com `contact_id` vazam para o workspace; sem contato só o dono da conta.                                    |
+| `email_messages`        | Editar / Excluir | ✅  | ⛔  | 🟡  | ✅  | ✅  | Consolidado admin+team.                                                                                                      |
+| `email_broadcasts`      | Ver / Criar      | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                                                                                                           |
+| `email_broadcasts`      | Editar / Excluir | ✅  | ⛔  | 🟡  | ✅  | ✅  | Consolidado admin+team.                                                                                                      |
+| `email_tracking_events` | Todos            | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro (abertos, cliques).                                                                                        |
+| `email_send_log`        | Todos            | ⛔  | ⛔  | ⛔  | ⛔  | ⛔  | Só `service_role` (jobs internos).                                                                                           |
 
 **Alerta 3** — Todo e-mail vinculado a um contato (inbound ou outbound) fica visível para o workspace inteiro na timeline. Isso é intencional para CRM, mas convém deixar claro para o usuário que os colegas veem o corpo do e-mail.
 
 ### 3.2 WhatsApp
 
-| Tabela | Verbo | O | M | L | A | P | Regra |
-|--------|-------|---|---|---|---|---|-------|
-| `whatsapp_conversations` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `whatsapp_conversations` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team (jul/2026). |
-| `whatsapp_messages` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `whatsapp_messages` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
-| `whatsapp_campaigns` | Ver / Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Workspace inteiro. |
-| `whatsapp_campaigns` | Editar / Excluir | ✅ | ⛔ | 🟡 | ✅ | ✅ | Consolidado admin+team. |
+| Tabela                   | Verbo            | O   | M   | L   | A   | P   | Regra                              |
+| ------------------------ | ---------------- | --- | --- | --- | --- | --- | ---------------------------------- |
+| `whatsapp_conversations` | Ver / Criar      | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                 |
+| `whatsapp_conversations` | Editar / Excluir | ✅  | ⛔  | 🟡  | ✅  | ✅  | Consolidado admin+team (jul/2026). |
+| `whatsapp_messages`      | Ver / Criar      | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                 |
+| `whatsapp_messages`      | Editar / Excluir | ✅  | ⛔  | 🟡  | ✅  | ✅  | Consolidado admin+team.            |
+| `whatsapp_campaigns`     | Ver / Criar      | ✅  | ✅  | ✅  | ✅  | ✅  | Workspace inteiro.                 |
+| `whatsapp_campaigns`     | Editar / Excluir | ✅  | ⛔  | 🟡  | ✅  | ✅  | Consolidado admin+team.            |
 
 ### 3.3 Chat interno
 
-| Tabela | Verbo | O | M | L | A | P | Regra |
-|--------|-------|---|---|---|---|---|-------|
-| `chat_conversations` | Ver / Editar | ✅ | 🟡 | 🟡 | 🟡 | 🟡 | Só membros da conversa (`is_chat_member`). Admin do workspace **não** vê o chat se não for adicionado. |
-| `chat_conversations` | Criar | ✅ | ✅ | ✅ | ✅ | ✅ | Precisa ser membro do workspace e ficar como `created_by`. |
-| `chat_conversation_members` | Ver | ✅ | 🟡 | 🟡 | 🟡 | 🟡 | Só quem já é membro da conversa. |
-| `chat_conversation_members` | Adicionar | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | Só o `created_by` da conversa pode adicionar (e só se adicionar quem seria o próprio user? — a policy exige `user_id = auth.uid()`; o convite real é feito por server function). |
-| `chat_conversation_members` | Remover / Atualizar | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | Só o próprio usuário se remove/atualiza. |
-| `chat_messages` | Ver | ✅ | 🟡 | 🟡 | 🟡 | 🟡 | Só membros da conversa. |
-| `chat_messages` | Enviar | ✅ | 🟡 | 🟡 | 🟡 | 🟡 | Precisa ser membro e `sender_user_id = uid`. |
-| `chat_messages` | Editar | ✅ | ⛔ | ⛔ | ⛔ | ⛔ | Só o autor da mensagem. |
-| `chat_message_attachments` | Ver / Enviar | ✅ | 🟡 | 🟡 | 🟡 | 🟡 | Herda de `chat_messages`. |
+| Tabela                      | Verbo               | O   | M   | L   | A   | P   | Regra                                                                                                                                                                            |
+| --------------------------- | ------------------- | --- | --- | --- | --- | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chat_conversations`        | Ver / Editar        | ✅  | 🟡  | 🟡  | 🟡  | 🟡  | Só membros da conversa (`is_chat_member`). Admin do workspace **não** vê o chat se não for adicionado.                                                                           |
+| `chat_conversations`        | Criar               | ✅  | ✅  | ✅  | ✅  | ✅  | Precisa ser membro do workspace e ficar como `created_by`.                                                                                                                       |
+| `chat_conversation_members` | Ver                 | ✅  | 🟡  | 🟡  | 🟡  | 🟡  | Só quem já é membro da conversa.                                                                                                                                                 |
+| `chat_conversation_members` | Adicionar           | ✅  | ⛔  | ⛔  | ⛔  | ⛔  | Só o `created_by` da conversa pode adicionar (e só se adicionar quem seria o próprio user? — a policy exige `user_id = auth.uid()`; o convite real é feito por server function). |
+| `chat_conversation_members` | Remover / Atualizar | ✅  | ⛔  | ⛔  | ⛔  | ⛔  | Só o próprio usuário se remove/atualiza.                                                                                                                                         |
+| `chat_messages`             | Ver                 | ✅  | 🟡  | 🟡  | 🟡  | 🟡  | Só membros da conversa.                                                                                                                                                          |
+| `chat_messages`             | Enviar              | ✅  | 🟡  | 🟡  | 🟡  | 🟡  | Precisa ser membro e `sender_user_id = uid`.                                                                                                                                     |
+| `chat_messages`             | Editar              | ✅  | ⛔  | ⛔  | ⛔  | ⛔  | Só o autor da mensagem.                                                                                                                                                          |
+| `chat_message_attachments`  | Ver / Enviar        | ✅  | 🟡  | 🟡  | 🟡  | 🟡  | Herda de `chat_messages`.                                                                                                                                                        |
 
 **Ponto positivo** — Chat é o único fluxo com isolamento efetivo por participante. Admin do workspace precisa ser adicionado à conversa para lê-la.
 

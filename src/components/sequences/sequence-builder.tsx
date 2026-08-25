@@ -31,7 +31,6 @@ import {
 import { TokenPills } from "@/components/ui/token-pills";
 import { SEQUENCE_TOKENS } from "@/lib/message-tokens-catalog";
 
-
 export interface SequenceDraft {
   id?: string;
   name: string;
@@ -215,7 +214,6 @@ export function SequenceBuilder({ open, draft, onClose, onSave }: Props) {
                       />
                     </div>
                   )}
-
                 </Card>
               ))}
             </div>

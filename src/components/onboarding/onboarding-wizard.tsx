@@ -67,10 +67,7 @@ function FieldControl({
   }
   if (field.type === "select") {
     return (
-      <Select
-        value={(value as string) ?? ""}
-        onValueChange={(v) => onChange(v)}
-      >
+      <Select value={(value as string) ?? ""} onValueChange={(v) => onChange(v)}>
         <SelectTrigger id={id}>
           <SelectValue placeholder="Selecione" />
         </SelectTrigger>
@@ -174,7 +171,10 @@ export function OnboardingWizard({
     },
     onSuccess: (res) => {
       const tc = "tasks_created" in res ? (res as { tasks_created: number }).tasks_created : 0;
-      const wf = "workflow_enqueued" in res ? (res as { workflow_enqueued: boolean }).workflow_enqueued : false;
+      const wf =
+        "workflow_enqueued" in res
+          ? (res as { workflow_enqueued: boolean }).workflow_enqueued
+          : false;
       toast.success(
         `Registro criado${tc ? ` · ${tc} tarefa(s)` : ""}${wf ? " · workflow disparado" : ""}`,
       );
@@ -223,9 +223,7 @@ export function OnboardingWizard({
         <div className="flex items-center justify-between gap-4">
           <div>
             <CardTitle className="text-xl">{template.name}</CardTitle>
-            {template.description && (
-              <CardDescription>{template.description}</CardDescription>
-            )}
+            {template.description && <CardDescription>{template.description}</CardDescription>}
           </div>
           <Badge variant="outline">
             Passo {stepIdx + 1} de {steps.length}
@@ -251,14 +249,10 @@ export function OnboardingWizard({
               <FieldControl
                 field={f}
                 value={form[f.name] ?? null}
-                onChange={(v) =>
-                  setForm((prev) => ({ ...prev, [f.name]: v }))
-                }
+                onChange={(v) => setForm((prev) => ({ ...prev, [f.name]: v }))}
               />
               {f.help && <p className="text-xs text-muted-foreground">{f.help}</p>}
-              {errors[f.name] && (
-                <p className="text-xs text-destructive">{errors[f.name]}</p>
-              )}
+              {errors[f.name] && <p className="text-xs text-destructive">{errors[f.name]}</p>}
             </div>
           ))}
         </div>

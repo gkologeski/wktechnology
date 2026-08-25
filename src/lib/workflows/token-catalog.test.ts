@@ -24,9 +24,9 @@ describe("token-catalog", () => {
   });
 
   it("inclui saídas de passos anteriores", () => {
-    const t = buildTextTokens(fields, [
-      { name: "steps.1.title", label: "Passo 1 · Título" },
-    ]).map((x) => x.token);
+    const t = buildTextTokens(fields, [{ name: "steps.1.title", label: "Passo 1 · Título" }]).map(
+      (x) => x.token,
+    );
     expect(t).toContain("{{steps.1.title}}");
   });
 

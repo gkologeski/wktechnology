@@ -25,7 +25,8 @@ export const Route = createFileRoute("/api/public/hooks/audit-export-tick")({
           }
           return { ran: results.length, results } as unknown as Record<string, unknown>;
         });
-        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        if (run.status === "error")
+          return Response.json({ ok: false, error: run.error }, { status: 500 });
         return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
     },

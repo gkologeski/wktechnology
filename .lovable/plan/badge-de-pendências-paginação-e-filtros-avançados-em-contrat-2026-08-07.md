@@ -28,14 +28,17 @@ Como os filtros agora precisam valer para a base inteira (e não só para o que 
 Além de busca, tipo, status, responsável e agrupamento já existentes:
 
 **Empresa (contraparte) e contratante**
+
 - Seletor com busca por empresa contraparte.
 - Seletor de contratante (entidade legal do próprio grupo). Quando o contrato veio de importação e o contratante só existe como texto extraído do documento, o filtro também considera esse texto, para não esconder contratos importados.
 
 **Período de vigência**
+
 - Início entre datas e término entre datas, com seletor de período em pt-BR.
 - Atalhos: "Vencendo em 30 dias", "60 dias", "90 dias", "Vigentes hoje" e "Já encerrados".
 
 **Comportamento comum aos filtros**
+
 - Todos os filtros ficam na URL, permitindo compartilhar um link já filtrado.
 - Uma barra de "filtros ativos" mostra chips removíveis individualmente e um botão "Limpar filtros".
 - Os filtros avançados ficam recolhidos atrás de um botão "Filtros" com contador, para não poluir a barra principal.

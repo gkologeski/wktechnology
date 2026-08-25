@@ -299,9 +299,7 @@ export const attachRecording = createServerFn({ method: "POST" })
       })
       .eq("id", data.meeting_id)
       .eq("owner_id", workspaceId)
-      .select(
-        "id, title, related_deal_id, related_contact_id, related_lead_id, related_ticket_id",
-      )
+      .select("id, title, related_deal_id, related_contact_id, related_lead_id, related_ticket_id")
       .maybeSingle();
     if (error) throw new Error(error.message);
 
@@ -473,10 +471,12 @@ Responda APENAS com JSON válido.`;
  * ============================================================ */
 async function refreshGoogleAccessToken(account: any): Promise<string> {
   const supabaseAdmin = await getSupabaseAdmin();
-  if (!account.refresh_token) throw new Error("Conta de calendário sem refresh_token — reconecte o Google");
+  if (!account.refresh_token)
+    throw new Error("Conta de calendário sem refresh_token — reconecte o Google");
   const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-  if (!clientId || !clientSecret) throw new Error("Credenciais OAuth do Google ausentes no servidor");
+  if (!clientId || !clientSecret)
+    throw new Error("Credenciais OAuth do Google ausentes no servidor");
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -492,7 +492,12 @@ async function refreshGoogleAccessToken(account: any): Promise<string> {
   const expiresAt = new Date(Date.now() + (j.expires_in - 60) * 1000).toISOString();
   await supabaseAdmin
     .from("calendar_accounts")
-    .update({ access_token: j.access_token, expires_at: expiresAt, last_status: "connected", last_error: null })
+    .update({
+      access_token: j.access_token,
+      expires_at: expiresAt,
+      last_status: "connected",
+      last_error: null,
+    })
     .eq("id", account.id);
   return j.access_token;
 }
@@ -582,7 +587,8 @@ export const summarizeCalendarEventRecording = createServerFn({ method: "POST" }
       .eq("owner_id", context.userId)
       .maybeSingle();
     if (evErr || !event) throw new Error("Evento de calendário não encontrado");
-    if (!event.recording_drive_file_id) throw new Error("Este evento ainda não tem gravação vinculada no Drive");
+    if (!event.recording_drive_file_id)
+      throw new Error("Este evento ainda não tem gravação vinculada no Drive");
 
     await supabaseAdmin
       .from("calendar_events")
@@ -603,7 +609,10 @@ Responda APENAS com JSON válido.`;
       // 1) Tentar transcrição primeiro (texto, sem limite de tamanho prático)
       let userContent: any;
       let usedTranscript = false;
-      const transcript = await findDriveTranscript(token, { title: event.title, end_at: event.end_at });
+      const transcript = await findDriveTranscript(token, {
+        title: event.title,
+        end_at: event.end_at,
+      });
       if (transcript) {
         const text = await downloadDriveTextFile(token, transcript.file_id, transcript.mime_type);
         const clipped = text.length > 200_000 ? text.slice(0, 200_000) : text;
@@ -633,7 +642,10 @@ Responda APENAS com JSON válido.`;
           );
         }
         const b64 = Buffer.from(arrayBuf).toString("base64");
-        const mime = (event.recording_mime_type as string | null) ?? dres.headers.get("content-type") ?? "video/mp4";
+        const mime =
+          (event.recording_mime_type as string | null) ??
+          dres.headers.get("content-type") ??
+          "video/mp4";
         const audioFormat = mime.includes("mp4")
           ? "mp4"
           : mime.includes("wav")
@@ -666,22 +678,33 @@ Responda APENAS com JSON válido.`;
       const json: any = await aiRes.json();
       const content = json.choices?.[0]?.message?.content ?? "";
       let parsed: any = {};
-      try { parsed = JSON.parse(content); } catch { parsed = { summary: content, transcript: content }; }
+      try {
+        parsed = JSON.parse(content);
+      } catch {
+        parsed = { summary: content, transcript: content };
+      }
 
       const decisions: any[] = Array.isArray(parsed.decisions) ? parsed.decisions : [];
       const actionItems: any[] = Array.isArray(parsed.action_items) ? parsed.action_items : [];
       let summaryText: string = parsed.summary ?? "";
-      if (usedTranscript) summaryText = `_Resumo gerado a partir da transcrição do Meet._\n\n${summaryText}`;
+      if (usedTranscript)
+        summaryText = `_Resumo gerado a partir da transcrição do Meet._\n\n${summaryText}`;
       if (decisions.length) {
-        summaryText += "\n\n**Decisões:**\n" + decisions.map((d) => `- ${typeof d === "string" ? d : JSON.stringify(d)}`).join("\n");
+        summaryText +=
+          "\n\n**Decisões:**\n" +
+          decisions.map((d) => `- ${typeof d === "string" ? d : JSON.stringify(d)}`).join("\n");
       }
       if (actionItems.length) {
-        summaryText += "\n\n**Próximos passos:**\n" + actionItems.map((it) => {
-          const parts = [it?.task ?? ""];
-          if (it?.assignee) parts.push(`(${it.assignee})`);
-          if (it?.due_hint) parts.push(`— ${it.due_hint}`);
-          return `- ${parts.join(" ")}`;
-        }).join("\n");
+        summaryText +=
+          "\n\n**Próximos passos:**\n" +
+          actionItems
+            .map((it) => {
+              const parts = [it?.task ?? ""];
+              if (it?.assignee) parts.push(`(${it.assignee})`);
+              if (it?.due_hint) parts.push(`— ${it.due_hint}`);
+              return `- ${parts.join(" ")}`;
+            })
+            .join("\n");
       }
 
       await supabaseAdmin
@@ -695,7 +718,12 @@ Responda APENAS com JSON válido.`;
         })
         .eq("id", event.id);
 
-      return { ok: true, summary: summaryText, action_items: actionItems, source: usedTranscript ? "transcript" : "video" };
+      return {
+        ok: true,
+        summary: summaryText,
+        action_items: actionItems,
+        source: usedTranscript ? "transcript" : "video",
+      };
     } catch (e: any) {
       const msg = String(e?.message ?? e);
       await supabaseAdmin
@@ -705,8 +733,6 @@ Responda APENAS com JSON válido.`;
       throw e;
     }
   });
-
-
 
 /* ============================================================
  * Create tasks (activities type=task) from action items
@@ -764,7 +790,12 @@ export const createTasksFromActionItems = createServerFn({ method: "POST" })
 export const signMeetingRecording = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ path: z.string().min(1).max(500), expires_in: z.number().int().min(30).max(86400).default(3600) }).parse(input),
+    z
+      .object({
+        path: z.string().min(1).max(500),
+        expires_in: z.number().int().min(30).max(86400).default(3600),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const supabaseAdmin = await getSupabaseAdmin();

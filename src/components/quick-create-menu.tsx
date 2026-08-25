@@ -28,7 +28,15 @@ import { useActiveModule } from "@/lib/modules/active-module";
 import { AssociateCandidateJobDialog } from "@/components/ats/associate-candidate-job-dialog";
 
 type QuickItem = {
-  to: "/leads" | "/contacts" | "/companies" | "/deals" | "/tickets" | "/tasks" | "/meetings" | "/notes";
+  to:
+    | "/leads"
+    | "/contacts"
+    | "/companies"
+    | "/deals"
+    | "/tickets"
+    | "/tasks"
+    | "/meetings"
+    | "/notes";
   label: string;
   icon: typeof Plus;
   /** false para rotas que ainda não têm modal de cadastro (apenas navega). */
@@ -106,10 +114,7 @@ export function QuickCreateMenu() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AssociateCandidateJobDialog
-        open={associateOpen}
-        onOpenChange={setAssociateOpen}
-      />
+      <AssociateCandidateJobDialog open={associateOpen} onOpenChange={setAssociateOpen} />
     </>
   );
 }

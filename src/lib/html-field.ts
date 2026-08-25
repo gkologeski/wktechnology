@@ -17,6 +17,9 @@ export function normalizeHtmlField(html: string | null | undefined): string | nu
 }
 
 /** Compara dois valores HTML após sanitização — útil para verificar round-trip. */
-export function htmlEquivalent(a: string | null | undefined, b: string | null | undefined): boolean {
+export function htmlEquivalent(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
   return sanitizeHtml(a ?? "") === sanitizeHtml(b ?? "");
 }

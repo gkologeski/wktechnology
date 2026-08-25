@@ -6,7 +6,7 @@
   - confirmação por contagem (`ConfirmCountDialog`);
   - detecção de bloqueio silencioso por permissão (`deniedIfUnaffected`);
   - aviso parcial ("X de Y excluído(s). Verifique suas permissões.").
-  Usada em: Candidatos, Vagas, Ofertas, Pessoas, Documentos, Benefícios, Incidentes, Projetos, Tarefas, Propostas, Serviços, Lançamentos financeiros, além das visões Quadro/Kanban (`entity-board.tsx`, `kanban-board.tsx`, `deals-board.tsx`, `tickets-board.tsx`).
+    Usada em: Candidatos, Vagas, Ofertas, Pessoas, Documentos, Benefícios, Incidentes, Projetos, Tarefas, Propostas, Serviços, Lançamentos financeiros, além das visões Quadro/Kanban (`entity-board.tsx`, `kanban-board.tsx`, `deals-board.tsx`, `tickets-board.tsx`).
 - `src/components/entity-list.tsx` (lista genérica usada pelos demais módulos) tem exclusão em massa com o mesmo padrão (confirmação por contagem + `deniedIfUnaffected`).
 - `src/components/contracts/contracts-bulk-bar.tsx` tem exclusão em massa própria, com bloqueio por regra de hierarquia e tooltip explicando quando não é permitido.
 

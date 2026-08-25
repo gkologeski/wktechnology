@@ -6,7 +6,14 @@ import type { Activity } from "@/lib/db-types";
 import { Paperclip, Download, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Eye, MousePointerClick } from "lucide-react";
-import { type EmailMeta, attachmentIcon, colorFromString, escapeHtmlText, formatBytes, initialsFromEmail } from "./timeline-shared";
+import {
+  type EmailMeta,
+  attachmentIcon,
+  colorFromString,
+  escapeHtmlText,
+  formatBytes,
+  initialsFromEmail,
+} from "./timeline-shared";
 
 export function EmailTimelineItem({
   meta,
@@ -24,12 +31,10 @@ export function EmailTimelineItem({
 
   const isOut = meta.direction === "outbound";
   const displayName = isOut
-    ? (meta.from_name || meta.from_email || "Você")
-    : (meta.from_name || meta.from_email || "Remetente");
+    ? meta.from_name || meta.from_email || "Você"
+    : meta.from_name || meta.from_email || "Remetente";
   const displayEmail = meta.from_email ?? "";
-  const dateStr = createdAt
-    ? formatDateTime(meta.sent_at || meta.received_at || createdAt)
-    : "";
+  const dateStr = createdAt ? formatDateTime(meta.sent_at || meta.received_at || createdAt) : "";
   const toList = meta.to_emails ?? [];
   const primaryTo = toList[0] ?? "—";
   const extraToCount = Math.max(0, toList.length - 1);
@@ -114,13 +119,17 @@ export function EmailTimelineItem({
                   para {primaryTo}
                   {extraToCount > 0 ? `, +${extraToCount}` : ""}
                 </span>
-                <ChevronDown className={cn("h-3 w-3 transition-transform", headerOpen && "rotate-180")} />
+                <ChevronDown
+                  className={cn("h-3 w-3 transition-transform", headerOpen && "rotate-180")}
+                />
               </button>
               {headerOpen && (
                 <div className="mt-1 space-y-0.5 rounded-md border border-border/50 bg-muted/30 p-2 text-[11px] text-muted-foreground">
                   <div>
                     <span className="text-foreground/70">De: </span>
-                    {meta.from_name ? `${meta.from_name} <${meta.from_email ?? ""}>` : (meta.from_email ?? "—")}
+                    {meta.from_name
+                      ? `${meta.from_name} <${meta.from_email ?? ""}>`
+                      : (meta.from_email ?? "—")}
                   </div>
                   <div>
                     <span className="text-foreground/70">Para: </span>

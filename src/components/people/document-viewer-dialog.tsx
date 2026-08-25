@@ -113,7 +113,8 @@ export function PersonDocumentViewerDialog({ open, onOpenChange, document }: Pro
         const r = await fetch(url);
         if (!r.ok) throw new Error(`Falha ao carregar PDF (HTTP ${r.status})`);
         const raw = await r.blob();
-        const blob = raw.type === "application/pdf" ? raw : raw.slice(0, raw.size, "application/pdf");
+        const blob =
+          raw.type === "application/pdf" ? raw : raw.slice(0, raw.size, "application/pdf");
         createdUrl = URL.createObjectURL(blob);
         if (!cancelled) setPdfBlobUrl(createdUrl);
         else if (createdUrl) URL.revokeObjectURL(createdUrl);
@@ -217,11 +218,7 @@ export function PersonDocumentViewerDialog({ open, onOpenChange, document }: Pro
     if (kind === "image") {
       return (
         <div className="flex h-[70vh] items-center justify-center overflow-auto bg-muted/20 p-2">
-          <img
-            src={url}
-            alt={fileName}
-            className="max-h-full max-w-full object-contain"
-          />
+          <img src={url} alt={fileName} className="max-h-full max-w-full object-contain" />
         </div>
       );
     }
@@ -281,13 +278,7 @@ export function PersonDocumentViewerDialog({ open, onOpenChange, document }: Pro
 
     if (kind === "office") {
       const officeSrc = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`;
-      return (
-        <iframe
-          src={officeSrc}
-          title={fileName}
-          className="h-[70vh] w-full bg-muted/20"
-        />
-      );
+      return <iframe src={officeSrc} title={fileName} className="h-[70vh] w-full bg-muted/20" />;
     }
 
     if (kind === "text") {

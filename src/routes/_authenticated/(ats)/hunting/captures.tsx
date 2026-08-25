@@ -86,7 +86,9 @@ function HuntingCapturesPage() {
 
       {q.isLoading ? (
         <div className="space-y-2">
-          {Array.from({ length: 6 }).map((_, i) => <RowSkeleton key={i} />)}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <RowSkeleton key={i} />
+          ))}
         </div>
       ) : captures.length === 0 ? (
         <EmptyState
@@ -103,9 +105,15 @@ function HuntingCapturesPage() {
         <Card>
           <CardContent className="p-0">
             <div className="flex items-center gap-3 border-b border-border-subtle px-4 py-2">
-              <Checkbox checked={allChecked} onCheckedChange={toggleAll} aria-label="Selecionar todos" />
+              <Checkbox
+                checked={allChecked}
+                onCheckedChange={toggleAll}
+                aria-label="Selecionar todos"
+              />
               <span className="text-xs text-muted-foreground">
-                {selected.size > 0 ? `${selected.size} selecionados` : "Selecione para enriquecer com IA"}
+                {selected.size > 0
+                  ? `${selected.size} selecionados`
+                  : "Selecione para enriquecer com IA"}
               </span>
             </div>
             <div className="divide-y">
@@ -118,18 +126,26 @@ function HuntingCapturesPage() {
                     className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex min-w-0 flex-1 items-start gap-3">
-                      <Checkbox checked={checked} onCheckedChange={() => toggle(c.id)} aria-label="Selecionar" />
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => toggle(c.id)}
+                        aria-label="Selecionar"
+                      />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-medium">{cand?.full_name ?? "—"}</p>
-                          <Badge variant="outline" className="text-xs">LinkedIn</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            LinkedIn
+                          </Badge>
                           {Array.isArray((cand as unknown as { skills?: unknown[] })?.skills) &&
-                            ((cand as unknown as { skills: unknown[] }).skills).length > 0 && (
-                              <Badge variant="outline" className="text-[10px] border-emerald-400 text-emerald-600">
+                            (cand as unknown as { skills: unknown[] }).skills.length > 0 && (
+                              <Badge
+                                variant="outline"
+                                className="text-[10px] border-emerald-400 text-emerald-600"
+                              >
                                 enriquecido
                               </Badge>
                             )}
-
                         </div>
 
                         <p className="truncate text-xs text-muted-foreground">
@@ -138,7 +154,10 @@ function HuntingCapturesPage() {
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Capturado{" "}
-                          {formatDistanceToNow(new Date(c.captured_at as string), { locale: ptBR, addSuffix: true })}
+                          {formatDistanceToNow(new Date(c.captured_at as string), {
+                            locale: ptBR,
+                            addSuffix: true,
+                          })}
                         </p>
                       </div>
                     </div>

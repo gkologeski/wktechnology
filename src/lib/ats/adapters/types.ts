@@ -56,7 +56,6 @@ export type JobPostPayload = {
 };
 export type JobPostResult = { externalId: string; url: string };
 
-
 export type JobApplicantRecord = {
   providerApplicantId: string;
   fullName: string | null;

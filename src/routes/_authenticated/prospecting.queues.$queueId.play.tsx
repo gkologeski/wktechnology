@@ -2,7 +2,16 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, SkipForward, ArrowRight, Phone, Mail, Play, ListChecks, ShieldOff } from "lucide-react";
+import {
+  ArrowLeft,
+  SkipForward,
+  ArrowRight,
+  Phone,
+  Mail,
+  Play,
+  ListChecks,
+  ShieldOff,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -175,10 +184,7 @@ function PlayProspectingQueue() {
               </div>
             ) : (
               <>
-                <Select
-                  value={pendingQuestionnaireId}
-                  onValueChange={setPendingQuestionnaireId}
-                >
+                <Select value={pendingQuestionnaireId} onValueChange={setPendingQuestionnaireId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecionar questionário" />
                   </SelectTrigger>
@@ -202,9 +208,7 @@ function PlayProspectingQueue() {
                   </Button>
                 </div>
                 {total === 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    Esta fila não possui itens.
-                  </p>
+                  <p className="text-xs text-muted-foreground">Esta fila não possui itens.</p>
                 ) : null}
               </>
             )}
@@ -228,9 +232,7 @@ function PlayProspectingQueue() {
         <Card>
           <CardContent className="pt-8 text-center space-y-2">
             <p className="text-lg font-medium">Fila concluída 🎉</p>
-            <p className="text-sm text-muted-foreground">
-              Todos os itens foram trabalhados.
-            </p>
+            <p className="text-sm text-muted-foreground">Todos os itens foram trabalhados.</p>
             <Button asChild variant="outline">
               <Link to="/prospecting" search={{ tab: "fila" as const }}>
                 Voltar para filas
@@ -250,7 +252,8 @@ function PlayProspectingQueue() {
   const phone = current.phone ? String(current.phone) : "";
   const companyName =
     (current.company_name as string | null) ??
-    ((current.company as { name?: string } | null)?.name ?? null);
+    (current.company as { name?: string } | null)?.name ??
+    null;
   const statusRaw =
     entity === "lead"
       ? current.status
@@ -262,8 +265,7 @@ function PlayProspectingQueue() {
   const score = typeof current.score === "number" ? current.score : null;
   const detailTo = entity === "lead" ? "/leads/$id" : "/contacts/$id";
   const relatedKey = entity === "lead" ? "related_lead_id" : "related_contact_id";
-  const displayName =
-    fullName || email || companyName || (entity === "lead" ? "Lead" : "Contato");
+  const displayName = fullName || email || companyName || (entity === "lead" ? "Lead" : "Contato");
 
   return (
     <div className="mx-auto max-w-6xl p-6 space-y-4">
@@ -348,10 +350,7 @@ function PlayProspectingQueue() {
           </Card>
 
           <div className="flex justify-between gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIdx((i) => Math.min(i + 1, total))}
-            >
+            <Button variant="outline" onClick={() => setIdx((i) => Math.min(i + 1, total))}>
               <SkipForward className="mr-1 h-4 w-4" /> Pular (S)
             </Button>
             <Button onClick={() => setIdx((i) => Math.min(i + 1, total))}>

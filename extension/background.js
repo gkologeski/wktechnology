@@ -47,14 +47,24 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         const out = await apiCall("/api/public/hunting/log-outreach", msg.payload);
         sendResponse({ ok: true, data: out });
       } else if (msg.type === "PAIR_FROM_WEB") {
-        const apiBase = String(msg.apiBase || "").trim().replace(/\/$/, "");
+        const apiBase = String(msg.apiBase || "")
+          .trim()
+          .replace(/\/$/, "");
         const apiKey = String(msg.apiKey || "").trim();
         if (!apiBase || !apiKey) {
-          await chrome.storage.local.set({ lastPairError: "missing_fields", lastPairAt: Date.now() });
+          await chrome.storage.local.set({
+            lastPairError: "missing_fields",
+            lastPairAt: Date.now(),
+          });
           sendResponse({ ok: false, error: "missing_fields" });
           return;
         }
-        await chrome.storage.local.set({ apiBase, apiKey, lastPairError: null, lastPairAt: Date.now() });
+        await chrome.storage.local.set({
+          apiBase,
+          apiKey,
+          lastPairError: null,
+          lastPairAt: Date.now(),
+        });
         sendResponse({ ok: true });
       } else if (msg.type === "PING") {
         const cfg = await getConfig();

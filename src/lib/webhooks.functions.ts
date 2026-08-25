@@ -9,7 +9,6 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const WEBHOOK_MANAGE = "system.webhooks.manage.workspace";
 
-
 export const WEBHOOK_EVENTS = [
   "lead.created",
   "lead.updated",
@@ -76,7 +75,6 @@ export const upsertWebhook = createServerFn({ method: "POST" })
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
     if (data.id) {
-
       const { error } = await supabase
         .from("outbound_webhooks")
         .update({
@@ -112,19 +110,18 @@ export const deleteWebhook = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(userId);
     const ws = await getActiveWorkspaceId(supabase, userId);
     await assertPermission(supabase, userId, ws, WEBHOOK_MANAGE);
-    await supabase.from("outbound_webhooks").delete().eq("id", data.id).eq("workspace_id", workspaceId);
+    await supabase
+      .from("outbound_webhooks")
+      .delete()
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
     return { ok: true };
   });
-
 
 export const listWebhookDeliveries = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (d: {
-      webhook_id?: string | null;
-      event_type?: string | null;
-      status?: string | null;
-    }) =>
+    (d: { webhook_id?: string | null; event_type?: string | null; status?: string | null }) =>
       z
         .object({
           webhook_id: z.string().uuid().nullable().optional(),

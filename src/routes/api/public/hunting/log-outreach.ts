@@ -34,18 +34,13 @@ export const Route = createFileRoute("/api/public/hunting/log-outreach")({
         if (!parsed.success)
           return jsonResponse({ error: parsed.error.flatten() }, { status: 400 });
 
-        const candidate = await findCandidateByLinkedinUrl(
-          auth.ownerId,
-          parsed.data.linkedin_url,
-        );
-        if (!candidate)
-          return jsonResponse({ error: "candidate_not_found" }, { status: 404 });
+        const candidate = await findCandidateByLinkedinUrl(auth.ownerId, parsed.data.linkedin_url);
+        if (!candidate) return jsonResponse({ error: "candidate_not_found" }, { status: 404 });
 
         const meta: string[] = [];
         if (parsed.data.detected !== undefined)
           meta.push(`detecção: ${parsed.data.detected ? "automática" : "manual"}`);
-        if (parsed.data.final_length !== undefined)
-          meta.push(`${parsed.data.final_length} chars`);
+        if (parsed.data.final_length !== undefined) meta.push(`${parsed.data.final_length} chars`);
         if (parsed.data.truncated) meta.push("truncado");
         if (parsed.data.template_id) meta.push(`template: ${parsed.data.template_id}`);
         const description = meta.length

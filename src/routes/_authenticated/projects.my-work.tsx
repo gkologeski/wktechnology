@@ -80,16 +80,13 @@ function MyWorkPage() {
   });
   const weekQuery = useQuery({
     queryKey: ["my-work", "timesheet", toIsoDate(weekStart), toIsoDate(weekEnd)],
-    queryFn: () =>
-      timesheetFn({ data: { from: toIsoDate(weekStart), to: toIsoDate(weekEnd) } }),
+    queryFn: () => timesheetFn({ data: { from: toIsoDate(weekStart), to: toIsoDate(weekEnd) } }),
   });
 
   const allTasks = (tasksQuery.data ?? []) as Task[];
   const openTasks = allTasks.filter((t) => t.status !== "done");
   const today = openTasks.filter((t) => t.due_at && t.due_at.slice(0, 10) === todayIso);
-  const overdue = openTasks.filter(
-    (t) => t.due_at && t.due_at.slice(0, 10) < todayIso,
-  );
+  const overdue = openTasks.filter((t) => t.due_at && t.due_at.slice(0, 10) < todayIso);
   const weekAhead = openTasks.filter((t) => {
     if (!t.due_at) return false;
     const d = t.due_at.slice(0, 10);
@@ -136,7 +133,7 @@ function MyWorkPage() {
           value={running ? fmtElapsed(running.started_at) : "—"}
           hint={
             running
-              ? running.project_tasks?.title ?? running.projects?.name ?? "Sem tarefa"
+              ? (running.project_tasks?.title ?? running.projects?.name ?? "Sem tarefa")
               : "Nenhum timer em execução"
           }
         />
@@ -206,9 +203,7 @@ function MetricCard({
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-semibold tabular-nums truncate">{value}</div>
-        {hint ? (
-          <div className="text-xs text-muted-foreground mt-1 truncate">{hint}</div>
-        ) : null}
+        {hint ? <div className="text-xs text-muted-foreground mt-1 truncate">{hint}</div> : null}
       </CardContent>
     </Card>
   );

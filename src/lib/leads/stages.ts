@@ -80,7 +80,6 @@ export function resolveLeadStageValue(
   return lead.stage_id ?? lead.status ?? stages[0]?.value ?? "new";
 }
 
-
 /**
  * Status legado derivado da etapa — mantém filtros e relatórios existentes
  * funcionando quando a etapa é customizada.

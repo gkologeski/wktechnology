@@ -129,8 +129,7 @@ function FilesPage() {
   };
 
   const createFolderMut = useMutation({
-    mutationFn: () =>
-      createFolderFn({ data: { name: newFolderName.trim(), parentId: folderId } }),
+    mutationFn: () => createFolderFn({ data: { name: newFolderName.trim(), parentId: folderId } }),
     onSuccess: () => {
       toast.success("Pasta criada");
       setNewFolderOpen(false);
@@ -339,9 +338,7 @@ function FilesPage() {
                     setRenameTarget({ id: f.id, kind: "folder", name: f.name });
                     setRenameValue(f.name);
                   }}
-                  onDelete={() =>
-                    setDeleteTarget({ id: f.id, kind: "folder", name: f.name })
-                  }
+                  onDelete={() => setDeleteTarget({ id: f.id, kind: "folder", name: f.name })}
                 />
               </li>
             ))}
@@ -415,11 +412,7 @@ function FilesPage() {
           <DialogHeader>
             <DialogTitle>Renomear</DialogTitle>
           </DialogHeader>
-          <Input
-            value={renameValue}
-            onChange={(e) => setRenameValue(e.target.value)}
-            autoFocus
-          />
+          <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} autoFocus />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenameTarget(null)}>
               Cancelar
@@ -437,9 +430,12 @@ function FilesPage() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir {deleteTarget?.kind === "folder" ? "pasta" : "arquivo"}</AlertDialogTitle>
+            <AlertDialogTitle>
+              Excluir {deleteTarget?.kind === "folder" ? "pasta" : "arquivo"}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. {deleteTarget?.kind === "folder" && "Todos os arquivos da pasta serão removidos."}
+              Esta ação não pode ser desfeita.{" "}
+              {deleteTarget?.kind === "folder" && "Todos os arquivos da pasta serão removidos."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

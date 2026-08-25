@@ -70,22 +70,25 @@ export const getObservability = createServerFn({ method: "GET" })
 
     const { data: acc } = await supabase
       .from("unipile_accounts")
-      .select("id, status, display_name, unipile_account_id, daily_window, last_seen_at, last_error")
+      .select(
+        "id, status, display_name, unipile_account_id, daily_window, last_seen_at, last_error",
+      )
       .eq("workspace_id", workspaceId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    const emptyBudgets: ObservabilityBudget[] = (Object.keys(ENDPOINT_DAILY_LIMITS) as UnipileEndpointKey[])
-      .map((endpoint) => ({
-        endpoint,
-        label: ENDPOINT_LABELS[endpoint],
-        used: 0,
-        limit: ENDPOINT_DAILY_LIMITS[endpoint],
-        remaining: ENDPOINT_DAILY_LIMITS[endpoint],
-        last_request_at: null,
-      }));
+    const emptyBudgets: ObservabilityBudget[] = (
+      Object.keys(ENDPOINT_DAILY_LIMITS) as UnipileEndpointKey[]
+    ).map((endpoint) => ({
+      endpoint,
+      label: ENDPOINT_LABELS[endpoint],
+      used: 0,
+      limit: ENDPOINT_DAILY_LIMITS[endpoint],
+      remaining: ENDPOINT_DAILY_LIMITS[endpoint],
+      last_request_at: null,
+    }));
 
     if (!acc) {
       return {
@@ -126,25 +129,27 @@ export const getObservability = createServerFn({ method: "GET" })
         last_request_at: (b as { last_request_at: string | null }).last_request_at ?? null,
       });
     }
-    const budgets: ObservabilityBudget[] = (Object.keys(ENDPOINT_DAILY_LIMITS) as UnipileEndpointKey[]).map(
-      (endpoint) => {
-        const b = byEndpoint.get(endpoint);
-        const used = b?.count ?? 0;
-        const limit = ENDPOINT_DAILY_LIMITS[endpoint];
-        return {
-          endpoint,
-          label: ENDPOINT_LABELS[endpoint],
-          used,
-          limit,
-          remaining: Math.max(0, limit - used),
-          last_request_at: b?.last_request_at ?? null,
-        };
-      },
-    );
+    const budgets: ObservabilityBudget[] = (
+      Object.keys(ENDPOINT_DAILY_LIMITS) as UnipileEndpointKey[]
+    ).map((endpoint) => {
+      const b = byEndpoint.get(endpoint);
+      const used = b?.count ?? 0;
+      const limit = ENDPOINT_DAILY_LIMITS[endpoint];
+      return {
+        endpoint,
+        label: ENDPOINT_LABELS[endpoint],
+        used,
+        limit,
+        remaining: Math.max(0, limit - used),
+        last_request_at: b?.last_request_at ?? null,
+      };
+    });
 
     // Agregado 24h a partir dos requests trazidos
     const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    const win = (requests ?? []).filter((r) => new Date(r.created_at as string).getTime() >= cutoff);
+    const win = (requests ?? []).filter(
+      (r) => new Date(r.created_at as string).getTime() >= cutoff,
+    );
     const total = win.length;
     const success = win.filter((r) => {
       const s = (r.status ?? 0) as number;
@@ -155,10 +160,10 @@ export const getObservability = createServerFn({ method: "GET" })
       .map((r) => r.latency_ms as number | null)
       .filter((v): v is number => typeof v === "number" && v >= 0)
       .sort((a, b) => a - b);
-    const avg = lats.length
-      ? Math.round(lats.reduce((s, v) => s + v, 0) / lats.length)
+    const avg = lats.length ? Math.round(lats.reduce((s, v) => s + v, 0) / lats.length) : null;
+    const p95 = lats.length
+      ? lats[Math.min(lats.length - 1, Math.floor(lats.length * 0.95))]
       : null;
-    const p95 = lats.length ? lats[Math.min(lats.length - 1, Math.floor(lats.length * 0.95))] : null;
 
     return {
       account: acc,

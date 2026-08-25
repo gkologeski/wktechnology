@@ -5,7 +5,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -177,9 +183,7 @@ export function TimeEntryDialog({
 
           {billable && (
             <div className="grid gap-1.5">
-              <Label htmlFor="te-rate">
-                Tarifa/h (opcional — usa a da alocação se vazio)
-              </Label>
+              <Label htmlFor="te-rate">Tarifa/h (opcional — usa a da alocação se vazio)</Label>
               <Input
                 id="te-rate"
                 type="number"
@@ -190,8 +194,7 @@ export function TimeEntryDialog({
               />
               {preview > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Valor:{" "}
-                  {preview.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  Valor: {preview.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                 </p>
               )}
             </div>
@@ -208,9 +211,7 @@ export function TimeEntryDialog({
             />
           </div>
 
-          {projectLabel && (
-            <p className="text-xs text-muted-foreground">Projeto: {projectLabel}</p>
-          )}
+          {projectLabel && <p className="text-xs text-muted-foreground">Projeto: {projectLabel}</p>}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>

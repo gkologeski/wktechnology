@@ -135,7 +135,6 @@ export function useCanDelete(resource: string): UseCanDeleteResult {
     [flags, teamIds, user?.id, rule.ownerFields],
   );
 
-
   const reason = useCallback(
     (record?: OwnableRecord) => (canDeleteRecord(record) ? undefined : DELETE_NOT_ALLOWED_TITLE),
     [canDeleteRecord],

@@ -62,7 +62,6 @@ const MONEY_ROOTS = [
   "tcv",
 ];
 
-
 /** Nomes exatos considerados monetários. */
 const MONEY_EXACT = new Set([
   "value",
@@ -120,9 +119,9 @@ export function isMoneyField(key: string): boolean {
   // Chaves colapsadas (sem separador), ex.: annualrevenue, dealamount, hs_arr.
   const collapsed = k.replace(/[_-]/g, "");
   if (collapsed !== k && MONEY_ROOTS.some((r) => collapsed.endsWith(r))) return true;
-  if (MONEY_ROOTS.some((r) => k.endsWith(r) && k.length > r.length && !k.includes("_"))) return true;
+  if (MONEY_ROOTS.some((r) => k.endsWith(r) && k.length > r.length && !k.includes("_")))
+    return true;
   return false;
-
 }
 
 /** Extrai o código de moeda do próprio registro, com fallback BRL. */

@@ -634,8 +634,7 @@ async function runAction(
       case "open_deal_dialog": {
         // Registra uma intenção pendente. A criação do negócio é confirmada
         // pelo usuário no modal aberto na tela do registro.
-        if (ctx.entity !== "leads")
-          throw new Error("open_deal_dialog suporta apenas leads");
+        if (ctx.entity !== "leads") throw new Error("open_deal_dialog suporta apenas leads");
         const subject = action.subject
           ? (renderTokens(action.subject, ctx.after, ctx.vars) as string)
           : "Criar oportunidade";

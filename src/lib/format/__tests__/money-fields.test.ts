@@ -47,7 +47,6 @@ describe("isMoneyField", () => {
   });
 });
 
-
 describe("formatMoney", () => {
   it("formata em BRL por padrão", () => {
     expect(formatMoney(1500)?.replace(/\u00a0/g, " ")).toBe("R$ 1.500,00");

@@ -44,72 +44,72 @@ export function EnrichmentHistoryPage() {
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-      <PageHeader
-        title="Enriquecimento — histórico"
-        description="Execuções recentes de enriquecimento (Apollo, Lusha) e seus resultados."
-      />
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Provedor</TableHead>
-              <TableHead>Entidade</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Total</TableHead>
-              <TableHead className="text-right">OK</TableHead>
-              <TableHead className="text-right">Falhas</TableHead>
-              <TableHead className="text-right">Créditos</TableHead>
-              <TableHead>Iniciado</TableHead>
-              <TableHead className="w-12"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {q.isLoading && (
+        <PageHeader
+          title="Enriquecimento — histórico"
+          description="Execuções recentes de enriquecimento (Apollo, Lusha) e seus resultados."
+        />
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
-                  Carregando…
-                </TableCell>
+                <TableHead>Provedor</TableHead>
+                <TableHead>Entidade</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-right">OK</TableHead>
+                <TableHead className="text-right">Falhas</TableHead>
+                <TableHead className="text-right">Créditos</TableHead>
+                <TableHead>Iniciado</TableHead>
+                <TableHead className="w-12"></TableHead>
               </TableRow>
-            )}
-            {q.data && q.data.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
-                  Nenhuma execução ainda.
-                </TableCell>
-              </TableRow>
-            )}
-            {q.data?.map((j) => (
-              <TableRow key={j.id}>
-                <TableCell className="capitalize">{j.provider}</TableCell>
-                <TableCell>{j.entity === "lead" ? "Leads" : "Contatos"}</TableCell>
-                <TableCell>
-                  <Badge variant={STATUS_VARIANT[j.status] ?? "outline"}>{j.status}</Badge>
-                </TableCell>
-                <TableCell className="text-right tabular-nums">{j.total}</TableCell>
-                <TableCell className="text-right tabular-nums">{j.succeeded}</TableCell>
-                <TableCell className="text-right tabular-nums">{j.failed}</TableCell>
-                <TableCell className="text-right tabular-nums">{j.credits_used}</TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDateTime(j.started_at ?? j.created_at)}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8"
-                    onClick={() => setViewing(j)}
-                    title="Ver itens"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {q.isLoading && (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
+                    Carregando…
+                  </TableCell>
+                </TableRow>
+              )}
+              {q.data && q.data.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-6">
+                    Nenhuma execução ainda.
+                  </TableCell>
+                </TableRow>
+              )}
+              {q.data?.map((j) => (
+                <TableRow key={j.id}>
+                  <TableCell className="capitalize">{j.provider}</TableCell>
+                  <TableCell>{j.entity === "lead" ? "Leads" : "Contatos"}</TableCell>
+                  <TableCell>
+                    <Badge variant={STATUS_VARIANT[j.status] ?? "outline"}>{j.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums">{j.total}</TableCell>
+                  <TableCell className="text-right tabular-nums">{j.succeeded}</TableCell>
+                  <TableCell className="text-right tabular-nums">{j.failed}</TableCell>
+                  <TableCell className="text-right tabular-nums">{j.credits_used}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDateTime(j.started_at ?? j.created_at)}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={() => setViewing(j)}
+                      title="Ver itens"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
 
-      <JobItemsSheet job={viewing} onClose={() => setViewing(null)} />
+        <JobItemsSheet job={viewing} onClose={() => setViewing(null)} />
       </div>
 
       <ProspectSearchHistorySection />

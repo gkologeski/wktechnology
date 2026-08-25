@@ -31,10 +31,7 @@ async function loadAdapter(provider: z.infer<typeof PROVIDER>): Promise<JobBoard
   return VagasComJobBoardAdapter;
 }
 
-async function detectIsMock(
-  provider: z.infer<typeof PROVIDER>,
-  ownerId: string,
-): Promise<boolean> {
+async function detectIsMock(provider: z.infer<typeof PROVIDER>, ownerId: string): Promise<boolean> {
   if (provider === "linkedin") {
     // LinkedIn é live quando existe conta Unipile conectada para o workspace.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -56,14 +53,15 @@ async function detectIsMock(
   return !m.__vagasIsLive();
 }
 
-
 export const listJobPostings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ job_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: rows, error } = await context.supabase
       .from("ats_job_postings")
-      .select("id, provider, status, external_id, external_url, is_mock, last_synced_at, last_error, updated_at")
+      .select(
+        "id, provider, status, external_id, external_url, is_mock, last_synced_at, last_error, updated_at",
+      )
       .eq("job_id", data.job_id)
       .order("provider", { ascending: true });
     if (error) throw new Error(error.message);
@@ -109,7 +107,6 @@ export const listAllJobPostings = createServerFn({ method: "POST" })
     }
     return { postings: rows ?? [], counts };
   });
-
 
 export const publishJobToProvider = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -160,9 +157,7 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
             publishMode: jobAny.linkedin_publish_mode ?? "FREE",
             budgetPeriod: jobAny.linkedin_budget_period ?? "total",
             budgetAmount:
-              jobAny.linkedin_budget_amount == null
-                ? null
-                : Number(jobAny.linkedin_budget_amount),
+              jobAny.linkedin_budget_amount == null ? null : Number(jobAny.linkedin_budget_amount),
             budgetCurrency: jobAny.linkedin_budget_currency,
           }
         : undefined;
@@ -189,19 +184,17 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
     const jobOwnerId = (job as { owner_id: string }).owner_id;
 
     if (!result.ok) {
-      await supabaseAdmin
-        .from("ats_job_postings")
-        .upsert(
-          {
-            owner_id: jobOwnerId,
-            job_id: job.id,
-            provider: data.provider,
-            status: "failed",
-            last_error: result.error,
-            last_synced_at: new Date().toISOString(),
-          },
-          { onConflict: "job_id,provider" },
-        );
+      await supabaseAdmin.from("ats_job_postings").upsert(
+        {
+          owner_id: jobOwnerId,
+          job_id: job.id,
+          provider: data.provider,
+          status: "failed",
+          last_error: result.error,
+          last_synced_at: new Date().toISOString(),
+        },
+        { onConflict: "job_id,provider" },
+      );
       throw new Error(result.error);
     }
 
@@ -227,7 +220,6 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("Não foi possível salvar a publicação");
-
 
     await recordAtsEvent(context.supabase, {
       ownerId: context.userId,
@@ -280,7 +272,6 @@ export const unpublishJobFromProvider = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!row) throw new Error("Publicação não encontrada");
 
-
     await recordAtsEvent(context.supabase, {
       ownerId: context.userId,
       name: "ats.job.unposted",
@@ -298,9 +289,7 @@ export const unpublishJobFromProvider = createServerFn({ method: "POST" })
  */
 export const syncPostingApplicantsNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ posting_id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ posting_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     // Verifica se o posting pertence ao workspace do usuário (RLS aplica).
     const { data: posting, error } = await context.supabase
@@ -317,10 +306,7 @@ export const syncPostingApplicantsNow = createServerFn({ method: "POST" })
       throw new Error("Publique a vaga no LinkedIn antes de sincronizar aplicantes");
     }
 
-    const { syncPostingApplicants } = await import(
-      "./linkedin-applicants-sync.server"
-    );
+    const { syncPostingApplicants } = await import("./linkedin-applicants-sync.server");
     const result = await syncPostingApplicants(data.posting_id);
     return result;
   });
-

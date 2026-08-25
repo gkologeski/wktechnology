@@ -63,16 +63,14 @@ export function ModulePlansSection() {
               Planos por módulo
             </CardTitle>
             <CardDescription>
-              Ative módulos do ERP e escolha um plano independente para cada um.
-              A fatura é unificada por workspace.
+              Ative módulos do ERP e escolha um plano independente para cada um. A fatura é
+              unificada por workspace.
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent>
-        {query.isLoading && (
-          <p className="text-sm text-muted-foreground">Carregando módulos…</p>
-        )}
+        {query.isLoading && <p className="text-sm text-muted-foreground">Carregando módulos…</p>}
         {!query.isLoading && modules.length === 0 && (
           <p className="text-sm text-muted-foreground">Nenhum módulo configurado.</p>
         )}

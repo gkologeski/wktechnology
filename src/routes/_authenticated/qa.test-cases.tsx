@@ -1,12 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useEffect, useCallback } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +40,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import data from "@/data/qa-test-cases.json";
-import { BugReportDialog, type BugReportQaContext } from "@/components/bug-report/bug-report-dialog";
+import {
+  BugReportDialog,
+  type BugReportQaContext,
+} from "@/components/bug-report/bug-report-dialog";
 
 export const Route = createFileRoute("/_authenticated/qa/test-cases")({
   component: QaTestCasesPage,
@@ -113,8 +110,9 @@ function useLocalMap(key: string) {
 }
 
 function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
   );
 }
 
@@ -171,7 +169,7 @@ function QaTestCasesPage() {
   }, [cases, search, moduleFilter, prioFilter, statusFilter, smokeOnly, statusMap]);
 
   const selected = useMemo(
-    () => (selectedId ? cases.find((c) => c.id === selectedId) ?? null : null),
+    () => (selectedId ? (cases.find((c) => c.id === selectedId) ?? null) : null),
     [selectedId, cases],
   );
 
@@ -198,7 +196,12 @@ function QaTestCasesPage() {
     const onKey = (e: KeyboardEvent) => {
       if (bugOpen || skipOpen) return;
       const tag = (e.target as HTMLElement | null)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement | null)?.isContentEditable) return;
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        (e.target as HTMLElement | null)?.isContentEditable
+      )
+        return;
       if (e.key === "ArrowLeft") {
         e.preventDefault();
         goPrev();
@@ -261,7 +264,18 @@ function QaTestCasesPage() {
 
   const exportCsv = () => {
     const rows = [
-      ["ID", "Módulo", "Sub-módulo", "Título", "Prioridade", "Tipo", "Smoke", "Status", "Chamado", "Observações"],
+      [
+        "ID",
+        "Módulo",
+        "Sub-módulo",
+        "Título",
+        "Prioridade",
+        "Tipo",
+        "Smoke",
+        "Status",
+        "Chamado",
+        "Observações",
+      ],
       ...cases.map((c) => [
         c.id,
         c.modulo,

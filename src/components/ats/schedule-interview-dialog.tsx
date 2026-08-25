@@ -21,10 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  scheduleInterview,
-  createSelfScheduleLink,
-} from "@/lib/ats/interviews.functions";
+import { scheduleInterview, createSelfScheduleLink } from "@/lib/ats/interviews.functions";
 import { listInterviewKits } from "@/lib/ats/interview-kits.functions";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { getAppUrl } from "@/lib/app-url";
@@ -210,15 +207,23 @@ export function ScheduleInterviewDialog({
             </div>
 
             <div className="space-y-1">
-              <Label>Kit de perguntas {kind === "async" ? "(obrigatório p/ vídeo assíncrono)" : "(opcional)"}</Label>
-              <Select value={kitId || "__none"} onValueChange={(v) => setKitId(v === "__none" ? "" : v)}>
+              <Label>
+                Kit de perguntas{" "}
+                {kind === "async" ? "(obrigatório p/ vídeo assíncrono)" : "(opcional)"}
+              </Label>
+              <Select
+                value={kitId || "__none"}
+                onValueChange={(v) => setKitId(v === "__none" ? "" : v)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Nenhum" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none">Nenhum</SelectItem>
                   {kits.map((k) => (
-                    <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                    <SelectItem key={k.id} value={k.id}>
+                      {k.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

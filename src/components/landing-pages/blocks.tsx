@@ -68,9 +68,7 @@ function Editable({
       contentEditable
       suppressContentEditableWarning
       data-placeholder={placeholder}
-      onBlur={(e: React.FocusEvent<HTMLElement>) =>
-        onChange?.((e.target as HTMLElement).innerText)
-      }
+      onBlur={(e: React.FocusEvent<HTMLElement>) => onChange?.((e.target as HTMLElement).innerText)}
     >
       {value}
     </As>
@@ -156,9 +154,21 @@ const hero: BlockDef = {
   ),
   Properties: ({ block, onChange }) => (
     <>
-      <TextField label="Headline" value={String(block.headline ?? "")} onChange={(v) => onChange({ headline: v })} />
-      <AreaField label="Subtítulo" value={String(block.subheadline ?? "")} onChange={(v) => onChange({ subheadline: v })} />
-      <TextField label="Texto do botão" value={String(block.cta ?? "")} onChange={(v) => onChange({ cta: v })} />
+      <TextField
+        label="Headline"
+        value={String(block.headline ?? "")}
+        onChange={(v) => onChange({ headline: v })}
+      />
+      <AreaField
+        label="Subtítulo"
+        value={String(block.subheadline ?? "")}
+        onChange={(v) => onChange({ subheadline: v })}
+      />
+      <TextField
+        label="Texto do botão"
+        value={String(block.cta ?? "")}
+        onChange={(v) => onChange({ cta: v })}
+      />
       <div className="space-y-1.5">
         <Label className="text-xs font-medium">Alinhamento</Label>
         <div className="flex gap-2">
@@ -238,8 +248,16 @@ const image: BlockDef = {
         value={String(block.src ?? "")}
         onChange={(v) => onChange({ src: v ?? "" })}
       />
-      <TextField label="Texto alternativo (alt)" value={String(block.alt ?? "")} onChange={(v) => onChange({ alt: v })} />
-      <TextField label="Legenda" value={String(block.caption ?? "")} onChange={(v) => onChange({ caption: v })} />
+      <TextField
+        label="Texto alternativo (alt)"
+        value={String(block.alt ?? "")}
+        onChange={(v) => onChange({ alt: v })}
+      />
+      <TextField
+        label="Legenda"
+        value={String(block.caption ?? "")}
+        onChange={(v) => onChange({ caption: v })}
+      />
     </>
   ),
 };
@@ -249,18 +267,38 @@ const button: BlockDef = {
   type: "button",
   label: "Botão",
   icon: MousePointerClick,
-  defaults: { type: "button", label: "Clique aqui", href: "#", variant: "default", align: "center" },
+  defaults: {
+    type: "button",
+    label: "Clique aqui",
+    href: "#",
+    variant: "default",
+    align: "center",
+  },
   Render: ({ block }) => (
-    <section className={`py-8 px-6 ${block.align === "left" ? "text-left" : block.align === "right" ? "text-right" : "text-center"}`}>
-      <Button asChild size="lg" variant={(block.variant as "default" | "outline" | "secondary") ?? "default"}>
+    <section
+      className={`py-8 px-6 ${block.align === "left" ? "text-left" : block.align === "right" ? "text-right" : "text-center"}`}
+    >
+      <Button
+        asChild
+        size="lg"
+        variant={(block.variant as "default" | "outline" | "secondary") ?? "default"}
+      >
         <a href={String(block.href ?? "#")}>{String(block.label ?? "Botão")}</a>
       </Button>
     </section>
   ),
   Properties: ({ block, onChange }) => (
     <>
-      <TextField label="Rótulo" value={String(block.label ?? "")} onChange={(v) => onChange({ label: v })} />
-      <TextField label="Link (href)" value={String(block.href ?? "")} onChange={(v) => onChange({ href: v })} />
+      <TextField
+        label="Rótulo"
+        value={String(block.label ?? "")}
+        onChange={(v) => onChange({ label: v })}
+      />
+      <TextField
+        label="Link (href)"
+        value={String(block.href ?? "")}
+        onChange={(v) => onChange({ href: v })}
+      />
       <div className="space-y-1.5">
         <Label className="text-xs font-medium">Estilo</Label>
         <div className="flex gap-2 flex-wrap">
@@ -269,7 +307,12 @@ const button: BlockDef = {
             { v: "outline", l: "Contorno" },
             { v: "secondary", l: "Secundário" },
           ].map((o) => (
-            <Button key={o.v} size="sm" variant={block.variant === o.v ? "default" : "outline"} onClick={() => onChange({ variant: o.v })}>
+            <Button
+              key={o.v}
+              size="sm"
+              variant={block.variant === o.v ? "default" : "outline"}
+              onClick={() => onChange({ variant: o.v })}
+            >
               {o.l}
             </Button>
           ))}
@@ -279,7 +322,12 @@ const button: BlockDef = {
         <Label className="text-xs font-medium">Alinhamento</Label>
         <div className="flex gap-2">
           {["left", "center", "right"].map((a) => (
-            <Button key={a} size="sm" variant={block.align === a ? "default" : "outline"} onClick={() => onChange({ align: a })}>
+            <Button
+              key={a}
+              size="sm"
+              variant={block.align === a ? "default" : "outline"}
+              onClick={() => onChange({ align: a })}
+            >
               {a === "left" ? "Esq." : a === "center" ? "Centro" : "Dir."}
             </Button>
           ))}
@@ -358,7 +406,11 @@ const features: BlockDef = {
     const items = (block.items as Array<{ title: string; description: string }>) ?? [];
     return (
       <>
-        <TextField label="Título da seção" value={String(block.title ?? "")} onChange={(v) => onChange({ title: v })} />
+        <TextField
+          label="Título da seção"
+          value={String(block.title ?? "")}
+          onChange={(v) => onChange({ title: v })}
+        />
         <div className="space-y-2">
           <Label className="text-xs font-medium">Itens</Label>
           {items.map((it, idx) => (
@@ -394,7 +446,9 @@ const features: BlockDef = {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => onChange({ items: [...items, { title: "Novo recurso", description: "" }] })}
+            onClick={() =>
+              onChange({ items: [...items, { title: "Novo recurso", description: "" }] })
+            }
           >
             + Item
           </Button>
@@ -409,22 +463,41 @@ const testimonial: BlockDef = {
   type: "testimonial",
   label: "Depoimento",
   icon: Quote,
-  defaults: { type: "testimonial", quote: "Excelente produto, mudou nosso negócio!", author: "Cliente Satisfeito", role: "" },
+  defaults: {
+    type: "testimonial",
+    quote: "Excelente produto, mudou nosso negócio!",
+    author: "Cliente Satisfeito",
+    role: "",
+  },
   Render: ({ block }) => (
     <section className="py-16 px-6 max-w-2xl mx-auto text-center">
       <Quote className="h-8 w-8 text-primary mx-auto mb-4 opacity-60" />
       <blockquote className="text-xl italic mb-4">"{String(block.quote ?? "")}"</blockquote>
       <cite className="not-italic">
         <div className="font-semibold">{String(block.author ?? "")}</div>
-        {block.role ? <div className="text-sm text-muted-foreground">{String(block.role)}</div> : null}
+        {block.role ? (
+          <div className="text-sm text-muted-foreground">{String(block.role)}</div>
+        ) : null}
       </cite>
     </section>
   ),
   Properties: ({ block, onChange }) => (
     <>
-      <AreaField label="Depoimento" value={String(block.quote ?? "")} onChange={(v) => onChange({ quote: v })} />
-      <TextField label="Autor" value={String(block.author ?? "")} onChange={(v) => onChange({ author: v })} />
-      <TextField label="Cargo / empresa" value={String(block.role ?? "")} onChange={(v) => onChange({ role: v })} />
+      <AreaField
+        label="Depoimento"
+        value={String(block.quote ?? "")}
+        onChange={(v) => onChange({ quote: v })}
+      />
+      <TextField
+        label="Autor"
+        value={String(block.author ?? "")}
+        onChange={(v) => onChange({ author: v })}
+      />
+      <TextField
+        label="Cargo / empresa"
+        value={String(block.role ?? "")}
+        onChange={(v) => onChange({ role: v })}
+      />
     </>
   ),
 };
@@ -445,9 +518,21 @@ const cta: BlockDef = {
   ),
   Properties: ({ block, onChange }) => (
     <>
-      <TextField label="Texto" value={String(block.text ?? "")} onChange={(v) => onChange({ text: v })} />
-      <TextField label="Texto do botão" value={String(block.button ?? "")} onChange={(v) => onChange({ button: v })} />
-      <TextField label="Link" value={String(block.href ?? "")} onChange={(v) => onChange({ href: v })} />
+      <TextField
+        label="Texto"
+        value={String(block.text ?? "")}
+        onChange={(v) => onChange({ text: v })}
+      />
+      <TextField
+        label="Texto do botão"
+        value={String(block.button ?? "")}
+        onChange={(v) => onChange({ button: v })}
+      />
+      <TextField
+        label="Link"
+        value={String(block.href ?? "")}
+        onChange={(v) => onChange({ href: v })}
+      />
     </>
   ),
 };
@@ -457,7 +542,12 @@ const form: BlockDef = {
   type: "form",
   label: "Formulário",
   icon: FormInput,
-  defaults: { type: "form", title: "Fale conosco", fields: ["name", "email"], submitLabel: "Enviar" },
+  defaults: {
+    type: "form",
+    title: "Fale conosco",
+    fields: ["name", "email"],
+    submitLabel: "Enviar",
+  },
   Render: ({ block }) => {
     const fields = (block.fields as string[]) ?? ["name", "email"];
     const labels: Record<string, string> = {
@@ -469,7 +559,9 @@ const form: BlockDef = {
     };
     return (
       <section className="py-16 px-6 max-w-md mx-auto">
-        {block.title ? <h3 className="text-2xl font-bold text-center mb-6">{String(block.title)}</h3> : null}
+        {block.title ? (
+          <h3 className="text-2xl font-bold text-center mb-6">{String(block.title)}</h3>
+        ) : null}
         <div className="space-y-3 pointer-events-none">
           {fields.map((f) => (
             <div key={f}>
@@ -491,7 +583,11 @@ const form: BlockDef = {
     const all = ["name", "email", "phone", "company", "message"];
     return (
       <>
-        <TextField label="Título" value={String(block.title ?? "")} onChange={(v) => onChange({ title: v })} />
+        <TextField
+          label="Título"
+          value={String(block.title ?? "")}
+          onChange={(v) => onChange({ title: v })}
+        />
         <div className="space-y-1.5">
           <Label className="text-xs font-medium">Campos</Label>
           <div className="space-y-1">
@@ -503,7 +599,9 @@ const form: BlockDef = {
                     type="checkbox"
                     checked={on}
                     onChange={(e) => {
-                      const next = e.target.checked ? [...fields, f] : fields.filter((x) => x !== f);
+                      const next = e.target.checked
+                        ? [...fields, f]
+                        : fields.filter((x) => x !== f);
                       onChange({ fields: next });
                     }}
                   />
@@ -513,7 +611,11 @@ const form: BlockDef = {
             })}
           </div>
         </div>
-        <TextField label="Texto do botão" value={String(block.submitLabel ?? "")} onChange={(v) => onChange({ submitLabel: v })} />
+        <TextField
+          label="Texto do botão"
+          value={String(block.submitLabel ?? "")}
+          onChange={(v) => onChange({ submitLabel: v })}
+        />
       </>
     );
   },
@@ -578,7 +680,9 @@ const faq: BlockDef = {
     const items = (block.items as Array<{ q: string; a: string }>) ?? [];
     return (
       <section className="py-16 px-6 max-w-3xl mx-auto">
-        {block.title ? <h2 className="text-3xl font-bold text-center mb-8">{String(block.title)}</h2> : null}
+        {block.title ? (
+          <h2 className="text-3xl font-bold text-center mb-8">{String(block.title)}</h2>
+        ) : null}
         <div className="space-y-3">
           {items.map((it, i) => (
             <details key={i} className="border border-border rounded-lg p-4 group">
@@ -597,7 +701,11 @@ const faq: BlockDef = {
     const items = (block.items as Array<{ q: string; a: string }>) ?? [];
     return (
       <>
-        <TextField label="Título" value={String(block.title ?? "")} onChange={(v) => onChange({ title: v })} />
+        <TextField
+          label="Título"
+          value={String(block.title ?? "")}
+          onChange={(v) => onChange({ title: v })}
+        />
         <div className="space-y-2">
           <Label className="text-xs font-medium">Perguntas</Label>
           {items.map((it, idx) => (
@@ -621,12 +729,20 @@ const faq: BlockDef = {
                   onChange({ items: next });
                 }}
               />
-              <Button size="sm" variant="ghost" onClick={() => onChange({ items: items.filter((_, j) => j !== idx) })}>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onChange({ items: items.filter((_, j) => j !== idx) })}
+              >
                 Remover
               </Button>
             </div>
           ))}
-          <Button size="sm" variant="outline" onClick={() => onChange({ items: [...items, { q: "Nova pergunta", a: "" }] })}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => onChange({ items: [...items, { q: "Nova pergunta", a: "" }] })}
+          >
             + Pergunta
           </Button>
         </div>
@@ -688,12 +804,20 @@ const stats: BlockDef = {
                 onChange({ items: next });
               }}
             />
-            <Button size="sm" variant="ghost" onClick={() => onChange({ items: items.filter((_, j) => j !== idx) })}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => onChange({ items: items.filter((_, j) => j !== idx) })}
+            >
               Remover
             </Button>
           </div>
         ))}
-        <Button size="sm" variant="outline" onClick={() => onChange({ items: [...items, { value: "0", label: "Novo" }] })}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onChange({ items: [...items, { value: "0", label: "Novo" }] })}
+        >
           + Métrica
         </Button>
       </div>

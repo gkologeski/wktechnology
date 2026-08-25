@@ -31,8 +31,7 @@ export function EmailSignatureEditor({
   }, [initialHtml]);
 
   const mut = useMutation({
-    mutationFn: () =>
-      save({ data: { id: accountId, signature_html: normalizeHtmlField(html) } }),
+    mutationFn: () => save({ data: { id: accountId, signature_html: normalizeHtmlField(html) } }),
     onSuccess: () => {
       toast.success("Assinatura salva");
       qc.invalidateQueries({ queryKey: ["email_accounts"] });

@@ -33,7 +33,10 @@
   color: #475569;
   margin-bottom: 8px;
 }
-#techhire-hunter-sidebar .thh-warn { color: #b91c1c; font-weight: 500; }
+#techhire-hunter-sidebar .thh-warn {
+  color: #b91c1c;
+  font-weight: 500;
+}
 #techhire-hunter-sidebar .thh-preview {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -41,7 +44,10 @@
   padding: 8px 10px;
   margin-bottom: 10px;
 }
-#techhire-hunter-sidebar .thh-muted { color: #64748b; font-size: 12px; }
+#techhire-hunter-sidebar .thh-muted {
+  color: #64748b;
+  font-size: 12px;
+}
 #techhire-hunter-sidebar .thh-label {
   display: block;
   font-size: 11px;
@@ -75,13 +81,17 @@
   cursor: pointer;
   font: inherit;
 }
-#techhire-hunter-sidebar .thh-btn:hover { background: #f1f5f9; }
+#techhire-hunter-sidebar .thh-btn:hover {
+  background: #f1f5f9;
+}
 #techhire-hunter-sidebar .thh-primary {
   background: #0f172a;
   color: #fff;
   border-color: #0f172a;
 }
-#techhire-hunter-sidebar .thh-primary:hover { background: #1e293b; }
+#techhire-hunter-sidebar .thh-primary:hover {
+  background: #1e293b;
+}
 #techhire-hunter-sidebar hr {
   border: none;
   border-top: 1px solid #e2e8f0;
@@ -112,7 +122,10 @@
   font-size: 11px;
   color: #64748b;
 }
-#techhire-hunter-sidebar .thh-counter.thh-over { color: #b91c1c; font-weight: 600; }
+#techhire-hunter-sidebar .thh-counter.thh-over {
+  color: #b91c1c;
+  font-weight: 600;
+}
 #techhire-hunter-sidebar .thh-pill {
   font-size: 10px;
   font-weight: 600;
@@ -121,11 +134,26 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-#techhire-hunter-sidebar .thh-pill-idle { background: #f1f5f9; color: #475569; }
-#techhire-hunter-sidebar .thh-pill-filling { background: #fef3c7; color: #92400e; }
-#techhire-hunter-sidebar .thh-pill-ready { background: #dbeafe; color: #1d4ed8; }
-#techhire-hunter-sidebar .thh-pill-sent { background: #dcfce7; color: #166534; }
-#techhire-hunter-sidebar .thh-pill-failed { background: #fee2e2; color: #b91c1c; }
+#techhire-hunter-sidebar .thh-pill-idle {
+  background: #f1f5f9;
+  color: #475569;
+}
+#techhire-hunter-sidebar .thh-pill-filling {
+  background: #fef3c7;
+  color: #92400e;
+}
+#techhire-hunter-sidebar .thh-pill-ready {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+#techhire-hunter-sidebar .thh-pill-sent {
+  background: #dcfce7;
+  color: #166534;
+}
+#techhire-hunter-sidebar .thh-pill-failed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
 #techhire-hunter-sidebar .thh-debug-toggle {
   display: flex;
   align-items: center;
@@ -136,7 +164,9 @@
   cursor: pointer;
   user-select: none;
 }
-#techhire-hunter-sidebar .thh-debug-toggle input { accent-color: #0f172a; }
+#techhire-hunter-sidebar .thh-debug-toggle input {
+  accent-color: #0f172a;
+}
 #techhire-hunter-sidebar .thh-debug-panel {
   background: #0f172a;
   color: #e2e8f0;
@@ -156,7 +186,9 @@
   color: #94a3b8;
   font-weight: 600;
 }
-#techhire-hunter-sidebar .thh-debug-panel h4:first-child { margin-top: 0; }
+#techhire-hunter-sidebar .thh-debug-panel h4:first-child {
+  margin-top: 0;
+}
 #techhire-hunter-sidebar .thh-debug-row {
   display: flex;
   justify-content: space-between;
@@ -164,11 +196,24 @@
   padding: 2px 0;
   border-bottom: 1px dashed rgba(148, 163, 184, 0.18);
 }
-#techhire-hunter-sidebar .thh-debug-row:last-child { border-bottom: 0; }
-#techhire-hunter-sidebar .thh-debug-key { color: #cbd5e1; }
-#techhire-hunter-sidebar .thh-debug-ok { color: #4ade80; font-weight: 600; }
-#techhire-hunter-sidebar .thh-debug-miss { color: #f87171; font-weight: 600; }
-#techhire-hunter-sidebar .thh-debug-warn { color: #fbbf24; font-weight: 600; }
+#techhire-hunter-sidebar .thh-debug-row:last-child {
+  border-bottom: 0;
+}
+#techhire-hunter-sidebar .thh-debug-key {
+  color: #cbd5e1;
+}
+#techhire-hunter-sidebar .thh-debug-ok {
+  color: #4ade80;
+  font-weight: 600;
+}
+#techhire-hunter-sidebar .thh-debug-miss {
+  color: #f87171;
+  font-weight: 600;
+}
+#techhire-hunter-sidebar .thh-debug-warn {
+  color: #fbbf24;
+  font-weight: 600;
+}
 #techhire-hunter-sidebar .thh-debug-actions {
   display: flex;
   gap: 6px;
@@ -181,5 +226,6 @@
   font-size: 11px;
   padding: 4px 8px;
 }
-#techhire-hunter-sidebar .thh-debug-actions .thh-btn:hover { background: #334155; }
-
+#techhire-hunter-sidebar .thh-debug-actions .thh-btn:hover {
+  background: #334155;
+}

@@ -20,7 +20,7 @@ Regras:
 
 - Cabeçalho em `<strong>` dentro de `<p>`.
 - Lista `<ol>` numerada, uma pergunta por `<li>`.
-- Prefixo em negrito: se `q.label` contém ` - ` (padrão dos templates BANT/CHAMP/MEDDIC/GPCT — "Budget - existe orçamento…"), quebra em prefixo antes do ` - ` (ex.: "Budget") e resto ("existe orçamento…"). Se não houver separador, negrita o label inteiro e não repete o resto.
+- Prefixo em negrito: se `q.label` contém `-` (padrão dos templates BANT/CHAMP/MEDDIC/GPCT — "Budget - existe orçamento…"), quebra em prefixo antes do `-` (ex.: "Budget") e resto ("existe orçamento…"). Se não houver separador, negrita o label inteiro e não repete o resto.
 - Escapar HTML de `q.label` e da resposta (perguntas/respostas podem ter `<` `>` `&`) para evitar quebra de sanitização e injeção acidental.
 - Formatação de valores permanece igual: booleano → "Sim"/"Não"; array → join com ", "; demais → String(raw). Perguntas sem resposta continuam ignoradas.
 

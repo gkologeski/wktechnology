@@ -27,7 +27,10 @@ export function formatErrorMessage(err: unknown, fallback = "Erro inesperado."):
     return "Nova versão disponível. Recarregando…";
   }
 
-  const stripped = raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+  const stripped = raw
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
   if (!stripped) return fallback;
   return stripped.length > 300 ? `${stripped.slice(0, 300)}…` : stripped;
 }

@@ -2,12 +2,12 @@
 
 ## 1. Escolha da ferramenta
 
-| Necessidade | Use |
-| --- | --- |
-| Ler/gravar dados do app a partir da UI | `createServerFn` em `src/lib/**/*.functions.ts` |
-| Endpoint HTTP para terceiros (webhook, cron, API pública) | file route em `src/routes/api/public/**` |
-| Lógica puramente de banco (derivar coluna, cascata) | função/trigger SQL |
-| Trabalho privilegiado (Auth Admin, backfill) | `supabaseAdmin` importado **dentro** do handler |
+| Necessidade                                               | Use                                             |
+| --------------------------------------------------------- | ----------------------------------------------- |
+| Ler/gravar dados do app a partir da UI                    | `createServerFn` em `src/lib/**/*.functions.ts` |
+| Endpoint HTTP para terceiros (webhook, cron, API pública) | file route em `src/routes/api/public/**`        |
+| Lógica puramente de banco (derivar coluna, cascata)       | função/trigger SQL                              |
+| Trabalho privilegiado (Auth Admin, backfill)              | `supabaseAdmin` importado **dentro** do handler |
 
 **Nunca** criar `supabase/functions/<name>/index.ts` (Edge Functions).
 
@@ -132,12 +132,16 @@ Modelo mínimo de handler seguro:
 
 ```ts
 export const Route = createFileRoute("/api/public/hooks/example")({
-  server: { handlers: { POST: async ({ request }) => {
-    // 1) autenticar o chamador (HMAC, CRON_SECRET, api key)
-    // 2) validar payload com zod
-    // 3) executar; nunca retornar PII
-    return new Response("ok");
-  } } },
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        // 1) autenticar o chamador (HMAC, CRON_SECRET, api key)
+        // 2) validar payload com zod
+        // 3) executar; nunca retornar PII
+        return new Response("ok");
+      },
+    },
+  },
 });
 ```
 

@@ -107,9 +107,7 @@ export type SourcingAnalyticsResult = {
 export const getSourcingAnalytics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) =>
-    z
-      .object({ days: z.number().int().min(1).max(365).default(30) })
-      .parse(input ?? {}),
+    z.object({ days: z.number().int().min(1).max(365).default(30) }).parse(input ?? {}),
   )
   .handler(async ({ context, data }): Promise<SourcingAnalyticsResult> => {
     const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
@@ -125,10 +123,7 @@ export const getSourcingAnalytics = createServerFn({ method: "POST" })
         .select("id, enrollment_id, step_order, channel, status, created_at, metadata")
         .gte("created_at", since)
         .limit(10000),
-      context.supabase
-        .from("ats_sourcing_sequences")
-        .select("id, name")
-        .limit(500),
+      context.supabase.from("ats_sourcing_sequences").select("id, name").limit(500),
     ]);
 
     if (enrollmentsRes.error) throw new Error(enrollmentsRes.error.message);
@@ -283,7 +278,13 @@ export const getSourcingAnalytics = createServerFn({ method: "POST" })
     type VKey = string;
     const variantMap = new Map<
       VKey,
-      { sequence_id: string; step_order: number; variant: string; sent: number; enrollees: Set<string> }
+      {
+        sequence_id: string;
+        step_order: number;
+        variant: string;
+        sent: number;
+        enrollees: Set<string>;
+      }
     >();
     for (const l of stepLog) {
       const enr = enrMap.get(l.enrollment_id);
@@ -324,10 +325,11 @@ export const getSourcingAnalytics = createServerFn({ method: "POST" })
           response_rate: enrolled > 0 ? replied / enrolled : 0,
         };
       })
-      .sort((a, b) =>
-        a.sequence_name.localeCompare(b.sequence_name) ||
-        a.step_order - b.step_order ||
-        a.variant.localeCompare(b.variant),
+      .sort(
+        (a, b) =>
+          a.sequence_name.localeCompare(b.sequence_name) ||
+          a.step_order - b.step_order ||
+          a.variant.localeCompare(b.variant),
       );
 
     return {

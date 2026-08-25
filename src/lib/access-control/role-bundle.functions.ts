@@ -234,8 +234,6 @@ async function effectiveRoleKeys(
   return keys;
 }
 
-
-
 const SetPermInput = z.object({
   role_id: z.string().uuid(),
   permission_key: z.string().min(1),

@@ -353,7 +353,8 @@ export async function processDunningRuns(supabase: SupabaseClient) {
       const target = new Date(due);
       target.setUTCDate(target.getUTCDate() + nextStep.offset_days);
       // Nunca agenda no passado
-      const scheduled = target.getTime() > now.getTime() ? target : new Date(now.getTime() + 60_000);
+      const scheduled =
+        target.getTime() > now.getTime() ? target : new Date(now.getTime() + 60_000);
       nextRunAt = scheduled.toISOString();
       nextStatus = "active";
     }

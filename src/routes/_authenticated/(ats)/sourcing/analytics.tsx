@@ -17,12 +17,7 @@ import {
 } from "lucide-react";
 import { LazyChart } from "@/components/charts/lazy-chart";
 
-import {
-  AtsPageHeader,
-  AtsSectionHeader,
-  EmptyState,
-  MetricCard,
-} from "@/components/ats/ui";
+import { AtsPageHeader, AtsSectionHeader, EmptyState, MetricCard } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -153,13 +148,7 @@ function SourcingAnalyticsPage() {
     rows.push(["Por canal"]);
     rows.push(["Canal", "Enviados", "Falhas", "Pulados", "Total"]);
     for (const c of data.by_channel) {
-      rows.push([
-        CHANNEL_LABELS[c.channel] ?? c.channel,
-        c.sent,
-        c.failed,
-        c.skipped,
-        c.total,
-      ]);
+      rows.push([CHANNEL_LABELS[c.channel] ?? c.channel, c.sent, c.failed, c.skipped, c.total]);
     }
     rows.push([]);
     rows.push(["Funil por step"]);
@@ -169,9 +158,25 @@ function SourcingAnalyticsPage() {
     }
     rows.push([]);
     rows.push(["A/B por variante"]);
-    rows.push(["Sequência", "Step", "Variante", "Enviados", "Engajados", "Respostas", "Resp. rate"]);
+    rows.push([
+      "Sequência",
+      "Step",
+      "Variante",
+      "Enviados",
+      "Engajados",
+      "Respostas",
+      "Resp. rate",
+    ]);
     for (const v of data.by_variant) {
-      rows.push([v.sequence_name, v.step_order, v.variant, v.sent, v.enrolled, v.replied, pct(v.response_rate)]);
+      rows.push([
+        v.sequence_name,
+        v.step_order,
+        v.variant,
+        v.sent,
+        v.enrolled,
+        v.replied,
+        pct(v.response_rate),
+      ]);
     }
     const today = new Date().toISOString().slice(0, 10);
     downloadCsv(`sourcing-analytics-${days}d-${today}.csv`, rows);
@@ -201,20 +206,10 @@ function SourcingAnalyticsPage() {
                 </button>
               ))}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => refetch()}
-              disabled={isFetching}
-            >
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
               {isFetching ? "Atualizando…" : "Atualizar"}
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportCsv}
-              disabled={!data || isLoading}
-            >
+            <Button variant="outline" size="sm" onClick={exportCsv} disabled={!data || isLoading}>
               <Download className="mr-1.5 h-3.5 w-3.5" />
               CSV
             </Button>
@@ -284,24 +279,56 @@ function SourcingAnalyticsPage() {
             ) : (
               <div className="h-64 w-full">
                 <LazyChart>
-                  {({ ResponsiveContainer, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Area }) => (
+                  {({
+                    ResponsiveContainer,
+                    AreaChart,
+                    CartesianGrid,
+                    XAxis,
+                    YAxis,
+                    Tooltip,
+                    Legend,
+                    Area,
+                  }) => (
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData} margin={{ top: 8, right: 16, bottom: 0, left: -8 }}>
+                      <AreaChart
+                        data={chartData}
+                        margin={{ top: 8, right: 16, bottom: 0, left: -8 }}
+                      >
                         <defs>
                           <linearGradient id="g-sent" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
                             <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                           </linearGradient>
                           <linearGradient id="g-replied" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(var(--status-open))" stopOpacity={0.35} />
-                            <stop offset="100%" stopColor="hsl(var(--status-open))" stopOpacity={0} />
+                            <stop
+                              offset="0%"
+                              stopColor="hsl(var(--status-open))"
+                              stopOpacity={0.35}
+                            />
+                            <stop
+                              offset="100%"
+                              stopColor="hsl(var(--status-open))"
+                              stopOpacity={0}
+                            />
                           </linearGradient>
                           <linearGradient id="g-failed" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={0.3} />
-                            <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0} />
+                            <stop
+                              offset="0%"
+                              stopColor="hsl(var(--destructive))"
+                              stopOpacity={0.3}
+                            />
+                            <stop
+                              offset="100%"
+                              stopColor="hsl(var(--destructive))"
+                              stopOpacity={0}
+                            />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          stroke="hsl(var(--border))"
+                          vertical={false}
+                        />
                         <XAxis
                           dataKey="label"
                           stroke="hsl(var(--muted-foreground))"
@@ -361,8 +388,6 @@ function SourcingAnalyticsPage() {
           </CardContent>
         </Card>
       </section>
-
-
 
       <section className="space-y-3">
         <AtsSectionHeader title="Performance por sequência" />
@@ -442,9 +467,7 @@ function SourcingAnalyticsPage() {
           <Card>
             <CardContent className="p-0">
               {isLoading ? (
-                <div className="px-4 py-8 text-center text-sm text-text-tertiary">
-                  Carregando…
-                </div>
+                <div className="px-4 py-8 text-center text-sm text-text-tertiary">Carregando…</div>
               ) : !data || data.by_channel.length === 0 ? (
                 <div className="p-4">
                   <EmptyState
@@ -584,7 +607,9 @@ function SourcingAnalyticsPage() {
                         <TableCell className="text-right tabular-nums">{v.sent}</TableCell>
                         <TableCell className="text-right tabular-nums">{v.enrolled}</TableCell>
                         <TableCell className="text-right tabular-nums">{v.replied}</TableCell>
-                        <TableCell className="text-right tabular-nums">{pct(v.response_rate)}</TableCell>
+                        <TableCell className="text-right tabular-nums">
+                          {pct(v.response_rate)}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

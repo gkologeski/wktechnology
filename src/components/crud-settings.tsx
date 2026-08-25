@@ -64,7 +64,6 @@ export function CrudSettings<T extends { id: string }>({
     },
   });
 
-
   const invalidate = () => qc.invalidateQueries({ queryKey: qk.crudList(table) });
 
   const startNew = () => {

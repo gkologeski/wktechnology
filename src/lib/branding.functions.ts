@@ -47,13 +47,15 @@ export const getBranding = createServerFn({ method: "GET" })
     return { branding: row, workspace_id: workspaceId };
   });
 
-
 const themeSchema = z
   .object({
     light: z.record(z.string(), z.string()).optional(),
     dark: z.record(z.string(), z.string()).optional(),
     icons: z
-      .object({ stroke: z.number().min(1).max(3).optional(), size: z.number().min(12).max(24).optional() })
+      .object({
+        stroke: z.number().min(1).max(3).optional(),
+        size: z.number().min(12).max(24).optional(),
+      })
       .optional(),
     assets: z.record(z.string(), z.string()).optional(),
   })
@@ -110,4 +112,3 @@ export const saveBranding = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-

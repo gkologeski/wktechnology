@@ -203,7 +203,8 @@ async function apolloRequest<T = unknown>({
   const lovableKey = process.env.LOVABLE_API_KEY;
   const apolloKey = process.env.APOLLO_API_KEY;
   if (!lovableKey) throw new Error("LOVABLE_API_KEY ausente");
-  if (!apolloKey) throw new Error("APOLLO_API_KEY ausente. Conecte o Apollo.io em Configurações → Conectores.");
+  if (!apolloKey)
+    throw new Error("APOLLO_API_KEY ausente. Conecte o Apollo.io em Configurações → Conectores.");
 
   const url = new URL(`${APOLLO_GATEWAY_URL}${path}`);
   if (query) {
@@ -229,18 +230,20 @@ async function apolloRequest<T = unknown>({
   const res = await fetch(url, init);
 
   if (res.status === 401) {
-    throw new Error("Credenciais do Apollo.io inválidas. Reconecte o conector em Configurações → Conectores.");
+    throw new Error(
+      "Credenciais do Apollo.io inválidas. Reconecte o conector em Configurações → Conectores.",
+    );
   }
   if (res.status === 403) {
     const text = await res.text();
     throw new Error(
-      `A chave do Apollo.io não tem acesso a este endpoint (${text}). Use uma master key com permissão para people search.`
+      `A chave do Apollo.io não tem acesso a este endpoint (${text}). Use uma master key com permissão para people search.`,
     );
   }
   if (res.status === 429) {
     const retryAfter = res.headers.get("Retry-After");
     throw new Error(
-      `Limite de requisições do Apollo.io atingido. ${retryAfter ? `Tente novamente em ${retryAfter}s.` : "Aguarde alguns minutos."}`
+      `Limite de requisições do Apollo.io atingido. ${retryAfter ? `Tente novamente em ${retryAfter}s.` : "Aguarde alguns minutos."}`,
     );
   }
   if (!res.ok) {
@@ -378,7 +381,6 @@ function buildApolloQuery(search: ProspectSearch): Record<string, string | strin
   return query;
 }
 
-
 function cleanEmail(email: string | null | undefined): string | null {
   if (!email) return null;
   if (email.toLowerCase().includes("not_unlocked")) return null;
@@ -420,10 +422,7 @@ export const runProspectSearch = createServerFn({ method: "POST" })
     try {
       const apolloQuery = buildApolloQuery(search);
 
-      await sb
-        .from("prospecting_searches")
-        .update({ apollo_query: apolloQuery })
-        .eq("id", data.id);
+      await sb.from("prospecting_searches").update({ apollo_query: apolloQuery }).eq("id", data.id);
 
       const searchRes = await apolloRequest<ApolloPersonSearchResponse>({
         path: "/api/v1/mixed_people/api_search",
@@ -535,10 +534,12 @@ export const runProspectSearch = createServerFn({ method: "POST" })
         .eq("id", data.id);
 
       return { count: enriched.length, total_entries: totalEntries, notice };
-
     } catch (e) {
       const msg = e instanceof Error ? e.message : "erro";
-      await sb.from("prospecting_searches").update({ status: "failed", error: msg }).eq("id", data.id);
+      await sb
+        .from("prospecting_searches")
+        .update({ status: "failed", error: msg })
+        .eq("id", data.id);
       throw new Error(msg);
     }
   });

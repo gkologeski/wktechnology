@@ -7,7 +7,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { runAutoStart } from "@/lib/people/onboarding.functions";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 
-
 export const PEOPLE_EMPLOYMENT_TYPES = ["pj", "clt", "contractor", "intern", "other"] as const;
 export const PEOPLE_STATUSES = [
   "active",
@@ -86,7 +85,6 @@ export type PersonRow = {
   can_view_sensitive?: boolean;
 };
 
-
 const upsertSchema = z.object({
   id: z.string().uuid().nullable().optional(),
   full_name: z.string().min(2).max(160),
@@ -126,7 +124,6 @@ const upsertSchema = z.object({
   pix_key: z.string().max(160).nullable().optional(),
   address: z.string().max(400).nullable().optional(),
 });
-
 
 function normalize(value: string | null | undefined): string | null {
   if (value === undefined || value === null) return null;
@@ -221,7 +218,9 @@ export const getPerson = createServerFn({ method: "POST" })
     if (canViewSensitive) {
       const { data: sensRow, error: sensErr } = await supabase
         .from("people")
-        .select("cost_hour, monthly_cost, personal_doc, bank, bank_agency, bank_account, pix_key, address")
+        .select(
+          "cost_hour, monthly_cost, personal_doc, bank, bank_agency, bank_account, pix_key, address",
+        )
         .eq("id", data.id)
         .maybeSingle();
       if (sensErr) throw new Error(sensErr.message);
@@ -252,13 +251,22 @@ export const getPerson = createServerFn({ method: "POST" })
     }
 
     return {
-      ...(base as Omit<PersonRow, "cost_hour" | "monthly_cost" | "personal_doc" | "bank" | "bank_agency" | "bank_account" | "pix_key" | "address">),
+      ...(base as Omit<
+        PersonRow,
+        | "cost_hour"
+        | "monthly_cost"
+        | "personal_doc"
+        | "bank"
+        | "bank_agency"
+        | "bank_account"
+        | "pix_key"
+        | "address"
+      >),
       ...sensitive,
       can_view_sensitive: canViewSensitive,
       manager_name,
     } as PersonRow & { manager_name: string | null };
   });
-
 
 /**
  * Cria ou atualiza uma pessoa. Apenas admin do workspace tem write (RLS).
@@ -274,7 +282,6 @@ export const upsertPerson = createServerFn({ method: "POST" })
       "techpeople.people.update.workspace",
     ]);
 
-
     // owner_id vem do workspace ativo do usuário (via profiles.active_workspace_id).
     let ownerId: string | null = null;
     if (!data.id) {
@@ -283,7 +290,8 @@ export const upsertPerson = createServerFn({ method: "POST" })
         .select("active_workspace_id")
         .eq("id", userId)
         .maybeSingle();
-      ownerId = (prof as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
+      ownerId =
+        (prof as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
       if (!ownerId) throw new Error("Workspace ativo não encontrado");
     }
 
@@ -325,7 +333,6 @@ export const upsertPerson = createServerFn({ method: "POST" })
       pix_key: normalize(data.pix_key ?? null),
       address: normalize(data.address ?? null),
     };
-
 
     if (data.id) {
       // Detecta transição de status para `offboarding` para disparar automação.
@@ -375,12 +382,9 @@ export const upsertPerson = createServerFn({ method: "POST" })
     return { id: newId };
   });
 
-
 export const archivePerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    z.object({ id: z.string().uuid(), archived: z.boolean() }).parse(i),
-  )
+  .inputValidator((i) => z.object({ id: z.string().uuid(), archived: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceIdForCheck = await getActiveWorkspaceId(supabase, userId);
@@ -395,7 +399,6 @@ export const archivePerson = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-
 
 /**
  * Promove um candidato aprovado para uma pessoa (Sprint 1).
@@ -477,4 +480,3 @@ export const promoteCandidateToPerson = createServerFn({ method: "POST" })
     }).catch(() => undefined);
     return { id: newId, existed: false };
   });
-

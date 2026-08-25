@@ -59,7 +59,6 @@ export type LinkSuggestion = {
 
 export type OwnEntity = { cnpjDigits: string; name: string; tradeName: string | null };
 
-
 function digits(value: string | null | undefined): string {
   return (value ?? "").replace(/\D/g, "");
 }
@@ -154,7 +153,6 @@ export function isValidSuggestion(
   return false;
 }
 
-
 /** Mantém apenas a primeira sugestão por contrato pendente, priorizando confiança. */
 export function dedupeSuggestions(items: LinkSuggestion[]): LinkSuggestion[] {
   const order: Record<LinkConfidence, number> = { high: 0, medium: 1, low: 2 };
@@ -246,4 +244,3 @@ export const ROLE_INFERRED_LABEL: Record<"provider" | "client", string> = {
   provider: "Prestação (somos a CONTRATADA)",
   client: "Compra (somos a CONTRATANTE)",
 };
-

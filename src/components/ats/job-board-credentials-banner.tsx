@@ -43,17 +43,13 @@ export function JobBoardCredentialsBanner() {
           Job boards em modo simulado
         </div>
         <p className="text-xs text-muted-foreground">
-          As publicações são persistidas mas nenhum job board recebe a vaga
-          enquanto as credenciais não estiverem configuradas. Cada provider
-          exige o seu próprio app/contrato — abaixo o que falta para sair do
-          modo simulado.
+          As publicações são persistidas mas nenhum job board recebe a vaga enquanto as credenciais
+          não estiverem configuradas. Cada provider exige o seu próprio app/contrato — abaixo o que
+          falta para sair do modo simulado.
         </p>
         <div className="grid gap-2 sm:grid-cols-3">
           {PROVIDERS.map((p) => (
-            <div
-              key={p.slug}
-              className="rounded-md border border-border/60 bg-background/60 p-3"
-            >
+            <div key={p.slug} className="rounded-md border border-border/60 bg-background/60 p-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">{p.name}</span>
                 <Badge variant="outline" className="text-[10px]">

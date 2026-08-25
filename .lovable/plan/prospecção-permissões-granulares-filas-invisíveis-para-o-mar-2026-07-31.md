@@ -13,27 +13,31 @@
 ## Plano
 
 ### 1. Catálogo granular de prospecção (migration)
+
 Cadastrar em `public.permissions`, para cada recurso de prospecção, o conjunto completo de ações nos escopos aplicáveis, seguindo exatamente o padrão de `techsales.leads`:
 
-| Recurso | Ações | Escopos |
-| --- | --- | --- |
-| `techsales.prospecting.queue` | view, create, update, delete, assign | workspace, team, own (assign: workspace) |
-| `techsales.prospecting.cadences` | view, create, update, delete | workspace, own |
-| `techsales.prospecting.questionnaires` | view, create, update, delete | workspace, own |
-| `techsales.prospecting.scoring` | view, update | workspace |
-| `techsales.prospecting.playbooks` | view, create, update, delete | workspace, own |
-| `techsales.prospecting.enrichment` | view, create, export | workspace |
-| `techsales.prospecting.search` | view, create, export | workspace |
-| `techsales.prospecting.scripts` | view, create, update, delete | workspace, own |
-| `techsales.prospecting.voice` | view, update | workspace |
+| Recurso                                | Ações                                | Escopos                                  |
+| -------------------------------------- | ------------------------------------ | ---------------------------------------- |
+| `techsales.prospecting.queue`          | view, create, update, delete, assign | workspace, team, own (assign: workspace) |
+| `techsales.prospecting.cadences`       | view, create, update, delete         | workspace, own                           |
+| `techsales.prospecting.questionnaires` | view, create, update, delete         | workspace, own                           |
+| `techsales.prospecting.scoring`        | view, update                         | workspace                                |
+| `techsales.prospecting.playbooks`      | view, create, update, delete         | workspace, own                           |
+| `techsales.prospecting.enrichment`     | view, create, export                 | workspace                                |
+| `techsales.prospecting.search`         | view, create, export                 | workspace                                |
+| `techsales.prospecting.scripts`        | view, create, update, delete         | workspace, own                           |
+| `techsales.prospecting.voice`          | view, update                         | workspace                                |
 
 As 9 chaves `*.view` atuais são **mantidas** (menu, abas e permission sets em uso apontam para elas); as novas são aditivas, com `label_pt` em PT-BR. Nada é removido nem renomeado.
 
 ### 2. Matriz completa no diagnóstico
+
 Adicionar `/prospecting` em `MENU_RESOURCES_BY_URL` com os 9 recursos acima. Com o catálogo do item 1, `/settings/rbac-diagnostics` passa a exibir Exibir / Criar / Editar / Excluir (e Exportar/Atribuir onde existir) com o combo de escopo por linha, como nas demais telas.
 
 ### 3. Visibilidade real das filas (migration)
+
 Substituir a policy única de `prospecting_queues` por policies por comando, preservando o comportamento atual do dono:
+
 - `SELECT`: dono **ou** (mesmo workspace **e** (`is_shared = true` **ou** o usuário tem `techsales.prospecting.queue.view.workspace`)).
 - `INSERT`: `owner_id = auth.uid()` e exige `techsales.prospecting.queue.create.*`.
 - `UPDATE`/`DELETE`: dono, **ou** quem tem a chave `...update.workspace` / `...delete.workspace` no mesmo workspace.
@@ -41,7 +45,9 @@ Substituir a policy única de `prospecting_queues` por policies por comando, pre
 A checagem usa a função `public.user_has_permission` já existente, dentro de uma função `SECURITY DEFINER` para evitar recursão de RLS. Pertinência ao workspace via `current_user_workspaces`/`is_workspace_member`, já existentes.
 
 ### 4. Enforcement server-side
+
 Em `src/lib/prospecting/queues.functions.ts`, aplicar `assertAnyPermission` (de `src/lib/access-control/enforce.server.ts`) nos handlers:
+
 - `listQueues` / `listQueueItems` → `queue.view.{workspace,team,own}`
 - `upsertQueue` (criar) → `queue.create.*`; (editar) → `queue.update.*`
 - `addToQueue` / `removeFromQueue` → `queue.update.*`
@@ -50,7 +56,9 @@ Em `src/lib/prospecting/queues.functions.ts`, aplicar `assertAnyPermission` (de 
 Mesmo padrão, no mesmo escopo, para `cadences.functions.ts` e `questionnaires.functions.ts` (as abas que o marketing@ já vê).
 
 ### 5. UI coerente com a permissão
+
 Em `src/components/prospecting/queue-tab.tsx` (e nos equivalentes de cadências/questionários):
+
 - "Nova fila" só aparece com `queue.create.*`;
 - "Editar fila"/"Excluir fila" só aparecem para o dono ou com `...update/delete.workspace`;
 - badge "Compartilhada" nas filas com `is_shared`;
@@ -59,6 +67,7 @@ Em `src/components/prospecting/queue-tab.tsx` (e nos equivalentes de cadências/
 O filtro "Todos os responsáveis" volta a aparecer automaticamente: ele vive no card de detalhe da fila selecionada, que não existia porque nenhuma fila era visível.
 
 ### 6. Liberar para o papel de vendedor
+
 Após aprovado, incluir as novas chaves no permission set do papel do marketing@ em Configurações → Controle de acesso → Permissões (decisão sua sobre quais ações liberar; não faremos isso por migration).
 
 ## Detalhes técnicos

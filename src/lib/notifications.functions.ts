@@ -212,7 +212,6 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
       related_ticket_id: string | null;
     };
 
-
     const author = a.created_by ?? userId;
     // Author display name
     const { data: authorProf } = await supabase
@@ -244,10 +243,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id, full_name, notification_preferences")
       .in("id", uniqueIds);
-    const prefMap = new Map<
-      string,
-      { full_name: string | null; prefs: NotificationPrefs }
-    >();
+    const prefMap = new Map<string, { full_name: string | null; prefs: NotificationPrefs }>();
     for (const row of prefRows ?? []) {
       prefMap.set((row as { id: string }).id, {
         full_name: (row as { full_name: string | null }).full_name,
@@ -258,15 +254,18 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     }
 
     // Build origin for email link (server-only helper loaded inside the handler)
-    const { getRequestOrigin, getRequestAuthorization } = await import(
-      "@/lib/request-origin.server"
-    );
+    const { getRequestOrigin, getRequestAuthorization } =
+      await import("@/lib/request-origin.server");
     const origin = getRequestOrigin();
     const fullLink = link.link ? `${origin}${link.link}` : origin || undefined;
 
     // Insert in-app notifications + collect email targets
     const inappRows: Array<Record<string, unknown>> = [];
-    const emailJobs: Array<{ to: string; recipientName: string | null; category: NotificationCategory }> = [];
+    const emailJobs: Array<{
+      to: string;
+      recipientName: string | null;
+      category: NotificationCategory;
+    }> = [];
 
     for (const t of targets) {
       const p = prefMap.get(t.userId);
@@ -302,7 +301,6 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
         .insert(inappRows as never);
       if (insertErr) console.error("notify insert failed", insertErr.message);
     }
-
 
     // Send emails (admin needed to read auth.users.email)
     if (emailJobs.length > 0) {
@@ -439,9 +437,7 @@ export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
     for (const row of prefRows ?? []) {
       prefMap.set(
         (row as { id: string }).id,
-        mergeWithDefaults(
-          (row as { notification_preferences: unknown }).notification_preferences,
-        ),
+        mergeWithDefaults((row as { notification_preferences: unknown }).notification_preferences),
       );
     }
 

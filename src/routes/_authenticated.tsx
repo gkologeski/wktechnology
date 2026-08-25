@@ -111,7 +111,6 @@ function AuthenticatedLayout() {
 
   return (
     <SidebarProvider>
-      
       <div className="min-h-screen flex w-full bg-muted/20">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">

@@ -56,8 +56,8 @@ function MyPermissionsPage() {
           <ShieldCheck className="h-5 w-5" /> Minhas permissões
         </h1>
         <p className="text-sm text-muted-foreground">
-          Lista de tudo o que seu perfil de acesso permite fazer neste workspace.
-          Se algo aqui estiver faltando, peça ao administrador para revisar seu cargo.
+          Lista de tudo o que seu perfil de acesso permite fazer neste workspace. Se algo aqui
+          estiver faltando, peça ao administrador para revisar seu cargo.
         </p>
       </div>
 
@@ -83,17 +83,15 @@ function MyPermissionsPage() {
           <CardHeader>
             <CardTitle>Nenhuma permissão atribuída</CardTitle>
             <CardDescription>
-              Seu usuário ainda não possui um cargo com permissões neste workspace.
-              Peça ao administrador para atribuir um perfil de acesso.
+              Seu usuário ainda não possui um cargo com permissões neste workspace. Peça ao
+              administrador para atribuir um perfil de acesso.
             </CardDescription>
           </CardHeader>
         </Card>
       )}
 
       {!isLoading && total > 0 && grouped.length === 0 && (
-        <p className="text-sm text-muted-foreground">
-          Nenhuma permissão corresponde ao filtro.
-        </p>
+        <p className="text-sm text-muted-foreground">Nenhuma permissão corresponde ao filtro.</p>
       )}
 
       {grouped.map(([module, items]) => (
@@ -109,9 +107,7 @@ function MyPermissionsPage() {
                 className="border rounded-md p-3 flex items-start justify-between gap-3"
               >
                 <div className="min-w-0">
-                  <div className="font-medium">
-                    {it.label_pt ?? it.key}
-                  </div>
+                  <div className="font-medium">{it.label_pt ?? it.key}</div>
                   {it.description && (
                     <div className="text-sm text-muted-foreground">{it.description}</div>
                   )}

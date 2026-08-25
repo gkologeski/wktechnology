@@ -20,15 +20,18 @@ async function callAi(messages: Array<{ role: string; content: string }>, json =
       ...(json ? { response_format: { type: "json_object" } } : {}),
     }),
   });
-  if (r.status === 429) throw new Error("Limite de uso da IA atingido. Tente novamente em alguns instantes.");
-  if (r.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos no workspace.");
+  if (r.status === 429)
+    throw new Error("Limite de uso da IA atingido. Tente novamente em alguns instantes.");
+  if (r.status === 402)
+    throw new Error("Créditos de IA esgotados. Adicione créditos no workspace.");
   if (!r.ok) throw new Error(`AI Gateway ${r.status}: ${await r.text().catch(() => "")}`);
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "";
 }
 
 async function buildJobContext(supabase: any, jobId: string, userId?: string) {
-  const cols = "title, seniority, remote_mode, employment_type, location, description, requirements, metadata, owner_id, hiring_manager_id, recruiter_id";
+  const cols =
+    "title, seniority, remote_mode, employment_type, location, description, requirements, metadata, owner_id, hiring_manager_id, recruiter_id";
   let { data: job, error } = await supabase
     .from("ats_jobs")
     .select(cols)
@@ -45,7 +48,11 @@ async function buildJobContext(supabase: any, jobId: string, userId?: string) {
       .eq("id", jobId)
       .maybeSingle();
     if (!full) throw new Error("Vaga não encontrada");
-    let allowed = userId != null && (full.owner_id === userId || full.hiring_manager_id === userId || full.recruiter_id === userId);
+    let allowed =
+      userId != null &&
+      (full.owner_id === userId ||
+        full.hiring_manager_id === userId ||
+        full.recruiter_id === userId);
     if (!allowed && userId) {
       const { data: isAdmin } = await supabaseAdmin.rpc("is_platform_admin", { _user: userId });
       allowed = Boolean(isAdmin);
@@ -68,20 +75,27 @@ async function buildJobContext(supabase: any, jobId: string, userId?: string) {
 
 export const rankPipelineCandidates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ job_id: z.string().uuid(), limit: z.number().int().min(1).max(50).optional() }).parse(d))
+  .inputValidator((d) =>
+    z
+      .object({ job_id: z.string().uuid(), limit: z.number().int().min(1).max(50).optional() })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
     const { context: jobCtx } = await buildJobContext(supabase, data.job_id, context.userId);
 
     const { data: apps } = await supabase
       .from("ats_applications")
-      .select("id, status, stage_value, ats_candidates(id, full_name, current_position, current_company, skills, location)")
+      .select(
+        "id, status, stage_value, ats_candidates(id, full_name, current_position, current_company, skills, location)",
+      )
       .eq("job_id", data.job_id)
       .neq("status", "rejected")
       .limit(data.limit ?? 25);
 
     const items = (apps ?? []).filter((a: any) => a.ats_candidates);
-    if (items.length === 0) return { ranking: [] as Array<{ candidate_id: string; score: number; reason: string }> };
+    if (items.length === 0)
+      return { ranking: [] as Array<{ candidate_id: string; score: number; reason: string }> };
 
     const candidatesBlock = items
       .map((a: any, i: number) => {

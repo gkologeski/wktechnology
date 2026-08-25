@@ -24,7 +24,13 @@ type Props = {
   onCreated?: (id: string) => void;
 };
 
-export function QuickCreateProjectDialog({ open, onOpenChange, contractId, serviceId, onCreated }: Props) {
+export function QuickCreateProjectDialog({
+  open,
+  onOpenChange,
+  contractId,
+  serviceId,
+  onCreated,
+}: Props) {
   const create = useServerFn(createProject);
   const navigate = useNavigate();
   const [name, setName] = useState("");
@@ -82,7 +88,11 @@ export function QuickCreateProjectDialog({ open, onOpenChange, contractId, servi
           </div>
           <div className="space-y-1.5">
             <Label>Descrição</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

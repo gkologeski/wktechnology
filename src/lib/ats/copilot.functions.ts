@@ -61,8 +61,7 @@ async function buildCandidateContext(supabase: any, candidateId: string) {
   if (cand.skills?.length) lines.push(`Skills: ${(cand.skills as string[]).join(", ")}`);
   if (cand.tags?.length) lines.push(`Tags: ${(cand.tags as string[]).join(", ")}`);
   if (cand.notes) lines.push(`Notas: ${String(cand.notes).slice(0, 1500)}`);
-  if (cand.cv_parsed)
-    lines.push(`CV (parseado): ${JSON.stringify(cand.cv_parsed).slice(0, 5000)}`);
+  if (cand.cv_parsed) lines.push(`CV (parseado): ${JSON.stringify(cand.cv_parsed).slice(0, 5000)}`);
 
   if (apps?.length) {
     lines.push("\nAplicações:");

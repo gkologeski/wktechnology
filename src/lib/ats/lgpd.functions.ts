@@ -4,7 +4,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Json } from "@/integrations/supabase/types";
 import { z } from "zod";
 
-
 export type DsarType = "export" | "erasure" | "rectification" | "access";
 export type DsarStatus = "pending" | "in_progress" | "completed" | "rejected";
 
@@ -41,8 +40,6 @@ export interface CandidateExportSnapshot {
   interviews: Json;
 }
 
-
-
 const createSchema = z.object({
   candidate_id: z.string().uuid(),
   request_type: z.enum(["export", "erasure", "rectification", "access"]),
@@ -69,8 +66,7 @@ export const listDsarRequests = createServerFn({ method: "GET" })
     return (rows ?? []).map((r: Record<string, unknown>) => ({
       id: r.id as string,
       candidate_id: r.candidate_id as string,
-      candidate_name:
-        ((r.ats_candidates as { full_name?: string } | null)?.full_name ?? null),
+      candidate_name: (r.ats_candidates as { full_name?: string } | null)?.full_name ?? null,
       subject_email: (r.subject_email as string | null) ?? null,
       request_type: r.request_type as DsarType,
       status: r.status as DsarStatus,
@@ -129,15 +125,9 @@ export const exportCandidateData = createServerFn({ method: "POST" })
         .eq("owner_id", userId)
         .eq("candidate_id", cid),
       appIds.length
-        ? supabase
-            .from("ats_scorecard_responses")
-            .select("*")
-            .in("application_id", appIds)
+        ? supabase.from("ats_scorecard_responses").select("*").in("application_id", appIds)
         : Promise.resolve({ data: [] as unknown[] }),
-      supabase
-        .from("ats_interviews")
-        .select("*")
-        .eq("candidate_id", cid),
+      supabase.from("ats_interviews").select("*").eq("candidate_id", cid),
     ]);
 
     const applicationsList = (appsData ?? []) as unknown as Json;
@@ -178,7 +168,6 @@ export const exportCandidateData = createServerFn({ method: "POST" })
     return snapshot;
   });
 
-
 export const eraseCandidate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: { candidate_id: string; dsar_id?: string; confirm: string }) => {
@@ -212,9 +201,7 @@ export const eraseCandidate = createServerFn({ method: "POST" })
 
 export const updateDsarStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
-    (input: { id: string; status: DsarStatus; notes?: string | null }) => input,
-  )
+  .inputValidator((input: { id: string; status: DsarStatus; notes?: string | null }) => input)
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const patch: {
@@ -319,7 +306,14 @@ export const listRetentionDue = createServerFn({ method: "GET" })
       .limit(500);
     if (error) throw new Error(error.message);
     const now = Date.now();
-    return ((rows ?? []) as Array<{ id: string; full_name: string; email: string | null; retention_until: string }>).map((r) => ({
+    return (
+      (rows ?? []) as Array<{
+        id: string;
+        full_name: string;
+        email: string | null;
+        retention_until: string;
+      }>
+    ).map((r) => ({
       id: r.id,
       full_name: r.full_name,
       email: r.email,

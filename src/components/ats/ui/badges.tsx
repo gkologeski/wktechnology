@@ -48,28 +48,47 @@ const statusMap: Record<JobStatus, { label: string; cls: string }> = {
     cls: "border-border-default bg-surface-sunken text-text-secondary",
   },
 };
-export function StatusBadge({ status, label, className }: { status: JobStatus; label?: string; className?: string }) {
+export function StatusBadge({
+  status,
+  label,
+  className,
+}: {
+  status: JobStatus;
+  label?: string;
+  className?: string;
+}) {
   const cfg = statusMap[status];
   return <BadgeBase className={cn(cfg.cls, className)}>{label ?? cfg.label}</BadgeBase>;
 }
 
 /* ----- StageBadge: pipeline stage ----- */
-export type PipelineStage =
-  | "sourced"
-  | "screen"
-  | "interview"
-  | "offer"
-  | "hired"
-  | "rejected";
+export type PipelineStage = "sourced" | "screen" | "interview" | "offer" | "hired" | "rejected";
 const stageMap: Record<PipelineStage, { label: string; cls: string }> = {
-  sourced: { label: "Sourced", cls: "border-stage-sourced/30 bg-stage-sourced/10 text-stage-sourced" },
+  sourced: {
+    label: "Sourced",
+    cls: "border-stage-sourced/30 bg-stage-sourced/10 text-stage-sourced",
+  },
   screen: { label: "Triagem", cls: "border-stage-screen/30 bg-stage-screen/10 text-stage-screen" },
-  interview: { label: "Entrevista", cls: "border-stage-interview/30 bg-stage-interview/10 text-stage-interview" },
+  interview: {
+    label: "Entrevista",
+    cls: "border-stage-interview/30 bg-stage-interview/10 text-stage-interview",
+  },
   offer: { label: "Oferta", cls: "border-stage-offer/30 bg-stage-offer/10 text-stage-offer" },
   hired: { label: "Contratado", cls: "border-stage-hired/30 bg-stage-hired/10 text-stage-hired" },
-  rejected: { label: "Rejeitado", cls: "border-stage-rejected/30 bg-stage-rejected/10 text-stage-rejected" },
+  rejected: {
+    label: "Rejeitado",
+    cls: "border-stage-rejected/30 bg-stage-rejected/10 text-stage-rejected",
+  },
 };
-export function StageBadge({ stage, label, className }: { stage: PipelineStage; label?: string; className?: string }) {
+export function StageBadge({
+  stage,
+  label,
+  className,
+}: {
+  stage: PipelineStage;
+  label?: string;
+  className?: string;
+}) {
   const cfg = stageMap[stage];
   return <BadgeBase className={cn(cfg.cls, className)}>{label ?? cfg.label}</BadgeBase>;
 }
@@ -108,7 +127,15 @@ const riskMap: Record<RiskLevel, { label: string; cls: string }> = {
   medium: { label: "Risco médio", cls: "border-risk-medium/30 bg-risk-medium/10 text-risk-medium" },
   high: { label: "Risco alto", cls: "border-risk-high/30 bg-risk-high/10 text-risk-high" },
 };
-export function RiskBadge({ level, label, className }: { level: RiskLevel; label?: string; className?: string }) {
+export function RiskBadge({
+  level,
+  label,
+  className,
+}: {
+  level: RiskLevel;
+  label?: string;
+  className?: string;
+}) {
   const cfg = riskMap[level];
   return <BadgeBase className={cn(cfg.cls, className)}>{label ?? cfg.label}</BadgeBase>;
 }

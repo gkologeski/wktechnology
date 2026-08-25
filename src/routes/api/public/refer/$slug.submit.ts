@@ -32,10 +32,7 @@ export const Route = createFileRoute("/api/public/refer/$slug/submit")({
         const body = await request.json().catch(() => null);
         const parsed = Payload.safeParse(body);
         if (!parsed.success)
-          return Response.json(
-            { error: parsed.error.flatten() },
-            { status: 400, headers: cors },
-          );
+          return Response.json({ error: parsed.error.flatten() }, { status: 400, headers: cors });
 
         // honeypot
         if (parsed.data._hp && parsed.data._hp.length > 0)
@@ -49,16 +46,13 @@ export const Route = createFileRoute("/api/public/refer/$slug/submit")({
           .select("id, owner_id, default_bonus_cents, enabled, enable_public_form")
           .eq("public_slug", params.slug)
           .maybeSingle();
-        if (pErr)
-          return Response.json({ error: pErr.message }, { status: 500, headers: cors });
+        if (pErr) return Response.json({ error: pErr.message }, { status: 500, headers: cors });
         if (!program || !program.enabled || !program.enable_public_form)
           return Response.json({ error: "Not found" }, { status: 404, headers: cors });
 
         // rate-limit best-effort por IP nos últimos 10 min
         const ip =
-          request.headers.get("cf-connecting-ip") ||
-          request.headers.get("x-forwarded-for") ||
-          null;
+          request.headers.get("cf-connecting-ip") || request.headers.get("x-forwarded-for") || null;
         if (ip) {
           const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
           const { count } = await supabaseAdmin
@@ -68,10 +62,7 @@ export const Route = createFileRoute("/api/public/refer/$slug/submit")({
             .gte("submitted_at", since)
             .ilike("referrer_email", parsed.data.referrer_email);
           if ((count ?? 0) >= 5)
-            return Response.json(
-              { error: "Too many submissions" },
-              { status: 429, headers: cors },
-            );
+            return Response.json({ error: "Too many submissions" }, { status: 429, headers: cors });
         }
 
         const { data: row, error } = await supabaseAdmin
@@ -93,8 +84,7 @@ export const Route = createFileRoute("/api/public/refer/$slug/submit")({
           } as never)
           .select("id")
           .single();
-        if (error)
-          return Response.json({ error: error.message }, { status: 500, headers: cors });
+        if (error) return Response.json({ error: error.message }, { status: 500, headers: cors });
 
         await recordAtsEvent(supabaseAdmin, {
           ownerId: program.owner_id,

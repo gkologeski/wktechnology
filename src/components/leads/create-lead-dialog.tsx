@@ -155,7 +155,6 @@ export function CreateLeadDialog({
           company_id: company.id ?? null,
           company_name: company.name.trim() || null,
           source: form.source.trim() || null,
-
         })
         .select("id")
         .single();
@@ -182,134 +181,137 @@ export function CreateLeadDialog({
 
   return (
     <>
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!saving) onOpenChange(v);
-      }}
-    >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Criar lead</DialogTitle>
-          <DialogDescription>
-            Preencha as informações básicas. Você poderá editar tudo depois.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-3 py-2">
-          <div className="grid grid-cols-2 gap-3">
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!saving) onOpenChange(v);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar lead</DialogTitle>
+            <DialogDescription>
+              Preencha as informações básicas. Você poderá editar tudo depois.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="first_name">Nome *</Label>
+                <Input
+                  id="first_name"
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="last_name">Sobrenome</Label>
+                <Input
+                  id="last_name"
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
+              </div>
+            </div>
             <div className="space-y-1.5">
-              <Label htmlFor="first_name">Nome *</Label>
-              <Input
-                id="first_name"
-                value={form.first_name}
-                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-                autoFocus
+              <Label htmlFor="email">Email</Label>
+              <EmailInput
+                id="email"
+                value={form.email}
+                onChange={(v) => setForm({ ...form, email: v })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="last_name">Sobrenome</Label>
-              <Input
-                id="last_name"
-                value={form.last_name}
-                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+              <Label htmlFor="phone">Telefone</Label>
+              <PhoneInput
+                id="phone"
+                value={form.phone}
+                onChange={(v) => setForm({ ...form, phone: v })}
               />
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <EmailInput
-              id="email"
-              value={form.email}
-              onChange={(v) => setForm({ ...form, email: v })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="phone">Telefone</Label>
-            <PhoneInput
-              id="phone"
-              value={form.phone}
-              onChange={(v) => setForm({ ...form, phone: v })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="company_name">Empresa</Label>
-            <CompanyPicker
-              id="company_name"
-              value={company}
-              onChange={setCompany}
-              toastOnMatches
-              onCreateNew={(name) => {
-                setPendingCompanyName(name);
-                setCreateCompanyOpen(true);
-              }}
-            />
-          </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="company_name">Empresa</Label>
+              <CompanyPicker
+                id="company_name"
+                value={company}
+                onChange={setCompany}
+                toastOnMatches
+                onCreateNew={(name) => {
+                  setPendingCompanyName(name);
+                  setCreateCompanyOpen(true);
+                }}
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label>Fonte</Label>
-            <SourceCombobox value={form.source} onChange={(v) => setForm({ ...form, source: v })} />
+            <div className="space-y-1.5">
+              <Label>Fonte</Label>
+              <SourceCombobox
+                value={form.source}
+                onChange={(v) => setForm({ ...form, source: v })}
+              />
+            </div>
+            <OnboardingGuidedEntry entity="lead" onNavigate={() => onOpenChange(false)} />
           </div>
-          <OnboardingGuidedEntry entity="lead" onNavigate={() => onOpenChange(false)} />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={submit}
-            disabled={saving || !form.first_name.trim() || (!!company.name.trim() && !company.id)}
-            title={
-              !!company.name.trim() && !company.id
-                ? "Selecione a empresa na lista para continuar"
-                : undefined
-            }
-          >
-            {saving ? "Criando…" : "Criar lead"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={submit}
+              disabled={saving || !form.first_name.trim() || (!!company.name.trim() && !company.id)}
+              title={
+                !!company.name.trim() && !company.id
+                  ? "Selecione a empresa na lista para continuar"
+                  : undefined
+              }
+            >
+              {saving ? "Criando…" : "Criar lead"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
 
-      <AlertDialog open={showReuse} onOpenChange={setShowReuse}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Contato existente encontrado</AlertDialogTitle>
-            <AlertDialogDescription>
-              Encontramos um contato com o e-mail{" "}
-              <strong>{matchedContact?.email}</strong>
-              {matchedContact?.first_name || matchedContact?.last_name ? (
-                <>
-                  {" "}
-                  (<strong>
-                    {[matchedContact?.first_name, matchedContact?.last_name]
-                      .filter(Boolean)
-                      .join(" ")}
-                  </strong>
-                  {matchedContact?.companies?.name || matchedContact?.company_name
-                    ? ` — ${matchedContact?.companies?.name ?? matchedContact?.company_name}`
-                    : ""}
-                  )
-                </>
-              ) : null}
-              . Deseja reaproveitar os dados desse contato neste novo lead?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Não, manter o que digitei</AlertDialogCancel>
-            <AlertDialogAction onClick={applyContact}>Sim, reaproveitar</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </Dialog>
+        <AlertDialog open={showReuse} onOpenChange={setShowReuse}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Contato existente encontrado</AlertDialogTitle>
+              <AlertDialogDescription>
+                Encontramos um contato com o e-mail <strong>{matchedContact?.email}</strong>
+                {matchedContact?.first_name || matchedContact?.last_name ? (
+                  <>
+                    {" "}
+                    (
+                    <strong>
+                      {[matchedContact?.first_name, matchedContact?.last_name]
+                        .filter(Boolean)
+                        .join(" ")}
+                    </strong>
+                    {matchedContact?.companies?.name || matchedContact?.company_name
+                      ? ` — ${matchedContact?.companies?.name ?? matchedContact?.company_name}`
+                      : ""}
+                    )
+                  </>
+                ) : null}
+                . Deseja reaproveitar os dados desse contato neste novo lead?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Não, manter o que digitei</AlertDialogCancel>
+              <AlertDialogAction onClick={applyContact}>Sim, reaproveitar</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </Dialog>
 
-    <QuickCreateCompanyDialog
-      open={createCompanyOpen}
-      onOpenChange={setCreateCompanyOpen}
-      initialName={pendingCompanyName}
-      onCreated={(id) => {
-        setCompany({ id, name: pendingCompanyName });
-        setForm((f) => ({ ...f, company_name: pendingCompanyName }));
-      }}
-    />
+      <QuickCreateCompanyDialog
+        open={createCompanyOpen}
+        onOpenChange={setCreateCompanyOpen}
+        initialName={pendingCompanyName}
+        onCreated={(id) => {
+          setCompany({ id, name: pendingCompanyName });
+          setForm((f) => ({ ...f, company_name: pendingCompanyName }));
+        }}
+      />
     </>
   );
 }

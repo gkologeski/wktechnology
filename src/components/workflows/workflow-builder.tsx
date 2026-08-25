@@ -335,7 +335,6 @@ export function WorkflowBuilder({
     }
   };
 
-
   const handleDropAt = (to: { parentPath: StepPath; index: number }) => {
     if (!dragging) return;
     const from = dragging;
@@ -587,7 +586,6 @@ export function WorkflowBuilder({
                         }
                       />
                     </Suspense>
-
                   ) : (
                     <p className="text-sm text-muted-foreground">
                       Selecione um passo no canvas para configurar.
@@ -1910,4 +1908,3 @@ function TriggerConfigPanel({
     </div>
   );
 }
-

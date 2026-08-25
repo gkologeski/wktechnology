@@ -24,7 +24,6 @@ export type WorkflowActionTemplateRow = {
   updated_at: string;
 };
 
-
 const upsertSchema = z.object({
   id: z.string().uuid().optional(),
   name: z.string().trim().min(1).max(120),

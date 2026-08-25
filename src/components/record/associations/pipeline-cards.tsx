@@ -7,9 +7,27 @@ import { Briefcase, Ticket as TicketIcon } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/crm";
 import { AddAssociation } from "@/components/record/add-association";
-import { QuickCreateDealDialog, QuickCreateTicketDialog } from "@/components/record/quick-create-dialogs";
+import {
+  QuickCreateDealDialog,
+  QuickCreateTicketDialog,
+} from "@/components/record/quick-create-dialogs";
 import { usePipelines } from "@/lib/pipelines";
-import { AssocCard, AssocItemActions, AssocLabelAdder, DEAL_SELECT, type DealRow, DetailRow, Empty, EntityAvatar, StagePicker, ViewAllFooter, emitTimelineRefresh, formatDealDateLong, sb, useAssociateWithPeriod } from "./primitives";
+import {
+  AssocCard,
+  AssocItemActions,
+  AssocLabelAdder,
+  DEAL_SELECT,
+  type DealRow,
+  DetailRow,
+  Empty,
+  EntityAvatar,
+  StagePicker,
+  ViewAllFooter,
+  emitTimelineRefresh,
+  formatDealDateLong,
+  sb,
+  useAssociateWithPeriod,
+} from "./primitives";
 
 export function DealsCard({
   entity,
@@ -35,7 +53,7 @@ export function DealsCard({
           .select(DEAL_SELECT)
           .eq("company_id", entityId)
           .limit(50);
-        setRows(((data ?? []) as never) as DealRow[]);
+        setRows((data ?? []) as never as DealRow[]);
         return;
       }
       const primaryP = supabase
@@ -56,7 +74,7 @@ export function DealsCard({
       let extra: DealRow[] = [];
       if (linkedIds.length) {
         const { data } = await supabase.from("deals").select(DEAL_SELECT).in("id", linkedIds);
-        extra = ((data ?? []) as never) as DealRow[];
+        extra = (data ?? []) as never as DealRow[];
       }
       const map = new Map<string, DealRow>();
       for (const d of [
@@ -131,7 +149,6 @@ export function DealsCard({
     toast.success("Etapa atualizada");
   };
 
-
   return (
     <>
       <AssocCard
@@ -183,19 +200,14 @@ export function DealsCard({
                           <DetailRow
                             label="Valor"
                             value={
-                              d.value != null
-                                ? formatCurrency(d.value, d.currency ?? "BRL")
-                                : null
+                              d.value != null ? formatCurrency(d.value, d.currency ?? "BRL") : null
                             }
                           />
                           <DetailRow
                             label="Data de fechamento"
                             value={formatDealDateLong(d.expected_close_date)}
                           />
-                          <DetailRow
-                            label="Pipeline"
-                            value={pipeline?.name ?? "—"}
-                          />
+                          <DetailRow label="Pipeline" value={pipeline?.name ?? "—"} />
                           <div className="min-w-0">
                             <div className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
                               Fase
@@ -207,10 +219,8 @@ export function DealsCard({
                                 stages={stages}
                                 onChange={(v) => changeStage(d.id, v)}
                               />
-
                             </div>
                           </div>
-
                         </div>
                         <AssocLabelAdder />
                       </div>
@@ -282,10 +292,10 @@ export function TicketsCard({
           .select(TICKET_SELECT)
           .eq("company_id", companyId)
           .limit(50);
-        companyRows = ((data ?? []) as never) as TicketRow[];
+        companyRows = (data ?? []) as never as TicketRow[];
       }
       const map = new Map<string, TicketRow>();
-      for (const t of [...(((direct ?? []) as never) as TicketRow[]), ...companyRows])
+      for (const t of [...((direct ?? []) as never as TicketRow[]), ...companyRows])
         map.set(t.id, t);
       setRows(Array.from(map.values()).slice(0, 50));
     })();

@@ -7,7 +7,13 @@ export const Route = createFileRoute("/_authenticated/dei-analytics")({
   component: DeiAnalyticsPage,
 });
 
-function Section({ title, rows }: { title: string; rows: Array<{ label: string; value: number }> }) {
+function Section({
+  title,
+  rows,
+}: {
+  title: string;
+  rows: Array<{ label: string; value: number }>;
+}) {
   const total = rows.reduce((s, r) => s + r.value, 0) || 1;
   return (
     <div className="rounded border p-4">
@@ -16,10 +22,16 @@ function Section({ title, rows }: { title: string; rows: Array<{ label: string; 
         {rows.map((r) => (
           <div key={r.label}>
             <div className="flex justify-between text-sm">
-              <span>{r.label}</span><span>{r.value} ({Math.round((r.value / total) * 100)}%)</span>
+              <span>{r.label}</span>
+              <span>
+                {r.value} ({Math.round((r.value / total) * 100)}%)
+              </span>
             </div>
             <div className="h-2 bg-muted rounded">
-              <div className="h-2 bg-primary rounded" style={{ width: `${(r.value / total) * 100}%` }} />
+              <div
+                className="h-2 bg-primary rounded"
+                style={{ width: `${(r.value / total) * 100}%` }}
+              />
             </div>
           </div>
         ))}
@@ -30,7 +42,10 @@ function Section({ title, rows }: { title: string; rows: Array<{ label: string; 
 
 function DeiAnalyticsPage() {
   const fn = useServerFn(getDeiAnalytics);
-  const q = useQuery({ queryKey: ["dei-analytics"], queryFn: () => fn({ data: undefined as never }) });
+  const q = useQuery({
+    queryKey: ["dei-analytics"],
+    queryFn: () => fn({ data: undefined as never }),
+  });
 
   if (q.isLoading) return <div className="p-6">Carregando...</div>;
   const d = q.data!;

@@ -73,7 +73,12 @@ export async function assertWorkspaceAdmin(workspaceId: string, userId: string):
 }
 
 async function listAllAuthUsers(): Promise<
-  Array<{ id: string; email: string | null; created_at: string | null; last_sign_in_at: string | null }>
+  Array<{
+    id: string;
+    email: string | null;
+    created_at: string | null;
+    last_sign_in_at: string | null;
+  }>
 > {
   const out: Array<{
     id: string;
@@ -129,7 +134,9 @@ export async function findUnlinkedAccounts(workspaceId: string): Promise<Unlinke
     .from("workspace_members")
     .select("user_id")
     .eq("workspace_id", workspaceId);
-  const memberIds = new Set(((members as { user_id: string }[] | null) ?? []).map((m) => m.user_id));
+  const memberIds = new Set(
+    ((members as { user_id: string }[] | null) ?? []).map((m) => m.user_id),
+  );
   const domains = new Set<string>();
   for (const u of users) {
     if (memberIds.has(u.id)) {
@@ -165,10 +172,9 @@ export async function linkAccountToWorkspace(input: {
 
   const { error: wmErr } = await supabaseAdmin
     .from("workspace_members")
-    .upsert(
-      { workspace_id: workspaceId, user_id: userId, role } as never,
-      { onConflict: "workspace_id,user_id" },
-    );
+    .upsert({ workspace_id: workspaceId, user_id: userId, role } as never, {
+      onConflict: "workspace_id,user_id",
+    });
   if (wmErr) throw new Error(wmErr.message);
 
   // Perfil de acesso equivalente ao papel escolhido (tabela legada team_members).

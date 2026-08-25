@@ -234,9 +234,7 @@ export const updateRelationshipStatus = createServerFn({ method: "POST" })
 
 export const getCandidatePools = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ candidate_id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ candidate_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: rows, error } = await context.supabase
       .from("ats_talent_pool_members")
@@ -297,4 +295,3 @@ export const enqueueReEngageNurture = createServerFn({ method: "POST" })
     });
     return { enrolled: candidateIds.length };
   });
-

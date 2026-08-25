@@ -65,8 +65,7 @@ function makeAdminMock(opts: {
                 not: () => ({
                   lte: () => ({
                     order: () => ({
-                      limit: () =>
-                        Promise.resolve({ data: opts.due, error: null }),
+                      limit: () => Promise.resolve({ data: opts.due, error: null }),
                     }),
                   }),
                 }),
@@ -87,8 +86,7 @@ function makeAdminMock(opts: {
         return {
           upsert: (payload: unknown, options: unknown) => {
             upsertCalls.push({ payload, options });
-            const inserted =
-              opts.upsertBehavior === "duplicate" ? [] : [{ id: "fe-new" }];
+            const inserted = opts.upsertBehavior === "duplicate" ? [] : [{ id: "fe-new" }];
             return {
               select: () => Promise.resolve({ data: inserted, error: null }),
             };

@@ -2,15 +2,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  Search,
-  ArrowRight,
-  Mail,
-  Download,
-  Inbox,
-  Sparkles,
-  Activity,
-} from "lucide-react";
+import { Search, ArrowRight, Mail, Download, Inbox, Sparkles, Activity } from "lucide-react";
 import { AtsPageHeader, MetricCard, MetricsGridSkeleton } from "@/components/ats/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { listHuntingStats } from "@/lib/ats/hunting.functions";
@@ -24,7 +16,8 @@ const TILES = [
     to: "/hunting/search",
     icon: Search,
     title: "Buscar no LinkedIn",
-    description: "Pesquisa via Unipile com throttling humano. Selecione perfis e importe direto pro ATS.",
+    description:
+      "Pesquisa via Unipile com throttling humano. Selecione perfis e importe direto pro ATS.",
   },
   {
     to: "/hunting/captures",
@@ -72,21 +65,9 @@ function HuntingHub() {
         <MetricsGridSkeleton count={3} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-3">
-          <MetricCard
-            label="Capturados hoje"
-            value={stats.data?.today ?? 0}
-            icon={Sparkles}
-          />
-          <MetricCard
-            label="Últimos 7 dias"
-            value={stats.data?.last_7_days ?? 0}
-            icon={Search}
-          />
-          <MetricCard
-            label="Total no banco"
-            value={stats.data?.total ?? 0}
-            icon={Inbox}
-          />
+          <MetricCard label="Capturados hoje" value={stats.data?.today ?? 0} icon={Sparkles} />
+          <MetricCard label="Últimos 7 dias" value={stats.data?.last_7_days ?? 0} icon={Search} />
+          <MetricCard label="Total no banco" value={stats.data?.total ?? 0} icon={Inbox} />
         </div>
       )}
 

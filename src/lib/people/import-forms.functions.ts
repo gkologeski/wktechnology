@@ -233,8 +233,10 @@ function normalizeRow(row: Record<string, string>): { row: NormalizedRow | null;
       birth_date: parseBirth(pick(row, COLUMN_ALIASES.birth)),
       email: trim(pick(row, COLUMN_ALIASES.email))?.toLowerCase() ?? null,
       raw_email_alt: trim(pick(row, COLUMN_ALIASES.email_alt))?.toLowerCase() ?? null,
-      phone: toE164(pick(row, COLUMN_ALIASES.mobile) ?? "") ?? trim(pick(row, COLUMN_ALIASES.mobile)),
-      mobile: toE164(pick(row, COLUMN_ALIASES.mobile) ?? "") ?? trim(pick(row, COLUMN_ALIASES.mobile)),
+      phone:
+        toE164(pick(row, COLUMN_ALIASES.mobile) ?? "") ?? trim(pick(row, COLUMN_ALIASES.mobile)),
+      mobile:
+        toE164(pick(row, COLUMN_ALIASES.mobile) ?? "") ?? trim(pick(row, COLUMN_ALIASES.mobile)),
       emergency_contact: trim(pick(row, COLUMN_ALIASES.emergency)),
       address_line1: trim(pick(row, COLUMN_ALIASES.address)),
       address_complement: trim(pick(row, COLUMN_ALIASES.complement)),
@@ -242,7 +244,9 @@ function normalizeRow(row: Record<string, string>): { row: NormalizedRow | null;
       state: trim(pick(row, COLUMN_ALIASES.state))?.toUpperCase() ?? null,
       zip: (() => {
         const z = digits(pick(row, COLUMN_ALIASES.zip));
-        return z.length === 8 ? `${z.slice(0, 5)}-${z.slice(5)}` : trim(pick(row, COLUMN_ALIASES.zip));
+        return z.length === 8
+          ? `${z.slice(0, 5)}-${z.slice(5)}`
+          : trim(pick(row, COLUMN_ALIASES.zip));
       })(),
       education: trim(pick(row, COLUMN_ALIASES.education)),
       bank: trim(pick(row, COLUMN_ALIASES.bank)),
@@ -273,7 +277,10 @@ async function fetchCsv(sheetUrl: string): Promise<NormalizedRow[]> {
   if (!id) throw new Error("URL da planilha inválida");
   const csvUrl = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv`;
   const res = await fetch(csvUrl, { redirect: "follow" });
-  if (!res.ok) throw new Error(`Falha ao baixar planilha (${res.status}): torne pública como "Qualquer pessoa com o link".`);
+  if (!res.ok)
+    throw new Error(
+      `Falha ao baixar planilha (${res.status}): torne pública como "Qualquer pessoa com o link".`,
+    );
   const csv = await res.text();
   const parsed = Papa.parse<Record<string, string>>(csv, {
     header: true,
@@ -324,14 +331,12 @@ function sniffExt(bytes: Uint8Array): { ext: string; mime: string } | null {
   if (b[0] === 0x25 && b[1] === 0x50 && b[2] === 0x44 && b[3] === 0x46)
     return { ext: "pdf", mime: "application/pdf" };
   // JPEG
-  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff)
-    return { ext: "jpg", mime: "image/jpeg" };
+  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { ext: "jpg", mime: "image/jpeg" };
   // PNG
   if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47)
     return { ext: "png", mime: "image/png" };
   // GIF
-  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46)
-    return { ext: "gif", mime: "image/gif" };
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return { ext: "gif", mime: "image/gif" };
   // ZIP / DOCX / XLSX
   if (b[0] === 0x50 && b[1] === 0x4b && b[2] === 0x03 && b[3] === 0x04)
     return { ext: "zip", mime: "application/zip" };
@@ -361,7 +366,10 @@ function extFromName(name: string | null): string | null {
   if (!name) return null;
   const i = name.lastIndexOf(".");
   if (i < 0 || i >= name.length - 1) return null;
-  const e = name.slice(i + 1).toLowerCase().replace(/[^a-z0-9]/g, "");
+  const e = name
+    .slice(i + 1)
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
   return e.length > 0 && e.length <= 5 ? e : null;
 }
 
@@ -475,8 +483,7 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
         full_name: r.full_name,
         phone: r.phone ?? r.mobile ?? null,
         cpf_formatted: r.cpf_formatted,
-        id_doc_drive_id:
-          r.attachments.find((a) => a.label === ID_DOC_LABEL)?.drive_id ?? null,
+        id_doc_drive_id: r.attachments.find((a) => a.label === ID_DOC_LABEL)?.drive_id ?? null,
       }));
       return {
         total_unique: rows.length,
@@ -495,7 +502,6 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
       };
     }
 
-
     // owner_id = workspace ativo do usuário.
     const { data: prof } = await supabase
       .from("profiles")
@@ -513,28 +519,40 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: existingRows } = await supabaseAdmin
       .from("people")
-      .select("id, owner_id, full_name, email, phone, cnpj, legal_entity_name, personal_doc, notes, preferred_name, location")
+      .select(
+        "id, owner_id, full_name, email, phone, cnpj, legal_entity_name, personal_doc, notes, preferred_name, location",
+      )
       .eq("owner_id", ownerId)
       .in("cnpj", [...cpfList, ...cpfFormattedList, ...cpfList.map(formatCPF)]);
-    const byCpf = new Map<string, {
-      id: string;
-      owner_id: string;
-      full_name: string;
-      email: string | null;
-      phone: string | null;
-      cnpj: string | null;
-      legal_entity_name: string | null;
-      personal_doc: Record<string, unknown> | null;
-      notes: string | null;
-      preferred_name: string | null;
-      location: string | null;
-    }>();
+    const byCpf = new Map<
+      string,
+      {
+        id: string;
+        owner_id: string;
+        full_name: string;
+        email: string | null;
+        phone: string | null;
+        cnpj: string | null;
+        legal_entity_name: string | null;
+        personal_doc: Record<string, unknown> | null;
+        notes: string | null;
+        preferred_name: string | null;
+        location: string | null;
+      }
+    >();
     for (const r of (existingRows ?? []) as never[]) {
       const rr = r as {
-        id: string; owner_id: string; full_name: string; email: string | null;
-        phone: string | null; cnpj: string | null; legal_entity_name: string | null;
-        personal_doc: Record<string, unknown> | null; notes: string | null;
-        preferred_name: string | null; location: string | null;
+        id: string;
+        owner_id: string;
+        full_name: string;
+        email: string | null;
+        phone: string | null;
+        cnpj: string | null;
+        legal_entity_name: string | null;
+        personal_doc: Record<string, unknown> | null;
+        notes: string | null;
+        preferred_name: string | null;
+        location: string | null;
       };
       const key = digits(rr.cnpj ?? "");
       if (key.length === 11) byCpf.set(key, rr);
@@ -580,7 +598,9 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
           row.education ? `Escolaridade: ${row.education}` : null,
           row.shirt ? `Camiseta: ${row.shirt}` : null,
           row.emergency_contact ? `Recado: ${row.emergency_contact}` : null,
-          row.bank ? `Banco: ${row.bank} — Ag ${row.agency ?? "-"} / Conta ${row.account ?? "-"}` : null,
+          row.bank
+            ? `Banco: ${row.bank} — Ag ${row.agency ?? "-"} / Conta ${row.account ?? "-"}`
+            : null,
           row.pix ? `PIX: ${row.pix}` : null,
           row.address_line1
             ? `Endereço: ${row.address_line1}${row.address_complement ? " - " + row.address_complement : ""}, ${row.city ?? ""}/${row.state ?? ""} ${row.zip ?? ""}`
@@ -697,22 +717,21 @@ export const importPeopleFromPublicSheet = createServerFn({ method: "POST" })
                 attachmentsFailed++;
                 continue;
               }
-              const displayName = dl.original_name && dl.original_name.trim().length > 0
-                ? dl.original_name
-                : `${att.label}.${dl.ext}`;
-              const { error: docErr } = await supabaseAdmin
-                .from("people_documents")
-                .insert({
-                  owner_id: ownerId,
-                  created_by: userId,
-                  person_id: personId,
-                  doc_type: att.label,
-                  file_url: path,
-                  file_name: displayName,
-                  is_sensitive: true,
-                  status: "valid",
-                  notes: `Importado do Google Forms (Drive ID ${att.drive_id})`,
-                } as never);
+              const displayName =
+                dl.original_name && dl.original_name.trim().length > 0
+                  ? dl.original_name
+                  : `${att.label}.${dl.ext}`;
+              const { error: docErr } = await supabaseAdmin.from("people_documents").insert({
+                owner_id: ownerId,
+                created_by: userId,
+                person_id: personId,
+                doc_type: att.label,
+                file_url: path,
+                file_name: displayName,
+                is_sensitive: true,
+                status: "valid",
+                notes: `Importado do Google Forms (Drive ID ${att.drive_id})`,
+              } as never);
               if (docErr) {
                 attachmentsFailed++;
                 continue;
@@ -811,7 +830,11 @@ export const reimportBrokenAttachments = createServerFn({ method: "POST" })
         const m = row.notes?.match(REIMPORT_DRIVE_ID_RE);
         if (!m) {
           stillFailed++;
-          failures.push({ id: row.id, person_id: row.person_id, reason: "Drive ID não encontrado nas notas" });
+          failures.push({
+            id: row.id,
+            person_id: row.person_id,
+            reason: "Drive ID não encontrado nas notas",
+          });
           continue;
         }
         const driveId = m[1];
@@ -821,7 +844,9 @@ export const reimportBrokenAttachments = createServerFn({ method: "POST" })
           failures.push({
             id: row.id,
             person_id: row.person_id,
-            reason: dl ? `Não foi possível identificar o tipo (${dl.mime})` : "Falha no download do Drive",
+            reason: dl
+              ? `Não foi possível identificar o tipo (${dl.mime})`
+              : "Falha no download do Drive",
           });
           continue;
         }
@@ -838,9 +863,10 @@ export const reimportBrokenAttachments = createServerFn({ method: "POST" })
         if (row.file_url && row.file_url !== newPath) {
           await supabaseAdmin.storage.from("people-documents").remove([row.file_url]);
         }
-        const displayName = dl.original_name && dl.original_name.trim().length > 0
-          ? dl.original_name
-          : `${row.doc_type}.${dl.ext}`;
+        const displayName =
+          dl.original_name && dl.original_name.trim().length > 0
+            ? dl.original_name
+            : `${row.doc_type}.${dl.ext}`;
         const { error: updErr } = await supabaseAdmin
           .from("people_documents")
           .update({ file_url: newPath, file_name: displayName } as never)

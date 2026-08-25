@@ -19,9 +19,8 @@ export const diagnoseContractRoles = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { diagnoseRoles, CONTRACT_UPDATE_PERMISSIONS } = await import(
-      "@/lib/contracts/role-recalc.server"
-    );
+    const { diagnoseRoles, CONTRACT_UPDATE_PERMISSIONS } =
+      await import("@/lib/contracts/role-recalc.server");
     await assertAnyPermission(supabase, userId, workspaceId, CONTRACT_UPDATE_PERMISSIONS);
     return diagnoseRoles(supabase, workspaceId);
   });

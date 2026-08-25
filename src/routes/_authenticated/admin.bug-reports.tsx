@@ -63,7 +63,6 @@ export const Route = createFileRoute("/_authenticated/admin/bug-reports")({
   component: BugReportsAdminPage,
 });
 
-
 const STATUS_LABEL: Record<BugReportStatus, string> = {
   open: "Aberto",
   triaged: "Triado",
@@ -342,10 +341,7 @@ function BugReportsAdminPage() {
           </Select>
         </div>
         <div className="ml-auto">
-          <ViewModeToggle
-            value={sp.view}
-            onChange={(v) => navigate({ search: { view: v } })}
-          />
+          <ViewModeToggle value={sp.view} onChange={(v) => navigate({ search: { view: v } })} />
         </div>
       </div>
 
@@ -406,7 +402,6 @@ function BugReportsAdminPage() {
           }}
         />
       ) : (
-
         <div className="space-y-3">
           {rows.map((r) => {
             const created = new Date(r.created_at as string);

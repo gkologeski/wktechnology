@@ -36,7 +36,6 @@ import {
 } from "@/lib/reports.functions";
 import { LazyChart } from "@/components/charts/lazy-chart";
 
-
 const compactNumber = (v: number) =>
   new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(
     Number(v) || 0,
@@ -553,14 +552,27 @@ function ChartRender({
     return (
       <div className="h-[380px]">
         <LazyChart>
-          {({ ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip: RTooltip, Line }) => (
+          {({
+            ResponsiveContainer,
+            LineChart,
+            CartesianGrid,
+            XAxis,
+            YAxis,
+            Tooltip: RTooltip,
+            Line,
+          }) => (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={truncated}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis dataKey="key" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 11 }} width={48} tickFormatter={compactNumber} />
                 <RTooltip />
-                <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -571,7 +583,15 @@ function ChartRender({
   return (
     <div className="h-[380px]">
       <LazyChart>
-        {({ ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip: RTooltip, Bar }) => (
+        {({
+          ResponsiveContainer,
+          BarChart,
+          CartesianGrid,
+          XAxis,
+          YAxis,
+          Tooltip: RTooltip,
+          Bar,
+        }) => (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={truncated}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />

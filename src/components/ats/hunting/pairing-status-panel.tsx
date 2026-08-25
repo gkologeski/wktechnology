@@ -22,15 +22,11 @@ export function PairingStatusPanel() {
   const [lastCheck, setLastCheck] = useState<number | null>(null);
 
   const requestStatus = useCallback(() => {
-    window.postMessage(
-      { source: "techhire-extension-status-request" },
-      window.location.origin,
-    );
+    window.postMessage({ source: "techhire-extension-status-request" }, window.location.origin);
   }, []);
 
   useEffect(() => {
     let intervalId: ReturnType<typeof setInterval>;
-
 
     function onMessage(event: MessageEvent) {
       if (event.source !== window) return;
@@ -117,9 +113,7 @@ export function PairingStatusPanel() {
             {cfg.primary && (
               <Button asChild size="sm" variant="default">
                 <a href={cfg.primary.href}>
-                  {cfg.primary.icon ? (
-                    <cfg.primary.icon className="mr-1 h-3.5 w-3.5" />
-                  ) : null}
+                  {cfg.primary.icon ? <cfg.primary.icon className="mr-1 h-3.5 w-3.5" /> : null}
                   {cfg.primary.label}
                 </a>
               </Button>
@@ -131,9 +125,7 @@ export function PairingStatusPanel() {
                 setState("checking");
                 requestStatus();
                 setTimeout(() => {
-                  setState((prev) =>
-                    prev === "checking" ? "not_installed" : prev,
-                  );
+                  setState((prev) => (prev === "checking" ? "not_installed" : prev));
                 }, 1500);
               }}
             >
@@ -215,8 +207,7 @@ const STATE_CFG: Record<
   failed: {
     label: "Falhou",
     description: "A última tentativa de pareamento não foi concluída.",
-    nextStep:
-      "Gere uma nova API key e tente novamente. Confira se a chave foi colada inteira.",
+    nextStep: "Gere uma nova API key e tente novamente. Confira se a chave foi colada inteira.",
     icon: AlertCircle,
     iconCls: "text-destructive",
     border: "border-destructive/30",

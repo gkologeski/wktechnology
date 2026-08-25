@@ -50,7 +50,9 @@ export const getProject = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: row, error } = await supabase
       .from("projects")
-      .select("*, contracts(id, number, title, currency, counterparty_company_id), services(id, name, currency)")
+      .select(
+        "*, contracts(id, number, title, currency, counterparty_company_id), services(id, name, currency)",
+      )
       .eq("id", data.id)
       .maybeSingle();
     if (error) throw error;
@@ -91,7 +93,11 @@ export const createProject = createServerFn({ method: "POST" })
         role = ((svc as any).role as "provider" | "client") ?? role;
       }
     } else if (contractId) {
-      const { data: c } = await supabase.from("contracts").select("role").eq("id", contractId).maybeSingle();
+      const { data: c } = await supabase
+        .from("contracts")
+        .select("role")
+        .eq("id", contractId)
+        .maybeSingle();
       if (c) role = ((c as any).role as "provider" | "client") ?? role;
     }
 
@@ -170,7 +176,9 @@ export const deleteProject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, ["techprojects.projects.delete.workspace"]);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techprojects.projects.delete.workspace",
+    ]);
     const { error } = await supabase.from("projects").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
@@ -276,7 +284,9 @@ export const deleteTask = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, ["techprojects.tasks.delete.workspace"]);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techprojects.tasks.delete.workspace",
+    ]);
     const { error } = await supabase.from("project_tasks").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
@@ -660,4 +670,3 @@ export const getProjectFinancials = createServerFn({ method: "POST" })
       (milestones ?? []) as any,
     );
   });
-

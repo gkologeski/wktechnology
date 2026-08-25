@@ -38,12 +38,7 @@ export function WorkspaceMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-9 gap-2 px-2"
-          aria-label="Workspace"
-        >
+        <Button variant="ghost" size="sm" className="h-9 gap-2 px-2" aria-label="Workspace">
           <Building2 className="h-4 w-4" />
           <span className="hidden xl:inline text-sm">Workspace</span>
         </Button>

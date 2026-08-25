@@ -10,7 +10,12 @@ export const DEFAULT_ATS_STAGES: AtsStage[] = [
   { value: "applied", label: "Aplicado", color: "var(--hs-stage-1)", type: "open" },
   { value: "screening", label: "Triagem", color: "var(--hs-stage-2)", type: "open" },
   { value: "interview_hr", label: "Entrevista RH", color: "var(--hs-stage-3)", type: "open" },
-  { value: "interview_tech", label: "Entrevista técnica", color: "var(--hs-stage-3)", type: "open" },
+  {
+    value: "interview_tech",
+    label: "Entrevista técnica",
+    color: "var(--hs-stage-3)",
+    type: "open",
+  },
   { value: "test", label: "Teste", color: "var(--hs-stage-4)", type: "open" },
   { value: "offer", label: "Proposta", color: "var(--hs-stage-4)", type: "open" },
   { value: "hired", label: "Contratado", color: "var(--hs-stage-won)", type: "won" },
@@ -72,6 +77,7 @@ export function atsStageOutcome(rawStages: unknown, value: string): "open" | "wo
 /** Etapa de contratação do pipeline (para marcar candidatura como contratada). */
 export function wonAtsStageValue(rawStages: unknown): string | null {
   const stages = parseAtsStages(rawStages);
-  const won = stages.find((s) => s.type === "won") ?? stages.find((s) => WON_STAGE_FALLBACKS.has(s.value));
+  const won =
+    stages.find((s) => s.type === "won") ?? stages.find((s) => WON_STAGE_FALLBACKS.has(s.value));
   return won?.value ?? null;
 }

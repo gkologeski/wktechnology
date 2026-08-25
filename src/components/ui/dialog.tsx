@@ -9,10 +9,7 @@ import { notifyDialogClosed } from "@/lib/dialog-refresh";
 
 // Wrapper do Root que notifica o QueryClient sempre que o dialog fecha, para
 // revalidar dados alterados dentro dele sem exigir F5 do usuário.
-const Dialog = ({
-  onOpenChange,
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) => (
+const Dialog = ({ onOpenChange, ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) => (
   <DialogPrimitive.Root
     {...props}
     onOpenChange={(open) => {

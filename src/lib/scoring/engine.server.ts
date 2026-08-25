@@ -52,7 +52,10 @@ export function evalScoringCondition(
       const raw = String(c.value ?? "");
       // Se o valor tem vírgulas, tratar como "contém qualquer" dos termos.
       const terms = raw.includes(",")
-        ? raw.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)
+        ? raw
+            .split(",")
+            .map((s) => s.trim().toLowerCase())
+            .filter(Boolean)
         : [raw.toLowerCase()];
       return terms.some((t) => t && hay.includes(t));
     }
@@ -233,13 +236,9 @@ export async function runScoringFullScan(
 
     let lastId: string | null = null;
     // paginação keyset por id
-    // eslint-disable-next-line no-constant-condition
+
     while (true) {
-      let q = supabase
-        .from(table)
-        .select("*")
-        .order("id", { ascending: true })
-        .limit(pageSize);
+      let q = supabase.from(table).select("*").order("id", { ascending: true }).limit(pageSize);
       if (lastId) q = q.gt("id", lastId);
       const { data: rows, error: eErr } = await q;
       if (eErr) {
@@ -288,4 +287,3 @@ export async function runScoringFullScan(
 
   return result;
 }
-

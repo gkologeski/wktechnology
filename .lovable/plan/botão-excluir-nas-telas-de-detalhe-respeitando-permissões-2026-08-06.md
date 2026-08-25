@@ -14,11 +14,10 @@ Observação importante: hoje a exclusão indevida não passa silenciosamente no
    - permissão de gerência/exclusão no workspace → pode excluir qualquer registro;
    - permissão de exclusão por equipe → pode excluir registros de responsáveis da sua equipe;
    - permissão de exclusão apenas própria → só quando o registro é dele (responsável/criador);
-    - nenhuma dessas → sem permissão de exclusão para aquele registro.
+   - nenhuma dessas → sem permissão de exclusão para aquele registro.
 2. **Botão sempre visível, habilitado só com permissão** — em todas as telas de detalhe (e nos menus de linha dos grids) o botão/item "Excluir" passa a aparecer sempre, mas fica desabilitado quando o usuário não pode excluir aquele registro, com tooltip explicando o motivo ("Você não tem permissão para excluir este registro"). A função de exclusão também bloqueia com mensagem clara caso seja chamada sem permissão (defesa em profundidade).
 3. **Padronizar o feedback de exclusão** nas telas que ainda excluem sem o guard: usar o guard existente, que exibe "Você não tem permissão para excluir este registro" quando o banco bloqueia, em vez de dizer "excluído" e voltar para a lista.
 4. **Alinhar o grid de empresas** para usar a mesma regra por registro (hoje o item da linha aparece habilitado com permissão "própria" mesmo em empresas de outro responsável) — passa a aparecer sempre, desabilitado quando não permitido.
-
 
 ## Detalhes técnicos
 

@@ -1,7 +1,21 @@
 import type { FieldOpt } from "./step-tree";
-import { countSteps, describeAction, defaultActionOfType, ACTION_ICONS, getBranchList, setBranchList, isBranchKey } from "./step-tree";
+import {
+  countSteps,
+  describeAction,
+  defaultActionOfType,
+  ACTION_ICONS,
+  getBranchList,
+  setBranchList,
+  isBranchKey,
+} from "./step-tree";
 import { useEntityFieldOptions } from "./use-entity-field-options";
-import { ConditionListEditor, FieldValueEditor, newLeafCondition, normalizeTopGroup, denormalizeTopGroup } from "./conditions-editor";
+import {
+  ConditionListEditor,
+  FieldValueEditor,
+  newLeafCondition,
+  normalizeTopGroup,
+  denormalizeTopGroup,
+} from "./conditions-editor";
 import { EntityPickerDialog } from "./entity-picker-dialog";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +23,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus, Webhook, X, ArrowUp, ArrowDown } from "lucide-react";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { useQuery } from "@tanstack/react-query";

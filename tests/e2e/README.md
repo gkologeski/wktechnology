@@ -5,11 +5,13 @@ Cobertura: smoke test público automático da tela de login. Com credenciais de 
 ## Pré-requisitos
 
 1. **Instalar browsers** (uma única vez):
+
    ```bash
    bun run test:e2e:install
    ```
 
 2. **Opcional: variáveis de ambiente** — usuário de teste com perfil Admin para rodar os testes autenticados:
+
    ```bash
    export E2E_USER_EMAIL="seu-teste@exemplo.com"
    export E2E_USER_PASSWORD="..."
@@ -30,10 +32,12 @@ bun run test:e2e:ui       # modo UI interativo
 ## O que é testado
 
 ### `public-smoke.spec.ts`
+
 - Abre `/login` sem autenticação
 - Valida título, email, senha e botão Entrar
 
 ### `lead-convert-flow.spec.ts`
+
 - Seed de um Lead via Supabase
 - Abre `/leads/:id`, dispara **Converter** → confirma no `AlertDialog`
 - Valida no banco que **Company + Contact + Deal** (stage `qualified`) foram criados e vinculados
@@ -41,6 +45,7 @@ bun run test:e2e:ui       # modo UI interativo
 - Cleanup de todos os registros
 
 ### `confirm-dialogs.spec.ts`
+
 - **AlertDialog de exclusão (detalhe do lead)** — testa Cancelar + Excluir
 - **AlertDialog de exclusão em massa (/leads)** — seleciona 2 e exclui
 - **ConfirmCountDialog (/companies)** — verifica que o botão fica desabilitado até a quantidade correta ser digitada

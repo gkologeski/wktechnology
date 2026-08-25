@@ -21,14 +21,14 @@ A correção é registrar a data real de fechamento.
 
 - `ALTER TABLE public.deals ADD COLUMN closed_at timestamptz` (nullable).
 - Índice parcial `deals_closed_at_idx ON public.deals (workspace_id, closed_at)
-  WHERE closed_at IS NOT NULL` para a agregação da Home.
+WHERE closed_at IS NOT NULL` para a agregação da Home.
 - Função `public.deals_set_closed_at()` (`SECURITY INVOKER`, `SET search_path = public`)
   em trigger `BEFORE INSERT OR UPDATE` na tabela:
   - `NEW.stage = 'won'` e `closed_at IS NULL` → `NEW.closed_at = now()`;
   - saiu de `won` → `NEW.closed_at = NULL`;
   - `closed_at` informado explicitamente pelo app é preservado.
 - Backfill: `closed_at = coalesce(entered_at do stage_entries mais recente do
-  negócio na etapa atual, updated_at)` para `stage = 'won'`.
+negócio na etapa atual, updated_at)` para `stage = 'won'`.
 - Não altera RLS, GRANTs nem outros triggers de `deals`.
 
 **Código**

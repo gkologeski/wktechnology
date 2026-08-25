@@ -9,10 +9,7 @@ import { cn } from "@/lib/utils";
 import { notifyDialogClosed } from "@/lib/dialog-refresh";
 
 // Notifica o QueryClient quando o sheet fecha para revalidar dados sem F5.
-const Sheet = ({
-  onOpenChange,
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Root>) => (
+const Sheet = ({ onOpenChange, ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) => (
   <SheetPrimitive.Root
     {...props}
     onOpenChange={(open) => {

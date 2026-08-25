@@ -28,7 +28,10 @@ describe("whatsapp paste", () => {
   });
 
   it("handles html-wrapped input from rich editor", () => {
-    const wrapped = sample.split("\n").map((l) => `<p>${l}</p>`).join("");
+    const wrapped = sample
+      .split("\n")
+      .map((l) => `<p>${l}</p>`)
+      .join("");
     const html = maybeConvertWhatsAppPaste(wrapped);
     expect(html).not.toBeNull();
     expect(html).toContain("podemos sim");

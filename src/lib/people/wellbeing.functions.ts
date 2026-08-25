@@ -264,9 +264,7 @@ const incidentUpsertSchema = z.object({
 
 export const listIncidents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    z.object({ person_id: z.string().uuid().nullable().optional() }).parse(i),
-  )
+  .inputValidator((i) => z.object({ person_id: z.string().uuid().nullable().optional() }).parse(i))
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("people_incidents")
@@ -321,10 +319,7 @@ export const deleteIncident = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("people_incidents")
-      .delete()
-      .eq("id", data.id);
+    const { error } = await context.supabase.from("people_incidents").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

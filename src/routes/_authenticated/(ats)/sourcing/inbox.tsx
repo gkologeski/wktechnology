@@ -132,8 +132,7 @@ function InboxPage() {
   });
 
   const stopMut = useMutation({
-    mutationFn: (enrollment_id: string) =>
-      stop({ data: { enrollment_id, reason: "stopped" } }),
+    mutationFn: (enrollment_id: string) => stop({ data: { enrollment_id, reason: "stopped" } }),
     onSuccess: () => {
       toast.success("Sequência encerrada");
       invalidate();
@@ -142,8 +141,10 @@ function InboxPage() {
   });
 
   const repliedMut = useMutation({
-    mutationFn: (vars: { enrollment_id: string; channel: "whatsapp" | "linkedin_task" | "email" | "inbound" }) =>
-      markReplied({ data: vars }),
+    mutationFn: (vars: {
+      enrollment_id: string;
+      channel: "whatsapp" | "linkedin_task" | "email" | "inbound";
+    }) => markReplied({ data: vars }),
     onSuccess: () => {
       toast.success("Candidato marcado como respondeu");
       invalidate();

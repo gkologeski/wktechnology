@@ -10,7 +10,9 @@ const decisionEnum = z.enum(["approved", "rejected"]);
 // Default approval chain per contract role.
 // provider (venda): legal → finance
 // client   (compra): purchasing → finance → legal
-export function defaultStagesForRole(role: "provider" | "client"): Array<"legal" | "finance" | "purchasing"> {
+export function defaultStagesForRole(
+  role: "provider" | "client",
+): Array<"legal" | "finance" | "purchasing"> {
   return role === "client" ? ["purchasing", "finance", "legal"] : ["legal", "finance"];
 }
 
@@ -160,7 +162,10 @@ export const decideContractApproval = createServerFn({ method: "POST" })
       contractStatus = "awaiting_signature";
     }
     if (contractStatus) {
-      await supabase.from("contracts").update({ status: contractStatus as any }).eq("id", approval.contract_id);
+      await supabase
+        .from("contracts")
+        .update({ status: contractStatus as any })
+        .eq("id", approval.contract_id);
     }
 
     await (supabase as any).from("contract_events").insert({

@@ -53,10 +53,7 @@ export async function assertWorkflowsDelete(
   await assertAnyPermissionInActiveWorkspace(supabase, userId, [...WORKFLOWS_DELETE_KEYS]);
 }
 
-export async function assertReportsExport(
-  supabase: SupabaseClient,
-  userId: string,
-): Promise<void> {
+export async function assertReportsExport(supabase: SupabaseClient, userId: string): Promise<void> {
   await assertAnyPermissionInActiveWorkspace(supabase, userId, [...REPORTS_EXPORT_KEYS]);
 }
 

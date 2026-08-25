@@ -55,11 +55,12 @@ function TimesheetPage() {
 
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const days = useMemo(
-    () => Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(weekStart);
-      d.setDate(d.getDate() + i);
-      return d;
-    }),
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() + i);
+        return d;
+      }),
     [weekStart],
   );
   const from = toIsoDate(days[0]!);
@@ -79,8 +80,7 @@ function TimesheetPage() {
       setSelected(new Set());
       qc.invalidateQueries({ queryKey: ["timesheet"] });
     },
-    onError: (e: unknown) =>
-      toast.error(e instanceof Error ? e.message : "Falha ao aprovar"),
+    onError: (e: unknown) => toast.error(e instanceof Error ? e.message : "Falha ao aprovar"),
   });
 
   const rows = (query.data ?? []) as Array<{

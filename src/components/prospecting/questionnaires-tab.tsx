@@ -828,9 +828,7 @@ function QuestionRow({
                   value={textPoints}
                   onChange={(e) => setTextPoints(Math.max(0, Number(e.target.value) || 0))}
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  0 = pergunta aberta não pontua.
-                </p>
+                <p className="text-[11px] text-muted-foreground">0 = pergunta aberta não pontua.</p>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs" htmlFor={`tmc-${question.id}`}>
@@ -850,7 +848,6 @@ function QuestionRow({
               </div>
             </div>
           ) : null}
-
 
           {supportsOptions ? (
             <div className="space-y-2">

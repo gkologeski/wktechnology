@@ -6,17 +6,17 @@ Modelo inspirado no HubSpot: Cargos (`permission_sets`) agregam chaves granulare
 
 Todos criados com `is_system=true` e protegidos por trigger contra rename/delete:
 
-| Cargo | Escopo | Uso típico |
-|---|---|---|
-| Super Admin | Todos os módulos | Fundador / TI |
-| Admin | Todos os módulos | Ops / Head |
-| Sales Manager | TechSales full | Gerente de vendas |
-| Sales Rep | TechSales próprio | SDR / AE |
-| Marketing | Campanhas + leads | Marketing |
-| Service Rep | Tickets | Suporte |
-| Recruiter | TechHire | Recrutador |
-| Hiring Manager | TechHire (leitura + entrevistas) | Gestor solicitante |
-| Read-Only | Leitura ampla | Auditoria / observador |
+| Cargo          | Escopo                           | Uso típico             |
+| -------------- | -------------------------------- | ---------------------- |
+| Super Admin    | Todos os módulos                 | Fundador / TI          |
+| Admin          | Todos os módulos                 | Ops / Head             |
+| Sales Manager  | TechSales full                   | Gerente de vendas      |
+| Sales Rep      | TechSales próprio                | SDR / AE               |
+| Marketing      | Campanhas + leads                | Marketing              |
+| Service Rep    | Tickets                          | Suporte                |
+| Recruiter      | TechHire                         | Recrutador             |
+| Hiring Manager | TechHire (leitura + entrevistas) | Gestor solicitante     |
+| Read-Only      | Leitura ampla                    | Auditoria / observador |
 
 ## Chaves de permissão
 
@@ -24,10 +24,10 @@ Formato: `<module>.<object>.<action>.<scope>` (ex: `techsales.deals.create.own`,
 
 ## Enforcement — status atual (MVP)
 
-| Camada | Estado | Observação |
-|---|---|---|
-| **RLS (perímetro)** | ✅ Ativo | Já limita acesso por workspace; policies workspace-wide continuam válidas — é a defesa real contra bypass. |
-| **UI (Cargos)** | 🟡 Parcial | CTAs primários gatados via `<Can permission="...">` nas listas de Deals, Contacts, Companies, Leads, Tickets e ATS Jobs. |
+| Camada               | Estado      | Observação                                                                                                                                                                 |
+| -------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **RLS (perímetro)**  | ✅ Ativo    | Já limita acesso por workspace; policies workspace-wide continuam válidas — é a defesa real contra bypass.                                                                 |
+| **UI (Cargos)**      | 🟡 Parcial  | CTAs primários gatados via `<Can permission="...">` nas listas de Deals, Contacts, Companies, Leads, Tickets e ATS Jobs.                                                   |
 | **Server functions** | 🟠 Pendente | A maior parte dos CRUDs vai direto do cliente para o Supabase; `assertPermission` cobre apenas fluxos que já usam `createServerFn` (ATS scorecards, ofertas, importações). |
 
 ## Como aplicar em novas telas
@@ -37,7 +37,7 @@ import { Can } from "@/lib/access-control/use-permissions";
 
 <Can permission="techsales.deals.create.own">
   <Button onClick={openNew}>Criar negócio</Button>
-</Can>
+</Can>;
 ```
 
 Múltiplas chaves:

@@ -105,7 +105,6 @@ function renderInterpolations(src: string, ctx: QuoteRenderContext): string {
   return out;
 }
 
-
 /** Sample data used to preview templates inside the editor. */
 export function sampleQuoteContext(): QuoteRenderContext {
   return {

@@ -21,7 +21,9 @@ export const listDependencies = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: rows, error } = await supabase
       .from("project_task_dependencies")
-      .select("id, task_id, depends_on_task_id, dep_type, created_at, project_tasks!project_task_dependencies_depends_on_task_id_fkey(id, title, status)")
+      .select(
+        "id, task_id, depends_on_task_id, dep_type, created_at, project_tasks!project_task_dependencies_depends_on_task_id_fkey(id, title, status)",
+      )
       .eq("task_id", data.taskId);
     if (error) throw error;
     return rows ?? [];
@@ -115,9 +117,7 @@ export const addChecklistItem = createServerFn({ method: "POST" })
 
 export const toggleChecklistItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ id: z.string().uuid(), isDone: z.boolean() }).parse(input),
-  )
+  .inputValidator((input) => z.object({ id: z.string().uuid(), isDone: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const patch = {
@@ -221,10 +221,7 @@ export const listWorkspaceTaskTags = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase } = context;
-    const { data: rows, error } = await supabase
-      .from("project_tasks")
-      .select("tags")
-      .limit(500);
+    const { data: rows, error } = await supabase.from("project_tasks").select("tags").limit(500);
     if (error) throw error;
     const set = new Set<string>();
     for (const r of rows ?? []) {

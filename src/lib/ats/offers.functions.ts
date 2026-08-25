@@ -79,7 +79,6 @@ export const listOffers = createServerFn({ method: "POST" })
     return (rows ?? []) as unknown as OfferListRow[];
   });
 
-
 export const getOffer = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
@@ -205,11 +204,16 @@ export const sendOffer = createServerFn({ method: "POST" })
 
     const publicToken =
       (offer.public_token as string | null) ??
-      (crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, ""));
+      crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
 
     const { error: e4 } = await supabase
       .from("ats_offers")
-      .update({ status: "sent", sent_at: nowIso, esign_document_id: esignId, public_token: publicToken })
+      .update({
+        status: "sent",
+        sent_at: nowIso,
+        esign_document_id: esignId,
+        public_token: publicToken,
+      })
       .eq("id", offer.id);
     if (e4) throw new Error(e4.message);
 

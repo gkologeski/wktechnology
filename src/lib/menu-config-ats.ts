@@ -29,7 +29,6 @@ import {
   LayoutDashboard,
 } from "lucide-react";
 
-
 import type { SidebarGroup } from "@/lib/menu-config";
 
 // Sidebar ATS: somente itens do módulo. Configurações de workspace (membros,
@@ -38,9 +37,7 @@ import type { SidebarGroup } from "@/lib/menu-config";
 export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
   {
     label: "Visão geral",
-    items: [
-      { title: "Dashboard", url: "/ats-dashboard", icon: LayoutDashboard },
-    ],
+    items: [{ title: "Dashboard", url: "/ats-dashboard", icon: LayoutDashboard }],
   },
   {
     label: "Recrutamento",
@@ -76,21 +73,15 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
   },
   {
     label: "Contratação",
-    items: [
-      { title: "Ofertas", url: "/offers", icon: FileSignature },
-    ],
+    items: [{ title: "Ofertas", url: "/offers", icon: FileSignature }],
   },
   {
     label: "Comunicação",
-    items: [
-      { title: "E-mails por etapa", url: "/stage-emails", icon: Mail },
-    ],
+    items: [{ title: "E-mails por etapa", url: "/stage-emails", icon: Mail }],
   },
   {
     label: "Carreiras",
-    items: [
-      { title: "Ver site de Carreiras", url: "/careers", icon: Globe, external: true },
-    ],
+    items: [{ title: "Ver site de Carreiras", url: "/careers", icon: Globe, external: true }],
   },
   {
     label: "Inteligência (IA)",
@@ -111,9 +102,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
   },
   {
     label: "Compliance",
-    items: [
-      { title: "LGPD & DSAR", url: "/compliance", icon: Shield },
-    ],
+    items: [{ title: "LGPD & DSAR", url: "/compliance", icon: Shield }],
   },
 ];
 
@@ -166,5 +155,3 @@ function collectPrefixes(): string[] {
 }
 
 export const ATS_ROUTE_PREFIXES: readonly string[] = collectPrefixes();
-
-

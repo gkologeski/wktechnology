@@ -338,10 +338,7 @@ export const listBankAccounts = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    let q = supabase
-      .from("financial_bank_accounts")
-      .select("*")
-      .order("name", { ascending: true });
+    let q = supabase.from("financial_bank_accounts").select("*").order("name", { ascending: true });
     if (data.legalEntityId) q = q.eq("legal_entity_id", data.legalEntityId);
     if (data.legalEntityIds && data.legalEntityIds.length)
       q = q.in("legal_entity_id", data.legalEntityIds);
@@ -491,8 +488,22 @@ export const getFinanceDashboard = createServerFn({ method: "POST" })
     }
 
     return {
-      ar: { open: ar_open, overdue: ar_overdue, paid_180d: ar_paid, d30: ar_30, d60: ar_60, d90: ar_90 },
-      ap: { open: ap_open, overdue: ap_overdue, paid_180d: ap_paid, d30: ap_30, d60: ap_60, d90: ap_90 },
+      ar: {
+        open: ar_open,
+        overdue: ar_overdue,
+        paid_180d: ar_paid,
+        d30: ar_30,
+        d60: ar_60,
+        d90: ar_90,
+      },
+      ap: {
+        open: ap_open,
+        overdue: ap_overdue,
+        paid_180d: ap_paid,
+        d30: ap_30,
+        d60: ap_60,
+        d90: ap_90,
+      },
       net_30: ar_30 - ap_30,
       net_60: ar_60 - ap_60,
       net_90: ar_90 - ap_90,
@@ -552,8 +563,7 @@ export const getDreReport = createServerFn({ method: "POST" })
         cat?.kind ?? (direction === "receivable" ? "revenue" : "expense");
       const key = cat?.id ?? `__uncat_${kind}`;
       const name =
-        cat?.name ??
-        (kind === "revenue" ? "Sem categoria (receitas)" : "Sem categoria (despesas)");
+        cat?.name ?? (kind === "revenue" ? "Sem categoria (receitas)" : "Sem categoria (despesas)");
       if (!months.includes(ym)) return;
       let agg = map.get(key);
       if (!agg) {
@@ -585,16 +595,26 @@ export const getDreReport = createServerFn({ method: "POST" })
       const { data: payments, error } = await pq;
       if (error) throw error;
       for (const p of payments ?? []) {
-        const entry = (p as unknown as {
-          financial_entries: {
-            direction: string;
-            status: string;
-            counterparty_legal_entity_id: string | null;
-            financial_categories: { id: string; name: string; kind: "revenue" | "expense" } | null;
-          };
-        }).financial_entries;
+        const entry = (
+          p as unknown as {
+            financial_entries: {
+              direction: string;
+              status: string;
+              counterparty_legal_entity_id: string | null;
+              financial_categories: {
+                id: string;
+                name: string;
+                kind: "revenue" | "expense";
+              } | null;
+            };
+          }
+        ).financial_entries;
         if (!entry || entry.status === "cancelled") continue;
-        if (groupIds && entry.counterparty_legal_entity_id && groupIds.includes(entry.counterparty_legal_entity_id)) {
+        if (
+          groupIds &&
+          entry.counterparty_legal_entity_id &&
+          groupIds.includes(entry.counterparty_legal_entity_id)
+        ) {
           intercompanyEliminated++;
           continue;
         }
@@ -620,7 +640,11 @@ export const getDreReport = createServerFn({ method: "POST" })
           counterparty_legal_entity_id: string | null;
           financial_categories: { id: string; name: string; kind: "revenue" | "expense" } | null;
         };
-        if (groupIds && row.counterparty_legal_entity_id && groupIds.includes(row.counterparty_legal_entity_id)) {
+        if (
+          groupIds &&
+          row.counterparty_legal_entity_id &&
+          groupIds.includes(row.counterparty_legal_entity_id)
+        ) {
           intercompanyEliminated++;
           continue;
         }
@@ -628,8 +652,6 @@ export const getDreReport = createServerFn({ method: "POST" })
         addRow(row.financial_categories, r.direction, Number(r.amount), ym);
       }
     }
-
-
 
     const categories = Array.from(map.values()).sort((a, b) => {
       if (a.kind !== b.kind) return a.kind === "revenue" ? -1 : 1;
@@ -800,7 +822,9 @@ const splitModeEnum = z.enum(["equal", "first_bigger", "custom_amounts"]);
 function addMonths(iso: string, n: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   const target = new Date(Date.UTC(y, m - 1 + n, 1));
-  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  const lastDay = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate();
   target.setUTCDate(Math.min(d, lastDay));
   return target.toISOString().slice(0, 10);
 }
@@ -925,7 +949,9 @@ export const listInstallmentSiblings = createServerFn({ method: "POST" })
     const parentId = entry.parent_entry_id ?? entry.id;
     const { data: rows, error } = await supabase
       .from("financial_entries")
-      .select("id, description, amount, due_date, status, installment_number, installment_total, parent_entry_id")
+      .select(
+        "id, description, amount, due_date, status, installment_number, installment_total, parent_entry_id",
+      )
       .or(`id.eq.${parentId},parent_entry_id.eq.${parentId}`)
       .order("installment_number", { ascending: true });
     if (error) throw error;
@@ -935,7 +961,9 @@ export const listInstallmentSiblings = createServerFn({ method: "POST" })
 export const deleteInstallmentGroup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({ parent_entry_id: z.string().uuid(), only_open: z.boolean().default(true) }).parse(input),
+    z
+      .object({ parent_entry_id: z.string().uuid(), only_open: z.boolean().default(true) })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;

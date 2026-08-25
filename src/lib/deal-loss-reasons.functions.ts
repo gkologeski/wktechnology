@@ -43,19 +43,11 @@ export const getDealLossReasons = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    let options = await listFromDb(
-      context.supabase,
-      workspaceId,
-      data?.includeInactive ?? false,
-    );
+    let options = await listFromDb(context.supabase, workspaceId, data?.includeInactive ?? false);
     if (options.length === 0 && process.env.LOVABLE_API_KEY && process.env.HUBSPOT_API_KEY) {
       try {
         await syncReasonsFromHubspot(context.supabase, workspaceId);
-        options = await listFromDb(
-          context.supabase,
-          workspaceId,
-          data?.includeInactive ?? false,
-        );
+        options = await listFromDb(context.supabase, workspaceId, data?.includeInactive ?? false);
       } catch {
         // silent fail; user can trigger manually
       }
@@ -107,13 +99,16 @@ async function syncReasonsFromHubspot(
     throw new Error("Conecte o HubSpot para sincronizar os motivos.");
   }
 
-  const res = await fetch(`${GATEWAY_URL}/crm/v3/properties/deals/${encodeURIComponent(propertyName)}`, {
-    headers: {
-      Authorization: `Bearer ${LOVABLE_API_KEY}`,
-      "X-Connection-Api-Key": HUBSPOT_API_KEY,
-      "Content-Type": "application/json",
+  const res = await fetch(
+    `${GATEWAY_URL}/crm/v3/properties/deals/${encodeURIComponent(propertyName)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": HUBSPOT_API_KEY,
+        "Content-Type": "application/json",
+      },
     },
-  });
+  );
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`HubSpot [${res.status}]: ${body.slice(0, 200)}`);
@@ -239,8 +234,7 @@ export const backfillLostDealReasons = createServerFn({ method: "POST" })
       };
       const byHsId = new Map<string, string>();
       for (const r of payload.results ?? []) {
-        const v =
-          r.properties?.[propertyName] ?? r.properties?.closed_lost_reason ?? null;
+        const v = r.properties?.[propertyName] ?? r.properties?.closed_lost_reason ?? null;
         if (v && String(v).trim()) byHsId.set(String(r.id), String(v));
       }
       for (const c of chunk) {
@@ -260,4 +254,3 @@ export const backfillLostDealReasons = createServerFn({ method: "POST" })
 
     return { checked: candidates.length, updated, skipped };
   });
-

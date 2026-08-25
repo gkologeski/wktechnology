@@ -13,22 +13,28 @@ Ou seja: não é um bug de um campo específico — é falta de um conceito úni
 ## O que será feito
 
 ### 1. Uma única fonte de verdade para "é dinheiro"
+
 Novo módulo `src/lib/format/money-fields.ts` com:
+
 - `isMoneyField(key)`: reconhece por convenção de nome (`value`, `amount`, `budget`, `price`, `cost`, `fee`, `salary`, `revenue`, `mrr`, `arr`, `total`, `subtotal`, `discount_value`, `*_amount`, `*_value`, `*_price`, `*_cost`, `*_rate` monetários) com uma lista de exceções explícitas (`late_fee_percent`, `*_percent`, `payment_day`, `hours_per_month`, `notice_days`, `confidence`, `score`, etc.);
 - `formatMoney(value, currency)` reaproveitando `formatCurrency` de `src/lib/crm.ts`, respeitando a coluna `currency` do próprio registro quando existir (fallback BRL).
 
 ### 2. Painel de propriedades (detalhe de Lead, Negócio, Empresa, Contato, Contrato…)
+
 - `inferDisplayType` passa a usar `isMoneyField`, cobrindo todos os campos monetários hoje sem formatação.
 - Na edição, o campo monetário usa o `CurrencyInput` já existente (`src/components/ui/currency-input.tsx`) em vez de `<input type="number">`, mantendo o valor salvo como número (sem mudança de payload).
 
 ### 3. Catálogo genérico de campos
+
 - Adicionar `currency` ao `EntityFieldType` e classificar as colunas monetárias em `inferType`/overrides.
 - Onde os campos do catálogo são renderizados (qualificação de lead, editor de campos extras de workflows), `currency` exibe formatado e edita com `CurrencyInput`; o payload continua numérico.
 
 ### 4. Propriedades personalizadas
+
 - Novo tipo `currency` no cadastro de propriedades, com exibição formatada e input monetário. Propriedades `number` existentes continuam funcionando igual (nenhuma migração de dados).
 
 ### 5. Consistência visual
+
 - Alinhamento à direita e `title=` com o valor completo nos campos monetários, seguindo o padrão já usado nas telas financeiras.
 
 ## Detalhes técnicos

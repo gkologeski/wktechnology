@@ -34,9 +34,7 @@ export const listWorkspaceModules = createServerFn({ method: "GET" })
       .select("module_id, enabled, plan_code, activated_at")
       .eq("workspace_id", workspaceId);
 
-    const { data: plans } = await supabaseAdmin
-      .from("plans")
-      .select("code, name, price_monthly");
+    const { data: plans } = await supabaseAdmin.from("plans").select("code, name, price_monthly");
 
     const wmByMod = new Map((wm ?? []).map((r) => [r.module_id as string, r]));
     const planByCode = new Map((plans ?? []).map((p) => [p.code as string, p]));
@@ -63,25 +61,21 @@ export const listWorkspaceModules = createServerFn({ method: "GET" })
 /** Ativa/desativa um módulo no workspace ativo. */
 export const setWorkspaceModuleEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    z.object({ module_id: z.string().min(1), enabled: z.boolean() }).parse(i),
-  )
+  .inputValidator((i) => z.object({ module_id: z.string().min(1), enabled: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { assertWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
     await assertWorkspaceAdmin(context.userId, workspaceId);
 
-    const { error } = await supabaseAdmin
-      .from("workspace_modules")
-      .upsert(
-        {
-          workspace_id: workspaceId,
-          module_id: data.module_id,
-          enabled: data.enabled,
-        } as never,
-        { onConflict: "workspace_id,module_id" },
-      );
+    const { error } = await supabaseAdmin.from("workspace_modules").upsert(
+      {
+        workspace_id: workspaceId,
+        module_id: data.module_id,
+        enabled: data.enabled,
+      } as never,
+      { onConflict: "workspace_id,module_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -103,17 +97,15 @@ export const setWorkspaceModulePlan = createServerFn({ method: "POST" })
     const { assertWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
     await assertWorkspaceAdmin(context.userId, workspaceId);
 
-    const { error } = await supabaseAdmin
-      .from("workspace_modules")
-      .upsert(
-        {
-          workspace_id: workspaceId,
-          module_id: data.module_id,
-          plan_code: data.plan_code,
-          enabled: true,
-        } as never,
-        { onConflict: "workspace_id,module_id" },
-      );
+    const { error } = await supabaseAdmin.from("workspace_modules").upsert(
+      {
+        workspace_id: workspaceId,
+        module_id: data.module_id,
+        plan_code: data.plan_code,
+        enabled: true,
+      } as never,
+      { onConflict: "workspace_id,module_id" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });

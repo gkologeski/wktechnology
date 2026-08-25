@@ -68,7 +68,9 @@ function PageComponent() {
       {/* 3) Filtros */}
       <FilterBar
         searchPlaceholder="Buscar…"
-        onSearchChange={(_q) => { /* debounce 300ms aplicado pelo componente consumidor */ }}
+        onSearchChange={(_q) => {
+          /* debounce 300ms aplicado pelo componente consumidor */
+        }}
       />
 
       {/* 4) Conteúdo principal — empty / lista */}
@@ -76,7 +78,11 @@ function PageComponent() {
         <EmptyState
           title="Nada por aqui ainda"
           description="Crie o primeiro registro para começar."
-          action={<Button size="sm"><Plus className="mr-1.5 h-4 w-4" /> Nova ação</Button>}
+          action={
+            <Button size="sm">
+              <Plus className="mr-1.5 h-4 w-4" /> Nova ação
+            </Button>
+          }
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">

@@ -26,14 +26,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type ModuleId =
-  | "crm"
-  | "ats"
-  | "contracts"
-  | "services"
-  | "projects"
-  | "finance"
-  | "people";
+export type ModuleId = "crm" | "ats" | "contracts" | "services" | "projects" | "finance" | "people";
 
 export type ModuleMenuItem = {
   title: string;

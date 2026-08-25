@@ -6,7 +6,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2, XCircle, RotateCcw, ScanSearch, Wand2, FilePlus2 } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  RotateCcw,
+  ScanSearch,
+  Wand2,
+  FilePlus2,
+} from "lucide-react";
 
 import {
   getBankConnection,
@@ -21,13 +29,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Table,
@@ -47,9 +49,7 @@ import {
 } from "@/components/ui/select";
 import { formatCurrency } from "@/lib/crm";
 
-export const Route = createFileRoute(
-  "/_authenticated/finance/banking/reconciliation",
-)({
+export const Route = createFileRoute("/_authenticated/finance/banking/reconciliation")({
   component: ReconciliationPage,
   head: () => ({
     meta: [
@@ -81,9 +81,7 @@ function ReconciliationPage() {
   const setRecon = useServerFn(setStatementReconciliation);
 
   const [windowDays, setWindowDays] = useState(5);
-  const [historyStatus, setHistoryStatus] = useState<"matched" | "ignored" | "all">(
-    "all",
-  );
+  const [historyStatus, setHistoryStatus] = useState<"matched" | "ignored" | "all">("all");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const toggleOne = (id: string) =>
     setSelected((s) => {
@@ -187,9 +185,7 @@ function ReconciliationPage() {
         },
       }),
     onSuccess: (r: any) => {
-      toast.success(
-        `${r?.linked ?? 0} vinculada(s), ${r?.skipped ?? 0} sem candidato`,
-      );
+      toast.success(`${r?.linked ?? 0} vinculada(s), ${r?.skipped ?? 0} sem candidato`);
       clearSelection();
       invalidateAll();
     },
@@ -197,13 +193,11 @@ function ReconciliationPage() {
   });
 
   const bulkCreateMut = useMutation({
-    mutationFn: (ids: string[]) =>
-      bulkCreateFn({ data: { transaction_ids: ids } }),
+    mutationFn: (ids: string[]) => bulkCreateFn({ data: { transaction_ids: ids } }),
     onSuccess: (r: any) => {
       const errs = r?.errors?.length ?? 0;
       toast.success(
-        `${r?.created ?? 0} lançamento(s) criado(s)` +
-          (errs > 0 ? ` · ${errs} falha(s)` : ""),
+        `${r?.created ?? 0} lançamento(s) criado(s)` + (errs > 0 ? ` · ${errs} falha(s)` : ""),
       );
       clearSelection();
       invalidateAll();
@@ -227,9 +221,7 @@ function ReconciliationPage() {
     if (allSelected) clearSelection();
     else setSelected(new Set(allIds));
   };
-  const bulkBusy =
-    bulkIgnoreMut.isPending || bulkLinkMut.isPending || bulkCreateMut.isPending;
-
+  const bulkBusy = bulkIgnoreMut.isPending || bulkLinkMut.isPending || bulkCreateMut.isPending;
 
   return (
     <div className="space-y-6 p-6">
@@ -242,10 +234,7 @@ function ReconciliationPage() {
         <Card>
           <CardContent className="p-8 text-center text-sm text-muted-foreground">
             Nenhuma conexão bancária ativa. Conecte o Banco Inter em
-            <a
-              href="/finance/banking"
-              className="ml-1 font-medium text-primary underline"
-            >
+            <a href="/finance/banking" className="ml-1 font-medium text-primary underline">
               /finance/banking
             </a>
             .
@@ -265,9 +254,7 @@ function ReconciliationPage() {
               hint="Ajuste a janela de dias"
             />
             <div className="rounded-lg border bg-card p-4">
-              <div className="text-xs uppercase text-muted-foreground">
-                Janela de busca
-              </div>
+              <div className="text-xs uppercase text-muted-foreground">Janela de busca</div>
               <div className="mt-2 flex items-center gap-2">
                 <Input
                   type="number"
@@ -297,8 +284,8 @@ function ReconciliationPage() {
                 <CardHeader>
                   <CardTitle className="text-base">Sugestões de conciliação</CardTitle>
                   <CardDescription>
-                    Cada transação lista até 3 pagamentos candidatos com valor idêntico
-                    dentro da janela configurada.
+                    Cada transação lista até 3 pagamentos candidatos com valor idêntico dentro da
+                    janela configurada.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -309,17 +296,14 @@ function ReconciliationPage() {
                   ) : items.length === 0 ? (
                     <div className="flex flex-col items-center gap-2 p-8 text-center text-sm text-muted-foreground">
                       <ScanSearch className="h-6 w-6" />
-                      Nenhuma pendência. Todas as transações estão conciliadas ou
-                      ignoradas.
+                      Nenhuma pendência. Todas as transações estão conciliadas ou ignoradas.
                     </div>
                   ) : (
                     <>
                       <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3">
                         <label className="flex items-center gap-2 text-sm">
                           <Checkbox
-                            checked={
-                              allSelected ? true : someSelected ? "indeterminate" : false
-                            }
+                            checked={allSelected ? true : someSelected ? "indeterminate" : false}
                             onCheckedChange={toggleAll}
                           />
                           <span className="font-medium">
@@ -374,10 +358,7 @@ function ReconciliationPage() {
                           const signed = t.direction === "credit" ? t.amount : -t.amount;
                           const isSelected = selected.has(t.id);
                           return (
-                            <li
-                              key={t.id}
-                              className="rounded-lg border bg-card p-4 shadow-sm"
-                            >
+                            <li key={t.id} className="rounded-lg border bg-card p-4 shadow-sm">
                               <div className="flex flex-wrap items-start justify-between gap-3">
                                 <div className="flex min-w-0 flex-1 items-start gap-3">
                                   <Checkbox
@@ -386,99 +367,95 @@ function ReconciliationPage() {
                                     className="mt-1"
                                   />
                                   <div className="min-w-0 flex-1">
-
-                                <div className="text-sm font-medium">
-                                  {t.description ?? "Movimentação"}
-                                </div>
-                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                                  <span>{formatDateTime(t.posted_at)}</span>
-                                  {t.counterparty && (
-                                    <>
-                                      <span>·</span>
-                                      <span>{t.counterparty}</span>
-                                    </>
-                                  )}
-                                </div>
-                                  </div>
-                                </div>
-
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className={`text-base font-semibold tabular-nums ${
-                                    signed >= 0 ? "text-emerald-600" : "text-destructive"
-                                  }`}
-                                >
-                                  {formatCurrency(signed, "BRL")}
-                                </span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => ignoreMut.mutate(t.id)}
-                                  disabled={ignoreMut.isPending}
-                                >
-                                  <XCircle className="mr-1 h-4 w-4" />
-                                  Ignorar
-                                </Button>
-                              </div>
-                            </div>
-
-                            {it.candidates.length === 0 ? (
-                              <div className="mt-3 rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-                                Nenhum pagamento candidato dentro da janela de{" "}
-                                {windowDays} dia(s).
-                              </div>
-                            ) : (
-                              <div className="mt-3 space-y-2">
-                                <div className="text-xs font-medium uppercase text-muted-foreground">
-                                  Candidatos
-                                </div>
-                                {it.candidates.map((c: any) => (
-                                  <div
-                                    key={c.payment_id}
-                                    className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3"
-                                  >
-                                    <div className="min-w-0 flex-1 text-sm">
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <span className="font-medium tabular-nums">
-                                          {formatCurrency(Number(c.amount), "BRL")}
-                                        </span>
-                                        <Badge variant="secondary">
-                                          {c.method ?? "—"}
-                                        </Badge>
-                                        <span className="text-xs text-muted-foreground">
-                                          {formatDate(c.paid_at)} · {c.days_diff} dia(s)
-                                        </span>
-                                      </div>
-                                      {(c.reference || c.notes) && (
-                                        <div className="mt-1 truncate text-xs text-muted-foreground">
-                                          {c.reference ?? c.notes}
-                                        </div>
+                                    <div className="text-sm font-medium">
+                                      {t.description ?? "Movimentação"}
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                      <span>{formatDateTime(t.posted_at)}</span>
+                                      {t.counterparty && (
+                                        <>
+                                          <span>·</span>
+                                          <span>{t.counterparty}</span>
+                                        </>
                                       )}
                                     </div>
-                                    <Button
-                                      size="sm"
-                                      onClick={() =>
-                                        acceptMut.mutate({
-                                          transaction_id: t.id,
-                                          payment_id: c.payment_id,
-                                        })
-                                      }
-                                      disabled={acceptMut.isPending}
-                                    >
-                                      <CheckCircle2 className="mr-1 h-4 w-4" />
-                                      Aceitar
-                                    </Button>
                                   </div>
-                                ))}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`text-base font-semibold tabular-nums ${
+                                      signed >= 0 ? "text-emerald-600" : "text-destructive"
+                                    }`}
+                                  >
+                                    {formatCurrency(signed, "BRL")}
+                                  </span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => ignoreMut.mutate(t.id)}
+                                    disabled={ignoreMut.isPending}
+                                  >
+                                    <XCircle className="mr-1 h-4 w-4" />
+                                    Ignorar
+                                  </Button>
+                                </div>
                               </div>
-                            )}
-                          </li>
-                        );
-                      })}
+
+                              {it.candidates.length === 0 ? (
+                                <div className="mt-3 rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+                                  Nenhum pagamento candidato dentro da janela de {windowDays}{" "}
+                                  dia(s).
+                                </div>
+                              ) : (
+                                <div className="mt-3 space-y-2">
+                                  <div className="text-xs font-medium uppercase text-muted-foreground">
+                                    Candidatos
+                                  </div>
+                                  {it.candidates.map((c: any) => (
+                                    <div
+                                      key={c.payment_id}
+                                      className="flex flex-wrap items-center justify-between gap-3 rounded-md border bg-muted/30 p-3"
+                                    >
+                                      <div className="min-w-0 flex-1 text-sm">
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <span className="font-medium tabular-nums">
+                                            {formatCurrency(Number(c.amount), "BRL")}
+                                          </span>
+                                          <Badge variant="secondary">{c.method ?? "—"}</Badge>
+                                          <span className="text-xs text-muted-foreground">
+                                            {formatDate(c.paid_at)} · {c.days_diff} dia(s)
+                                          </span>
+                                        </div>
+                                        {(c.reference || c.notes) && (
+                                          <div className="mt-1 truncate text-xs text-muted-foreground">
+                                            {c.reference ?? c.notes}
+                                          </div>
+                                        )}
+                                      </div>
+                                      <Button
+                                        size="sm"
+                                        onClick={() =>
+                                          acceptMut.mutate({
+                                            transaction_id: t.id,
+                                            payment_id: c.payment_id,
+                                          })
+                                        }
+                                        disabled={acceptMut.isPending}
+                                      >
+                                        <CheckCircle2 className="mr-1 h-4 w-4" />
+                                        Aceitar
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </>
                   )}
-
                 </CardContent>
               </Card>
             </TabsContent>
@@ -489,14 +466,10 @@ function ReconciliationPage() {
                   <div>
                     <CardTitle className="text-base">Histórico</CardTitle>
                     <CardDescription>
-                      Transações conciliadas ou ignoradas. Use "Reativar" para voltar a
-                      pendente.
+                      Transações conciliadas ou ignoradas. Use "Reativar" para voltar a pendente.
                     </CardDescription>
                   </div>
-                  <Select
-                    value={historyStatus}
-                    onValueChange={(v: any) => setHistoryStatus(v)}
-                  >
+                  <Select value={historyStatus} onValueChange={(v: any) => setHistoryStatus(v)}>
                     <SelectTrigger className="w-40">
                       <SelectValue />
                     </SelectTrigger>
@@ -554,9 +527,7 @@ function ReconciliationPage() {
                               <TableCell>
                                 <Badge
                                   variant={
-                                    r.reconciliation_status === "matched"
-                                      ? "default"
-                                      : "secondary"
+                                    r.reconciliation_status === "matched" ? "default" : "secondary"
                                   }
                                 >
                                   {r.reconciliation_status === "matched"
@@ -568,10 +539,7 @@ function ReconciliationPage() {
                                 {r.matched_payment ? (
                                   <span>
                                     {formatDate(r.matched_payment.paid_at)} ·{" "}
-                                    {formatCurrency(
-                                      Number(r.matched_payment.amount),
-                                      "BRL",
-                                    )}
+                                    {formatCurrency(Number(r.matched_payment.amount), "BRL")}
                                     {r.matched_payment.method && (
                                       <span className="text-muted-foreground">
                                         {" "}

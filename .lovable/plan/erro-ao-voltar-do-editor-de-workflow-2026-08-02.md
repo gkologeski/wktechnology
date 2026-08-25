@@ -23,11 +23,13 @@ não para um defeito no botão "<". Não há, no momento, nenhuma reprodução d
 ## Proposta
 
 Fase 1 — Confirmar (sem alterar código)
+
 - Recarregar o preview e repetir o fluxo: abrir workflow -> editar -> clicar em "<".
 - Se o erro voltar, capturar a URL da barra de endereço no momento da falha e se ele ocorre também
   no domínio publicado (`app.wktechnology.com.br`), para separar preview de produção.
 
 Fase 2 — Endurecer o retorno (apenas se o erro se repetir, ou se você quiser já de saída)
+
 - Ao fechar o editor, revalidar a lista de workflows via React Query em vez de depender do estado
   atual da tela, evitando lista desatualizada após sair da edição.
 - Confirmação de saída quando houver alterações não salvas no rascunho, para o "<" não descartar

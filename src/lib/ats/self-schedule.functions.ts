@@ -8,13 +8,15 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 export const createSelfScheduleLink = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
-    z.object({
-      application_id: z.string().uuid(),
-      candidate_id: z.string().uuid(),
-      job_id: z.string().uuid(),
-      slots: z.array(z.string()).min(1).max(20),
-      duration_min: z.number().int().min(15).max(240).default(30),
-    }).parse(d),
+    z
+      .object({
+        application_id: z.string().uuid(),
+        candidate_id: z.string().uuid(),
+        job_id: z.string().uuid(),
+        slots: z.array(z.string()).min(1).max(20),
+        duration_min: z.number().int().min(15).max(240).default(30),
+      })
+      .parse(d),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -53,9 +55,7 @@ export const getSelfScheduleByToken = createServerFn({ method: "GET" })
   });
 
 export const confirmSelfSchedule = createServerFn({ method: "POST" })
-  .inputValidator((d) =>
-    z.object({ token: z.string().min(8), slot: z.string() }).parse(d),
-  )
+  .inputValidator((d) => z.object({ token: z.string().min(8), slot: z.string() }).parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin: sb } = await import("@/integrations/supabase/client.server");
     const { data: row, error: e0 } = await sb

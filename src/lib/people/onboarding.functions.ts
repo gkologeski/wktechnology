@@ -6,7 +6,6 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emitEvent } from "@/lib/events.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-
 export const ONB_KINDS = ["onboarding", "offboarding"] as const;
 export type OnbKind = (typeof ONB_KINDS)[number];
 export const ONB_KIND_LABELS: Record<OnbKind, string> = {
@@ -14,12 +13,7 @@ export const ONB_KIND_LABELS: Record<OnbKind, string> = {
   offboarding: "Desligamento",
 };
 
-export const ONB_PLAN_STATUSES = [
-  "not_started",
-  "in_progress",
-  "completed",
-  "canceled",
-] as const;
+export const ONB_PLAN_STATUSES = ["not_started", "in_progress", "completed", "canceled"] as const;
 export type OnbPlanStatus = (typeof ONB_PLAN_STATUSES)[number];
 export const ONB_PLAN_STATUS_LABELS: Record<OnbPlanStatus, string> = {
   not_started: "Não iniciado",
@@ -28,13 +22,7 @@ export const ONB_PLAN_STATUS_LABELS: Record<OnbPlanStatus, string> = {
   canceled: "Cancelado",
 };
 
-export const ONB_TASK_STATUSES = [
-  "pending",
-  "in_progress",
-  "done",
-  "blocked",
-  "skipped",
-] as const;
+export const ONB_TASK_STATUSES = ["pending", "in_progress", "done", "blocked", "skipped"] as const;
 export type OnbTaskStatus = (typeof ONB_TASK_STATUSES)[number];
 export const ONB_TASK_STATUS_LABELS: Record<OnbTaskStatus, string> = {
   pending: "Pendente",
@@ -52,7 +40,6 @@ export type OnbTemplateItem = {
   is_critical?: boolean | null;
   revocation_system?: string | null;
 };
-
 
 export type OnbTemplateRow = {
   id: string;
@@ -106,12 +93,8 @@ export type OnbTaskRow = {
   updated_at: string;
 };
 
-
 type MinimalClient = { from: (t: string) => unknown };
-async function resolveWorkspaceId(
-  supabase: MinimalClient,
-  userId: string,
-): Promise<string> {
+async function resolveWorkspaceId(supabase: MinimalClient, userId: string): Promise<string> {
   const q = supabase.from("profiles") as {
     select: (c: string) => {
       eq: (
@@ -141,7 +124,6 @@ const templateItemSchema = z.object({
   revocation_system: z.string().max(120).nullable().optional(),
 });
 
-
 const templateSchema = z.object({
   id: z.string().uuid().nullable().optional(),
   name: z.string().min(2).max(200),
@@ -155,11 +137,7 @@ const templateSchema = z.object({
 
 export const listOnbTemplates = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    z
-      .object({ kind: z.enum(ONB_KINDS).nullable().optional() })
-      .parse(i ?? {}),
-  )
+  .inputValidator((i) => z.object({ kind: z.enum(ONB_KINDS).nullable().optional() }).parse(i ?? {}))
   .handler(async ({ data, context }) => {
     let q = context.supabase
       .from("people_onboarding_templates")
@@ -328,7 +306,8 @@ export const createOnbPlan = createServerFn({ method: "POST" })
         .select("items")
         .eq("id", data.template_id)
         .maybeSingle();
-      const items = ((tpl as { items?: OnbTemplateItem[] } | null)?.items ?? []) as OnbTemplateItem[];
+      const items = ((tpl as { items?: OnbTemplateItem[] } | null)?.items ??
+        []) as OnbTemplateItem[];
       if (items.length > 0) {
         const base = new Date(startedAt);
         const rows = items.map((it, idx) => {
@@ -349,9 +328,7 @@ export const createOnbPlan = createServerFn({ method: "POST" })
             status: "pending" as const,
           };
         });
-        const { error: e2 } = await supabase
-          .from("people_onboarding_tasks")
-          .insert(rows as never);
+        const { error: e2 } = await supabase.from("people_onboarding_tasks").insert(rows as never);
         if (e2) throw new Error(e2.message);
       }
     }
@@ -360,12 +337,7 @@ export const createOnbPlan = createServerFn({ method: "POST" })
 
 export const updateOnbPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    planSchema
-      .partial()
-      .extend({ id: z.string().uuid() })
-      .parse(i),
-  )
+  .inputValidator((i) => planSchema.partial().extend({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { id, ...rest } = data;
     const payload: Record<string, unknown> = { ...rest };
@@ -422,7 +394,6 @@ export const upsertOnbTask = createServerFn({ method: "POST" })
       order_index: data.order_index,
       is_critical: data.is_critical ?? false,
       revocation_system: data.revocation_system ?? null,
-
     };
     if (data.status === "done") {
       payload.completed_at = new Date().toISOString();
@@ -458,9 +429,7 @@ export const upsertOnbTask = createServerFn({ method: "POST" })
 export const setOnbTaskStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
-    z
-      .object({ id: z.string().uuid(), status: z.enum(ONB_TASK_STATUSES) })
-      .parse(i),
+    z.object({ id: z.string().uuid(), status: z.enum(ONB_TASK_STATUSES) }).parse(i),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -586,11 +555,8 @@ async function materializePlan(
         is_critical: it.is_critical ?? false,
         revocation_system: it.revocation_system ?? null,
       };
-
     });
-    const { error: e2 } = await supabase
-      .from("people_onboarding_tasks")
-      .insert(rows as never);
+    const { error: e2 } = await supabase.from("people_onboarding_tasks").insert(rows as never);
     if (e2) throw new Error(e2.message);
     taskCount = rows.length;
   }
@@ -677,8 +643,8 @@ export async function runAutoStart(
   if (!tpl) return { status: "skipped_no_template" };
   const startedAt =
     kind === "onboarding"
-      ? p.hire_date ?? new Date().toISOString().slice(0, 10)
-      : p.termination_date ?? new Date().toISOString().slice(0, 10);
+      ? (p.hire_date ?? new Date().toISOString().slice(0, 10))
+      : (p.termination_date ?? new Date().toISOString().slice(0, 10));
   const { planId, taskCount } = await materializePlan(supabase, {
     userId,
     workspaceId: p.owner_id,
@@ -742,9 +708,7 @@ export type OffboardingComplianceSummary = {
 
 export const getOffboardingCompliance = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) =>
-    z.object({ person_id: z.string().uuid() }).parse(i),
-  )
+  .inputValidator((i) => z.object({ person_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<OffboardingComplianceSummary> => {
     const { supabase } = context;
     const { data: planRow } = await supabase
@@ -774,7 +738,9 @@ export const getOffboardingCompliance = createServerFn({ method: "POST" })
     }
     const { data: taskRows, error } = await supabase
       .from("people_onboarding_tasks")
-      .select("id, plan_id, title, category, revocation_system, due_date, status, is_critical, order_index")
+      .select(
+        "id, plan_id, title, category, revocation_system, due_date, status, is_critical, order_index",
+      )
       .eq("plan_id", plan.id)
       .order("order_index", { ascending: true });
     if (error) throw new Error(error.message);
@@ -822,7 +788,13 @@ export const getOffboardingCompliance = createServerFn({ method: "POST" })
       plan_status: plan.status,
       started_at: plan.started_at,
       target_completion_date: plan.target_completion_date,
-      totals: { total, done, critical_total: criticalTotal, critical_pending: criticalPending, overdue },
+      totals: {
+        total,
+        done,
+        critical_total: criticalTotal,
+        critical_pending: criticalPending,
+        overdue,
+      },
       critical_tasks: critical,
     };
   });

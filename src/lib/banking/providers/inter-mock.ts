@@ -31,9 +31,9 @@ export const interMockProvider: BankProvider = {
     };
   },
 
-  async exchangeCode({ code }): Promise<
-    BankTokens & { external_account_id?: string; display_name?: string }
-  > {
+  async exchangeCode({
+    code,
+  }): Promise<BankTokens & { external_account_id?: string; display_name?: string }> {
     if (!code) throw new Error("Código de autorização ausente");
     return {
       access_token: randomToken("mock_at"),
@@ -94,12 +94,48 @@ export const interMockProvider: BankProvider = {
       counterparty: string;
       category: string;
     }> = [
-      { dir: "credit", amount: 8500, desc: "PIX recebido — Cliente A", counterparty: "CLIENTE A LTDA", category: "receita" },
-      { dir: "debit", amount: 1200.5, desc: "Pagamento fornecedor", counterparty: "FORN SERVIÇOS SA", category: "despesa" },
-      { dir: "credit", amount: 3200, desc: "Boleto liquidado", counterparty: "CLIENTE B ME", category: "receita" },
-      { dir: "debit", amount: 480.9, desc: "Tarifa bancária", counterparty: "BANCO INTER", category: "tarifa" },
-      { dir: "debit", amount: 2750, desc: "Folha de pagamento", counterparty: "FOLHA", category: "folha" },
-      { dir: "credit", amount: 1500, desc: "PIX recebido — Cliente C", counterparty: "CLIENTE C EIRELI", category: "receita" },
+      {
+        dir: "credit",
+        amount: 8500,
+        desc: "PIX recebido — Cliente A",
+        counterparty: "CLIENTE A LTDA",
+        category: "receita",
+      },
+      {
+        dir: "debit",
+        amount: 1200.5,
+        desc: "Pagamento fornecedor",
+        counterparty: "FORN SERVIÇOS SA",
+        category: "despesa",
+      },
+      {
+        dir: "credit",
+        amount: 3200,
+        desc: "Boleto liquidado",
+        counterparty: "CLIENTE B ME",
+        category: "receita",
+      },
+      {
+        dir: "debit",
+        amount: 480.9,
+        desc: "Tarifa bancária",
+        counterparty: "BANCO INTER",
+        category: "tarifa",
+      },
+      {
+        dir: "debit",
+        amount: 2750,
+        desc: "Folha de pagamento",
+        counterparty: "FOLHA",
+        category: "folha",
+      },
+      {
+        dir: "credit",
+        amount: 1500,
+        desc: "PIX recebido — Cliente C",
+        counterparty: "CLIENTE C EIRELI",
+        category: "receita",
+      },
     ];
 
     let running = 40000;
@@ -142,7 +178,9 @@ export const interMockProvider: BankProvider = {
 
   async createBoletoCharge({ charge_id, amount, due_date }) {
     const nossoNum = charge_id.replace(/\D/g, "").slice(0, 10).padStart(10, "0");
-    const centavos = Math.round(amount * 100).toString().padStart(10, "0");
+    const centavos = Math.round(amount * 100)
+      .toString()
+      .padStart(10, "0");
     const dueCode = new Date(due_date).getTime().toString().slice(-4);
     const digitable = `07790.00000 ${nossoNum.slice(0, 5)}.${nossoNum.slice(5)}0 00000.000000 1 ${dueCode}${centavos.slice(0, 6)}`;
     const barcode = `07791${dueCode}${centavos}0000000000${nossoNum}`;

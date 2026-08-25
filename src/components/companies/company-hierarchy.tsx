@@ -16,7 +16,6 @@ import { Building2, ChevronRight, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
-
 type MiniCompany = { id: string; name: string; domain: string | null };
 
 export function CompanyHierarchy({
@@ -187,7 +186,6 @@ function PickParentDialog({
       return (data ?? []) as MiniCompany[];
     },
   });
-
 
   const filtered = useMemo(
     () => results.filter((r) => !excludeIds.includes(r.id)),

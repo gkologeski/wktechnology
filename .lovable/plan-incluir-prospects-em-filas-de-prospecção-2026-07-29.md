@@ -5,11 +5,13 @@ Na lista de resultados de uma busca (`/prospecting?tab=prospecting` → painel l
 ## O que muda
 
 **Por prospect (cada card do painel)**
+
 - Novo botão "Incluir na fila" ao lado de "Importar como Lead".
 - Abre o modal existente de prospecção, onde o usuário escolhe uma fila manual já existente **ou** digita o nome de uma nova fila para criar na hora (o modal já suporta as duas opções, incluindo a aba de Cadência).
 - Como as filas trabalham com leads, o prospect é importado como lead automaticamente antes de entrar na fila (se já tiver sido importado, reaproveita o lead existente — sem duplicar).
 
 **No topo da lista de resultados**
+
 - "Importar todos os leads": importa todos os prospects ainda não importados, com confirmação da quantidade e um resumo ao final (importados / já existentes / falhas).
 - "Incluir todos em uma fila": importa os pendentes e abre o mesmo modal de fila já com todos os leads selecionados.
 - Ambos ficam desabilitados quando não há resultados, e mostram estado de carregamento durante o processamento.

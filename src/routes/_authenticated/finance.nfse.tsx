@@ -72,7 +72,6 @@ const STATUS_DOT: Record<string, string> = {
   cancelled: "bg-muted-foreground/40",
 };
 
-
 type NfseRow = {
   id: string;
   status: string;
@@ -85,7 +84,12 @@ type NfseRow = {
   issued_at: string | null;
   created_at: string;
   error_message: string | null;
-  customer_invoices?: { invoice_number: string | null; amount: number | null; currency: string | null; description: string | null } | null;
+  customer_invoices?: {
+    invoice_number: string | null;
+    amount: number | null;
+    currency: string | null;
+    description: string | null;
+  } | null;
 };
 
 function NfseListPage() {
@@ -193,102 +197,102 @@ function NfseListPage() {
       )}
 
       {view === "table" && (
-
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" /> Últimas emissões
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : items.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Nenhuma NFS-e emitida. Emita a partir de uma fatura em "Faturas".
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fatura</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Nº NF / RPS</TableHead>
-                  <TableHead>Cód. serviço</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Emitida em</TableHead>
-                  <TableHead className="text-right">Documentos</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((n) => (
-                  <TableRow key={n.id}>
-                    <TableCell className="font-medium">
-                      {n.customer_invoices?.invoice_number ?? "—"}
-                      {n.customer_invoices?.description && (
-                        <div className="text-xs text-muted-foreground truncate max-w-[240px]">
-                          {n.customer_invoices.description}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={STATUS_VARIANT[n.status] ?? "secondary"}>
-                        {STATUS_LABEL[n.status] ?? n.status}
-                      </Badge>
-                      {n.error_message && (
-                        <div className="text-xs text-destructive mt-1 max-w-[240px] truncate" title={n.error_message}>
-                          {n.error_message}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {n.nf_number ?? n.rps_number ?? "—"}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs">{n.service_code ?? "—"}</TableCell>
-                    <TableCell>
-                      {n.amount != null
-                        ? Number(n.amount).toLocaleString("pt-BR", {
-                            style: "currency",
-                            currency: "BRL",
-                          })
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {n.issued_at ? formatDateTime(n.issued_at) : formatDateTime(n.created_at)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        {n.pdf_url && (
-                          <Button size="sm" variant="ghost" asChild>
-                            <a href={n.pdf_url} target="_blank" rel="noreferrer">
-                              PDF <ExternalLink className="ml-1 h-3 w-3" />
-                            </a>
-                          </Button>
-                        )}
-                        {n.xml_url && (
-                          <Button size="sm" variant="ghost" asChild>
-                            <a href={n.xml_url} target="_blank" rel="noreferrer">
-                              XML <ExternalLink className="ml-1 h-3 w-3" />
-                            </a>
-                          </Button>
-                        )}
-                        {!n.pdf_url && !n.xml_url && (
-                          <span className="text-xs text-muted-foreground">—</span>
-                        )}
-                      </div>
-                    </TableCell>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" /> Últimas emissões
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : items.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Nenhuma NFS-e emitida. Emita a partir de uma fatura em "Faturas".
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fatura</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Nº NF / RPS</TableHead>
+                    <TableHead>Cód. serviço</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Emitida em</TableHead>
+                    <TableHead className="text-right">Documentos</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {items.map((n) => (
+                    <TableRow key={n.id}>
+                      <TableCell className="font-medium">
+                        {n.customer_invoices?.invoice_number ?? "—"}
+                        {n.customer_invoices?.description && (
+                          <div className="text-xs text-muted-foreground truncate max-w-[240px]">
+                            {n.customer_invoices.description}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={STATUS_VARIANT[n.status] ?? "secondary"}>
+                          {STATUS_LABEL[n.status] ?? n.status}
+                        </Badge>
+                        {n.error_message && (
+                          <div
+                            className="text-xs text-destructive mt-1 max-w-[240px] truncate"
+                            title={n.error_message}
+                          >
+                            {n.error_message}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {n.nf_number ?? n.rps_number ?? "—"}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{n.service_code ?? "—"}</TableCell>
+                      <TableCell>
+                        {n.amount != null
+                          ? Number(n.amount).toLocaleString("pt-BR", {
+                              style: "currency",
+                              currency: "BRL",
+                            })
+                          : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {n.issued_at ? formatDateTime(n.issued_at) : formatDateTime(n.created_at)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          {n.pdf_url && (
+                            <Button size="sm" variant="ghost" asChild>
+                              <a href={n.pdf_url} target="_blank" rel="noreferrer">
+                                PDF <ExternalLink className="ml-1 h-3 w-3" />
+                              </a>
+                            </Button>
+                          )}
+                          {n.xml_url && (
+                            <Button size="sm" variant="ghost" asChild>
+                              <a href={n.xml_url} target="_blank" rel="noreferrer">
+                                XML <ExternalLink className="ml-1 h-3 w-3" />
+                              </a>
+                            </Button>
+                          )}
+                          {!n.pdf_url && !n.xml_url && (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       )}
-
     </div>
   );
 }

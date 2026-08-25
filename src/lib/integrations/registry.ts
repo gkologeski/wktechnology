@@ -52,7 +52,6 @@ export type ProviderDef = {
   href?: string;
 };
 
-
 export const PROVIDERS: ProviderDef[] = [
   {
     slug: "hubspot",
@@ -154,7 +153,6 @@ export const CATEGORY_LABELS: Record<ProviderDef["category"], string> = {
   tasks: "Tarefas",
   sourcing: "Sourcing & Mensageria",
 };
-
 
 // re-export icon for convenience
 export { Zap, MessageSquare };

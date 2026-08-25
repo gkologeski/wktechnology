@@ -693,10 +693,7 @@ function BlockInspector({
       {block.type === "logo" && (
         <>
           <Field label="Imagem">
-            <ImageInput
-              value={String(p.url ?? "")}
-              onChange={(v) => setProp("url", v ?? "")}
-            />
+            <ImageInput value={String(p.url ?? "")} onChange={(v) => setProp("url", v ?? "")} />
           </Field>
           <Field label="Largura (px)">
             <Input

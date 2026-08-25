@@ -307,6 +307,6 @@ export function sortFieldsByCanonicalOrder<T extends { name: string }>(
     if (rank.has(f.name)) known.push(f);
     else unknown.push(f);
   }
-  known.sort((a, b) => (rank.get(a.name)! - rank.get(b.name)!));
+  known.sort((a, b) => rank.get(a.name)! - rank.get(b.name)!);
   return [...known, ...unknown];
 }

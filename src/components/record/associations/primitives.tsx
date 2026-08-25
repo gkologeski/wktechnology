@@ -4,9 +4,18 @@ import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, MoreHorizontal, Copy, ArrowRight, Tag, ChevronDown } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { AssociatePeriodDialog, periodToDays, type AssociationPeriod } from "@/components/associations/associate-period-dialog";
+import {
+  AssociatePeriodDialog,
+  periodToDays,
+  type AssociationPeriod,
+} from "@/components/associations/associate-period-dialog";
 import { propagateAssociationHistory } from "@/lib/associations.functions";
 import { type PipelineStage } from "@/lib/pipelines";
 import type { AssociationKind } from "@/lib/associations.functions";
@@ -200,14 +209,18 @@ export function ViewAllFooter({ href, label }: { href: string; label: string }) 
   );
 }
 
-export function EntityAvatar({ initials, tone = "muted" }: { initials: string; tone?: "muted" | "primary" }) {
+export function EntityAvatar({
+  initials,
+  tone = "muted",
+}: {
+  initials: string;
+  tone?: "muted" | "primary";
+}) {
   return (
     <div
       className={
         "w-9 h-9 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 " +
-        (tone === "primary"
-          ? "bg-primary/10 text-primary"
-          : "bg-muted text-muted-foreground")
+        (tone === "primary" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")
       }
     >
       {initials}

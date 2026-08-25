@@ -36,7 +36,15 @@ const FORMATTED_SAMPLES: Array<{ name: string; html: string; plain: string }> = 
   },
 ];
 
-const EMPTY_SAMPLES = ["", "   ", "<p></p>", "<p><br></p>", "<p>   </p>", "<ul></ul>", "<div><br></div>"];
+const EMPTY_SAMPLES = [
+  "",
+  "   ",
+  "<p></p>",
+  "<p><br></p>",
+  "<p>   </p>",
+  "<ul></ul>",
+  "<div><br></div>",
+];
 
 describe("normalizeHtmlField (campos WYSIWYG salvos no banco)", () => {
   it.each(EMPTY_SAMPLES)("retorna null para conteúdo vazio: %s", (input) => {
@@ -61,12 +69,21 @@ describe("normalizeHtmlField (campos WYSIWYG salvos no banco)", () => {
 describe("sanitizeHtml mantém tags do toolbar", () => {
   it("não remove strong/em/u/ul/ol/li/a/p/span.mention", () => {
     const html =
-      '<p><strong>b</strong><em>i</em><u>u</u></p>' +
-      '<ul><li>x</li></ul><ol><li>y</li></ol>' +
+      "<p><strong>b</strong><em>i</em><u>u</u></p>" +
+      "<ul><li>x</li></ul><ol><li>y</li></ol>" +
       '<p><a href="https://x.com">l</a></p>' +
       '<p><span class="mention" data-user-id="1">@n</span></p>';
     const out = sanitizeHtml(html);
-    for (const tag of ["<strong>", "<em>", "<u>", "<ul>", "<ol>", "<li>", "<a ", '<span class="mention"']) {
+    for (const tag of [
+      "<strong>",
+      "<em>",
+      "<u>",
+      "<ul>",
+      "<ol>",
+      "<li>",
+      "<a ",
+      '<span class="mention"',
+    ]) {
       expect(out).toContain(tag);
     }
   });

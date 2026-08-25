@@ -33,8 +33,10 @@ async function callAi(messages: Array<{ role: string; content: string }>) {
       response_format: { type: "json_object" },
     }),
   });
-  if (r.status === 429) throw new Error("Limite de uso da IA atingido. Tente novamente em alguns instantes.");
-  if (r.status === 402) throw new Error("Créditos de IA esgotados. Adicione créditos no workspace.");
+  if (r.status === 429)
+    throw new Error("Limite de uso da IA atingido. Tente novamente em alguns instantes.");
+  if (r.status === 402)
+    throw new Error("Créditos de IA esgotados. Adicione créditos no workspace.");
   if (!r.ok) throw new Error(`AI Gateway ${r.status}: ${await r.text().catch(() => "")}`);
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "";
@@ -96,8 +98,15 @@ export const analyzePipelineHealth = createServerFn({ method: "POST" })
     const stageLabel = Object.fromEntries(DEFAULT_ATS_STAGES.map((s) => [s.value, s.label]));
     const orderIdx = (v: string) => stageOrder.indexOf(v);
 
-    type Visit = { stage: string; enteredAt: number; exitedAt: number | null; exitedTo: string | null };
-    const visitsByStage: Record<string, Visit[]> = Object.fromEntries(stageOrder.map((s) => [s, [] as Visit[]]));
+    type Visit = {
+      stage: string;
+      enteredAt: number;
+      exitedAt: number | null;
+      exitedTo: string | null;
+    };
+    const visitsByStage: Record<string, Visit[]> = Object.fromEntries(
+      stageOrder.map((s) => [s, [] as Visit[]]),
+    );
     let avgTotalCloseDays = 0;
     let closedCount = 0;
 
@@ -128,7 +137,12 @@ export const analyzePipelineHealth = createServerFn({ method: "POST" })
               ? "rejected"
               : null;
         if (visitsByStage[cur.stage]) {
-          visitsByStage[cur.stage].push({ stage: cur.stage, enteredAt: cur.ts, exitedAt, exitedTo });
+          visitsByStage[cur.stage].push({
+            stage: cur.stage,
+            enteredAt: cur.ts,
+            exitedAt,
+            exitedTo,
+          });
         }
       }
     }

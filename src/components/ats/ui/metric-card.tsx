@@ -77,7 +77,12 @@ export function MetricCard({
           </span>
         )}
         {delta ? (
-          <span className={cn("inline-flex shrink-0 items-center gap-0.5 text-xs font-medium", deltaColor)}>
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-0.5 text-xs font-medium",
+              deltaColor,
+            )}
+          >
             {DeltaIcon ? <DeltaIcon className="h-3 w-3" /> : null}
             {delta.value}
           </span>

@@ -5,16 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { runIcpScan, getLeadIcpFit as getFit } from "@/lib/scoring/icp.server";
 
-const OpEnum = z.enum([
-  "eq",
-  "neq",
-  "in",
-  "contains",
-  "gt",
-  "lt",
-  "is_empty",
-  "is_not_empty",
-]);
+const OpEnum = z.enum(["eq", "neq", "in", "contains", "gt", "lt", "is_empty", "is_not_empty"]);
 
 const CriterionSchema = z.object({
   id: z.string().uuid().optional(),

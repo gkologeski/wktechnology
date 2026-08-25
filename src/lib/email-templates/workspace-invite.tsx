@@ -99,8 +99,7 @@ const WorkspaceInviteEmail = ({
   const expNote = expDate
     ? interpolate(expiresNote || "Este convite expira em {{expiresAt}}.", vars)
     : "";
-  const footer =
-    footerNote || "Se você não esperava este e-mail, pode ignorá-lo com segurança.";
+  const footer = footerNote || "Se você não esperava este e-mail, pode ignorá-lo com segurança.";
 
   const button = {
     background: primary,

@@ -119,7 +119,10 @@ export function OffboardingCompliancePanel({ personId }: Props) {
             </div>
             <ul className="divide-y divide-border rounded-md border">
               {data.critical_tasks.map((task) => (
-                <li key={task.id} className="flex items-center justify-between gap-3 px-3 py-2 text-sm">
+                <li
+                  key={task.id}
+                  className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                >
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium">{task.title}</div>
                     <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-xs text-muted-foreground">

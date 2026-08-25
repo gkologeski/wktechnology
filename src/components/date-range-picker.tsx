@@ -28,7 +28,12 @@ export type DateRangePickerProps = {
 };
 
 const GROUP_ORDER: PresetGroup[] = [
-  "Dias", "Semanas", "Trimestres", "Semestres", "Anos", "Últimos N dias",
+  "Dias",
+  "Semanas",
+  "Trimestres",
+  "Semestres",
+  "Anos",
+  "Últimos N dias",
 ];
 
 export function DateRangePicker({
@@ -77,9 +82,7 @@ export function DateRangePicker({
               {GROUP_ORDER.map((group, gi) => (
                 <div key={group}>
                   {gi > 0 && <Separator className="my-2" />}
-                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
-                    {group}
-                  </div>
+                  <div className="px-2 py-1 text-xs font-medium text-muted-foreground">{group}</div>
                   {PRESETS.filter((p) => p.group === group).map((p) => (
                     <button
                       key={p.key}

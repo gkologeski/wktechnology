@@ -3,6 +3,7 @@
 ## Diagnóstico (verificado nos dados reais)
 
 O lead `Luiz Feitosa` / `Frequencia Inteligência` tem:
+
 - e-mail `profeitosa@yahoo.com.br` (provedor gratuito)
 - empresa vinculada sem `website` e sem `domain`
 
@@ -21,6 +22,7 @@ Ou seja, a cascata se comportou assim:
 ```
 
 Consequências:
+
 - o `people/match` é a chamada cobrada: o Apollo debita o crédito mesmo quando devolve um registro sem dados novos (só o eco do e-mail enviado);
 - como havia algo em `lead`, o resultado foi marcado como `found: true` e ficou em cache por 30 dias, então a tela mostra "enriquecido" sem nenhum campo novo;
 - `warnings` vazio confirma que não houve erro de crédito/permissão — foi realmente "nenhum dado".

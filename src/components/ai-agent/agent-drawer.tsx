@@ -356,4 +356,3 @@ export function AgentDrawer({
 
 // O gatilho flutuante vive em `@/components/ai-agent/agent-trigger` para que
 // este módulo (AI SDK + react-markdown) só seja baixado ao abrir o assistente.
-

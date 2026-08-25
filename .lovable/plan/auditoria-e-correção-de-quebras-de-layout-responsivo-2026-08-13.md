@@ -22,11 +22,14 @@ sistemática e não pontual.
 ## O que será feito
 
 ### 1. Correção imediata do caso reportado
+
 - `ai-summary-panel.tsx`: cabeçalho passa a `flex-col gap-2 sm:flex-row sm:items-center sm:justify-between`, título com `min-w-0`, grupo de controles com `flex-wrap` + `shrink-0` e selects com largura fluida (`w-full sm:w-[150px]`, `min-w-0`).
 
 ### 2. Varredura automatizada de quebras
+
 Script Playwright (em `/tmp`, não versionado) que percorre as rotas autenticadas
 e públicas principais em 360, 768, 1024, 1280 e 1440px e reporta, por tela:
+
 - elementos com `scrollWidth > clientWidth` (transbordo horizontal);
 - elementos cujo retângulo ultrapassa a largura do contêiner pai/viewport;
 - botões/labels visivelmente cortados ou sobrepostos.
@@ -35,8 +38,10 @@ O resultado gera a lista priorizada de telas a corrigir (evita "achismo" e
 garante cobertura real do sistema).
 
 ### 3. Correções por padrão, não por tela isolada
+
 Para cada ocorrência apontada pela varredura, aplicar os padrões já vigentes no
 projeto:
+
 - linhas de cabeçalho: `grid grid-cols-[minmax(0,1fr)_auto]` no mobile, `flex` a partir de `sm`;
 - `min-w-0` em todo contêiner flex/grid que contém texto; `truncate` em títulos de uma linha;
 - `shrink-0` em ícones, avatares e botões de ação;
@@ -49,6 +54,7 @@ vaga), toolbars/FilterBar de listas, painéis laterais de associações, builder
 (workflow, sequência, cotação) e modais largos.
 
 ### 4. Validação
+
 - `tsgo --noEmit` e `bun run lint`;
 - re-execução da varredura Playwright confirmando zero transbordos nas telas corrigidas;
 - checagem visual em light e dark nos breakpoints 360/768/1024/1280.

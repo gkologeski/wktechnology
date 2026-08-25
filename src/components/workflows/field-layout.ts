@@ -28,11 +28,15 @@ export function loadFieldLayout(entity: string): FieldLayout {
     }
     // Sanitiza estrutura
     const groups: FieldGroup[] = parsed.groups
-      .filter((g): g is FieldGroup => !!g && typeof g.id === "string" && typeof g.label === "string")
+      .filter(
+        (g): g is FieldGroup => !!g && typeof g.id === "string" && typeof g.label === "string",
+      )
       .map((g) => ({
         id: g.id,
         label: g.label,
-        fieldNames: Array.isArray(g.fieldNames) ? g.fieldNames.filter((s) => typeof s === "string") : [],
+        fieldNames: Array.isArray(g.fieldNames)
+          ? g.fieldNames.filter((s) => typeof s === "string")
+          : [],
         collapsed: Boolean(g.collapsed),
       }));
     return { version: VERSION, groups };
@@ -87,14 +91,19 @@ export function insertFieldInGroup(
     groups: cleaned.groups.map((g) => {
       if (g.id !== groupId) return g;
       const next = [...g.fieldNames];
-      const at = typeof index === "number" && index >= 0 && index <= next.length ? index : next.length;
+      const at =
+        typeof index === "number" && index >= 0 && index <= next.length ? index : next.length;
       next.splice(at, 0, fieldName);
       return { ...g, fieldNames: next };
     }),
   };
 }
 
-export function reorderGroups(layout: FieldLayout, fromIndex: number, toIndex: number): FieldLayout {
+export function reorderGroups(
+  layout: FieldLayout,
+  fromIndex: number,
+  toIndex: number,
+): FieldLayout {
   if (fromIndex === toIndex) return layout;
   const next = [...layout.groups];
   const [moved] = next.splice(fromIndex, 1);

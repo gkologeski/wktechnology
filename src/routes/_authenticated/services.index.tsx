@@ -287,7 +287,11 @@ function ServicesPage() {
           stageField="status"
           selectable
           entityLabel="serviço"
-          canDelete={canAny(["techservice.services.delete.workspace","techservice.services.delete.own","techsales.catalog.services.delete.workspace"])}
+          canDelete={canAny([
+            "techservice.services.delete.workspace",
+            "techservice.services.delete.own",
+            "techsales.catalog.services.delete.workspace",
+          ])}
           canUpdate={canAny([
             "techservice.services.update.workspace",
             "techservice.services.update.own",

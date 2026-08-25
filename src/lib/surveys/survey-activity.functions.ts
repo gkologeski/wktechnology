@@ -49,7 +49,6 @@ export type SalesScoreQuestion = {
   text_min_chars: number | null;
 };
 
-
 /** Pesquisas disponíveis para responder, agrupadas por tipo. */
 export const listAvailableSurveys = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -79,7 +78,6 @@ export const listAvailableSurveys = createServerFn({ method: "GET" })
       salesQuestionnaires: sales.filter((q) => q.is_template !== true),
     };
   });
-
 
 /** Perguntas do formulário de uma pesquisa. */
 export const getSurveyForm = createServerFn({ method: "POST" })
@@ -112,7 +110,6 @@ export const getSurveyForm = createServerFn({ method: "POST" })
         pass_threshold: null as number | null,
         field_layout: null as Json,
         scoring: [] as SalesScoreQuestion[],
-
 
         questions: (rows ?? []).map(
           (r) =>
@@ -376,7 +373,6 @@ export const getActivitySurveyResponses = createServerFn({ method: "POST" })
     }));
   });
 
-
 /**
  * Pesquisa pendente (criada por workflow) de um registro: atividade do tipo
  * `survey` ainda sem resposta registrada.
@@ -384,9 +380,7 @@ export const getActivitySurveyResponses = createServerFn({ method: "POST" })
 export const getPendingSurveyActivity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i: unknown) =>
-    z
-      .object({ related_key: z.enum(RELATED_KEYS), related_id: z.string().uuid() })
-      .parse(i),
+    z.object({ related_key: z.enum(RELATED_KEYS), related_id: z.string().uuid() }).parse(i),
   )
   .handler(async ({ context, data }) => {
     const { data: rows, error } = await context.supabase
@@ -413,7 +407,9 @@ export const getPendingSurveyActivity = createServerFn({ method: "POST" })
         "activity_id",
         candidates.map((c) => c.id),
       );
-    const done = new Set((answered.data ?? []).map((r) => (r as { activity_id: string }).activity_id));
+    const done = new Set(
+      (answered.data ?? []).map((r) => (r as { activity_id: string }).activity_id),
+    );
 
     for (const c of candidates) {
       if (done.has(c.id)) continue;

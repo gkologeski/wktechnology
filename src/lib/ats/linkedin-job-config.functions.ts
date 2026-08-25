@@ -18,7 +18,13 @@ const CONFIG = z.object({
     .nullable()
     .optional(),
   linkedin_apply_type: z.enum(["linkedin", "external"]).nullable().optional(),
-  linkedin_apply_url: z.string().trim().url().nullable().optional().or(z.literal("").transform(() => null)),
+  linkedin_apply_url: z
+    .string()
+    .trim()
+    .url()
+    .nullable()
+    .optional()
+    .or(z.literal("").transform(() => null)),
   linkedin_notification_email: z
     .string()
     .trim()
@@ -104,21 +110,14 @@ export const searchLinkedinDirectory = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ context, data }) => {
-    const { loadAccountCtx, resolveSearchParameterItems } = await import(
-      "@/lib/unipile/client.server"
-    );
+    const { loadAccountCtx, resolveSearchParameterItems } =
+      await import("@/lib/unipile/client.server");
     // Reaproveita o helper versionado (v1/v2) que fala com
     // /linkedin/search/parameters e devolve items com {id,title}.
     const ctxUp = await loadAccountCtx(context.userId).catch(() => null);
     if (!ctxUp) {
       return { items: [] as Array<{ id: string; title: string }>, connected: false };
     }
-    const items = await resolveSearchParameterItems(
-      ctxUp,
-      data.type,
-      data.keywords,
-      data.limit,
-    );
+    const items = await resolveSearchParameterItems(ctxUp, data.type, data.keywords, data.limit);
     return { items: items.filter((it) => it.title), connected: true };
   });
-

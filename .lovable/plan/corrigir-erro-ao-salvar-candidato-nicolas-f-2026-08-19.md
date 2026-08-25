@@ -12,12 +12,15 @@ Ou seja, o registro nem precisa ser alterado nesses campos: o simples ato de sal
 ## Ajustes propostos
 
 ### 1. Aceitar as origens realmente usadas
+
 Ampliar a lista de origens válidas para incluir as que já existem nos dados (`cv_pdf`, `linkedin_apply`, `linkedin_extension`, `linkedin_unipile_search`), mantendo `manual` como padrão. Valores desconhecidos vindos de registros legados são preservados em vez de bloquear o salvamento.
 
 ### 2. Normalizar o LinkedIn em vez de recusar
+
 Antes de validar, completar automaticamente o endereço quando vier sem protocolo (`www.linkedin.com/...` passa a `https://www.linkedin.com/...`). Continua sendo recusado apenas texto que não é endereço válido de forma alguma, e vazio segue permitido.
 
 ### 3. Mensagem de erro legível
+
 Hoje o usuário vê o JSON bruto da validação. Passar a exibir uma mensagem em português indicando o campo com problema (ex.: "LinkedIn inválido"), em vez do objeto técnico.
 
 ## Detalhes técnicos

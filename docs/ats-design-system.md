@@ -16,35 +16,35 @@ Definidos em `:root` (light) e `.dark`, e expostos como classes Tailwind via `@t
 
 ### Superfícies e bordas
 
-| Token            | Classe Tailwind            | Uso                                |
-| ---------------- | -------------------------- | ---------------------------------- |
-| `--surface-1`    | `bg-surface-1`             | Fundo de página                    |
-| `--surface-2`    | `bg-surface-2`             | Cards, painéis                     |
-| `--surface-3`    | `bg-surface-3`             | Elementos elevados, hover de card  |
-| `--surface-sunken` | `bg-surface-sunken`      | Inputs, skeletons, listas zebra    |
-| `--border-subtle`  | `border-border-subtle`   | Divisores leves dentro de cards    |
-| `--border-default` | `border-border-default`  | Borda padrão de card               |
-| `--border-strong`  | `border-border-strong`   | Borda em estados ativos/foco       |
+| Token              | Classe Tailwind         | Uso                               |
+| ------------------ | ----------------------- | --------------------------------- |
+| `--surface-1`      | `bg-surface-1`          | Fundo de página                   |
+| `--surface-2`      | `bg-surface-2`          | Cards, painéis                    |
+| `--surface-3`      | `bg-surface-3`          | Elementos elevados, hover de card |
+| `--surface-sunken` | `bg-surface-sunken`     | Inputs, skeletons, listas zebra   |
+| `--border-subtle`  | `border-border-subtle`  | Divisores leves dentro de cards   |
+| `--border-default` | `border-border-default` | Borda padrão de card              |
+| `--border-strong`  | `border-border-strong`  | Borda em estados ativos/foco      |
 
 ### Texto
 
-| Token              | Classe                  | Uso                          |
-| ------------------ | ----------------------- | ---------------------------- |
-| `--text-primary`   | `text-text-primary`     | Conteúdo principal           |
-| `--text-secondary` | `text-text-secondary`   | Descrições, labels           |
-| `--text-tertiary`  | `text-text-tertiary`    | Eyebrows, metadados          |
-| `--text-disabled`  | `text-text-disabled`    | Estados desabilitados        |
+| Token              | Classe                | Uso                   |
+| ------------------ | --------------------- | --------------------- |
+| `--text-primary`   | `text-text-primary`   | Conteúdo principal    |
+| `--text-secondary` | `text-text-secondary` | Descrições, labels    |
+| `--text-tertiary`  | `text-text-tertiary`  | Eyebrows, metadados   |
+| `--text-disabled`  | `text-text-disabled`  | Estados desabilitados |
 
 ### Status de vaga · Etapa de pipeline · Score · Risco · IA · DEI
 
-| Família    | Tokens                                                                                          |
-| ---------- | ----------------------------------------------------------------------------------------------- |
-| Status     | `--status-open`, `--status-onhold`, `--status-closed`, `--status-draft`                         |
-| Stage      | `--stage-sourced`, `--stage-screen`, `--stage-interview`, `--stage-offer`, `--stage-hired`, `--stage-rejected` |
-| Score      | `--score-strong` (≥80), `--score-good` (60–79), `--score-mixed` (40–59), `--score-weak` (<40)   |
-| Risco      | `--risk-low`, `--risk-medium`, `--risk-high`                                                    |
-| IA         | `--ai-accent`, `--ai-surface`, `--ai-border`                                                    |
-| DEI        | `--dei-accent`, `--dei-surface`                                                                 |
+| Família | Tokens                                                                                                         |
+| ------- | -------------------------------------------------------------------------------------------------------------- |
+| Status  | `--status-open`, `--status-onhold`, `--status-closed`, `--status-draft`                                        |
+| Stage   | `--stage-sourced`, `--stage-screen`, `--stage-interview`, `--stage-offer`, `--stage-hired`, `--stage-rejected` |
+| Score   | `--score-strong` (≥80), `--score-good` (60–79), `--score-mixed` (40–59), `--score-weak` (<40)                  |
+| Risco   | `--risk-low`, `--risk-medium`, `--risk-high`                                                                   |
+| IA      | `--ai-accent`, `--ai-surface`, `--ai-border`                                                                   |
+| DEI     | `--dei-accent`, `--dei-surface`                                                                                |
 
 Cada token gera classes Tailwind correspondentes: `bg-status-open`, `text-stage-interview`, `border-ai-border`, `bg-ai-surface`, etc.
 
@@ -60,21 +60,21 @@ Cada token gera classes Tailwind correspondentes: `bg-status-open`, `text-stage-
 
 Todos presentacionais — **proibido** importar Supabase, server functions, queries ou mutations.
 
-| Componente        | Quando usar                                                                 |
-| ----------------- | --------------------------------------------------------------------------- |
-| `AtsPageHeader`   | Topo de toda rota ATS. Título + descrição + ação primária + ações secundárias. |
-| `AtsSectionHeader`| Cabeçalho de seções dentro de páginas/drawers.                              |
-| `MetricCard`      | KPI individual. Aceita `tone`, `delta`, `icon`, `hint`, `loading`.          |
-| `StatusBadge`     | Status de vaga.                                                             |
-| `StageBadge`      | Etapa de pipeline.                                                          |
-| `ScoreBadge`      | Score de candidato/match (0–100). Cor derivada automaticamente.             |
-| `SourceBadge`     | Fonte do candidato (LinkedIn, Indeed, indicação…).                          |
-| `RiskBadge`       | Sinalização de risco/fraude.                                                |
-| `EmptyState`      | Toda lista/painel vazio. Sempre com CTA acionável.                          |
-| `Skeletons.*`     | Loading fiel ao layout final (Metric/MetricsGrid/Card/Row).                 |
-| `FilterBar`       | Busca + chips de filtro + ações. Reservado para listas (não aplicado ainda).|
-| `AIInsightCard`   | Bloco de insight de IA ou DEI. Discreto, com explicabilidade.               |
-| `FormSection`     | Seção de formulário com título/descrição à esquerda e campos à direita.     |
+| Componente         | Quando usar                                                                    |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `AtsPageHeader`    | Topo de toda rota ATS. Título + descrição + ação primária + ações secundárias. |
+| `AtsSectionHeader` | Cabeçalho de seções dentro de páginas/drawers.                                 |
+| `MetricCard`       | KPI individual. Aceita `tone`, `delta`, `icon`, `hint`, `loading`.             |
+| `StatusBadge`      | Status de vaga.                                                                |
+| `StageBadge`       | Etapa de pipeline.                                                             |
+| `ScoreBadge`       | Score de candidato/match (0–100). Cor derivada automaticamente.                |
+| `SourceBadge`      | Fonte do candidato (LinkedIn, Indeed, indicação…).                             |
+| `RiskBadge`        | Sinalização de risco/fraude.                                                   |
+| `EmptyState`       | Toda lista/painel vazio. Sempre com CTA acionável.                             |
+| `Skeletons.*`      | Loading fiel ao layout final (Metric/MetricsGrid/Card/Row).                    |
+| `FilterBar`        | Busca + chips de filtro + ações. Reservado para listas (não aplicado ainda).   |
+| `AIInsightCard`    | Bloco de insight de IA ou DEI. Discreto, com explicabilidade.                  |
+| `FormSection`      | Seção de formulário com título/descrição à esquerda e campos à direita.        |
 
 ## Padrões de UX
 

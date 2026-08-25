@@ -44,7 +44,6 @@ import {
   type PeopleEmploymentType,
 } from "@/lib/people/people.functions";
 
-
 export const Route = createFileRoute("/_authenticated/people/analytics")({
   component: PeopleAnalyticsPage,
   head: () => ({
@@ -182,9 +181,6 @@ function PeopleAnalyticsPage() {
         }
       />
 
-
-
-
       {isLoading || !data ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {Array.from({ length: 8 }).map((_, i) => (
@@ -258,8 +254,7 @@ function PeopleAnalyticsPage() {
                   <UserPlus className="h-4 w-4 text-emerald-500" /> Admissões (12 meses)
                 </CardTitle>
                 <CardDescription>
-                  Total:{" "}
-                  {data.hires_last_12m.reduce((s, r) => s + r.count, 0)} pessoas
+                  Total: {data.hires_last_12m.reduce((s, r) => s + r.count, 0)} pessoas
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -272,8 +267,7 @@ function PeopleAnalyticsPage() {
                   <UserMinus className="h-4 w-4 text-red-500" /> Desligamentos (12 meses)
                 </CardTitle>
                 <CardDescription>
-                  Total:{" "}
-                  {data.terminations_last_12m.reduce((s, r) => s + r.count, 0)} pessoas
+                  Total: {data.terminations_last_12m.reduce((s, r) => s + r.count, 0)} pessoas
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -303,10 +297,7 @@ function PeopleAnalyticsPage() {
                         </span>
                       </div>
                       <div className="h-1.5 bg-muted rounded overflow-hidden">
-                        <div
-                          className="h-full bg-primary/70"
-                          style={{ width: `${p}%` }}
-                        />
+                        <div className="h-full bg-primary/70" style={{ width: `${p}%` }} />
                       </div>
                     </div>
                   );
@@ -337,10 +328,7 @@ function PeopleAnalyticsPage() {
                         </span>
                       </div>
                       <div className="h-1.5 bg-muted rounded overflow-hidden">
-                        <div
-                          className="h-full bg-primary/70"
-                          style={{ width: `${p}%` }}
-                        />
+                        <div className="h-full bg-primary/70" style={{ width: `${p}%` }} />
                       </div>
                     </div>
                   );
@@ -361,9 +349,8 @@ function PeopleAnalyticsPage() {
               <RefreshCw className="h-4 w-4" /> Sincronizar folha com TechFinance
             </DialogTitle>
             <DialogDescription>
-              Cria/atualiza uma recorrência mensal (Pagar) por pessoa ativa com o
-              custo total (base + benefícios vigentes). Idempotente — pode rodar
-              quantas vezes precisar.
+              Cria/atualiza uma recorrência mensal (Pagar) por pessoa ativa com o custo total (base
+              + benefícios vigentes). Idempotente — pode rodar quantas vezes precisar.
             </DialogDescription>
           </DialogHeader>
 
@@ -389,7 +376,9 @@ function PeopleAnalyticsPage() {
                   <div className="text-[11px] text-muted-foreground">Desativadas</div>
                 </div>
                 <div className="rounded border p-2">
-                  <div className="text-lg font-semibold text-muted-foreground">{syncResult.skipped}</div>
+                  <div className="text-lg font-semibold text-muted-foreground">
+                    {syncResult.skipped}
+                  </div>
                   <div className="text-[11px] text-muted-foreground">Sem alteração</div>
                 </div>
               </div>
@@ -478,6 +467,5 @@ function PeopleAnalyticsPage() {
         </DialogContent>
       </Dialog>
     </div>
-
   );
 }

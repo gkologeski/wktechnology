@@ -152,15 +152,7 @@ function FinanceAuditPage() {
   );
 }
 
-function Metric({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "ok" | "warn";
-}) {
+function Metric({ label, value, tone }: { label: string; value: number; tone?: "ok" | "warn" }) {
   return (
     <Card>
       <CardHeader className="pb-2 flex-row items-center justify-between">

@@ -12,22 +12,12 @@ import {
   ExternalLink,
   Plus,
 } from "lucide-react";
-import {
-  AtsPageHeader,
-  AtsSectionHeader,
-  MetricCard,
-  EmptyState,
-} from "@/components/ats/ui";
+import { AtsPageHeader, AtsSectionHeader, MetricCard, EmptyState } from "@/components/ats/ui";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -76,7 +66,6 @@ function ComplianceHub() {
         description="Solicitações de titulares (DSAR), retenção de dados e auditoria de anonimização para candidatos."
       />
 
-
       <Tabs defaultValue="dsar" className="space-y-4">
         <TabsList>
           <TabsTrigger value="dsar">Solicitações DSAR</TabsTrigger>
@@ -113,9 +102,21 @@ function DsarTab() {
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Pendentes" value={pending} icon={ClipboardList} tone={pending > 0 ? "warning" : "neutral"} loading={q.isLoading} />
+        <MetricCard
+          label="Pendentes"
+          value={pending}
+          icon={ClipboardList}
+          tone={pending > 0 ? "warning" : "neutral"}
+          loading={q.isLoading}
+        />
         <MetricCard label="Em andamento" value={inProgress} icon={Clock4} loading={q.isLoading} />
-        <MetricCard label="Concluídas" value={completed} icon={Shield} tone="positive" loading={q.isLoading} />
+        <MetricCard
+          label="Concluídas"
+          value={completed}
+          icon={Shield}
+          tone="positive"
+          loading={q.isLoading}
+        />
         <MetricCard label="Total" value={rows.length} loading={q.isLoading} />
       </div>
 
@@ -167,8 +168,7 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
   const [confirmText, setConfirmText] = useState("");
 
   const exportM = useMutation({
-    mutationFn: () =>
-      exportFn({ data: { candidate_id: row.candidate_id, dsar_id: row.id } }),
+    mutationFn: () => exportFn({ data: { candidate_id: row.candidate_id, dsar_id: row.id } }),
     onSuccess: (snap) => {
       const blob = new Blob([JSON.stringify(snap, null, 2)], {
         type: "application/json",
@@ -202,8 +202,7 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
   });
 
   const reject = useMutation({
-    mutationFn: () =>
-      updateFn({ data: { id: row.id, status: "rejected" } }),
+    mutationFn: () => updateFn({ data: { id: row.id, status: "rejected" } }),
     onSuccess: () => {
       toast.success("Solicitação marcada como rejeitada");
       onChanged();
@@ -227,8 +226,7 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
           <DsarStatusBadge status={row.status} />
         </div>
         <div className="mt-0.5 text-xs text-text-tertiary truncate">
-          {row.subject_email ?? "—"} ·{" "}
-          {new Date(row.created_at).toLocaleString("pt-BR")}
+          {row.subject_email ?? "—"} · {new Date(row.created_at).toLocaleString("pt-BR")}
           {row.notes ? ` · ${row.notes}` : null}
         </div>
       </div>
@@ -260,8 +258,9 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
                   <DialogHeader>
                     <DialogTitle>Anonimizar candidato</DialogTitle>
                     <DialogDescription>
-                      Esta ação remove dados pessoais (nome, e-mail, telefone, CV, notas) e revoga consentimentos.
-                      Aplicações, scorecards e entrevistas permanecem para estatística. Ação irreversível.
+                      Esta ação remove dados pessoais (nome, e-mail, telefone, CV, notas) e revoga
+                      consentimentos. Aplicações, scorecards e entrevistas permanecem para
+                      estatística. Ação irreversível.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-2">
@@ -317,15 +316,30 @@ function DsarRow({ row, onChanged }: { row: DsarRequest; onChanged: () => void }
 
 function DsarStatusBadge({ status }: { status: DsarRequest["status"] }) {
   const map: Record<DsarRequest["status"], { label: string; cls: string }> = {
-    pending: { label: "Pendente", cls: "bg-amber-100 text-amber-900 border-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-900" },
-    in_progress: { label: "Em andamento", cls: "bg-blue-100 text-blue-900 border-blue-200 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-900" },
-    completed: { label: "Concluída", cls: "bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-900" },
-    rejected: { label: "Rejeitada", cls: "bg-rose-100 text-rose-900 border-rose-200 dark:bg-rose-950 dark:text-rose-200 dark:border-rose-900" },
+    pending: {
+      label: "Pendente",
+      cls: "bg-amber-100 text-amber-900 border-amber-200 dark:bg-amber-950 dark:text-amber-200 dark:border-amber-900",
+    },
+    in_progress: {
+      label: "Em andamento",
+      cls: "bg-blue-100 text-blue-900 border-blue-200 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-900",
+    },
+    completed: {
+      label: "Concluída",
+      cls: "bg-emerald-100 text-emerald-900 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-900",
+    },
+    rejected: {
+      label: "Rejeitada",
+      cls: "bg-rose-100 text-rose-900 border-rose-200 dark:bg-rose-950 dark:text-rose-200 dark:border-rose-900",
+    },
   };
   const { label, cls } = map[status];
-  return <Badge variant="outline" className={`text-[10px] ${cls}`}>{label}</Badge>;
+  return (
+    <Badge variant="outline" className={`text-[10px] ${cls}`}>
+      {label}
+    </Badge>
+  );
 }
-
 
 function NewDsarButton({ onCreated }: { onCreated: () => void }) {
   const [open, setOpen] = useState(false);
@@ -421,10 +435,7 @@ function NewDsarButton({ onCreated }: { onCreated: () => void }) {
           <Button variant="ghost" onClick={() => setOpen(false)}>
             Cancelar
           </Button>
-          <Button
-            onClick={() => m.mutate()}
-            disabled={!candidateId.trim() || m.isPending}
-          >
+          <Button onClick={() => m.mutate()} disabled={!candidateId.trim() || m.isPending}>
             {m.isPending ? "Registrando…" : "Registrar"}
           </Button>
         </DialogFooter>
@@ -489,10 +500,7 @@ function RetentionTab() {
           ) : (
             <ul className="divide-y divide-border-subtle">
               {rows.map((r) => (
-                <li
-                  key={r.id}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
-                >
+                <li key={r.id} className="flex items-center justify-between gap-3 px-4 py-3">
                   <div className="min-w-0">
                     <Link
                       to="/candidates/$id"

@@ -105,11 +105,7 @@ export function CreateOfferDialog({
             </div>
             <div>
               <Label>Data de início</Label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
           </div>
           <div>

@@ -18,10 +18,8 @@ export const Route = createFileRoute("/api/public/refer/$slug")({
           .select("id, public_slug, name, landing_headline, landing_body, terms_url")
           .eq("public_slug", params.slug)
           .maybeSingle();
-        if (error)
-          return Response.json({ error: error.message }, { status: 500, headers: cors });
-        if (!data)
-          return Response.json({ error: "Not found" }, { status: 404, headers: cors });
+        if (error) return Response.json({ error: error.message }, { status: 500, headers: cors });
+        if (!data) return Response.json({ error: "Not found" }, { status: 404, headers: cors });
         return Response.json({ program: data }, { headers: cors });
       },
     },

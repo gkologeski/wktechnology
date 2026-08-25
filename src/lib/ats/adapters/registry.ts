@@ -102,9 +102,4 @@ export function findAdapterDescriptor(slug: string): AtsAdapterDescriptor | unde
 }
 
 // Tipos re-exportados para uso por implementações:
-export type {
-  JobBoardAdapter,
-  AssessmentAdapter,
-  BackgroundCheckAdapter,
-  HrisAdapter,
-};
+export type { JobBoardAdapter, AssessmentAdapter, BackgroundCheckAdapter, HrisAdapter };

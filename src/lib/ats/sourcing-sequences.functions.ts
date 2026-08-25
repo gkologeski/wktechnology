@@ -40,11 +40,7 @@ export const getSequence = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const [{ data: seq }, { data: steps }, { data: enrollments }] = await Promise.all([
-      context.supabase
-        .from("ats_sourcing_sequences")
-        .select("*")
-        .eq("id", data.id)
-        .maybeSingle(),
+      context.supabase.from("ats_sourcing_sequences").select("*").eq("id", data.id).maybeSingle(),
       context.supabase
         .from("ats_sourcing_sequence_steps")
         .select("*")
@@ -247,4 +243,3 @@ export const stopEnrollment = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
-

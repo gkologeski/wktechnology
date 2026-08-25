@@ -22,7 +22,6 @@ import {
 import { TokenPills } from "@/components/ui/token-pills";
 import { EMAIL_TOKENS } from "@/lib/message-tokens-catalog";
 
-
 export const Route = createFileRoute("/_authenticated/settings/email-templates")({
   component: EmailTemplatesPage,
 });

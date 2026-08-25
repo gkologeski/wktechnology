@@ -42,7 +42,7 @@ Todas sob `src/routes/_authenticated/`.
 
 **TechSales** — `/leads`, `/leads/$id`, `/leads/import-hubspot`, `/contacts`,
 `/companies`, `/deals`, `/proposals`, `/prospecting` (índice, campanhas, filas
-com modo *play*), `/agents/sdr`, `/campaigns/email`, `/campaigns/whatsapp`,
+com modo _play_), `/agents/sdr`, `/campaigns/email`, `/campaigns/whatsapp`,
 `/catalog/products`, `/catalog/services`.
 
 **TechHire** (`(ats)/`) — `/ats-dashboard`, `/jobs`, `/jobs/$id`,
@@ -105,6 +105,7 @@ Prospecção (Apollo/hunting)
 ```
 
 Pontos de atenção:
+
 - Desqualificar um lead atualiza `status` **e** `stage_id` juntos.
 - O funil da tela reflete o pipeline configurado (`StageTracker` dinâmico).
 - Scoring unificado (alternativas + texto + ICP) em
@@ -153,10 +154,10 @@ bancária (`bank_statement_transactions`), cobrança/dunning e NFS-e.
 
 ## 4. Onde procurar o quê
 
-| Pergunta | Comece por |
-| --- | --- |
+| Pergunta                      | Comece por                                                                                    |
+| ----------------------------- | --------------------------------------------------------------------------------------------- |
 | "Como essa tela busca dados?" | rota em `src/routes/_authenticated/**` → `useServerFn`/`useQuery` → `src/lib/**.functions.ts` |
-| "Quem pode ver isso?" | `docs/architecture/security-rbac.md` + `pg_policies` da tabela |
-| "Qual tabela guarda isso?" | `docs/architecture/data-model.md` |
-| "Isso é automático?" | `docs/architecture/workflows-automation.md` |
-| "Qual componente usar?" | `docs/techhire-design-system.md` |
+| "Quem pode ver isso?"         | `docs/architecture/security-rbac.md` + `pg_policies` da tabela                                |
+| "Qual tabela guarda isso?"    | `docs/architecture/data-model.md`                                                             |
+| "Isso é automático?"          | `docs/architecture/workflows-automation.md`                                                   |
+| "Qual componente usar?"       | `docs/techhire-design-system.md`                                                              |

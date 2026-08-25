@@ -185,7 +185,9 @@ async function collectFromMeetings(
     if (Array.isArray(s?.decisions) && s.decisions.length)
       parts.push(`Decisões: ${s.decisions.join("; ")}`);
     if (Array.isArray(s?.action_items) && s.action_items.length)
-      parts.push(`Ações: ${s.action_items.map((a: SB) => (typeof a === "string" ? a : JSON.stringify(a))).join("; ")}`);
+      parts.push(
+        `Ações: ${s.action_items.map((a: SB) => (typeof a === "string" ? a : JSON.stringify(a))).join("; ")}`,
+      );
     if (s?.transcript) parts.push(`Transcrição: ${String(s.transcript).slice(0, 4000)}`);
     if (parts.length === 0) continue;
     const minutes = m.recording_duration_seconds
@@ -232,7 +234,9 @@ async function collectFromEmails(
   if (threadIds.length === 0) return msgs;
   const { data: emails } = await supabase
     .from("email_messages")
-    .select("subject, snippet, body_text, direction, from_name, from_email, sent_at, received_at, created_at")
+    .select(
+      "subject, snippet, body_text, direction, from_name, from_email, sent_at, received_at, created_at",
+    )
     .in("thread_id", threadIds)
     .gte("created_at", since)
     .order("created_at", { ascending: true })
@@ -356,12 +360,14 @@ async function collectMessages(
 }
 
 const KIND_HEADER: Record<z.infer<typeof KIND>, string> = {
-  conversation: "Você é um analista de vendas. Resuma a conversa multi-canal abaixo (WhatsApp, e-mails e atividades).",
+  conversation:
+    "Você é um analista de vendas. Resuma a conversa multi-canal abaixo (WhatsApp, e-mails e atividades).",
   call: "Você é um analista de vendas. Resuma as ligações abaixo, incluindo transcrições e resultados.",
   meeting:
     "Você é um analista de vendas. Resuma as reuniões, gravações e transcrições abaixo, destacando decisões e ações combinadas.",
   email: "Você é um analista de vendas. Resuma a troca de e-mails abaixo.",
-  notes: "Você é um analista de vendas. Consolide as notas internas e comentários da equipe abaixo.",
+  notes:
+    "Você é um analista de vendas. Consolide as notas internas e comentários da equipe abaixo.",
   tasks: "Você é um analista de vendas. Resuma o histórico de tarefas e follow-ups abaixo.",
   all: "Você é um analista de vendas. Consolide TODA a interação (conversas, e-mails, ligações, reuniões, notas e tarefas) abaixo em um resumo executivo.",
 };

@@ -100,7 +100,9 @@ function SequencesPage() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setOpen(false)}>
+                  Cancelar
+                </Button>
                 <Button onClick={() => mut.mutate()} disabled={!form.name.trim() || mut.isPending}>
                   {mut.isPending ? "Criando..." : "Criar"}
                 </Button>

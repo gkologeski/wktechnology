@@ -100,8 +100,7 @@ export function ProspectSearchFormDialog({
   const advancedCount = useMemo(
     () =>
       advancedKeys.reduce(
-        (n, k) =>
-          n + ((value.filters[k] as string[] | undefined)?.length ? 1 : 0),
+        (n, k) => n + ((value.filters[k] as string[] | undefined)?.length ? 1 : 0),
         0,
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -164,7 +163,6 @@ export function ProspectSearchFormDialog({
                   Enter, Tab ou vírgula para adicionar. A base do Apollo é majoritariamente em
                   inglês — prefira CTO, Head of IT, Sales Director.
                 </p>
-
               </div>
 
               <div>
@@ -202,7 +200,6 @@ export function ProspectSearchFormDialog({
                   Comece a digitar e escolha um setor da lista do Apollo. Setores e palavras-chave
                   são combinados com OU.
                 </p>
-
               </div>
 
               <div>
@@ -227,7 +224,6 @@ export function ProspectSearchFormDialog({
                   resultados.
                 </p>
               </div>
-
             </div>
           </section>
 
@@ -241,9 +237,7 @@ export function ProspectSearchFormDialog({
             >
               <span className="flex items-center gap-2">
                 {showAdvanced ? "Ocultar filtros avançados" : "Mostrar todos os filtros"}
-                {advancedCount > 0 && (
-                  <Badge variant="secondary">{advancedCount}</Badge>
-                )}
+                {advancedCount > 0 && <Badge variant="secondary">{advancedCount}</Badge>}
               </span>
               {showAdvanced ? (
                 <ChevronUp className="h-4 w-4" />
@@ -290,9 +284,7 @@ export function ProspectSearchFormDialog({
                   <Label>Faixa de receita anual</Label>
                   <MultiSelectOptions
                     value={value.filters.organization_estimated_annual_revenue_ranges ?? []}
-                    onChange={(v) =>
-                      setFilter("organization_estimated_annual_revenue_ranges", v)
-                    }
+                    onChange={(v) => setFilter("organization_estimated_annual_revenue_ranges", v)}
                     options={REVENUE_RANGE_OPTIONS}
                     placeholder="Todas as faixas"
                   />
@@ -356,9 +348,7 @@ export function ProspectSearchFormDialog({
               <Textarea
                 rows={2}
                 value={value.instructions}
-                onChange={(e) =>
-                  setValue((v) => ({ ...v, instructions: e.target.value }))
-                }
+                onChange={(e) => setValue((v) => ({ ...v, instructions: e.target.value }))}
                 placeholder="Contexto adicional para a triagem interna (opcional)."
               />
             </div>
@@ -376,9 +366,7 @@ export function ProspectSearchFormDialog({
                   }))
                 }
               />
-              <p className="text-xs text-muted-foreground mt-1">
-                Entre 1 e 50 por execução.
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Entre 1 e 50 por execução.</p>
             </div>
           </div>
         </div>

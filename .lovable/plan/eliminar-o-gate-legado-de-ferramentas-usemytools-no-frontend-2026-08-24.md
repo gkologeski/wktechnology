@@ -33,7 +33,7 @@
    - Log de auditoria e exportação de auditoria → `system.audit.view.*`
      (substitui `access_logs`)
    - Times/usuários/convites → `system.members.*`
-   Apenas visibilidade/disabled de CTA; nenhuma regra de negócio muda.
+     Apenas visibilidade/disabled de CTA; nenhuma regra de negócio muda.
 
 2. **Trocar o gate legado server-side por RBAC granular**:
    - `workflows.functions.ts`: `requireTool(..., "manage_workflows")` →

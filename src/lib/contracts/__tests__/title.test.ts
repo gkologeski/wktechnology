@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildContractTitle, buildContractTitleResult, normalizePartyName } from "@/lib/contracts/title";
+import {
+  buildContractTitle,
+  buildContractTitleResult,
+  normalizePartyName,
+} from "@/lib/contracts/title";
 
 describe("normalizePartyName", () => {
   it("remove sufixos societários e normaliza", () => {
@@ -85,9 +89,6 @@ describe("buildContractTitle", () => {
       }),
     ).toBe("[PRESTAÇÃO] CLIENTE BETA X WK TECHNOLOGY");
   });
-
-
-
 
   it("retorna null quando falta uma das partes", () => {
     expect(buildContractTitle({ role: "provider", contractingName: "Cliente Beta" })).toBeNull();

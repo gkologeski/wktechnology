@@ -47,7 +47,10 @@ export const listWorkspaceModules = createServerFn({ method: "POST" })
       .order("sort_order", { ascending: true });
     if (cat.error) throw new Error(cat.error.message);
 
-    let active = new Map<string, { enabled: boolean; activated_at: string; plan_code: string | null }>();
+    let active = new Map<
+      string,
+      { enabled: boolean; activated_at: string; plan_code: string | null }
+    >();
     if (workspaceId) {
       const wm = await supabase
         .from("workspace_modules")

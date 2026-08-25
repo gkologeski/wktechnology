@@ -7,7 +7,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
-import { searchCompanies, searchContacts, searchPipelines, searchUsers } from "@/lib/workflow-refs.functions";
+import {
+  searchCompanies,
+  searchContacts,
+  searchPipelines,
+  searchUsers,
+} from "@/lib/workflow-refs.functions";
 
 type Pipeline = { id: string; name: string; stages: unknown };
 
@@ -38,9 +43,7 @@ export function useReferenceLabels() {
     queryKey: ["ref-pipelines-basic"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("pipelines")
-        .select("id, name, stages");
+      const { data, error } = await supabase.from("pipelines").select("id, name, stages");
       if (error) throw error;
       return (data ?? []) as Pipeline[];
     },
@@ -60,9 +63,7 @@ export function useReferenceLabels() {
     queryKey: ["ref-rotation-rules-basic"],
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("rotation_rules")
-        .select("id, name");
+      const { data, error } = await supabase.from("rotation_rules").select("id, name");
       if (error) throw error;
       return (data ?? []) as Array<{ id: string; name: string }>;
     },
@@ -231,9 +232,9 @@ export function useReferenceLabels() {
       return LOADING_LABEL;
     },
     labelForSequence: (id: string | null | undefined) =>
-      !id ? "—" : maps.seq.get(id) ?? short(id, "sequência"),
+      !id ? "—" : (maps.seq.get(id) ?? short(id, "sequência")),
     labelForRule: (id: string | null | undefined) =>
-      !id ? "—" : maps.rr.get(id) ?? short(id, "regra"),
+      !id ? "—" : (maps.rr.get(id) ?? short(id, "regra")),
     labelForStage: (
       pipelineId: string | null | undefined,
       stageValue: string | null | undefined,
@@ -248,6 +249,5 @@ export function useReferenceLabels() {
     },
   };
 }
-
 
 export type ReferenceLabels = ReturnType<typeof useReferenceLabels>;

@@ -204,7 +204,7 @@ function OffersPage() {
           stageField="status"
           selectable
           entityLabel="oferta"
-          canDelete={canAny(["techhire.offers.delete.workspace","techhire.offers.delete.own"])}
+          canDelete={canAny(["techhire.offers.delete.workspace", "techhire.offers.delete.own"])}
           readOnly
           isLoading={loading}
           ariaLabel="Quadro de ofertas"

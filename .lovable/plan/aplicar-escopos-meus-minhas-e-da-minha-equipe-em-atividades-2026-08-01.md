@@ -14,6 +14,7 @@ Hoje as permissões de escopo de Atividades existem no catálogo e aparecem em `
 ## O que será feito
 
 ### 1. Regras de acesso do banco (migration)
+
 Reescrever leitura, edição e exclusão de Atividades para respeitar as chaves granulares:
 
 - **Todos**: quem tem a chave de escopo "todos" (ou é dono/administrador do workspace) vê e age sobre tudo do workspace.
@@ -23,18 +24,22 @@ Reescrever leitura, edição e exclusão de Atividades para respeitar as chaves 
 - A criação continua exigindo que o responsável seja o próprio usuário (sem mudança).
 
 ### 2. Rede de segurança nas concessões
+
 Migration aditiva: cargos e conjuntos de permissão que hoje **não têm nenhuma** chave de visualização de Atividades recebem "Meus/Minhas" (visualizar), para ninguém perder o próprio histórico. Nenhuma concessão existente é removida ou alterada.
 
 ### 3. Consultas do aplicativo
+
 - Reaproveitar o helper de escopo já existente para limitar leituras server-side de Atividades por responsável permitido, nos caminhos que usam o cliente autenticado (timeline agregada, resumos de IA, copiloto).
 - Caminhos que usam cliente privilegiado (sincronizações, webhooks, workers) permanecem restritos ao registro em que operam; não passam a listar atividades para usuários.
 
 ### 4. Interface
+
 - Em Tarefas e nas listas de Atividades, o filtro de Responsável passa a refletir o escopo efetivo: com escopo "próprio", só "Meus registros"; com escopo de equipe, apenas colegas do grupo; "Todos os responsáveis" somente com escopo "todos".
 - Estados vazios com texto claro quando o escopo limita o resultado (nada de "nenhum registro" ambíguo).
 - Sem alteração visual fora desse filtro.
 
 ### 5. Validação
+
 - Testes de unidade do mapeamento de escopo (chave -> filtro esperado).
 - Verificação no banco simulando cada cargo: contagem de atividades visíveis para um usuário com escopo próprio, de equipe e total.
 - Rodar typecheck, lint, testes e build.

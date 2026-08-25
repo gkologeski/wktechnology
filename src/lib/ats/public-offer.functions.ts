@@ -11,13 +11,18 @@ export const getOfferByToken = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("ats_offers")
-      .select("id, title, body, status, salary_amount, salary_currency, start_date, sent_at, signed_at, declined_at, viewed_at, public_token, candidate_id, job_id")
+      .select(
+        "id, title, body, status, salary_amount, salary_currency, start_date, sent_at, signed_at, declined_at, viewed_at, public_token, candidate_id, job_id",
+      )
       .eq("public_token", data.token)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (!row) throw new Error("Oferta não encontrada");
     if (!row.viewed_at) {
-      await supabaseAdmin.from("ats_offers").update({ viewed_at: new Date().toISOString() }).eq("id", row.id);
+      await supabaseAdmin
+        .from("ats_offers")
+        .update({ viewed_at: new Date().toISOString() })
+        .eq("id", row.id);
     }
     return row;
   });

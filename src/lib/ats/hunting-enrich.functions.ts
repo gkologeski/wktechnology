@@ -68,8 +68,7 @@ Devolva SOMENTE um JSON válido neste formato:
   const seniority = (allowed as readonly string[]).includes(sen as string)
     ? (sen as EnrichResult["seniority"])
     : null;
-  const headline =
-    typeof parsed.headline === "string" ? parsed.headline.slice(0, 160) : null;
+  const headline = typeof parsed.headline === "string" ? parsed.headline.slice(0, 160) : null;
   return { skills, seniority, headline };
 }
 

@@ -12,7 +12,9 @@ type OAuthDetails = {
 };
 
 type OAuthApi = {
-  getAuthorizationDetails: (id: string) => Promise<{ data: OAuthDetails | null; error: Error | null }>;
+  getAuthorizationDetails: (
+    id: string,
+  ) => Promise<{ data: OAuthDetails | null; error: Error | null }>;
   approveAuthorization: (id: string) => Promise<{ data: OAuthDetails | null; error: Error | null }>;
   denyAuthorization: (id: string) => Promise<{ data: OAuthDetails | null; error: Error | null }>;
 };

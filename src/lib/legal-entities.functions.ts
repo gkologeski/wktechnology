@@ -90,13 +90,15 @@ export const suggestLegalEntityCnpjs = createServerFn({ method: "POST" })
       }
     }
 
-    return ((entities ?? []) as Array<{
-      id: string;
-      code: string | null;
-      name: string;
-      trade_name: string | null;
-      cnpj: string | null;
-    }>).map((e) => {
+    return (
+      (entities ?? []) as Array<{
+        id: string;
+        code: string | null;
+        name: string;
+        trade_name: string | null;
+        cnpj: string | null;
+      }>
+    ).map((e) => {
       const candidates = new Map<string, { count: number; rawName: string }>();
       const keys = [normalizeEntityName(e.name), normalizeEntityName(e.trade_name)].filter(
         (k) => k.length >= 4,
@@ -195,7 +197,6 @@ export const fillLegalEntityCnpjsAndRecalc = createServerFn({ method: "POST" })
       contracts_retitled: result.retitled,
     };
   });
-
 
 export const listLegalEntities = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

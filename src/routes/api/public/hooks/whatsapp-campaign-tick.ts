@@ -249,7 +249,8 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
             processed: totalProcessed,
           } as unknown as Record<string, unknown>;
         });
-        if (run.status === "error") return Response.json({ ok: false, error: run.error }, { status: 500 });
+        if (run.status === "error")
+          return Response.json({ ok: false, error: run.error }, { status: 500 });
         return Response.json({ ok: true, duration_ms: run.duration_ms, ...run.metrics });
       },
     },

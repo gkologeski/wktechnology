@@ -98,7 +98,13 @@ export function EmailsCard({ entity, entityId }: { entity: AssociationEntity; en
   );
 }
 
-export function AttachmentsCard({ entity, entityId }: { entity: AssociationEntity; entityId: string }) {
+export function AttachmentsCard({
+  entity,
+  entityId,
+}: {
+  entity: AssociationEntity;
+  entityId: string;
+}) {
   const [rows, setRows] = useState<{ name: string; path: string; type?: string }[]>([]);
   const fetchRows = useCallback(() => {
     supabase

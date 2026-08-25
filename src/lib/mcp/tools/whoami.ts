@@ -12,8 +12,16 @@ export default defineTool({
     const supabase = supabaseForUser(ctx);
     const userId = ctx.getUserId()!;
     const workspaceId = await resolveWorkspaceId(supabase, userId);
-    const { data } = await supabase.from("workspaces").select("id,name").eq("id", workspaceId).maybeSingle();
-    const payload = { user_id: userId, email: ctx.getUserEmail() ?? null, workspace: data ?? { id: workspaceId } };
+    const { data } = await supabase
+      .from("workspaces")
+      .select("id,name")
+      .eq("id", workspaceId)
+      .maybeSingle();
+    const payload = {
+      user_id: userId,
+      email: ctx.getUserEmail() ?? null,
+      workspace: data ?? { id: workspaceId },
+    };
     return {
       content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
       structuredContent: payload,

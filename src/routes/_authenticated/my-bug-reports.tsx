@@ -186,9 +186,10 @@ function MyBugReportsPage() {
     mutationFn: async (payload: { id: string; feedback: string; previous: string | null }) => {
       const stamp = format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR });
       const entry = `[${stamp}] ${payload.feedback}`;
-      const merged = payload.previous && payload.previous.trim().length > 0
-        ? `${entry}\n\n---\n\n${payload.previous}`
-        : entry;
+      const merged =
+        payload.previous && payload.previous.trim().length > 0
+          ? `${entry}\n\n---\n\n${payload.previous}`
+          : entry;
       const { error } = await supabase
         .from("bug_reports")
         .update({
@@ -372,7 +373,13 @@ function MyBugReportsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => setReopen({ id: r.id, feedback: "", previous: r.user_resolution_feedback ?? null })}
+                            onClick={() =>
+                              setReopen({
+                                id: r.id,
+                                feedback: "",
+                                previous: r.user_resolution_feedback ?? null,
+                              })
+                            }
                           >
                             <ThumbsDown className="h-4 w-4 mr-2" /> Não, ainda persiste
                           </Button>
@@ -380,14 +387,16 @@ function MyBugReportsPage() {
                       )}
                     </div>
                   )}
-                  {r.user_resolution_confirmed === false && r.user_resolution_feedback && r.status !== "resolved" && (
-                    <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">
-                        Você reabriu este chamado informando:
-                      </p>
-                      <HtmlContent html={r.user_resolution_feedback} />
-                    </div>
-                  )}
+                  {r.user_resolution_confirmed === false &&
+                    r.user_resolution_feedback &&
+                    r.status !== "resolved" && (
+                      <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          Você reabriu este chamado informando:
+                        </p>
+                        <HtmlContent html={r.user_resolution_feedback} />
+                      </div>
+                    )}
                   {Array.isArray(r.image_paths) && r.image_paths.length > 0 && (
                     <BugReportImages paths={r.image_paths} />
                   )}
@@ -587,7 +596,11 @@ function MyBugReportsPage() {
                   toast.error("Descreva com pelo menos 10 caracteres");
                   return;
                 }
-                reopenMut.mutate({ id: reopen.id, feedback: reopen.feedback.trim(), previous: reopen.previous });
+                reopenMut.mutate({
+                  id: reopen.id,
+                  feedback: reopen.feedback.trim(),
+                  previous: reopen.previous,
+                });
               }}
               disabled={reopenMut.isPending}
             >

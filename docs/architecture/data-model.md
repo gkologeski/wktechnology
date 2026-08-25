@@ -8,12 +8,12 @@ editar). Atalhos convenientes em `src/lib/db-types.ts`.
 
 ## 1. Colunas transversais
 
-| Coluna | Presente em | Significado |
-| --- | --- | --- |
-| `workspace_id` | 267 tabelas | **Isolamento de tenant.** Base de toda política RLS de dados de negócio. |
-| `assigned_to` | 65 tabelas | Responsável pelo registro. Filtro/coluna de UI — não é segurança. |
-| `owner_id` | 220 tabelas | Legado em migração para `workspace_id` + `assigned_to`. Não usar como filtro novo. |
-| `created_at` / `updated_at` | maioria | `updated_at` mantido por triggers `*_touch_updated_at`. |
+| Coluna                      | Presente em | Significado                                                                        |
+| --------------------------- | ----------- | ---------------------------------------------------------------------------------- |
+| `workspace_id`              | 267 tabelas | **Isolamento de tenant.** Base de toda política RLS de dados de negócio.           |
+| `assigned_to`               | 65 tabelas  | Responsável pelo registro. Filtro/coluna de UI — não é segurança.                  |
+| `owner_id`                  | 220 tabelas | Legado em migração para `workspace_id` + `assigned_to`. Não usar como filtro novo. |
+| `created_at` / `updated_at` | maioria     | `updated_at` mantido por triggers `*_touch_updated_at`.                            |
 
 Tabelas **sem** `workspace_id` (globais de plataforma, tabelas-ponte ou
 escopadas por usuário) — não adicione `workspace_id` a elas sem análise:
@@ -35,6 +35,7 @@ escopadas por usuário) — não adicione `workspace_id` a elas sem análise:
 ## 2. Tabelas por domínio
 
 ### 2.1 Tenant, acesso e plataforma
+
 `workspaces`, `workspace_members`, `workspace_invites`,
 `workspace_invite_settings`, `workspace_modules`, `workspace_branding`,
 `workspace_subscriptions`, `modules`, `module_branding`, `plans`,
@@ -55,6 +56,7 @@ Auditoria e observabilidade: `audit_logs`, `access_audit_log`, `audit_exports`,
 `bug_reports`, `bug_report_analyses`, `notifications`, `push_subscriptions`.
 
 ### 2.2 TechSales / CRM
+
 `leads`, `lead_sources`, `contacts`, `companies`, `deals`, `deal_contacts`,
 `deal_line_items`, `deal_loss_reasons`, `pipelines`, `stage_entries`,
 `activities`, `activity_comments`, `activity_survey_responses`, `meetings`,
@@ -77,6 +79,7 @@ Prospecção: `prospecting_campaigns`, `prospecting_campaign_variants`,
 `sdr_enrollments`, `enrichment_jobs`, `enrichment_job_items`.
 
 ### 2.3 TechHire / ATS (prefixo `ats_`)
+
 Núcleo: `ats_jobs`, `ats_job_postings`, `ats_pipelines`, `ats_candidates`,
 `ats_applications`, `ats_application_events`, `ats_match_scores`.
 
@@ -102,6 +105,7 @@ tenant; silver medalists via `ats_auto_add_silver_medalist` /
 `ensure_silver_medalist_pool`; anonimização por `anonymize_ats_candidate`.
 
 ### 2.4 TechPeople
+
 `people`, `people_allocations`, `people_benefits`, `people_documents`,
 `people_events`, `people_goals`, `people_incidents`, `people_reviews`,
 `people_one_on_ones`, `people_psychosocial_assessments`,
@@ -116,6 +120,7 @@ Triggers relevantes: `people_sync_workspace_id`,
 `can_view_person`, `can_view_person_sensitive`, `can_manage_person`.
 
 ### 2.5 TechContracts
+
 `contracts`, `contract_events`, `contract_approvals`, `contract_templates`,
 `contract_template_services`, `contract_link_ai_suggestions`,
 `contracting_presets`, `esign_documents`, `esign_signers`,
@@ -127,6 +132,7 @@ Enums: `contract_status`, `contract_role`, `contract_approval_stage`,
 `esign_verify_hash`, `esign_check_completion`, `ats_offers_sync_on_esign`.
 
 ### 2.6 TechService
+
 `tickets`, `sla_policies`, `macros`, `kb_articles`, `kb_categories`,
 `live_chat_sessions`, `live_chat_messages`, `playbooks`, `playbook_responses`,
 `survey_templates`, `survey_template_questions`, `survey_responses`,
@@ -136,6 +142,7 @@ Funções: `apply_sla_to_ticket`, `find_sla_policy`, `lookup_stage_sla`,
 `create_ticket_survey`.
 
 ### 2.7 TechFinance
+
 `financial_entries`, `financial_entry_allocations`, `financial_payments`,
 `financial_recurrences`, `financial_categories`, `financial_cost_centers`,
 `financial_bank_accounts`, `customer_invoices`, `customer_payments`,
@@ -148,6 +155,7 @@ Enums: `financial_direction`, `financial_entry_status`,
 `recalc_financial_entry` e `financial_payments_after_change`.
 
 ### 2.8 TechProjects
+
 `projects`, `project_spaces`, `project_folders`, `project_lists`,
 `project_list_custom_fields`, `project_list_templates`, `project_members`,
 `project_milestones`, `project_tasks`, `project_task_statuses`,
@@ -158,6 +166,7 @@ Enums: `project_status`, `project_member_role`, `project_milestone_status`,
 `project_task_status`, `project_task_priority`.
 
 ### 2.9 Comunicação e marketing
+
 `email_accounts`, `email_messages`, `email_threads`, `email_templates`,
 `email_snippets`, `snippets`, `email_broadcasts`,
 `email_broadcast_recipients`, `email_tracking_events`, `email_unsubscribes`,
@@ -171,6 +180,7 @@ Enums: `project_status`, `project_member_role`, `project_milestone_status`,
 `live_chat_*`.
 
 ### 2.10 Automação e integrações
+
 `workflows`, `workflow_runs`, `workflow_events`, `workflow_approvals`,
 `workflow_subscriptions`, `workflow_action_templates`,
 `workflow_time_cursors`, `outbound_webhooks`, `webhook_deliveries`,

@@ -3,9 +3,11 @@ name: Security memory
 description: RLS policies, accepted security postures, webhooks authentication (cron, Twilio), public routes details, and recurring security scans.
 type: feature
 ---
+
 # Security posture
 
 ## Workspace data
+
 - Tudo workspace-escopado via `workspace_id` + `current_user_workspaces()` (RLS `ws_*`). Não criar policies legadas comparando `owner_id` com `workspace UUID`.
 - Tabelas core de CRM (activities, companies, contacts, deals, leads, pipelines, products, proposals, quotes, tickets, workflows) usam APENAS o conjunto canônico `ws_*`. Não recriar policies `*_admin_*`/`*_team_*` — foram removidas por consolidarem união permissiva com o conjunto novo.
 - Toda `CREATE TABLE public.*` na mesma migration: `GRANT SELECT/INSERT/UPDATE/DELETE TO authenticated`, `GRANT ALL TO service_role`.
@@ -15,11 +17,12 @@ type: feature
 - `landing_pages`, `sla_policies` e `outbound_webhooks` ainda usam o conjunto legado `*_admin_*`/`*_team_*` como fonte única de enforcement (não existe `ws_*` para elas). Não remover essas policies sem antes criar o conjunto canônico equivalente — removê-las derrubaria todo o acesso.
 - Todas as policies de tabelas de negócio devem declarar `TO authenticated` (nunca o role `public`), mesmo quando a expressão já depende de `auth.uid()`.
 
-
 ## Tabelas de controle de acesso (owner-scoped)
+
 - `job_roles`, `permission_sets`, `user_permission_sets`, `field_permission_rules`, `user_job_roles` usam a coluna `owner_id` (auth.uid do dono do workspace). Não renomear de volta para `workspace_id` e não comparar `owner_id` com `workspaces.id`. Policies: `*_read` (is_system OR owner_id = auth.uid() OR shares_workspace_with(owner_id)); `*_write` FOR ALL restrita a `owner_id = auth.uid()`.
 
 ## Tabelas com segredos de integração
+
 - `slack_integrations`: SELECT/INSERT/UPDATE/DELETE apenas para `is_workspace_admin_v2`. Não recriar policy ALL permissiva.
 - `wa_business_accounts`: SELECT/INSERT/UPDATE/DELETE apenas para `is_workspace_admin_v2`. Membros comuns não podem criar/sobrescrever `access_token`.
 - `integrations`: owner-scoped (`owner_id = auth.uid()`) por design — admin do workspace gerencia via server function com service_role.
@@ -44,9 +47,8 @@ type: feature
 - `financial_entries`: `ws_financial_entries_select` = membership do workspace **e** (admin `is_workspace_admin_v2` OR `finance.read` OR (`owner_id`/`assigned_to` = auth.uid() **e** `techfinance.entries.create.own` ainda vigente)). Criador sem permissão financeira ativa não lê mais lançamentos antigos — não voltar para `owner_id = auth.uid()` puro.
 - `ats_hunting_captures`: policies explícitas por operação, estritamente por usuário (`owner_id = auth.uid()`; INSERT exige também `captured_by IS NULL OR captured_by = auth.uid()`). `owner_id` é sempre um `auth.users.id` (nunca `workspaces.id`), então não há exposição cross-user do `raw_payload`. Não criar leitura workspace-wide nessa tabela.
 
-
-
 ## Webhooks & cron
+
 - `/api/public/hooks/*-tick` exigem `Authorization: Bearer ${CRON_SECRET}` via `requireCronAuth`.
 - Twilio webhooks: validar `X-Twilio-Signature` com `TWILIO_AUTH_TOKEN`.
 - Meta/WhatsApp: validar assinatura com `META_WHATSAPP_APP_SECRET`.
@@ -54,6 +56,7 @@ type: feature
 - `payment_webhook_events`: sem policies de INSERT/UPDATE/DELETE autenticadas (apenas service_role). Default-deny é proposital.
 
 ## Rotas públicas
+
 - `/quote/$token`, `/sign/$token`, `/portal/$token`, `/book/$slug`, `/wa/$slug`, `/lp/$slug`, `/kb`, `/sales`, `/terms`, `/privacy`, `/dpa`, `/refund` são públicas por design.
 - `/api/public/forms/*`, `/api/public/widget/*`, `/api/public/booking/*` aceitam input não-autenticado mas validam com Zod e rate-limit no handler.
 - `live_chat_sessions`: sem policy INSERT por autenticados — sessões são criadas exclusivamente via `/api/public/widget/session` com service_role. Aceitável e intencional; não adicionar policy INSERT cliente.
@@ -62,6 +65,7 @@ type: feature
 - `booking_pages`: ausência de policy `anon` é intencional e correta. `/book/$slug` lê via `/api/public/booking/$slug` → `getBookingPageBySlug` (service_role) devolvendo apenas campos de apresentação. Não reportar falta de leitura anon nessa tabela como vulnerabilidade.
 
 ## Varreduras automáticas (Release pós-6)
+
 - Cron `security-scan-tick` (diário 03:00 UTC) chama `/api/public/hooks/security-scan-tick`.
 - Coletor SQL `public.security_scan_collect()` (SECURITY DEFINER, search_path fixo, EXECUTE apenas service_role) checa: tabelas em `public` sem RLS, RLS sem policies, GRANTs para `anon`, funções SECURITY DEFINER sem `search_path`.
 - Route handler também checa presença de `CRON_SECRET`, `TWILIO_AUTH_TOKEN`, `META_WHATSAPP_APP_SECRET`, `STRIPE_WEBHOOK_SECRET`.

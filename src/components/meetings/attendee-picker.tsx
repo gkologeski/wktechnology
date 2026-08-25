@@ -95,12 +95,10 @@ export function AttendeePicker({
         <div className="flex flex-wrap gap-1">
           {value.map((a) => (
             <Badge key={a.email} variant="secondary" className="gap-1 pr-1">
-              {a.contact_id ? (
-                <User className="h-3 w-3" />
-              ) : (
-                <Mail className="h-3 w-3" />
-              )}
-              <span className="max-w-[200px] truncate">{a.name ? `${a.name} <${a.email}>` : a.email}</span>
+              {a.contact_id ? <User className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
+              <span className="max-w-[200px] truncate">
+                {a.name ? `${a.name} <${a.email}>` : a.email}
+              </span>
               <button
                 type="button"
                 aria-label="Remover"
@@ -146,7 +144,9 @@ export function AttendeePicker({
                 type="button"
                 key={m.id}
                 disabled={already}
-                onClick={() => add({ email: m.email!, name: fullName(m) || undefined, contact_id: m.id })}
+                onClick={() =>
+                  add({ email: m.email!, name: fullName(m) || undefined, contact_id: m.id })
+                }
                 className="flex w-full items-start gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-muted disabled:opacity-50"
               >
                 <User className="mt-0.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -154,7 +154,9 @@ export function AttendeePicker({
                   <span className="truncate">{name}</span>
                   <span className="truncate text-[11px] text-muted-foreground">{m.email}</span>
                 </span>
-                {already && <span className="ml-auto text-[10px] text-muted-foreground">adicionado</span>}
+                {already && (
+                  <span className="ml-auto text-[10px] text-muted-foreground">adicionado</span>
+                )}
               </button>
             );
           })}

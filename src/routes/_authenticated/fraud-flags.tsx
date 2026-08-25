@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { listCandidateFlags, scanCandidateFraud, resolveCandidateFlag } from "@/lib/ats/fraud.functions";
+import {
+  listCandidateFlags,
+  scanCandidateFraud,
+  resolveCandidateFlag,
+} from "@/lib/ats/fraud.functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -17,7 +21,10 @@ function FraudFlagsPage() {
   const resolve = useServerFn(resolveCandidateFlag);
   const qc = useQueryClient();
 
-  const q = useQuery({ queryKey: ["fraud-flags"], queryFn: () => list({ data: undefined as never }) });
+  const q = useQuery({
+    queryKey: ["fraud-flags"],
+    queryFn: () => list({ data: undefined as never }),
+  });
   const scanM = useMutation({
     mutationFn: () => scan({ data: undefined as never }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["fraud-flags"] }),
@@ -32,7 +39,9 @@ function FraudFlagsPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-semibold">Flags de risco</h1>
-          <p className="text-sm text-muted-foreground">Duplicatas, CVs suspeitos e sinais de fraude.</p>
+          <p className="text-sm text-muted-foreground">
+            Duplicatas, CVs suspeitos e sinais de fraude.
+          </p>
         </div>
         <Button disabled={scanM.isPending} onClick={() => scanM.mutate()}>
           {scanM.isPending ? "Analisando..." : "Rodar scan agora"}
@@ -55,20 +64,34 @@ function FraudFlagsPage() {
                 <td className="p-2">{f.ats_candidates?.full_name ?? "-"}</td>
                 <td className="p-2">{f.kind}</td>
                 <td className="p-2">
-                  <Badge variant={f.severity === "high" ? "destructive" : f.severity === "medium" ? "default" : "outline"}>
+                  <Badge
+                    variant={
+                      f.severity === "high"
+                        ? "destructive"
+                        : f.severity === "medium"
+                          ? "default"
+                          : "outline"
+                    }
+                  >
                     {f.severity}
                   </Badge>
                 </td>
                 <td className="p-2">{f.resolved ? "Resolvido" : "Aberto"}</td>
                 <td className="p-2">
                   {!f.resolved && (
-                    <Button size="sm" variant="ghost" onClick={() => resM.mutate(f.id)}>Marcar resolvido</Button>
+                    <Button size="sm" variant="ghost" onClick={() => resM.mutate(f.id)}>
+                      Marcar resolvido
+                    </Button>
                   )}
                 </td>
               </tr>
             ))}
             {(q.data ?? []).length === 0 && (
-              <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Sem flags. Rode um scan.</td></tr>
+              <tr>
+                <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                  Sem flags. Rode um scan.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

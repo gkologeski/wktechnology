@@ -6,7 +6,8 @@ import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 export default defineTool({
   name: "create_lead",
   title: "Criar lead",
-  description: "Cria um novo lead no CRM em nome do usuário autenticado, respeitando as permissões do workspace.",
+  description:
+    "Cria um novo lead no CRM em nome do usuário autenticado, respeitando as permissões do workspace.",
   inputSchema: {
     first_name: z.string().trim().min(1).describe("Nome do lead."),
     last_name: z.string().trim().optional().describe("Sobrenome do lead."),
@@ -16,7 +17,12 @@ export default defineTool({
     source: z.string().trim().optional().describe("Origem do lead (ex.: indicação, site, evento)."),
     notes: z.string().trim().optional().describe("Observações iniciais sobre o lead."),
   },
-  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false,
+  },
   handler: async (input, ctx) => {
     if (!ctx.isAuthenticated()) return unauthenticated();
     const userId = ctx.getUserId()!;

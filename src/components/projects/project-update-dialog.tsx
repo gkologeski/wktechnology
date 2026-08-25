@@ -90,7 +90,9 @@ export function ProjectUpdateDialog({
     onError: (e: Error) => toast.error(e.message || "Não foi possível salvar o acompanhamento."),
   });
 
-  const invalid = title.trim().length === 0 || (progress !== "" && (Number(progress) < 0 || Number(progress) > 100));
+  const invalid =
+    title.trim().length === 0 ||
+    (progress !== "" && (Number(progress) < 0 || Number(progress) > 100));
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>

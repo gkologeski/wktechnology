@@ -20,13 +20,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { listAuditLogs, AUDIT_ENTITY_LABELS, AUDIT_ACTION_LABELS } from "@/lib/audit.functions";
 import { RefreshCcw, Eye, ShieldCheck, AlertTriangle } from "lucide-react";
-import {
-  PageHeader,
-  FilterBar,
-  EmptyState,
-  MetaPill,
-  Skeletons,
-} from "@/components/techhire/ui";
+import { PageHeader, FilterBar, EmptyState, MetaPill, Skeletons } from "@/components/techhire/ui";
 
 export const Route = createFileRoute("/_authenticated/settings/audit-log")({
   component: AuditLogPage,
@@ -269,8 +263,7 @@ function DetailDialog({ row, onClose }: { row: Row | null; onClose: () => void }
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-text-tertiary">Quando:</span>{" "}
-                {formatDateTime(row.created_at)}
+                <span className="text-text-tertiary">Quando:</span> {formatDateTime(row.created_at)}
               </div>
               <div>
                 <span className="text-text-tertiary">Por:</span>{" "}

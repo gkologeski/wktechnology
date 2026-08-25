@@ -86,9 +86,7 @@ export function CandidateCopilotPanel({ candidateId }: { candidateId: string }) 
       <div className="p-4 space-y-3 text-sm">
         {summary && (
           <div className="rounded-lg border border-border-subtle bg-surface-2 p-3 space-y-2">
-            {summary.headline && (
-              <p className="text-text-primary">{summary.headline}</p>
-            )}
+            {summary.headline && <p className="text-text-primary">{summary.headline}</p>}
             {!!summary.strengths?.length && (
               <div>
                 <div className="text-[11px] font-medium text-text-tertiary uppercase tracking-wide mb-1">

@@ -29,11 +29,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import {
-  addApplication,
-  listAtsCandidates,
-  listAtsJobs,
-} from "@/lib/ats/ats.functions";
+import { addApplication, listAtsCandidates, listAtsJobs } from "@/lib/ats/ats.functions";
 
 type Candidate = { id: string; full_name: string; email: string | null };
 type Job = {
@@ -135,9 +131,7 @@ export function AssociateCandidateJobDialog({
     if (!q) return candidates.slice(0, 50);
     return candidates
       .filter(
-        (c) =>
-          c.full_name.toLowerCase().includes(q) ||
-          (c.email ?? "").toLowerCase().includes(q),
+        (c) => c.full_name.toLowerCase().includes(q) || (c.email ?? "").toLowerCase().includes(q),
       )
       .slice(0, 50);
   }, [candidates, candQuery]);
@@ -218,9 +212,7 @@ export function AssociateCandidateJobDialog({
                               key={c.id}
                               value={c.id}
                               onSelect={() => setCandidateId(c.id)}
-                              className={
-                                candidateId === c.id ? "bg-surface-sunken" : undefined
-                              }
+                              className={candidateId === c.id ? "bg-surface-sunken" : undefined}
                             >
                               <div className="flex flex-col min-w-0">
                                 <span className="text-sm truncate">{c.full_name}</span>
@@ -245,9 +237,7 @@ export function AssociateCandidateJobDialog({
           {presetJobId ? (
             <div className="rounded-md border border-border-subtle bg-surface-sunken px-3 py-2 text-sm">
               <div className="text-xs text-text-tertiary">Vaga</div>
-              <div className="font-medium text-text-primary">
-                {presetJobTitle ?? "Selecionada"}
-              </div>
+              <div className="font-medium text-text-primary">{presetJobTitle ?? "Selecionada"}</div>
             </div>
           ) : (
             <div className="space-y-2">

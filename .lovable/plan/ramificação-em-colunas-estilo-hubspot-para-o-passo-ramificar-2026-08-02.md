@@ -7,6 +7,7 @@ Sim — hoje o comportamento está incompleto. O passo `branch_if` (Se/Então/Se
 Transformar o switch em ramificação visual: cada case ganha sua própria coluna no canvas, mais uma coluna final "Padrão" (quando nenhum valor bate), exatamente no mesmo padrão visual já usado pelo Se/Então/Senão.
 
 Em cada coluna será possível:
+
 - adicionar passos pelo botão "+" (abre a biblioteca de ações do mesmo jeito que hoje);
 - selecionar um passo e configurá-lo no painel lateral, com todos os campos normais (sem JSON);
 - arrastar e soltar passos dentro da coluna, entre colunas de cases diferentes e entre a coluna e o fluxo principal;

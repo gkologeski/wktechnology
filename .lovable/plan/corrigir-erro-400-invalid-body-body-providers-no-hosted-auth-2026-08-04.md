@@ -10,7 +10,7 @@ de corpo). O que a Unipile v2 recusa é o campo `providers` enviado em
 providers: ["LINKEDIN"]
 ```
 
-A mensagem de erro diz que `providers` deve ser uma *string* ou um valor de um enum
+A mensagem de erro diz que `providers` deve ser uma _string_ ou um valor de um enum
 específico, e que o item `providers/0` também não está entre os valores permitidos.
 Ou seja: o formato herdado da v1 (array com o nome em MAIÚSCULAS) não é válido na v2.
 

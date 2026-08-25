@@ -13,10 +13,7 @@ import {
   EmptyState,
   Skeletons,
 } from "@/components/techhire/ui";
-import {
-  generateDailyBriefing,
-  getLatestBriefing,
-} from "@/lib/ats/daily-briefing.functions";
+import { generateDailyBriefing, getLatestBriefing } from "@/lib/ats/daily-briefing.functions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/briefing")({
   component: BriefingPage,
@@ -79,12 +76,7 @@ function BriefingPage() {
         title="Briefing diário"
         description="Resumo gerado por IA com prioridades, riscos e recomendações do recrutamento, com base nas últimas 24h e 7 dias."
         primaryAction={
-          <Button
-            onClick={() => mut.mutate()}
-            disabled={mut.isPending}
-            size="sm"
-            className="h-9"
-          >
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending} size="sm" className="h-9">
             {mut.isPending ? (
               <Loader2 className="size-3.5 animate-spin mr-1.5" />
             ) : (
@@ -193,13 +185,9 @@ function ItemSection({
               <div className="flex items-start gap-2">
                 <Icon className="size-3.5 mt-0.5 text-text-tertiary shrink-0" />
                 <div className="space-y-0.5">
-                  {it.title && (
-                    <div className="font-medium text-text-primary">{it.title}</div>
-                  )}
+                  {it.title && <div className="font-medium text-text-primary">{it.title}</div>}
                   {(it.why || it.action) && (
-                    <div className="text-text-secondary text-[13px]">
-                      {it.why || it.action}
-                    </div>
+                    <div className="text-text-secondary text-[13px]">{it.why || it.action}</div>
                   )}
                 </div>
               </div>

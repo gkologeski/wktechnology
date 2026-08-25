@@ -10,7 +10,10 @@ export const HEALTH_LABELS: Record<DeliveryHealth, string> = {
   red: "Crítico",
 };
 
-export const HEALTH_VARIANT: Record<DeliveryHealth, "default" | "secondary" | "destructive" | "outline"> = {
+export const HEALTH_VARIANT: Record<
+  DeliveryHealth,
+  "default" | "secondary" | "destructive" | "outline"
+> = {
   green: "default",
   yellow: "secondary",
   red: "destructive",

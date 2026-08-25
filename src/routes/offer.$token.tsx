@@ -16,7 +16,8 @@ function OfferPage() {
   });
 
   if (q.isLoading) return <div className="p-8 text-center">Carregando...</div>;
-  if (q.error) return <div className="p-8 text-center text-destructive">{(q.error as Error).message}</div>;
+  if (q.error)
+    return <div className="p-8 text-center text-destructive">{(q.error as Error).message}</div>;
   const o = q.data!;
 
   return (

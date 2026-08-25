@@ -150,7 +150,11 @@ export type HSRec = {
   updatedAt?: string;
 };
 
-export async function batchRead(obj: string, ids: string[], properties: string[]): Promise<HSRec[]> {
+export async function batchRead(
+  obj: string,
+  ids: string[],
+  properties: string[],
+): Promise<HSRec[]> {
   const out: HSRec[] = [];
   const unique = Array.from(new Set(ids));
   for (let i = 0; i < unique.length; i += 100) {
@@ -273,7 +277,10 @@ export function mapDealStageEnum(
   return "new";
 }
 
-export function mapLeadStatusEnum(category: string | undefined, label?: string | undefined): string {
+export function mapLeadStatusEnum(
+  category: string | undefined,
+  label?: string | undefined,
+): string {
   const c = (category ?? "").toUpperCase();
   if (c === "UNQUALIFIED") return "disqualified";
   if (c === "QUALIFIED") return "qualified";
@@ -432,7 +439,14 @@ export async function syncLeadPipeline(
 }
 
 // ─────────────────────────── Counts (preview) ─────────────────────────────────
-export const ObjectKey = z.enum(["companies", "contacts", "deals", "leads", "tickets", "activities"]);
+export const ObjectKey = z.enum([
+  "companies",
+  "contacts",
+  "deals",
+  "leads",
+  "tickets",
+  "activities",
+]);
 
 export type ObjectKey = z.infer<typeof ObjectKey>;
 
@@ -548,7 +562,14 @@ export type LogEntry = {
   count?: number;
 };
 
-export const STEP_ORDER = ["companies", "contacts", "deals", "leads", "tickets", "activities"] as const;
+export const STEP_ORDER = [
+  "companies",
+  "contacts",
+  "deals",
+  "leads",
+  "tickets",
+  "activities",
+] as const;
 
 export type StepName = (typeof STEP_ORDER)[number];
 

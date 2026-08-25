@@ -7,12 +7,7 @@ import { BarChart3, Download, Info } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -29,7 +24,6 @@ import {
   useLegalEntityFilter,
   useLegalEntityFilterInput,
 } from "@/components/finance/legal-entity-select";
-
 
 export const Route = createFileRoute("/_authenticated/finance/dre")({
   head: () => ({
@@ -66,7 +60,6 @@ function DrePage() {
       }),
   });
 
-
   const revenueRows = useMemo(
     () => (data?.categories ?? []).filter((c) => c.kind === "revenue"),
     [data],
@@ -99,12 +92,7 @@ function DrePage() {
       ...data.totals.expense.map(String),
       String(data.totals.totalExpense),
     ]);
-    rows.push([
-      "Resultado",
-      "",
-      ...data.totals.result.map(String),
-      String(data.totals.netResult),
-    ]);
+    rows.push(["Resultado", "", ...data.totals.result.map(String), String(data.totals.netResult)]);
     const csv = [header, ...rows]
       .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
       .join("\n");
@@ -137,7 +125,6 @@ function DrePage() {
             <LegalEntitySelect value={legalEntityId} onChange={setLegalEntityId} />
             <Select value={String(months)} onValueChange={(v) => setMonths(Number(v))}>
               <SelectTrigger className="w-[140px]">
-
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -163,12 +150,14 @@ function DrePage() {
                   <strong>Consolidado</strong> — {data.consolidation.groupSize} CNPJs do grupo
                 </span>
                 <span className="text-muted-foreground text-xs">
-                  {data.consolidation.intercompanyEliminated} transação(ões) intercompany eliminada(s)
+                  {data.consolidation.intercompanyEliminated} transação(ões) intercompany
+                  eliminada(s)
                 </span>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-sm">
-              Transações entre CNPJs do grupo são eliminadas para não inflar receitas e despesas na visão consolidada.
+              Transações entre CNPJs do grupo são eliminadas para não inflar receitas e despesas na
+              visão consolidada.
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -179,11 +168,12 @@ function DrePage() {
           <Info className="h-4 w-4" />
           <AlertTitle>Como funciona a eliminação intercompany</AlertTitle>
           <AlertDescription>
-            Quando um grupo empresarial é selecionado, lançamentos cuja empresa e contra-parte pertencem ao mesmo grupo são excluídos do cálculo. Isso evita que vendas internas entre CNPJs do grupo sejam contadas como receita/despesa real.
+            Quando um grupo empresarial é selecionado, lançamentos cuja empresa e contra-parte
+            pertencem ao mesmo grupo são excluídos do cálculo. Isso evita que vendas internas entre
+            CNPJs do grupo sejam contadas como receita/despesa real.
           </AlertDescription>
         </Alert>
       )}
-
 
       {data && (
         <div className="grid gap-4 md:grid-cols-3">
@@ -204,9 +194,7 @@ function DrePage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0 overflow-auto">
-          {isLoading && (
-            <p className="text-sm text-muted-foreground p-4">Carregando DRE…</p>
-          )}
+          {isLoading && <p className="text-sm text-muted-foreground p-4">Carregando DRE…</p>}
           {!isLoading && data && (
             <table className="w-full text-sm">
               <thead className="bg-muted/40">
@@ -301,7 +289,9 @@ function SummaryCard({
         <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-semibold tabular-nums ${cls} truncate`}>{formatCurrency(value)}</div>
+        <div className={`text-2xl font-semibold tabular-nums ${cls} truncate`}>
+          {formatCurrency(value)}
+        </div>
       </CardContent>
     </Card>
   );

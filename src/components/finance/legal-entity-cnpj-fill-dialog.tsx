@@ -78,7 +78,11 @@ export function LegalEntityCnpjFillDialog({
       const digits = onlyDigits(values[r.id]);
       if (digits.length === 14) seen.set(digits, (seen.get(digits) ?? 0) + 1);
     });
-    return new Set(Array.from(seen.entries()).filter(([, n]) => n > 1).map(([d]) => d));
+    return new Set(
+      Array.from(seen.entries())
+        .filter(([, n]) => n > 1)
+        .map(([d]) => d),
+    );
   }, [rows, values]);
 
   const changed = useMemo(

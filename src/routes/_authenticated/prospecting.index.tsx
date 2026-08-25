@@ -44,7 +44,6 @@ const TAB_VALUES = [
   "voice",
 ] as const;
 
-
 type TabValue = (typeof TAB_VALUES)[number];
 
 const searchSchema = z.object({
@@ -59,17 +58,67 @@ type TabDef = {
 };
 
 const TABS: readonly TabDef[] = [
-  { value: "fila",           label: "Fila",              permission: "techsales.prospecting.queue.view",          Component: QueueTab },
-  { value: "nutricao",       label: "Nutrição",          permission: "techsales.prospecting.queue.view",          Component: NurturingTab },
+  {
+    value: "fila",
+    label: "Fila",
+    permission: "techsales.prospecting.queue.view",
+    Component: QueueTab,
+  },
+  {
+    value: "nutricao",
+    label: "Nutrição",
+    permission: "techsales.prospecting.queue.view",
+    Component: NurturingTab,
+  },
 
-  { value: "questionarios",  label: "Questionários",     permission: "techsales.prospecting.questionnaires.view", Component: QuestionnairesTab },
-  { value: "cadencias",      label: "Cadências",         permission: "techsales.prospecting.cadences.view",       Component: CadencesTab },
-  { value: "scoring",        label: "Scoring",           permission: "techsales.prospecting.scoring.view",        Component: ScoringPage },
-  { value: "playbooks",      label: "Playbooks",         permission: "techsales.prospecting.playbooks.view",      Component: PlaybooksPage },
-  { value: "enrichment",     label: "Enrichment",        permission: "techsales.prospecting.enrichment.view",     Component: EnrichmentHistoryPage },
-  { value: "prospecting",    label: "Busca de prospects",permission: "techsales.prospecting.search.view",         Component: ProspectingPage },
-  { value: "scripts",        label: "Scripts",           permission: "techsales.prospecting.scripts.view",        Component: ScriptsPage },
-  { value: "voice",          label: "Voice Agent",       permission: "techsales.prospecting.voice.view",          Component: VoiceAgentPage },
+  {
+    value: "questionarios",
+    label: "Questionários",
+    permission: "techsales.prospecting.questionnaires.view",
+    Component: QuestionnairesTab,
+  },
+  {
+    value: "cadencias",
+    label: "Cadências",
+    permission: "techsales.prospecting.cadences.view",
+    Component: CadencesTab,
+  },
+  {
+    value: "scoring",
+    label: "Scoring",
+    permission: "techsales.prospecting.scoring.view",
+    Component: ScoringPage,
+  },
+  {
+    value: "playbooks",
+    label: "Playbooks",
+    permission: "techsales.prospecting.playbooks.view",
+    Component: PlaybooksPage,
+  },
+  {
+    value: "enrichment",
+    label: "Enrichment",
+    permission: "techsales.prospecting.enrichment.view",
+    Component: EnrichmentHistoryPage,
+  },
+  {
+    value: "prospecting",
+    label: "Busca de prospects",
+    permission: "techsales.prospecting.search.view",
+    Component: ProspectingPage,
+  },
+  {
+    value: "scripts",
+    label: "Scripts",
+    permission: "techsales.prospecting.scripts.view",
+    Component: ScriptsPage,
+  },
+  {
+    value: "voice",
+    label: "Voice Agent",
+    permission: "techsales.prospecting.voice.view",
+    Component: VoiceAgentPage,
+  },
 ];
 
 export const PROSPECTING_TAB_PERMISSIONS = TABS.map((t) => t.permission);

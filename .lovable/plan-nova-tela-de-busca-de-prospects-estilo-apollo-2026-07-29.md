@@ -71,11 +71,13 @@ Estados: loading no botão "Executar busca", empty state quando nenhum resultado
 ## Escopo e não-escopo
 
 Escopo:
+
 - Redesenhar apenas a UI de criação/edição de busca e a serialização dos filtros para Apollo.
 - Migration aditiva de `filters jsonb` em `prospecting_searches`.
 - Ajuste do `runProspectSearch` para consumir os novos filtros estruturados.
 
 Fora do escopo:
+
 - Não alterar a tela de resultados, importação para lead, cadências, scoring ou RLS.
 - Não remover a geração heurística legada (já foi removida em turnos anteriores).
 - Não integrar novas fontes além do Apollo.

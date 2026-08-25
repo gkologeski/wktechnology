@@ -80,16 +80,59 @@ import { ImageInput } from "@/components/ui/image-input";
 
 const SANITIZE_CONFIG = {
   ALLOWED_TAGS: [
-    "p", "br", "hr", "strong", "b", "em", "i", "u", "s", "a",
-    "ul", "ol", "li", "blockquote", "code", "pre",
-    "h1", "h2", "h3", "h4", "h5", "h6",
-    "span", "div", "mark", "sub", "sup",
-    "table", "thead", "tbody", "tr", "th", "td", "colgroup", "col",
+    "p",
+    "br",
+    "hr",
+    "strong",
+    "b",
+    "em",
+    "i",
+    "u",
+    "s",
+    "a",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+    "code",
+    "pre",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "span",
+    "div",
+    "mark",
+    "sub",
+    "sup",
+    "table",
+    "thead",
+    "tbody",
+    "tr",
+    "th",
+    "td",
+    "colgroup",
+    "col",
     "img",
   ],
   ALLOWED_ATTR: [
-    "href", "target", "rel", "class", "style", "src", "alt", "title",
-    "width", "height", "colspan", "rowspan", "align", "data-type", "data-checked",
+    "href",
+    "target",
+    "rel",
+    "class",
+    "style",
+    "src",
+    "alt",
+    "title",
+    "width",
+    "height",
+    "colspan",
+    "rowspan",
+    "align",
+    "data-type",
+    "data-checked",
     "colwidth",
   ],
 };
@@ -182,7 +225,11 @@ export const WordEditor = forwardRef<WordEditorHandle, Props>(function WordEdito
       extensions: [
         StarterKit.configure({ link: false, underline: false }),
         Underline,
-        Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" } }),
+        Link.configure({
+          openOnClick: false,
+          autolink: true,
+          HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
+        }),
         TextAlign.configure({ types: ["heading", "paragraph"] }),
         TextStyleWithSize,
         Color,
@@ -275,16 +322,15 @@ function Toolbar({ editor }: { editor: Editor }) {
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
   };
 
-  const blockValue =
-    editor.isActive("heading", { level: 1 })
-      ? "h1"
-      : editor.isActive("heading", { level: 2 })
-        ? "h2"
-        : editor.isActive("heading", { level: 3 })
-          ? "h3"
-          : editor.isActive("heading", { level: 4 })
-            ? "h4"
-            : "p";
+  const blockValue = editor.isActive("heading", { level: 1 })
+    ? "h1"
+    : editor.isActive("heading", { level: 2 })
+      ? "h2"
+      : editor.isActive("heading", { level: 3 })
+        ? "h3"
+        : editor.isActive("heading", { level: 4 })
+          ? "h4"
+          : "p";
 
   const setBlock = (v: string) => {
     if (v === "p") editor.chain().focus().setParagraph().run();
@@ -310,12 +356,30 @@ function Toolbar({ editor }: { editor: Editor }) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="p">
-            <span className="flex items-center gap-2 text-xs"><Pilcrow className="h-3 w-3" /> Parágrafo</span>
+            <span className="flex items-center gap-2 text-xs">
+              <Pilcrow className="h-3 w-3" /> Parágrafo
+            </span>
           </SelectItem>
-          <SelectItem value="h1"><span className="flex items-center gap-2 text-xs"><Heading1 className="h-3 w-3" /> Título 1</span></SelectItem>
-          <SelectItem value="h2"><span className="flex items-center gap-2 text-xs"><Heading2 className="h-3 w-3" /> Título 2</span></SelectItem>
-          <SelectItem value="h3"><span className="flex items-center gap-2 text-xs"><Heading3 className="h-3 w-3" /> Título 3</span></SelectItem>
-          <SelectItem value="h4"><span className="flex items-center gap-2 text-xs"><Heading4 className="h-3 w-3" /> Título 4</span></SelectItem>
+          <SelectItem value="h1">
+            <span className="flex items-center gap-2 text-xs">
+              <Heading1 className="h-3 w-3" /> Título 1
+            </span>
+          </SelectItem>
+          <SelectItem value="h2">
+            <span className="flex items-center gap-2 text-xs">
+              <Heading2 className="h-3 w-3" /> Título 2
+            </span>
+          </SelectItem>
+          <SelectItem value="h3">
+            <span className="flex items-center gap-2 text-xs">
+              <Heading3 className="h-3 w-3" /> Título 3
+            </span>
+          </SelectItem>
+          <SelectItem value="h4">
+            <span className="flex items-center gap-2 text-xs">
+              <Heading4 className="h-3 w-3" /> Título 4
+            </span>
+          </SelectItem>
         </SelectContent>
       </Select>
 
@@ -332,7 +396,9 @@ function Toolbar({ editor }: { editor: Editor }) {
         <SelectContent>
           {FONT_FAMILIES.map((f) => (
             <SelectItem key={f.label} value={f.value || "__default__"} onSelect={() => {}}>
-              <span style={{ fontFamily: f.value || undefined }} className="text-xs">{f.label}</span>
+              <span style={{ fontFamily: f.value || undefined }} className="text-xs">
+                {f.label}
+              </span>
             </SelectItem>
           ))}
         </SelectContent>
@@ -350,42 +416,82 @@ function Toolbar({ editor }: { editor: Editor }) {
         </SelectTrigger>
         <SelectContent>
           {FONT_SIZES.map((s) => (
-            <SelectItem key={s} value={s} className="text-xs">{s}</SelectItem>
+            <SelectItem key={s} value={s} className="text-xs">
+              {s}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>
 
       <Sep />
 
-      <Btn active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} title="Negrito (Ctrl+B)">
+      <Btn
+        active={editor.isActive("bold")}
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        title="Negrito (Ctrl+B)"
+      >
         <Bold className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} title="Itálico (Ctrl+I)">
+      <Btn
+        active={editor.isActive("italic")}
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        title="Itálico (Ctrl+I)"
+      >
         <Italic className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive("underline")} onClick={() => editor.chain().focus().toggleUnderline().run()} title="Sublinhado (Ctrl+U)">
+      <Btn
+        active={editor.isActive("underline")}
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        title="Sublinhado (Ctrl+U)"
+      >
         <UnderlineIcon className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive("strike")} onClick={() => editor.chain().focus().toggleStrike().run()} title="Tachado">
+      <Btn
+        active={editor.isActive("strike")}
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+        title="Tachado"
+      >
         <Strikethrough className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive("subscript")} onClick={() => editor.chain().focus().toggleSubscript().run()} title="Subscrito">
+      <Btn
+        active={editor.isActive("subscript")}
+        onClick={() => editor.chain().focus().toggleSubscript().run()}
+        title="Subscrito"
+      >
         <SubIcon className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive("superscript")} onClick={() => editor.chain().focus().toggleSuperscript().run()} title="Sobrescrito">
+      <Btn
+        active={editor.isActive("superscript")}
+        onClick={() => editor.chain().focus().toggleSuperscript().run()}
+        title="Sobrescrito"
+      >
         <SupIcon className="h-3.5 w-3.5" />
       </Btn>
 
-      <label className="ml-1 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-muted" title="Cor do texto">
-        <span className="h-3.5 w-3.5 rounded-sm border" style={{ background: (editor.getAttributes("textStyle").color as string) || "currentColor" }} />
+      <label
+        className="ml-1 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-muted"
+        title="Cor do texto"
+      >
+        <span
+          className="h-3.5 w-3.5 rounded-sm border"
+          style={{
+            background: (editor.getAttributes("textStyle").color as string) || "currentColor",
+          }}
+        />
         <input
           type="color"
           className="sr-only"
           onChange={(e) => editor.chain().focus().setColor(e.target.value).run()}
         />
       </label>
-      <label className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-muted" title="Cor de destaque">
-        <span className="h-3.5 w-3.5 rounded-sm border" style={{ background: (editor.getAttributes("highlight").color as string) || "#fef08a" }} />
+      <label
+        className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded hover:bg-muted"
+        title="Cor de destaque"
+      >
+        <span
+          className="h-3.5 w-3.5 rounded-sm border"
+          style={{ background: (editor.getAttributes("highlight").color as string) || "#fef08a" }}
+        />
         <input
           type="color"
           className="sr-only"
@@ -395,46 +501,91 @@ function Toolbar({ editor }: { editor: Editor }) {
 
       <Sep />
 
-      <Btn active={editor.isActive({ textAlign: "left" })} onClick={() => editor.chain().focus().setTextAlign("left").run()} title="Alinhar à esquerda">
+      <Btn
+        active={editor.isActive({ textAlign: "left" })}
+        onClick={() => editor.chain().focus().setTextAlign("left").run()}
+        title="Alinhar à esquerda"
+      >
         <AlignLeft className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive({ textAlign: "center" })} onClick={() => editor.chain().focus().setTextAlign("center").run()} title="Centralizar">
+      <Btn
+        active={editor.isActive({ textAlign: "center" })}
+        onClick={() => editor.chain().focus().setTextAlign("center").run()}
+        title="Centralizar"
+      >
         <AlignCenter className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive({ textAlign: "right" })} onClick={() => editor.chain().focus().setTextAlign("right").run()} title="Alinhar à direita">
+      <Btn
+        active={editor.isActive({ textAlign: "right" })}
+        onClick={() => editor.chain().focus().setTextAlign("right").run()}
+        title="Alinhar à direita"
+      >
         <AlignRight className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive({ textAlign: "justify" })} onClick={() => editor.chain().focus().setTextAlign("justify").run()} title="Justificar">
+      <Btn
+        active={editor.isActive({ textAlign: "justify" })}
+        onClick={() => editor.chain().focus().setTextAlign("justify").run()}
+        title="Justificar"
+      >
         <AlignJustify className="h-3.5 w-3.5" />
       </Btn>
 
       <Sep />
 
-      <Btn active={editor.isActive("bulletList")} onClick={() => editor.chain().focus().toggleBulletList().run()} title="Lista">
+      <Btn
+        active={editor.isActive("bulletList")}
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        title="Lista"
+      >
         <List className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive("orderedList")} onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Lista numerada">
+      <Btn
+        active={editor.isActive("orderedList")}
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        title="Lista numerada"
+      >
         <ListOrdered className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive("taskList")} onClick={() => editor.chain().focus().toggleTaskList().run()} title="Lista de tarefas">
+      <Btn
+        active={editor.isActive("taskList")}
+        onClick={() => editor.chain().focus().toggleTaskList().run()}
+        title="Lista de tarefas"
+      >
         <ListChecks className="h-3.5 w-3.5" />
       </Btn>
-      <Btn onClick={() => editor.chain().focus().liftListItem("listItem").run()} title="Diminuir recuo">
+      <Btn
+        onClick={() => editor.chain().focus().liftListItem("listItem").run()}
+        title="Diminuir recuo"
+      >
         <IndentDecrease className="h-3.5 w-3.5" />
       </Btn>
-      <Btn onClick={() => editor.chain().focus().sinkListItem("listItem").run()} title="Aumentar recuo">
+      <Btn
+        onClick={() => editor.chain().focus().sinkListItem("listItem").run()}
+        title="Aumentar recuo"
+      >
         <IndentIncrease className="h-3.5 w-3.5" />
       </Btn>
 
       <Sep />
 
-      <Btn active={editor.isActive("blockquote")} onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Citação">
+      <Btn
+        active={editor.isActive("blockquote")}
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        title="Citação"
+      >
         <Quote className="h-3.5 w-3.5" />
       </Btn>
-      <Btn active={editor.isActive("codeBlock")} onClick={() => editor.chain().focus().toggleCodeBlock().run()} title="Código">
+      <Btn
+        active={editor.isActive("codeBlock")}
+        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+        title="Código"
+      >
         <Code className="h-3.5 w-3.5" />
       </Btn>
-      <Btn onClick={() => editor.chain().focus().setHorizontalRule().run()} title="Linha horizontal">
+      <Btn
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+        title="Linha horizontal"
+      >
         <Minus className="h-3.5 w-3.5" />
       </Btn>
 
@@ -468,7 +619,10 @@ function Toolbar({ editor }: { editor: Editor }) {
           <Btn onClick={() => editor.chain().focus().addRowAfter().run()} title="Adicionar linha">
             <Rows className="h-3.5 w-3.5" />
           </Btn>
-          <Btn onClick={() => editor.chain().focus().addColumnAfter().run()} title="Adicionar coluna">
+          <Btn
+            onClick={() => editor.chain().focus().addColumnAfter().run()}
+            title="Adicionar coluna"
+          >
             <Columns className="h-3.5 w-3.5" />
           </Btn>
           <Btn onClick={() => editor.chain().focus().deleteTable().run()} title="Excluir tabela">

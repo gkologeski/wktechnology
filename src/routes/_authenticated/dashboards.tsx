@@ -38,7 +38,6 @@ import { listReports, runReport } from "@/lib/reports.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { LazyChart } from "@/components/charts/lazy-chart";
 
-
 const compactNumber = (v: number) =>
   new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: 1 }).format(
     Number(v) || 0,
@@ -551,7 +550,20 @@ function WidgetCard({
               </div>
             ) : (
               <LazyChart>
-                {({ ResponsiveContainer, LineChart, PieChart, BarChart, CartesianGrid, XAxis, YAxis, Tooltip: RTooltip, Line, Pie, Cell, Bar }) => (
+                {({
+                  ResponsiveContainer,
+                  LineChart,
+                  PieChart,
+                  BarChart,
+                  CartesianGrid,
+                  XAxis,
+                  YAxis,
+                  Tooltip: RTooltip,
+                  Line,
+                  Pie,
+                  Cell,
+                  Bar,
+                }) => (
                   <ResponsiveContainer>
                     {chartType === "line" ? (
                       <LineChart data={rows}>

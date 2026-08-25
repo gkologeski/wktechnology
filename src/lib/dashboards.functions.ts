@@ -34,7 +34,10 @@ export const createDashboard = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     if (data.is_default) {
-      await supabase.from("dashboards").update({ is_default: false }).eq("workspace_id", workspaceId);
+      await supabase
+        .from("dashboards")
+        .update({ is_default: false })
+        .eq("workspace_id", workspaceId);
     }
     const { data: row, error } = await supabase
       .from("dashboards")

@@ -120,97 +120,96 @@ export function CreateContactDialog({
 
   return (
     <>
-
-    <Dialog
-      open={open}
-      onOpenChange={(v) => {
-        if (!saving) onOpenChange(v);
-      }}
-    >
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Criar contato</DialogTitle>
-          <DialogDescription>
-            Preencha as informações básicas. Você poderá editar tudo depois.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-3 py-2">
-          <div className="grid grid-cols-2 gap-3">
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!saving) onOpenChange(v);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Criar contato</DialogTitle>
+            <DialogDescription>
+              Preencha as informações básicas. Você poderá editar tudo depois.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="first_name">Nome *</Label>
+                <Input
+                  id="first_name"
+                  value={form.first_name}
+                  onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="last_name">Sobrenome</Label>
+                <Input
+                  id="last_name"
+                  value={form.last_name}
+                  onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                />
+              </div>
+            </div>
             <div className="space-y-1.5">
-              <Label htmlFor="first_name">Nome *</Label>
-              <Input
-                id="first_name"
-                value={form.first_name}
-                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
-                autoFocus
+              <Label htmlFor="email">Email</Label>
+              <EmailInput
+                id="email"
+                value={form.email}
+                onChange={(v) => setForm({ ...form, email: v })}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="last_name">Sobrenome</Label>
-              <Input
-                id="last_name"
-                value={form.last_name}
-                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+              <Label htmlFor="phone">Telefone</Label>
+              <PhoneInput
+                id="phone"
+                value={form.phone}
+                onChange={(v) => setForm({ ...form, phone: v })}
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="job_title">Cargo</Label>
+              <Input
+                id="job_title"
+                value={form.job_title}
+                onChange={(e) => setForm({ ...form, job_title: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="company_name">Empresa</Label>
+              <CompanyPicker
+                id="company_name"
+                value={company}
+                onChange={setCompany}
+                toastOnMatches
+                onCreateNew={(name) => {
+                  setPendingCompanyName(name);
+                  setCreateCompanyOpen(true);
+                }}
+              />
+            </div>
+            <OnboardingGuidedEntry entity="contact" onNavigate={() => onOpenChange(false)} />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="email">Email</Label>
-            <EmailInput
-              id="email"
-              value={form.email}
-              onChange={(v) => setForm({ ...form, email: v })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="phone">Telefone</Label>
-            <PhoneInput
-              id="phone"
-              value={form.phone}
-              onChange={(v) => setForm({ ...form, phone: v })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="job_title">Cargo</Label>
-            <Input
-              id="job_title"
-              value={form.job_title}
-              onChange={(e) => setForm({ ...form, job_title: e.target.value })}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="company_name">Empresa</Label>
-            <CompanyPicker
-              id="company_name"
-              value={company}
-              onChange={setCompany}
-              toastOnMatches
-              onCreateNew={(name) => {
-                setPendingCompanyName(name);
-                setCreateCompanyOpen(true);
-              }}
-            />
-          </div>
-          <OnboardingGuidedEntry entity="contact" onNavigate={() => onOpenChange(false)} />
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={submit}
-            disabled={saving || !form.first_name.trim() || (!!company.name.trim() && !company.id)}
-            title={
-              !!company.name.trim() && !company.id
-                ? "Selecione a empresa na lista para continuar"
-                : undefined
-            }
-          >
-            {saving ? "Criando…" : "Criar contato"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={submit}
+              disabled={saving || !form.first_name.trim() || (!!company.name.trim() && !company.id)}
+              title={
+                !!company.name.trim() && !company.id
+                  ? "Selecione a empresa na lista para continuar"
+                  : undefined
+              }
+            >
+              {saving ? "Criando…" : "Criar contato"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <QuickCreateCompanyDialog
         open={createCompanyOpen}
         onOpenChange={setCreateCompanyOpen}

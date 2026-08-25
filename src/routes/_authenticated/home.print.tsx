@@ -7,10 +7,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { z } from "zod";
-import {
-  getHomeDashboard,
-  type HomeDashboardResponse,
-} from "@/lib/home/dashboard.functions";
+import { getHomeDashboard, type HomeDashboardResponse } from "@/lib/home/dashboard.functions";
 import { MODULES } from "@/lib/modules/registry";
 
 const Search = z.object({

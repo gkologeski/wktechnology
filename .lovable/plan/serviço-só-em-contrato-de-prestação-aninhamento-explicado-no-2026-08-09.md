@@ -9,6 +9,7 @@ Serviço pertence ao contrato de **prestação** (papel Prestação, ou seja, um
 ## O que muda na tela
 
 Contrato de Compra:
+
 - Card "Serviços" fica em modo somente leitura: continua listando serviços já existentes (nada é removido), sem o botão "Associar serviço", com nota explicando que serviços são associados ao contrato de prestação e link para o contrato pai quando existir.
 - Card de vínculo ganha texto claro: um contrato de compra é aninhado **sob** um contrato de prestação e não aninha outros contratos de compra; o botão continua sendo "Aninhar sob contrato de prestação".
 

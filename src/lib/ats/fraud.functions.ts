@@ -35,19 +35,47 @@ export const scanCandidateFraud = createServerFn({ method: "POST" })
       if (p && p.length >= 8) byPhone.set(p, [...(byPhone.get(p) ?? []), c.id]);
 
       const cvText = JSON.stringify(c.cv_parsed ?? "").toLowerCase();
-      const aiClues = ["proativo", "team player", "resultados", "comunicação", "dinâmico"].filter((w) => cvText.includes(w)).length;
+      const aiClues = ["proativo", "team player", "resultados", "comunicação", "dinâmico"].filter(
+        (w) => cvText.includes(w),
+      ).length;
       const hasDates = /\b(19|20)\d{2}\b/.test(cvText);
       if (cvText.length > 300 && aiClues >= 4 && !hasDates) {
-        flags.push({ owner_id: userId, candidate_id: c.id, kind: "ai_generated_cv", severity: "medium", details: { clues: aiClues } as Json });
+        flags.push({
+          owner_id: userId,
+          candidate_id: c.id,
+          kind: "ai_generated_cv",
+          severity: "medium",
+          details: { clues: aiClues } as Json,
+        });
       }
     }
 
-    for (const [email, ids] of byEmail) if (ids.length > 1) for (const id of ids)
-      flags.push({ owner_id: userId, candidate_id: id, kind: "duplicate_email", severity: "high", details: { email, dup_ids: ids } as Json });
-    for (const [phone, ids] of byPhone) if (ids.length > 1) for (const id of ids)
-      flags.push({ owner_id: userId, candidate_id: id, kind: "duplicate_phone", severity: "high", details: { phone, dup_ids: ids } as Json });
+    for (const [email, ids] of byEmail)
+      if (ids.length > 1)
+        for (const id of ids)
+          flags.push({
+            owner_id: userId,
+            candidate_id: id,
+            kind: "duplicate_email",
+            severity: "high",
+            details: { email, dup_ids: ids } as Json,
+          });
+    for (const [phone, ids] of byPhone)
+      if (ids.length > 1)
+        for (const id of ids)
+          flags.push({
+            owner_id: userId,
+            candidate_id: id,
+            kind: "duplicate_phone",
+            severity: "high",
+            details: { phone, dup_ids: ids } as Json,
+          });
 
-    await supabase.from("ats_candidate_flags").delete().eq("workspace_id", workspaceId).neq("kind", "manual");
+    await supabase
+      .from("ats_candidate_flags")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .neq("kind", "manual");
     if (flags.length > 0) {
       const { error: e2 } = await supabase.from("ats_candidate_flags").insert(flags);
       if (e2) throw new Error(e2.message);
@@ -72,7 +100,9 @@ export const resolveCandidateFlag = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
-      .from("ats_candidate_flags").update({ resolved: true }).eq("id", data.id);
+      .from("ats_candidate_flags")
+      .update({ resolved: true })
+      .eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

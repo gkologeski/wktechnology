@@ -21,8 +21,10 @@ async function callAiJson(messages: Array<{ role: string; content: string }>) {
       response_format: { type: "json_object" },
     }),
   });
-  if (r.status === 429) throw new Error("AI Gateway: limite de requisições. Tente novamente em instantes.");
-  if (r.status === 402) throw new Error("AI Gateway: créditos esgotados. Adicione créditos no Workspace.");
+  if (r.status === 429)
+    throw new Error("AI Gateway: limite de requisições. Tente novamente em instantes.");
+  if (r.status === 402)
+    throw new Error("AI Gateway: créditos esgotados. Adicione créditos no Workspace.");
   if (!r.ok) throw new Error(`AI Gateway ${r.status}: ${await r.text().catch(() => "")}`);
   const j = await r.json();
   return j.choices?.[0]?.message?.content ?? "{}";
@@ -113,7 +115,13 @@ export const generateDailyBriefing = createServerFn({ method: "POST" })
     try {
       parsed = JSON.parse(content);
     } catch {
-      parsed = { headline: "Briefing", summary: String(content).slice(0, 1000), priorities: [], risks: [], recommendations: [] };
+      parsed = {
+        headline: "Briefing",
+        summary: String(content).slice(0, 1000),
+        priorities: [],
+        risks: [],
+        recommendations: [],
+      };
     }
 
     const { data, error } = await context.supabase

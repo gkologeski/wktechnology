@@ -13,13 +13,7 @@ import {
   Lock,
   Asterisk,
 } from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -237,12 +231,8 @@ export function SimulationTab({ data }: { data: AccessBundle }) {
                 <Badge variant="outline" className="gap-1">
                   <ShieldCheck className="h-3 w-3" /> Escopo: {result.data_scope}
                 </Badge>
-                <Badge variant="outline">
-                  {result.permissions.length} permissões
-                </Badge>
-                <Badge variant="outline">
-                  {result.field_rules.length} regras de campo
-                </Badge>
+                <Badge variant="outline">{result.permissions.length} permissões</Badge>
+                <Badge variant="outline">{result.field_rules.length} regras de campo</Badge>
               </div>
 
               <div>
@@ -321,9 +311,7 @@ export function ReportsTab() {
   }
   if (!r) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Sem dados suficientes para gerar o relatório.
-      </p>
+      <p className="text-sm text-muted-foreground">Sem dados suficientes para gerar o relatório.</p>
     );
   }
 
@@ -395,15 +383,7 @@ export function ReportsTab() {
   );
 }
 
-function Metric({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone?: "ok" | "warning";
-}) {
+function Metric({ label, value, tone }: { label: string; value: number; tone?: "ok" | "warning" }) {
   return (
     <div className="rounded-lg border p-3">
       <div className="text-xs text-muted-foreground">{label}</div>

@@ -106,17 +106,19 @@ export const getMyTeam = createServerFn({ method: "POST" })
     ]);
 
     const allocCount = new Map<string, number>();
-    for (const a of ((allocsRes.data as { person_id: string }[] | null) ?? [])) {
+    for (const a of (allocsRes.data as { person_id: string }[] | null) ?? []) {
       allocCount.set(a.person_id, (allocCount.get(a.person_id) ?? 0) + 1);
     }
 
     const hoursMonth = new Map<string, number>();
     const pendingHours = new Map<string, number>();
-    for (const e of ((entriesRes.data as {
-      person_id: string;
-      hours: number | null;
-      approved_at: string | null;
-    }[] | null) ?? [])) {
+    for (const e of (entriesRes.data as
+      | {
+          person_id: string;
+          hours: number | null;
+          approved_at: string | null;
+        }[]
+      | null) ?? []) {
       const h = Number(e.hours ?? 0);
       hoursMonth.set(e.person_id, (hoursMonth.get(e.person_id) ?? 0) + h);
       if (!e.approved_at) {
@@ -125,15 +127,17 @@ export const getMyTeam = createServerFn({ method: "POST" })
     }
 
     const docsExp = new Map<string, number>();
-    for (const d of ((docsRes.data as { person_id: string }[] | null) ?? [])) {
+    for (const d of (docsRes.data as { person_id: string }[] | null) ?? []) {
       docsExp.set(d.person_id, (docsExp.get(d.person_id) ?? 0) + 1);
     }
 
     const nextOoO = new Map<string, string>();
-    for (const o of ((oneOnOnesRes.data as {
-      person_id: string;
-      scheduled_at: string;
-    }[] | null) ?? [])) {
+    for (const o of (oneOnOnesRes.data as
+      | {
+          person_id: string;
+          scheduled_at: string;
+        }[]
+      | null) ?? []) {
       if (!nextOoO.has(o.person_id)) nextOoO.set(o.person_id, o.scheduled_at);
     }
 

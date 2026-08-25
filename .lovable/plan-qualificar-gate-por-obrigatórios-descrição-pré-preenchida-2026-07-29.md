@@ -5,6 +5,7 @@ Ajustar o fluxo de qualificação em `/prospecting/queues/:id/play` para (1) só
 ## Mudanças
 
 ### 1. `src/components/prospecting/qualification-panel.tsx`
+
 - Calcular `missingRequired` a partir de `qData.questions` filtrando `q.required === true` e verificando se `answers[q.id]` está vazio (null/undefined, string vazia, ou array vazio para `multi`).
 - Botão "Qualificar" recebe `disabled = busy || !activeId || missingRequired.length > 0`.
 - Quando desabilitado por faltarem obrigatórios, adicionar `title` no botão listando as perguntas pendentes (feedback para o usuário).
@@ -15,6 +16,7 @@ Ajustar o fluxo de qualificação em `/prospecting/queues/:id/play` para (1) só
 - Passar `qualificationSummary` como nova prop `initialDescription` para `CreateDealFromLeadDialog`.
 
 ### 2. `src/components/leads/create-deal-from-lead-dialog.tsx`
+
 - Aceitar prop opcional `initialDescription?: string`.
 - Inicializar `useState(initialDescription ?? "")` e, via `useEffect`, atualizar `description` quando `open` passa a `true` e o campo ainda estiver vazio (não sobrescreve edição do usuário).
 

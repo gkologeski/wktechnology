@@ -9,9 +9,7 @@ const BUCKET = "ats-async-videos";
 
 export const listAsyncVideoResponses = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) =>
-    z.object({ interview_id: z.string().uuid() }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ interview_id: z.string().uuid() }).parse(d))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);

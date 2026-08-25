@@ -74,7 +74,9 @@ function HuntingObservabilityPage() {
             />
             <MetricCard
               label="Latência média"
-              value={data?.aggregate.avg_latency_ms != null ? `${data.aggregate.avg_latency_ms} ms` : "—"}
+              value={
+                data?.aggregate.avg_latency_ms != null ? `${data.aggregate.avg_latency_ms} ms` : "—"
+              }
               icon={Clock}
             />
             <MetricCard
@@ -103,7 +105,11 @@ function HuntingObservabilityPage() {
                         <code className="text-[10px] text-muted-foreground">{b.endpoint}</code>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={danger ? "text-destructive font-medium" : "text-muted-foreground"}>
+                        <span
+                          className={
+                            danger ? "text-destructive font-medium" : "text-muted-foreground"
+                          }
+                        >
                           {b.used} / {b.limit}
                         </span>
                         <Badge variant="outline" className="text-[10px]">
@@ -115,7 +121,10 @@ function HuntingObservabilityPage() {
                     {b.last_request_at && (
                       <p className="text-[10px] text-muted-foreground">
                         Última chamada{" "}
-                        {formatDistanceToNow(new Date(b.last_request_at), { locale: ptBR, addSuffix: true })}
+                        {formatDistanceToNow(new Date(b.last_request_at), {
+                          locale: ptBR,
+                          addSuffix: true,
+                        })}
                       </p>
                     )}
                   </div>
@@ -144,7 +153,9 @@ function HuntingObservabilityPage() {
                         <Badge variant={statusVariant(r.status)} className="text-[10px]">
                           {r.status ?? "—"}
                         </Badge>
-                        <code className="truncate text-xs">{r.method} {r.endpoint}</code>
+                        <code className="truncate text-xs">
+                          {r.method} {r.endpoint}
+                        </code>
                         {r.error && (
                           <span className="truncate text-[11px] text-destructive">· {r.error}</span>
                         )}
@@ -152,7 +163,10 @@ function HuntingObservabilityPage() {
                       <div className="flex shrink-0 items-center gap-3 text-[11px] text-muted-foreground">
                         <span>{r.latency_ms != null ? `${r.latency_ms} ms` : "—"}</span>
                         <span>
-                          {formatDistanceToNow(new Date(r.created_at), { locale: ptBR, addSuffix: true })}
+                          {formatDistanceToNow(new Date(r.created_at), {
+                            locale: ptBR,
+                            addSuffix: true,
+                          })}
                         </span>
                       </div>
                     </div>

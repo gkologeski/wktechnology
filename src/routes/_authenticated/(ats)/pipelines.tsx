@@ -102,7 +102,6 @@ function PipelinesPage() {
     },
   });
 
-
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [isDefault, setIsDefault] = useState(false);

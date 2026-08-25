@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 
-
 export function Highlight({ text, query }: { text: string; query: string }): ReactNode {
   const q = query.trim();
   if (!q) return text;
@@ -19,4 +18,3 @@ export function Highlight({ text, query }: { text: string; query: string }): Rea
     </>
   );
 }
-

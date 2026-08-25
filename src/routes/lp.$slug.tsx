@@ -93,7 +93,9 @@ function PublicLandingPage() {
         background: theme.bgColor || undefined,
         fontFamily,
         // expose primary as CSS var so blocks pick it up via tailwind primary if desired
-        ...(theme.primaryColor ? ({ ["--primary" as never]: theme.primaryColor } as React.CSSProperties) : {}),
+        ...(theme.primaryColor
+          ? ({ ["--primary" as never]: theme.primaryColor } as React.CSSProperties)
+          : {}),
       }}
     >
       {page.blocks.map((block, i) => {

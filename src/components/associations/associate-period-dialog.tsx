@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -66,7 +73,10 @@ export function AssociatePeriodDialog({
               className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
             >
               <RadioGroupItem value={opt.value} id={`period-${opt.value}`} />
-              <Label htmlFor={`period-${opt.value}`} className="text-sm font-normal cursor-pointer flex-1">
+              <Label
+                htmlFor={`period-${opt.value}`}
+                className="text-sm font-normal cursor-pointer flex-1"
+              >
                 {opt.label}
               </Label>
             </div>

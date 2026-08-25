@@ -256,11 +256,15 @@ export function ContactPicker({
         <p className="text-[11px] text-muted-foreground">Buscando…</p>
       )}
 
-      {mode === "pick" && !value.id && value.name.trim().length >= 2 && !loading && matches.length === 0 && (
-        <p className="text-[11px] text-muted-foreground">
-          Nenhum contato encontrado. Selecione um existente.
-        </p>
-      )}
+      {mode === "pick" &&
+        !value.id &&
+        value.name.trim().length >= 2 &&
+        !loading &&
+        matches.length === 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            Nenhum contato encontrado. Selecione um existente.
+          </p>
+        )}
     </div>
   );
 }

@@ -4,13 +4,7 @@ export { AtsSectionHeader } from "./section-header";
 export type { AtsSectionHeaderProps } from "./section-header";
 export { MetricCard } from "./metric-card";
 export type { MetricCardProps, MetricTone } from "./metric-card";
-export {
-  StatusBadge,
-  StageBadge,
-  ScoreBadge,
-  SourceBadge,
-  RiskBadge,
-} from "./badges";
+export { StatusBadge, StageBadge, ScoreBadge, SourceBadge, RiskBadge } from "./badges";
 export type { JobStatus, PipelineStage, RiskLevel } from "./badges";
 export { EmptyState } from "./empty-state";
 export type { EmptyStateProps } from "./empty-state";

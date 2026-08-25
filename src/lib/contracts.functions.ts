@@ -730,7 +730,6 @@ export const standardizeContractTitles = createServerFn({ method: "POST" })
     return { changes, unchanged: [], skipped: [] };
   });
 
-
 const titleStatusEnum = z.enum([
   "draft",
   "in_review",
@@ -791,7 +790,6 @@ export const standardizeContractTitlesByStatus = createServerFn({ method: "POST"
     const changes = await applyContractTitles(supabase as never, workspaceId, targetIds);
     return { scanned, changes, unchanged: [], skipped: [] };
   });
-
 
 // ============= CREATE =============
 

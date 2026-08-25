@@ -21,7 +21,6 @@ import { Badge } from "@/components/ui/badge";
 import { TokenPills } from "@/components/ui/token-pills";
 import { ATS_SOURCING_TOKENS, LINKEDIN_TOKENS } from "@/lib/message-tokens-catalog";
 
-
 import {
   Select,
   SelectContent,
@@ -96,8 +95,7 @@ function SequenceDetailPage() {
           task_instructions: draft.task_instructions.trim() || null,
           variant_label: draft.variant_label.trim().toUpperCase().slice(0, 8) || "A",
           variant_weight: draft.variant_weight,
-          max_wait_days:
-            draft.channel === "wait_invite_accept" ? draft.max_wait_days : null,
+          max_wait_days: draft.channel === "wait_invite_accept" ? draft.max_wait_days : null,
           poll_interval_hours:
             draft.channel === "wait_invite_accept" ? draft.poll_interval_hours : null,
           on_timeout: draft.channel === "wait_invite_accept" ? draft.on_timeout : null,
@@ -154,7 +152,6 @@ function SequenceDetailPage() {
         }}
       />
 
-
       <section className="space-y-3">
         <AtsSectionHeader title="Steps" description="Ordem de execução da cadência." />
         {data.steps.length === 0 ? (
@@ -192,11 +189,7 @@ function SequenceDetailPage() {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeStep.mutate(s.id)}
-                    >
+                    <Button variant="ghost" size="icon" onClick={() => removeStep.mutate(s.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </CardContent>
@@ -208,7 +201,10 @@ function SequenceDetailPage() {
       </section>
 
       <section className="space-y-3">
-        <AtsSectionHeader title="Adicionar step ou variante (A/B)" description="Mesma posição (step) com variant_label diferente cria uma variante A/B sorteada por peso." />
+        <AtsSectionHeader
+          title="Adicionar step ou variante (A/B)"
+          description="Mesma posição (step) com variant_label diferente cria uma variante A/B sorteada por peso."
+        />
         <Card>
           <CardContent className="space-y-4 p-5">
             <div className="grid gap-4 sm:grid-cols-4">
@@ -218,7 +214,9 @@ function SequenceDetailPage() {
                   value={String(draft.step_order)}
                   onValueChange={(v) => setDraft({ ...draft, step_order: Number(v) })}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0">Novo step (#{maxStepOrder + 1})</SelectItem>
                     {Array.from({ length: maxStepOrder }, (_, i) => i + 1).map((n) => (
@@ -245,7 +243,9 @@ function SequenceDetailPage() {
                   min={1}
                   max={100}
                   value={draft.variant_weight}
-                  onChange={(e) => setDraft({ ...draft, variant_weight: Number(e.target.value) || 1 })}
+                  onChange={(e) =>
+                    setDraft({ ...draft, variant_weight: Number(e.target.value) || 1 })
+                  }
                 />
               </div>
               <div className="space-y-1.5">
@@ -254,7 +254,9 @@ function SequenceDetailPage() {
                   value={draft.channel}
                   onValueChange={(v) => setDraft({ ...draft, channel: v as typeof draft.channel })}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="whatsapp">WhatsApp (tarefa)</SelectItem>
@@ -287,9 +289,7 @@ function SequenceDetailPage() {
                   <TokenPills
                     className="mt-1.5"
                     tokens={ATS_SOURCING_TOKENS}
-                    onInsert={(t) =>
-                      setDraft((d) => ({ ...d, subject: (d.subject ?? "") + t }))
-                    }
+                    onInsert={(t) => setDraft((d) => ({ ...d, subject: (d.subject ?? "") + t }))}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -333,10 +333,7 @@ function SequenceDetailPage() {
                     onChange={(e) =>
                       setDraft({
                         ...draft,
-                        poll_interval_hours: Math.min(
-                          48,
-                          Math.max(6, Number(e.target.value) || 6),
-                        ),
+                        poll_interval_hours: Math.min(48, Math.max(6, Number(e.target.value) || 6)),
                       })
                     }
                   />
@@ -364,8 +361,7 @@ function SequenceDetailPage() {
                   limit do Unipile e não consome sua cota diária de envios.
                 </p>
               </div>
-            ) : draft.channel === "linkedin_invite" ||
-              draft.channel === "linkedin_message" ? (
+            ) : draft.channel === "linkedin_invite" || draft.channel === "linkedin_message" ? (
               <div className="space-y-1.5">
                 <Label>
                   {draft.channel === "linkedin_invite"
@@ -385,7 +381,8 @@ function SequenceDetailPage() {
                   onInsert={(t) => setDraft((d) => ({ ...d, body: (d.body ?? "") + t }))}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Enviado automaticamente via Unipile. Requer LinkedIn conectado em Configurações → Integrações.
+                  Enviado automaticamente via Unipile. Requer LinkedIn conectado em Configurações →
+                  Integrações.
                 </p>
               </div>
             ) : (
@@ -524,7 +521,11 @@ function SequenceSettings({
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label>Fuso horário</Label>
-              <Input value={tz} onChange={(e) => setTz(e.target.value)} placeholder="America/Sao_Paulo" />
+              <Input
+                value={tz}
+                onChange={(e) => setTz(e.target.value)}
+                placeholder="America/Sao_Paulo"
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Limite diário</Label>

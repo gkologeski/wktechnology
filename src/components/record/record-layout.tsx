@@ -29,7 +29,6 @@ export function RecordLayout({
         <div className="space-y-6 min-w-0">{center}</div>
         <aside className="space-y-4 min-w-0">{right}</aside>
       </div>
-
     </div>
   );
 }

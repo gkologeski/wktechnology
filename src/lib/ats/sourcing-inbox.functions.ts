@@ -16,7 +16,6 @@ import { recordAtsEvent } from "./audit.server";
 type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
 type Json = { [k: string]: JsonValue };
 
-
 type StepLogRow = {
   id: string;
   enrollment_id: string;
@@ -149,9 +148,7 @@ export const listInbox = createServerFn({ method: "GET" })
 
 export const markStepHandled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ log_id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ log_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { data: row } = await context.supabase
       .from("ats_sourcing_step_log")
@@ -178,9 +175,7 @@ export const markStepHandled = createServerFn({ method: "POST" })
 
 export const resumeEnrollment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: unknown) =>
-    z.object({ enrollment_id: z.string().uuid() }).parse(input),
-  )
+  .inputValidator((input: unknown) => z.object({ enrollment_id: z.string().uuid() }).parse(input))
   .handler(async ({ context, data }) => {
     const { error } = await context.supabase
       .from("ats_sourcing_enrollments")
@@ -258,4 +253,3 @@ export const markCandidateReplied = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
-

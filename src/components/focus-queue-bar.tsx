@@ -31,7 +31,12 @@ export function FocusQueueBar() {
 
   const match = parsePath(pathname);
   const queue = getFocusQueue();
-  const active = !!(match && queue && queue.entity === match.entity && queue.ids[queue.index] === match.id);
+  const active = !!(
+    match &&
+    queue &&
+    queue.entity === match.entity &&
+    queue.ids[queue.index] === match.id
+  );
 
   const entity = match?.entity ?? queue?.entity ?? null;
 

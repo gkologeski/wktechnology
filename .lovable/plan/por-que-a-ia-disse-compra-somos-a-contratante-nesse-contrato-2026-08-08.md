@@ -4,10 +4,10 @@
 
 Consultei os dois contratos da evidência:
 
-| Contrato | Papel salvo (`role`) | CONTRATANTE extraída | CONTRATADA extraída |
-| --- | --- | --- | --- |
+| Contrato            | Papel salvo (`role`)   | CONTRATANTE extraída       | CONTRATADA extraída                       |
+| ------------------- | ---------------------- | -------------------------- | ----------------------------------------- |
 | C-202608-7678 (CPS) | Prestação (`provider`) | CITEL · 51.212.892/0001-25 | CW KOLOGESKI · 42.296.945/0001-42 (nossa) |
-| C-202608-3746 (CC) | Compra (`client`) | CITEL · 51.212.892/0001-25 | CW KOLOGESKI · 42.296.945/0001-42 (nossa) |
+| C-202608-3746 (CC)  | Compra (`client`)      | CITEL · 51.212.892/0001-25 | CW KOLOGESKI · 42.296.945/0001-42 (nossa) |
 
 Ou seja: os dois documentos foram extraídos com exatamente as mesmas partes — a CW é a CONTRATADA nos dois — mas um deles ficou gravado como contrato de **Compra**.
 

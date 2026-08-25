@@ -32,10 +32,7 @@ export function MetricsGridSkeleton({ count = 4 }: { count?: number }) {
 export function CardSkeleton({ className, lines = 4 }: { className?: string; lines?: number }) {
   return (
     <div
-      className={cn(
-        "rounded-lg border border-border-subtle bg-surface-2 p-5 shadow-xs",
-        className,
-      )}
+      className={cn("rounded-lg border border-border-subtle bg-surface-2 p-5 shadow-xs", className)}
     >
       <Bar className="h-4 w-40" />
       <div className="mt-4 space-y-3">

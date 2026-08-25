@@ -22,11 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  createFinancialEntry,
-  createInstallments,
-  listCategories,
-} from "@/lib/finance.functions";
+import { createFinancialEntry, createInstallments, listCategories } from "@/lib/finance.functions";
 import { useLegalEntities } from "@/components/finance/legal-entity-select";
 
 type Direction = "receivable" | "payable";
@@ -36,7 +32,9 @@ const today = () => new Date().toISOString().slice(0, 10);
 function addMonths(iso: string, n: number): string {
   const [y, m, d] = iso.split("-").map(Number);
   const target = new Date(Date.UTC(y, m - 1 + n, 1));
-  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  const lastDay = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate();
   target.setUTCDate(Math.min(d, lastDay));
   return target.toISOString().slice(0, 10);
 }
@@ -45,8 +43,7 @@ function addDays(iso: string, n: number): string {
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
 }
-const money = (n: number) =>
-  n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const money = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export function QuickCreateEntryDialog({
   open,
@@ -73,9 +70,7 @@ export function QuickCreateEntryDialog({
   const [notes, setNotes] = useState("");
   const [counterpartyLegalEntityId, setCounterpartyLegalEntityId] = useState<string>("none");
   const { data: legalEntities = [] } = useLegalEntities();
-  const [categories, setCategories] = useState<
-    Awaited<ReturnType<typeof listCategories>>
-  >([]);
+  const [categories, setCategories] = useState<Awaited<ReturnType<typeof listCategories>>>([]);
 
   // Installment state
   const [installments, setInstallments] = useState(false);
@@ -99,7 +94,9 @@ export function QuickCreateEntryDialog({
     setCadence("monthly");
     setCustomDays(30);
     setSplitMode("equal");
-    listCats().then(setCategories).catch(() => setCategories([]));
+    listCats()
+      .then(setCategories)
+      .catch(() => setCategories([]));
   }, [open, defaultDirection, listCats]);
 
   const filteredCats = categories.filter((c) =>
@@ -261,13 +258,17 @@ export function QuickCreateEntryDialog({
                       min={2}
                       max={120}
                       value={count}
-                      onChange={(e) => setCount(Math.max(2, Math.min(120, Number(e.target.value) || 2)))}
+                      onChange={(e) =>
+                        setCount(Math.max(2, Math.min(120, Number(e.target.value) || 2)))
+                      }
                     />
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Cadência</Label>
                     <Select value={cadence} onValueChange={(v) => setCadence(v as typeof cadence)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="monthly">Mensal</SelectItem>
                         <SelectItem value="weekly">Semanal</SelectItem>
@@ -288,8 +289,13 @@ export function QuickCreateEntryDialog({
                         onChange={(e) => setCustomDays(Math.max(1, Number(e.target.value) || 30))}
                       />
                     ) : (
-                      <Select value={splitMode} onValueChange={(v) => setSplitMode(v as typeof splitMode)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                      <Select
+                        value={splitMode}
+                        onValueChange={(v) => setSplitMode(v as typeof splitMode)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="equal">Na última</SelectItem>
                           <SelectItem value="first_bigger">Na primeira</SelectItem>

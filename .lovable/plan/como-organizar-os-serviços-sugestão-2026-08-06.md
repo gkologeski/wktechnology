@@ -12,11 +12,11 @@ Criar um item de catálogo por tecnologia/cargo ("Dev React Sênior", "Dev Java 
 
 O melhor modelo é separar em **três dimensões**:
 
-| Dimensão | Onde vive | Exemplos |
-| --- | --- | --- |
+| Dimensão                  | Onde vive                                  | Exemplos                                                                         |
+| ------------------------- | ------------------------------------------ | -------------------------------------------------------------------------------- |
 | Linha de serviço (oferta) | `service_catalog` — poucos itens, estáveis | Outsourcing de TI, Fábrica de Software, Consultoria, Hunting, BPO Administrativo |
-| Cargo / perfil contratado | no serviço do contrato | Desenvolvedor, Assistente Financeiro, Coordenador de RH, Analista de Dados, QA |
-| Senioridade + stack | no serviço do contrato (tags) | Júnior/Pleno/Sênior; React, Java, .NET, Salesforce |
+| Cargo / perfil contratado | no serviço do contrato                     | Desenvolvedor, Assistente Financeiro, Coordenador de RH, Analista de Dados, QA   |
+| Senioridade + stack       | no serviço do contrato (tags)              | Júnior/Pleno/Sênior; React, Java, .NET, Salesforce                               |
 
 Assim "Outsourcing de TI" continua sendo o serviço de todos os alocados, e cada contrato diz **qual cargo, qual senioridade e qual stack** foi contratado. Preço e imposto ficam por contrato (como já ficam), não por variação de catálogo.
 

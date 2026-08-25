@@ -29,7 +29,6 @@ export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
     ],
   },
 
-
   {
     label: "Workspace",
     items: [
@@ -61,10 +60,6 @@ export const WORKSPACE_ROUTE_PREFIXES: readonly string[] = [
   "/files",
 ];
 
-
-
 export function isWorkspacePathname(pathname: string): boolean {
-  return WORKSPACE_ROUTE_PREFIXES.some(
-    (p) => pathname === p || pathname.startsWith(p + "/"),
-  );
+  return WORKSPACE_ROUTE_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + "/"));
 }

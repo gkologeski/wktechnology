@@ -60,7 +60,13 @@ export const updateReferralProgramPortal = createServerFn({ method: "POST" })
     z
       .object({
         id: z.string().uuid(),
-        public_slug: z.string().min(3).max(40).regex(/^[a-z0-9-]+$/).nullable().optional(),
+        public_slug: z
+          .string()
+          .min(3)
+          .max(40)
+          .regex(/^[a-z0-9-]+$/)
+          .nullable()
+          .optional(),
         landing_headline: z.string().max(200).nullable().optional(),
         landing_body: z.string().max(4000).nullable().optional(),
         enable_public_form: z.boolean().optional(),
@@ -177,9 +183,7 @@ export const updateReferral = createServerFn({ method: "POST" })
             "expired",
           ])
           .optional(),
-        bonus_status: z
-          .enum(["pending", "eligible", "approved", "paid", "forfeited"])
-          .optional(),
+        bonus_status: z.enum(["pending", "eligible", "approved", "paid", "forfeited"]).optional(),
         bonus_cents: z.number().int().min(0).optional(),
         candidate_id: z.string().uuid().nullable().optional(),
         decision_notes: z.string().max(2000).nullable().optional(),

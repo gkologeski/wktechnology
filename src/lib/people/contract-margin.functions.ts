@@ -40,15 +40,13 @@ type AllocRow = {
   billable_rate: number | null;
   person_id: string;
   contract_id: string | null;
-  contracts:
-    | {
-        id: string;
-        contract_number: string | null;
-        title: string | null;
-        company_id: string | null;
-        companies: { id: string; name: string | null } | null;
-      }
-    | null;
+  contracts: {
+    id: string;
+    contract_number: string | null;
+    title: string | null;
+    company_id: string | null;
+    companies: { id: string; name: string | null } | null;
+  } | null;
 };
 
 const schema = z.object({

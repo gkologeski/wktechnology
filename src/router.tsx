@@ -76,7 +76,6 @@ export const getRouter = () => {
 
   bindDialogRefreshClient(queryClient);
 
-
   const router = createRouter({
     routeTree,
     context: { queryClient },
