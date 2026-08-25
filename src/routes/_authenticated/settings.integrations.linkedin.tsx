@@ -128,8 +128,8 @@ function LinkedinIntegrationPage() {
         try {
           await reconcile({ data: search.state ? { state: search.state } : {} });
         } catch {
-      /* ignora */
-    }
+          /* ignora */
+        }
         await refresh();
       })();
     }

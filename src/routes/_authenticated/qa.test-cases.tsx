@@ -99,8 +99,8 @@ function useLocalMap(key: string) {
       try {
         localStorage.setItem(key, JSON.stringify(next));
       } catch {
-      /* ignora */
-    }
+        /* ignora */
+      }
       return next;
     });
   };
