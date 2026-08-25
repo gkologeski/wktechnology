@@ -3,7 +3,6 @@ import { z } from "zod";
 // Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function sbAdmin(): Promise<any> {
-  const supabaseAdmin = await sbAdmin();
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
 }
