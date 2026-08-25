@@ -177,12 +177,12 @@ function StartTimerPopover({
 
   const projectsQuery = useQuery({
     queryKey: ["projects", "for-timer"],
-    queryFn: () => useServerFnBypass(listProjects, { status: "active" }),
+    queryFn: () => callServerFn(listProjects, { status: "active" }),
     enabled: open,
   });
   const tasksQuery = useQuery({
     queryKey: ["project-tasks", "for-timer", projectId],
-    queryFn: () => useServerFnBypass(listAllProjectTasks, projectId ? { projectId } : {}),
+    queryFn: () => callServerFn(listAllProjectTasks, projectId ? { projectId } : {}),
     enabled: open && Boolean(projectId),
   });
 
@@ -306,7 +306,7 @@ function StartTimerPopover({
 
 // Wrapper para invocar server function fora de contexto React (query fn).
 // Simples: chama diretamente já que server functions são funções isoladas.
-function useServerFnBypass<T extends (...args: never[]) => unknown>(
+function callServerFn<T extends (...args: never[]) => unknown>(
   fn: T,
   data: Record<string, unknown>,
 ): ReturnType<T> {

@@ -26,9 +26,6 @@ export function PairingStatusPanel() {
   }, []);
 
   useEffect(() => {
-    // eslint-disable-next-line prefer-const -- atribuído depois, no fim do effect
-    let intervalId: ReturnType<typeof setInterval>;
-
     function onMessage(event: MessageEvent) {
       if (event.source !== window) return;
       const data = event.data as StatusMsg;
@@ -66,7 +63,7 @@ export function PairingStatusPanel() {
     }, 200);
 
     // Polling de estado pareado.
-    intervalId = setInterval(requestStatus, 2000);
+    const intervalId = setInterval(requestStatus, 2000);
 
     return () => {
       window.removeEventListener("message", onMessage);
