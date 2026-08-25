@@ -206,7 +206,10 @@ export function CandidatesKanbanView({
 
                         {c.current_position ? (
                           <div className="mt-0.5 flex items-center gap-1 text-xs text-text-secondary">
-                            <Briefcase className="h-3 w-3 shrink-0 text-text-tertiary" aria-hidden />
+                            <Briefcase
+                              className="h-3 w-3 shrink-0 text-text-tertiary"
+                              aria-hidden
+                            />
                             <span className="truncate">
                               {c.current_position}
                               {c.current_company ? ` @ ${c.current_company}` : ""}

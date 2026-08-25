@@ -108,7 +108,10 @@ export function CandidatesTableView({
                       className="text-text-primary hover:underline inline-flex items-center gap-1"
                     >
                       {c.full_name as string}
-                      <ExternalLink className="h-3 w-3 opacity-0 group-hover:opacity-60" aria-hidden />
+                      <ExternalLink
+                        className="h-3 w-3 opacity-0 group-hover:opacity-60"
+                        aria-hidden
+                      />
                     </Link>
                     {c.email ? (
                       <div className="text-xs text-text-tertiary truncate max-w-[240px]">
@@ -129,7 +132,11 @@ export function CandidatesTableView({
                     )}
                   </TableCell>
                   <TableCell className="text-text-secondary">
-                    {c.location ? (c.location as string) : <span className="text-text-tertiary">—</span>}
+                    {c.location ? (
+                      (c.location as string)
+                    ) : (
+                      <span className="text-text-tertiary">—</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <CandidateStatusPill status={status} />

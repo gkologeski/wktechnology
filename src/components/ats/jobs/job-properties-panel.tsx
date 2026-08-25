@@ -31,11 +31,7 @@ import { OwnerField } from "@/components/entity/owner-field";
 import { AssigneeField } from "@/components/entity/assignee-field";
 import { listAtsPipelines } from "@/lib/ats/pipelines.functions";
 import { ATS_JOB_STATUSES } from "@/lib/ats/stages";
-import {
-  EMPLOYMENT_LABEL,
-  REMOTE_LABEL,
-  SENIORITY_LABEL,
-} from "@/components/ats/jobs/job-labels";
+import { EMPLOYMENT_LABEL, REMOTE_LABEL, SENIORITY_LABEL } from "@/components/ats/jobs/job-labels";
 import type { Job } from "@/components/ats/jobs/job-detail.types";
 
 export type JobPatch = {
