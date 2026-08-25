@@ -442,6 +442,18 @@ export const runProspectSearch = createServerFn({ method: "POST" })
           const p = detail.person;
           const org = p.organization;
           const email = cleanEmail(p.email);
+          // Telefone é sempre da pessoa: celular tem prioridade e o fixo da
+          // empresa nunca substitui o número do prospect.
+          const numbers = p.phone_numbers ?? [];
+          const isMobile = (n: { type?: string }) =>
+            (n.type ?? "").toLowerCase().includes("mobile");
+          const numOf = (n?: { sanitized_number?: string; raw_number?: string }) =>
+            n?.sanitized_number ?? n?.raw_number ?? null;
+          const personPhone =
+            numOf(numbers.find(isMobile)) ??
+            numOf(numbers.find((n) => !isMobile(n))) ??
+            p.phone ??
+            null;
 
           enriched.push({
             owner_id: userId,
@@ -455,9 +467,10 @@ export const runProspectSearch = createServerFn({ method: "POST" })
             domain_hint: org?.primary_domain || null,
             email: email,
             email_hint: email,
-            phone: p.phone || org?.primary_phone?.number || org?.phone || null,
+            phone: personPhone,
             linkedin_url: p.linkedin_url || null,
             location: buildLocation(p),
+
             industry: org?.industry || null,
             company_size: org?.estimated_num_employees ? String(org.estimated_num_employees) : null,
             apollo_score: null,
