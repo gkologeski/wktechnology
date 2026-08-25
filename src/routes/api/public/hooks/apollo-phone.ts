@@ -25,9 +25,8 @@ export const Route = createFileRoute("/api/public/hooks/apollo-phone")({
         }
 
         try {
-          const { applyApolloPhonePayload } = await import(
-            "@/lib/integrations/apollo-phone-webhook.server"
-          );
+          const { applyApolloPhonePayload } =
+            await import("@/lib/integrations/apollo-phone-webhook.server");
           const updated = await applyApolloPhonePayload(payload as never);
           return Response.json({ ok: true, updated });
         } catch (e) {
@@ -38,7 +37,10 @@ export const Route = createFileRoute("/api/public/hooks/apollo-phone")({
         }
       },
       GET: async () =>
-        Response.json({ ok: true, info: "POST payload da Apollo com ?secret=APOLLO_WEBHOOK_SECRET" }),
+        Response.json({
+          ok: true,
+          info: "POST payload da Apollo com ?secret=APOLLO_WEBHOOK_SECRET",
+        }),
     },
   },
 });

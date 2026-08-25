@@ -667,7 +667,6 @@ function LeadsHubspotView() {
           lead.mobile_phone ? (toE164(lead.mobile_phone) ?? lead.mobile_phone) : "—",
       },
       {
-
         key: "company",
         label: "Empresa",
         render: (lead) =>

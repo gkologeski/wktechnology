@@ -116,7 +116,6 @@ function apolloPhoneWebhookUrl(): string | null {
 }
 
 export class ApolloNotConfiguredError extends Error {
-
   constructor() {
     super("Apollo.io não conectado. Conecte o Apollo em Configurações → Conectores.");
     this.name = "ApolloNotConfiguredError";

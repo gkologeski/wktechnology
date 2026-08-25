@@ -16,7 +16,6 @@ export const LEAD_KEYS = [
   "company_name",
 ] as const;
 
-
 /** Colunas reais de `companies`. */
 export const COMPANY_KEYS = [
   "name",

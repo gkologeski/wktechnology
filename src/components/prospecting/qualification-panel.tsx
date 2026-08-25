@@ -609,8 +609,7 @@ export function QualificationPanel({
                     ? " · gravado"
                     : ""}
                 </Badge>
-                {enrichment.data.lead?.mobile_phone ||
-                enrichment.data.contacts?.mobile_phone ? (
+                {enrichment.data.lead?.mobile_phone || enrichment.data.contacts?.mobile_phone ? (
                   <Badge variant="outline" title="Número identificado como celular pelo Apollo.io">
                     Celular encontrado
                   </Badge>
@@ -624,7 +623,6 @@ export function QualificationPanel({
                   </Badge>
                 ) : null}
               </>
-
             ) : enrichment.data ? (
               <Badge
                 variant="outline"
