@@ -145,6 +145,8 @@ const BASE_LEAD_KEYS = [
   "last_name",
   "email",
   "phone",
+  "mobile_phone",
+
   "company_name",
   "company_id",
   "status",
