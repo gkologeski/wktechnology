@@ -1422,6 +1422,7 @@ interface EventRow {
 interface WorkflowRow {
   id: string;
   owner_id: string;
+  workspace_id: string;
   entity: WorkflowEntity;
   trigger: WorkflowTrigger;
   actions: WorkflowAction[];
