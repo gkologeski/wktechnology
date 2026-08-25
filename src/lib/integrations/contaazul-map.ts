@@ -62,6 +62,8 @@ export function parseBrNumber(input: unknown): Money | null {
     s = s.replace(",", ".");
   }
   s = s.replace(/[^0-9.]/g, "");
+  if (!/\d/.test(s)) return null;
+
   const n = Number(s);
   if (!Number.isFinite(n)) return null;
   return negative ? -n : n;
