@@ -198,6 +198,7 @@ import { Route as AuthenticatedMarketplaceSlugRouteImport } from './routes/_auth
 import { Route as AuthenticatedLeadsImportHubspotRouteImport } from './routes/_authenticated/leads.import-hubspot'
 import { Route as AuthenticatedLeadsIdRouteImport } from './routes/_authenticated/leads.$id'
 import { Route as AuthenticatedLandingPagesIdRouteImport } from './routes/_authenticated/landing-pages.$id'
+import { Route as AuthenticatedIntegrationsContaazulRouteImport } from './routes/_authenticated/integrations.contaazul'
 import { Route as AuthenticatedIntegrationsSlugRouteImport } from './routes/_authenticated/integrations.$slug'
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
@@ -275,6 +276,7 @@ import { Route as ApiPublicTwilioRecordingStatusRouteImport } from './routes/api
 import { Route as ApiPublicReferSlugRouteImport } from './routes/api/public/refer/$slug'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicOauthGoogleCallbackRouteImport } from './routes/api/public/oauth/google-callback'
+import { Route as ApiPublicOauthContaazulCallbackRouteImport } from './routes/api/public/oauth/contaazul-callback'
 import { Route as ApiPublicMetaWhatsappWebhookRouteImport } from './routes/api/public/meta/whatsapp-webhook'
 import { Route as ApiPublicInterviewTokenRouteImport } from './routes/api/public/interview/$token'
 import { Route as ApiPublicHuntingTemplatesRouteImport } from './routes/api/public/hunting/templates'
@@ -308,6 +310,7 @@ import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
 import { Route as ApiPublicHooksDunningTickRouteImport } from './routes/api/public/hooks/dunning-tick'
+import { Route as ApiPublicHooksContaazulTickRouteImport } from './routes/api/public/hooks/contaazul-tick'
 import { Route as ApiPublicHooksCalendarTickRouteImport } from './routes/api/public/hooks/calendar-tick'
 import { Route as ApiPublicHooksCalendarRecordingsTickRouteImport } from './routes/api/public/hooks/calendar-recordings-tick'
 import { Route as ApiPublicHooksBugReportAnalyzeRouteImport } from './routes/api/public/hooks/bug-report-analyze'
@@ -1436,6 +1439,12 @@ const AuthenticatedLandingPagesIdRoute =
     path: '/landing-pages/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedIntegrationsContaazulRoute =
+  AuthenticatedIntegrationsContaazulRouteImport.update({
+    id: '/contaazul',
+    path: '/contaazul',
+    getParentRoute: () => AuthenticatedIntegrationsRoute,
+  } as any)
 const AuthenticatedIntegrationsSlugRoute =
   AuthenticatedIntegrationsSlugRouteImport.update({
     id: '/$slug',
@@ -1876,6 +1885,12 @@ const ApiPublicOauthGoogleCallbackRoute =
     path: '/api/public/oauth/google-callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicOauthContaazulCallbackRoute =
+  ApiPublicOauthContaazulCallbackRouteImport.update({
+    id: '/api/public/oauth/contaazul-callback',
+    path: '/api/public/oauth/contaazul-callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicMetaWhatsappWebhookRoute =
   ApiPublicMetaWhatsappWebhookRouteImport.update({
     id: '/api/public/meta/whatsapp-webhook',
@@ -2068,6 +2083,12 @@ const ApiPublicHooksDunningTickRoute =
   ApiPublicHooksDunningTickRouteImport.update({
     id: '/api/public/hooks/dunning-tick',
     path: '/api/public/hooks/dunning-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksContaazulTickRoute =
+  ApiPublicHooksContaazulTickRouteImport.update({
+    id: '/api/public/hooks/contaazul-tick',
+    path: '/api/public/hooks/contaazul-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksCalendarTickRoute =
@@ -2543,6 +2564,7 @@ export interface FileRoutesByFullPath {
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
+  '/integrations/contaazul': typeof AuthenticatedIntegrationsContaazulRoute
   '/landing-pages/$id': typeof AuthenticatedLandingPagesIdRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
@@ -2708,6 +2730,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/contaazul-tick': typeof ApiPublicHooksContaazulTickRoute
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
@@ -2741,6 +2764,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hunting/templates': typeof ApiPublicHuntingTemplatesRoute
   '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
+  '/api/public/oauth/contaazul-callback': typeof ApiPublicOauthContaazulCallbackRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
@@ -2899,6 +2923,7 @@ export interface FileRoutesByTo {
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
+  '/integrations/contaazul': typeof AuthenticatedIntegrationsContaazulRoute
   '/landing-pages/$id': typeof AuthenticatedLandingPagesIdRoute
   '/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
@@ -3063,6 +3088,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/contaazul-tick': typeof ApiPublicHooksContaazulTickRoute
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
@@ -3096,6 +3122,7 @@ export interface FileRoutesByTo {
   '/api/public/hunting/templates': typeof ApiPublicHuntingTemplatesRoute
   '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
+  '/api/public/oauth/contaazul-callback': typeof ApiPublicOauthContaazulCallbackRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
@@ -3261,6 +3288,7 @@ export interface FileRoutesById {
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
+  '/_authenticated/integrations/contaazul': typeof AuthenticatedIntegrationsContaazulRoute
   '/_authenticated/landing-pages/$id': typeof AuthenticatedLandingPagesIdRoute
   '/_authenticated/leads/$id': typeof AuthenticatedLeadsIdRoute
   '/_authenticated/leads/import-hubspot': typeof AuthenticatedLeadsImportHubspotRoute
@@ -3426,6 +3454,7 @@ export interface FileRoutesById {
   '/api/public/hooks/bug-report-analyze': typeof ApiPublicHooksBugReportAnalyzeRoute
   '/api/public/hooks/calendar-recordings-tick': typeof ApiPublicHooksCalendarRecordingsTickRoute
   '/api/public/hooks/calendar-tick': typeof ApiPublicHooksCalendarTickRoute
+  '/api/public/hooks/contaazul-tick': typeof ApiPublicHooksContaazulTickRoute
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
@@ -3459,6 +3488,7 @@ export interface FileRoutesById {
   '/api/public/hunting/templates': typeof ApiPublicHuntingTemplatesRoute
   '/api/public/interview/$token': typeof ApiPublicInterviewTokenRoute
   '/api/public/meta/whatsapp-webhook': typeof ApiPublicMetaWhatsappWebhookRoute
+  '/api/public/oauth/contaazul-callback': typeof ApiPublicOauthContaazulCallbackRoute
   '/api/public/oauth/google-callback': typeof ApiPublicOauthGoogleCallbackRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/refer/$slug': typeof ApiPublicReferSlugRouteWithChildren
@@ -3624,6 +3654,7 @@ export interface FileRouteTypes {
     | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
+    | '/integrations/contaazul'
     | '/landing-pages/$id'
     | '/leads/$id'
     | '/leads/import-hubspot'
@@ -3789,6 +3820,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/contaazul-tick'
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
@@ -3822,6 +3854,7 @@ export interface FileRouteTypes {
     | '/api/public/hunting/templates'
     | '/api/public/interview/$token'
     | '/api/public/meta/whatsapp-webhook'
+    | '/api/public/oauth/contaazul-callback'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/refer/$slug'
@@ -3980,6 +4013,7 @@ export interface FileRouteTypes {
     | '/inbox/email'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
+    | '/integrations/contaazul'
     | '/landing-pages/$id'
     | '/leads/$id'
     | '/leads/import-hubspot'
@@ -4144,6 +4178,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/contaazul-tick'
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
@@ -4177,6 +4212,7 @@ export interface FileRouteTypes {
     | '/api/public/hunting/templates'
     | '/api/public/interview/$token'
     | '/api/public/meta/whatsapp-webhook'
+    | '/api/public/oauth/contaazul-callback'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/refer/$slug'
@@ -4341,6 +4377,7 @@ export interface FileRouteTypes {
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
     | '/_authenticated/integrations/$slug'
+    | '/_authenticated/integrations/contaazul'
     | '/_authenticated/landing-pages/$id'
     | '/_authenticated/leads/$id'
     | '/_authenticated/leads/import-hubspot'
@@ -4506,6 +4543,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bug-report-analyze'
     | '/api/public/hooks/calendar-recordings-tick'
     | '/api/public/hooks/calendar-tick'
+    | '/api/public/hooks/contaazul-tick'
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
@@ -4539,6 +4577,7 @@ export interface FileRouteTypes {
     | '/api/public/hunting/templates'
     | '/api/public/interview/$token'
     | '/api/public/meta/whatsapp-webhook'
+    | '/api/public/oauth/contaazul-callback'
     | '/api/public/oauth/google-callback'
     | '/api/public/payments/webhook'
     | '/api/public/refer/$slug'
@@ -4642,6 +4681,7 @@ export interface RootRouteChildren {
   ApiPublicHooksBugReportAnalyzeRoute: typeof ApiPublicHooksBugReportAnalyzeRoute
   ApiPublicHooksCalendarRecordingsTickRoute: typeof ApiPublicHooksCalendarRecordingsTickRoute
   ApiPublicHooksCalendarTickRoute: typeof ApiPublicHooksCalendarTickRoute
+  ApiPublicHooksContaazulTickRoute: typeof ApiPublicHooksContaazulTickRoute
   ApiPublicHooksDunningTickRoute: typeof ApiPublicHooksDunningTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
@@ -4675,6 +4715,7 @@ export interface RootRouteChildren {
   ApiPublicHuntingTemplatesRoute: typeof ApiPublicHuntingTemplatesRoute
   ApiPublicInterviewTokenRoute: typeof ApiPublicInterviewTokenRoute
   ApiPublicMetaWhatsappWebhookRoute: typeof ApiPublicMetaWhatsappWebhookRoute
+  ApiPublicOauthContaazulCallbackRoute: typeof ApiPublicOauthContaazulCallbackRoute
   ApiPublicOauthGoogleCallbackRoute: typeof ApiPublicOauthGoogleCallbackRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicReferSlugRoute: typeof ApiPublicReferSlugRouteWithChildren
@@ -6030,6 +6071,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLandingPagesIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/integrations/contaazul': {
+      id: '/_authenticated/integrations/contaazul'
+      path: '/contaazul'
+      fullPath: '/integrations/contaazul'
+      preLoaderRoute: typeof AuthenticatedIntegrationsContaazulRouteImport
+      parentRoute: typeof AuthenticatedIntegrationsRoute
+    }
     '/_authenticated/integrations/$slug': {
       id: '/_authenticated/integrations/$slug'
       path: '/$slug'
@@ -6569,6 +6617,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicOauthGoogleCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/oauth/contaazul-callback': {
+      id: '/api/public/oauth/contaazul-callback'
+      path: '/api/public/oauth/contaazul-callback'
+      fullPath: '/api/public/oauth/contaazul-callback'
+      preLoaderRoute: typeof ApiPublicOauthContaazulCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/meta/whatsapp-webhook': {
       id: '/api/public/meta/whatsapp-webhook'
       path: '/api/public/meta/whatsapp-webhook'
@@ -6798,6 +6853,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/dunning-tick'
       fullPath: '/api/public/hooks/dunning-tick'
       preLoaderRoute: typeof ApiPublicHooksDunningTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/contaazul-tick': {
+      id: '/api/public/hooks/contaazul-tick'
+      path: '/api/public/hooks/contaazul-tick'
+      fullPath: '/api/public/hooks/contaazul-tick'
+      preLoaderRoute: typeof ApiPublicHooksContaazulTickRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/calendar-tick': {
@@ -7270,12 +7332,15 @@ const AuthenticatedDealsRouteWithChildren =
 
 interface AuthenticatedIntegrationsRouteChildren {
   AuthenticatedIntegrationsSlugRoute: typeof AuthenticatedIntegrationsSlugRoute
+  AuthenticatedIntegrationsContaazulRoute: typeof AuthenticatedIntegrationsContaazulRoute
   AuthenticatedIntegrationsIndexRoute: typeof AuthenticatedIntegrationsIndexRoute
 }
 
 const AuthenticatedIntegrationsRouteChildren: AuthenticatedIntegrationsRouteChildren =
   {
     AuthenticatedIntegrationsSlugRoute: AuthenticatedIntegrationsSlugRoute,
+    AuthenticatedIntegrationsContaazulRoute:
+      AuthenticatedIntegrationsContaazulRoute,
     AuthenticatedIntegrationsIndexRoute: AuthenticatedIntegrationsIndexRoute,
   }
 
@@ -8089,6 +8154,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksCalendarRecordingsTickRoute:
     ApiPublicHooksCalendarRecordingsTickRoute,
   ApiPublicHooksCalendarTickRoute: ApiPublicHooksCalendarTickRoute,
+  ApiPublicHooksContaazulTickRoute: ApiPublicHooksContaazulTickRoute,
   ApiPublicHooksDunningTickRoute: ApiPublicHooksDunningTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
@@ -8130,6 +8196,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHuntingTemplatesRoute: ApiPublicHuntingTemplatesRoute,
   ApiPublicInterviewTokenRoute: ApiPublicInterviewTokenRoute,
   ApiPublicMetaWhatsappWebhookRoute: ApiPublicMetaWhatsappWebhookRoute,
+  ApiPublicOauthContaazulCallbackRoute: ApiPublicOauthContaazulCallbackRoute,
   ApiPublicOauthGoogleCallbackRoute: ApiPublicOauthGoogleCallbackRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicReferSlugRoute: ApiPublicReferSlugRouteWithChildren,

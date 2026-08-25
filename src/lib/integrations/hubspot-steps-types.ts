@@ -56,7 +56,7 @@ export type LogEntry = {
   count?: number;
 };
 
-type ItemRow = {
+export type ItemRow = {
   id: string;
   status: string;
   before: { step?: string; order?: number; depends_on?: string[]; [k: string]: unknown } | null;
@@ -73,7 +73,7 @@ export type UpsertResult = {
   localId?: string;
   error?: string;
 };
-type UpsertTask = { hsId: string; payload: Record<string, unknown> };
+export type UpsertTask = { hsId: string; payload: Record<string, unknown> };
 
 export type ResumeState = {
   started_at?: string;

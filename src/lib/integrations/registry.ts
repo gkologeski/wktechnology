@@ -116,14 +116,16 @@ export const PROVIDERS: ProviderDef[] = [
   {
     slug: "contaazul",
     name: "Conta Azul",
-    description: "Sincronize Empresas como clientes no Conta Azul (ERP).",
+    description:
+      "Importe contas a pagar e a receber, plano de contas, contas bancárias e extratos do Conta Azul para o TechFinance.",
     category: "finance",
     icon: Building2,
     color: "bg-blue-600",
     authMode: "oauth",
     entities: ["company"],
-    supports: { sync: true },
+    supports: { import: true, sync: true },
     docs: "https://developers.contaazul.com/",
+    href: "/integrations/contaazul",
   },
   {
     slug: "linkedin",
