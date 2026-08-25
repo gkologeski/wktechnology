@@ -55,4 +55,4 @@ Cada passo é idempotente por `external_ref` / `external_id`: reimportar atualiz
 ## Pendências conhecidas
 
 - A importação por API só funciona após o app OAuth do Conta Azul (client id/secret) estar disponível; até então a tela indica a pendência e o caminho por arquivo cobre o uso real.
-- Fragmentação do `hubspot-steps.server.ts` iniciada na etapa anterior (novos módulos `hubspot-steps-{types,state,upsert,discovery}`) ainda precisa passar por typecheck/lint/build — será validada junto com esta entrega.
+- Correção imediata antes de tudo: a fragmentação do `hubspot-steps.server.ts` feita na etapa anterior deixou 7 erros de typecheck (tipos `ItemRow`/`UpsertTask` sem `export`, helpers `loadImportedHsIdsForStep`/`loadLocalMapForHsIds` sem `export`/import e um parâmetro implícito `any`). São ajustes de export/import; serão corrigidos como primeiro passo, seguidos de `tsgo`, lint, testes e build. Não consigo aplicá-los em modo de planejamento.
