@@ -105,7 +105,18 @@ type ApolloPerson = {
   organization?: ApolloOrg | null;
 };
 
+/**
+ * URL do webhook de telefone da Apollo (entrega assíncrona do número revelado).
+ * Só é enviada quando `APOLLO_PHONE_WEBHOOK_URL` estiver configurada; sem ela a
+ * Apollo devolve o número no próprio corpo da resposta quando disponível.
+ */
+function apolloPhoneWebhookUrl(): string | null {
+  const url = process.env["APOLLO_PHONE_WEBHOOK_URL"];
+  return url && url.startsWith("http") ? url : null;
+}
+
 export class ApolloNotConfiguredError extends Error {
+
   constructor() {
     super("Apollo.io não conectado. Conecte o Apollo em Configurações → Conectores.");
     this.name = "ApolloNotConfiguredError";
