@@ -6,7 +6,14 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 import { CA_ENTITIES } from "./contaazul-map";
 
-const entitySchema = z.enum(["categories", "cost-centers", "bank-accounts", "receivable", "payable", "statements"]);
+const entitySchema = z.enum([
+  "categories",
+  "cost-centers",
+  "bank-accounts",
+  "receivable",
+  "payable",
+  "statements",
+]);
 
 /** Estado da conexão + último resultado por entidade. */
 export const contaAzulStatus = createServerFn({ method: "GET" })

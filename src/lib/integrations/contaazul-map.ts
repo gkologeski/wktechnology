@@ -49,7 +49,10 @@ export function parseBrNumber(input: unknown): Money | null {
   const raw = input.trim();
   if (!raw) return null;
   const negative = /^\(.*\)$/.test(raw) || raw.startsWith("-");
-  let s = raw.replace(/[()\s]/g, "").replace(/^-/, "").replace(/R\$/gi, "");
+  let s = raw
+    .replace(/[()\s]/g, "")
+    .replace(/^-/, "")
+    .replace(/R\$/gi, "");
   const hasComma = s.includes(",");
   const hasDot = s.includes(".");
   if (hasComma && hasDot) {
@@ -59,6 +62,8 @@ export function parseBrNumber(input: unknown): Money | null {
     s = s.replace(",", ".");
   }
   s = s.replace(/[^0-9.]/g, "");
+  if (!/\d/.test(s)) return null;
+
   const n = Number(s);
   if (!Number.isFinite(n)) return null;
   return negative ? -n : n;
@@ -202,7 +207,8 @@ export function mapEntry(
   const dueDate =
     parseDateOnly(pick(raw, ["due_date", "dueDate", "data_vencimento", "vencimento", "date"])) ??
     parseDateOnly(pick(raw, ["created_at"])) ??
-    (today ?? new Date().toISOString().slice(0, 10));
+    today ??
+    new Date().toISOString().slice(0, 10);
   const competenceDate =
     parseDateOnly(pick(raw, ["competence_date", "issue_date", "data_competencia", "emission"])) ??
     dueDate;
@@ -213,7 +219,9 @@ export function mapEntry(
         `Conta Azul ${direction === "receivable" ? "a receber" : "a pagar"} ${externalId}`,
     ).slice(0, 500) || `Conta Azul ${externalId}`;
 
-  const installmentNumber = Number(pick(raw, ["installment", "parcela", "installment_number"]) ?? 0);
+  const installmentNumber = Number(
+    pick(raw, ["installment", "parcela", "installment_number"]) ?? 0,
+  );
   const installmentTotal = Number(
     pick(raw, ["installments", "total_parcelas", "installment_total"]) ?? 0,
   );
@@ -240,12 +248,9 @@ export function mapEntry(
         | string
         | undefined) ?? null,
     costCenterExternalId:
-      (pickDeep(raw, [
-        "cost_center.id",
-        "cost_center_id",
-        "centro_custo.id",
-        "centro_custo_id",
-      ]) as string | undefined) ?? null,
+      (pickDeep(raw, ["cost_center.id", "cost_center_id", "centro_custo.id", "centro_custo_id"]) as
+        | string
+        | undefined) ?? null,
     counterpartyName:
       (pickDeep(raw, [
         "customer.name",
@@ -374,7 +379,8 @@ export function mapStatementTx(raw: Raw): NormalizedStatementTx | null {
       (pick(raw, ["description", "descricao", "history", "historico"]) as string | undefined) ??
       null,
     counterparty:
-      (pickDeep(raw, ["counterparty", "person.name", "cliente.nome"]) as string | undefined) ?? null,
+      (pickDeep(raw, ["counterparty", "person.name", "cliente.nome"]) as string | undefined) ??
+      null,
     bankAccountExternalId:
       (pickDeep(raw, ["bank_account.id", "bank_account_id", "conta_id"]) as string | undefined) ??
       null,
