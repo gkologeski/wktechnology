@@ -538,7 +538,9 @@ function LeadsHubspotView() {
       { key: "last_name", label: "Sobrenome" },
       { key: "email", label: "Email" },
       { key: "phone", label: "Telefone" },
+      { key: "mobile_phone", label: "Celular" },
       { key: "company", label: "Empresa" },
+
       { key: "status", label: "Status" },
       { key: "source", label: "Origem" },
       { key: "score", label: "Score" },
