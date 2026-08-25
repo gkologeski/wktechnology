@@ -30,6 +30,7 @@ import { SourceCombobox } from "@/components/leads/source-combobox";
 import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialogs";
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
+import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
@@ -143,6 +144,15 @@ export function CreateLeadDialog({
     }
     setSaving(true);
     try {
+      const dup = await checkLeadDuplicate(supabase, {
+        email: form.email.trim() || null,
+        phone: phoneE164,
+      });
+      if (dup.duplicate) {
+        toast.error(dup.message ?? "Lead duplicado");
+        setSaving(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("leads")
         .insert({
