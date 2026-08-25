@@ -595,19 +595,36 @@ export function QualificationPanel({
                 {enrichment.data.warnings[0]}
               </Badge>
             ) : enrichment.data?.found ? (
-              <Badge
-                variant="secondary"
-                className="gap-1"
-                title={enrichment.data.domain ? `Domínio: ${enrichment.data.domain}` : undefined}
-              >
-                <Sparkles className="h-3 w-3" aria-hidden="true" />
-                Apollo
-                {enrichment.data.domain ? ` · ${enrichment.data.domain}` : ""}
-                {enrichment.data.applied &&
-                Object.values(enrichment.data.applied).some((v) => v.length > 0)
-                  ? " · gravado"
-                  : ""}
-              </Badge>
+              <>
+                <Badge
+                  variant="secondary"
+                  className="gap-1"
+                  title={enrichment.data.domain ? `Domínio: ${enrichment.data.domain}` : undefined}
+                >
+                  <Sparkles className="h-3 w-3" aria-hidden="true" />
+                  Apollo
+                  {enrichment.data.domain ? ` · ${enrichment.data.domain}` : ""}
+                  {enrichment.data.applied &&
+                  Object.values(enrichment.data.applied).some((v) => v.length > 0)
+                    ? " · gravado"
+                    : ""}
+                </Badge>
+                {enrichment.data.lead?.mobile_phone ||
+                enrichment.data.contacts?.mobile_phone ? (
+                  <Badge variant="outline" title="Número identificado como celular pelo Apollo.io">
+                    Celular encontrado
+                  </Badge>
+                ) : enrichment.data.companies?.phone ? (
+                  <Badge
+                    variant="outline"
+                    className="text-muted-foreground"
+                    title="O Apollo.io devolveu apenas o telefone corporativo da empresa."
+                  >
+                    Apenas telefone corporativo
+                  </Badge>
+                ) : null}
+              </>
+
             ) : enrichment.data ? (
               <Badge
                 variant="outline"
