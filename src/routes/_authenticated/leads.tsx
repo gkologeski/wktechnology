@@ -658,6 +658,14 @@ function LeadsHubspotView() {
         render: (lead) => (lead.phone ? (toE164(lead.phone) ?? lead.phone) : "—"),
       },
       {
+        key: "mobile_phone",
+        label: "Celular",
+        className: "text-muted-foreground",
+        render: (lead) =>
+          lead.mobile_phone ? (toE164(lead.mobile_phone) ?? lead.mobile_phone) : "—",
+      },
+      {
+
         key: "company",
         label: "Empresa",
         render: (lead) =>
