@@ -14,6 +14,7 @@ import { ACTION_LABELS } from "./types";
 import { getPath } from "@/lib/message-tokens";
 import { renderWorkflowTokens, toStr } from "./render-tokens";
 import { hydrateTriggerAssociations } from "./hydrate-associations.server";
+import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
 type AnyRow = Record<string, unknown>;
 type LogStep = {
