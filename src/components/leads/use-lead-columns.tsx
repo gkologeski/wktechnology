@@ -40,7 +40,12 @@ export function useLeadColumns({
   stages: LeadStage[];
   nameFor: (id: string) => string;
   initialsFor: (id: string) => string;
-  hsOwners: { byId?: Map<string, { first_name?: string | null; last_name?: string | null; email?: string | null }> };
+  hsOwners: {
+    byId?: Map<
+      string,
+      { first_name?: string | null; last_name?: string | null; email?: string | null }
+    >;
+  };
 }) {
   /** Cabeçalho ordenável para as colunas do catálogo dinâmico ("Outros campos"). */
   const autoSortHeader = useCallback(
