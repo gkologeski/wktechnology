@@ -41,7 +41,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const { data: lead, error } = await supabase
       .from("leads")
       .select(
-        "id, first_name, last_name, email, phone, company_name, company_id, converted_contact_id, custom_fields",
+        "id, first_name, last_name, email, phone, mobile_phone, company_name, company_id, converted_contact_id, custom_fields",
       )
       .eq("id", data.leadId)
       .maybeSingle();
