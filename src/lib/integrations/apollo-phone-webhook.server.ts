@@ -6,7 +6,7 @@
  * e grava o celular/telefone no lead e no contato correspondentes (match por
  * e-mail ou pelo id externo da Apollo), sem sobrescrever valores existentes.
  */
-import { getSupabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 type ApolloWebhookPhone = { sanitized_number?: string; raw_number?: string; type?: string };
 
@@ -40,7 +40,7 @@ export async function applyApolloPhonePayload(payload: ApolloPhonePayload): Prom
   const people = payload.people ?? (payload.person ? [payload.person] : []);
   if (!people.length) return 0;
 
-  const supabase = getSupabaseAdmin();
+  const supabase = supabaseAdmin;
   let updated = 0;
 
   for (const person of people) {
