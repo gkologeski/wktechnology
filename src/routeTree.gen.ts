@@ -318,6 +318,7 @@ import { Route as ApiPublicHooksBankingTickRouteImport } from './routes/api/publ
 import { Route as ApiPublicHooksAuditExportTickRouteImport } from './routes/api/public/hooks/audit-export-tick'
 import { Route as ApiPublicHooksAtsInterviewRemindersTickRouteImport } from './routes/api/public/hooks/ats-interview-reminders-tick'
 import { Route as ApiPublicHooksAtsEmailsTickRouteImport } from './routes/api/public/hooks/ats-emails-tick'
+import { Route as ApiPublicHooksApolloPhoneRouteImport } from './routes/api/public/hooks/apollo-phone'
 import { Route as ApiPublicHooksAiSummaryTickRouteImport } from './routes/api/public/hooks/ai-summary-tick'
 import { Route as ApiPublicHooksActivityRemindersTickRouteImport } from './routes/api/public/hooks/activity-reminders-tick'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
@@ -2132,6 +2133,12 @@ const ApiPublicHooksAtsEmailsTickRoute =
     path: '/api/public/hooks/ats-emails-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksApolloPhoneRoute =
+  ApiPublicHooksApolloPhoneRouteImport.update({
+    id: '/api/public/hooks/apollo-phone',
+    path: '/api/public/hooks/apollo-phone',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksAiSummaryTickRoute =
   ApiPublicHooksAiSummaryTickRouteImport.update({
     id: '/api/public/hooks/ai-summary-tick',
@@ -2717,6 +2724,7 @@ export interface FileRoutesByFullPath {
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/apollo-phone': typeof ApiPublicHooksApolloPhoneRoute
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
@@ -3074,6 +3082,7 @@ export interface FileRoutesByTo {
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/apollo-phone': typeof ApiPublicHooksApolloPhoneRoute
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
@@ -3439,6 +3448,7 @@ export interface FileRoutesById {
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
   '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
+  '/api/public/hooks/apollo-phone': typeof ApiPublicHooksApolloPhoneRoute
   '/api/public/hooks/ats-emails-tick': typeof ApiPublicHooksAtsEmailsTickRoute
   '/api/public/hooks/ats-interview-reminders-tick': typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   '/api/public/hooks/audit-export-tick': typeof ApiPublicHooksAuditExportTickRoute
@@ -3804,6 +3814,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/apollo-phone'
     | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/ats-interview-reminders-tick'
     | '/api/public/hooks/audit-export-tick'
@@ -4161,6 +4172,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/apollo-phone'
     | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/ats-interview-reminders-tick'
     | '/api/public/hooks/audit-export-tick'
@@ -4525,6 +4537,7 @@ export interface FileRouteTypes {
     | '/api/public/forms/embed-js'
     | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
+    | '/api/public/hooks/apollo-phone'
     | '/api/public/hooks/ats-emails-tick'
     | '/api/public/hooks/ats-interview-reminders-tick'
     | '/api/public/hooks/audit-export-tick'
@@ -4660,6 +4673,7 @@ export interface RootRouteChildren {
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
   ApiPublicHooksActivityRemindersTickRoute: typeof ApiPublicHooksActivityRemindersTickRoute
   ApiPublicHooksAiSummaryTickRoute: typeof ApiPublicHooksAiSummaryTickRoute
+  ApiPublicHooksApolloPhoneRoute: typeof ApiPublicHooksApolloPhoneRoute
   ApiPublicHooksAtsEmailsTickRoute: typeof ApiPublicHooksAtsEmailsTickRoute
   ApiPublicHooksAtsInterviewRemindersTickRoute: typeof ApiPublicHooksAtsInterviewRemindersTickRoute
   ApiPublicHooksAuditExportTickRoute: typeof ApiPublicHooksAuditExportTickRoute
@@ -6895,6 +6909,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksAtsEmailsTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/apollo-phone': {
+      id: '/api/public/hooks/apollo-phone'
+      path: '/api/public/hooks/apollo-phone'
+      fullPath: '/api/public/hooks/apollo-phone'
+      preLoaderRoute: typeof ApiPublicHooksApolloPhoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/ai-summary-tick': {
       id: '/api/public/hooks/ai-summary-tick'
       path: '/api/public/hooks/ai-summary-tick'
@@ -8124,6 +8145,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksActivityRemindersTickRoute:
     ApiPublicHooksActivityRemindersTickRoute,
   ApiPublicHooksAiSummaryTickRoute: ApiPublicHooksAiSummaryTickRoute,
+  ApiPublicHooksApolloPhoneRoute: ApiPublicHooksApolloPhoneRoute,
   ApiPublicHooksAtsEmailsTickRoute: ApiPublicHooksAtsEmailsTickRoute,
   ApiPublicHooksAtsInterviewRemindersTickRoute:
     ApiPublicHooksAtsInterviewRemindersTickRoute,
