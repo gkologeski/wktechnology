@@ -354,7 +354,7 @@ export const seedStarterKb = createServerFn({ method: "POST" })
 // ========== PÚBLICO (qualquer um) ==========
 
 export const listKbPublic = createServerFn({ method: "GET" }).handler(async () => {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   // Lista todos os artigos publicados de todos workspaces (KB pública multi-tenant simples)
   const [cats, arts] = await Promise.all([

@@ -45,7 +45,7 @@ export const testCalendarConnection = createServerFn({ method: "POST" })
       calendar_count?: number;
       primary_email?: string;
     }> => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const steps: CalendarTestStep[] = [];
       const fail = (name: string, detail: string) => {
         steps.push({ name, status: "error", detail });
