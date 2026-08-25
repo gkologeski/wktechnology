@@ -48,6 +48,7 @@ describe("workflow engine survey activity", () => {
       entity: "leads",
       entityId: "lead-1",
       ownerId: "owner-1",
+      workspaceId: "ws-1",
       after: { id: "lead-1" },
       before: null,
     });
@@ -106,6 +107,7 @@ describe("workflow engine survey activity", () => {
       entity: "leads",
       entityId: "lead-1",
       ownerId: "owner-1",
+      workspaceId: "ws-1",
       after: { id: "lead-1" },
       before: null,
     });
