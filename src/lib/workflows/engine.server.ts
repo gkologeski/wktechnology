@@ -14,6 +14,7 @@ import { ACTION_LABELS } from "./types";
 import { getPath } from "@/lib/message-tokens";
 import { renderWorkflowTokens, toStr } from "./render-tokens";
 import { hydrateTriggerAssociations } from "./hydrate-associations.server";
+import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
 type AnyRow = Record<string, unknown>;
 type LogStep = {
@@ -217,6 +218,7 @@ interface RunCtx {
   entity: WorkflowEntity;
   entityId: string;
   ownerId: string;
+  workspaceId: string;
   after: AnyRow | null;
   before: AnyRow | null;
   /** Fase 5 — variáveis mutáveis do run, populadas por format_data e lidas via {{vars.X}}. */
@@ -895,6 +897,20 @@ async function runAction(
             ? (renderTokens(action.source, ctx.after) as string) || null
             : "workflow",
         };
+        const dup = await checkLeadDuplicate(supabase, {
+          workspaceId: ctx.workspaceId,
+          email: (base.email as string | null) ?? null,
+          phone: (base.phone as string | null) ?? null,
+        });
+        if (dup.duplicate) {
+          return {
+            at,
+            ok: false,
+            action: "create_lead",
+            error: dup.message ?? "Lead duplicado",
+            detail: { existing_id: dup.existingId },
+          };
+        }
         const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
         const { data, error } = await supabase
           .from("leads")
@@ -1407,6 +1423,7 @@ interface EventRow {
 interface WorkflowRow {
   id: string;
   owner_id: string;
+  workspace_id: string;
   entity: WorkflowEntity;
   trigger: WorkflowTrigger;
   actions: WorkflowAction[];
@@ -1470,6 +1487,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
             entity: event.entity,
             entityId: event.entity_id,
             ownerId: event.owner_id,
+            workspaceId: wfr.workspace_id,
             after: hydratedAfter,
             before: event.before,
             workflowId: wfr.id,
@@ -1555,6 +1573,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       entity: event.entity,
       entityId: event.entity_id,
       ownerId: event.owner_id,
+      workspaceId: wf.workspace_id,
       after: hydratedAfter,
       before: event.before,
       workflowId: wf.id,

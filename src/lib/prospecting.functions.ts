@@ -8,6 +8,7 @@ import {
   toFriendlyDbError,
   withTransientRetry,
 } from "@/lib/db/transient-retry";
+import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
 const APOLLO_GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
 
@@ -565,6 +566,15 @@ export const importProspectAsLead = createServerFn({ method: "POST" })
     const parts = fullName.split(" ");
     const first = parts[0] || fullName;
     const last = parts.slice(1).join(" ") || null;
+
+    const dup = await checkLeadDuplicate(sb, {
+      workspaceId,
+      email: (r.email || r.email_hint) ?? null,
+      phone: r.phone ?? null,
+    });
+    if (dup.duplicate) {
+      return { id: dup.existingId, already: true, skipped: dup.message ?? null };
+    }
 
     const { data: lead, error: lErr } = await sb
       .from("leads")

@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
 import { buildMeta, jsonError, parseListParams } from "@/lib/api-keys/list-params.server";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
+import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
 
 const CreateLead = z.object({
   first_name: z.string().min(1).max(120),
@@ -60,6 +61,17 @@ export const Route = createFileRoute("/api/public/v1/leads")({
               headers: { "Content-Type": "application/json" },
             },
           );
+        }
+        const dup = await checkLeadDuplicate(supabaseAdmin, {
+          workspaceId: auth.workspaceId,
+          email: parsed.data.email ?? null,
+          phone: parsed.data.phone ?? null,
+        });
+        if (dup.duplicate) {
+          return new Response(JSON.stringify({ error: "duplicate", message: dup.message }), {
+            status: 409,
+            headers: { "Content-Type": "application/json" },
+          });
         }
         const { data, error } = await supabaseAdmin
           .from("leads")
