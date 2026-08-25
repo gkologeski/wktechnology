@@ -323,6 +323,8 @@ function AllocationDialog({
   const [status, setStatus] = useState<AllocationStatus>(editing?.status ?? "active");
   const [notes, setNotes] = useState<string>(editing?.notes ?? "");
   const [seniority, setSeniority] = useState<string>("");
+  const [presetId, setPresetId] = useState<string | null>(editing?.contracting_preset_id ?? null);
+  const [competencies, setCompetencies] = useState<string[]>(editing?.competencies ?? []);
 
   const suggestFn = useServerFn(listContractRoleSuggestions);
   const { data: suggestions = [] } = useQuery({
@@ -340,6 +342,12 @@ function AllocationDialog({
   const applySuggestion = (s: ContractRoleSuggestion) => {
     if (s.job_profile_name) setRoleTitle(s.job_profile_name);
     if (s.seniority) setSeniority(s.seniority);
+    setPresetId(s.contracting_preset_id ?? null);
+    if (s.competencies.length) setCompetencies(s.competencies);
+    // Taxas do preset só entram quando o usuário ainda não digitou nada.
+    if (s.suggested_billable_rate != null && !billable)
+      setBillable(String(s.suggested_billable_rate));
+    if (s.suggested_cost_rate != null && !cost) setCost(String(s.suggested_cost_rate));
   };
 
   const mut = useMutation({
@@ -363,6 +371,8 @@ function AllocationDialog({
           status,
           notes: notes || null,
           seniority: seniority || null,
+          contracting_preset_id: presetId,
+          competencies,
         },
       }),
     onSuccess: () => {
@@ -435,6 +445,7 @@ function AllocationDialog({
                       <span className="text-xs">
                         {s.job_profile_name ?? s.service_name}
                         {s.seniority ? ` · ${SENIORITY_LABEL[s.seniority] ?? s.seniority}` : ""}
+                        {s.preset_name ? ` · ${s.preset_name}` : ""}
                       </span>
                     </Button>
                   ))}
@@ -442,6 +453,26 @@ function AllocationDialog({
               </div>
             ) : null}
           </div>
+          {competencies.length > 0 ? (
+            <div className="space-y-2 md:col-span-2">
+              <Label>Competências sugeridas</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {competencies.map((c) => (
+                  <Badge key={c} variant="secondary" className="gap-1">
+                    {c}
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={() => setCompetencies((prev) => prev.filter((x) => x !== c))}
+                      aria-label={`Remover competência ${c}`}
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          ) : null}
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="alloc-seniority">Senioridade</Label>
             <Select

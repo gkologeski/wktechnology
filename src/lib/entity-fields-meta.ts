@@ -225,7 +225,6 @@ export const LABELS: Record<string, string> = {
   financial_entry_id: "Lançamento financeiro",
   subscription_id: "Assinatura",
   quote_id: "Cotação",
-  product_id: "Produto",
   service_id: "Serviço",
   list_id: "Lista",
   pool_id: "Pool de talentos",

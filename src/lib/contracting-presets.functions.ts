@@ -246,3 +246,28 @@ export const listContractingPresetOptions = createServerFn({ method: "POST" })
     if (error) throw error;
     return rows ?? [];
   });
+
+// Presets aplicáveis a uma linha de serviço do catálogo. Usado para
+// pré-preencher itens de linha (negócios/propostas/cotações) e sugestões de
+// alocação de pessoas.
+export const listPresetsForService = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ serviceCatalogId: z.string().uuid().nullable().optional() }).parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, VIEW);
+    if (!data.serviceCatalogId) return [];
+
+    const { data: rows, error } = await supabase
+      .from("contracting_presets")
+      .select(OPTION_SELECT)
+      .eq("active", true)
+      .eq("service_catalog_id", data.serviceCatalogId)
+      .order("name")
+      .limit(100);
+    if (error) throw error;
+    return rows ?? [];
+  });

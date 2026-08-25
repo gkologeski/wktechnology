@@ -17,7 +17,6 @@ export type WorkflowEntity =
   | "bank_payments"
   | "quotes"
   | "proposals"
-  | "products"
   | "services"
   | "recurring_plans"
   | "subscription_invoices"
@@ -46,7 +45,6 @@ export const WORKFLOW_WRITABLE_TABLES = [
   "bank_payments",
   "quotes",
   "proposals",
-  "products",
   "services",
   "recurring_plans",
   "subscription_invoices",
@@ -398,7 +396,6 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   bank_payments: "Pagamentos bancários",
   quotes: "Cotações",
   proposals: "Propostas",
-  products: "Produtos",
   services: "Serviços",
   recurring_plans: "Planos recorrentes",
   subscription_invoices: "Faturas de assinatura",
@@ -414,7 +411,7 @@ export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }>
     entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews"],
   },
   { label: "Projetos", entities: ["projects", "project_tasks", "project_milestones"] },
-  { label: "Contratos e catálogo", entities: ["contracts", "products", "services"] },
+  { label: "Contratos e catálogo", entities: ["contracts", "services"] },
   {
     label: "Financeiro",
     entities: [
@@ -598,7 +595,6 @@ export const RECORD_ACTION_MODULES: RecordActionModule[] = [
     label: "Contratos e catálogo",
     entities: [
       { table: "contracts", singular: "Contrato" },
-      { table: "products", singular: "Produto" },
       { table: "services", singular: "Serviço" },
     ],
   },
@@ -787,7 +783,6 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "accepted_at",
     "owner_id",
   ],
-  products: ["name", "sku", "price", "cost", "active", "category", "owner_id"],
   services: ["name", "unit_price", "duration_min", "active", "category", "owner_id"],
   recurring_plans: ["name", "amount", "currency", "interval", "active", "owner_id"],
   subscription_invoices: ["number", "status", "amount", "due_date", "paid_at", "subscription_id"],

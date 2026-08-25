@@ -74,7 +74,6 @@ export const SEGMENT_LABELS: Record<string, string> = {
   pipelines: "Funis",
   playbooks: "Playbooks",
   portal: "Portal",
-  products: "Produtos",
   "property-groups: ": "Grupos de propriedades",
   "property-groups": "Grupos de propriedades",
   "prospecting-scripts": "Scripts de prospecção",

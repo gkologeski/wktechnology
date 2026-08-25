@@ -163,6 +163,13 @@ export const createQuoteFromDeal = createServerFn({ method: "POST" })
       discount_type: li.discount_type ?? "pct",
       tax_rate: li.tax_rate,
       position: idx,
+      // Preset de contratação e derivados (cargo/senioridade/unidade) viajam
+      // junto com o item para o snapshot da cotação.
+      service_catalog_id: li.service_catalog_id ?? null,
+      contracting_preset_id: li.contracting_preset_id ?? null,
+      job_profile_id: li.job_profile_id ?? null,
+      seniority: li.seniority ?? null,
+      unit: li.unit ?? null,
     }));
     const { error: insErr } = await supabase.from("quote_line_items").insert(payload);
     if (insErr) throw insErr;
@@ -178,7 +185,9 @@ export const updateQuote = createServerFn({ method: "POST" })
         id: z.string().uuid(),
         patch: z.object({
           title: z.string().nullable().optional(),
-          status: z.enum(["draft", "published", "sent", "accepted", "declined", "expired"]).optional(),
+          status: z
+            .enum(["draft", "published", "sent", "accepted", "declined", "expired"])
+            .optional(),
           valid_until: z.string().nullable().optional(),
           notes: z.string().nullable().optional(),
           terms: z.string().nullable().optional(),
@@ -233,6 +242,11 @@ export const resyncQuoteLineItems = createServerFn({ method: "POST" })
         discount_type: li.discount_type ?? "pct",
         tax_rate: li.tax_rate,
         position: idx,
+        service_catalog_id: li.service_catalog_id ?? null,
+        contracting_preset_id: li.contracting_preset_id ?? null,
+        job_profile_id: li.job_profile_id ?? null,
+        seniority: li.seniority ?? null,
+        unit: li.unit ?? null,
       }));
       const { error: insErr } = await supabase.from("quote_line_items").insert(payload);
       if (insErr) throw insErr;
@@ -241,7 +255,6 @@ export const resyncQuoteLineItems = createServerFn({ method: "POST" })
     if (uErr) throw uErr;
     return { ok: true, totals };
   });
-
 
 export const deleteQuote = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

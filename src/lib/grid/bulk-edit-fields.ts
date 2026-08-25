@@ -26,7 +26,6 @@ export const BULK_EDIT_ENTITIES = [
   "bank_payments",
   "quotes",
   "proposals",
-  "products",
   "services",
   "recurring_plans",
   "subscription_invoices",

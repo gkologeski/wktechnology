@@ -53,12 +53,9 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/tasks": ["techsales.tasks"],
   "/tasks/queues": ["techsales.task_queues"],
   "/dashboard": ["techsales.dashboard"],
-  "/catalog/products": ["techsales.catalog.products"],
   "/catalog/services": ["techsales.catalog.services"],
   "/catalog/job-profiles": ["techsales.catalog.services"],
   "/catalog/contracting-presets": ["techsales.catalog.services"],
-  "/settings/products": ["techsales.catalog.products"],
-  "/services/products": ["techsales.catalog.products"],
   "/leads/import-hubspot": ["system.import"],
   "/prospecting": [
     "techsales.prospecting_queue",

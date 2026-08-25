@@ -6348,6 +6348,7 @@ export type Database = {
       }
       deal_line_items: {
         Row: {
+          contracting_preset_id: string | null
           created_at: string
           deal_id: string
           description: string | null
@@ -6355,18 +6356,21 @@ export type Database = {
           discount_pct: number
           discount_type: string
           id: string
+          job_profile_id: string | null
           name: string
           owner_id: string
           position: number
-          product_id: string | null
           quantity: number
+          seniority: string | null
           service_catalog_id: string | null
           tax_rate: number
+          unit: string | null
           unit_price: number
           updated_at: string
           workspace_id: string
         }
         Insert: {
+          contracting_preset_id?: string | null
           created_at?: string
           deal_id: string
           description?: string | null
@@ -6374,18 +6378,21 @@ export type Database = {
           discount_pct?: number
           discount_type?: string
           id?: string
+          job_profile_id?: string | null
           name: string
           owner_id: string
           position?: number
-          product_id?: string | null
           quantity?: number
+          seniority?: string | null
           service_catalog_id?: string | null
           tax_rate?: number
+          unit?: string | null
           unit_price?: number
           updated_at?: string
           workspace_id?: string
         }
         Update: {
+          contracting_preset_id?: string | null
           created_at?: string
           deal_id?: string
           description?: string | null
@@ -6393,18 +6400,27 @@ export type Database = {
           discount_pct?: number
           discount_type?: string
           id?: string
+          job_profile_id?: string | null
           name?: string
           owner_id?: string
           position?: number
-          product_id?: string | null
           quantity?: number
+          seniority?: string | null
           service_catalog_id?: string | null
           tax_rate?: number
+          unit?: string | null
           unit_price?: number
           updated_at?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "deal_line_items_contracting_preset_id_fkey"
+            columns: ["contracting_preset_id"]
+            isOneToOne: false
+            referencedRelation: "contracting_presets"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "deal_line_items_deal_id_fkey"
             columns: ["deal_id"]
@@ -6413,10 +6429,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "deal_line_items_product_id_fkey"
-            columns: ["product_id"]
+            foreignKeyName: "deal_line_items_job_profile_id_fkey"
+            columns: ["job_profile_id"]
             isOneToOne: false
-            referencedRelation: "products"
+            referencedRelation: "job_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -11213,7 +11229,9 @@ export type Database = {
           allocation_pct: number
           assigned_to: string | null
           billable_rate: number | null
+          competencies: string[]
           contract_id: string | null
+          contracting_preset_id: string | null
           cost_rate: number | null
           created_at: string
           currency: string
@@ -11235,7 +11253,9 @@ export type Database = {
           allocation_pct?: number
           assigned_to?: string | null
           billable_rate?: number | null
+          competencies?: string[]
           contract_id?: string | null
+          contracting_preset_id?: string | null
           cost_rate?: number | null
           created_at?: string
           currency?: string
@@ -11257,7 +11277,9 @@ export type Database = {
           allocation_pct?: number
           assigned_to?: string | null
           billable_rate?: number | null
+          competencies?: string[]
           contract_id?: string | null
+          contracting_preset_id?: string | null
           cost_rate?: number | null
           created_at?: string
           currency?: string
@@ -11281,6 +11303,13 @@ export type Database = {
             columns: ["contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocations_contracting_preset_id_fkey"
+            columns: ["contracting_preset_id"]
+            isOneToOne: false
+            referencedRelation: "contracting_presets"
             referencedColumns: ["id"]
           },
           {
@@ -12602,62 +12631,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "playbooks_workspace_id_fkey"
-            columns: ["workspace_id"]
-            isOneToOne: false
-            referencedRelation: "workspaces"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      products: {
-        Row: {
-          active: boolean
-          created_at: string
-          currency: string
-          description: string | null
-          id: string
-          name: string
-          owner_id: string
-          sku: string | null
-          tax_rate: number
-          unit: string | null
-          unit_price: number
-          updated_at: string
-          workspace_id: string
-        }
-        Insert: {
-          active?: boolean
-          created_at?: string
-          currency?: string
-          description?: string | null
-          id?: string
-          name: string
-          owner_id: string
-          sku?: string | null
-          tax_rate?: number
-          unit?: string | null
-          unit_price?: number
-          updated_at?: string
-          workspace_id?: string
-        }
-        Update: {
-          active?: boolean
-          created_at?: string
-          currency?: string
-          description?: string | null
-          id?: string
-          name?: string
-          owner_id?: string
-          sku?: string | null
-          tax_rate?: number
-          unit?: string | null
-          unit_price?: number
-          updated_at?: string
-          workspace_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "products_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -14446,7 +14419,6 @@ export type Database = {
           owner_id: string
           pass_threshold: number
           pipeline_id: string | null
-          product_id: string | null
           updated_at: string
           workspace_id: string | null
         }
@@ -14463,7 +14435,6 @@ export type Database = {
           owner_id: string
           pass_threshold?: number
           pipeline_id?: string | null
-          product_id?: string | null
           updated_at?: string
           workspace_id?: string | null
         }
@@ -14480,7 +14451,6 @@ export type Database = {
           owner_id?: string
           pass_threshold?: number
           pipeline_id?: string | null
-          product_id?: string | null
           updated_at?: string
           workspace_id?: string | null
         }
@@ -14952,59 +14922,95 @@ export type Database = {
       }
       quote_line_items: {
         Row: {
+          contracting_preset_id: string | null
           created_at: string
           description: string | null
           discount_amount: number
           discount_pct: number
           discount_type: string
           id: string
+          job_profile_id: string | null
           name: string
           owner_id: string
           position: number
           quantity: number
           quote_id: string
+          seniority: string | null
+          service_catalog_id: string | null
           tax_rate: number
+          unit: string | null
           unit_price: number
           workspace_id: string
         }
         Insert: {
+          contracting_preset_id?: string | null
           created_at?: string
           description?: string | null
           discount_amount?: number
           discount_pct?: number
           discount_type?: string
           id?: string
+          job_profile_id?: string | null
           name: string
           owner_id: string
           position?: number
           quantity?: number
           quote_id: string
+          seniority?: string | null
+          service_catalog_id?: string | null
           tax_rate?: number
+          unit?: string | null
           unit_price?: number
           workspace_id?: string
         }
         Update: {
+          contracting_preset_id?: string | null
           created_at?: string
           description?: string | null
           discount_amount?: number
           discount_pct?: number
           discount_type?: string
           id?: string
+          job_profile_id?: string | null
           name?: string
           owner_id?: string
           position?: number
           quantity?: number
           quote_id?: string
+          seniority?: string | null
+          service_catalog_id?: string | null
           tax_rate?: number
+          unit?: string | null
           unit_price?: number
           workspace_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "quote_line_items_contracting_preset_id_fkey"
+            columns: ["contracting_preset_id"]
+            isOneToOne: false
+            referencedRelation: "contracting_presets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_line_items_job_profile_id_fkey"
+            columns: ["job_profile_id"]
+            isOneToOne: false
+            referencedRelation: "job_profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quote_line_items_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_line_items_service_catalog_id_fkey"
+            columns: ["service_catalog_id"]
+            isOneToOne: false
+            referencedRelation: "service_catalog"
             referencedColumns: ["id"]
           },
           {
@@ -16256,7 +16262,6 @@ export type Database = {
           name: string
           next_billing_at: string | null
           owner_id: string
-          product_id: string | null
           quantity: number
           role: Database["public"]["Enums"]["contract_role"]
           seniority: string | null
@@ -16283,7 +16288,6 @@ export type Database = {
           name: string
           next_billing_at?: string | null
           owner_id: string
-          product_id?: string | null
           quantity?: number
           role: Database["public"]["Enums"]["contract_role"]
           seniority?: string | null
@@ -16310,7 +16314,6 @@ export type Database = {
           name?: string
           next_billing_at?: string | null
           owner_id?: string
-          product_id?: string | null
           quantity?: number
           role?: Database["public"]["Enums"]["contract_role"]
           seniority?: string | null
@@ -16334,13 +16337,6 @@ export type Database = {
             columns: ["job_profile_id"]
             isOneToOne: false
             referencedRelation: "job_profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "services_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
             referencedColumns: ["id"]
           },
           {
@@ -19578,27 +19574,6 @@ export type Database = {
           name?: string | null
           public_slug?: string | null
           terms_url?: string | null
-        }
-        Relationships: []
-      }
-      catalog_items: {
-        Row: {
-          active: boolean | null
-          base_price: number | null
-          category: string | null
-          code: string | null
-          created_at: string | null
-          currency: string | null
-          description: string | null
-          id: string | null
-          kind: string | null
-          name: string | null
-          owner_id: string | null
-          tax_rate: number | null
-          type: string | null
-          unit: string | null
-          updated_at: string | null
-          workspace_id: string | null
         }
         Relationships: []
       }

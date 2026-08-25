@@ -116,7 +116,6 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
           "bank_payments",
           "quotes",
           "proposals",
-          "products",
           "services",
           "recurring_plans",
           "subscription_invoices",

@@ -8,7 +8,6 @@ export const SERVICES_SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Serviços",
     items: [
       { title: "Serviços", url: "/services", icon: Package },
-      { title: "Produtos", url: "/services/products", icon: Package, need: "manager", permissionAny: MENU_PERMISSIONS.catalog },
     ],
   },
 ];

@@ -20,7 +20,16 @@ import { Download, Check, X, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { renderQuoteTemplate, type QuoteRenderContext } from "@/lib/quote-template-renderer";
+import { SENIORITY_LABEL } from "@/lib/job-profiles-shared";
 
+function lineRoleHint(li: { seniority?: string | null; unit?: string | null }) {
+  return [
+    li.seniority ? (SENIORITY_LABEL[li.seniority] ?? li.seniority) : null,
+    li.unit ? `por ${li.unit}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 export const Route = createFileRoute("/quote/$token")({
   component: PublicQuotePage,
@@ -79,7 +88,6 @@ function PublicQuotePage() {
     triggerDownload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, error, data]);
-
 
   if (isLoading) return <div className="p-8 text-sm text-muted-foreground">Carregando…</div>;
   if (error || !data)
@@ -200,6 +208,11 @@ function PublicQuotePage() {
                     <tr key={li.id} className="border-t">
                       <td className="p-3">
                         <div>{li.name}</div>
+                        {lineRoleHint(li) && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {lineRoleHint(li)}
+                          </div>
+                        )}
                         {li.description && (
                           <div className="text-xs text-muted-foreground mt-0.5">
                             {li.description}
@@ -362,6 +375,8 @@ type LineItem = {
   unit_price: number;
   discount_pct: number;
   tax_rate: number;
+  seniority?: string | null;
+  unit?: string | null;
 };
 
 type QuoteForRender = {
