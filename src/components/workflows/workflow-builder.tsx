@@ -21,7 +21,7 @@ import {
 } from "@/lib/workflows/association-tokens";
 import type { RefKind } from "@/lib/entity-fields-refs";
 
-import { Suspense } from "react";
+import { lazy, Suspense } from "react";
 
 import {
   countSteps,
