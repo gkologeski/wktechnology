@@ -29,6 +29,14 @@ export default defineTool({
     const userId = ctx.getUserId()!;
     const supabase = supabaseForUser(ctx);
     const workspaceId = await resolveWorkspaceId(supabase, userId);
+    const dup = await checkLeadDuplicate(supabase, {
+      workspaceId,
+      email: input.email ?? null,
+      phone: input.phone ?? null,
+    });
+    if (dup.duplicate) {
+      return { content: [{ type: "text", text: dup.message ?? "Lead duplicado" }], isError: true };
+    }
     const { data, error } = await supabase
       .from("leads")
       .insert({
