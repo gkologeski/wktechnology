@@ -286,6 +286,17 @@ export const agentCreateLead = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
+    const dup = await checkLeadDuplicate(context.supabase, {
+      email: data.email ?? null,
+      phone: data.phone ?? null,
+    });
+    if (dup.duplicate) {
+      return {
+        id: dup.existingId ?? "",
+        url: dup.existingId ? `/leads/${dup.existingId}` : "/leads",
+        summary: dup.message ?? "Lead duplicado detectado.",
+      };
+    }
     const { data: row, error } = await context.supabase
       .from("leads")
       .insert({ owner_id: context.userId, ...data })
