@@ -2,12 +2,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export const listChatSessions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data, error } = await supabaseAdmin
       .from("live_chat_sessions")
@@ -25,6 +25,7 @@ export const listChatMessages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ session_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: rows, error } = await supabaseAdmin
       .from("live_chat_messages")
@@ -47,6 +48,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin.from("live_chat_messages").insert({
       session_id: data.session_id,
@@ -69,6 +71,7 @@ export const closeChatSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ session_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     await supabaseAdmin
       .from("live_chat_sessions")
@@ -90,6 +93,7 @@ export const convertChatSessionToTicket = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: session, error: sErr } = await supabaseAdmin
       .from("live_chat_sessions")

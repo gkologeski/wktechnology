@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { buildCalendarAuthUrl, callbackRedirectUri, signState } from "@/lib/email-oauth.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
@@ -46,6 +45,7 @@ export const testCalendarConnection = createServerFn({ method: "POST" })
       calendar_count?: number;
       primary_email?: string;
     }> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const steps: CalendarTestStep[] = [];
       const fail = (name: string, detail: string) => {
         steps.push({ name, status: "error", detail });
@@ -214,6 +214,7 @@ export const startCalendarOAuth = createServerFn({ method: "POST" })
 export const listCalendarAccounts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data, error } = await supabaseAdmin
       .from("calendar_accounts")
@@ -230,6 +231,7 @@ export const setCalendarMeetEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin
       .from("calendar_accounts")
@@ -244,6 +246,7 @@ export const disconnectCalendarAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     // Preserva o histórico de reuniões (recording_url, transcript, summary_text,
     // vínculos com activities/bookings) desassociando os eventos da conta antes
@@ -268,6 +271,7 @@ export const setCalendarSyncEnabled = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { error } = await supabaseAdmin
       .from("calendar_accounts")
@@ -282,6 +286,7 @@ export const syncCalendarNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: row, error } = await supabaseAdmin
       .from("calendar_accounts")
@@ -298,6 +303,7 @@ export const syncAccountRecordings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ account_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: row, error } = await supabaseAdmin
       .from("calendar_accounts")
@@ -324,6 +330,7 @@ export const pushActivityToCalendar = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: acct, error: aErr } = await supabaseAdmin
       .from("calendar_accounts")

@@ -2,7 +2,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import {
   pushEntity,
   pushAllForOwner,
@@ -24,6 +23,7 @@ export const pushEntityNow = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return await pushEntity(supabaseAdmin, context.userId, data.entity as SyncEntity, data.limit);
   });
 
@@ -38,6 +38,7 @@ export const pushAllNow = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return await pushAllForOwner(supabaseAdmin, context.userId, data.limit);
   });
 
@@ -45,6 +46,7 @@ export const pushAllNow = createServerFn({ method: "POST" })
 export const listSyncConflicts = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("hubspot_sync_state")
       .select(
@@ -69,6 +71,7 @@ export const resolveSyncConflict = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     return await resolveConflictRow(supabaseAdmin, context.userId, data.id, data.strategy);
   });
 
@@ -76,6 +79,7 @@ export const resolveSyncConflict = createServerFn({ method: "POST" })
 export const getHubspotSyncConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data } = await supabaseAdmin
       .from("integrations")
       .select("config")
@@ -94,6 +98,7 @@ export const setHubspotAutoPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ enabled: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: cur } = await supabaseAdmin
       .from("integrations")
       .select("id, config")

@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { tickSequences } from "@/lib/sequences/engine.server";
 import type { SequenceEntity, SequenceStep } from "@/lib/sequences/types";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -182,7 +181,10 @@ export const updateEnrollmentStatus = createServerFn({ method: "POST" })
 
 export const triggerSequencesTickNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => tickSequences(supabaseAdmin, 100));
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return tickSequences(supabaseAdmin, 100);
+  });
 
 export type SequenceListItem = Awaited<ReturnType<typeof listSequences>>[number];
 export type EnrollmentListItem = Awaited<ReturnType<typeof listEnrollments>>[number];

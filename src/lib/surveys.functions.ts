@@ -1,10 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const getSurveyByToken = createServerFn({ method: "GET" })
   .inputValidator((input) => z.object({ token: z.string().min(8).max(64) }).parse(input))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: survey, error } = await supabaseAdmin
       .from("survey_responses")
       .select("id, token, kind, score, comment, responded_at, ticket_id")
@@ -31,6 +31,7 @@ export const submitSurvey = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: existing, error: e1 } = await supabaseAdmin
       .from("survey_responses")
       .select("id, kind, responded_at")

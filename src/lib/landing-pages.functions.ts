@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 
 const SlugSchema = z
@@ -100,6 +99,7 @@ export const deleteLandingPage = createServerFn({ method: "POST" })
 export const getPublishedBySlug = createServerFn({ method: "GET" })
   .inputValidator((d: { slug: string }) => z.object({ slug: SlugSchema }).parse(d))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Projeção mínima: sem owner_id/assigned_to nem contadores internos.
     const { data: row } = await (supabaseAdmin.from("landing_pages") as any)
       .select("id,title,description,blocks,theme,seo,slug")
@@ -130,6 +130,7 @@ export const trackLpEvent = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: lp } = await (supabaseAdmin.from("landing_pages") as any)
       .select("owner_id")
       .eq("id", data.landing_page_id)

@@ -2,7 +2,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
@@ -30,6 +29,7 @@ const slugify = (s: string) =>
 export const listKbCategoriesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, KB_VIEW);
     const { data, error } = await supabaseAdmin
@@ -56,6 +56,7 @@ export const upsertKbCategory = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     await assertAnyPermission(
       context.supabase,
@@ -94,6 +95,7 @@ export const deleteKbCategory = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, KB_DELETE);
     await supabaseAdmin.from("kb_categories").delete().eq("id", data.id).eq("owner_id", ws);
@@ -103,6 +105,7 @@ export const deleteKbCategory = createServerFn({ method: "POST" })
 export const listKbArticlesAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, KB_VIEW);
     const { data, error } = await supabaseAdmin
@@ -118,6 +121,7 @@ export const getKbArticleAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, KB_VIEW);
     const { data: row, error } = await supabaseAdmin
@@ -147,6 +151,7 @@ export const upsertKbArticle = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     await assertAnyPermission(
       context.supabase,
@@ -187,6 +192,7 @@ export const deleteKbArticle = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, KB_DELETE);
     await supabaseAdmin.from("kb_articles").delete().eq("id", data.id).eq("owner_id", ws);
@@ -281,6 +287,7 @@ const STARTER_ARTICLES: Array<{ category: string; title: string; excerpt: string
 export const seedStarterKb = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     await assertAnyPermission(context.supabase, context.userId, ws, KB_MANAGE);
 
@@ -347,6 +354,8 @@ export const seedStarterKb = createServerFn({ method: "POST" })
 // ========== PÚBLICO (qualquer um) ==========
 
 export const listKbPublic = createServerFn({ method: "GET" }).handler(async () => {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
   // Lista todos os artigos publicados de todos workspaces (KB pública multi-tenant simples)
   const [cats, arts] = await Promise.all([
     supabaseAdmin
@@ -366,6 +375,7 @@ export const listKbPublic = createServerFn({ method: "GET" }).handler(async () =
 export const getKbArticlePublic = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ slug: z.string().min(1).max(80) }).parse(i))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("kb_articles")
       .select("id, title, slug, excerpt, body, category_id, published_at, views")

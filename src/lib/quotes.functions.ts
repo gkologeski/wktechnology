@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 function token() {
   return randomBytes(24).toString("hex");
@@ -356,6 +355,7 @@ export const createQuotePaymentLink = createServerFn({ method: "POST" })
 export const getQuoteByToken = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ token: z.string().min(1).max(128) }).parse(input))
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: quote, error } = await supabaseAdmin
       .from("quotes")
       .select("*")
@@ -424,6 +424,7 @@ export const respondToQuote = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: quote, error } = await supabaseAdmin
       .from("quotes")
       .select("id, status")
