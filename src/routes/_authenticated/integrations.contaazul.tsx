@@ -24,6 +24,10 @@ import {
   contaAzulStatus,
 } from "@/lib/integrations/contaazul.functions";
 import { ContaAzulFileImportDialog } from "@/components/contaazul/contaazul-file-import-dialog";
+import {
+  ContaAzulSyncProgress,
+  type CaSyncStateRow,
+} from "@/components/contaazul/contaazul-sync-progress";
 
 export const Route = createFileRoute("/_authenticated/integrations/contaazul")({
   head: () => ({
