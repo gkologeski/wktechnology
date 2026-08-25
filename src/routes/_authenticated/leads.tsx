@@ -9,6 +9,7 @@ import { listQueues, upsertQueue } from "@/lib/prospecting/queues.functions";
 import { QUEUE_CREATE, QUEUE_UPDATE, QUEUE_VIEW } from "@/lib/prospecting/permission-keys";
 
 import { useAuth } from "@/lib/auth";
+import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { useEnsureDefaultPipeline } from "@/lib/pipelines";
 import { toast } from "sonner";
 import { useLeadStages, deriveLeadStatus, findLeadStage } from "@/lib/leads/stages";
