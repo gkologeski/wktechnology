@@ -416,6 +416,7 @@ async function resolveContactsToLeads(
     phone: string | null;
   }>,
 ): Promise<Array<{ lead_id: string; name: string; phone: string | null }>> {
+  const sb = await sbAdmin();
   const emails = contacts.map((c) => c.email).filter((e): e is string => !!e);
   const phones = contacts.map((c) => c.phone).filter((p): p is string => !!p);
   if (emails.length === 0 && phones.length === 0) return [];

@@ -504,6 +504,7 @@ export async function startVapiCall(opts: {
   attemptNumber?: number;
   attemptId?: string | null;
 }): Promise<{ ok: boolean; call_id?: string; error?: string }> {
+  const sb = await sbAdmin();
   const persistDiag = async (patch: Record<string, unknown>) => {
     if (!opts.attemptId) return;
     await sb.from("prospecting_call_attempts").update(patch).eq("id", opts.attemptId);
