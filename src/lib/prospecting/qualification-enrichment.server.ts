@@ -7,7 +7,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** Colunas reais de `leads` que podem ser preenchidas pelo enriquecimento. */
-export const LEAD_KEYS = ["first_name", "last_name", "email", "phone", "company_name"] as const;
+export const LEAD_KEYS = [
+  "first_name",
+  "last_name",
+  "email",
+  "phone",
+  "mobile_phone",
+  "company_name",
+] as const;
+
 
 /** Colunas reais de `companies`. */
 export const COMPANY_KEYS = [
