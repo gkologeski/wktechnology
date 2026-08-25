@@ -139,7 +139,7 @@ export async function runCompareStep({
     }
   }
 
-  ok = 1;
+
   await supabase
     .from("enrichment_job_items")
     .update({
