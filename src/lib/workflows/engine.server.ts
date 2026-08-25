@@ -1573,6 +1573,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       entity: event.entity,
       entityId: event.entity_id,
       ownerId: event.owner_id,
+      workspaceId: wf.workspace_id,
       after: hydratedAfter,
       before: event.before,
       workflowId: wf.id,
