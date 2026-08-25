@@ -265,8 +265,12 @@ export async function apolloPeopleMatch(input: {
 }): Promise<{ person: ApolloPersonData; company: ApolloCompanyData | null } | null> {
   const params: Record<string, unknown> = {
     reveal_personal_emails: true,
-    reveal_phone_number: false,
+    // Sem este flag a Apollo não devolve números pessoais/diretos — só o
+    // telefone corporativo. Consome crédito e depende da permissão da chave.
+    reveal_phone_number: true,
   };
+  const webhookUrl = apolloPhoneWebhookUrl();
+  if (webhookUrl) params.webhook_url = webhookUrl;
   if (input.linkedin_url) params.linkedin_url = input.linkedin_url;
   else if (input.email) params.email = input.email;
   else if (input.first_name && (input.domain || input.company_name)) {
@@ -286,18 +290,23 @@ export async function apolloPeopleMatch(input: {
   if (!p) return null;
 
   const phones = p.phone_numbers ?? [];
-  const work = phones.find((n) => n.type !== "mobile");
-  const mobile = phones.find((n) => n.type === "mobile");
+  const isMobile = (n: { type?: string }) => (n.type ?? "").toLowerCase().includes("mobile");
+  const work = phones.find((n) => !isMobile(n));
+  const mobile = phones.find(isMobile);
   const num = (n?: { sanitized_number?: string; raw_number?: string }) =>
     n?.sanitized_number ?? n?.raw_number ?? null;
+  const mobileNumber = num(mobile);
+  const workNumber = num(work) ?? num(phones[0]);
 
   return {
     person: {
       first_name: p.first_name ?? null,
       last_name: p.last_name ?? null,
       email: p.email ?? null,
-      phone: num(work) ?? num(phones[0]),
-      mobile_phone: num(mobile),
+      // Celular tem prioridade; o corporativo entra como alternativa.
+      phone: mobileNumber ?? workNumber,
+      mobile_phone: mobileNumber,
+
       job_title: p.title ?? null,
       linkedin_url: p.linkedin_url ?? null,
       twitter_handle: handleFromUrl(p.twitter_url),
