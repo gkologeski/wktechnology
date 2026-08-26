@@ -512,6 +512,22 @@ function BookingsSheet({ pageId, onClose }: { pageId: string; onClose: () => voi
                     <div className="text-xs text-muted-foreground">{b.invitee_phone}</div>
                   )}
                   {b.notes && <div className="text-xs mt-1 whitespace-pre-wrap">{b.notes}</div>}
+                  {b.meet_link && (
+                    <a
+                      href={b.meet_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-primary underline mt-1 inline-flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                      Link do Google Meet
+                    </a>
+                  )}
+                  {b.calendar_sync_error && (
+                    <p className="text-xs text-destructive mt-1 break-words">
+                      Falha na sincronização: {b.calendar_sync_error}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <Badge variant={b.status === "confirmed" ? "default" : "secondary"}>
