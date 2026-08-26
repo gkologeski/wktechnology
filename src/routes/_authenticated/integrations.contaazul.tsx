@@ -57,11 +57,15 @@ function ContaAzulIntegrationPage() {
 
   const [selected, setSelected] = useState<CaEntity[]>([...CA_ENTITIES]);
   const [busy, setBusy] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { data, isLoading, isError, isFetching, refetch } = useQuery({
     queryKey: ["contaazul", "status"],
     queryFn: () => status({}),
+    refetchInterval: autoRefresh ? 5000 : false,
+    refetchIntervalInBackground: false,
   });
+
 
   // Retorno do popup OAuth.
   useEffect(() => {
