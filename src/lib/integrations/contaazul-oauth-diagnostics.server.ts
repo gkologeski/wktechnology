@@ -25,6 +25,24 @@ export type ContaAzulOAuthDiagnostic = {
   occurredAt: string;
 };
 
+export type ContaAzulOAuthParamChecks = {
+  responseType: boolean;
+  clientId: boolean;
+  redirectUri: boolean;
+  state: boolean;
+  scope: boolean;
+  redirectMatchesCallback: boolean;
+  clientIdConsistent: boolean;
+};
+
+export type ContaAzulOAuthChecks = {
+  https: boolean;
+  expectedHosts: boolean;
+  callbackConsistent: boolean;
+  requiredParams: ContaAzulOAuthParamChecks;
+  likelyDevelopmentRedirect: boolean;
+};
+
 const SENSITIVE_PARAMS = new Set([
   "state",
   "code",
@@ -53,6 +71,43 @@ function cleanMessage(value: string): string {
     .replace(/[\r\n\t]+/g, " ")
     .trim()
     .slice(0, 300);
+}
+
+function readAuthorizeSearchParams(rawUrl: string): URLSearchParams {
+  const [base = "", hash = ""] = rawUrl.split("#", 2);
+  const merged = new URLSearchParams();
+  const baseUrl = new URL(base);
+  for (const [key, value] of baseUrl.searchParams.entries()) merged.append(key, value);
+  if (hash) {
+    const [, hashQuery = ""] = hash.split("?", 2);
+    const hashParams = new URLSearchParams(hashQuery);
+    for (const [key, value] of hashParams.entries()) merged.set(key, value);
+  }
+  return merged;
+}
+
+function isTruthyParam(params: URLSearchParams, key: string): boolean {
+  return Boolean(params.get(key)?.trim());
+}
+
+export function inspectContaAzulAuthorizeParams(
+  rawUrl: string,
+  opts: { callback: string; expectedClientId?: string | null },
+): ContaAzulOAuthParamChecks {
+  const params = readAuthorizeSearchParams(rawUrl);
+  const redirectUri = params.get("redirect_uri")?.trim() ?? "";
+  const clientId = params.get("client_id")?.trim() ?? "";
+  return {
+    responseType: params.get("response_type") === "code",
+    clientId: Boolean(clientId),
+    redirectUri: Boolean(redirectUri),
+    state: isTruthyParam(params, "state"),
+    scope: CA_SCOPES.split(" ").every((scope) =>
+      (params.get("scope") ?? "").split(/\s+/).includes(scope),
+    ),
+    redirectMatchesCallback: redirectUri === opts.callback,
+    clientIdConsistent: !opts.expectedClientId || !clientId || clientId === opts.expectedClientId,
+  };
 }
 
 export function sanitizeContaAzulAuthorizeUrl(rawUrl: string): string {
@@ -143,11 +198,27 @@ export function getContaAzulOAuthConfiguration(origin: string) {
         https: callback.startsWith("https://"),
         expectedHosts: true,
         callbackConsistent: true,
+        requiredParams: {
+          responseType: false,
+          clientId: false,
+          redirectUri: false,
+          state: false,
+          scope: false,
+          redirectMatchesCallback: false,
+          clientIdConsistent: true,
+        },
+        likelyDevelopmentRedirect: false,
       },
     };
   }
   const creds = contaAzulCreds();
   const fullUrl = buildAuthorizeUrl({ origin: returnOrigin, state: "[diagnostico]" });
+  const rawConfiguredParams = readAuthorizeSearchParams(creds.authUrl);
+  const rawConfiguredRedirect = rawConfiguredParams.get("redirect_uri")?.trim() ?? "";
+  const paramChecks = inspectContaAzulAuthorizeParams(fullUrl, {
+    callback,
+    expectedClientId: creds.clientId,
+  });
   const authHost = new URL(creds.authUrl.split("#", 1)[0]).hostname;
   const tokenHost = new URL(creds.tokenUrl).hostname;
   const callbackUrl = new URL(callback);
@@ -170,6 +241,8 @@ export function getContaAzulOAuthConfiguration(origin: string) {
         tokenHost === "api-v2.contaazul.com" &&
         callbackUrl.hostname.endsWith("wktechnology.com.br"),
       callbackConsistent: fullUrl.includes(encodeURIComponent(callback)),
+      requiredParams: paramChecks,
+      likelyDevelopmentRedirect: rawConfiguredRedirect === "https://www.contaazul.com",
     },
   };
 }
