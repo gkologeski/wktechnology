@@ -10,7 +10,10 @@
  * LOVABLE_API_KEY (padrão do projeto); sem ela, caem para a API direta.
  */
 
+import { getPublicAppUrl } from "@/lib/app-url";
+
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
+
 const APOLLO_BASE = "https://api.apollo.io";
 
 const FREE_EMAIL_DOMAINS = new Set([
@@ -107,12 +110,22 @@ type ApolloPerson = {
 
 /**
  * URL do webhook de telefone da Apollo (entrega assíncrona do número revelado).
- * Só é enviada quando `APOLLO_PHONE_WEBHOOK_URL` estiver configurada; sem ela a
- * Apollo devolve o número no próprio corpo da resposta quando disponível.
+ * A Apollo exige `webhook_url` sempre que `reveal_phone_number` é usado, então
+ * usamos `APOLLO_PHONE_WEBHOOK_URL` quando configurada e, na ausência dela,
+ * derivamos a rota pública já existente a partir do host público da aplicação.
  */
-function apolloPhoneWebhookUrl(): string | null {
-  const url = process.env["APOLLO_PHONE_WEBHOOK_URL"];
-  return url && url.startsWith("http") ? url : null;
+export function apolloPhoneWebhookUrl(): string | null {
+  const configured = process.env["APOLLO_PHONE_WEBHOOK_URL"];
+  const candidate =
+    configured && configured.trim()
+      ? configured.trim()
+      : `${getPublicAppUrl()}/api/public/hooks/apollo-phone`;
+  try {
+    const url = new URL(candidate);
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 export class ApolloNotConfiguredError extends Error {
@@ -275,12 +288,16 @@ export async function apolloPeopleMatch(input: {
 }): Promise<{ person: ApolloPersonData; company: ApolloCompanyData | null } | null> {
   const params: Record<string, unknown> = {
     reveal_personal_emails: true,
-    // Sem este flag a Apollo não devolve números pessoais/diretos — só o
-    // telefone corporativo. Consome crédito e depende da permissão da chave.
-    reveal_phone_number: true,
   };
+  // A Apollo rejeita `reveal_phone_number` sem `webhook_url` (400
+  // SEARCH.VALIDATION.WEBHOOK_URL_REQUIRED). Só pedimos a revelação quando
+  // há um webhook https válido para receber os números de forma assíncrona.
   const webhookUrl = apolloPhoneWebhookUrl();
-  if (webhookUrl) params.webhook_url = webhookUrl;
+  if (webhookUrl) {
+    params.reveal_phone_number = true;
+    params.webhook_url = webhookUrl;
+  }
+
   if (input.linkedin_url) params.linkedin_url = input.linkedin_url;
   else if (input.email) params.email = input.email;
   else if (input.first_name && (input.domain || input.company_name)) {

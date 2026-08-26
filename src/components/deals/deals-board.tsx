@@ -62,32 +62,63 @@ export function DealsBoard({
   }, [deals, pipeline]);
 
   const [lostTarget, setLostTarget] = useState<{
-    id: string;
+    ids: string[];
     name: string | null;
     stageId: string;
   } | null>(null);
 
-  const applyStageUpdate = async (
-    id: string,
-    newStage: string,
-    extra?: Record<string, unknown>,
-  ) => {
+  /** Payload de etapa (mantém a coluna legada `stage` em sincronia). */
+  const stagePayload = (newStage: string, extra?: Record<string, unknown>) => {
     const legacyEnum = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
     const stageType = pipeline.stages.find((s) => s.value === newStage)?.type;
     const payload: Record<string, unknown> = { stage_id: newStage, ...(extra ?? {}) };
     if (legacyEnum.includes(newStage)) payload.stage = newStage;
     else if (stageType === "lost") payload.stage = "lost";
     else if (stageType === "won") payload.stage = "won";
+    return payload;
+  };
 
+  /**
+   * Aplica a etapa em um ou mais negócios. Usa `.select("id")` para detectar
+   * bloqueio silencioso da RLS e avisar quando parte da seleção não mudou.
+   */
+  const applyStageUpdate = async (
+    ids: string[],
+    newStage: string,
+    extra?: Record<string, unknown>,
+  ) => {
+    if (!ids.length) return;
+    const payload = stagePayload(newStage, extra);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("deals").update(payload).eq("id", id);
+    const { data, error } = await (supabase as any)
+      .from("deals")
+      .update(payload)
+      .in("id", ids)
+      .select("id");
     if (error) {
       toast.error(error.message);
       qc.invalidateQueries({ queryKey: ["deals"] });
+      return;
     }
+    const updated = ((data ?? []) as { id: string }[]).length;
+    if (updated === 0) {
+      toast.error("Nenhum negócio foi movido: sua permissão não alcança estes registros.");
+    } else if (updated < ids.length) {
+      toast.warning(
+        `${updated} de ${ids.length} negócios movidos. Os demais estão fora do seu acesso.`,
+      );
+    } else if (ids.length > 1) {
+      toast.success(`${updated} negócios movidos`);
+    }
+    qc.invalidateQueries({ queryKey: ["deals"] });
   };
 
+  /** Ids afetados por um arrasto: o lote selecionado ou apenas o card movido. */
+  const dragBatch = (id: string) =>
+    selection.isSelected(id) && selection.ids.length > 1 ? selection.ids : [id];
+
   const onDragEnd = async (e: DragEndEvent) => {
+    if (!canUpdate) return;
     const id = String(e.active.id);
     const newStage = e.over?.id as string | undefined;
     if (!newStage) return;
@@ -96,34 +127,48 @@ export function DealsBoard({
     const currentKey = deal.stage_id || (deal.stage as string);
     if (currentKey === newStage) return;
 
+    const batch = dragBatch(id).filter((dealId) => {
+      const d = deals.find((x) => x.id === dealId);
+      return d ? (d.stage_id || (d.stage as string)) !== newStage : false;
+    });
+    if (!batch.length) return;
+
     const stageType = pipeline.stages.find((s) => s.value === newStage)?.type;
     if (stageType === "lost") {
-      setLostTarget({ id, name: deal.name ?? null, stageId: newStage });
+      setLostTarget({
+        ids: batch,
+        name: batch.length === 1 ? (deal.name ?? null) : null,
+        stageId: newStage,
+      });
       return;
     }
 
     qc.setQueriesData<Deal[]>({ queryKey: ["deals", "list"] }, (old = []) =>
       old.map((d) =>
-        d.id === id ? { ...d, stage: newStage as Deal["stage"], stage_id: newStage } : d,
+        batch.includes(d.id) ? { ...d, stage: newStage as Deal["stage"], stage_id: newStage } : d,
       ),
     );
 
-    await applyStageUpdate(id, newStage);
+    await applyStageUpdate(batch, newStage);
+    if (batch.length > 1) selection.clear();
   };
 
   const confirmLost = async (result: LostReasonResult) => {
     if (!lostTarget) return;
     const notes = result.notes ? `${result.reasonLabel} — ${result.notes}` : result.reasonLabel;
+    const ids = lostTarget.ids;
     qc.setQueriesData<Deal[]>({ queryKey: ["deals", "list"] }, (old = []) =>
       old.map((d) =>
-        d.id === lostTarget.id
+        ids.includes(d.id)
           ? { ...d, stage: "lost" as Deal["stage"], stage_id: lostTarget.stageId }
           : d,
       ),
     );
-    await applyStageUpdate(lostTarget.id, lostTarget.stageId, { closed_lost_reason: notes });
-    toast.success("Marcado como perdido");
-    qc.invalidateQueries({ queryKey: ["deals"] });
+    await applyStageUpdate(ids, lostTarget.stageId, { closed_lost_reason: notes });
+    toast.success(
+      ids.length > 1 ? `${ids.length} negócios marcados como perdidos` : "Marcado como perdido",
+    );
+    if (ids.length > 1) selection.clear();
   };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
