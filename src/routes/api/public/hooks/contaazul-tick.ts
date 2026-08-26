@@ -46,21 +46,62 @@ export const Route = createFileRoute("/api/public/hooks/contaazul-tick")({
           }>) {
             if (!row.oauth_tokens?.access_token) continue;
             workspaces += 1;
-            const results = await runContaAzulSteps(
-              {
-                supabase: supabaseAdmin,
-                workspaceId: row.owner_id,
-                userId: row.config?.connected_by ?? row.owner_id,
-                since,
+
+            // Log por workspace: permite que a tela de sincronização mostre
+            // apenas o histórico do próprio workspace.
+            const wsStartedAt = new Date();
+            const wsT0 = Date.now();
+            let wsImported = 0;
+            let wsUpdated = 0;
+            let wsFailed = 0;
+            let wsError: string | null = null;
+
+            try {
+              const results = await runContaAzulSteps(
+                {
+                  supabase: supabaseAdmin,
+                  workspaceId: row.owner_id,
+                  userId: row.config?.connected_by ?? row.owner_id,
+                  since,
+                },
+                INCREMENTAL,
+              );
+              for (const r of results) {
+                wsImported += r.imported;
+                wsUpdated += r.updated;
+                wsFailed += r.failed;
+              }
+            } catch (e) {
+              wsError = e instanceof Error ? e.message : String(e);
+            }
+
+            imported += wsImported;
+            updated += wsUpdated;
+            failed += wsFailed;
+
+            const { error: logError } = await supabaseAdmin.from("cron_run_logs").insert({
+              job_name: "contaazul-tick",
+              workspace_id: row.owner_id,
+              started_at: wsStartedAt.toISOString(),
+              finished_at: new Date().toISOString(),
+              duration_ms: Date.now() - wsT0,
+              status: wsError ? "error" : "success",
+              error: wsError,
+              metrics: {
+                workspaces: 1,
+                imported: wsImported,
+                updated: wsUpdated,
+                failed: wsFailed,
               },
-              INCREMENTAL,
-            );
-            for (const r of results) {
-              imported += r.imported;
-              updated += r.updated;
-              failed += r.failed;
+            });
+            if (logError) {
+              console.warn("[cron:contaazul-tick] falha ao gravar log do workspace", {
+                workspace_id: row.owner_id,
+                error: logError.message,
+              });
             }
           }
+
 
           return { workspaces, imported, updated, failed } as unknown as Record<string, unknown>;
         });
