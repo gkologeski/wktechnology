@@ -51,15 +51,23 @@ export const Route = createFileRoute("/api/public/oauth/contaazul-callback")({
         }
 
         try {
-          const [{ exchangeCodeForTokens, saveTokens }, { supabaseAdmin }] = await Promise.all([
+          const [
+            { exchangeCodeForTokens, normalizeContaAzulReturnOrigin, saveTokens },
+            { supabaseAdmin },
+          ] = await Promise.all([
             import("@/lib/integrations/contaazul-api.server"),
             import("@/integrations/supabase/client.server"),
           ]);
-          const tokens = await exchangeCodeForTokens({ code, origin: state.origin });
+          const origin = normalizeContaAzulReturnOrigin(state.origin);
+          const tokens = await exchangeCodeForTokens({ code, origin });
           await saveTokens(supabaseAdmin, {
             workspaceId: state.workspaceId,
             tokens,
-            config: { connected_by: state.userId, connected_at: new Date().toISOString() },
+            config: {
+              connected_by: state.userId,
+              connected_at: new Date().toISOString(),
+              oauth_version: "v2",
+            },
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
@@ -70,14 +78,17 @@ export const Route = createFileRoute("/api/public/oauth/contaazul-callback")({
           );
         }
 
-        const returnUrl = `${state.origin.replace(/\/$/, "")}/integrations/contaazul?contaazul=connected`;
+        const { normalizeContaAzulReturnOrigin } =
+          await import("@/lib/integrations/contaazul-api.server");
+        const returnOrigin = normalizeContaAzulReturnOrigin(state.origin);
+        const returnUrl = `${returnOrigin}/integrations/contaazul?contaazul=connected`;
         return htmlResponse(
           "Conta Azul conectado",
           `<h1>Conta Azul conectado com sucesso</h1><p>Você já pode importar os dados no TechFinance.</p><p><a href="${esc(returnUrl)}">Voltar agora</a></p><script>
 (function(){
   var url=${JSON.stringify(returnUrl)};
   if(window.opener&&!window.opener.closed){
-    window.opener.postMessage({type:"contaazul-oauth-connected",url:url},"*");
+    window.opener.postMessage({type:"contaazul-oauth-connected",url:url},${JSON.stringify(returnOrigin)});
     window.close();
     setTimeout(function(){window.location.replace(url);},800);
     return;

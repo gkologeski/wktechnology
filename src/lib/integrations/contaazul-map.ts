@@ -32,12 +32,12 @@ export const CA_ENTITY_LABELS: Record<CaEntity, string> = {
  * ajustes de versão da API não exijam mudança na lógica de importação.
  */
 export const CA_ENDPOINTS: Record<CaEntity, string> = {
-  categories: "/categories",
-  "cost-centers": "/cost-centers",
-  "bank-accounts": "/bank-accounts",
-  receivable: "/financial-events/receivables",
-  payable: "/financial-events/payables",
-  statements: "/bank-accounts/statements",
+  categories: "/v1/categorias",
+  "cost-centers": "/v1/centro-de-custo",
+  "bank-accounts": "/v1/conta-financeira",
+  receivable: "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
+  payable: "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
+  statements: "/v1/financeiro/transferencias",
 };
 
 export type Money = number;
@@ -201,7 +201,10 @@ export function mapEntry(
   if (!externalId) return null;
 
   const amount =
-    parseBrNumber(pick(raw, ["value", "total", "amount", "valor", "valor_total"])) ?? 0;
+    parseBrNumber(
+      pick(raw, ["value", "total", "amount", "valor", "valor_total", "valor_liquido"]) ??
+        pickDeep(raw, ["valor_composicao.valor_liquido", "valor_composicao.valor_bruto"]),
+    ) ?? 0;
   const paidAmount =
     parseBrNumber(pick(raw, ["paid_value", "value_paid", "valor_pago", "paid_amount"])) ?? 0;
   const dueDate =
@@ -220,10 +223,11 @@ export function mapEntry(
     ).slice(0, 500) || `Conta Azul ${externalId}`;
 
   const installmentNumber = Number(
-    pick(raw, ["installment", "parcela", "installment_number"]) ?? 0,
+    pick(raw, ["installment", "parcela", "installment_number", "numero_parcela"]) ?? 0,
   );
   const installmentTotal = Number(
-    pick(raw, ["installments", "total_parcelas", "installment_total"]) ?? 0,
+    pick(raw, ["installments", "total_parcelas", "installment_total", "total_parcelas_evento"]) ??
+      0,
   );
 
   return {
@@ -244,13 +248,22 @@ export function mapEntry(
     installmentNumber: installmentNumber > 0 ? installmentNumber : null,
     installmentTotal: installmentTotal > 0 ? installmentTotal : null,
     categoryExternalId:
-      (pickDeep(raw, ["category.id", "category_id", "categoria.id", "categoria_id"]) as
-        | string
-        | undefined) ?? null,
+      (pickDeep(raw, [
+        "category.id",
+        "category_id",
+        "categoria.id",
+        "categoria_id",
+        "id_categoria",
+      ]) as string | undefined) ?? null,
     costCenterExternalId:
-      (pickDeep(raw, ["cost_center.id", "cost_center_id", "centro_custo.id", "centro_custo_id"]) as
-        | string
-        | undefined) ?? null,
+      (pickDeep(raw, [
+        "cost_center.id",
+        "cost_center_id",
+        "centro_custo.id",
+        "centro_custo_id",
+        "centro_de_custo.id",
+        "id_centro_de_custo",
+      ]) as string | undefined) ?? null,
     counterpartyName:
       (pickDeep(raw, [
         "customer.name",
@@ -259,6 +272,7 @@ export function mapEntry(
         "cliente.nome",
         "fornecedor.nome",
         "counterparty_name",
+        "pessoa.nome",
       ]) as string | undefined) ?? null,
     counterpartyDoc: normalizeDoc(
       pickDeep(raw, [
@@ -267,12 +281,16 @@ export function mapEntry(
         "person.document",
         "cliente.documento",
         "fornecedor.documento",
+        "pessoa.documento",
         "document",
         "cnpj",
         "cpf",
       ]),
     ),
-    paymentMethod: (pick(raw, ["payment_method", "forma_pagamento"]) as string | undefined) ?? null,
+    paymentMethod:
+      (pick(raw, ["payment_method", "forma_pagamento", "metodo_pagamento"]) as
+        | string
+        | undefined) ?? null,
     raw,
   };
 }
@@ -289,7 +307,9 @@ export function mapCategory(raw: Raw): NormalizedCategory | null {
   const externalId = String(pick(raw, ["id", "uuid", "codigo"]) ?? "").trim();
   const name = String(pick(raw, ["name", "nome", "description"]) ?? "").trim();
   if (!externalId || !name) return null;
-  const rawKind = String(pick(raw, ["type", "kind", "tipo", "nature"]) ?? "").toLowerCase();
+  const rawKind = String(
+    pick(raw, ["type", "kind", "tipo", "nature", "categoria_pai"]) ?? "",
+  ).toLowerCase();
   const isRevenue = /revenue|receita|income|entrada|credit/.test(rawKind);
   return {
     externalId,
@@ -297,7 +317,7 @@ export function mapCategory(raw: Raw): NormalizedCategory | null {
     kind: isRevenue ? "revenue" : "expense",
     parentExternalId:
       (pickDeep(raw, ["parent.id", "parent_id", "pai_id"]) as string | undefined) ?? null,
-    code: (pick(raw, ["code", "codigo_contabil"]) as string | undefined) ?? null,
+    code: (pick(raw, ["code", "codigo", "codigo_contabil"]) as string | undefined) ?? null,
   };
 }
 
@@ -362,14 +382,18 @@ export type NormalizedStatementTx = {
 };
 
 export function mapStatementTx(raw: Raw): NormalizedStatementTx | null {
-  const externalId = String(pick(raw, ["id", "uuid", "transaction_id"]) ?? "").trim();
+  const externalId = String(
+    pick(raw, ["id", "uuid", "transaction_id", "id_transferencia"]) ?? "",
+  ).trim();
   if (!externalId) return null;
-  const rawAmount = parseBrNumber(pick(raw, ["value", "amount", "valor"])) ?? 0;
+  const rawAmount =
+    parseBrNumber(pick(raw, ["value", "amount", "valor", "valor_transferencia"])) ?? 0;
   const rawType = String(pick(raw, ["type", "kind", "tipo", "direction"]) ?? "").toLowerCase();
   const isOut = rawAmount < 0 || /debit|debito|débito|out|saida|saída|pagamento/.test(rawType);
   const postedAt =
-    parseDateOnly(pick(raw, ["date", "posted_at", "data", "transaction_date"])) ??
-    new Date().toISOString().slice(0, 10);
+    parseDateOnly(
+      pick(raw, ["date", "posted_at", "data", "transaction_date", "data_transferencia"]),
+    ) ?? new Date().toISOString().slice(0, 10);
   return {
     externalId,
     postedAt,
@@ -379,11 +403,23 @@ export function mapStatementTx(raw: Raw): NormalizedStatementTx | null {
       (pick(raw, ["description", "descricao", "history", "historico"]) as string | undefined) ??
       null,
     counterparty:
-      (pickDeep(raw, ["counterparty", "person.name", "cliente.nome"]) as string | undefined) ??
-      null,
+      (pickDeep(raw, [
+        "counterparty",
+        "person.name",
+        "cliente.nome",
+        "origem.nome",
+        "destino.nome",
+      ]) as string | undefined) ?? null,
     bankAccountExternalId:
-      (pickDeep(raw, ["bank_account.id", "bank_account_id", "conta_id"]) as string | undefined) ??
-      null,
+      (pickDeep(raw, [
+        "bank_account.id",
+        "bank_account_id",
+        "conta_id",
+        "conta_financeira.id",
+        "id_conta_financeira",
+        "origem.id",
+        "destino.id",
+      ]) as string | undefined) ?? null,
     balanceAfter: parseBrNumber(pick(raw, ["balance", "saldo", "balance_after"])),
     raw,
   };

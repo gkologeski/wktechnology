@@ -389,7 +389,7 @@ async function syncFinancialEvents(
   const rows = await caFetchAll({
     accessToken,
     path: CA_ENDPOINTS[entity],
-    query: ctx.since ? { start_date: ctx.since.slice(0, 10) } : undefined,
+    query: ctx.since ? { data_alteracao_de: ctx.since } : undefined,
   });
   const today = new Date().toISOString().slice(0, 10);
   const entries: NormalizedEntry[] = [];
@@ -419,7 +419,9 @@ async function syncStatements(ctx: StepCtx, accessToken: string): Promise<StepRe
   const rows = await caFetchAll({
     accessToken,
     path: CA_ENDPOINTS.statements,
-    query: ctx.since ? { start_date: ctx.since.slice(0, 10) } : undefined,
+    query: ctx.since
+      ? { data_inicio: ctx.since.slice(0, 10), data_fim: new Date().toISOString().slice(0, 10) }
+      : undefined,
   });
 
   for (const raw of rows) {
