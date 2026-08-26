@@ -322,7 +322,6 @@ async function pushBookingToGoogle(
   };
 }
 
-
 export async function createPublicBooking(input: {
   slug: string;
   start: string;
@@ -471,4 +470,3 @@ export async function createPublicBooking(input: {
   if (error || !booking) throw new Error(error?.message || "Falha ao criar reserva");
   return { id: booking.id, meet_link: gcal.meetLink };
 }
-
