@@ -531,8 +531,13 @@ function BookingsSheet({ pageId, onClose }: { pageId: string; onClose: () => voi
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <Badge variant={b.status === "confirmed" ? "default" : "secondary"}>
-                    {b.status}
+                    {b.status === "confirmed" ? "Confirmada" : "Cancelada"}
                   </Badge>
+                  {b.gcal_event_id ? (
+                    <Badge variant="outline">No Google Agenda</Badge>
+                  ) : (
+                    <Badge variant="outline">Fora do Google Agenda</Badge>
+                  )}
                   {b.status === "confirmed" && (
                     <Button
                       size="sm"
