@@ -96,7 +96,11 @@ export const Route = createFileRoute("/api/public/oauth/contaazul-callback")({
             stage: "troca_token",
             message,
           });
-          await diagnostics.saveContaAzulOAuthDiagnostic(supabaseAdmin, state.workspaceId, safeError);
+          await diagnostics.saveContaAzulOAuthDiagnostic(
+            supabaseAdmin,
+            state.workspaceId,
+            safeError,
+          );
           return htmlResponse(
             "Falha ao conectar",
             `<h1>Não foi possível concluir a conexão</h1><p>${esc(safeError.message)}</p><p><a href="/integrations/contaazul">Voltar</a></p>`,

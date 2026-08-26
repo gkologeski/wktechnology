@@ -15,11 +15,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { contaAzulOAuthDiagnostics } from "@/lib/integrations/contaazul.functions";
 
@@ -137,7 +133,8 @@ export function ContaAzulOAuthDiagnostics() {
   const diagnostics = useServerFn(contaAzulOAuthDiagnostics);
   const query = useQuery({
     queryKey: ["contaazul", "oauth-diagnostics"],
-    queryFn: () => diagnostics({ data: { origin: window.location.origin } }) as Promise<DiagnosticsData>,
+    queryFn: () =>
+      diagnostics({ data: { origin: window.location.origin } }) as Promise<DiagnosticsData>,
     enabled: open,
     staleTime: 30_000,
   });
@@ -162,7 +159,9 @@ export function ContaAzulOAuthDiagnostics() {
             <CollapsibleTrigger asChild>
               <Button variant="outline" size="sm" aria-expanded={open}>
                 {open ? "Ocultar" : "Ver diagnóstico"}
-                <ChevronDown className={`ml-2 h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
+                <ChevronDown
+                  className={`ml-2 h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+                />
               </Button>
             </CollapsibleTrigger>
           </div>
@@ -201,7 +200,9 @@ export function ContaAzulOAuthDiagnostics() {
                     onClick={() => void query.refetch()}
                     disabled={query.isFetching}
                   >
-                    <RefreshCw className={`mr-2 h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`} />
+                    <RefreshCw
+                      className={`mr-2 h-4 w-4 ${query.isFetching ? "animate-spin" : ""}`}
+                    />
                     Atualizar
                   </Button>
                 </div>
@@ -209,12 +210,19 @@ export function ContaAzulOAuthDiagnostics() {
                 <StatusNotice diagnostic={data.lastDiagnostic} />
 
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <DiagnosticValue label="URL de autorização (sanitizada)" value={data.authorizationUrl} copyable />
+                  <DiagnosticValue
+                    label="URL de autorização (sanitizada)"
+                    value={data.authorizationUrl}
+                    copyable
+                  />
                   <DiagnosticValue label="Endpoint de token" value={data.tokenUrl} copyable />
                   <DiagnosticValue label="Callback exato" value={data.callback} copyable />
                   <DiagnosticValue label="Origem de retorno" value={data.returnOrigin} copyable />
                   <DiagnosticValue label="Escopos" value={data.scopes.join(" ")} copyable />
-                  <DiagnosticValue label="Cliente (mascarado)" value={data.clientIdMasked ?? "Não configurado"} />
+                  <DiagnosticValue
+                    label="Cliente (mascarado)"
+                    value={data.clientIdMasked ?? "Não configurado"}
+                  />
                 </div>
               </>
             ) : null}

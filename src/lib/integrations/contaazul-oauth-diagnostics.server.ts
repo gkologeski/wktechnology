@@ -25,7 +25,13 @@ export type ContaAzulOAuthDiagnostic = {
   occurredAt: string;
 };
 
-const SENSITIVE_PARAMS = new Set(["state", "code", "access_token", "refresh_token", "client_secret"]);
+const SENSITIVE_PARAMS = new Set([
+  "state",
+  "code",
+  "access_token",
+  "refresh_token",
+  "client_secret",
+]);
 
 function shortFingerprint(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 10);
@@ -40,7 +46,10 @@ function cleanMessage(value: string): string {
   return value
     .replace(/Bearer\s+[^\s]+/gi, "Bearer [removido]")
     .replace(/Basic\s+[^\s]+/gi, "Basic [removido]")
-    .replace(/(access_token|refresh_token|client_secret|code|state)\s*[=:]\s*[^\s&,}]+/gi, "$1=[removido]")
+    .replace(
+      /(access_token|refresh_token|client_secret|code|state)\s*[=:]\s*[^\s&,}]+/gi,
+      "$1=[removido]",
+    )
     .replace(/[\r\n\t]+/g, " ")
     .trim()
     .slice(0, 300);
@@ -69,9 +78,10 @@ export function normalizeContaAzulOAuthError(input: {
   code?: string | null;
   message?: string | null;
 }): ContaAzulOAuthDiagnostic {
-  const fallback = input.stage === "autorizacao_provedor"
-    ? "O Conta Azul rejeitou a solicitação antes de concluir a autorização."
-    : "Não foi possível concluir a autenticação OAuth.";
+  const fallback =
+    input.stage === "autorizacao_provedor"
+      ? "O Conta Azul rejeitou a solicitação antes de concluir a autorização."
+      : "Não foi possível concluir a autenticação OAuth.";
   return {
     stage: input.stage,
     status: "error",
@@ -102,7 +112,10 @@ export async function saveContaAzulOAuthDiagnostic(
   if (error) throw new Error(error.message);
 }
 
-export async function markContaAzulAuthorizationStarted(supabase: SupabaseClient, workspaceId: string) {
+export async function markContaAzulAuthorizationStarted(
+  supabase: SupabaseClient,
+  workspaceId: string,
+) {
   await saveContaAzulOAuthDiagnostic(supabase, workspaceId, {
     stage: "autorizacao_provedor",
     status: "pending",
@@ -126,7 +139,11 @@ export function getContaAzulOAuthConfiguration(origin: string) {
       scopes: CA_SCOPES.split(" "),
       returnOrigin,
       clientIdMasked: null,
-      checks: { https: callback.startsWith("https://"), expectedHosts: true, callbackConsistent: true },
+      checks: {
+        https: callback.startsWith("https://"),
+        expectedHosts: true,
+        callbackConsistent: true,
+      },
     };
   }
   const creds = contaAzulCreds();
@@ -144,8 +161,14 @@ export function getContaAzulOAuthConfiguration(origin: string) {
     returnOrigin,
     clientIdMasked: maskClientId(creds.clientId),
     checks: {
-      https: creds.authUrl.startsWith("https://") && creds.tokenUrl.startsWith("https://") && callbackUrl.protocol === "https:",
-      expectedHosts: authHost === "login.contaazul.com" && tokenHost === "api-v2.contaazul.com" && callbackUrl.hostname.endsWith("wktechnology.com.br"),
+      https:
+        creds.authUrl.startsWith("https://") &&
+        creds.tokenUrl.startsWith("https://") &&
+        callbackUrl.protocol === "https:",
+      expectedHosts:
+        authHost === "login.contaazul.com" &&
+        tokenHost === "api-v2.contaazul.com" &&
+        callbackUrl.hostname.endsWith("wktechnology.com.br"),
       callbackConsistent: fullUrl.includes(encodeURIComponent(callback)),
     },
   };
