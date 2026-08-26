@@ -334,6 +334,9 @@ function ContaAzulIntegrationPage() {
             syncState={(data?.syncState ?? []) as CaSyncStateRow[]}
             cronRuns={data?.cronRuns ?? []}
             running={busy}
+            autoRefresh={autoRefresh}
+            refreshing={isFetching}
+
           />
         </>
       )}
