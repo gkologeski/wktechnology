@@ -154,20 +154,37 @@ function ContaAzulIntegrationPage() {
         title="Conta Azul"
         description="Importe contas a pagar e a receber, plano de contas, contas bancárias e extratos para o TechFinance."
         actions={
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <Button variant="ghost" size="sm" asChild>
               <Link to="/integrations">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Integrações
               </Link>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={busy}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Atualizar
+            <div className="flex items-center gap-2">
+              <Switch
+                id="contaazul-auto-refresh"
+                checked={autoRefresh}
+                onCheckedChange={setAutoRefresh}
+              />
+              <Label htmlFor="contaazul-auto-refresh" className="text-xs whitespace-nowrap">
+                Atualização automática
+              </Label>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void refetch()}
+              disabled={isFetching}
+              aria-label="Atualizar progresso da sincronização"
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+              {isFetching ? "Atualizando…" : "Atualizar"}
             </Button>
           </div>
         }
       />
+
 
       {isLoading ? (
         <div className="space-y-4">
