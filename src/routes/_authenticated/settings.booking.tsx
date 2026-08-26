@@ -322,7 +322,7 @@ function EditorDialog({
               <Input value={form.timezone} onChange={(e) => upd({ timezone: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <Label>Calendário (busy lookup)</Label>
+              <Label>Conta de calendário (Google Agenda + Meet)</Label>
               <Select
                 value={form.calendar_account_id ?? "none"}
                 onValueChange={(v) => upd({ calendar_account_id: v === "none" ? null : v })}
@@ -339,6 +339,28 @@ function EditorDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {!form.calendar_account_id && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 space-y-2">
+                  <p className="text-xs text-destructive">
+                    Sem conta selecionada, as reservas não criam evento no Google Agenda nem link do
+                    Google Meet.
+                  </p>
+                  {accounts.length > 0 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => upd({ calendar_account_id: accounts[0].id })}
+                    >
+                      Usar {accounts[0].email}
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Conecte uma conta Google em Configurações → Calendário.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
