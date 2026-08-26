@@ -243,6 +243,7 @@ export function ContaAzulSyncProgress({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Início</TableHead>
+                    <TableHead>Origem</TableHead>
                     <TableHead>Situação</TableHead>
                     <TableHead className="text-right">Duração</TableHead>
                     <TableHead className="text-right">Workspaces</TableHead>
@@ -257,6 +258,12 @@ export function ContaAzulSyncProgress({
                       <TableCell className="whitespace-nowrap">
                         {run.startedAt ? formatDateTime(run.startedAt) : "—"}
                       </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-muted-foreground">
+                          {run.scope === "global" ? "Execução global" : "Este workspace"}
+                        </Badge>
+                      </TableCell>
+
                       <TableCell>
                         {run.status === "success" ? (
                           <StatusBadge status="open" label="Sucesso" />
