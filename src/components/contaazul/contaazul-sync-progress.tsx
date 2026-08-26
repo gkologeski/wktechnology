@@ -1,6 +1,14 @@
 // Painel presentacional de progresso da sincronização do Conta Azul.
 // Componente puro: recebe estado por props, sem acesso a dados.
-import { AlertTriangle, CheckCircle2, Clock, Database, TimerReset } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Database,
+  RefreshCw,
+  TimerReset,
+} from "lucide-react";
+
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
