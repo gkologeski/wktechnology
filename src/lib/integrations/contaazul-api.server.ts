@@ -63,6 +63,25 @@ export function contaAzulRedirectUri(_origin?: string): string {
   return base.replace(/\/$/, "");
 }
 
+const ALLOWED_RETURN_HOSTS = new Set([
+  "app.wktechnology.com.br",
+  "crm.wktechnology.com.br",
+  "ats.wktechnology.com.br",
+  "wktechnology.lovable.app",
+]);
+
+export function normalizeContaAzulReturnOrigin(origin: string): string {
+  try {
+    const parsed = new URL(origin);
+    if (parsed.protocol === "https:" && ALLOWED_RETURN_HOSTS.has(parsed.hostname)) {
+      return parsed.origin;
+    }
+  } catch {
+    // Usa o domínio canônico quando a origem enviada pelo cliente é inválida.
+  }
+  return CANONICAL_PUBLIC_URL;
+}
+
 export const CA_SCOPES = "openid profile aws.cognito.signin.user.admin";
 
 function appendAuthorizeParams(authUrl: string, params: Record<string, string>): string {

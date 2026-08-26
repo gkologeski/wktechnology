@@ -78,12 +78,13 @@ describe("contaazul-map", () => {
     );
 
     expect(entry).not.toBeNull();
-    expect(entry!.amount).toBe(1500.25);
-    expect(entry!.status).toBe("overdue");
-    expect(entry!.categoryExternalId).toBe("cat-v2");
-    expect(entry!.costCenterExternalId).toBe("cc-v2");
-    expect(entry!.counterpartyName).toBe("ACME");
-    expect(entry!.paymentMethod).toBe("BOLETO");
+    if (!entry) throw new Error("Evento financeiro v2 não foi mapeado");
+    expect(entry.amount).toBe(1500.25);
+    expect(entry.status).toBe("overdue");
+    expect(entry.categoryExternalId).toBe("cat-v2");
+    expect(entry.costCenterExternalId).toBe("cc-v2");
+    expect(entry.counterpartyName).toBe("ACME");
+    expect(entry.paymentMethod).toBe("BOLETO");
   });
 
   it("classifica transações de extrato como entrada/saída", () => {

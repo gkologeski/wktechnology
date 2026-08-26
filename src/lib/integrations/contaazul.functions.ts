@@ -95,12 +95,13 @@ export const contaAzulAuthorizeUrl = createServerFn({ method: "POST" })
       import("./contaazul-state.server"),
     ]);
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    const origin = api.normalizeContaAzulReturnOrigin(data.origin);
     const state = signContaAzulState({
       workspaceId,
       userId: context.userId,
-      origin: data.origin,
+      origin,
     });
-    return { url: api.buildAuthorizeUrl({ origin: data.origin, state }) };
+    return { url: api.buildAuthorizeUrl({ origin, state }) };
   });
 
 export const contaAzulDisconnect = createServerFn({ method: "POST" })

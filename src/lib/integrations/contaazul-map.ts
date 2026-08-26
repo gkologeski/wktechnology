@@ -411,8 +411,15 @@ export function mapStatementTx(raw: Raw): NormalizedStatementTx | null {
         "destino.nome",
       ]) as string | undefined) ?? null,
     bankAccountExternalId:
-      (pickDeep(raw, ["bank_account.id", "bank_account_id", "conta_id"]) as string | undefined) ??
-      null,
+      (pickDeep(raw, [
+        "bank_account.id",
+        "bank_account_id",
+        "conta_id",
+        "conta_financeira.id",
+        "id_conta_financeira",
+        "origem.id",
+        "destino.id",
+      ]) as string | undefined) ?? null,
     balanceAfter: parseBrNumber(pick(raw, ["balance", "saldo", "balance_after"])),
     raw,
   };
