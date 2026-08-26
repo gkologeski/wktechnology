@@ -1,54 +1,43 @@
-# Aprofundar diagnóstico OAuth do Conta Azul
+# Plano: corrigir edição/movimentação em massa no Kanban de Negócios
 
-## Diagnóstico atual confirmado
+## Objetivo
+Permitir que, no Kanban de Negócios, ao selecionar 2 ou mais negócios e arrastar um deles para outra etapa, todos os negócios selecionados sejam movidos juntos.
 
-- O painel anexado mostra que a URL gerada pelo TechERP contém os parâmetros obrigatórios básicos: `response_type=code`, `client_id`, `redirect_uri`, `state` e `scope`.
-- O erro continua acontecendo na tela do Conta Azul, antes de retornar ao callback do TechERP. Nessa etapa, o sistema ainda não recebe `code`, `error` ou `error_description` do provedor.
-- Portanto, o diagnóstico atual comprova que a URL está bem formada, mas ainda não permite confirmar se o aplicativo cadastrado no Conta Azul aceita aquele `client_id`, callback, ambiente e escopos.
+## Diagnóstico confirmado
+- A tela `/deals` renderiza o Kanban com `DealsBoard` e `selectable` habilitado.
+- `DealsBoard` já mostra seleção de cards e a barra de ações em massa (`GridBulkBar`).
+- O drag-and-drop atual em `DealsBoard` usa apenas `e.active.id`, então move somente o card arrastado, mesmo quando há múltiplos cards selecionados.
+- O componente genérico `KanbanBoard` também possui seleção em massa, mas `DealsBoard` usa uma implementação própria para negócios.
 
-## Plano de implementação
+## Implementação proposta
+1. Ajustar o `DealsBoard` para calcular o lote de movimentação:
+   - Se o card arrastado estiver selecionado, mover todos os cards selecionados.
+   - Se o card arrastado não estiver selecionado, manter o comportamento atual e mover apenas ele.
+2. Aplicar atualização em massa para a nova etapa:
+   - Atualizar `stage_id` para a etapa destino.
+   - Atualizar a coluna legada `stage` quando a etapa destino for compatível com os valores legados ou tiver tipo `won`/`lost`.
+   - Invalidar as queries de negócios ao final.
+3. Tratar bloqueio por RLS/permissão de forma clara:
+   - Usar `.select("id")` após o update para saber quantos registros foram realmente alterados.
+   - Exibir aviso quando nenhum ou apenas parte dos negócios selecionados for atualizado.
+4. Manter comportamento especial para etapa perdida:
+   - Se a etapa destino for do tipo `lost`, abrir o diálogo de motivo somente para o card arrastado nesta correção, preservando o fluxo atual e evitando perda de contexto para múltiplos registros.
+   - A movimentação em massa para etapas não-perdidas será corrigida agora.
 
-1. **Separar “URL bem formada” de “configuração aceita pelo Conta Azul”**
-   - Alterar os textos do painel para não concluir “verificações aprovadas” como se a configuração externa estivesse validada.
-   - Mostrar um status específico: “Parâmetros locais válidos; validação final depende do app cadastrado no Conta Azul”.
-   - Quando a etapa ficar como “autorização aguardando retorno”, indicar que a falha ocorreu antes do callback e não deixou detalhes técnicos para o TechERP.
+## Arquivos a alterar
+- `src/components/deals/deals-board.tsx`
 
-2. **Adicionar comparação segura com a URL oficial do Conta Azul**
-   - Exibir campos separados para comparar/copiar: endpoint de autorização, `client_id`, callback, escopos e `redirect_uri` efetivo.
-   - Permitir revelar/copiar o `client_id` completo apenas para usuários com permissão de gerenciar integrações; `client_id` não é segredo, mas continuará protegido por contexto/permissão.
-   - Continuar nunca exibindo `client_secret`, access token, refresh token, authorization code ou `state` real.
+## Validação
+- Verificar no código que o Kanban continua renderizando a barra de ações em massa.
+- Validar manualmente no preview:
+  - selecionar dois negócios na mesma coluna;
+  - arrastar um selecionado para outra etapa;
+  - confirmar que ambos mudam de coluna após atualização;
+  - confirmar que arrastar um card não selecionado move somente ele.
+- Rodar validação focada disponível sem executar mudanças fora do escopo.
 
-3. **Registrar tentativa sem callback**
-   - Ao clicar em “Conectar”, iniciar uma tentativa OAuth com timestamp.
-   - Monitorar o popup: se ele for fechado sem mensagem de sucesso e sem callback, registrar diagnóstico seguro como “sem retorno do Conta Azul”.
-   - Atualizar o painel automaticamente para mostrar essa origem do erro em vez de permanecer apenas como “aguardando retorno”.
-
-4. **Melhorar a orientação para configuração externa**
-   - Adicionar checklist objetivo no painel:
-     - o app no Conta Azul precisa ser de produção quando o callback for `https://app.wktechnology.com.br/api/public/oauth/contaazul-callback`;
-     - o callback cadastrado precisa ser exatamente igual, sem barra extra;
-     - o `client_id` exibido no TechERP precisa ser o mesmo da URL fornecida pelo Conta Azul;
-     - usuário, senha e access token de teste não entram na URL OAuth.
-   - Se a URL cadastrada/fornecida apontar para `https://www.contaazul.com`, destacar que isso parece ambiente de desenvolvimento/teste e provavelmente não concluirá o callback real.
-
-5. **Validação técnica**
-   - Expandir testes unitários do diagnóstico para cobrir:
-     - URL bem formada mas ainda não confirmada pelo provedor;
-     - popup fechado sem callback;
-     - `client_id` completo disponível apenas como valor não secreto;
-     - remoção de `state`, `code`, tokens e segredo em qualquer saída para UI/log.
-   - Executar testes focados e lint/typecheck dos arquivos alterados.
-
-## Escopo
-
-- Sem alteração de banco, RLS, sincronização financeira ou importação de dados.
-- Sem uso de usuário/senha/access token de teste no fluxo OAuth.
-- Sem exposição de segredos.
-
-## Validação manual
-
-1. Abrir `/integrations/contaazul`.
-2. Expandir “Diagnóstico OAuth”.
-3. Copiar callback, escopos e `client_id` e comparar com o app no Conta Azul.
-4. Clicar em “Conectar”.
-5. Se a tela do Conta Azul voltar a negar sem callback, fechar o popup e confirmar que o painel registra “sem retorno do Conta Azul”.
+## Fora do escopo
+- Alterar permissões/RLS.
+- Criar novo schema ou migration.
+- Redesenhar o Kanban.
+- Implementar movimentação em massa para etapa `lost` com motivo compartilhado, a menos que seja pedido depois.
