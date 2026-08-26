@@ -1,51 +1,41 @@
-# Quebrar `finance.banking.tsx` e `settings.teams.tsx`
+# Conta Azul: progresso em tempo quase real + métricas por workspace
 
-Refatoração puramente estrutural: mesma UI, mesmas queries, mesmas mutations, mesmas permissões. Nenhuma mudança de comportamento, schema, RLS ou regra de negócio.
+## Credenciais (resposta)
+
+As credenciais do Conta Azul não são inseridas por tela: `src/lib/integrations/contaazul-api.server.ts:42-55` lê `CONTAAZUL_CLIENT_ID` e `CONTAAZUL_CLIENT_SECRET` (e opcionalmente `CONTAAZUL_API_BASE`, `CONTAAZUL_AUTH_URL`, `CONTAAZUL_TOKEN_URL`) de segredos do servidor. Enquanto não existirem, a tela mostra "não configurado" e o botão Conectar fica desabilitado. Vou solicitar o cadastro dos dois segredos obrigatórios como primeiro passo; a conexão da conta em si continua via OAuth no botão **Conectar**.
 
 ## Estado verificado
 
-- `src/routes/_authenticated/finance.banking.tsx`: 1.380 linhas, um único componente `BankingPage` com 4 abas (Extrato, Cobranças, Pagamentos, Histórico), ~10 mutations e ~6 queries, mais `BankingHealthCard` no fim do arquivo.
-- `src/routes/_authenticated/settings.teams.tsx`: 1.237 linhas, um único componente `UsersPage` com ~20 blocos de `useState` (convite, remoção/reatribuição, edição, papéis), cards de métricas, tabela de convites e tabela de membros.
+- `src/routes/_authenticated/integrations.contaazul.tsx:61` usa um único `useQuery` sem `refetchInterval`; já existe um botão "Atualizar" no cabeçalho (linha 160) que chama `refetch()`.
+- `src/lib/integrations/contaazul.functions.ts:34-39` lê as últimas 5 execuções de `cron_run_logs` filtrando só por `job_name = 'contaazul-tick'` — sem recorte por workspace.
+- `cron_run_logs` **não possui coluna `workspace_id`** (colunas: `job_name`, `started_at`, `finished_at`, `duration_ms`, `status`, `metrics`, `error`, `created_at`).
+- O tick (`src/routes/api/public/hooks/contaazul-tick.ts`) roda uma vez para todos os workspaces conectados e grava apenas totais agregados (`workspaces`, `imported`, `updated`, `failed`), por isso hoje as métricas na tela são globais.
 
-## Banking — nova estrutura
+## O que fazer
 
-`src/components/finance/banking/`
+### 1. Autoatualização do painel de progresso
 
-- `connection-card.tsx` — cartão de conexão bancária (conectar, sincronizar, desconectar) e o diálogo mock de conclusão de OAuth.
-- `statement-tab.tsx` — extrato + conciliação.
-- `charges-tab.tsx` — lista de cobranças, diálogo de nova cobrança, detalhe, cancelar, simular pagamento.
-- `payments-tab.tsx` — lista de pagamentos, diálogo de novo pagamento, aprovar/cancelar/simular liquidação.
-- `events-tab.tsx` — histórico de eventos.
-- `banking-health-card.tsx` — movido do fim da rota.
+- Adicionar `refetchInterval` de 5s ao `useQuery` da tela, ativo somente quando a integração está conectada e há sincronização em andamento ou o painel está visível; pausar quando a aba está em background (`refetchIntervalInBackground: false`).
+- Manter um switch "Atualização automática" ao lado do botão Atualizar, com estado local, para o usuário desligar.
+- Botão "Atualizar" existente ganha indicador de carregamento (`isFetching`) para dar feedback do refresh manual.
+- Sem tela nova: usa `Button`/`Switch` do design system e mantém loading/empty/error atuais.
 
-A rota fica como container: `PageHeader`, `Tabs` e as queries de nível de página, passando dados/callbacks por props. Cada aba possui suas próprias queries e mutations quando pertencem só a ela, invalidando as mesmas query keys de hoje. As abas de cobranças/pagamentos/histórico entram via `lazy` + `Suspense` com skeleton, para só carregar quando o usuário abre a aba.
+### 2. Métricas do histórico por workspace
 
-## Teams — nova estrutura
+Como o log de cron é global por execução, o recorte por workspace exige registrar o resultado por workspace:
 
-`src/components/teams/`
-
-- `invite-user-dialog.tsx` — formulário de convite (papel + conjunto de permissões obrigatório) e exibição do link gerado.
-- `teams-metrics.tsx` — cards de métricas do topo.
-- `pending-invites-table.tsx` — tabela de convites pendentes com reenviar/revogar.
-- `members-table.tsx` — busca, filtro por papel e tabela de membros com ações.
-- `edit-member-dialog.tsx` — edição de nome, telefone e papel.
-- `member-roles-dialog.tsx` — cargo primário, cargos extras e conjuntos de permissões extras.
-- `remove-member-dialog.tsx` — remoção com reatribuição de registros (`assigned_to`) e contagens.
-
-A rota mantém a orquestração: estado de seleção corrente, `refetch` das listas e as verificações `<Can>` existentes, exatamente como hoje. O card `UnlinkedAccountsCard` já é externo e permanece.
-
-## Regras da refatoração
-
-- Nenhuma query, mutation, `<Can>`, toast ou label alterada; apenas movida.
-- Sem novos componentes de UI: seguem `@/components/ui/*` e o design system atual.
-- Sem Supabase/server functions dentro de componentes puramente apresentacionais — quem hoje chama server fn continua chamando no componente que detém a ação.
-- Estados de loading/empty/error preservados idênticos.
-
-## Validação
-
-- `bun run typecheck`, `bun run lint`, `bun run test`, `bun run build` (comparar tempo com a baseline ~69s).
-- Smoke manual: Finance → Banking (conectar mock, sincronizar, criar cobrança, criar pagamento, aprovar, ver histórico) e Configurações → Times (convidar, reenviar, revogar, editar membro, papéis, remover com reatribuição).
+- Migration: adicionar `workspace_id uuid null` a `public.cron_run_logs` com índice `(job_name, workspace_id, started_at desc)`. Coluna opcional — execuções realmente globais continuam com `null`. Sem alterar as policies existentes (tabela é escrita pelo `service_role` e lida por server function admin).
+- No tick do Conta Azul, além do log agregado atual, gravar uma linha por workspace processado (`job_name = 'contaazul-tick'`, `workspace_id = owner_id`, métricas do próprio workspace, status e erro individuais). Um erro em um workspace não interrompe os demais.
+- `contaAzulStatus` passa a filtrar `cron_run_logs` por `workspace_id = context.workspaceId` (mantendo compatibilidade: se não houver nenhuma linha por workspace ainda, exibe as execuções globais como hoje, marcadas como "execução global").
+- O painel passa a rotular a origem da execução (workspace vs. global) para não induzir a erro durante a transição.
 
 ## Fora de escopo
 
-- Redesenho visual, remoção de funcionalidade, mudança de permissões/RLS/schema.
+- Alterar o motor de sincronização, mapeamentos ou entidades importadas.
+- Alterar RLS/policies de outras tabelas, schema financeiro ou regras de negócio.
+- Redesenhar a tela de integração.
+
+## Validação
+
+- `bun run typecheck`, `bun run lint`, `bun run test`, `bun run build`.
+- Manual: abrir `/integrations/contaazul`, disparar "Sincronizar agora" e confirmar que os contadores avançam sozinhos sem recarregar a página; desligar o switch e confirmar que para; clicar em Atualizar e ver o indicador; após uma execução do tick, confirmar que o histórico mostra apenas o workspace atual.
