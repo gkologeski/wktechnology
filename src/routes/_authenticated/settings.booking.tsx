@@ -25,7 +25,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, ExternalLink, Plus, Trash2, Pencil, Eye, X } from "lucide-react";
+import { Copy, ExternalLink, Plus, Trash2, Pencil, Eye, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   listBookingPages,
