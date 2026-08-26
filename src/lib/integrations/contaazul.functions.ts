@@ -89,19 +89,62 @@ export const contaAzulAuthorizeUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ origin: z.string().url() }).parse(input))
   .handler(async ({ data, context }) => {
-    const [{ resolveActiveWorkspace }, api, { signContaAzulState }] = await Promise.all([
+    const [
+      { resolveActiveWorkspace },
+      api,
+      { signContaAzulState },
+      { supabaseAdmin },
+      diagnostics,
+      { assertAnyPermission },
+      { INTEGRATIONS_MANAGE },
+    ] = await Promise.all([
       import("@/lib/active-workspace.server"),
       import("./contaazul-api.server"),
       import("./contaazul-state.server"),
+      import("@/integrations/supabase/client.server"),
+      import("./contaazul-oauth-diagnostics.server"),
+      import("@/lib/access-control/enforce.server"),
+      import("@/lib/access-control/admin-permission-keys"),
     ]);
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, workspaceId, INTEGRATIONS_MANAGE);
     const origin = api.normalizeContaAzulReturnOrigin(data.origin);
     const state = signContaAzulState({
       workspaceId,
       userId: context.userId,
       origin,
     });
+    await diagnostics.markContaAzulAuthorizationStarted(supabaseAdmin, workspaceId);
     return { url: api.buildAuthorizeUrl({ origin, state }) };
+  });
+
+/** Configuração efetiva e último erro OAuth, sempre sem segredos. */
+export const contaAzulOAuthDiagnostics = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ origin: z.string().url() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const [
+      { resolveActiveWorkspace },
+      { supabaseAdmin },
+      diagnostics,
+      api,
+      { assertAnyPermission },
+      { INTEGRATIONS_MANAGE },
+    ] = await Promise.all([
+      import("@/lib/active-workspace.server"),
+      import("@/integrations/supabase/client.server"),
+      import("./contaazul-oauth-diagnostics.server"),
+      import("./contaazul-api.server"),
+      import("@/lib/access-control/enforce.server"),
+      import("@/lib/access-control/admin-permission-keys"),
+    ]);
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    await assertAnyPermission(context.supabase, context.userId, workspaceId, INTEGRATIONS_MANAGE);
+    const integration = await api.loadIntegration(supabaseAdmin, workspaceId);
+    const configuration = diagnostics.getContaAzulOAuthConfiguration(data.origin);
+    const lastDiagnostic =
+      (integration?.config as { oauth_diagnostic?: unknown } | null)?.oauth_diagnostic ?? null;
+    return { ...configuration, lastDiagnostic };
   });
 
 export const contaAzulDisconnect = createServerFn({ method: "POST" })
