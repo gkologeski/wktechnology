@@ -48,7 +48,12 @@ export function contaAzulCreds(): CaCreds {
     clientId,
     clientSecret,
     apiBase: process.env["CONTAAZUL_API_BASE"] ?? DEFAULT_API_BASE,
-    authUrl: process.env["CONTAAZUL_AUTH_URL"] ?? DEFAULT_AUTH_URL,
+    authUrl:
+      process.env["CONTAAZUL_AUTHORIZATION_CODE_URL"] ??
+      process.env["CONTAAZUL_AUTH_CODE_URL"] ??
+      process.env["CONTAAZUL_AUTHORIZATION_URL"] ??
+      process.env["CONTAAZUL_AUTH_URL"] ??
+      DEFAULT_AUTH_URL,
     tokenUrl: process.env["CONTAAZUL_TOKEN_URL"] ?? DEFAULT_TOKEN_URL,
   };
 }
@@ -84,17 +89,29 @@ export function normalizeContaAzulReturnOrigin(origin: string): string {
 
 export const CA_SCOPES = "openid profile aws.cognito.signin.user.admin";
 
+function setParamIfMissing(search: URLSearchParams, key: string, value: string): void {
+  if (!search.has(key) || !search.get(key)) search.set(key, value);
+}
+
 function appendAuthorizeParams(authUrl: string, params: Record<string, string>): string {
   if (!authUrl.includes("#")) {
     const url = new URL(authUrl);
-    for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+    setParamIfMissing(url.searchParams, "response_type", params.response_type);
+    setParamIfMissing(url.searchParams, "client_id", params.client_id);
+    setParamIfMissing(url.searchParams, "scope", params.scope);
+    url.searchParams.set("redirect_uri", params.redirect_uri);
+    url.searchParams.set("state", params.state);
     return url.toString();
   }
 
   const [base = "", hash = ""] = authUrl.split("#", 2);
   const [hashPath = "", hashQuery = ""] = hash.split("?", 2);
   const search = new URLSearchParams(hashQuery);
-  for (const [key, value] of Object.entries(params)) search.set(key, value);
+  setParamIfMissing(search, "response_type", params.response_type);
+  setParamIfMissing(search, "client_id", params.client_id);
+  setParamIfMissing(search, "scope", params.scope);
+  search.set("redirect_uri", params.redirect_uri);
+  search.set("state", params.state);
   const query = search.toString();
   return `${base}#${hashPath}${query ? `?${query}` : ""}`;
 }

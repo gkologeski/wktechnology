@@ -27,6 +27,16 @@ type OAuthDiagnostic = {
   occurredAt: string;
 };
 
+type RequiredParamChecks = {
+  responseType: boolean;
+  clientId: boolean;
+  redirectUri: boolean;
+  state: boolean;
+  scope: boolean;
+  redirectMatchesCallback: boolean;
+  clientIdConsistent: boolean;
+};
+
 type DiagnosticsData = {
   configured: boolean;
   oauthVersion: string;
@@ -36,7 +46,13 @@ type DiagnosticsData = {
   scopes: string[];
   returnOrigin: string;
   clientIdMasked: string | null;
-  checks: Record<string, boolean>;
+  checks: {
+    https: boolean;
+    expectedHosts: boolean;
+    callbackConsistent: boolean;
+    requiredParams: RequiredParamChecks;
+    likelyDevelopmentRedirect: boolean;
+  };
   lastDiagnostic: OAuthDiagnostic | null;
 };
 
@@ -83,6 +99,74 @@ function DiagnosticValue({
           </Button>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function CheckRow({ label, passed, hint }: { label: string; passed: boolean; hint: string }) {
+  return (
+    <li className="flex items-start gap-2 text-sm">
+      {passed ? (
+        <CheckCircle2 className="mt-0.5 h-4 w-4 text-success" />
+      ) : (
+        <AlertTriangle className="mt-0.5 h-4 w-4 text-warning" />
+      )}
+      <span>
+        <span className="font-medium text-foreground">{label}</span>
+        <span className="text-muted-foreground"> — {hint}</span>
+      </span>
+    </li>
+  );
+}
+
+function ConfigurationChecks({ data }: { data: DiagnosticsData }) {
+  const required = data.checks.requiredParams;
+  return (
+    <div className="rounded-md border p-4">
+      <p className="mb-3 text-sm font-medium">Verificações da autorização</p>
+      <ul className="space-y-2">
+        <CheckRow
+          label="response_type=code"
+          passed={required.responseType}
+          hint="Obrigatório para receber o código de autorização."
+        />
+        <CheckRow
+          label="client_id"
+          passed={required.clientId}
+          hint="Identificador do aplicativo cadastrado no Conta Azul."
+        />
+        <CheckRow
+          label="redirect_uri"
+          passed={required.redirectUri}
+          hint="Callback enviado ao Conta Azul na solicitação."
+        />
+        <CheckRow
+          label="state"
+          passed={required.state}
+          hint="Proteção contra CSRF e vínculo com o workspace."
+        />
+        <CheckRow
+          label="scope"
+          passed={required.scope}
+          hint="Escopos exigidos pela API atual do Conta Azul."
+        />
+        <CheckRow
+          label="Callback consistente"
+          passed={required.redirectMatchesCallback && data.checks.callbackConsistent}
+          hint="A URL autorizada precisa ser exatamente igual ao callback cadastrado."
+        />
+        <CheckRow
+          label="Client ID consistente"
+          passed={required.clientIdConsistent}
+          hint="O client_id da URL deve pertencer ao mesmo app do client_secret salvo."
+        />
+      </ul>
+      {data.checks.likelyDevelopmentRedirect ? (
+        <div className="mt-4 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-warning-foreground">
+          A URL fornecida parece ser de aplicação de desenvolvimento do Conta Azul. Esse ambiente
+          costuma usar callback de teste e pode rejeitar o callback real do TechERP.
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -140,7 +224,13 @@ export function ContaAzulOAuthDiagnostics() {
   });
 
   const data = query.data;
-  const failedChecks = data ? Object.values(data.checks).some((value) => !value) : false;
+  const failedChecks = data
+    ? !data.checks.https ||
+      !data.checks.expectedHosts ||
+      !data.checks.callbackConsistent ||
+      Object.values(data.checks.requiredParams).some((value) => !value) ||
+      data.checks.likelyDevelopmentRedirect
+    : false;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -209,6 +299,8 @@ export function ContaAzulOAuthDiagnostics() {
 
                 <StatusNotice diagnostic={data.lastDiagnostic} />
 
+                <ConfigurationChecks data={data} />
+
                 <div className="grid gap-4 lg:grid-cols-2">
                   <DiagnosticValue
                     label="URL de autorização (sanitizada)"
@@ -223,6 +315,12 @@ export function ContaAzulOAuthDiagnostics() {
                     label="Cliente (mascarado)"
                     value={data.clientIdMasked ?? "Não configurado"}
                   />
+                </div>
+
+                <div className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                  Usuário, senha e access token de teste não são enviados como parâmetros da
+                  autorização OAuth. O login ocorre no Conta Azul e o TechERP salva somente os
+                  tokens retornados pelo callback autorizado.
                 </div>
               </>
             ) : null}
