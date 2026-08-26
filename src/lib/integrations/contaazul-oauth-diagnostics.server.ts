@@ -102,7 +102,9 @@ export function inspectContaAzulAuthorizeParams(
     clientId: Boolean(clientId),
     redirectUri: Boolean(redirectUri),
     state: isTruthyParam(params, "state"),
-    scope: CA_SCOPES.split(" ").every((scope) => (params.get("scope") ?? "").split(/\s+/).includes(scope)),
+    scope: CA_SCOPES.split(" ").every((scope) =>
+      (params.get("scope") ?? "").split(/\s+/).includes(scope),
+    ),
     redirectMatchesCallback: redirectUri === opts.callback,
     clientIdConsistent: !opts.expectedClientId || !clientId || clientId === opts.expectedClientId,
   };

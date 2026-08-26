@@ -44,7 +44,10 @@ describe("diagnóstico OAuth do Conta Azul", () => {
       "https://app.wktechnology.com.br/api/public/oauth/contaazul-callback";
 
     try {
-      const url = buildAuthorizeUrl({ origin: "https://app.wktechnology.com.br", state: "state-1" });
+      const url = buildAuthorizeUrl({
+        origin: "https://app.wktechnology.com.br",
+        state: "state-1",
+      });
       expect(url).toContain("prompt=login");
       expect(url).toContain("client_id=client-url");
       expect(url).toContain("state=state-1");
