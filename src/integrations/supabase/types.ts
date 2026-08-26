@@ -4014,6 +4014,7 @@ export type Database = {
         Row: {
           activity_id: string | null
           assigned_to: string | null
+          calendar_sync_error: string | null
           cancel_reason: string | null
           canceled_at: string | null
           contact_id: string | null
@@ -4025,6 +4026,7 @@ export type Database = {
           invitee_name: string
           invitee_phone: string | null
           lead_id: string | null
+          meet_link: string | null
           notes: string | null
           owner_id: string
           page_id: string
@@ -4037,6 +4039,7 @@ export type Database = {
         Insert: {
           activity_id?: string | null
           assigned_to?: string | null
+          calendar_sync_error?: string | null
           cancel_reason?: string | null
           canceled_at?: string | null
           contact_id?: string | null
@@ -4048,6 +4051,7 @@ export type Database = {
           invitee_name: string
           invitee_phone?: string | null
           lead_id?: string | null
+          meet_link?: string | null
           notes?: string | null
           owner_id: string
           page_id: string
@@ -4060,6 +4064,7 @@ export type Database = {
         Update: {
           activity_id?: string | null
           assigned_to?: string | null
+          calendar_sync_error?: string | null
           cancel_reason?: string | null
           canceled_at?: string | null
           contact_id?: string | null
@@ -4071,6 +4076,7 @@ export type Database = {
           invitee_name?: string
           invitee_phone?: string | null
           lead_id?: string | null
+          meet_link?: string | null
           notes?: string | null
           owner_id?: string
           page_id?: string

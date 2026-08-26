@@ -46,7 +46,10 @@ export const Route = createFileRoute("/api/public/booking/$slug/submit")({
             notes: parsed.data.notes ?? null,
             timezone: parsed.data.timezone ?? null,
           });
-          return Response.json({ ok: true, id: out.id }, { headers: corsHeaders });
+          return Response.json(
+            { ok: true, id: out.id, meet_link: out.meet_link },
+            { headers: corsHeaders },
+          );
         } catch (e) {
           const msg = e instanceof Error ? e.message : "erro";
           return Response.json({ error: msg }, { status: 400, headers: corsHeaders });

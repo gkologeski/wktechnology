@@ -50,6 +50,7 @@ function PublicBookingPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [meetLink, setMeetLink] = useState<string | null>(null);
   const tz = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
 
   useEffect(() => {
@@ -97,6 +98,7 @@ function PublicBookingPage() {
       });
       const j = await res.json();
       if (!res.ok) throw new Error(j.error || "erro");
+      setMeetLink(typeof j.meet_link === "string" ? j.meet_link : null);
       setConfirmed(true);
     } catch (e) {
       setError(String((e as Error).message || e));
@@ -130,6 +132,20 @@ function PublicBookingPage() {
                 dateStyle: "full",
                 timeStyle: "short",
               })}
+            </p>
+          )}
+          {meetLink ? (
+            <a
+              href={meetLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Entrar na reunião
+            </a>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              O organizador enviará o link da reunião por e-mail.
             </p>
           )}
         </div>
