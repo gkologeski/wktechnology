@@ -74,10 +74,12 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
           durationMs: (r["duration_ms"] as number | null) ?? null,
           status: (r["status"] as string | null) ?? null,
           error: (r["error"] as string | null) ?? null,
+          scope: r["workspace_id"] ? ("workspace" as const) : ("global" as const),
           workspaces: num(m["workspaces"]),
           imported: num(m["imported"]),
           updated: num(m["updated"]),
           failed: num(m["failed"]),
+
         };
       }),
     };
