@@ -1,6 +1,6 @@
 // Painel presentacional de progresso da sincronização do Conta Azul.
 // Componente puro: recebe estado por props, sem acesso a dados.
-import { AlertTriangle, CheckCircle2, Clock, Database, TimerReset } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Database, RefreshCw, TimerReset } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +32,8 @@ export type CaCronRun = {
   durationMs: number | null;
   status: string | null;
   error: string | null;
+  /** Origem do registro: execução do próprio workspace ou execução global. */
+  scope?: "workspace" | "global";
   workspaces: number;
   imported: number;
   updated: number;
@@ -43,6 +45,10 @@ export interface ContaAzulSyncProgressProps {
   cronRuns: CaCronRun[];
   /** Sincronização manual em andamento. */
   running?: boolean;
+  /** Atualização automática do painel ativa. */
+  autoRefresh?: boolean;
+  /** Requisição de status em andamento. */
+  refreshing?: boolean;
 }
 
 function formatDuration(ms: number | null) {
@@ -58,6 +64,8 @@ export function ContaAzulSyncProgress({
   syncState,
   cronRuns,
   running = false,
+  autoRefresh = false,
+  refreshing = false,
 }: ContaAzulSyncProgressProps) {
   const byEntity = new Map<string, CaSyncStateRow>(syncState.map((s) => [s.entity, s]));
 
@@ -82,12 +90,23 @@ export function ContaAzulSyncProgress({
               Situação por entidade e execuções automáticas. O agendador roda a cada 6 horas.
             </CardDescription>
           </div>
-          {running ? (
-            <Badge variant="secondary" className="gap-1">
-              <TimerReset className="h-3.5 w-3.5 animate-spin" />
-              Sincronizando…
-            </Badge>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+            {running ? (
+              <Badge variant="secondary" className="gap-1">
+                <TimerReset className="h-3.5 w-3.5 animate-spin" />
+                Sincronizando…
+              </Badge>
+            ) : null}
+            {autoRefresh ? (
+              <Badge variant="outline" className="gap-1 text-muted-foreground">
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                  aria-hidden="true"
+                />
+                {refreshing ? "Atualizando…" : "Atualização automática"}
+              </Badge>
+            ) : null}
+          </div>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -213,6 +232,7 @@ export function ContaAzulSyncProgress({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Início</TableHead>
+                    <TableHead>Origem</TableHead>
                     <TableHead>Situação</TableHead>
                     <TableHead className="text-right">Duração</TableHead>
                     <TableHead className="text-right">Workspaces</TableHead>
@@ -227,6 +247,12 @@ export function ContaAzulSyncProgress({
                       <TableCell className="whitespace-nowrap">
                         {run.startedAt ? formatDateTime(run.startedAt) : "—"}
                       </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-muted-foreground">
+                          {run.scope === "global" ? "Execução global" : "Este workspace"}
+                        </Badge>
+                      </TableCell>
+
                       <TableCell>
                         {run.status === "success" ? (
                           <StatusBadge status="open" label="Sucesso" />
