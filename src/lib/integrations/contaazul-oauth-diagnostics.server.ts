@@ -13,6 +13,7 @@ import {
 export type ContaAzulOAuthStage =
   | "configuracao_local"
   | "autorizacao_provedor"
+  | "sem_retorno"
   | "callback"
   | "troca_token"
   | "renovacao";
@@ -41,6 +42,23 @@ export type ContaAzulOAuthChecks = {
   callbackConsistent: boolean;
   requiredParams: ContaAzulOAuthParamChecks;
   likelyDevelopmentRedirect: boolean;
+};
+
+export type ContaAzulOAuthConfiguration = {
+  configured: boolean;
+  oauthVersion: string;
+  authorizationEndpoint: string;
+  authorizationUrl: string;
+  tokenUrl: string;
+  callback: string;
+  redirectUri: string;
+  scopes: string[];
+  returnOrigin: string;
+  clientId: string | null;
+  clientIdMasked: string | null;
+  localParamsValid: boolean;
+  externalValidationPending: boolean;
+  checks: ContaAzulOAuthChecks;
 };
 
 const SENSITIVE_PARAMS = new Set([
@@ -84,6 +102,19 @@ function readAuthorizeSearchParams(rawUrl: string): URLSearchParams {
     for (const [key, value] of hashParams.entries()) merged.set(key, value);
   }
   return merged;
+}
+
+function readAuthorizeEndpoint(rawUrl: string): string {
+  const [base = "", hash = ""] = rawUrl.split("#", 2);
+  const baseUrl = new URL(base);
+  baseUrl.search = "";
+  if (!hash) return baseUrl.toString();
+  const [hashPath = ""] = hash.split("?", 1);
+  return `${baseUrl.toString()}#${hashPath}`;
+}
+
+function allParamChecksPassed(params: ContaAzulOAuthParamChecks): boolean {
+  return Object.values(params).every(Boolean);
 }
 
 function isTruthyParam(params: URLSearchParams, key: string): boolean {
@@ -136,6 +167,8 @@ export function normalizeContaAzulOAuthError(input: {
   const fallback =
     input.stage === "autorizacao_provedor"
       ? "O Conta Azul rejeitou a solicitação antes de concluir a autorização."
+      : input.stage === "sem_retorno"
+        ? "O popup do Conta Azul foi fechado sem retornar ao callback do TechERP."
       : "Não foi possível concluir a autenticação OAuth.";
   return {
     stage: input.stage,
@@ -180,7 +213,23 @@ export async function markContaAzulAuthorizationStarted(
   });
 }
 
-export function getContaAzulOAuthConfiguration(origin: string) {
+export async function markContaAzulAuthorizationNoCallback(
+  supabase: SupabaseClient,
+  workspaceId: string,
+) {
+  await saveContaAzulOAuthDiagnostic(
+    supabase,
+    workspaceId,
+    normalizeContaAzulOAuthError({
+      stage: "sem_retorno",
+      code: "no_callback",
+      message:
+        "O popup do Conta Azul foi fechado sem retornar ao callback do TechERP. A rejeição ocorreu antes de recebermos código ou descrição técnica do provedor.",
+    }),
+  );
+}
+
+export function getContaAzulOAuthConfiguration(origin: string): ContaAzulOAuthConfiguration {
   const configured = contaAzulConfigured();
   const returnOrigin = normalizeContaAzulReturnOrigin(origin);
   const callback = contaAzulRedirectUri(returnOrigin);
@@ -188,12 +237,17 @@ export function getContaAzulOAuthConfiguration(origin: string) {
     return {
       configured: false,
       oauthVersion: "v2",
+      authorizationEndpoint: "https://login.contaazul.com/#/oauth/authorize",
       authorizationUrl: "https://login.contaazul.com/#/oauth/authorize",
       tokenUrl: "https://api-v2.contaazul.com/oauth/token",
       callback,
+      redirectUri: callback,
       scopes: CA_SCOPES.split(" "),
       returnOrigin,
+      clientId: null,
       clientIdMasked: null,
+      localParamsValid: false,
+      externalValidationPending: true,
       checks: {
         https: callback.startsWith("https://"),
         expectedHosts: true,
@@ -213,6 +267,7 @@ export function getContaAzulOAuthConfiguration(origin: string) {
   }
   const creds = contaAzulCreds();
   const fullUrl = buildAuthorizeUrl({ origin: returnOrigin, state: "[diagnostico]" });
+  const fullUrlParams = readAuthorizeSearchParams(fullUrl);
   const rawConfiguredParams = readAuthorizeSearchParams(creds.authUrl);
   const rawConfiguredRedirect = rawConfiguredParams.get("redirect_uri")?.trim() ?? "";
   const paramChecks = inspectContaAzulAuthorizeParams(fullUrl, {
@@ -222,15 +277,25 @@ export function getContaAzulOAuthConfiguration(origin: string) {
   const authHost = new URL(creds.authUrl.split("#", 1)[0]).hostname;
   const tokenHost = new URL(creds.tokenUrl).hostname;
   const callbackUrl = new URL(callback);
+  const localParamsValid =
+    creds.authUrl.startsWith("https://") &&
+    creds.tokenUrl.startsWith("https://") &&
+    callbackUrl.protocol === "https:" &&
+    allParamChecksPassed(paramChecks);
   return {
     configured: true,
     oauthVersion: "v2",
+    authorizationEndpoint: readAuthorizeEndpoint(fullUrl),
     authorizationUrl: sanitizeContaAzulAuthorizeUrl(fullUrl),
     tokenUrl: creds.tokenUrl,
     callback,
+    redirectUri: fullUrlParams.get("redirect_uri")?.trim() ?? "",
     scopes: CA_SCOPES.split(" "),
     returnOrigin,
-    clientIdMasked: maskClientId(creds.clientId),
+    clientId: fullUrlParams.get("client_id")?.trim() || creds.clientId,
+    clientIdMasked: maskClientId(fullUrlParams.get("client_id")?.trim() || creds.clientId),
+    localParamsValid,
+    externalValidationPending: true,
     checks: {
       https:
         creds.authUrl.startsWith("https://") &&
