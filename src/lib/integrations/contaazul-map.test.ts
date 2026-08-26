@@ -59,6 +59,33 @@ describe("contaazul-map", () => {
     expect(entry!.counterpartyDoc).toBe("12345678000199");
   });
 
+  it("mapeia uma parcela financeira da API v2 do Conta Azul", () => {
+    const entry = mapEntry(
+      {
+        id: "parcela-1",
+        descricao: "Parcela de serviço",
+        data_vencimento: "2026-09-10",
+        data_competencia: "2026-09-01",
+        status: "ATRASADO",
+        valor_composicao: { valor_liquido: 1500.25 },
+        categoria: { id: "cat-v2" },
+        centro_de_custo: { id: "cc-v2" },
+        cliente: { nome: "ACME", documento: "12.345.678/0001-99" },
+        metodo_pagamento: "BOLETO",
+      },
+      "receivable",
+      "2026-08-25",
+    );
+
+    expect(entry).not.toBeNull();
+    expect(entry!.amount).toBe(1500.25);
+    expect(entry!.status).toBe("overdue");
+    expect(entry!.categoryExternalId).toBe("cat-v2");
+    expect(entry!.costCenterExternalId).toBe("cc-v2");
+    expect(entry!.counterpartyName).toBe("ACME");
+    expect(entry!.paymentMethod).toBe("BOLETO");
+  });
+
   it("classifica transações de extrato como entrada/saída", () => {
     expect(mapStatementTx({ id: "t1", value: "-50,00", date: "2026-01-05" })!.direction).toBe(
       "out",

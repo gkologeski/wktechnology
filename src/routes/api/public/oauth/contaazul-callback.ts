@@ -59,7 +59,11 @@ export const Route = createFileRoute("/api/public/oauth/contaazul-callback")({
           await saveTokens(supabaseAdmin, {
             workspaceId: state.workspaceId,
             tokens,
-            config: { connected_by: state.userId, connected_at: new Date().toISOString() },
+            config: {
+              connected_by: state.userId,
+              connected_at: new Date().toISOString(),
+              oauth_version: "v2",
+            },
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);

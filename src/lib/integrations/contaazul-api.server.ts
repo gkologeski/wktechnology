@@ -2,9 +2,11 @@
 // paginação e retry com backoff. Segredos lidos apenas aqui, em runtime.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const DEFAULT_API_BASE = "https://api.contaazul.com/v1";
-const DEFAULT_AUTH_URL = "https://api.contaazul.com/auth/authorize";
-const DEFAULT_TOKEN_URL = "https://api.contaazul.com/oauth2/token";
+import { CANONICAL_PUBLIC_URL } from "@/lib/app-url";
+
+const DEFAULT_API_BASE = "https://api-v2.contaazul.com";
+const DEFAULT_AUTH_URL = "https://login.contaazul.com/#/oauth/authorize";
+const DEFAULT_TOKEN_URL = "https://api-v2.contaazul.com/oauth/token";
 
 export type CaCreds = {
   clientId: string;
@@ -55,21 +57,38 @@ export function contaAzulConfigured(): boolean {
   return !!process.env["CONTAAZUL_CLIENT_ID"] && !!process.env["CONTAAZUL_CLIENT_SECRET"];
 }
 
-export function contaAzulRedirectUri(origin: string): string {
-  return `${origin.replace(/\/$/, "")}/api/public/oauth/contaazul-callback`;
+export function contaAzulRedirectUri(_origin?: string): string {
+  const configured = process.env["CONTAAZUL_REDIRECT_URI"];
+  const base = configured?.trim() || `${CANONICAL_PUBLIC_URL}/api/public/oauth/contaazul-callback`;
+  return base.replace(/\/$/, "");
 }
 
-export const CA_SCOPES = "sales";
+export const CA_SCOPES = "openid profile aws.cognito.signin.user.admin";
+
+function appendAuthorizeParams(authUrl: string, params: Record<string, string>): string {
+  if (!authUrl.includes("#")) {
+    const url = new URL(authUrl);
+    for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
+    return url.toString();
+  }
+
+  const [base = "", hash = ""] = authUrl.split("#", 2);
+  const [hashPath = "", hashQuery = ""] = hash.split("?", 2);
+  const search = new URLSearchParams(hashQuery);
+  for (const [key, value] of Object.entries(params)) search.set(key, value);
+  const query = search.toString();
+  return `${base}#${hashPath}${query ? `?${query}` : ""}`;
+}
 
 export function buildAuthorizeUrl(opts: { origin: string; state: string }): string {
   const creds = contaAzulCreds();
-  const url = new URL(creds.authUrl);
-  url.searchParams.set("client_id", creds.clientId);
-  url.searchParams.set("redirect_uri", contaAzulRedirectUri(opts.origin));
-  url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", CA_SCOPES);
-  url.searchParams.set("state", opts.state);
-  return url.toString();
+  return appendAuthorizeParams(creds.authUrl, {
+    client_id: creds.clientId,
+    redirect_uri: contaAzulRedirectUri(opts.origin),
+    response_type: "code",
+    scope: CA_SCOPES,
+    state: opts.state,
+  });
 }
 
 function basicAuth(creds: CaCreds): string {
@@ -267,7 +286,7 @@ export function extractList(payload: unknown): Array<Record<string, unknown>> {
   if (Array.isArray(payload)) return payload as Array<Record<string, unknown>>;
   if (payload && typeof payload === "object") {
     const obj = payload as Record<string, unknown>;
-    for (const key of ["data", "items", "content", "results", "records"]) {
+    for (const key of ["itens", "data", "items", "content", "results", "records"]) {
       if (Array.isArray(obj[key])) return obj[key] as Array<Record<string, unknown>>;
     }
   }
@@ -289,7 +308,7 @@ export async function caFetchAll(opts: {
     const payload = await caFetch({
       accessToken: opts.accessToken,
       path: opts.path,
-      query: { ...opts.query, page, size: pageSize },
+      query: { ...opts.query, pagina: page, tamanho_pagina: pageSize },
     });
     const list = extractList(payload);
     out.push(...list);
