@@ -1,14 +1,6 @@
 // Painel presentacional de progresso da sincronização do Conta Azul.
 // Componente puro: recebe estado por props, sem acesso a dados.
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  Database,
-  RefreshCw,
-  TimerReset,
-} from "lucide-react";
-
+import { AlertTriangle, CheckCircle2, Clock, Database, RefreshCw, TimerReset } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -59,7 +51,6 @@ export interface ContaAzulSyncProgressProps {
   refreshing?: boolean;
 }
 
-
 function formatDuration(ms: number | null) {
   if (ms == null) return "—";
   if (ms < 1000) return `${ms} ms`;
@@ -76,7 +67,6 @@ export function ContaAzulSyncProgress({
   autoRefresh = false,
   refreshing = false,
 }: ContaAzulSyncProgressProps) {
-
   const byEntity = new Map<string, CaSyncStateRow>(syncState.map((s) => [s.entity, s]));
 
   const totalImported = syncState.reduce((acc, s) => acc + (s.imported_count ?? 0), 0);
@@ -117,7 +107,6 @@ export function ContaAzulSyncProgress({
               </Badge>
             ) : null}
           </div>
-
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

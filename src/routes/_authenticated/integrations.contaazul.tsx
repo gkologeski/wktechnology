@@ -68,7 +68,6 @@ function ContaAzulIntegrationPage() {
     refetchIntervalInBackground: false,
   });
 
-
   // Retorno do popup OAuth.
   useEffect(() => {
     function onMessage(event: MessageEvent) {
@@ -186,7 +185,6 @@ function ContaAzulIntegrationPage() {
           </div>
         }
       />
-
 
       {isLoading ? (
         <div className="space-y-4">
@@ -336,7 +334,6 @@ function ContaAzulIntegrationPage() {
             running={busy}
             autoRefresh={autoRefresh}
             refreshing={isFetching}
-
           />
         </>
       )}

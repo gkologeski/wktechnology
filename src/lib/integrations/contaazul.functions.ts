@@ -33,7 +33,8 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
     // Últimas execuções do agendador (job "contaazul-tick", a cada 6 horas).
     // Preferimos as linhas do próprio workspace; se ainda não existirem
     // (execuções antigas eram apenas globais), caímos para as globais.
-    const runCols = "id, started_at, finished_at, duration_ms, status, metrics, error, workspace_id";
+    const runCols =
+      "id, started_at, finished_at, duration_ms, status, metrics, error, workspace_id";
     const { data: wsRuns } = await supabaseAdmin
       .from("cron_run_logs")
       .select(runCols)
@@ -53,7 +54,6 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
         .limit(5);
       runs = globalRuns ?? [];
     }
-
 
     return {
       configured: api.contaAzulConfigured(),
@@ -79,7 +79,6 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
           imported: num(m["imported"]),
           updated: num(m["updated"]),
           failed: num(m["failed"]),
-
         };
       }),
     };

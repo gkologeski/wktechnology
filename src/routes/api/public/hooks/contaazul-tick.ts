@@ -102,7 +102,6 @@ export const Route = createFileRoute("/api/public/hooks/contaazul-tick")({
             }
           }
 
-
           return { workspaces, imported, updated, failed } as unknown as Record<string, unknown>;
         });
 
