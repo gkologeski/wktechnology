@@ -25,7 +25,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy, ExternalLink, Plus, Trash2, Pencil, Eye, X } from "lucide-react";
+import { Copy, ExternalLink, Plus, Trash2, Pencil, Eye, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import {
   listBookingPages,
@@ -136,8 +136,20 @@ function BookingSettings() {
                   {!p.active && <Badge variant="secondary">Inativa</Badge>}
                   <Badge variant="outline">{p.duration_minutes} min</Badge>
                   <Badge variant="outline">{p.target === "lead" ? "Lead" : "Contato"}</Badge>
+                  {!p.calendar_account_id && (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                      Sem calendário
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 truncate">/book/{p.slug}</div>
+                {!p.calendar_account_id && (
+                  <p className="text-xs text-destructive mt-1">
+                    Sem conta de calendário vinculada: as reservas não geram evento no Google Agenda
+                    nem link do Meet.
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <Button
@@ -310,7 +322,7 @@ function EditorDialog({
               <Input value={form.timezone} onChange={(e) => upd({ timezone: e.target.value })} />
             </div>
             <div className="space-y-1">
-              <Label>Calendário (busy lookup)</Label>
+              <Label>Conta de calendário (Google Agenda + Meet)</Label>
               <Select
                 value={form.calendar_account_id ?? "none"}
                 onValueChange={(v) => upd({ calendar_account_id: v === "none" ? null : v })}
@@ -327,6 +339,28 @@ function EditorDialog({
                   ))}
                 </SelectContent>
               </Select>
+              {!form.calendar_account_id && (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 space-y-2">
+                  <p className="text-xs text-destructive">
+                    Sem conta selecionada, as reservas não criam evento no Google Agenda nem link do
+                    Google Meet.
+                  </p>
+                  {accounts.length > 0 ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => upd({ calendar_account_id: accounts[0].id })}
+                    >
+                      Usar {accounts[0].email}
+                    </Button>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Conecte uma conta Google em Configurações → Calendário.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-3 gap-3">
@@ -478,11 +512,32 @@ function BookingsSheet({ pageId, onClose }: { pageId: string; onClose: () => voi
                     <div className="text-xs text-muted-foreground">{b.invitee_phone}</div>
                   )}
                   {b.notes && <div className="text-xs mt-1 whitespace-pre-wrap">{b.notes}</div>}
+                  {b.meet_link && (
+                    <a
+                      href={b.meet_link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-primary underline mt-1 inline-flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                      Link do Google Meet
+                    </a>
+                  )}
+                  {b.calendar_sync_error && (
+                    <p className="text-xs text-destructive mt-1 break-words">
+                      Falha na sincronização: {b.calendar_sync_error}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <Badge variant={b.status === "confirmed" ? "default" : "secondary"}>
-                    {b.status}
+                    {b.status === "confirmed" ? "Confirmada" : "Cancelada"}
                   </Badge>
+                  {b.gcal_event_id ? (
+                    <Badge variant="outline">No Google Agenda</Badge>
+                  ) : (
+                    <Badge variant="outline">Fora do Google Agenda</Badge>
+                  )}
                   {b.status === "confirmed" && (
                     <Button
                       size="sm"

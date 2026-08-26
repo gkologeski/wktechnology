@@ -26,6 +26,7 @@ export type BookingPageRow = {
   target: "lead" | "contact";
   color: string;
   location: string | null;
+  workspace_id: string | null;
 };
 
 export type Slot = { start: string; end: string };
@@ -206,6 +207,12 @@ export async function computeAvailableSlots(
   return slots;
 }
 
+type GoogleSyncResult = {
+  eventId: string | null;
+  meetLink: string | null;
+  error: string | null;
+};
+
 async function pushBookingToGoogle(
   page: BookingPageRow,
   booking: {
@@ -215,22 +222,34 @@ async function pushBookingToGoogle(
     invitee_email: string;
     notes: string | null;
   },
-): Promise<string | null> {
-  if (!page.calendar_account_id) return null;
+): Promise<GoogleSyncResult> {
+  const fail = (error: string): GoogleSyncResult => {
+    console.error(`[booking] Google Agenda: ${error}`);
+    return { eventId: null, meetLink: null, error };
+  };
+  if (!page.calendar_account_id) {
+    return {
+      eventId: null,
+      meetLink: null,
+      error: "Página de agendamento sem conta de calendário vinculada",
+    };
+  }
   const { data: account } = await supabaseAdmin
     .from("calendar_accounts")
     .select("id, provider, primary_calendar_id, access_token, refresh_token, expires_at, owner_id")
     .eq("id", page.calendar_account_id)
     .maybeSingle();
-  if (!account || account.provider !== "google") return null;
+  if (!account) return fail("Conta de calendário não encontrada");
+  if (account.provider !== "google") return fail("Conta de calendário não é Google");
 
   // Refresh if needed
   let token = account.access_token as string | null;
   const exp = account.expires_at ? new Date(account.expires_at).getTime() : 0;
   if (!token || Date.now() >= exp - 30_000) {
-    const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID;
-    const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
-    if (!clientId || !clientSecret || !account.refresh_token) return null;
+    const clientId = process.env["GOOGLE_OAUTH_CLIENT_ID"];
+    const clientSecret = process.env["GOOGLE_OAUTH_CLIENT_SECRET"];
+    if (!clientId || !clientSecret) return fail("Credenciais do Google não configuradas");
+    if (!account.refresh_token) return fail("Conta Google sem refresh token — reconecte a conta");
     const res = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -241,7 +260,9 @@ async function pushBookingToGoogle(
         grant_type: "refresh_token",
       }).toString(),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return fail(`Falha ao renovar token do Google [${res.status}]: ${await res.text()}`);
+    }
     const j = (await res.json()) as { access_token: string; expires_in: number };
     token = j.access_token;
     await supabaseAdmin
@@ -255,7 +276,7 @@ async function pushBookingToGoogle(
 
   const calId = encodeURIComponent(account.primary_calendar_id || "primary");
   const res = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/${calId}/events?sendUpdates=all`,
+    `https://www.googleapis.com/calendar/v3/calendars/${calId}/events?sendUpdates=all&conferenceDataVersion=1`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -272,12 +293,33 @@ async function pushBookingToGoogle(
         start: { dateTime: booking.start_at },
         end: { dateTime: booking.end_at },
         attendees: [{ email: booking.invitee_email, displayName: booking.invitee_name }],
+        // Solicita uma sala do Google Meet para o evento.
+        conferenceData: {
+          createRequest: {
+            requestId: crypto.randomUUID(),
+            conferenceSolutionKey: { type: "hangoutsMeet" },
+          },
+        },
       }),
     },
   );
-  if (!res.ok) return null;
-  const j = (await res.json()) as { id: string };
-  return j.id ?? null;
+  if (!res.ok) {
+    return fail(`Google Agenda recusou o evento [${res.status}]: ${await res.text()}`);
+  }
+  const j = (await res.json()) as {
+    id?: string;
+    hangoutLink?: string;
+    conferenceData?: { entryPoints?: { entryPointType?: string; uri?: string }[] };
+  };
+  const meetLink =
+    j.hangoutLink ??
+    j.conferenceData?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
+    null;
+  return {
+    eventId: j.id ?? null,
+    meetLink,
+    error: meetLink ? null : "Evento criado, mas o Google não retornou link do Meet",
+  };
 }
 
 export async function createPublicBooking(input: {
@@ -288,7 +330,7 @@ export async function createPublicBooking(input: {
   invitee_phone?: string | null;
   notes?: string | null;
   timezone?: string | null;
-}): Promise<{ id: string }> {
+}): Promise<{ id: string; meet_link: string | null }> {
   const page = await getBookingPageBySlug(input.slug);
   if (!page) throw new Error("Página de agendamento não encontrada");
   const startMs = new Date(input.start).getTime();
@@ -306,6 +348,7 @@ export async function createPublicBooking(input: {
   // Find/create contact or lead by email
   let leadId: string | null = null;
   let contactId: string | null = null;
+  const syncNotes: string[] = [];
   if (page.target === "contact") {
     const { data: existing } = await supabaseAdmin
       .from("contacts")
@@ -316,10 +359,11 @@ export async function createPublicBooking(input: {
     if (existing) contactId = existing.id;
     else {
       const [first, ...rest] = (input.invitee_name || "").trim().split(/\s+/);
-      const { data: created } = await supabaseAdmin
+      const { data: created, error: contactError } = await supabaseAdmin
         .from("contacts")
         .insert({
           owner_id: page.owner_id,
+          workspace_id: page.workspace_id ?? undefined,
           first_name: first || input.invitee_email,
           last_name: rest.join(" ") || null,
           email: input.invitee_email,
@@ -327,6 +371,10 @@ export async function createPublicBooking(input: {
         })
         .select("id")
         .single();
+      if (contactError) {
+        console.error(`[booking] falha ao criar contato: ${contactError.message}`);
+        syncNotes.push(`Contato não criado: ${contactError.message}`);
+      }
       contactId = created?.id ?? null;
     }
   } else {
@@ -339,10 +387,11 @@ export async function createPublicBooking(input: {
     if (existing) leadId = existing.id;
     else {
       const [first, ...rest] = (input.invitee_name || "").trim().split(/\s+/);
-      const { data: created } = await supabaseAdmin
+      const { data: created, error: leadError } = await supabaseAdmin
         .from("leads")
         .insert({
           owner_id: page.owner_id,
+          workspace_id: page.workspace_id ?? undefined,
           first_name: first || input.invitee_email,
           last_name: rest.join(" ") || null,
           email: input.invitee_email,
@@ -352,23 +401,28 @@ export async function createPublicBooking(input: {
         })
         .select("id")
         .single();
+      if (leadError) {
+        console.error(`[booking] falha ao criar lead: ${leadError.message}`);
+        syncNotes.push(`Lead não criado: ${leadError.message}`);
+      }
       leadId = created?.id ?? null;
       // Garante empresa e contato vinculados ao lead
       if (leadId) await ensureLeadRelationsSafe(supabaseAdmin, leadId);
     }
   }
 
-  // Push to Google Calendar (best effort)
-  const gcalEventId = await pushBookingToGoogle(page, {
+  // Push to Google Calendar (best effort, mas com erro registrado)
+  const gcal = await pushBookingToGoogle(page, {
     start_at,
     end_at,
     invitee_name: input.invitee_name,
     invitee_email: input.invitee_email,
     notes: input.notes ?? null,
   });
+  if (gcal.error) syncNotes.push(gcal.error);
 
   // Create activity (meeting) so it shows up everywhere
-  const { data: activity } = await supabaseAdmin
+  const { data: activity, error: activityError } = await supabaseAdmin
     .from("activities")
     .insert({
       owner_id: page.owner_id,
@@ -376,16 +430,20 @@ export async function createPublicBooking(input: {
       subject: `${page.title} — ${input.invitee_name}`,
       body: input.notes ?? null,
       due_date: start_at,
-      meeting_location: page.location ?? null,
+      meeting_location: page.location || gcal.meetLink || null,
       related_contact_id: contactId,
       related_lead_id: leadId,
       external_ids:
-        page.calendar_account_id && gcalEventId
-          ? { [`gcal_${page.calendar_account_id}`]: gcalEventId }
+        page.calendar_account_id && gcal.eventId
+          ? { [`gcal_${page.calendar_account_id}`]: gcal.eventId }
           : {},
     })
     .select("id")
     .single();
+  if (activityError) {
+    console.error(`[booking] falha ao criar atividade: ${activityError.message}`);
+    syncNotes.push(`Atividade não criada: ${activityError.message}`);
+  }
 
   const { data: booking, error } = await supabaseAdmin
     .from("bookings")
@@ -399,7 +457,9 @@ export async function createPublicBooking(input: {
       invitee_phone: input.invitee_phone ?? null,
       notes: input.notes ?? null,
       status: "confirmed",
-      gcal_event_id: gcalEventId,
+      gcal_event_id: gcal.eventId,
+      meet_link: gcal.meetLink,
+      calendar_sync_error: syncNotes.length ? syncNotes.join(" | ") : null,
       lead_id: leadId,
       contact_id: contactId,
       activity_id: activity?.id ?? null,
@@ -408,5 +468,5 @@ export async function createPublicBooking(input: {
     .select("id")
     .single();
   if (error || !booking) throw new Error(error?.message || "Falha ao criar reserva");
-  return { id: booking.id };
+  return { id: booking.id, meet_link: gcal.meetLink };
 }
