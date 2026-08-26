@@ -65,7 +65,10 @@ export function ContaAzulSyncProgress({
   syncState,
   cronRuns,
   running = false,
+  autoRefresh = false,
+  refreshing = false,
 }: ContaAzulSyncProgressProps) {
+
   const byEntity = new Map<string, CaSyncStateRow>(syncState.map((s) => [s.entity, s]));
 
   const totalImported = syncState.reduce((acc, s) => acc + (s.imported_count ?? 0), 0);
