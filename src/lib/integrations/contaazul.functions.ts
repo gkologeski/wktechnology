@@ -31,12 +31,29 @@ export const contaAzulStatus = createServerFn({ method: "GET" })
     const tokens = integration?.oauth_tokens ?? null;
 
     // Últimas execuções do agendador (job "contaazul-tick", a cada 6 horas).
-    const { data: runs } = await supabaseAdmin
+    // Preferimos as linhas do próprio workspace; se ainda não existirem
+    // (execuções antigas eram apenas globais), caímos para as globais.
+    const runCols = "id, started_at, finished_at, duration_ms, status, metrics, error, workspace_id";
+    const { data: wsRuns } = await supabaseAdmin
       .from("cron_run_logs")
-      .select("id, started_at, finished_at, duration_ms, status, metrics, error")
+      .select(runCols)
       .eq("job_name", "contaazul-tick")
+      .eq("workspace_id", workspaceId)
       .order("started_at", { ascending: false })
       .limit(5);
+
+    let runs = wsRuns ?? [];
+    if (runs.length === 0) {
+      const { data: globalRuns } = await supabaseAdmin
+        .from("cron_run_logs")
+        .select(runCols)
+        .eq("job_name", "contaazul-tick")
+        .is("workspace_id", null)
+        .order("started_at", { ascending: false })
+        .limit(5);
+      runs = globalRuns ?? [];
+    }
+
 
     return {
       configured: api.contaAzulConfigured(),
