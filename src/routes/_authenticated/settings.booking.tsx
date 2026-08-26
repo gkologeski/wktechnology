@@ -136,8 +136,20 @@ function BookingSettings() {
                   {!p.active && <Badge variant="secondary">Inativa</Badge>}
                   <Badge variant="outline">{p.duration_minutes} min</Badge>
                   <Badge variant="outline">{p.target === "lead" ? "Lead" : "Contato"}</Badge>
+                  {!p.calendar_account_id && (
+                    <Badge variant="destructive" className="gap-1">
+                      <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                      Sem calendário
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1 truncate">/book/{p.slug}</div>
+                {!p.calendar_account_id && (
+                  <p className="text-xs text-destructive mt-1">
+                    Sem conta de calendário vinculada: as reservas não geram evento no Google Agenda
+                    nem link do Meet.
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <Button
