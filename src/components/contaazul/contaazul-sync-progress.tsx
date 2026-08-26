@@ -92,12 +92,24 @@ export function ContaAzulSyncProgress({
               Situação por entidade e execuções automáticas. O agendador roda a cada 6 horas.
             </CardDescription>
           </div>
-          {running ? (
-            <Badge variant="secondary" className="gap-1">
-              <TimerReset className="h-3.5 w-3.5 animate-spin" />
-              Sincronizando…
-            </Badge>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2" aria-live="polite">
+            {running ? (
+              <Badge variant="secondary" className="gap-1">
+                <TimerReset className="h-3.5 w-3.5 animate-spin" />
+                Sincronizando…
+              </Badge>
+            ) : null}
+            {autoRefresh ? (
+              <Badge variant="outline" className="gap-1 text-muted-foreground">
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                  aria-hidden="true"
+                />
+                {refreshing ? "Atualizando…" : "Atualização automática"}
+              </Badge>
+            ) : null}
+          </div>
+
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
