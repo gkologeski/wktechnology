@@ -32,6 +32,8 @@ export type CaCronRun = {
   durationMs: number | null;
   status: string | null;
   error: string | null;
+  /** Origem do registro: execução do próprio workspace ou execução global. */
+  scope?: "workspace" | "global";
   workspaces: number;
   imported: number;
   updated: number;
@@ -43,7 +45,12 @@ export interface ContaAzulSyncProgressProps {
   cronRuns: CaCronRun[];
   /** Sincronização manual em andamento. */
   running?: boolean;
+  /** Atualização automática do painel ativa. */
+  autoRefresh?: boolean;
+  /** Requisição de status em andamento. */
+  refreshing?: boolean;
 }
+
 
 function formatDuration(ms: number | null) {
   if (ms == null) return "—";
