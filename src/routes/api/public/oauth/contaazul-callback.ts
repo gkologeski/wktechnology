@@ -25,13 +25,29 @@ export const Route = createFileRoute("/api/public/oauth/contaazul-callback")({
         const url = new URL(request.url);
         const code = url.searchParams.get("code");
         const errorParam = url.searchParams.get("error");
+        const errorDescription = url.searchParams.get("error_description");
         const { verifyContaAzulState } = await import("@/lib/integrations/contaazul-state.server");
         const state = verifyContaAzulState(url.searchParams.get("state"));
 
         if (errorParam) {
+          if (state) {
+            const [{ supabaseAdmin }, diagnostics] = await Promise.all([
+              import("@/integrations/supabase/client.server"),
+              import("@/lib/integrations/contaazul-oauth-diagnostics.server"),
+            ]);
+            await diagnostics.saveContaAzulOAuthDiagnostic(
+              supabaseAdmin,
+              state.workspaceId,
+              diagnostics.normalizeContaAzulOAuthError({
+                stage: "autorizacao_provedor",
+                code: errorParam,
+                message: errorDescription,
+              }),
+            );
+          }
           return htmlResponse(
             "Falha no Conta Azul",
-            `<h1>O Conta Azul retornou um erro</h1><p>${esc(errorParam)}</p><p><a href="/integrations/contaazul">Voltar</a></p>`,
+            `<h1>O Conta Azul retornou um erro</h1><p>${esc(errorDescription ?? errorParam)}</p><p><a href="/integrations/contaazul">Voltar</a></p>`,
             400,
           );
         }
@@ -67,13 +83,27 @@ export const Route = createFileRoute("/api/public/oauth/contaazul-callback")({
               connected_by: state.userId,
               connected_at: new Date().toISOString(),
               oauth_version: "v2",
+              oauth_diagnostic: null,
             },
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
+          const [{ supabaseAdmin }, diagnostics] = await Promise.all([
+            import("@/integrations/supabase/client.server"),
+            import("@/lib/integrations/contaazul-oauth-diagnostics.server"),
+          ]);
+          const safeError = diagnostics.normalizeContaAzulOAuthError({
+            stage: "troca_token",
+            message,
+          });
+          await diagnostics.saveContaAzulOAuthDiagnostic(
+            supabaseAdmin,
+            state.workspaceId,
+            safeError,
+          );
           return htmlResponse(
             "Falha ao conectar",
-            `<h1>Não foi possível concluir a conexão</h1><p>${esc(message)}</p><p><a href="/integrations/contaazul">Voltar</a></p>`,
+            `<h1>Não foi possível concluir a conexão</h1><p>${esc(safeError.message)}</p><p><a href="/integrations/contaazul">Voltar</a></p>`,
             500,
           );
         }

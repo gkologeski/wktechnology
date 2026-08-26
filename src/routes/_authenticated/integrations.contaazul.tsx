@@ -30,6 +30,7 @@ import {
   ContaAzulSyncProgress,
   type CaSyncStateRow,
 } from "@/components/contaazul/contaazul-sync-progress";
+import { ContaAzulOAuthDiagnostics } from "@/components/contaazul/contaazul-oauth-diagnostics";
 
 export const Route = createFileRoute("/_authenticated/integrations/contaazul")({
   head: () => ({
@@ -267,6 +268,10 @@ function ContaAzulIntegrationPage() {
               </Can>
             </CardContent>
           </Card>
+
+          <Can any={INTEGRATIONS_MANAGE} fallback={null}>
+            <ContaAzulOAuthDiagnostics />
+          </Can>
 
           <Card>
             <CardHeader>
