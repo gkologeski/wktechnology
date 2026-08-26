@@ -4,6 +4,7 @@
 //   suporte a dry-run e cascade de múltiplos provedores.
 // É importado por server fns; não roda em código de cliente.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { apolloPhoneWebhookUrl } from "./apollo-enrich.server";
 
 export type EnrichProvider = "apollo" | "lusha";
 export type EnrichEntity = "lead" | "contact";
@@ -44,8 +45,15 @@ export async function apolloMatch(input: {
 
   const params: Record<string, unknown> = {
     reveal_personal_emails: true,
-    reveal_phone_number: true,
   };
+  // `reveal_phone_number` exige `webhook_url` na Apollo; sem webhook válido o
+  // match segue sem revelação de telefone em vez de falhar com erro 400.
+  const phoneWebhook = apolloPhoneWebhookUrl();
+  if (phoneWebhook) {
+    params.reveal_phone_number = true;
+    params.webhook_url = phoneWebhook;
+  }
+
   if (input.linkedin_url) params.linkedin_url = input.linkedin_url;
   else if (input.email) params.email = input.email;
   else if (input.first_name && input.company_name) {

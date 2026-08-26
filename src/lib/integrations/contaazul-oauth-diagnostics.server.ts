@@ -169,7 +169,7 @@ export function normalizeContaAzulOAuthError(input: {
       ? "O Conta Azul rejeitou a solicitação antes de concluir a autorização."
       : input.stage === "sem_retorno"
         ? "O popup do Conta Azul foi fechado sem retornar ao callback do TechERP."
-      : "Não foi possível concluir a autenticação OAuth.";
+        : "Não foi possível concluir a autenticação OAuth.";
   return {
     stage: input.stage,
     status: "error",

@@ -32,7 +32,7 @@ import { DealsForecast } from "@/components/deals/deals-forecast";
 import { DealsHubspotTable } from "@/components/deals/deals-hubspot-table";
 import { DealDetailDrawer } from "@/components/deals/deal-detail-drawer";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
-import { Can } from "@/lib/access-control/use-permissions";
+import { Can, usePermissions } from "@/lib/access-control/use-permissions";
 import { useGridProjection } from "@/hooks/use-grid-projection";
 import { buildGridSelect } from "@/lib/grid/dynamic-select";
 
@@ -72,6 +72,18 @@ function DealsRoute() {
 function DealsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { canAny } = usePermissions();
+  // Mesmas chaves usadas nas ações do grid/detalhe: a RLS continua validando.
+  const canUpdateDeals = canAny([
+    "techsales.deals.update.own",
+    "techsales.deals.update.team",
+    "techsales.deals.update.workspace",
+  ]);
+  const canDeleteDeals = canAny([
+    "techsales.deals.delete.own",
+    "techsales.deals.delete.team",
+    "techsales.deals.delete.workspace",
+  ]);
   useEnsureDefaultPipeline("deal");
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
 
@@ -409,7 +421,8 @@ function DealsPage() {
               nextActivities={nextActivities}
               focusMode={focusMode}
               selectable
-              canDelete
+              canUpdate={canUpdateDeals}
+              canDelete={canDeleteDeals}
               onOpen={openEdit}
             />
           ) : (
