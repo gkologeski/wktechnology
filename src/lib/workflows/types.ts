@@ -490,6 +490,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
     label: "CRM",
     actions: [
       "set_field",
+      "set_substatus",
       "clear_field",
       "increment_field",
       "copy_field_from_association",
