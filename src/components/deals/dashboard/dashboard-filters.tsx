@@ -47,7 +47,7 @@ export function DashboardFilters({
           onValueChange={(v) => onPeriodChange(Number(v) as SalesDashboardPeriodDays)}
           disabled={disabled}
         >
-          <SelectTrigger id="dash-period" size="sm" className="mt-1 w-full">
+          <SelectTrigger id="dash-period" className="mt-1 h-9 w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -67,7 +67,7 @@ export function DashboardFilters({
           onValueChange={(v) => onPipelineChange(v === "__default__" ? null : v)}
           disabled={disabled || pipelines.length === 0}
         >
-          <SelectTrigger id="dash-pipeline" size="sm" className="mt-1 w-full">
+          <SelectTrigger id="dash-pipeline" className="mt-1 h-9 w-full">
             <SelectValue placeholder="Pipeline padrão" />
           </SelectTrigger>
           <SelectContent>
@@ -90,7 +90,7 @@ export function DashboardFilters({
           onValueChange={(v) => onScopeChange(v as SalesDashboardScope)}
           disabled={disabled || !canViewTeam}
         >
-          <SelectTrigger id="dash-scope" size="sm" className="mt-1 w-full">
+          <SelectTrigger id="dash-scope" className="mt-1 h-9 w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
