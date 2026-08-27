@@ -113,12 +113,22 @@ function DashboardPage() {
 
       <OnboardingChecklist />
 
-      {isLoading || !data ? (
+      {isLoading ? (
         <DashboardSkeleton />
       ) : isError ? (
         <EmptyState
           title="Não foi possível carregar o painel"
           description={error instanceof Error ? error.message : "Tente novamente em instantes."}
+          action={
+            <Button type="button" size="sm" onClick={() => refetch()}>
+              Tentar novamente
+            </Button>
+          }
+        />
+      ) : !data ? (
+        <EmptyState
+          title="Não foi possível carregar o painel"
+          description="Os dados do painel não estão disponíveis."
           action={
             <Button type="button" size="sm" onClick={() => refetch()}>
               Tentar novamente
