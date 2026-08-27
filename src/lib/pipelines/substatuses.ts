@@ -63,10 +63,7 @@ export function substatusesForStage(
 /** Substatus ativos da etapa atual, prontos para um seletor. */
 export function useStageSubstatuses(pipelineId?: string | null, stageValue?: string | null) {
   const q = usePipelineSubstatuses(pipelineId);
-  const options = useMemo(
-    () => substatusesForStage(q.data, stageValue),
-    [q.data, stageValue],
-  );
+  const options = useMemo(() => substatusesForStage(q.data, stageValue), [q.data, stageValue]);
   return { options, all: q.data ?? [], isLoading: q.isLoading, error: q.error };
 }
 
