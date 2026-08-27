@@ -87,6 +87,7 @@ function DealsPage() {
   ]);
   useEnsureDefaultPipeline("deal");
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
+  const { data: substatuses = [] } = usePipelineSubstatuses(selected?.id);
 
   useRealtimeInvalidate([
     { table: "deals", queryKeys: [["deals", "list"]] },
