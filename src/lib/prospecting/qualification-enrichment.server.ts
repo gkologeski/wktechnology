@@ -75,6 +75,11 @@ export type EnrichmentSuggestions = {
   found: boolean;
   /** Falhas parciais do provedor (ex.: créditos esgotados). */
   warnings: string[];
+  /**
+   * Revelação de telefone pedida à Apollo e ainda não entregue. O número chega
+   * depois, pelo webhook público, e é gravado no lead/contato.
+   */
+  phoneRevealPending?: boolean;
   lead: SuggestionMap;
   companies: SuggestionMap;
   contacts: SuggestionMap;
