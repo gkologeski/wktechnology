@@ -19,6 +19,7 @@ import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 
 import { StageTracker } from "@/components/stage-tracker";
+import { SubstatusSelect } from "@/components/pipelines/substatus-select";
 import {
   DealLineItems,
   DealLineItemsEditor,
