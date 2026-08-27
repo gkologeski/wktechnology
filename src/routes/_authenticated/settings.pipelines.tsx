@@ -185,6 +185,8 @@ function PipelineEditor({
   onSaved: () => void;
 }) {
   const isNew = !pipeline;
+  const { canAny } = usePermissions();
+  const canManageSubstatus = canAny(PIPELINES_MANAGE);
   const [name, setName] = useState(pipeline?.name ?? "");
   const [entity, setEntity] = useState(pipeline?.entity ?? "deal");
   const [isDefault, setIsDefault] = useState(pipeline?.is_default ?? false);
