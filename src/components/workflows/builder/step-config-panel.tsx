@@ -37,6 +37,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ExtraFieldsEditor, FkPicker } from "../extra-fields-editor";
 import { GenericRecordForm } from "../generic-record-form";
 import { TokenInput, TokenTextarea } from "../token-input";
+import { useWorkspaceSubstatuses } from "@/lib/pipelines/substatuses";
 import { ActionTemplatesBar } from "../action-templates-bar";
 import { ACTION_LABELS, type WorkflowEntity, type WorkflowAction } from "@/lib/workflows/types";
 import { useServerFn } from "@tanstack/react-start";
