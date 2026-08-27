@@ -234,6 +234,13 @@ function DealDetail() {
         </div>
       </div>
       <StageTracker stages={stages} current={currentStage} onChange={setStage} />
+      <SubstatusSelect
+        pipelineId={dealPipeline?.id ?? null}
+        stageValue={currentStage}
+        value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
+        onChange={setSubstatus}
+        className="max-w-xs space-y-1"
+      />
     </div>
   );
 
