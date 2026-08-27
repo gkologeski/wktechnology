@@ -57,7 +57,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const { data: lead, error } = await supabase
       .from("leads")
       .select(
-        "id, first_name, last_name, email, phone, mobile_phone, company_name, company_id, converted_contact_id, linkedin_url, custom_fields",
+        "id, workspace_id, first_name, last_name, email, phone, mobile_phone, company_name, company_id, converted_contact_id, linkedin_url, custom_fields",
       )
       .eq("id", data.leadId)
       .maybeSingle();
@@ -192,6 +192,42 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
       companies: companyNew,
       contacts: contactSuggestions,
     };
+
+    // Telefone na Apollo é assíncrono: registramos a revelação pendente com as
+    // chaves de correlação (id Apollo, LinkedIn, e-mail) para que o webhook
+    // grave o celular no lead/contato mesmo sem e-mail no cadastro.
+    if (result.phoneRevealRequested && lead.workspace_id) {
+      const { registerApolloPhoneReveals } = await import(
+        "@/lib/integrations/apollo-phone-reveal.server"
+      );
+      const targets: Array<{
+        workspaceId: string;
+        entityType: "lead" | "contact";
+        entityId: string;
+      }> = [
+        { workspaceId: lead.workspace_id, entityType: "lead", entityId: data.leadId },
+      ];
+      if (lead.converted_contact_id) {
+        targets.push({
+          workspaceId: lead.workspace_id,
+          entityType: "contact",
+          entityId: lead.converted_contact_id,
+        });
+      }
+      const pending = await registerApolloPhoneReveals(targets, {
+        apolloPersonId: result.personId ?? null,
+        linkedinUrl: linkedin,
+        email: (result.person?.email as string | null) ?? lead.email ?? null,
+        signal: payload.personSignal ?? null,
+      });
+      // Só sinaliza "aguardando" quando o número ainda não veio.
+      const alreadyHasMobile =
+        !!lead.mobile_phone ||
+        !!leadSuggestions.mobile_phone ||
+        !!contactSuggestions.mobile_phone;
+      payload.phoneRevealPending = pending > 0 && !alreadyHasMobile;
+    }
+
 
     // Só cacheia quando houve ganho real — sem isso, uma nova tentativa
     // (após preencher o site da empresa, por ex.) ficaria bloqueada 30 dias.
