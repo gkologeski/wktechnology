@@ -41,6 +41,9 @@ export function DealsBoardCard({
   dimmed,
   selectable,
   selected,
+  pipelineId,
+  canUpdateSubstatus,
+  onSubstatusChanged,
   onToggleSelect,
   onClick,
 }: {
@@ -55,6 +58,10 @@ export function DealsBoardCard({
   dimmed?: boolean;
   selectable?: boolean;
   selected?: boolean;
+  /** Pipeline do quadro: habilita o substatus no card. */
+  pipelineId?: string | null;
+  canUpdateSubstatus?: boolean;
+  onSubstatusChanged?: () => void;
   onToggleSelect?: (shift: boolean) => void;
   onClick: () => void;
 }) {
