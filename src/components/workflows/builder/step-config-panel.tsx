@@ -111,6 +111,8 @@ function StepConfigForm({
           />
         </div>
       );
+    case "set_substatus":
+      return <SetSubstatusForm action={action} onChange={onChange} />;
     case "create_activity":
       return (
         <div className="space-y-2">
