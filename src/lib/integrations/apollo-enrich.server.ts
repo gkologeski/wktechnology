@@ -92,6 +92,7 @@ type ApolloOrg = {
 };
 
 type ApolloPerson = {
+  id?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   email?: string | null;
@@ -110,11 +111,17 @@ type ApolloPerson = {
 
 /**
  * URL do webhook de telefone da Apollo (entrega assíncrona do número revelado).
- * A Apollo exige `webhook_url` sempre que `reveal_phone_number` é usado, então
- * usamos `APOLLO_PHONE_WEBHOOK_URL` quando configurada e, na ausência dela,
- * derivamos a rota pública já existente a partir do host público da aplicação.
+ *
+ * A Apollo exige `webhook_url` sempre que `reveal_phone_number` é usado e não
+ * envia headers customizados — por isso o segredo (`APOLLO_WEBHOOK_SECRET`)
+ * viaja na querystring, exatamente como a rota pública espera. Sem o segredo
+ * configurado a rota recusaria a entrega (503/401), então preferimos não pedir
+ * a revelação a queimar crédito em um número que nunca chegaria.
  */
 export function apolloPhoneWebhookUrl(): string | null {
+  const secret = process.env["APOLLO_WEBHOOK_SECRET"];
+  if (!secret || !secret.trim()) return null;
+
   const configured = process.env["APOLLO_PHONE_WEBHOOK_URL"];
   const candidate =
     configured && configured.trim()
@@ -122,11 +129,18 @@ export function apolloPhoneWebhookUrl(): string | null {
       : `${getPublicAppUrl()}/api/public/hooks/apollo-phone`;
   try {
     const url = new URL(candidate);
-    return url.protocol === "https:" ? url.toString() : null;
+    if (url.protocol !== "https:") return null;
+    url.searchParams.set("secret", secret.trim());
+    return url.toString();
   } catch {
     return null;
   }
 }
+
+/** Mensagem de diagnóstico quando a revelação de telefone não pode ser pedida. */
+export const APOLLO_PHONE_WEBHOOK_MISSING =
+  "Revelação de telefone desativada: configure APOLLO_WEBHOOK_SECRET (e um host público https) para receber os números da Apollo.";
+
 
 export class ApolloNotConfiguredError extends Error {
   constructor() {
@@ -285,7 +299,14 @@ export async function apolloPeopleMatch(input: {
   linkedin_url?: string | null;
   domain?: string | null;
   company_name?: string | null;
-}): Promise<{ person: ApolloPersonData; company: ApolloCompanyData | null } | null> {
+}): Promise<{
+  person: ApolloPersonData;
+  company: ApolloCompanyData | null;
+  /** Id da pessoa na Apollo — chave de correlação do webhook de telefone. */
+  personId: string | null;
+  /** Indica se a revelação assíncrona de telefone foi solicitada. */
+  phoneRevealRequested: boolean;
+} | null> {
   const params: Record<string, unknown> = {
     reveal_personal_emails: true,
   };
@@ -344,6 +365,8 @@ export async function apolloPeopleMatch(input: {
       cep: p.postal_code ?? null,
     },
     company: mapOrg(p.organization),
+    personId: p.id ?? null,
+    phoneRevealRequested: !!webhookUrl,
   };
 }
 
@@ -352,6 +375,10 @@ export type ApolloCascadeResult = {
   domainSource: "website" | "email" | "company_search" | null;
   person: ApolloPersonData | null;
   company: ApolloCompanyData | null;
+  /** Id da pessoa na Apollo (correlação da entrega assíncrona de telefone). */
+  personId?: string | null;
+  /** Revelação de telefone pedida à Apollo (chega depois, via webhook). */
+  phoneRevealRequested?: boolean;
   /** Falhas parciais do provedor (créditos, permissão, indisponibilidade). */
   warnings: string[];
 };
@@ -442,5 +469,21 @@ export async function runApolloCascade(input: {
     domainSource = "company_search";
   }
 
-  return { domain, domainSource, person: matched?.person ?? null, company, warnings };
+  // A Apollo nunca devolve telefone na resposta do match: ele chega depois,
+  // pelo webhook. Se a revelação não pôde ser pedida, isso é dito
+  // explicitamente para não parecer "a Apollo não tem o número".
+  if (matched && !matched.phoneRevealRequested && !warnings.includes(APOLLO_PHONE_WEBHOOK_MISSING)) {
+    warnings.push(APOLLO_PHONE_WEBHOOK_MISSING);
+  }
+
+  return {
+    domain,
+    domainSource,
+    person: matched?.person ?? null,
+    company,
+    personId: matched?.personId ?? null,
+    phoneRevealRequested: !!matched?.phoneRevealRequested,
+    warnings,
+  };
 }
+
