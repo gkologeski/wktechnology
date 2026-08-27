@@ -857,6 +857,57 @@ export type Database = {
           },
         ]
       }
+      apollo_phone_reveals: {
+        Row: {
+          apollo_person_id: string | null
+          applied_at: string | null
+          created_at: string
+          email: string | null
+          entity_id: string
+          entity_type: string
+          id: string
+          linkedin_url: string | null
+          mobile_phone: string | null
+          signal: string | null
+          status: string
+          updated_at: string
+          work_phone: string | null
+          workspace_id: string
+        }
+        Insert: {
+          apollo_person_id?: string | null
+          applied_at?: string | null
+          created_at?: string
+          email?: string | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          linkedin_url?: string | null
+          mobile_phone?: string | null
+          signal?: string | null
+          status?: string
+          updated_at?: string
+          work_phone?: string | null
+          workspace_id: string
+        }
+        Update: {
+          apollo_person_id?: string | null
+          applied_at?: string | null
+          created_at?: string
+          email?: string | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          linkedin_url?: string | null
+          mobile_phone?: string | null
+          signal?: string | null
+          status?: string
+          updated_at?: string
+          work_phone?: string | null
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
