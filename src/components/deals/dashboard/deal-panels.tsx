@@ -78,12 +78,7 @@ function Panel({
   className?: string;
 }) {
   return (
-    <section
-      className={cn(
-        "rounded-lg border border-border-subtle bg-surface-1 p-4",
-        className,
-      )}
-    >
+    <section className={cn("rounded-lg border border-border-subtle bg-surface-1 p-4", className)}>
       <SectionHeader title={title} description={description} />
       <div className="mt-3">
         {deals.length === 0 ? (

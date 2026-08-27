@@ -13,7 +13,9 @@ export function TasksPanel({ tasks }: { tasks: TaskItem[] }) {
       <SectionHeader
         title="Minhas tarefas"
         description={
-          overdue > 0 ? `${overdue} atrasada(s) de ${tasks.length} abertas.` : "Próximas pendências."
+          overdue > 0
+            ? `${overdue} atrasada(s) de ${tasks.length} abertas.`
+            : "Próximas pendências."
         }
         action={
           <Link

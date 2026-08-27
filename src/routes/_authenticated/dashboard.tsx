@@ -14,10 +14,7 @@ import type {
   SalesDashboardScope,
 } from "@/lib/deals/sales-dashboard.types";
 import { SalesKpiStrip } from "@/components/deals/dashboard/kpi-strip";
-import {
-  AdvancedDealsPanel,
-  AttentionDealsPanel,
-} from "@/components/deals/dashboard/deal-panels";
+import { AdvancedDealsPanel, AttentionDealsPanel } from "@/components/deals/dashboard/deal-panels";
 import { MeetingsAgenda } from "@/components/deals/dashboard/meetings-agenda";
 import { ContactsChart } from "@/components/deals/dashboard/contacts-chart";
 import { FunnelPanel } from "@/components/deals/dashboard/funnel-panel";
@@ -102,9 +99,7 @@ function DashboardPage() {
         onPeriodChange={(v) => navigate({ search: (s) => ({ ...s, period: v }) })}
         pipelines={data?.pipelines ?? []}
         pipelineId={pipelineId}
-        onPipelineChange={(v) =>
-          navigate({ search: (s) => ({ ...s, pipeline: v ?? undefined }) })
-        }
+        onPipelineChange={(v) => navigate({ search: (s) => ({ ...s, pipeline: v ?? undefined }) })}
         scope={data?.effectiveScope ?? scope}
         onScopeChange={(v) => navigate({ search: (s) => ({ ...s, scope: v }) })}
         canViewTeam={data?.canViewTeam ?? false}

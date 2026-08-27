@@ -4,7 +4,10 @@ import { MetricCard } from "@/components/techhire/ui";
 import { formatCurrency } from "@/lib/crm";
 import type { SalesDashboardKpis } from "@/lib/deals/sales-dashboard.types";
 
-function delta(value: number, suffix: string): { value: string; direction: "up" | "down" | "flat" } {
+function delta(
+  value: number,
+  suffix: string,
+): { value: string; direction: "up" | "down" | "flat" } {
   const direction = value > 0.05 ? "up" : value < -0.05 ? "down" : "flat";
   const sign = value > 0 ? "+" : "";
   return { value: `${sign}${value.toFixed(1)}${suffix}`, direction };
@@ -41,9 +44,7 @@ export function SalesKpiStrip({ kpis }: { kpis: SalesDashboardKpis }) {
         label="Taxa de conversão"
         value={`${kpis.conversionRate.toFixed(1)}%`}
         hint="Ganhos ÷ (ganhos + perdidos) no período"
-        delta={
-          kpis.conversionDelta != null ? delta(kpis.conversionDelta, " p.p.") : undefined
-        }
+        delta={kpis.conversionDelta != null ? delta(kpis.conversionDelta, " p.p.") : undefined}
         icon={TrendingUp}
         tone={kpis.conversionRate >= 30 ? "positive" : "neutral"}
       />
