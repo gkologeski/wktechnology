@@ -27,6 +27,8 @@ export type DealFilters = {
   closedPeriod: DatePreset;
   closedStart: string;
   closedEnd: string;
+  /** IDs de substatus selecionados (multi). */
+  substatusIds: string[];
 };
 
 export const EMPTY_DEAL_FILTERS: DealFilters = {
@@ -39,6 +41,7 @@ export const EMPTY_DEAL_FILTERS: DealFilters = {
   closedPeriod: "any",
   closedStart: "",
   closedEnd: "",
+  substatusIds: [],
 };
 
 export const PERIOD_LABELS: Record<DealPeriod, string> = {
