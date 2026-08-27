@@ -167,6 +167,8 @@ function LeadDetail() {
   const canDelete = !deletePermLoading && canDeleteRecord(lead);
   const { stages, pipelineId, isLoading: stagesLoading } = useLeadStages();
 
+  const invalidateSubstatusHistory = useInvalidateSubstatusHistory();
+
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const currentStageValue = resolveLeadStageValue(
@@ -174,8 +176,6 @@ function LeadDetail() {
     stages,
   );
   const currentStage = findLeadStage(stages, currentStageValue);
-
-  const invalidateSubstatusHistory = useInvalidateSubstatusHistory();
 
   /** O substatus precisa pertencer à etapa atual (validado por gatilho no banco). */
   const setSubstatus = async (substatusId: string | null) => {
