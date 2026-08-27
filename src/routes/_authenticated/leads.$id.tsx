@@ -37,6 +37,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { StageTracker } from "@/components/stage-tracker";
 import { SubstatusSelect } from "@/components/pipelines/substatus-select";
 import { SubstatusHistory } from "@/components/pipelines/substatus-history";
+import { useInvalidateSubstatusHistory } from "@/lib/pipelines/substatus-history";
 
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
