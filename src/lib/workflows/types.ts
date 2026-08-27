@@ -669,6 +669,7 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "pipeline_id",
     "expected_close_date",
     "owner_id",
+    "stage_substatus_id",
   ],
   tickets: [
     "subject",
