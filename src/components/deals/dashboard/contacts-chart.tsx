@@ -22,10 +22,23 @@ export function ContactsChart({ data }: { data: ContactsByDay[] }) {
       />
       <div className="mt-3 h-56">
         <LazyChart>
-          {({ ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid }) => (
+          {({
+            ResponsiveContainer,
+            BarChart,
+            Bar,
+            XAxis,
+            YAxis,
+            Tooltip,
+            Legend,
+            CartesianGrid,
+          }) => (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 4, right: 8, bottom: 0, left: -16 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border-subtle)" vertical={false} />
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="var(--color-border-subtle)"
+                  vertical={false}
+                />
                 <XAxis
                   dataKey="label"
                   tick={{ fontSize: 11, fill: "var(--color-text-tertiary)" }}

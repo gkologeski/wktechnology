@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { startFocusQueue } from "@/lib/focus-queue";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import { usePipelines, useEnsureDefaultPipeline } from "@/lib/pipelines";
+import { usePipelineSubstatuses } from "@/lib/pipelines/substatuses";
 import {
   DealsToolbar,
   EMPTY_DEAL_FILTERS,
@@ -44,6 +45,7 @@ const BASE_DEAL_KEYS = [
   "currency",
   "stage",
   "stage_id",
+  "stage_substatus_id",
   "pipeline_id",
   "company_id",
   "primary_contact_id",
@@ -86,6 +88,7 @@ function DealsPage() {
   ]);
   useEnsureDefaultPipeline("deal");
   const { pipelines, selected, selectedId, setSelectedId } = usePipelines("deal");
+  const { data: substatuses = [] } = usePipelineSubstatuses(selected?.id);
 
   useRealtimeInvalidate([
     { table: "deals", queryKeys: [["deals", "list"]] },
@@ -284,6 +287,11 @@ function DealsPage() {
     return deals.filter((d) => {
       if (selected?.id && d.pipeline_id !== selected.id) return false;
       if (filters.ownerId && d.owner_id !== filters.ownerId) return false;
+      if (
+        filters.substatusIds.length > 0 &&
+        !filters.substatusIds.includes(d.stage_substatus_id ?? "")
+      )
+        return false;
       if (min > 0 && Number(d.value || 0) < min) return false;
       if (filters.period === "overdue") {
         if (!d.expected_close_date) return false;
@@ -386,6 +394,7 @@ function DealsPage() {
         focusMode={view === "board" ? focusMode : undefined}
         onToggleFocus={view === "board" ? setFocusMode : undefined}
         hotCount={boardHotCount}
+        substatusOptions={substatuses}
       />
 
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="mt-4">

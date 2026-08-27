@@ -41,9 +41,7 @@ export function FunnelPanel({
                 <div className="flex items-baseline justify-between gap-2 text-xs">
                   <span className="min-w-0 truncate font-medium text-text-primary">
                     {s.label}
-                    <span className="ml-1.5 font-normal text-text-tertiary">
-                      {s.probability}%
-                    </span>
+                    <span className="ml-1.5 font-normal text-text-tertiary">{s.probability}%</span>
                   </span>
                   <span className="shrink-0 tabular-nums text-text-secondary">
                     {s.count} · {formatCurrency(s.valueSum)}

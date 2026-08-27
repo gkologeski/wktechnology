@@ -133,6 +133,7 @@ export interface MultiBranch {
 
 export type WorkflowAction =
   | { type: "set_field"; field: string; value: unknown }
+  | { type: "set_substatus"; substatus_id: string }
   | {
       type: "create_activity";
       activity_type?: string;
@@ -432,6 +433,7 @@ export const EVENT_LABELS: Record<WorkflowEventType, string> = {
 
 export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   set_field: "Atualizar campo",
+  set_substatus: "Atualizar substatus",
   create_activity: "Criar atividade",
   create_survey_activity: "Criar pesquisa (atividade)",
   open_deal_dialog: "Abrir criação de oportunidade",
@@ -488,6 +490,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
     label: "CRM",
     actions: [
       "set_field",
+      "set_substatus",
       "clear_field",
       "increment_field",
       "copy_field_from_association",
@@ -633,6 +636,7 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "score",
     "label",
     "owner_id",
+    "stage_substatus_id",
   ],
   contacts: [
     "first_name",
@@ -665,6 +669,7 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "pipeline_id",
     "expected_close_date",
     "owner_id",
+    "stage_substatus_id",
   ],
   tickets: [
     "subject",

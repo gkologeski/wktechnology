@@ -49,6 +49,26 @@ export function usePipelineSubstatuses(pipelineId?: string | null) {
   });
 }
 
+export async function fetchWorkspaceSubstatuses(): Promise<StageSubstatus[]> {
+  const { data, error } = await supabase
+    .from("pipeline_stage_substatuses")
+    .select(sel(COLUMNS))
+    .order("stage_value", { ascending: true })
+    .order("position", { ascending: true })
+    .order("created_at", { ascending: true })
+    .returns<StageSubstatus[]>();
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export function useWorkspaceSubstatuses() {
+  return useQuery({
+    queryKey: ["workspace-substatuses"],
+    staleTime: 60_000,
+    queryFn: fetchWorkspaceSubstatuses,
+  });
+}
+
 export function substatusesForStage(
   list: StageSubstatus[] | undefined,
   stageValue?: string | null,

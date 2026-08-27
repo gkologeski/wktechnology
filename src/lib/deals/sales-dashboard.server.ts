@@ -86,11 +86,8 @@ export async function loadSalesDashboard(
     _workspace_id: workspaceId,
   });
   const perms: string[] = Array.isArray(permsRes.data) ? (permsRes.data as string[]) : [];
-  const canViewTeam = perms.some((p) =>
-    /^techsales\.dashboard\.view\.(team|workspace)$/.test(p),
-  );
-  const effectiveScope: SalesDashboardScope =
-    input.scope === "team" && canViewTeam ? "team" : "me";
+  const canViewTeam = perms.some((p) => /^techsales\.dashboard\.view\.(team|workspace)$/.test(p));
+  const effectiveScope: SalesDashboardScope = input.scope === "team" && canViewTeam ? "team" : "me";
 
   // 1) Pipelines de negócio (para o filtro e metadados de etapa)
   const pipesRes = await supabase
@@ -231,27 +228,24 @@ export async function loadSalesDashboard(
     w.length + l.length > 0 ? (w.length / (w.length + l.length)) * 100 : 0;
 
   const forecastDeals = openDeals.filter(
-    (d) =>
-      d.expected_close_date && inRange(d.expected_close_date, monthStart, monthEnd),
+    (d) => d.expected_close_date && inRange(d.expected_close_date, monthStart, monthEnd),
   );
   const forecastValue = forecastDeals.reduce(
     (acc, d) => acc + (d.value ?? 0) * (probabilityOf(d, stages) / 100),
     0,
   );
 
-  const goals = ((goalsRes.data ?? []) as Array<{
-    target_value: number | null;
-    pipeline_id: string | null;
-    target_user_id: string | null;
-  }>).filter((g) => !g.pipeline_id || !selected || g.pipeline_id === selected.id);
-  const goalValue = goals.length
-    ? goals.reduce((acc, g) => acc + (g.target_value ?? 0), 0)
-    : null;
+  const goals = (
+    (goalsRes.data ?? []) as Array<{
+      target_value: number | null;
+      pipeline_id: string | null;
+      target_user_id: string | null;
+    }>
+  ).filter((g) => !g.pipeline_id || !selected || g.pipeline_id === selected.id);
+  const goalValue = goals.length ? goals.reduce((acc, g) => acc + (g.target_value ?? 0), 0) : null;
 
   // Nomes de responsáveis e empresas (para as listas)
-  const ownerIds = Array.from(
-    new Set(deals.map((d) => d.owner_id).filter(Boolean) as string[]),
-  );
+  const ownerIds = Array.from(new Set(deals.map((d) => d.owner_id).filter(Boolean) as string[]));
   const companyIds = Array.from(
     new Set(deals.map((d) => d.company_id).filter(Boolean) as string[]),
   );
@@ -339,12 +333,14 @@ export async function loadSalesDashboard(
 
   // Próximas reuniões (mescla meetings internas + bookings confirmados)
   const meetings: MeetingItem[] = [
-    ...((meetingsRes.data ?? []) as Array<{
-      id: string;
-      title: string | null;
-      scheduled_at: string;
-      public_token: string | null;
-    }>).map(
+    ...(
+      (meetingsRes.data ?? []) as Array<{
+        id: string;
+        title: string | null;
+        scheduled_at: string;
+        public_token: string | null;
+      }>
+    ).map(
       (m): MeetingItem => ({
         id: m.id,
         kind: "meeting",
@@ -354,13 +350,15 @@ export async function loadSalesDashboard(
         subtitle: null,
       }),
     ),
-    ...((bookingsRes.data ?? []) as Array<{
-      id: string;
-      invitee_name: string | null;
-      invitee_email: string | null;
-      start_at: string;
-      meet_link: string | null;
-    }>).map(
+    ...(
+      (bookingsRes.data ?? []) as Array<{
+        id: string;
+        invitee_name: string | null;
+        invitee_email: string | null;
+        start_at: string;
+        meet_link: string | null;
+      }>
+    ).map(
       (b): MeetingItem => ({
         id: b.id,
         kind: "booking",
@@ -375,12 +373,14 @@ export async function loadSalesDashboard(
     .slice(0, 8);
 
   // Tarefas do usuário (sempre pessoais)
-  const tasks: TaskItem[] = ((tasksRes.data ?? []) as Array<{
-    id: string;
-    subject: string | null;
-    due_date: string;
-    type: string;
-  }>).map((t) => ({
+  const tasks: TaskItem[] = (
+    (tasksRes.data ?? []) as Array<{
+      id: string;
+      subject: string | null;
+      due_date: string;
+      type: string;
+    }>
+  ).map((t) => ({
     id: t.id,
     subject: t.subject ?? "Tarefa",
     dueDate: t.due_date,
@@ -475,8 +475,7 @@ export async function loadSalesDashboard(
         wonPrev.length + lostPrev.length > 0
           ? conv(wonPeriod, lostPeriod) - conv(wonPrev, lostPrev)
           : null,
-      wonDeltaPct:
-        sum(wonPrev) > 0 ? ((sum(wonPeriod) - sum(wonPrev)) / sum(wonPrev)) * 100 : null,
+      wonDeltaPct: sum(wonPrev) > 0 ? ((sum(wonPeriod) - sum(wonPrev)) / sum(wonPrev)) * 100 : null,
       avgTicket: wonPeriod.length > 0 ? sum(wonPeriod) / wonPeriod.length : null,
     },
     advancedDeals,

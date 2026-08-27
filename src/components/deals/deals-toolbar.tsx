@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Select,
   SelectContent,
@@ -8,7 +9,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, X, Settings2, Target } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Search, X, Settings2, Target, ChevronDown } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Pipeline } from "@/lib/pipelines";
 import type { StageSubstatus } from "@/lib/pipelines/substatuses";
@@ -27,6 +30,8 @@ export type DealFilters = {
   closedPeriod: DatePreset;
   closedStart: string;
   closedEnd: string;
+  /** IDs de substatus selecionados (multi). */
+  substatusIds: string[];
 };
 
 export const EMPTY_DEAL_FILTERS: DealFilters = {
@@ -39,6 +44,7 @@ export const EMPTY_DEAL_FILTERS: DealFilters = {
   closedPeriod: "any",
   closedStart: "",
   closedEnd: "",
+  substatusIds: [],
 };
 
 export const PERIOD_LABELS: Record<DealPeriod, string> = {
@@ -61,6 +67,7 @@ export function DealsToolbar({
   focusMode,
   onToggleFocus,
   hotCount,
+  substatusOptions,
 }: {
   pipelines: Pipeline[];
   selectedPipelineId: string | null;
@@ -71,6 +78,7 @@ export function DealsToolbar({
   focusMode?: boolean;
   onToggleFocus?: (b: boolean) => void;
   hotCount?: number;
+  substatusOptions?: StageSubstatus[];
 }) {
   const setF = <K extends keyof DealFilters>(k: K, v: DealFilters[K]) =>
     setFilters({ ...filters, [k]: v });
@@ -110,6 +118,26 @@ export function DealsToolbar({
       clear: () => setF("minValue", ""),
     });
   }
+  if (filters.substatusIds.length > 0 && substatusOptions) {
+    const labels = filters.substatusIds
+      .map((id) => substatusOptions.find((s) => s.id === id)?.name ?? id.slice(0, 8))
+      .join(", ");
+    chips.push({
+      key: "substatusIds",
+      label: `Substatus: ${labels}`,
+      clear: () => setF("substatusIds", []),
+    });
+  }
+
+  const substatusByStage = useMemo(() => {
+    const map = new Map<string, StageSubstatus[]>();
+    for (const s of substatusOptions ?? []) {
+      const list = map.get(s.stage_value) ?? [];
+      list.push(s);
+      map.set(s.stage_value, list);
+    }
+    return map;
+  }, [substatusOptions]);
 
   return (
     <div className="space-y-2">
@@ -258,6 +286,66 @@ export function DealsToolbar({
           placeholder="Valor mínimo"
           className="h-9 w-[140px]"
         />
+
+        {substatusOptions && substatusOptions.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 px-3">
+                Substatus
+                {filters.substatusIds.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 px-1.5 text-[10px]">
+                    {filters.substatusIds.length}
+                  </Badge>
+                )}
+                <ChevronDown className="ml-2 h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0" align="end">
+              <div className="max-h-72 overflow-y-auto p-2">
+                {Array.from(substatusByStage.entries()).map(([stageValue, items]) => {
+                  const stage = pipelines
+                    .find((p) => p.id === selectedPipelineId)
+                    ?.stages.find((s) => s.value === stageValue);
+                  return (
+                    <div key={stageValue} className="mb-2">
+                      <p className="px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                        {stage?.label ?? stageValue}
+                      </p>
+                      <div className="space-y-0.5">
+                        {items.map((s) => {
+                          const checked = filters.substatusIds.includes(s.id);
+                          return (
+                            <label
+                              key={s.id}
+                              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                            >
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) =>
+                                  setF(
+                                    "substatusIds",
+                                    v
+                                      ? [...filters.substatusIds, s.id]
+                                      : filters.substatusIds.filter((x) => x !== s.id),
+                                  )
+                                }
+                              />
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={s.color ? { backgroundColor: s.color } : undefined}
+                              />
+                              <span className="flex-1 truncate">{s.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
 
       {chips.length > 0 && (

@@ -529,6 +529,22 @@ async function runAction(
         if (error) throw new Error(error.message);
         return { at, ok: true, action: "set_field", detail: { field: action.field, value } };
       }
+      case "set_substatus": {
+        if (ctx.entity !== "leads" && ctx.entity !== "deals") {
+          throw new Error("set_substatus suporta apenas leads e negócios");
+        }
+        const { error } = await supabase
+          .from(ctx.entity)
+          .update({ stage_substatus_id: action.substatus_id })
+          .eq("id", ctx.entityId);
+        if (error) throw new Error(error.message);
+        return {
+          at,
+          ok: true,
+          action: "set_substatus",
+          detail: { substatus_id: action.substatus_id },
+        };
+      }
       case "assign_to": {
         const assignField = assignFieldFor(ctx.entity);
         const { error } = await supabase

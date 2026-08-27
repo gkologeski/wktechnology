@@ -46,6 +46,7 @@ export type FieldOpt = {
 
 export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   set_field: Sparkles,
+  set_substatus: Sparkles,
   create_activity: Mail,
   create_survey_activity: ClipboardList,
   open_deal_dialog: Handshake,
@@ -89,6 +90,8 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
   switch (type) {
     case "set_field":
       return { type, field: "status", value: "" };
+    case "set_substatus":
+      return { type, substatus_id: "" };
     case "create_activity":
       return { type, subject: "Nova tarefa", activity_type: "task" };
     case "create_survey_activity":
