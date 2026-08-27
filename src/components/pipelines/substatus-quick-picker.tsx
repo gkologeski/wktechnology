@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { deniedIfUnaffected } from "@/lib/rls-denied";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 import { useStageSubstatuses } from "@/lib/pipelines/substatuses";
 import { SubstatusBadge } from "./substatus-badge";
 
