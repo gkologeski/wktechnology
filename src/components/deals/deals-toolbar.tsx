@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, X, Settings2, Target } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import type { Pipeline } from "@/lib/pipelines";
+import type { StageSubstatus } from "@/lib/pipelines/substatuses";
 import { DATE_PRESETS, DATE_PRESET_LABELS, type DatePreset } from "@/lib/date-presets";
 
 export type DealPeriod = DatePreset | "overdue" | "no_date";
