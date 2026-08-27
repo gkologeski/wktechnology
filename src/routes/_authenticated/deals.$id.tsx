@@ -94,6 +94,8 @@ function DealDetail() {
     );
   }, [deal, pipelines]);
 
+  const invalidateSubstatusHistory = useInvalidateSubstatusHistory();
+
   const stages = useMemo(
     () =>
       dealPipeline

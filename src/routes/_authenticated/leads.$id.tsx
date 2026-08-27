@@ -175,6 +175,8 @@ function LeadDetail() {
   );
   const currentStage = findLeadStage(stages, currentStageValue);
 
+  const invalidateSubstatusHistory = useInvalidateSubstatusHistory();
+
   /** O substatus precisa pertencer à etapa atual (validado por gatilho no banco). */
   const setSubstatus = async (substatusId: string | null) => {
     const { data: affected, error } = await supabase
@@ -187,6 +189,7 @@ function LeadDetail() {
       return;
     }
     if (deniedIfUnaffected(affected, "alterar o substatus deste lead")) return;
+    invalidateSubstatusHistory("leads", lead.id);
     void load();
   };
 
