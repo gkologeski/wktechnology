@@ -45,6 +45,7 @@ const BASE_DEAL_KEYS = [
   "currency",
   "stage",
   "stage_id",
+  "stage_substatus_id",
   "pipeline_id",
   "company_id",
   "primary_contact_id",
