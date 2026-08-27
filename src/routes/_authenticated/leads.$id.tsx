@@ -306,6 +306,14 @@ function LeadDetail() {
               : "bg-slate-700 text-white"
         }
       />
+      <SubstatusSelect
+        pipelineId={pipelineId}
+        stageValue={currentStageValue}
+        value={(lead as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
+        onChange={setSubstatus}
+        disabled={stagesLoading}
+        className="max-w-xs space-y-1"
+      />
     </div>
   );
 
