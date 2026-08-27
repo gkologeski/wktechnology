@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, X, Clock, Settings2, Sparkles, RefreshCw } from "lucide-react";
+import { Check, X, Clock, Settings2, Sparkles, RefreshCw, Linkedin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,7 @@ import {
   enrichLeadForQualification,
   applyQualificationEnrichment,
 } from "@/lib/prospecting/qualification-enrichment.functions";
+import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
 import { useLeadStages } from "@/lib/leads/stages";
 import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
@@ -225,13 +226,45 @@ export function QualificationPanel({
   const enrichFn = useServerFn(enrichLeadForQualification);
   const applyEnrichFn = useServerFn(applyQualificationEnrichment);
   const [refreshKey, setRefreshKey] = useState(0);
+  /** LinkedIn enviado ao provedor no último disparo manual. */
+  const [linkedinParam, setLinkedinParam] = useState<string | null>(null);
+  const [linkedinInput, setLinkedinInput] = useState("");
+  const [linkedinTouched, setLinkedinTouched] = useState(false);
+  const [linkedinError, setLinkedinError] = useState<string | null>(null);
   const enrichment = useQuery({
-    queryKey: ["qualification-enrichment", entityId, refreshKey],
-    queryFn: () => enrichFn({ data: { leadId: entityId, force: refreshKey > 0 } }),
+    queryKey: ["qualification-enrichment", entityId, refreshKey, linkedinParam],
+    queryFn: () =>
+      enrichFn({
+        data: {
+          leadId: entityId,
+          force: refreshKey > 0,
+          ...(linkedinParam ? { linkedinUrl: linkedinParam } : {}),
+        },
+      }),
     enabled: !!entityId,
     retry: false,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Espelha no campo o LinkedIn já conhecido do lead, sem atropelar a digitação.
+  const knownLinkedin = enrichment.data?.linkedinUrl ?? null;
+  useEffect(() => {
+    if (linkedinTouched) return;
+    setLinkedinInput(knownLinkedin ?? "");
+  }, [knownLinkedin, linkedinTouched]);
+
+  /** Valida a URL e dispara o enriquecimento usando o LinkedIn como chave. */
+  function enrichByLinkedin() {
+    const parsed = normalizeLinkedinUrl(linkedinInput);
+    if (!parsed.ok) {
+      setLinkedinError(parsed.error);
+      return;
+    }
+    setLinkedinError(null);
+    setLinkedinInput(parsed.url);
+    setLinkedinParam(parsed.url);
+    setRefreshKey((k) => k + 1);
+  }
 
   const suggestions = useMemo(
     () =>
@@ -603,6 +636,7 @@ export function QualificationPanel({
                 >
                   <Sparkles className="h-3 w-3" aria-hidden="true" />
                   Apollo
+                  {enrichment.data.personSignal === "linkedin" ? " · via LinkedIn" : ""}
                   {enrichment.data.domain ? ` · ${enrichment.data.domain}` : ""}
                   {enrichment.data.applied &&
                   Object.values(enrichment.data.applied).some((v) => v.length > 0)
@@ -657,6 +691,73 @@ export function QualificationPanel({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="rounded-md border border-border bg-muted/30 p-3 space-y-2">
+            <Label htmlFor="qualification-linkedin" className="flex items-center gap-2 text-xs">
+              <Linkedin className="h-3.5 w-3.5" aria-hidden="true" />
+              LinkedIn do contato
+            </Label>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Input
+                id="qualification-linkedin"
+                value={linkedinInput}
+                placeholder="https://www.linkedin.com/in/nome-sobrenome"
+                inputMode="url"
+                autoComplete="off"
+                aria-invalid={linkedinError ? true : undefined}
+                aria-describedby="qualification-linkedin-help"
+                disabled={busy || enrichment.isFetching}
+                onChange={(e) => {
+                  setLinkedinTouched(true);
+                  setLinkedinError(null);
+                  setLinkedinInput(e.target.value);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    enrichByLinkedin();
+                  }
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="shrink-0"
+                  disabled={busy || enrichment.isFetching || linkedinInput.trim() === ""}
+                  onClick={enrichByLinkedin}
+                  title="Buscar dados do contato usando o perfil do LinkedIn"
+                >
+                  <Sparkles
+                    className={`w-4 h-4 mr-1 ${enrichment.isFetching ? "animate-pulse" : ""}`}
+                    aria-hidden="true"
+                  />
+                  Enriquecer pelo LinkedIn
+                </Button>
+                {knownLinkedin ? (
+                  <a
+                    href={knownLinkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary underline underline-offset-2"
+                  >
+                    Abrir perfil
+                  </a>
+                ) : null}
+              </div>
+            </div>
+            {linkedinError ? (
+              <p className="text-xs text-destructive" role="alert">
+                {linkedinError}
+              </p>
+            ) : (
+              <p id="qualification-linkedin-help" className="text-xs text-muted-foreground">
+                {enrichment.data?.personSignal === "linkedin"
+                  ? "Dados localizados a partir do perfil do LinkedIn — só campos vazios foram preenchidos."
+                  : "O LinkedIn é o sinal mais preciso: preenche cargo, telefone, celular, empresa e localização automaticamente."}
+              </p>
+            )}
+          </div>
+
           <QualificationEntityBlocks
             blocks={blocksBefore}
             records={entityFields.records}

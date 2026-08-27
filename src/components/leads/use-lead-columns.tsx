@@ -114,6 +114,25 @@ export function useLeadColumns({
           lead.mobile_phone ? (toE164(lead.mobile_phone) ?? lead.mobile_phone) : "—",
       },
       {
+        key: "linkedin_url",
+        label: "LinkedIn",
+        className: "text-muted-foreground",
+        render: (lead) =>
+          lead.linkedin_url ? (
+            <a
+              href={lead.linkedin_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline underline-offset-2 truncate"
+              onClick={(e) => e.stopPropagation()}
+            >
+              Perfil
+            </a>
+          ) : (
+            "—"
+          ),
+      },
+      {
         key: "company",
         label: "Empresa",
         render: (lead) =>
