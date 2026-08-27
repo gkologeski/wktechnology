@@ -1007,6 +1007,64 @@ function StepConfigForm({
 }
 
 // ============================================================================
+// Configuração de ação: atualizar substatus
+// ============================================================================
+function SetSubstatusForm({
+  action,
+  onChange,
+}: {
+  action: Extract<WorkflowAction, { type: "set_substatus" }>;
+  onChange: (a: WorkflowAction) => void;
+}) {
+  const { data: substatuses = [], isLoading } = useWorkspaceSubstatuses();
+
+  const active = substatuses.filter((s) => s.is_active);
+
+  // Agrupa por pipeline para facilitar a navegação.
+  const byPipeline = active.reduce<Record<string, typeof active>>((acc, s) => {
+    if (!acc[s.pipeline_id]) acc[s.pipeline_id] = [];
+    acc[s.pipeline_id].push(s);
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-2">
+      <Label>Substatus</Label>
+      <Select
+        value={action.substatus_id}
+        onValueChange={(v) => onChange({ type: "set_substatus", substatus_id: v })}
+        disabled={isLoading}
+      >
+        <SelectTrigger>
+          <SelectValue placeholder="Selecione um substatus" />
+        </SelectTrigger>
+        <SelectContent>
+          {Object.entries(byPipeline).map(([pipelineId, list]) => (
+            <div key={pipelineId}>
+              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Pipeline {pipelineId.slice(0, 8)}
+              </div>
+              {list.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="inline-block h-2 w-2 rounded-full"
+                      style={{ backgroundColor: s.color ?? "#94a3b8" }}
+                    />
+                    {s.name}
+                    <span className="text-muted-foreground">({s.stage_value})</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </div>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+// ============================================================================
 // Fase 2 — helpers de UI para associações/campos/templates
 // ============================================================================
 function AssociationSelect({
