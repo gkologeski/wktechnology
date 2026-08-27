@@ -121,6 +121,26 @@ export function DealsToolbar({
       clear: () => setF("minValue", ""),
     });
   }
+  if (filters.substatusIds.length > 0 && substatusOptions) {
+    const labels = filters.substatusIds
+      .map((id) => substatusOptions.find((s) => s.id === id)?.name ?? id.slice(0, 8))
+      .join(", ");
+    chips.push({
+      key: "substatusIds",
+      label: `Substatus: ${labels}`,
+      clear: () => setF("substatusIds", []),
+    });
+  }
+
+  const substatusByStage = useMemo(() => {
+    const map = new Map<string, StageSubstatus[]>();
+    for (const s of substatusOptions ?? []) {
+      const list = map.get(s.stage_value) ?? [];
+      list.push(s);
+      map.set(s.stage_value, list);
+    }
+    return map;
+  }, [substatusOptions]);
 
   return (
     <div className="space-y-2">
