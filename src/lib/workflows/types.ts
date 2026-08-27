@@ -133,6 +133,7 @@ export interface MultiBranch {
 
 export type WorkflowAction =
   | { type: "set_field"; field: string; value: unknown }
+  | { type: "set_substatus"; substatus_id: string }
   | {
       type: "create_activity";
       activity_type?: string;
