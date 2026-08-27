@@ -171,6 +171,21 @@ function LeadDetail() {
   );
   const currentStage = findLeadStage(stages, currentStageValue);
 
+  /** O substatus precisa pertencer à etapa atual (validado por gatilho no banco). */
+  const setSubstatus = async (substatusId: string | null) => {
+    const { data: affected, error } = await supabase
+      .from("leads")
+      .update({ stage_substatus_id: substatusId } as never)
+      .eq("id", lead.id)
+      .select("id");
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (deniedIfUnaffected(affected, "alterar o substatus deste lead")) return;
+    void load();
+  };
+
   const setStage = async (v: string) => {
     if (v === currentStageValue) return;
     const stage = findLeadStage(stages, v);
