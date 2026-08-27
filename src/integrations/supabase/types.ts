@@ -20032,6 +20032,10 @@ export type Database = {
         Returns: undefined
       }
       recompute_deal_value: { Args: { _deal_id: string }; Returns: undefined }
+      reorder_pipeline_substatuses: {
+        Args: { _ids: string[] }
+        Returns: number
+      }
       reschedule_lovable_cron: { Args: { p_secret: string }; Returns: Json }
       resolve_workspace_id: { Args: { _owner: string }; Returns: string }
       restore_workspace: {

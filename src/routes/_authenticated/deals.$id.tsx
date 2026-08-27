@@ -20,6 +20,9 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 
 import { StageTracker } from "@/components/stage-tracker";
 import { SubstatusSelect } from "@/components/pipelines/substatus-select";
+import { SubstatusHistory } from "@/components/pipelines/substatus-history";
+import { useInvalidateSubstatusHistory } from "@/lib/pipelines/substatus-history";
+
 import {
   DealLineItems,
   DealLineItemsEditor,
@@ -91,6 +94,8 @@ function DealDetail() {
     );
   }, [deal, pipelines]);
 
+  const invalidateSubstatusHistory = useInvalidateSubstatusHistory();
+
   const stages = useMemo(
     () =>
       dealPipeline
@@ -122,6 +127,7 @@ function DealDetail() {
       toast.error(error.message);
       return;
     }
+    invalidateSubstatusHistory("deals", deal.id);
     void load();
   };
 
@@ -255,6 +261,7 @@ function DealDetail() {
         onChange={setSubstatus}
         className="max-w-xs space-y-1"
       />
+      <SubstatusHistory entity="deals" entityId={deal.id} className="max-w-xl" />
     </div>
   );
 

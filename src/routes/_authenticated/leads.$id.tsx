@@ -36,6 +36,9 @@ import { triggerTickNow } from "@/lib/workflows.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { StageTracker } from "@/components/stage-tracker";
 import { SubstatusSelect } from "@/components/pipelines/substatus-select";
+import { SubstatusHistory } from "@/components/pipelines/substatus-history";
+import { useInvalidateSubstatusHistory } from "@/lib/pipelines/substatus-history";
+
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
@@ -164,6 +167,8 @@ function LeadDetail() {
   const canDelete = !deletePermLoading && canDeleteRecord(lead);
   const { stages, pipelineId, isLoading: stagesLoading } = useLeadStages();
 
+  const invalidateSubstatusHistory = useInvalidateSubstatusHistory();
+
   if (!lead) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
   const currentStageValue = resolveLeadStageValue(
@@ -184,6 +189,7 @@ function LeadDetail() {
       return;
     }
     if (deniedIfUnaffected(affected, "alterar o substatus deste lead")) return;
+    invalidateSubstatusHistory("leads", lead.id);
     void load();
   };
 
@@ -330,6 +336,7 @@ function LeadDetail() {
         disabled={stagesLoading}
         className="max-w-xs space-y-1"
       />
+      <SubstatusHistory entity="leads" entityId={lead.id} className="max-w-xl" />
     </div>
   );
 

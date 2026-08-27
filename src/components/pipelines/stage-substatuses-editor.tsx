@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
   reorderSubstatuses,
   saveSubstatus,
   substatusesForStage,
+  substatusesKey,
   suggestedSubstatuses,
   useInvalidateSubstatuses,
   usePipelineSubstatuses,
@@ -37,7 +39,23 @@ export function StageSubstatusesEditor({
 }) {
   const q = usePipelineSubstatuses(pipelineId);
   const invalidate = useInvalidateSubstatuses();
+  const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+
+  /** Aplica a nova ordem direto no cache, para a lista reagir na hora. */
+  const reorderLocally = (ids: string[]) => {
+    qc.setQueryData<StageSubstatus[]>(substatusesKey(pipelineId), (prev) => {
+      if (!prev) return prev;
+      const positions = new Map(ids.map((id, i) => [id, i]));
+      return prev
+        .map((r) => (positions.has(r.id) ? { ...r, position: positions.get(r.id) as number } : r))
+        .sort((a, b) =>
+          a.stage_value === b.stage_value
+            ? a.position - b.position
+            : a.stage_value.localeCompare(b.stage_value),
+        );
+    });
+  };
 
   const rows = substatusesForStage(q.data, stageValue, { includeInactive: true });
 
@@ -77,7 +95,15 @@ export function StageSubstatusesEditor({
       const j = index + dir;
       if (j < 0 || j >= next.length) return;
       [next[index], next[j]] = [next[j], next[index]];
-      await reorderSubstatuses(next.map((r) => r.id));
+      const ids = next.map((r) => r.id);
+      // Reordena na hora e reverte no cache se o banco recusar.
+      reorderLocally(ids);
+      try {
+        await reorderSubstatuses(ids);
+      } catch (e) {
+        invalidate(pipelineId);
+        throw e;
+      }
     });
 
   const remove = (row: StageSubstatus) =>
