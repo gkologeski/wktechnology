@@ -77,8 +77,17 @@ export function StageSubstatusesEditor({
       const j = index + dir;
       if (j < 0 || j >= next.length) return;
       [next[index], next[j]] = [next[j], next[index]];
-      await reorderSubstatuses(next.map((r) => r.id));
+      const ids = next.map((r) => r.id);
+      // Reordena na hora e reverte no cache se o banco recusar.
+      reorderLocally(ids);
+      try {
+        await reorderSubstatuses(ids);
+      } catch (e) {
+        invalidate(pipelineId);
+        throw e;
+      }
     });
+
 
   const remove = (row: StageSubstatus) =>
     run(async () => {
