@@ -290,6 +290,66 @@ export function DealsToolbar({
           placeholder="Valor mínimo"
           className="h-9 w-[140px]"
         />
+
+        {substatusOptions && substatusOptions.length > 0 && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 px-3">
+                Substatus
+                {filters.substatusIds.length > 0 && (
+                  <Badge variant="secondary" className="ml-2 px-1.5 text-[10px]">
+                    {filters.substatusIds.length}
+                  </Badge>
+                )}
+                <ChevronDown className="ml-2 h-3.5 w-3.5 text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 p-0" align="end">
+              <div className="max-h-72 overflow-y-auto p-2">
+                {Array.from(substatusByStage.entries()).map(([stageValue, items]) => {
+                  const stage = pipelines
+                    .find((p) => p.id === selectedPipelineId)
+                    ?.stages.find((s) => s.value === stageValue);
+                  return (
+                    <div key={stageValue} className="mb-2">
+                      <p className="px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                        {stage?.label ?? stageValue}
+                      </p>
+                      <div className="space-y-0.5">
+                        {items.map((s) => {
+                          const checked = filters.substatusIds.includes(s.id);
+                          return (
+                            <label
+                              key={s.id}
+                              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                            >
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) =>
+                                  setF(
+                                    "substatusIds",
+                                    v
+                                      ? [...filters.substatusIds, s.id]
+                                      : filters.substatusIds.filter((x) => x !== s.id),
+                                  )
+                                }
+                              />
+                              <span
+                                className="h-1.5 w-1.5 rounded-full"
+                                style={s.color ? { backgroundColor: s.color } : undefined}
+                              />
+                              <span className="flex-1 truncate">{s.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
 
       {chips.length > 0 && (
