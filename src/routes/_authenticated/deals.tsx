@@ -286,6 +286,8 @@ function DealsPage() {
     return deals.filter((d) => {
       if (selected?.id && d.pipeline_id !== selected.id) return false;
       if (filters.ownerId && d.owner_id !== filters.ownerId) return false;
+      if (filters.substatusIds.length > 0 && !filters.substatusIds.includes(d.stage_substatus_id ?? ""))
+        return false;
       if (min > 0 && Number(d.value || 0) < min) return false;
       if (filters.period === "overdue") {
         if (!d.expected_close_date) return false;
