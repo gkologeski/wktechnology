@@ -124,8 +124,10 @@ function DealDetail() {
       toast.error(error.message);
       return;
     }
+    invalidateSubstatusHistory("deals", deal.id);
     void load();
   };
+
 
   const setPipeline = async (pipelineId: string) => {
     const next = pipelines.find((p) => p.id === pipelineId);
