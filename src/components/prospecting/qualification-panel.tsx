@@ -647,6 +647,15 @@ export function QualificationPanel({
                   <Badge variant="outline" title="Número identificado como celular pelo Apollo.io">
                     Celular encontrado
                   </Badge>
+                ) : enrichment.data.phoneRevealPending ? (
+                  <Badge
+                    variant="outline"
+                    className="gap-1 text-muted-foreground"
+                    title="O Apollo.io entrega o telefone de forma assíncrona. Assim que o número chegar, ele é gravado automaticamente no lead."
+                  >
+                    <Clock className="h-3 w-3" aria-hidden="true" />
+                    Telefone em revelação
+                  </Badge>
                 ) : enrichment.data.companies?.phone ? (
                   <Badge
                     variant="outline"
