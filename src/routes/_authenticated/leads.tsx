@@ -449,6 +449,7 @@ function LeadsHubspotView() {
 
   const hasActiveFilters =
     filters.status.length > 0 ||
+    filters.substatusIds.length > 0 ||
     filters.source.length > 0 ||
     filters.scoreMin > 0 ||
     filters.scoreMax < 100 ||
