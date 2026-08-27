@@ -1,7 +1,7 @@
 // Histórico de alterações de substatus de Leads e Negócios.
 // A origem é a tabela `property_history`, alimentada pelos gatilhos de auditoria
 // `leads_audit` / `deals_audit`. A visibilidade é decidida pela RLS do banco.
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type SubstatusHistoryEntry = {
@@ -106,4 +106,11 @@ export function useSubstatusHistory(entity: "leads" | "deals", entityId?: string
     staleTime: 30_000,
     queryFn: () => fetchSubstatusHistory(entity, entityId as string),
   });
+}
+
+/** Invalida o histórico de substatus após uma alteração. */
+export function useInvalidateSubstatusHistory() {
+  const qc = useQueryClient();
+  return (entity: "leads" | "deals", entityId: string) =>
+    void qc.invalidateQueries({ queryKey: ["substatus-history", entity, entityId] });
 }
