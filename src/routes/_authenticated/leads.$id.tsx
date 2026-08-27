@@ -330,6 +330,8 @@ function LeadDetail() {
         disabled={stagesLoading}
         className="max-w-xs space-y-1"
       />
+      <SubstatusHistory entity="leads" entityId={lead.id} className="max-w-xl" />
+
     </div>
   );
 
