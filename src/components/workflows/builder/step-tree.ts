@@ -46,6 +46,7 @@ export type FieldOpt = {
 
 export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   set_field: Sparkles,
+  set_substatus: Sparkles,
   create_activity: Mail,
   create_survey_activity: ClipboardList,
   open_deal_dialog: Handshake,
