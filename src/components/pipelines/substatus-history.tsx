@@ -52,9 +52,7 @@ export function SubstatusHistory({
               {entry.from_name ? (
                 <>
                   <span className="text-muted-foreground">De</span>
-                  <SubstatusBadge
-                    substatus={{ name: entry.from_name, color: entry.from_color }}
-                  />
+                  <SubstatusBadge substatus={{ name: entry.from_name, color: entry.from_color }} />
                   <span className="text-muted-foreground">para</span>
                 </>
               ) : (

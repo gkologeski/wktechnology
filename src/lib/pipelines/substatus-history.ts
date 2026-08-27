@@ -55,7 +55,9 @@ export async function fetchSubstatusHistory(
   if (rows.length === 0) return [];
 
   const substatusIds = Array.from(
-    new Set(rows.flatMap((r) => [asId(r.old_value), asId(r.new_value)]).filter(Boolean) as string[]),
+    new Set(
+      rows.flatMap((r) => [asId(r.old_value), asId(r.new_value)]).filter(Boolean) as string[],
+    ),
   );
   const userIds = Array.from(new Set(rows.map((r) => r.changed_by).filter(Boolean) as string[]));
 
@@ -73,7 +75,10 @@ export async function fetchSubstatusHistory(
           .select(sel("id, full_name"))
           .in("id", userIds)
           .returns<Array<{ id: string; full_name: string | null }>>()
-      : Promise.resolve({ data: [] as Array<{ id: string; full_name: string | null }>, error: null }),
+      : Promise.resolve({
+          data: [] as Array<{ id: string; full_name: string | null }>,
+          error: null,
+        }),
   ]);
 
   const subMap = new Map((substatuses.data ?? []).map((s) => [s.id, s]));

@@ -183,7 +183,6 @@ export async function reorderSubstatuses(ids: string[]): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-
 /** Invalida o cache de substatus de um pipeline (ou de todos). */
 export function useInvalidateSubstatuses() {
   const qc = useQueryClient();

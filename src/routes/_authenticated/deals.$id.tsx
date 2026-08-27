@@ -131,7 +131,6 @@ function DealDetail() {
     void load();
   };
 
-
   const setPipeline = async (pipelineId: string) => {
     const next = pipelines.find((p) => p.id === pipelineId);
     const firstStage = next?.stages[0]?.value ?? "new";
@@ -263,7 +262,6 @@ function DealDetail() {
         className="max-w-xs space-y-1"
       />
       <SubstatusHistory entity="deals" entityId={deal.id} className="max-w-xl" />
-
     </div>
   );
 
