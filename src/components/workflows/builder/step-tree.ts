@@ -90,6 +90,8 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
   switch (type) {
     case "set_field":
       return { type, field: "status", value: "" };
+    case "set_substatus":
+      return { type, substatus_id: "" };
     case "create_activity":
       return { type, subject: "Nova tarefa", activity_type: "task" };
     case "create_survey_activity":
