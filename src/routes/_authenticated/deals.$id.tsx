@@ -111,6 +111,19 @@ function DealDetail() {
     void load();
   };
 
+  /** O substatus precisa pertencer à etapa atual (validado por gatilho no banco). */
+  const setSubstatus = async (substatusId: string | null) => {
+    const { error } = await supabase
+      .from("deals")
+      .update({ stage_substatus_id: substatusId } as never)
+      .eq("id", deal.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    void load();
+  };
+
   const setPipeline = async (pipelineId: string) => {
     const next = pipelines.find((p) => p.id === pipelineId);
     const firstStage = next?.stages[0]?.value ?? "new";
