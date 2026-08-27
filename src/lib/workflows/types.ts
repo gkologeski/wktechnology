@@ -433,6 +433,7 @@ export const EVENT_LABELS: Record<WorkflowEventType, string> = {
 
 export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   set_field: "Atualizar campo",
+  set_substatus: "Atualizar substatus",
   create_activity: "Criar atividade",
   create_survey_activity: "Criar pesquisa (atividade)",
   open_deal_dialog: "Abrir criação de oportunidade",
