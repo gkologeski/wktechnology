@@ -20,6 +20,8 @@ import { AssociationsPanel } from "@/components/record/associations-panel";
 
 import { StageTracker } from "@/components/stage-tracker";
 import { SubstatusSelect } from "@/components/pipelines/substatus-select";
+import { SubstatusHistory } from "@/components/pipelines/substatus-history";
+
 import {
   DealLineItems,
   DealLineItemsEditor,
