@@ -99,12 +99,11 @@ async function resolveTargets(person: ApolloWebhookPerson): Promise<Target[]> {
 
 /** Aplica os números recebidos; devolve quantos registros foram atualizados. */
 export async function applyApolloPhonePayload(payload: ApolloPhonePayload): Promise<number> {
-  const people =
+  const people: ApolloWebhookPerson[] =
     payload.people ??
     (payload.person ? [payload.person] : null) ??
     payload.data?.people ??
-    (payload.data?.person ? [payload.data.person] : []) ??
-    [];
+    (payload.data?.person ? [payload.data.person] : []);
   if (!people.length) return 0;
 
   const supabase = supabaseAdmin;
