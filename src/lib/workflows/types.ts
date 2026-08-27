@@ -636,6 +636,7 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "score",
     "label",
     "owner_id",
+    "stage_substatus_id",
   ],
   contacts: [
     "first_name",
