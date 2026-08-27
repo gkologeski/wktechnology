@@ -90,13 +90,7 @@ export async function runTicketsStep(args: StepRunArgs): Promise<StepResult | vo
   const propsParam = propsList.join(",");
 
   // Load local maps so we can fill FK columns from associations.
-  const companyMap = await loadMapForStep(
-    supabase,
-    workspaceId,
-    jobId,
-    "companies",
-    "companies",
-  );
+  const companyMap = await loadMapForStep(supabase, workspaceId, jobId, "companies", "companies");
   const contactMap = await loadMapForStep(supabase, workspaceId, jobId, "contacts", "contacts");
   const dealMap = await loadMapForStep(supabase, workspaceId, jobId, "deals", "deals");
 
@@ -171,9 +165,7 @@ export async function runTicketsStep(args: StepRunArgs): Promise<StepResult | vo
           contact_id: contactHs ? (contactMap.get(contactHs) ?? null) : null,
           company_id: companyHs ? (companyMap.get(companyHs) ?? null) : null,
           deal_id: dealHs ? (dealMap.get(dealHs) ?? null) : null,
-          pipeline_id: p.hs_pipeline
-            ? (ticketPipelineMap[String(p.hs_pipeline)] ?? null)
-            : null,
+          pipeline_id: p.hs_pipeline ? (ticketPipelineMap[String(p.hs_pipeline)] ?? null) : null,
           custom_fields: {
             hs_pipeline: p.hs_pipeline ?? null,
             hs_pipeline_stage: stageId,

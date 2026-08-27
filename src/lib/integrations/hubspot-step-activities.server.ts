@@ -58,13 +58,7 @@ export async function runActivitiesStep(args: StepRunArgs): Promise<StepResult |
   };
   const t = TYPE_MAP[kind];
 
-  const companyMap = await loadMapForStep(
-    supabase,
-    workspaceId,
-    jobId,
-    "companies",
-    "companies",
-  );
+  const companyMap = await loadMapForStep(supabase, workspaceId, jobId, "companies", "companies");
   const contactMap = await loadMapForStep(supabase, workspaceId, jobId, "contacts", "contacts");
   const dealMap = await loadMapForStep(supabase, workspaceId, jobId, "deals", "deals");
   const leadMap = await loadMapForStep(supabase, workspaceId, jobId, "leads", "leads");

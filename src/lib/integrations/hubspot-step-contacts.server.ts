@@ -1,10 +1,11 @@
 // Etapa "contacts" da importação do HubSpot — extraída de hubspot-steps.server.ts
+import { batchRead, mapContact, rawOf } from "./hubspot-api.server";
 import {
-  batchRead,
-  mapContact,
-  rawOf,
-} from "./hubspot-api.server";
-import { appendLog, loadImportedHsIdsForStep, loadLocalMapForHsIds, patchItemBefore } from "./hubspot-steps-state.server";
+  appendLog,
+  loadImportedHsIdsForStep,
+  loadLocalMapForHsIds,
+  patchItemBefore,
+} from "./hubspot-steps-state.server";
 import { upsertBatchByHsId } from "./hubspot-steps-upsert.server";
 import { discoverTargetsFromAssociations } from "./hubspot-steps-discovery.server";
 import type { StepRunArgs } from "./hubspot-step-run-context";
@@ -129,9 +130,7 @@ export async function runContactsStep(args: StepRunArgs): Promise<StepResult | v
     const recs = await batchRead("contacts", chunkIds, propsList);
     const byId = new Map(recs.map((r) => [r.id, r]));
     const parentCompanyHsIds = Array.from(
-      new Set(
-        chunkIds.map((hsId) => parentMap?.[hsId]).filter((id): id is string => Boolean(id)),
-      ),
+      new Set(chunkIds.map((hsId) => parentMap?.[hsId]).filter((id): id is string => Boolean(id))),
     );
     const companyMap = parentCompanyHsIds.length
       ? await loadLocalMapForHsIds(supabase, workspaceId, "companies", parentCompanyHsIds)

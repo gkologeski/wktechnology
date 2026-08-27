@@ -8,7 +8,13 @@ import {
   mapDeal,
   rawOf,
 } from "./hubspot-api.server";
-import { appendLog, loadLocalMapForHsIds, loadMapForStep, patchItemBefore, searchTotal } from "./hubspot-steps-state.server";
+import {
+  appendLog,
+  loadLocalMapForHsIds,
+  loadMapForStep,
+  patchItemBefore,
+  searchTotal,
+} from "./hubspot-steps-state.server";
 import { upsertBatchByHsId } from "./hubspot-steps-upsert.server";
 import { syncHubspotDealPipelines } from "./hubspot-pipelines.server";
 import type { StepRunArgs } from "./hubspot-step-run-context";
