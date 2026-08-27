@@ -235,6 +235,11 @@ export function DealsBoard({
                         dimmed={focusMode && sig?.klass === "cold"}
                         selectable={selectable}
                         selected={selection.isSelected(d.id)}
+                        pipelineId={pipeline.id}
+                        canUpdateSubstatus={canUpdate}
+                        onSubstatusChanged={() =>
+                          void qc.invalidateQueries({ queryKey: ["deals"] })
+                        }
                         onToggleSelect={(shift) => selection.toggle(d.id, { columnIds, shift })}
                         onClick={() => onOpen(d)}
                       />
