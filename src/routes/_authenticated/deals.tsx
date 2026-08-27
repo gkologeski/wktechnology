@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { startFocusQueue } from "@/lib/focus-queue";
 import type { Deal, Company, Contact } from "@/lib/db-types";
 import { usePipelines, useEnsureDefaultPipeline } from "@/lib/pipelines";
+import { usePipelineSubstatuses } from "@/lib/pipelines/substatuses";
 import {
   DealsToolbar,
   EMPTY_DEAL_FILTERS,
