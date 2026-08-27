@@ -64,6 +64,7 @@ export function DealsToolbar({
   focusMode,
   onToggleFocus,
   hotCount,
+  substatusOptions,
 }: {
   pipelines: Pipeline[];
   selectedPipelineId: string | null;
@@ -74,6 +75,7 @@ export function DealsToolbar({
   focusMode?: boolean;
   onToggleFocus?: (b: boolean) => void;
   hotCount?: number;
+  substatusOptions?: StageSubstatus[];
 }) {
   const setF = <K extends keyof DealFilters>(k: K, v: DealFilters[K]) =>
     setFilters({ ...filters, [k]: v });
