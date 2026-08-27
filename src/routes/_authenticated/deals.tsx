@@ -390,6 +390,7 @@ function DealsPage() {
         focusMode={view === "board" ? focusMode : undefined}
         onToggleFocus={view === "board" ? setFocusMode : undefined}
         hotCount={boardHotCount}
+        substatusOptions={substatuses}
       />
 
       <Tabs value={view} onValueChange={(v) => setView(v as typeof view)} className="mt-4">
