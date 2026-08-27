@@ -35,6 +35,7 @@ import { lastBusinessDayOfMonth } from "@/lib/date-business";
 import { triggerTickNow } from "@/lib/workflows.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { StageTracker } from "@/components/stage-tracker";
+import { SubstatusSelect } from "@/components/pipelines/substatus-select";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
