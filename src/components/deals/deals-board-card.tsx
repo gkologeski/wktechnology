@@ -7,6 +7,7 @@ import type { Deal } from "@/lib/db-types";
 import type { DealSignals } from "@/lib/deals/hot-score";
 import { Building2, CalendarDays, Clock, Flame, Gem, User as UserIcon } from "lucide-react";
 import { BoardCardCheckbox } from "@/components/kanban/board-card-checkbox";
+import { SubstatusQuickPicker } from "@/components/pipelines/substatus-quick-picker";
 
 function initials(s?: string | null) {
   if (!s) return "??";
