@@ -43,6 +43,7 @@ export const BASE_LEAD_KEYS = [
   "email",
   "phone",
   "mobile_phone",
+  "linkedin_url",
 
   "company_name",
   "company_id",

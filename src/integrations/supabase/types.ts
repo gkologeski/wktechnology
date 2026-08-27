@@ -9554,6 +9554,7 @@ export type Database = {
           id: string
           label: string | null
           last_name: string | null
+          linkedin_url: string | null
           mobile_phone: string | null
           notes: string | null
           nurture_started_at: string | null
@@ -9591,6 +9592,7 @@ export type Database = {
           id?: string
           label?: string | null
           last_name?: string | null
+          linkedin_url?: string | null
           mobile_phone?: string | null
           notes?: string | null
           nurture_started_at?: string | null
@@ -9628,6 +9630,7 @@ export type Database = {
           id?: string
           label?: string | null
           last_name?: string | null
+          linkedin_url?: string | null
           mobile_phone?: string | null
           notes?: string | null
           nurture_started_at?: string | null

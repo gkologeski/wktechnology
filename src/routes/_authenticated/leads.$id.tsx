@@ -355,6 +355,7 @@ function LeadDetail() {
               { key: "email", label: "Email", type: "email", primary: true },
               { key: "phone", label: "Telefone", type: "tel", primary: true },
               { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
+              { key: "linkedin_url", label: "LinkedIn", type: "url", primary: true },
 
               { key: "company_name", label: "Empresa", type: "company", primary: true },
               { key: "source", label: "Fonte", primary: true },

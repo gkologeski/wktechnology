@@ -15,6 +15,7 @@ import type { EnrichmentSuggestions } from "./qualification-enrichment.server";
 
 export type {
   EnrichmentSuggestions,
+  PersonSignal,
   SuggestionMap,
   SuggestionValue,
 } from "./qualification-enrichment.server";
@@ -30,6 +31,11 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
         force: z.boolean().optional(),
         /** Grava imediatamente os campos vazios no banco (padrão: true). */
         persist: z.boolean().optional(),
+        /**
+         * LinkedIn informado pelo usuário na qualificação. Quando presente e
+         * válido, é gravado no lead e usado como sinal principal da busca.
+         */
+        linkedinUrl: z.string().trim().max(500).optional().nullable(),
       })
       .parse(input),
   )
@@ -37,11 +43,21 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { LEAD_KEYS, COMPANY_KEYS, CONTACT_KEYS, pick, onlyNew, applyEnrichmentToRecords } =
       await import("./qualification-enrichment.server");
+    const { normalizeLinkedinUrl, sameLinkedinUrl } = await import("./linkedin-url");
+
+    // O LinkedIn digitado é validado aqui: entrada inválida vira erro claro
+    // para a UI, em vez de consumir crédito do provedor com um sinal ruim.
+    let providedLinkedin: string | null = null;
+    if (data.linkedinUrl && data.linkedinUrl.trim() !== "") {
+      const parsed = normalizeLinkedinUrl(data.linkedinUrl);
+      if (!parsed.ok) throw new Error(parsed.error);
+      providedLinkedin = parsed.url;
+    }
 
     const { data: lead, error } = await supabase
       .from("leads")
       .select(
-        "id, first_name, last_name, email, phone, mobile_phone, company_name, company_id, converted_contact_id, custom_fields",
+        "id, first_name, last_name, email, phone, mobile_phone, company_name, company_id, converted_contact_id, linkedin_url, custom_fields",
       )
       .eq("id", data.leadId)
       .maybeSingle();
@@ -49,11 +65,28 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     if (!lead) throw new Error("Lead não encontrado.");
 
     const persist = data.persist !== false;
+
+    // Grava o LinkedIn informado no lead (fonte da verdade para as próximas
+    // consultas) antes de decidir sobre cache.
+    let leadLinkedin = lead.linkedin_url ?? null;
+    if (providedLinkedin && !sameLinkedinUrl(providedLinkedin, leadLinkedin)) {
+      const { error: linkErr } = await supabase
+        .from("leads")
+        .update({ linkedin_url: providedLinkedin })
+        .eq("id", data.leadId);
+      if (linkErr) throw new Error(linkErr.message);
+      leadLinkedin = providedLinkedin;
+      // Mantém o registro em memória coerente para as comparações seguintes.
+      (lead as { linkedin_url: string | null }).linkedin_url = providedLinkedin;
+    }
+
     const custom = (lead.custom_fields ?? {}) as Record<string, unknown>;
     const cached = custom.apollo_enrichment as
       | { fetched_at?: string; payload?: EnrichmentSuggestions }
       | undefined;
-    if (!data.force && cached?.payload && cached.fetched_at) {
+    const cacheMatchesLinkedin =
+      !leadLinkedin || sameLinkedinUrl(cached?.payload?.linkedinUrl ?? null, leadLinkedin);
+    if (!data.force && cacheMatchesLinkedin && cached?.payload && cached.fetched_at) {
       const age = Date.now() - new Date(cached.fetched_at).getTime();
       if (Number.isFinite(age) && age < CACHE_TTL_MS) {
         const payload = { ...cached.payload, cached: true };
@@ -90,7 +123,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
       }
     }
 
-    let linkedin: string | null = null;
+    let linkedin: string | null = leadLinkedin;
     let contactRow: Record<string, unknown> | null = null;
     if (lead.converted_contact_id) {
       const { data: contact } = await supabase
@@ -100,7 +133,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
         .maybeSingle();
       if (contact) {
         contactRow = contact as unknown as Record<string, unknown>;
-        linkedin = (contactRow.linkedin_url as string | null) ?? null;
+        linkedin = linkedin ?? (contactRow.linkedin_url as string | null) ?? null;
       }
     }
 
@@ -122,6 +155,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
       {
         ...pick(personSuggestions, LEAD_KEYS),
         ...(result.company?.name ? { company_name: result.company.name } : {}),
+        ...(linkedin ? { linkedin_url: linkedin } : {}),
       },
       lead as unknown as Record<string, unknown>,
     );
@@ -130,6 +164,7 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
         ...pick(personSuggestions, CONTACT_KEYS),
         ...(result.company?.name ? { company_name: result.company.name } : {}),
         ...(result.company?.website ? { website: result.company.website } : {}),
+        ...(linkedin ? { linkedin_url: linkedin } : {}),
       },
       contactRow,
     );
@@ -138,6 +173,14 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const payload: EnrichmentSuggestions = {
       domain: result.domain,
       domainSource: result.domainSource,
+      personSignal: linkedin
+        ? "linkedin"
+        : !result.person
+          ? "none"
+          : lead.email
+            ? "email"
+            : "name_domain",
+      linkedinUrl: linkedin,
       fetchedAt: new Date().toISOString(),
       cached: false,
       found:

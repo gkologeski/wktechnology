@@ -14,6 +14,7 @@ export const LEAD_KEYS = [
   "phone",
   "mobile_phone",
   "company_name",
+  "linkedin_url",
 ] as const;
 
 /** Colunas reais de `companies`. */
@@ -59,9 +60,16 @@ export const CONTACT_KEYS = [
 export type SuggestionValue = string | number | boolean | null;
 export type SuggestionMap = Record<string, SuggestionValue>;
 
+/** Sinal usado para localizar a pessoa no provedor. */
+export type PersonSignal = "linkedin" | "email" | "name_domain" | "none";
+
 export type EnrichmentSuggestions = {
   domain: string | null;
   domainSource: string | null;
+  /** Como a pessoa foi localizada (procedência exibida na UI). */
+  personSignal?: PersonSignal;
+  /** LinkedIn efetivamente usado na consulta, já normalizado. */
+  linkedinUrl?: string | null;
   fetchedAt: string;
   cached: boolean;
   found: boolean;
