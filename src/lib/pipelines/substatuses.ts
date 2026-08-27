@@ -173,16 +173,16 @@ export async function deleteSubstatus(id: string): Promise<void> {
   }
 }
 
-/** Grava a ordem informada (índice do array vira `position`). */
+/**
+ * Grava a ordem informada (índice do array vira `position`) em uma única
+ * chamada ao banco — a RLS continua decidindo o que pode ser atualizado.
+ */
 export async function reorderSubstatuses(ids: string[]): Promise<void> {
-  for (let i = 0; i < ids.length; i++) {
-    const { error } = await supabase
-      .from("pipeline_stage_substatuses")
-      .update({ position: i })
-      .eq("id", ids[i]);
-    if (error) throw new Error(error.message);
-  }
+  if (ids.length === 0) return;
+  const { error } = await supabase.rpc("reorder_pipeline_substatuses", { _ids: ids });
+  if (error) throw new Error(error.message);
 }
+
 
 /** Invalida o cache de substatus de um pipeline (ou de todos). */
 export function useInvalidateSubstatuses() {
