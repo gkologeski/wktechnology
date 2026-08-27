@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.sync_stage_substatus() FROM PUBLIC, anon, authenticated;

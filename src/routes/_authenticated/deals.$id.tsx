@@ -19,6 +19,7 @@ import { RecordLayout } from "@/components/record/record-layout";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 
 import { StageTracker } from "@/components/stage-tracker";
+import { SubstatusSelect } from "@/components/pipelines/substatus-select";
 import {
   DealLineItems,
   DealLineItemsEditor,
@@ -108,6 +109,19 @@ function DealDetail() {
     if (legacyEnum.includes(v)) payload.stage = v;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).from("deals").update(payload).eq("id", deal.id);
+    void load();
+  };
+
+  /** O substatus precisa pertencer à etapa atual (validado por gatilho no banco). */
+  const setSubstatus = async (substatusId: string | null) => {
+    const { error } = await supabase
+      .from("deals")
+      .update({ stage_substatus_id: substatusId } as never)
+      .eq("id", deal.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     void load();
   };
 
@@ -234,6 +248,13 @@ function DealDetail() {
         </div>
       </div>
       <StageTracker stages={stages} current={currentStage} onChange={setStage} />
+      <SubstatusSelect
+        pipelineId={dealPipeline?.id ?? null}
+        stageValue={currentStage}
+        value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
+        onChange={setSubstatus}
+        className="max-w-xs space-y-1"
+      />
     </div>
   );
 

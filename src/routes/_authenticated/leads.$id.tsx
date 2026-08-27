@@ -35,6 +35,7 @@ import { lastBusinessDayOfMonth } from "@/lib/date-business";
 import { triggerTickNow } from "@/lib/workflows.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { StageTracker } from "@/components/stage-tracker";
+import { SubstatusSelect } from "@/components/pipelines/substatus-select";
 import { ActivityTimeline } from "@/components/activity-timeline";
 import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
@@ -171,6 +172,21 @@ function LeadDetail() {
   );
   const currentStage = findLeadStage(stages, currentStageValue);
 
+  /** O substatus precisa pertencer à etapa atual (validado por gatilho no banco). */
+  const setSubstatus = async (substatusId: string | null) => {
+    const { data: affected, error } = await supabase
+      .from("leads")
+      .update({ stage_substatus_id: substatusId } as never)
+      .eq("id", lead.id)
+      .select("id");
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (deniedIfUnaffected(affected, "alterar o substatus deste lead")) return;
+    void load();
+  };
+
   const setStage = async (v: string) => {
     if (v === currentStageValue) return;
     const stage = findLeadStage(stages, v);
@@ -305,6 +321,14 @@ function LeadDetail() {
               ? "bg-red-600 text-white"
               : "bg-slate-700 text-white"
         }
+      />
+      <SubstatusSelect
+        pipelineId={pipelineId}
+        stageValue={currentStageValue}
+        value={(lead as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
+        onChange={setSubstatus}
+        disabled={stagesLoading}
+        className="max-w-xs space-y-1"
       />
     </div>
   );

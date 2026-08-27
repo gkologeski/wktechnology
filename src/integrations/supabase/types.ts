@@ -6580,6 +6580,7 @@ export type Database = {
           primary_contact_id: string | null
           stage: Database["public"]["Enums"]["deal_stage"]
           stage_id: string | null
+          stage_substatus_id: string | null
           updated_at: string
           value: number
           workspace_id: string
@@ -6616,6 +6617,7 @@ export type Database = {
           primary_contact_id?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
           stage_id?: string | null
+          stage_substatus_id?: string | null
           updated_at?: string
           value?: number
           workspace_id?: string
@@ -6652,6 +6654,7 @@ export type Database = {
           primary_contact_id?: string | null
           stage?: Database["public"]["Enums"]["deal_stage"]
           stage_id?: string | null
+          stage_substatus_id?: string | null
           updated_at?: string
           value?: number
           workspace_id?: string
@@ -6669,6 +6672,13 @@ export type Database = {
             columns: ["primary_contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_stage_substatus_id_fkey"
+            columns: ["stage_substatus_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stage_substatuses"
             referencedColumns: ["id"]
           },
           {
@@ -9553,6 +9563,7 @@ export type Database = {
           score: number
           source: string | null
           stage_id: string | null
+          stage_substatus_id: string | null
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
           workspace_id: string
@@ -9589,6 +9600,7 @@ export type Database = {
           score?: number
           source?: string | null
           stage_id?: string | null
+          stage_substatus_id?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
           workspace_id?: string
@@ -9625,6 +9637,7 @@ export type Database = {
           score?: number
           source?: string | null
           stage_id?: string | null
+          stage_substatus_id?: string | null
           status?: Database["public"]["Enums"]["lead_status"]
           updated_at?: string
           workspace_id?: string
@@ -9635,6 +9648,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_stage_substatus_id_fkey"
+            columns: ["stage_substatus_id"]
+            isOneToOne: false
+            referencedRelation: "pipeline_stage_substatuses"
             referencedColumns: ["id"]
           },
           {
@@ -12331,6 +12351,69 @@ export type Database = {
           scope?: Database["public"]["Enums"]["perm_scope"]
         }
         Relationships: []
+      }
+      pipeline_stage_substatuses: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          name: string
+          owner_id: string
+          pipeline_id: string
+          position: number
+          stage_value: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name: string
+          owner_id?: string
+          pipeline_id: string
+          position?: number
+          stage_value: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          name?: string
+          owner_id?: string
+          pipeline_id?: string
+          position?: number
+          stage_value?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pipeline_stage_substatuses_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pipeline_stage_substatuses_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pipelines: {
         Row: {

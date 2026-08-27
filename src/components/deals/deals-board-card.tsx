@@ -7,6 +7,7 @@ import type { Deal } from "@/lib/db-types";
 import type { DealSignals } from "@/lib/deals/hot-score";
 import { Building2, CalendarDays, Clock, Flame, Gem, User as UserIcon } from "lucide-react";
 import { BoardCardCheckbox } from "@/components/kanban/board-card-checkbox";
+import { SubstatusQuickPicker } from "@/components/pipelines/substatus-quick-picker";
 
 function initials(s?: string | null) {
   if (!s) return "??";
@@ -41,6 +42,9 @@ export function DealsBoardCard({
   dimmed,
   selectable,
   selected,
+  pipelineId,
+  canUpdateSubstatus,
+  onSubstatusChanged,
   onToggleSelect,
   onClick,
 }: {
@@ -55,6 +59,10 @@ export function DealsBoardCard({
   dimmed?: boolean;
   selectable?: boolean;
   selected?: boolean;
+  /** Pipeline do quadro: habilita o substatus no card. */
+  pipelineId?: string | null;
+  canUpdateSubstatus?: boolean;
+  onSubstatusChanged?: () => void;
   onToggleSelect?: (shift: boolean) => void;
   onClick: () => void;
 }) {
@@ -176,6 +184,20 @@ export function DealsBoardCard({
           style={isHighValue ? { color: "var(--hs-orange)" } : undefined}
         >
           {formatCurrency(Number(deal.value), deal.currency)}
+        </div>
+      )}
+
+      {pipelineId && (
+        <div className="mt-1.5">
+          <SubstatusQuickPicker
+            table="deals"
+            rowId={deal.id}
+            pipelineId={pipelineId}
+            stageValue={columnId ?? deal.stage_id ?? String(deal.stage)}
+            value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
+            canUpdate={canUpdateSubstatus}
+            onChanged={onSubstatusChanged}
+          />
         </div>
       )}
 
