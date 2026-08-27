@@ -255,6 +255,8 @@ function DealDetail() {
         onChange={setSubstatus}
         className="max-w-xs space-y-1"
       />
+      <SubstatusHistory entity="deals" entityId={deal.id} className="max-w-xl" />
+
     </div>
   );
 
