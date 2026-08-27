@@ -100,6 +100,12 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
             contacts: payload.contacts,
           });
         }
+        // O telefone pode ainda estar em revelação assíncrona na Apollo.
+        const { hasPendingApolloReveal } = await import(
+          "@/lib/integrations/apollo-phone-reveal.server"
+        );
+        payload.phoneRevealPending =
+          !lead.mobile_phone && (await hasPendingApolloReveal("lead", data.leadId));
         return payload;
       }
     }
