@@ -471,6 +471,21 @@ function PipelineEditor({
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
+                {pipeline?.id && s.value ? (
+                  <div className="sm:col-span-12">
+                    <StageSubstatusesEditor
+                      pipelineId={pipeline.id}
+                      stageValue={s.value}
+                      stageLabel={s.label || s.value}
+                      stageType={s.type ?? "open"}
+                      canManage={canManageSubstatus}
+                    />
+                  </div>
+                ) : (
+                  <p className="sm:col-span-12 text-[11px] text-muted-foreground">
+                    Salve o pipeline para configurar os substatus desta etapa.
+                  </p>
+                )}
               </div>
             ))}
             {stages.length === 0 && (
