@@ -19,7 +19,7 @@ type OAuthApi = {
   denyAuthorization: (id: string) => Promise<{ data: OAuthDetails | null; error: Error | null }>;
 };
 
-function oauthApi(): OAuthApi {
+export function oauthApi(): OAuthApi {
   return (supabase.auth as unknown as { oauth: OAuthApi }).oauth;
 }
 

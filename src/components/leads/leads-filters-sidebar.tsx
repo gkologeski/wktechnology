@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import type { LeadStage } from "@/lib/leads/stages";
 import { DEFAULT_FILTERS, STATUS_TONE, type Filters } from "@/lib/leads/constants";
 import { FilterGroup } from "@/components/leads/table-primitives";
+import type { StageSubstatus } from "@/lib/pipelines/substatuses";
 
 export function LeadsFiltersSidebar({
   filters,
@@ -16,12 +17,14 @@ export function LeadsFiltersSidebar({
   stages,
   sourceOptions,
   hasActiveFilters,
+  substatusOptions,
 }: {
   filters: Filters;
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
   stages: LeadStage[];
   sourceOptions: { value: string; count: number }[] | undefined;
   hasActiveFilters: boolean;
+  substatusOptions?: StageSubstatus[];
 }) {
   return (
     <aside className="hidden w-64 shrink-0 border-r bg-card/30 lg:flex lg:flex-col">
@@ -72,6 +75,57 @@ export function LeadsFiltersSidebar({
             );
           })}
         </FilterGroup>
+
+        {substatusOptions && substatusOptions.length > 0 && (
+          <FilterGroup title="Substatus" defaultOpen>
+            {(() => {
+              const byStage = new Map<string, StageSubstatus[]>();
+              for (const s of substatusOptions) {
+                const list = byStage.get(s.stage_value) ?? [];
+                list.push(s);
+                byStage.set(s.stage_value, list);
+              }
+              return Array.from(byStage.entries()).map(([stageValue, items]) => {
+                const stage = stages.find((s) => s.value === stageValue);
+                return (
+                  <div key={stageValue} className="mb-2">
+                    <p className="px-2 py-1 text-[11px] font-medium text-muted-foreground">
+                      {stage?.label ?? stageValue}
+                    </p>
+                    <div className="space-y-0.5">
+                      {items.map((s) => {
+                        const checked = filters.substatusIds.includes(s.id);
+                        return (
+                          <label
+                            key={s.id}
+                            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted"
+                          >
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(v) =>
+                                setFilters((f) => ({
+                                  ...f,
+                                  substatusIds: v
+                                    ? [...f.substatusIds, s.id]
+                                    : f.substatusIds.filter((x) => x !== s.id),
+                                }))
+                              }
+                            />
+                            <span
+                              className={cn("h-1.5 w-1.5 rounded-full", !s.color && "bg-primary")}
+                              style={s.color ? { backgroundColor: s.color } : undefined}
+                            />
+                            <span className="flex-1 truncate">{s.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </FilterGroup>
+        )}
 
         <FilterGroup title="Responsável" defaultOpen>
           <OwnerFilter
