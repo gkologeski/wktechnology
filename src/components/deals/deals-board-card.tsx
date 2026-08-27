@@ -179,6 +179,20 @@ export function DealsBoardCard({
         </div>
       )}
 
+      {pipelineId && (
+        <div className="mt-1.5">
+          <SubstatusQuickPicker
+            table="deals"
+            rowId={deal.id}
+            pipelineId={pipelineId}
+            stageValue={columnId ?? deal.stage_id ?? String(deal.stage)}
+            value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
+            canUpdate={canUpdateSubstatus}
+            onChanged={onSubstatusChanged}
+          />
+        </div>
+      )}
+
       {has("company") && companyName && (
         <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[var(--hs-text-muted)] truncate">
           <Building2 className="h-3 w-3 shrink-0" />
