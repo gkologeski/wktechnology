@@ -13,6 +13,7 @@ import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { useEnsureDefaultPipeline } from "@/lib/pipelines";
 import { toast } from "sonner";
 import { useLeadStages, deriveLeadStatus, findLeadStage } from "@/lib/leads/stages";
+import { usePipelineSubstatuses } from "@/lib/pipelines/substatuses";
 
 import type { Lead } from "@/lib/db-types";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
@@ -111,8 +112,9 @@ function LeadsHubspotView() {
   const [actionBusy, setActionBusy] = useState(false);
 
   useEnsureDefaultPipeline("lead");
-  const { stages } = useLeadStages();
+  const { stages, pipelineId } = useLeadStages();
   const stagesKey = stages.map((s) => s.value).join(",");
+  const { data: substatuses = [] } = usePipelineSubstatuses(pipelineId);
 
   const savedViews = useSavedViews("leads");
   const [activeSavedId, setActiveSavedId] = useState<string | null>(null);
@@ -215,6 +217,7 @@ function LeadsHubspotView() {
     }
 
     if (filters.source.length > 0) q = q.in("source", filters.source);
+    if (filters.substatusIds.length > 0) q = q.in("stage_substatus_id", filters.substatusIds);
     if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
     if (filters.scoreMax < 100) q = q.lte("score", filters.scoreMax);
     if (filters.createdPreset !== "any") {
@@ -591,6 +594,7 @@ function LeadsHubspotView() {
           stages={stages}
           sourceOptions={sourceOptions}
           hasActiveFilters={hasActiveFilters}
+          substatusOptions={substatuses}
         />
 
         {/* Main panel */}

@@ -48,6 +48,7 @@ export const BASE_LEAD_KEYS = [
   "company_id",
   "status",
   "stage_id",
+  "stage_substatus_id",
   "source",
   "score",
 
@@ -63,6 +64,7 @@ export type SortDir = "asc" | "desc";
 
 export type Filters = {
   status: string[];
+  substatusIds: string[];
   source: string[];
   scoreMin: number;
   scoreMax: number;
@@ -74,6 +76,7 @@ export type Filters = {
 
 export const DEFAULT_FILTERS: Filters = {
   status: [],
+  substatusIds: [],
   source: [],
   scoreMin: 0,
   scoreMax: 100,
