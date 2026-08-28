@@ -408,7 +408,7 @@ function LeadDetail() {
               { key: "score", label: "Score", type: "number" },
               { key: "notes", label: "Notas" },
             ]}
-            onSaved={load}
+            onSaved={() => void handlePropertiesSaved()}
           />
         }
         center={
