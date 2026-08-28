@@ -423,7 +423,10 @@ export async function runApolloCascade(input: {
       domainSource = "email";
     }
   }
-  if (!domain && input.company_name) {
+  // A busca por nome consome crédito e é imprecisa. Quando existe LinkedIn do
+  // contato, o `people/match` já devolve a organização — então a busca por nome
+  // é dispensada e o domínio vem do próprio match, mais adiante.
+  if (!domain && input.company_name && !input.linkedin_url) {
     const found = await step("busca de domínio por nome", () =>
       apolloFindDomainByName(input.company_name!),
     );

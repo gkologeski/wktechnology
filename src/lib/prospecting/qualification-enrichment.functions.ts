@@ -178,10 +178,10 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const payload: EnrichmentSuggestions = {
       domain: result.domain,
       domainSource: result.domainSource,
-      personSignal: linkedin
-        ? "linkedin"
-        : !result.person
-          ? "none"
+      personSignal: !result.person
+        ? "none"
+        : linkedin
+          ? "linkedin"
           : lead.email
             ? "email"
             : "name_domain",
