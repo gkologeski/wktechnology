@@ -105,11 +105,15 @@ function LeadDetail() {
    * reenriquecer o lead (e refletir na empresa/contato vinculados).
    */
   const linkedinRef = useRef<string | null>(null);
+  const linkedinSeededFor = useRef<string | null>(null);
   useEffect(() => {
-    linkedinRef.current = linkedinUrlOrNull(lead?.linkedin_url ?? null);
-    // Só reancora ao trocar de lead; edições passam pelo handler abaixo.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+    if (linkedinSeededFor.current === id) return;
+    if (!lead) return;
+    // Ancora só quando o lead carrega (uma vez por id); edições passam pelo
+    // handler abaixo, que compara o valor antes/depois de salvar.
+    linkedinRef.current = linkedinUrlOrNull(lead.linkedin_url ?? null);
+    linkedinSeededFor.current = id;
+  }, [id, lead]);
 
   const handlePropertiesSaved = async () => {
     const before = linkedinRef.current;

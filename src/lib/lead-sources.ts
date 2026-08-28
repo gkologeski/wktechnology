@@ -60,7 +60,10 @@ export async function ensureLeadSource(
     },
     { onConflict: "owner_id,name" },
   );
-  if (error) throw new Error(error.message);
+  // Uma fonte com o mesmo nome (outra grafia ou outro dono) já pode existir no
+  // workspace — o índice único por (workspace_id, lower(name)) não é coberto
+  // pelo conflict target. Nesse caso a fonte já está cadastrada: não é erro.
+  if (error && error.code !== "23505") throw new Error(error.message);
 }
 
 export async function updateLeadSource(
