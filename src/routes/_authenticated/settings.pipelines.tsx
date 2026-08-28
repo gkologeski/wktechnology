@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -202,6 +202,12 @@ function PipelineEditor({
   );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Ao trocar de pipeline na lista, rola até o editor (que fica ao fim da página).
+  useEffect(() => {
+    rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [pipeline?.id]);
 
   useEffect(() => {
     setName(pipeline?.name ?? "");
@@ -316,7 +322,7 @@ function PipelineEditor({
   };
 
   return (
-    <Card>
+    <Card ref={rootRef} className="scroll-mt-20">
       <CardHeader>
         <CardTitle className="text-base">{isNew ? "Novo pipeline" : "Editar pipeline"}</CardTitle>
       </CardHeader>
@@ -379,113 +385,132 @@ function PipelineEditor({
           </div>
           <div className="rounded-md border divide-y">
             {stages.map((s, i) => (
-              <div key={i} className="p-3 grid gap-2 sm:grid-cols-12 items-end">
-                <div className="sm:col-span-3 space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Nome</Label>
-                  <Input
-                    value={s.label}
-                    onChange={(e) => {
-                      const label = e.target.value;
-                      // auto-sync value while creating new stage if value matches slug of previous label
-                      const prevSlug = slugify(s.label);
-                      updateStage(i, {
-                        label,
-                        value: s.value === prevSlug || !s.value ? slugify(label) : s.value,
-                      });
-                    }}
-                  />
-                </div>
-                <div className="sm:col-span-3 space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Identificador</Label>
-                  <Input
-                    value={s.value}
-                    onChange={(e) => updateStage(i, { value: e.target.value })}
-                  />
-                </div>
-                <div className="sm:col-span-2 space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Tipo</Label>
-                  <Select
-                    value={s.type ?? "open"}
-                    onValueChange={(v) => updateStage(i, { type: v as Stage["type"] })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="open">Aberto</SelectItem>
-                      <SelectItem value="won">Ganho</SelectItem>
-                      <SelectItem value="lost">Perdido</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="sm:col-span-1 space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Prob. %</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={s.probability ?? ""}
-                    onChange={(e) =>
-                      updateStage(i, {
-                        probability: e.target.value === "" ? undefined : Number(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-                <div className="sm:col-span-1 space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">SLA (h)</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={s.sla_hours ?? ""}
-                    onChange={(e) =>
-                      updateStage(i, {
-                        sla_hours: e.target.value === "" ? null : Number(e.target.value),
-                      })
-                    }
-                  />
-                </div>
-                <div className="sm:col-span-1 space-y-1">
-                  <Label className="text-[10px] text-muted-foreground">Cor</Label>
-                  <Input
-                    value={s.color ?? ""}
-                    placeholder="var(--…) ou #hex"
-                    onChange={(e) => updateStage(i, { color: e.target.value })}
-                  />
-                </div>
-                <div className="sm:col-span-1 flex gap-1 justify-end">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => move(i, -1)}
-                    disabled={i === 0}
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => move(i, 1)}
-                    disabled={i === stages.length - 1}
-                  >
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={() => removeStage(i)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-                {pipeline?.id && s.value ? (
-                  <div className="sm:col-span-12">
-                    <StageSubstatusesEditor
-                      pipelineId={pipeline.id}
-                      stageValue={s.value}
-                      stageLabel={s.label || s.value}
-                      stageType={s.type ?? "open"}
-                      canManage={canManageSubstatus}
+              <div key={i} className="p-3 space-y-3">
+                {/* Linha 1: identidade da etapa + ações */}
+                <div className="grid gap-2 sm:grid-cols-12 items-end">
+                  <div className="sm:col-span-6 space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Nome</Label>
+                    <Input
+                      value={s.label}
+                      onChange={(e) => {
+                        const label = e.target.value;
+                        // auto-sync value while creating new stage if value matches slug of previous label
+                        const prevSlug = slugify(s.label);
+                        updateStage(i, {
+                          label,
+                          value: s.value === prevSlug || !s.value ? slugify(label) : s.value,
+                        });
+                      }}
                     />
                   </div>
+                  <div className="sm:col-span-3 space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Tipo</Label>
+                    <Select
+                      value={s.type ?? "open"}
+                      onValueChange={(v) => updateStage(i, { type: v as Stage["type"] })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="open">Aberto</SelectItem>
+                        <SelectItem value="won">Ganho</SelectItem>
+                        <SelectItem value="lost">Perdido</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="sm:col-span-3 flex gap-1 justify-end">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Mover etapa para cima"
+                      onClick={() => move(i, -1)}
+                      disabled={i === 0}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Mover etapa para baixo"
+                      onClick={() => move(i, 1)}
+                      disabled={i === stages.length - 1}
+                    >
+                      <ArrowDown className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label="Remover etapa"
+                      onClick={() => removeStage(i)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                {/* Linha 2: metadados numéricos e cor, com larguras mínimas reais */}
+                <div className="grid gap-2 sm:grid-cols-12 items-end">
+                  <div className="sm:col-span-4 space-y-1 min-w-0">
+                    <Label className="text-[10px] text-muted-foreground">Identificador</Label>
+                    <Input
+                      value={s.value}
+                      onChange={(e) => updateStage(i, { value: e.target.value })}
+                    />
+                  </div>
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">Prob. %</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={s.probability ?? ""}
+                      onChange={(e) =>
+                        updateStage(i, {
+                          probability: e.target.value === "" ? undefined : Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="sm:col-span-2 space-y-1">
+                    <Label className="text-[10px] text-muted-foreground">SLA (h)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={s.sla_hours ?? ""}
+                      onChange={(e) =>
+                        updateStage(i, {
+                          sla_hours: e.target.value === "" ? null : Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="sm:col-span-4 space-y-1 min-w-0">
+                    <Label className="text-[10px] text-muted-foreground">Cor</Label>
+                    <div className="flex items-center gap-2">
+                      <span
+                        aria-hidden="true"
+                        className="h-9 w-9 shrink-0 rounded-md border"
+                        style={{ background: s.color || "transparent" }}
+                      />
+                      <Input
+                        value={s.color ?? ""}
+                        placeholder="var(--…) ou #hex"
+                        className="min-w-0"
+                        onChange={(e) => updateStage(i, { color: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+                {pipeline?.id && s.value ? (
+                  <StageSubstatusesEditor
+                    pipelineId={pipeline.id}
+                    stageValue={s.value}
+                    stageLabel={s.label || s.value}
+                    stageType={s.type ?? "open"}
+                    canManage={canManageSubstatus}
+                  />
                 ) : (
-                  <p className="sm:col-span-12 text-[11px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground">
                     Salve o pipeline para configurar os substatus desta etapa.
                   </p>
                 )}
