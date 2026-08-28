@@ -43,7 +43,8 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { LEAD_KEYS, COMPANY_KEYS, CONTACT_KEYS, pick, onlyNew, applyEnrichmentToRecords } =
       await import("./qualification-enrichment.server");
-    const { normalizeLinkedinUrl, sameLinkedinUrl } = await import("./linkedin-url");
+    const { normalizeLinkedinUrl, sameLinkedinUrl, linkedinUrlOrNull } =
+      await import("./linkedin-url");
 
     // O LinkedIn digitado é validado aqui: entrada inválida vira erro claro
     // para a UI, em vez de consumir crédito do provedor com um sinal ruim.
