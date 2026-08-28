@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 import { useStageSubstatuses } from "@/lib/pipelines/substatuses";
 import { SubstatusBadge } from "./substatus-badge";
+import { SubstatusManageHint } from "./substatus-manage-hint";
 
 /**
  * Troca rápida de substatus a partir de um card do Kanban.
@@ -35,7 +36,11 @@ export function SubstatusQuickPicker({
   const [saving, setSaving] = useState(false);
   const current = all.find((s) => s.id === value) ?? null;
 
-  if (options.length === 0 && !current) return null;
+  // Etapa sem substatus: gestores veem um atalho para configurar; demais, nada.
+  if (options.length === 0 && !current) {
+    if (isLoading) return null;
+    return <SubstatusManageHint onClick={(e) => e.preventDefault?.()} />;
+  }
   if (!canUpdate) return <SubstatusBadge substatus={current} />;
 
   const apply = async (next: string | null) => {
