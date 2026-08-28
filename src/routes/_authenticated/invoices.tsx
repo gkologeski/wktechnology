@@ -17,7 +17,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CurrencyInput } from "@/components/ui/currency-input";
+import { CurrencyCommitInput } from "@/components/ui/currency-commit-input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -448,11 +448,11 @@ function CreateInvoiceDialog({
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="amount">Valor (BRL)</Label>
-            <CurrencyInput
+            <CurrencyCommitInput
               id="amount"
               currency="BRL"
               value={amount === "" ? null : Number(amount)}
-              onValueChange={(n) => setAmount(n === null ? "" : String(n))}
+              onCommit={(n) => setAmount(n === null ? "" : String(n))}
             />
           </div>
           <div className="space-y-1.5">

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CurrencyInput } from "@/components/ui/currency-input";
+import { CurrencyCommitInput } from "@/components/ui/currency-commit-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -292,9 +292,9 @@ function ServiceDetail() {
               </div>
               <div className="space-y-2">
                 <Label>Preço unitário</Label>
-                <CurrencyInput
+                <CurrencyCommitInput
                   value={unitPrice}
-                  onValueChange={(v) => setUnitPrice(typeof v === "number" ? v : 0)}
+                  onCommit={(v) => setUnitPrice(typeof v === "number" ? v : 0)}
                   currency={row.currency}
                 />
               </div>
