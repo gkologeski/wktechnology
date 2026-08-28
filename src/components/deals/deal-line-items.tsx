@@ -5,7 +5,7 @@ import { useCurrentUserId } from "@/hooks/use-current-user-id";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CurrencyInput } from "@/components/ui/currency-input";
+import { CurrencyCommitInput } from "@/components/ui/currency-commit-input";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { Wrench, Plus, Trash2, Pencil } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
