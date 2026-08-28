@@ -62,6 +62,10 @@ export function SourceCombobox({
   };
 
   const exists = sources.some((s) => s.name.toLowerCase() === search.trim().toLowerCase());
+  // Preferimos o rótulo cadastrado no catálogo; o de-para estático é fallback
+  // para valores vindos de integrações que ainda não estão no catálogo.
+  const selected = sources.find((s) => s.name === value);
+  const selectedLabel = selected ? sourceDisplayLabel(selected) : leadSourceLabel(value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -73,7 +77,7 @@ export function SourceCombobox({
           className="w-full justify-between font-normal"
         >
           <span className={cn(!value && "text-muted-foreground")}>
-            {value ? leadSourceLabel(value) : placeholder}
+            {value ? selectedLabel : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
