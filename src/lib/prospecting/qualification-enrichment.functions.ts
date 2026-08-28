@@ -68,8 +68,11 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const persist = data.persist !== false;
 
     // Grava o LinkedIn informado no lead (fonte da verdade para as próximas
-    // consultas) antes de decidir sobre cache.
-    let leadLinkedin = lead.linkedin_url ?? null;
+    // consultas) antes de decidir sobre cache. O valor vindo do cadastro é
+    // normalizado aqui para servir de sinal inicial — colagens fora do padrão
+    // (ou links que não são de perfil pessoal) são ignoradas em vez de virar
+    // uma consulta ruim.
+    let leadLinkedin = linkedinUrlOrNull(lead.linkedin_url);
     if (providedLinkedin && !sameLinkedinUrl(providedLinkedin, leadLinkedin)) {
       const { error: linkErr } = await supabase
         .from("leads")
