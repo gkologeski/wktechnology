@@ -77,8 +77,10 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
       stageEntities.size;
     if (total === 0) {
       setLabels((prev) => (prev.size === 0 ? prev : new Map()));
+      setLoaded(true);
       return;
     }
+    setLoaded(false);
     let cancelled = false;
     const next: LabelMap = new Map();
 
