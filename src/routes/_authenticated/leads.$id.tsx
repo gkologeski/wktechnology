@@ -99,48 +99,31 @@ function LeadDetail() {
   const pendingDealFn = useServerFn(getPendingDealIntent);
   const completeDealIntentFn = useServerFn(completeDealIntent);
   const tickWorkflows = useServerFn(triggerTickNow);
-  const enrichLead = useServerFn(enrichLeadForQualification);
 
   /**
-   * O LinkedIn é o sinal mais preciso da cascata Apollo. Guardamos o valor
-   * atual para detectar, após salvar as propriedades, que ele mudou — e então
-   * reenriquecer o lead (e refletir na empresa/contato vinculados).
+   * O LinkedIn é o sinal mais preciso da cascata Apollo. O hook abaixo dispara
+   * o enriquecimento apenas quando a URL normalizada muda, com um único toast.
    */
-  const linkedinRef = useRef<string | null>(null);
+  const reload = useCallback(async () => {
+    await load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+  const { enrichIfChanged } = useLinkedinEnrichment(id, reload);
+
+  // Ancora o valor já existente (uma vez por lead): abrir a tela não enriquece.
   const linkedinSeededFor = useRef<string | null>(null);
   useEffect(() => {
     if (linkedinSeededFor.current === id) return;
     if (!lead) return;
-    // Ancora só quando o lead carrega (uma vez por id); edições passam pelo
-    // handler abaixo, que compara o valor antes/depois de salvar.
-    linkedinRef.current = linkedinUrlOrNull(lead.linkedin_url ?? null);
+    markLinkedinEnriched(id, lead.linkedin_url ?? null);
     linkedinSeededFor.current = id;
   }, [id, lead]);
 
   const handlePropertiesSaved = async () => {
-    const before = linkedinRef.current;
     await load();
     const { data } = await supabase.from("leads").select("linkedin_url").eq("id", id).maybeSingle();
-    const after = linkedinUrlOrNull((data as { linkedin_url: string | null } | null)?.linkedin_url);
-    linkedinRef.current = after;
-    if (!after || sameLinkedinUrl(before, after)) return;
-    const toastId = toast.loading("LinkedIn atualizado — reenriquecendo o lead…");
-    try {
-      const result = await enrichLead({ data: { leadId: id, linkedinUrl: after, force: true } });
-      await load();
-      if (result.found) {
-        toast.success("Lead reenriquecido a partir do novo LinkedIn.", { id: toastId });
-      } else {
-        toast.info(result.warnings[0] ?? "Nenhum dado novo encontrado para este LinkedIn.", {
-          id: toastId,
-        });
-      }
-    } catch (e) {
-      // Enriquecimento é complementar: a edição já foi salva.
-      toast.error(e instanceof Error ? e.message : "Não foi possível reenriquecer o lead.", {
-        id: toastId,
-      });
-    }
+    const after = (data as { linkedin_url: string | null } | null)?.linkedin_url ?? null;
+    await enrichIfChanged(after);
   };
 
   /**
