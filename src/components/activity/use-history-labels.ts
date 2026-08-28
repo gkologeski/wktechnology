@@ -23,6 +23,9 @@ const PIPELINE_ENTITY: Record<string, string> = {
 export function useHistoryLabels(rows: PropertyChangeRow[]) {
   const { nameFor } = useWorkspaceMembers();
   const [labels, setLabels] = useState<LabelMap>(new Map());
+  // Enquanto as consultas não terminam, evitamos o rótulo neutro (que seria
+  // exibido e depois substituído pelo nome real).
+  const [loaded, setLoaded] = useState(false);
 
   // IDs por tipo de referência, derivados das propriedades alteradas.
   const wanted = useMemo(() => {
