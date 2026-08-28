@@ -124,6 +124,36 @@ export function CreateLeadDialog({
     return () => clearTimeout(timer);
   }, [form.email, user]);
 
+  // Verifica se a empresa vinculada já possui domínio (sinal de enriquecimento).
+  useEffect(() => {
+    if (!company.id) {
+      setCompanyDomain(undefined);
+      setDomainInput("");
+      return;
+    }
+    let cancel = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, domain, website")
+        .eq("id", company.id!)
+        .maybeSingle();
+      if (cancel) return;
+      if (error || !data) {
+        setCompanyDomain(undefined);
+        return;
+      }
+      const existing =
+        (data.domain as string | null)?.trim() || (data.website as string | null)?.trim() || null;
+      setCompanyDomain(existing);
+      if (existing) setDomainInput("");
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [company.id]);
+
+
   const applyContact = () => {
     if (!matchedContact) return;
     setForm((f) => ({
