@@ -202,6 +202,12 @@ function PipelineEditor({
   );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Ao trocar de pipeline na lista, rola até o editor (que fica ao fim da página).
+  useEffect(() => {
+    rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [pipeline?.id]);
 
   useEffect(() => {
     setName(pipeline?.name ?? "");
