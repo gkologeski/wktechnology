@@ -49,6 +49,9 @@ import { LeadsViewTabs } from "@/components/leads/leads-view-tabs";
 import { LeadsFiltersSidebar } from "@/components/leads/leads-filters-sidebar";
 import { LeadsToolbar } from "@/components/leads/leads-toolbar";
 import { LeadsTable } from "@/components/leads/leads-table";
+import { LeadsBoard } from "@/components/leads/leads-board";
+import { Button } from "@/components/ui/button";
+import { LayoutGrid, Table as TableIcon } from "lucide-react";
 import { LeadsDialogs, type PendingAction } from "@/components/leads/leads-dialogs";
 import { useLeadColumns } from "@/components/leads/use-lead-columns";
 
@@ -83,6 +86,22 @@ function LeadsHubspotView() {
   const navigate = useNavigate();
 
   const [activeView, setActiveView] = useState<ViewId>("all");
+  const LEADS_VIEW_KEY = "leads:view";
+  const [viewMode, setViewMode] = useState<"table" | "board">(() => {
+    if (typeof window === "undefined") return "table";
+    try {
+      return localStorage.getItem(LEADS_VIEW_KEY) === "board" ? "board" : "table";
+    } catch {
+      return "table";
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(LEADS_VIEW_KEY, viewMode);
+    } catch {
+      /* storage indisponível */
+    }
+  }, [viewMode]);
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -470,6 +489,16 @@ function LeadsHubspotView() {
     });
   };
 
+  /** Nomes dos responsáveis exibidos nos cards do quadro. */
+  const ownerNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const r of rows) {
+      const id = (r as { owner_id?: string | null }).owner_id;
+      if (id && !map.has(id)) map.set(id, nameFor(id) ?? "—");
+    }
+    return map;
+  }, [rows, nameFor]);
+
   const refreshLeads = async () => {
     await qc.refetchQueries({
       predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === "leads",
@@ -626,27 +655,69 @@ function LeadsHubspotView() {
             onClearSelection={clearSelection}
             ColumnsButton={ColumnsButton}
             onExportCsv={exportCsv}
+            ViewToggle={
+              <div
+                className="flex items-center gap-1"
+                role="group"
+                aria-label="Modo de visualização"
+              >
+                <Button
+                  variant={viewMode === "table" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  aria-pressed={viewMode === "table"}
+                  onClick={() => setViewMode("table")}
+                >
+                  <TableIcon className="h-3.5 w-3.5 mr-1" /> Tabela
+                </Button>
+                <Button
+                  variant={viewMode === "board" ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  aria-pressed={viewMode === "board"}
+                  onClick={() => setViewMode("board")}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5 mr-1" /> Quadro
+                </Button>
+              </div>
+            }
           />
 
-          {/* Table */}
-          <div className="min-h-0 flex-1 overflow-auto">
-            <LeadsTable
-              visibleColumns={visibleColumns}
-              rows={rows}
-              isLoading={isLoading}
-              isError={isError}
-              listError={listError}
-              refetch={refetch}
-              allSelected={allSelected}
-              someSelected={someSelected}
-              selectedIds={selectedIds}
-              toggleAll={toggleAll}
-              toggleOne={toggleOne}
-              onOpenLead={(id) => navigate({ to: "/leads/$id", params: { id } })}
-              onConvertLead={convert}
-              onRemoveLead={removeOne}
-            />
-          </div>
+          {viewMode === "board" ? (
+            <div className="min-h-0 flex-1 overflow-hidden p-3">
+              {isLoading ? (
+                <p className="text-sm text-muted-foreground">Carregando leads…</p>
+              ) : (
+                <LeadsBoard
+                  stages={stages}
+                  pipelineId={pipelineId}
+                  leads={rows}
+                  ownerNames={ownerNameMap}
+                  onOpen={(id) => navigate({ to: "/leads/$id", params: { id } })}
+                  onRequestQualification={(id) => navigate({ to: "/leads/$id", params: { id } })}
+                />
+              )}
+            </div>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-auto">
+              <LeadsTable
+                visibleColumns={visibleColumns}
+                rows={rows}
+                isLoading={isLoading}
+                isError={isError}
+                listError={listError}
+                refetch={refetch}
+                allSelected={allSelected}
+                someSelected={someSelected}
+                selectedIds={selectedIds}
+                toggleAll={toggleAll}
+                toggleOne={toggleOne}
+                onOpenLead={(id) => navigate({ to: "/leads/$id", params: { id } })}
+                onConvertLead={convert}
+                onRemoveLead={removeOne}
+              />
+            </div>
+          )}
 
           {/* Pagination */}
           <TablePagination
