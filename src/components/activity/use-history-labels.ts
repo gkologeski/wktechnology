@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
-import { isUuid } from "@/lib/timeline/property-labels";
+import { NEUTRAL_LABELS, STAGE_VALUE_LABELS, isUuid } from "@/lib/timeline/property-labels";
 import type { PropertyChangeRow } from "@/lib/timeline/history-groups";
 
 type LabelMap = Map<string, string>;
@@ -153,9 +153,14 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
                 ? (p.stages as Array<Record<string, unknown>>)
                 : [];
               for (const st of stages) {
-                const value = String(st["value"] ?? st["id"] ?? "");
                 const label = String(st["label"] ?? "").trim();
-                if (value && label) next.set(`stage:${value}`, label);
+                if (!label) continue;
+                // Pipelines importados guardam o id do provedor em `value`;
+                // outros usam `id`. Indexamos as duas chaves.
+                for (const key of [st["value"], st["id"]]) {
+                  const raw = key === null || key === undefined ? "" : String(key);
+                  if (raw) next.set(`stage:${raw}`, label);
+                }
               }
             }
           }),
@@ -176,10 +181,12 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
     if (STAGE_PROPS.has(property)) {
       if (value === null || value === undefined || value === "") return null;
       const raw = String(value);
+      // 1) catálogo do pipeline; 2) enum pt-BR; 3) rótulo neutro.
       const label = labels.get(`stage:${raw}`);
       if (label) return label;
-      // IDs legados (importação) que não existem mais em nenhum pipeline.
-      if (/^\d{4,}$/.test(raw) || isUuid(raw)) return "Etapa anterior (importada)";
+      const enumLabel = STAGE_VALUE_LABELS[raw.toLowerCase()];
+      if (enumLabel) return enumLabel;
+      if (/^\d{4,}$/.test(raw) || isUuid(raw)) return NEUTRAL_LABELS.legacyStage;
       return null;
     }
     if (!isUuid(value)) return null;
@@ -187,7 +194,8 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
       const name = nameFor(value);
       return name && name !== "—" ? name : null;
     }
-    return labels.get(value) ?? null;
+    // UUID sem correspondência nunca deve aparecer cru na timeline.
+    return labels.get(value) ?? NEUTRAL_LABELS.missingRecord;
   };
 
   const resolveActor = (id: string | null) => (id ? nameFor(id) : "Sistema");
