@@ -106,6 +106,20 @@ export function labelProperty(key: string): string {
 
 export function labelValue(v: unknown): string {
   if (v === null || v === undefined || v === "") return "—";
+  if (typeof v === "boolean") return v ? "Sim" : "Não";
+  if (typeof v === "object") {
+    // Campos JSON (ex.: custom_fields) não devem virar "[object Object]".
+    if (Array.isArray(v)) return v.length === 0 ? "—" : `${v.length} item(ns)`;
+    const entries = Object.entries(v as Record<string, unknown>).filter(
+      ([, val]) => val !== null && val !== undefined && val !== "",
+    );
+    if (entries.length === 0) return "—";
+    return entries
+      .slice(0, 3)
+      .map(([k, val]) => `${labelProperty(k)}: ${labelValue(val)}`)
+      .join(", ")
+      .concat(entries.length > 3 ? ` +${entries.length - 3}` : "");
+  }
   const s = String(v);
   const key = s.toLowerCase();
   return VALUE_LABELS[key] ?? s;
