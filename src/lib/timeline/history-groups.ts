@@ -63,13 +63,14 @@ export function groupPropertyChanges(rows: PropertyChangeRow[]): HistoryGroup[] 
   return groups;
 }
 
-const STAGE_PROPS = ["stage", "stage_id"] as const;
+const STAGE_PROPS = ["stage_id", "stage"] as const;
 
 /**
  * Colapsa alterações redundantes de etapa dentro do mesmo grupo.
  *
  * O registro guarda `stage` (slug) e `stage_id` (slug ou id legado) para o
- * mesmo movimento. Mantemos apenas uma linha por par de valores.
+ * mesmo movimento. Mantemos uma linha por etapa de destino, preferindo
+ * `stage_id` (campo canônico usado por pipelines e kanban).
  */
 function dedupeStageChanges(changes: PropertyChangeRow[]): PropertyChangeRow[] {
   const stageRows = changes.filter((c) => STAGE_PROPS.includes(c.property as "stage"));
@@ -79,7 +80,7 @@ function dedupeStageChanges(changes: PropertyChangeRow[]): PropertyChangeRow[] {
   for (const property of STAGE_PROPS) {
     for (const row of stageRows) {
       if (row.property !== property) continue;
-      const key = `${String(row.old_value ?? "")}→${String(row.new_value ?? "")}`;
+      const key = String(row.new_value ?? "");
       if (seen.has(key)) continue;
       seen.add(key);
       kept.push(row);
