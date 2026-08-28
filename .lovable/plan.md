@@ -1,33 +1,38 @@
-# Plano: Tornar o substatus de negócios descobrível e verificável
+# Plano: Corrigir layout do editor de pipeline + finalizar descobribilidade de substatus
 
-## Diagnóstico (confirmado)
+## Diagnóstico (confirmado com screenshots)
 
-- A tabela `pipeline_stage_substatuses` está **vazia** — nenhum substatus foi cadastrado ainda.
-- Os componentes (`SubstatusSelect` no detalhe do negócio e `SubstatusQuickPicker` no card do Kanban) **se ocultam** quando a etapa não tem substatus. Por isso nada aparece nos negócios.
-- O editor existe apenas em **Configurações → Pipelines**, dentro da edição de cada etapa, e exige a permissão de gerenciar pipelines (`canManageSubstatus`).
+No editor de etapas em `src/routes/_authenticated/settings.pipelines.tsx` (grid `sm:grid-cols-12` por etapa):
+- **Nome** (col-span-3) trunca valores ("(RO) Realizando O…").
+- **Prob. %**, **SLA (h)** e **Cor** (col-span-1 cada) ficam estreitos demais — valores escondidos/cortados ("va" no lugar de `var(--…)`).
+- A linha da etapa mistura 6 campos + 3 botões de ação em uma única faixa, causando o aperto.
+- O editor abre como card inline ao fim da lista, sem rolar até ele.
 
 ## O que será implementado
 
-### 1. Cadastro inicial dos substatus
-Sem alteração de código: orientar o cadastro em Configurações → Pipelines → editar pipeline → bloco "Substatus da etapa" em cada etapa (já funciona hoje).
+### 1. Reorganizar a linha da etapa em duas linhas (settings.pipelines.tsx)
+- **Linha 1:** Nome (flex-1 / col-span maior), Tipo, botões de ação (↑ ↓ 🗑) alinhados à direita.
+- **Linha 2:** Identificador, Prob. %, SLA (h) e Cor com larguras mínimas reais (`min-w`) e spans maiores; campo Cor ganha um swatch de preview ao lado.
+- Manter labels acessíveis, foco visível e responsividade (mobile empilha tudo).
 
-### 2. Estado vazio com atalho (descobribilidade)
-- No detalhe do negócio (`deals.$id.tsx`) e no card do Kanban (`SubstatusQuickPicker`), quando a etapa não tiver substatus e o usuário **puder gerenciar pipelines**, exibir um link discreto "Configurar substatus da etapa" apontando para `/settings/pipelines`.
-- Quando o usuário não tiver a permissão, manter o comportamento atual (oculto).
+### 2. Ao abrir o editor, rolar até ele
+- `scrollIntoView` no card "Editar pipeline" ao selecionar um pipeline na lista.
 
-### 3. Indicação visual do substatus atual
-- Garantir que, havendo substatus definido, o badge apareça no card do Kanban, no detalhe do negócio e no filtro da lista (já existe; validar após o cadastro inicial).
+### 3. Finalizar descobribilidade de substatus (plano anterior, parcialmente aplicado)
+- Já feito nesta sessão: componente `SubstatusManageHint` e uso no `SubstatusSelect` (atalho "Configurar substatus desta etapa" → `/settings/pipelines`, visível só para quem tem permissão de gerenciar pipelines).
+- Falta: aplicar o mesmo hint no `SubstatusQuickPicker` (card do Kanban) quando a etapa não tem substatus.
+- Bônus no editor: o bloco "Substatus da etapa" já aparece por etapa; manter e garantir que o empty state indique claramente onde clicar ("Adicionar").
 
 ### 4. Validação
-- Cadastrar 2–3 substatus de exemplo em uma etapa do pipeline de negócios (via tela), atribuir a um negócio pelo Kanban e pelo detalhe, e conferir: badge no card, histórico em `SubstatusHistory` e filtro na toolbar da lista.
+- `tsgo` para tipos; screenshots via Playwright do editor antes/depois em 1280px e 768px; conferir que nenhum valor fica cortado e que o hint de substatus aparece no Kanban/detalhe quando a etapa está sem substatus.
 
 ## Detalhes técnicos
 
-- Arquivos tocados: `src/components/pipelines/substatus-quick-picker.tsx`, `src/components/pipelines/substatus-select.tsx` (prop opcional `manageHref` + empty-state condicional), e ponto de uso em `src/routes/_authenticated/deals.$id.tsx`.
-- Sem mudança de schema, RLS ou regra de negócio.
-- Verificação de permissão reutiliza `canAny(PIPELINES_MANAGE)` já usado em `settings.pipelines.tsx`.
+- Arquivos: `src/routes/_authenticated/settings.pipelines.tsx` (layout da linha de etapa + scroll), `src/components/pipelines/substatus-quick-picker.tsx` (hint), `src/components/pipelines/substatus-manage-hint.tsx` e `substatus-select.tsx` (já alterados).
+- Apenas JSX/classes utilitárias — sem mudança de schema, RLS ou regra de negócio.
+- Tokens semânticos existentes; nada de cores hardcoded.
 
 ## Fora de escopo
 
-- Automações/workflows disparados por substatus.
-- Edição em massa de substatus.
+- Renomear/limpar os identificadores numéricos importados (só exibição; não altera dados).
+- Drag-and-drop para reordenar etapas (hoje é por botões ↑ ↓).
