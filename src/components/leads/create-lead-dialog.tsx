@@ -183,6 +183,17 @@ export function CreateLeadDialog({
       toast.error("Email inválido");
       return;
     }
+    let linkedinUrl: string | null = null;
+    if (form.linkedin_url.trim()) {
+      const parsed = normalizeLinkedinUrl(form.linkedin_url);
+      if (!parsed.ok) {
+        setLinkedinError(parsed.error);
+        toast.error(parsed.error);
+        return;
+      }
+      linkedinUrl = parsed.url;
+      setLinkedinError(null);
+    }
     const phoneE164 = form.phone.trim() ? toE164(form.phone.trim()) : null;
     if (form.phone.trim() && !phoneE164) {
       toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
