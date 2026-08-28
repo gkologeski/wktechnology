@@ -173,7 +173,9 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
     }
 
     void Promise.allSettled(tasks).then(() => {
-      if (!cancelled) setLabels(next);
+      if (cancelled) return;
+      setLabels(next);
+      setLoaded(true);
     });
     return () => {
       cancelled = true;
@@ -191,7 +193,9 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
       if (label) return label;
       const enumLabel = STAGE_VALUE_LABELS[raw.toLowerCase()];
       if (enumLabel) return enumLabel;
-      if (/^\d{4,}$/.test(raw) || isUuid(raw)) return NEUTRAL_LABELS.legacyStage;
+      if (/^\d{4,}$/.test(raw) || isUuid(raw)) {
+        return loaded ? NEUTRAL_LABELS.legacyStage : "…";
+      }
       return null;
     }
     if (!isUuid(value)) return null;
@@ -200,7 +204,9 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
       return name && name !== "—" ? name : null;
     }
     // UUID sem correspondência nunca deve aparecer cru na timeline.
-    return labels.get(value) ?? NEUTRAL_LABELS.missingRecord;
+    const known = labels.get(value);
+    if (known) return known;
+    return loaded ? NEUTRAL_LABELS.missingRecord : "…";
   };
 
   const resolveActor = (id: string | null) => (id ? nameFor(id) : "Sistema");
