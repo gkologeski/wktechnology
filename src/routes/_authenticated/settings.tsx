@@ -393,7 +393,15 @@ function SettingsLayout() {
                     <button
                       type="button"
                       aria-current={active ? "page" : undefined}
-                      onClick={() => setGroupOverride(section.label)}
+                      onClick={() => {
+                        setGroupOverride(section.label);
+                        // Se a página aberta não pertence ao grupo escolhido,
+                        // abre a 1ª opção do grupo (que ganha o foco no submenu).
+                        const alreadyInGroup = section.tabs.some((t) => isActive(t.to));
+                        if (!alreadyInGroup && section.tabs[0]) {
+                          navigate({ to: section.tabs[0].to });
+                        }
+                      }}
                       className={cn(
                         "whitespace-nowrap rounded-t-lg px-3 py-2 text-sm transition-colors border-b-2",
                         active
