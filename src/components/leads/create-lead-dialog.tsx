@@ -347,6 +347,23 @@ export function CreateLeadDialog({
               />
             </div>
 
+            {company.id && companyDomain === null && (
+              <div className="space-y-1.5">
+                <Label htmlFor="company_domain">Site da empresa</Label>
+                <Input
+                  id="company_domain"
+                  value={domainInput}
+                  placeholder="empresa.com.br"
+                  aria-describedby="company_domain-hint"
+                  onChange={(e) => setDomainInput(e.target.value)}
+                />
+                <p id="company_domain-hint" className="text-[11px] text-muted-foreground">
+                  Esta empresa ainda não tem domínio. Informar o site permite enriquecer os dados da
+                  empresa.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label>Fonte</Label>
               <SourceCombobox
