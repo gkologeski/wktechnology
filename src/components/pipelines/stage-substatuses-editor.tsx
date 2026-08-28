@@ -220,14 +220,16 @@ export function StageSubstatusesEditor({
       </div>
 
       {canManage && aiOpen && (
-        <SubstatusAiSuggestDialog
-          open={aiOpen}
-          setOpen={setAiOpen}
-          pipelineId={pipelineId}
-          stageValue={stageValue}
-          stageLabel={stageLabel}
-          onApply={applyAiProposal}
-        />
+        <Suspense fallback={null}>
+          <SubstatusAiSuggestDialog
+            open={aiOpen}
+            setOpen={setAiOpen}
+            pipelineId={pipelineId}
+            stageValue={stageValue}
+            stageLabel={stageLabel}
+            onApply={applyAiProposal}
+          />
+        </Suspense>
       )}
 
 
