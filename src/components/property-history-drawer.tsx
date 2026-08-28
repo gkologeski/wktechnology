@@ -7,6 +7,8 @@ import { useHistoryLabels } from "@/components/activity/use-history-labels";
 
 type Row = {
   id: string;
+  entity: string;
+  entity_id: string;
   property: string;
   old_value: unknown;
   new_value: unknown;
