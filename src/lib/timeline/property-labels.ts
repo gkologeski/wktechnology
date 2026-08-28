@@ -87,6 +87,35 @@ export const VALUE_LABELS: Record<string, string> = {
   null: "—",
 };
 
+/**
+ * Rótulos das etapas de enum (`deal_stage`, `lead_status`) usados quando a
+ * etapa gravada no histórico não existe no catálogo do pipeline.
+ */
+export const STAGE_VALUE_LABELS: Record<string, string> = {
+  new: "Novo",
+  contacted: "Contatado",
+  contacting: "Contatando",
+  qualifying: "Qualificando",
+  qualified: "Qualificado",
+  disqualified: "Desqualificado",
+  unqualified: "Não qualificado",
+  nurturing: "Em nutrição",
+  proposal: "Proposta",
+  negotiation: "Negociação",
+  won: "Ganho",
+  lost: "Perdido",
+  open: "Aberto",
+  waiting: "Aguardando",
+  resolved: "Resolvido",
+  closed: "Fechado",
+};
+
+/** Rótulo neutro para IDs/hashes sem correspondência atual. */
+export const NEUTRAL_LABELS = {
+  legacyStage: "Etapa anterior (importada)",
+  missingRecord: "Registro removido",
+} as const;
+
 /** Propriedades tratadas como "movimentação" (destaque próprio na timeline). */
 export const MOVEMENT_PROPERTIES = new Set([
   "stage",

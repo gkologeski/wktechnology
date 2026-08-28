@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CurrencyInput } from "@/components/ui/currency-input";
+import { CurrencyCommitInput } from "@/components/ui/currency-commit-input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -354,9 +354,9 @@ function ContractDetail() {
             )}
             <div className="space-y-2">
               <Label>Valor total</Label>
-              <CurrencyInput
+              <CurrencyCommitInput
                 value={totalValue}
-                onValueChange={(v) => setTotalValue(typeof v === "number" ? v : 0)}
+                onCommit={(v) => setTotalValue(typeof v === "number" ? v : 0)}
                 currency={contract.currency ?? "BRL"}
               />
             </div>

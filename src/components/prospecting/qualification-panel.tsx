@@ -72,6 +72,7 @@ import {
 } from "@/lib/prospecting/qualification-enrichment.functions";
 import { EnrichmentSourcesCard } from "@/components/prospecting/enrichment-sources-card";
 import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
+import { markLinkedinEnriched } from "@/lib/prospecting/use-linkedin-enrichment";
 import { useLeadStages } from "@/lib/leads/stages";
 import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
@@ -253,6 +254,12 @@ export function QualificationPanel({
     if (linkedinTouched) return;
     setLinkedinInput(knownLinkedin ?? "");
   }, [knownLinkedin, linkedinTouched]);
+
+  // Registra a URL já usada aqui para que salvar propriedades na tela do lead
+  // não repita o enriquecimento (nem o toast) para o mesmo LinkedIn.
+  useEffect(() => {
+    if (knownLinkedin) markLinkedinEnriched(entityId, knownLinkedin);
+  }, [entityId, knownLinkedin]);
 
   /** Valida a URL e dispara o enriquecimento usando o LinkedIn como chave. */
   function enrichByLinkedin() {
