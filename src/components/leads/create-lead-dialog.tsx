@@ -63,12 +63,17 @@ export function CreateLeadDialog({
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
+    linkedin_url: "",
     email: "",
     phone: "",
     company_name: "",
     source: "",
   });
+  const [linkedinError, setLinkedinError] = useState<string | null>(null);
   const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
+  /** Domínio da empresa vinculada: null = sem domínio, undefined = desconhecido. */
+  const [companyDomain, setCompanyDomain] = useState<string | null | undefined>(undefined);
+  const [domainInput, setDomainInput] = useState("");
   const [matchedContact, setMatchedContact] = useState<ContactMatch | null>(null);
   const [showReuse, setShowReuse] = useState(false);
   const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
@@ -76,7 +81,18 @@ export function CreateLeadDialog({
   const lastCheckedEmail = useRef<string>("");
 
   const reset = () => {
-    setForm({ first_name: "", last_name: "", email: "", phone: "", company_name: "", source: "" });
+    setForm({
+      first_name: "",
+      last_name: "",
+      linkedin_url: "",
+      email: "",
+      phone: "",
+      company_name: "",
+      source: "",
+    });
+    setLinkedinError(null);
+    setCompanyDomain(undefined);
+    setDomainInput("");
     setCompany({ id: null, name: "" });
     setMatchedContact(null);
     setShowReuse(false);
