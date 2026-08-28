@@ -68,6 +68,7 @@ import { QualificationFieldLayoutDialog } from "@/components/prospecting/qualifi
 import { QualificationQuestionInput } from "@/components/prospecting/qualification-question-input";
 import {
   enrichLeadForQualification,
+  // (mantido no mesmo bloco de imports do módulo de enriquecimento)
   applyQualificationEnrichment,
 } from "@/lib/prospecting/qualification-enrichment.functions";
 import { EnrichmentSourcesCard } from "@/components/prospecting/enrichment-sources-card";
@@ -253,6 +254,12 @@ export function QualificationPanel({
     if (linkedinTouched) return;
     setLinkedinInput(knownLinkedin ?? "");
   }, [knownLinkedin, linkedinTouched]);
+
+  // Registra a URL já usada aqui para que salvar propriedades na tela do lead
+  // não repita o enriquecimento (nem o toast) para o mesmo LinkedIn.
+  useEffect(() => {
+    if (knownLinkedin) markLinkedinEnriched(entityId, knownLinkedin);
+  }, [entityId, knownLinkedin]);
 
   /** Valida a URL e dispara o enriquecimento usando o LinkedIn como chave. */
   function enrichByLinkedin() {
