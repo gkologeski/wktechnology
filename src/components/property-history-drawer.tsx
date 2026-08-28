@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { formatDateTime } from "@/lib/crm";
 import { labelProperty, labelValue } from "@/lib/timeline/property-labels";
+import { useHistoryLabels } from "@/components/activity/use-history-labels";
 
 type Row = {
   id: string;
@@ -38,6 +39,11 @@ export function PropertyHistoryDrawer({
       .then((r: { data: Row[] | null }) => setRows(r.data ?? []));
   }, [open, entity, entityId]);
 
+  // Resolve UUIDs (substatus, empresa, responsável…) para nomes legíveis.
+  const { resolveValue, resolveActor } = useHistoryLabels(rows);
+  const display = (property: string, raw: unknown) =>
+    resolveValue(property, raw) ?? labelValue(raw);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-[480px] sm:max-w-[480px] overflow-y-auto">
@@ -52,12 +58,12 @@ export function PropertyHistoryDrawer({
             <li key={h.id} className="rounded border p-3 text-sm">
               <div className="font-medium">{labelProperty(h.property)}</div>
               <div className="text-xs text-muted-foreground mt-1">
-                <span className="line-through">{labelValue(h.old_value)}</span>
+                <span className="line-through">{display(h.property, h.old_value)}</span>
                 {" → "}
-                <span className="text-foreground">{labelValue(h.new_value)}</span>
+                <span className="text-foreground">{display(h.property, h.new_value)}</span>
               </div>
               <div className="text-[11px] text-muted-foreground mt-1">
-                {formatDateTime(h.changed_at)}
+                {resolveActor(h.changed_by)} · {formatDateTime(h.changed_at)}
               </div>
             </li>
           ))}
