@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useStageSubstatuses } from "@/lib/pipelines/substatuses";
+import { SubstatusManageHint } from "./substatus-manage-hint";
 
 const NONE = "__none__";
 
@@ -43,7 +44,11 @@ export function SubstatusSelect({
       </p>
     );
   }
-  if (options.length === 0 && hideWhenEmpty) return null;
+  if (options.length === 0 && hideWhenEmpty) {
+    if (value) return null;
+    // Etapa sem substatus: mostra atalho de configuração para gestores.
+    return <SubstatusManageHint className={className} />;
+  }
 
   const current = value && options.some((o) => o.id === value) ? value : NONE;
 
