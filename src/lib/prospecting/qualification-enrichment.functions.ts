@@ -43,7 +43,8 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { LEAD_KEYS, COMPANY_KEYS, CONTACT_KEYS, pick, onlyNew, applyEnrichmentToRecords } =
       await import("./qualification-enrichment.server");
-    const { normalizeLinkedinUrl, sameLinkedinUrl } = await import("./linkedin-url");
+    const { normalizeLinkedinUrl, sameLinkedinUrl, linkedinUrlOrNull } =
+      await import("./linkedin-url");
 
     // O LinkedIn digitado é validado aqui: entrada inválida vira erro claro
     // para a UI, em vez de consumir crédito do provedor com um sinal ruim.
@@ -67,8 +68,11 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const persist = data.persist !== false;
 
     // Grava o LinkedIn informado no lead (fonte da verdade para as próximas
-    // consultas) antes de decidir sobre cache.
-    let leadLinkedin = lead.linkedin_url ?? null;
+    // consultas) antes de decidir sobre cache. O valor vindo do cadastro é
+    // normalizado aqui para servir de sinal inicial — colagens fora do padrão
+    // (ou links que não são de perfil pessoal) são ignoradas em vez de virar
+    // uma consulta ruim.
+    let leadLinkedin = linkedinUrlOrNull(lead.linkedin_url);
     if (providedLinkedin && !sameLinkedinUrl(providedLinkedin, leadLinkedin)) {
       const { error: linkErr } = await supabase
         .from("leads")
@@ -178,10 +182,10 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     const payload: EnrichmentSuggestions = {
       domain: result.domain,
       domainSource: result.domainSource,
-      personSignal: linkedin
-        ? "linkedin"
-        : !result.person
-          ? "none"
+      personSignal: !result.person
+        ? "none"
+        : linkedin
+          ? "linkedin"
           : lead.email
             ? "email"
             : "name_domain",
