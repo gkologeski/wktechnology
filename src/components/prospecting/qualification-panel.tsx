@@ -70,6 +70,7 @@ import {
   enrichLeadForQualification,
   applyQualificationEnrichment,
 } from "@/lib/prospecting/qualification-enrichment.functions";
+import { EnrichmentSourcesCard } from "@/components/prospecting/enrichment-sources-card";
 import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
 import { useLeadStages } from "@/lib/leads/stages";
 import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
