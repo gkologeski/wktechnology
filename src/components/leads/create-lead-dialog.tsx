@@ -31,6 +31,7 @@ import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialo
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
+import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
@@ -63,12 +64,17 @@ export function CreateLeadDialog({
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
+    linkedin_url: "",
     email: "",
     phone: "",
     company_name: "",
     source: "",
   });
+  const [linkedinError, setLinkedinError] = useState<string | null>(null);
   const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
+  /** Domínio da empresa vinculada: null = sem domínio, undefined = desconhecido. */
+  const [companyDomain, setCompanyDomain] = useState<string | null | undefined>(undefined);
+  const [domainInput, setDomainInput] = useState("");
   const [matchedContact, setMatchedContact] = useState<ContactMatch | null>(null);
   const [showReuse, setShowReuse] = useState(false);
   const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
@@ -76,7 +82,18 @@ export function CreateLeadDialog({
   const lastCheckedEmail = useRef<string>("");
 
   const reset = () => {
-    setForm({ first_name: "", last_name: "", email: "", phone: "", company_name: "", source: "" });
+    setForm({
+      first_name: "",
+      last_name: "",
+      linkedin_url: "",
+      email: "",
+      phone: "",
+      company_name: "",
+      source: "",
+    });
+    setLinkedinError(null);
+    setCompanyDomain(undefined);
+    setDomainInput("");
     setCompany({ id: null, name: "" });
     setMatchedContact(null);
     setShowReuse(false);
@@ -108,6 +125,35 @@ export function CreateLeadDialog({
     return () => clearTimeout(timer);
   }, [form.email, user]);
 
+  // Verifica se a empresa vinculada já possui domínio (sinal de enriquecimento).
+  useEffect(() => {
+    if (!company.id) {
+      setCompanyDomain(undefined);
+      setDomainInput("");
+      return;
+    }
+    let cancel = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("companies")
+        .select("id, domain, website")
+        .eq("id", company.id!)
+        .maybeSingle();
+      if (cancel) return;
+      if (error || !data) {
+        setCompanyDomain(undefined);
+        return;
+      }
+      const existing =
+        (data.domain as string | null)?.trim() || (data.website as string | null)?.trim() || null;
+      setCompanyDomain(existing);
+      if (existing) setDomainInput("");
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, [company.id]);
+
   const applyContact = () => {
     if (!matchedContact) return;
     setForm((f) => ({
@@ -137,6 +183,17 @@ export function CreateLeadDialog({
       toast.error("Email inválido");
       return;
     }
+    let linkedinUrl: string | null = null;
+    if (form.linkedin_url.trim()) {
+      const parsed = normalizeLinkedinUrl(form.linkedin_url);
+      if (!parsed.ok) {
+        setLinkedinError(parsed.error);
+        toast.error(parsed.error);
+        return;
+      }
+      linkedinUrl = parsed.url;
+      setLinkedinError(null);
+    }
     const phoneE164 = form.phone.trim() ? toE164(form.phone.trim()) : null;
     if (form.phone.trim() && !phoneE164) {
       toast.error("Telefone inválido. Use o formato E.164 (ex.: +5511999998888).");
@@ -160,6 +217,7 @@ export function CreateLeadDialog({
           status: "new",
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim() || null,
+          linkedin_url: linkedinUrl,
           email: form.email.trim() || null,
           phone: phoneE164,
           company_id: company.id ?? null,
@@ -169,6 +227,23 @@ export function CreateLeadDialog({
         .select("id")
         .single();
       if (error) throw error;
+      // Completa o domínio da empresa vinculada (só quando ainda estiver vazio)
+      const domainToSave = domainInput.trim();
+      if (company.id && !companyDomain && domainToSave) {
+        const normalized = domainToSave
+          .replace(/^https?:\/\//i, "")
+          .replace(/^www\./i, "")
+          .replace(/\/.*$/, "")
+          .trim()
+          .toLowerCase();
+        if (normalized) {
+          await supabase
+            .from("companies")
+            .update({ domain: normalized })
+            .eq("id", company.id)
+            .is("domain", null);
+        }
+      }
       // Garante empresa e contato vinculados ao lead recém-criado
       await ensureLeadRelationsSafe(supabase, data!.id);
       // Persiste fonte nova no catálogo
@@ -225,6 +300,23 @@ export function CreateLeadDialog({
               </div>
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="linkedin_url">LinkedIn</Label>
+              <Input
+                id="linkedin_url"
+                value={form.linkedin_url}
+                placeholder="https://www.linkedin.com/in/nome-sobrenome"
+                aria-invalid={linkedinError ? true : undefined}
+                aria-describedby="linkedin_url-hint"
+                onChange={(e) => {
+                  setLinkedinError(null);
+                  setForm({ ...form, linkedin_url: e.target.value });
+                }}
+              />
+              <p id="linkedin_url-hint" className="text-[11px] text-muted-foreground">
+                {linkedinError ?? "Opcional. Melhora a precisão do enriquecimento na qualificação."}
+              </p>
+            </div>
+            <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
               <EmailInput
                 id="email"
@@ -253,6 +345,23 @@ export function CreateLeadDialog({
                 }}
               />
             </div>
+
+            {company.id && companyDomain === null && (
+              <div className="space-y-1.5">
+                <Label htmlFor="company_domain">Site da empresa</Label>
+                <Input
+                  id="company_domain"
+                  value={domainInput}
+                  placeholder="empresa.com.br"
+                  aria-describedby="company_domain-hint"
+                  onChange={(e) => setDomainInput(e.target.value)}
+                />
+                <p id="company_domain-hint" className="text-[11px] text-muted-foreground">
+                  Esta empresa ainda não tem domínio. Informar o site permite enriquecer os dados da
+                  empresa.
+                </p>
+              </div>
+            )}
 
             <div className="space-y-1.5">
               <Label>Fonte</Label>

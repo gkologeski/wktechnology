@@ -55,7 +55,10 @@ async function resolveTargets(person: ApolloWebhookPerson): Promise<Target[]> {
   const linkedin = linkedinUrlOrNull(person.linkedin_url);
   const personId = person.id?.trim() ?? null;
 
-  const fromReveals = async (column: "apollo_person_id" | "linkedin_url" | "email", value: string) => {
+  const fromReveals = async (
+    column: "apollo_person_id" | "linkedin_url" | "email",
+    value: string,
+  ) => {
     const { data } = await supabase
       .from("apollo_phone_reveals")
       .select("id, entity_type, entity_id")

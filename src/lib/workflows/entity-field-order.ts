@@ -71,8 +71,10 @@ const ORDER: OrderMap = {
   leads: [
     "first_name",
     "last_name",
+    "linkedin_url",
     "email",
     "phone",
+    "mobile_phone",
     "company_name",
     "company_id",
     "source",

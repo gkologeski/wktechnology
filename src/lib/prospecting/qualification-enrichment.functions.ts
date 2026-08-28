@@ -101,9 +101,8 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
           });
         }
         // O telefone pode ainda estar em revelação assíncrona na Apollo.
-        const { hasPendingApolloReveal } = await import(
-          "@/lib/integrations/apollo-phone-reveal.server"
-        );
+        const { hasPendingApolloReveal } =
+          await import("@/lib/integrations/apollo-phone-reveal.server");
         payload.phoneRevealPending =
           !lead.mobile_phone && (await hasPendingApolloReveal("lead", data.leadId));
         return payload;
@@ -203,16 +202,13 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     // chaves de correlação (id Apollo, LinkedIn, e-mail) para que o webhook
     // grave o celular no lead/contato mesmo sem e-mail no cadastro.
     if (result.phoneRevealRequested && lead.workspace_id) {
-      const { registerApolloPhoneReveals } = await import(
-        "@/lib/integrations/apollo-phone-reveal.server"
-      );
+      const { registerApolloPhoneReveals } =
+        await import("@/lib/integrations/apollo-phone-reveal.server");
       const targets: Array<{
         workspaceId: string;
         entityType: "lead" | "contact";
         entityId: string;
-      }> = [
-        { workspaceId: lead.workspace_id, entityType: "lead", entityId: data.leadId },
-      ];
+      }> = [{ workspaceId: lead.workspace_id, entityType: "lead", entityId: data.leadId }];
       if (lead.converted_contact_id) {
         targets.push({
           workspaceId: lead.workspace_id,
@@ -228,12 +224,9 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
       });
       // Só sinaliza "aguardando" quando o número ainda não veio.
       const alreadyHasMobile =
-        !!lead.mobile_phone ||
-        !!leadSuggestions.mobile_phone ||
-        !!contactSuggestions.mobile_phone;
+        !!lead.mobile_phone || !!leadSuggestions.mobile_phone || !!contactSuggestions.mobile_phone;
       payload.phoneRevealPending = pending > 0 && !alreadyHasMobile;
     }
-
 
     // Só cacheia quando houve ganho real — sem isso, uma nova tentativa
     // (após preencher o site da empresa, por ex.) ficaria bloqueada 30 dias.
