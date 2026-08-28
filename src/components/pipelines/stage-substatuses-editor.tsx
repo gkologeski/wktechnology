@@ -47,6 +47,7 @@ export function StageSubstatusesEditor({
   const invalidate = useInvalidateSubstatuses();
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
 
   /** Aplica a nova ordem direto no cache, para a lista reagir na hora. */
   const reorderLocally = (ids: string[]) => {
