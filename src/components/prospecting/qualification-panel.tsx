@@ -68,11 +68,11 @@ import { QualificationFieldLayoutDialog } from "@/components/prospecting/qualifi
 import { QualificationQuestionInput } from "@/components/prospecting/qualification-question-input";
 import {
   enrichLeadForQualification,
-  // (mantido no mesmo bloco de imports do módulo de enriquecimento)
   applyQualificationEnrichment,
 } from "@/lib/prospecting/qualification-enrichment.functions";
 import { EnrichmentSourcesCard } from "@/components/prospecting/enrichment-sources-card";
 import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
+import { markLinkedinEnriched } from "@/lib/prospecting/use-linkedin-enrichment";
 import { useLeadStages } from "@/lib/leads/stages";
 import { PermissionDeniedError } from "@/lib/access-control/rls-denied";
 import { handlePermissionError } from "@/lib/access-control/handle-permission-error";
