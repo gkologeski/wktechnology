@@ -63,6 +63,21 @@ export type SuggestionMap = Record<string, SuggestionValue>;
 /** Sinal usado para localizar a pessoa no provedor. */
 export type PersonSignal = "linkedin" | "email" | "name_domain" | "none";
 
+/** Procedência de um campo preenchido pelo enriquecimento. */
+export type FieldSource =
+  | "linkedin"
+  | "email_domain"
+  | "name_domain"
+  | "company_domain"
+  | "manual";
+
+/** Procedência por coluna, agrupada por entidade. */
+export type FieldSourceMap = {
+  lead: Record<string, FieldSource>;
+  companies: Record<string, FieldSource>;
+  contacts: Record<string, FieldSource>;
+};
+
 export type EnrichmentSuggestions = {
   domain: string | null;
   domainSource: string | null;
@@ -83,9 +98,50 @@ export type EnrichmentSuggestions = {
   lead: SuggestionMap;
   companies: SuggestionMap;
   contacts: SuggestionMap;
+  /** Procedência de cada campo sugerido (exibida no painel). */
+  fieldSources?: FieldSourceMap;
   /** Colunas efetivamente gravadas no banco por entidade. */
   applied?: Record<string, string[]>;
 };
+
+/**
+ * Deriva a procedência de cada campo sugerido: dados da pessoa herdam o sinal
+ * do match (LinkedIn, e-mail corporativo, nome + domínio) e dados da empresa
+ * vêm do domínio resolvido. O LinkedIn digitado pelo usuário é "manual".
+ */
+export function buildFieldSources(args: {
+  lead: SuggestionMap;
+  companies: SuggestionMap;
+  contacts: SuggestionMap;
+  personSignal: PersonSignal;
+  /** Campos que vieram da empresa (Apollo organization), não da pessoa. */
+  companyDerivedKeys?: readonly string[];
+  /** LinkedIn informado manualmente nesta execução. */
+  linkedinFromUser?: boolean;
+}): FieldSourceMap {
+  const personSource: FieldSource =
+    args.personSignal === "linkedin"
+      ? "linkedin"
+      : args.personSignal === "email"
+        ? "email_domain"
+        : "name_domain";
+  const companyDerived = new Set(args.companyDerivedKeys ?? ["company_name", "website"]);
+
+  const forPerson = (map: SuggestionMap): Record<string, FieldSource> => {
+    const out: Record<string, FieldSource> = {};
+    for (const key of Object.keys(map)) {
+      if (key === "linkedin_url") out[key] = args.linkedinFromUser ? "manual" : "linkedin";
+      else if (companyDerived.has(key)) out[key] = "company_domain";
+      else out[key] = personSource;
+    }
+    return out;
+  };
+
+  const companies: Record<string, FieldSource> = {};
+  for (const key of Object.keys(args.companies)) companies[key] = "company_domain";
+
+  return { lead: forPerson(args.lead), companies, contacts: forPerson(args.contacts) };
+}
 
 /** Copia apenas as chaves permitidas com valores primitivos preenchidos. */
 export function pick(

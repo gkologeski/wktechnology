@@ -371,7 +371,7 @@ export async function apolloPeopleMatch(input: {
 
 export type ApolloCascadeResult = {
   domain: string | null;
-  domainSource: "website" | "email" | "company_search" | null;
+  domainSource: "website" | "email" | "company_search" | "linkedin" | null;
   person: ApolloPersonData | null;
   company: ApolloCompanyData | null;
   /** Id da pessoa na Apollo (correlação da entrega assíncrona de telefone). */
@@ -468,7 +468,9 @@ export async function runApolloCascade(input: {
   if (!company && matched?.company) company = matched.company;
   if (!domain && company?.domain) {
     domain = company.domain;
-    domainSource = "company_search";
+    // Quando o domínio veio junto do match da pessoa, a procedência real é o
+    // sinal usado nesse match (LinkedIn/e-mail), não uma busca por nome.
+    domainSource = input.linkedin_url ? "linkedin" : matched?.company ? "email" : "company_search";
   }
 
   // A Apollo nunca devolve telefone na resposta do match: ele chega depois,
