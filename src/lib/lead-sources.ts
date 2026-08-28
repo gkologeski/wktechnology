@@ -71,7 +71,7 @@ export async function updateLeadSource(
   id: string,
   patch: { name?: string; label?: string | null; active?: boolean },
 ): Promise<void> {
-  const values: Record<string, unknown> = {};
+  const values: { name?: string; label?: string | null; active?: boolean } = {};
   if (patch.name !== undefined) {
     const name = patch.name.trim();
     if (!name) throw new Error("Informe o nome da fonte.");
