@@ -141,7 +141,6 @@ export function apolloPhoneWebhookUrl(): string | null {
 export const APOLLO_PHONE_WEBHOOK_MISSING =
   "Revelação de telefone desativada: configure APOLLO_WEBHOOK_SECRET (e um host público https) para receber os números da Apollo.";
 
-
 export class ApolloNotConfiguredError extends Error {
   constructor() {
     super("Apollo.io não conectado. Conecte o Apollo em Configurações → Conectores.");
@@ -472,7 +471,11 @@ export async function runApolloCascade(input: {
   // A Apollo nunca devolve telefone na resposta do match: ele chega depois,
   // pelo webhook. Se a revelação não pôde ser pedida, isso é dito
   // explicitamente para não parecer "a Apollo não tem o número".
-  if (matched && !matched.phoneRevealRequested && !warnings.includes(APOLLO_PHONE_WEBHOOK_MISSING)) {
+  if (
+    matched &&
+    !matched.phoneRevealRequested &&
+    !warnings.includes(APOLLO_PHONE_WEBHOOK_MISSING)
+  ) {
     warnings.push(APOLLO_PHONE_WEBHOOK_MISSING);
   }
 
@@ -486,4 +489,3 @@ export async function runApolloCascade(input: {
     warnings,
   };
 }
-

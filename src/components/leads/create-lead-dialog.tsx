@@ -154,7 +154,6 @@ export function CreateLeadDialog({
     };
   }, [company.id]);
 
-
   const applyContact = () => {
     if (!matchedContact) return;
     setForm((f) => ({

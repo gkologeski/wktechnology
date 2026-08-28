@@ -71,9 +71,7 @@ export async function registerApolloPhoneReveals(
           .from("apollo_phone_reveals")
           .update(patch as never)
           .eq("id", row.id)
-      : await supabase
-          .from("apollo_phone_reveals")
-          .insert(patch as never);
+      : await supabase.from("apollo_phone_reveals").insert(patch as never);
     if (!error) pending += 1;
     else console.warn(`[apollo] registro de revelação falhou: ${error.message}`);
   }
