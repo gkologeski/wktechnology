@@ -275,6 +275,8 @@ function SettingsLayout() {
   const path = useLocation({ select: (l) => l.pathname });
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  // Grupo de configuração escolhido manualmente nas abas (null = segue a rota).
+  const [groupOverride, setGroupOverride] = useState<string | null>(null);
   const { isAdmin, isManager } = useMyRole();
   const { isPlatformAdmin } = useIsPlatformAdmin();
 
@@ -326,7 +328,6 @@ function SettingsLayout() {
     allowedSections.find((s) => s.tabs.some((t) => t.to === currentValue))?.label ??
     allowedSections[0]?.label ??
     "";
-  const [groupOverride, setGroupOverride] = useState<string | null>(null);
   const searching = query.trim().length > 0;
   const currentGroup =
     groupOverride && allowedSections.some((s) => s.label === groupOverride)
