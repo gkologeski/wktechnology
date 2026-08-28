@@ -24,8 +24,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { QualificationPanel } from "@/components/prospecting/qualification-panel";
-import { enrichLeadForQualification } from "@/lib/prospecting/qualification-enrichment.functions";
-import { linkedinUrlOrNull, sameLinkedinUrl } from "@/lib/prospecting/linkedin-url";
+import {
+  markLinkedinEnriched,
+  useLinkedinEnrichment,
+} from "@/lib/prospecting/use-linkedin-enrichment";
 import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
 import { getPendingSurveyActivity } from "@/lib/surveys/survey-activity.functions";
 import {
