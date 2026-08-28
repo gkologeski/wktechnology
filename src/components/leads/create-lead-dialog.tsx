@@ -31,6 +31,7 @@ import { QuickCreateCompanyDialog } from "@/components/record/quick-create-dialo
 import { ensureLeadSource } from "@/lib/lead-sources";
 import { ensureLeadRelationsSafe } from "@/lib/leads/lead-relations";
 import { checkLeadDuplicate } from "@/lib/leads/lead-duplicate-check";
+import { normalizeLinkedinUrl } from "@/lib/prospecting/linkedin-url";
 import { isEmail, toE164 } from "@/lib/validators";
 import { useToastCreated } from "@/lib/toast-nav";
 import { OnboardingGuidedEntry } from "@/components/onboarding/onboarding-guided-entry";
@@ -217,6 +218,7 @@ export function CreateLeadDialog({
           status: "new",
           first_name: form.first_name.trim(),
           last_name: form.last_name.trim() || null,
+          linkedin_url: linkedinUrl,
           email: form.email.trim() || null,
           phone: phoneE164,
           company_id: company.id ?? null,
@@ -226,6 +228,23 @@ export function CreateLeadDialog({
         .select("id")
         .single();
       if (error) throw error;
+      // Completa o domínio da empresa vinculada (só quando ainda estiver vazio)
+      const domainToSave = domainInput.trim();
+      if (company.id && !companyDomain && domainToSave) {
+        const normalized = domainToSave
+          .replace(/^https?:\/\//i, "")
+          .replace(/^www\./i, "")
+          .replace(/\/.*$/, "")
+          .trim()
+          .toLowerCase();
+        if (normalized) {
+          await supabase
+            .from("companies")
+            .update({ domain: normalized })
+            .eq("id", company.id)
+            .is("domain", null);
+        }
+      }
       // Garante empresa e contato vinculados ao lead recém-criado
       await ensureLeadRelationsSafe(supabase, data!.id);
       // Persiste fonte nova no catálogo
@@ -280,6 +299,23 @@ export function CreateLeadDialog({
                   onChange={(e) => setForm({ ...form, last_name: e.target.value })}
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="linkedin_url">LinkedIn</Label>
+              <Input
+                id="linkedin_url"
+                value={form.linkedin_url}
+                placeholder="https://www.linkedin.com/in/nome-sobrenome"
+                aria-invalid={linkedinError ? true : undefined}
+                aria-describedby="linkedin_url-hint"
+                onChange={(e) => {
+                  setLinkedinError(null);
+                  setForm({ ...form, linkedin_url: e.target.value });
+                }}
+              />
+              <p id="linkedin_url-hint" className="text-[11px] text-muted-foreground">
+                {linkedinError ?? "Opcional. Melhora a precisão do enriquecimento na qualificação."}
+              </p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
