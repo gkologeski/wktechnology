@@ -26,6 +26,7 @@ export function LeadsToolbar({
   onBulkEdit,
   onClearSelection,
   ColumnsButton,
+  ViewToggle,
   onExportCsv,
 }: {
   search: string;
@@ -44,6 +45,8 @@ export function LeadsToolbar({
   onBulkEdit: () => void;
   onClearSelection: () => void;
   ColumnsButton: React.ComponentType;
+  /** Alternador Tabela/Quadro renderizado à direita da barra. */
+  ViewToggle?: React.ReactNode;
   onExportCsv: () => void;
 }) {
   return (
@@ -118,6 +121,7 @@ export function LeadsToolbar({
         </div>
       ) : (
         <div className="flex items-center gap-1.5">
+          {ViewToggle}
           <ColumnsButton />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

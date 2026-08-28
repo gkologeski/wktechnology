@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy, Suspense } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
 import { REMINDER_OPTIONS } from "@/lib/activity-reminders";
 import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
@@ -38,6 +38,7 @@ import {
   Video,
   Zap,
   FolderOpen,
+  History,
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -84,6 +85,13 @@ import {
 import { TimelineActionBar } from "./activity/timeline-action-bar";
 
 import { EmailTimelineItem } from "./activity/email-timeline-item";
+import { HistoryTimelineItem } from "./activity/history-timeline-item";
+import { useHistoryLabels } from "./activity/use-history-labels";
+import {
+  groupPropertyChanges,
+  type HistoryGroup,
+  type PropertyChangeRow,
+} from "@/lib/timeline/history-groups";
 import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
 import {
   SurveyTimelineCard,
@@ -174,6 +182,10 @@ export function ActivityTimeline({
   const hasWhatsAppDraft = useHasMessageDraft({
     scope: { channel: "whatsapp", contactId: target.contactId, to: target.phone ?? "" },
   });
+
+  // Histórico de alterações/movimentações (property_history) exibido na timeline.
+  const [historyRows, setHistoryRows] = useState<PropertyChangeRow[]>([]);
+  const [showHistory, setShowHistory] = useState(true);
 
   // Filtro de período da timeline (presets + datas customizadas)
   const [datePreset, setDatePreset] = useState<DatePreset>("any");
@@ -423,6 +435,33 @@ export function ActivityTimeline({
       return tb - ta;
     });
     setItems(rows);
+
+    // Histórico de alterações/movimentações da entidade (mesmo período).
+    const historyEntity: Record<RelatedKey, string | null> = {
+      related_lead_id: "leads",
+      related_contact_id: "contacts",
+      related_company_id: "companies",
+      related_deal_id: "deals",
+      related_ticket_id: null,
+    };
+    const entityName = historyEntity[relatedKey];
+    if (entityName) {
+      let hq = supabase
+        .from("property_history")
+        .select("id, entity, entity_id, property, old_value, new_value, changed_at, changed_by")
+        .eq("entity", entityName)
+        .eq("entity_id", relatedId)
+        .order("changed_at", { ascending: false })
+        .limit(300);
+      if (filtStart) hq = hq.gte("changed_at", filtStart.toISOString());
+      if (filtEnd) hq = hq.lt("changed_at", filtEnd.toISOString());
+      const { data: hist, error: histErr } = await hq;
+      if (histErr) console.error("[timeline] history load", histErr);
+      setHistoryRows((hist ?? []) as PropertyChangeRow[]);
+    } else {
+      setHistoryRows([]);
+    }
+
     setLoading(false);
     setRefreshing(false);
   };
@@ -430,6 +469,27 @@ export function ActivityTimeline({
   useEffect(() => {
     void load(); /* eslint-disable-next-line */
   }, [relatedId, datePreset, dateCustom.start, dateCustom.end]);
+
+  // Histórico agrupado + resolução de IDs para nomes.
+  const historyGroups = useMemo(() => groupPropertyChanges(historyRows), [historyRows]);
+  const { resolveValue: resolveHistoryValue, resolveActor: resolveHistoryActor } =
+    useHistoryLabels(historyRows);
+
+  // Lista única, cronológica, de atividades + eventos de histórico.
+  const timelineEntries = useMemo(() => {
+    const entries: Array<{ t: number; activity?: Activity; history?: HistoryGroup }> = items.map(
+      (a) => ({
+        t: new Date(a.hs_createdate ?? a.created_at ?? 0).getTime(),
+        activity: a,
+      }),
+    );
+    if (showHistory) {
+      for (const g of historyGroups) {
+        entries.push({ t: new Date(g.changed_at).getTime(), history: g });
+      }
+    }
+    return entries.sort((a, b) => b.t - a.t);
+  }, [items, historyGroups, showHistory]);
 
   // Carrega as respostas das atividades do tipo "pesquisa" exibidas na timeline.
   useEffect(() => {
@@ -1208,6 +1268,16 @@ export function ActivityTimeline({
             />
           </PopoverContent>
         </Popover>
+        <Button
+          variant={showHistory ? "secondary" : "outline"}
+          size="sm"
+          className="gap-2 h-8 text-xs"
+          aria-pressed={showHistory}
+          onClick={() => setShowHistory((v) => !v)}
+        >
+          <History className="h-3.5 w-3.5" />
+          Histórico
+        </Button>
         {refreshing && !loading && (
           <span
             className="inline-flex items-center gap-1 text-xs text-muted-foreground ml-1"
@@ -1221,13 +1291,24 @@ export function ActivityTimeline({
 
       {loading ? (
         <div className="text-sm text-muted-foreground">Carregando...</div>
-      ) : items.length === 0 ? (
+      ) : timelineEntries.length === 0 ? (
         <div className="text-sm text-muted-foreground text-center py-6">
           Nenhuma atividade ainda.
         </div>
       ) : (
         <ol className="space-y-5">
-          {items.map((a) => {
+          {timelineEntries.map((entry) => {
+            if (entry.history) {
+              return (
+                <HistoryTimelineItem
+                  key={entry.history.id}
+                  group={entry.history}
+                  resolveValue={resolveHistoryValue}
+                  resolveActor={resolveHistoryActor}
+                />
+              );
+            }
+            const a = entry.activity as Activity;
             const atts = (a as unknown as { attachments?: Attachment[] }).attachments ?? [];
             const mens = (a as unknown as { mentions?: string[] }).mentions ?? [];
             const icon = ICONS[a.type as ActivityType] ?? <Send className="h-4 w-4" />;
