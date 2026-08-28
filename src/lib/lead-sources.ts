@@ -18,8 +18,7 @@ export type LeadSource = {
 /** Evita a inferência custosa do supabase-js sobre a string de select. */
 const sel = (s: string): string => s;
 
-const COLUMNS =
-  "id, owner_id, workspace_id, name, label, active, created_at, updated_at";
+const COLUMNS = "id, owner_id, workspace_id, name, label, active, created_at, updated_at";
 
 export const leadSourcesKey = (activeOnly: boolean) => ["lead-sources", activeOnly] as const;
 
@@ -30,10 +29,7 @@ export function sourceDisplayLabel(source: Pick<LeadSource, "name" | "label">): 
 }
 
 export async function listLeadSources(activeOnly = true): Promise<LeadSource[]> {
-  let q = supabase
-    .from("lead_sources")
-    .select(sel(COLUMNS))
-    .order("name", { ascending: true });
+  let q = supabase.from("lead_sources").select(sel(COLUMNS)).order("name", { ascending: true });
   if (activeOnly) q = q.eq("active", true);
   const { data, error } = await q.returns<LeadSource[]>();
   if (error) throw new Error(error.message);

@@ -64,12 +64,7 @@ export type SuggestionMap = Record<string, SuggestionValue>;
 export type PersonSignal = "linkedin" | "email" | "name_domain" | "none";
 
 /** Procedência de um campo preenchido pelo enriquecimento. */
-export type FieldSource =
-  | "linkedin"
-  | "email_domain"
-  | "name_domain"
-  | "company_domain"
-  | "manual";
+export type FieldSource = "linkedin" | "email_domain" | "name_domain" | "company_domain" | "manual";
 
 /** Procedência por coluna, agrupada por entidade. */
 export type FieldSourceMap = {

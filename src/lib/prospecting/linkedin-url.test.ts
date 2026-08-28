@@ -49,7 +49,6 @@ describe("normalizeLinkedinUrl", () => {
     expect(msg("não é url")).toContain("Link inválido");
   });
 
-
   it("linkedinUrlOrNull devolve null em entrada inválida", () => {
     expect(linkedinUrlOrNull("https://www.linkedin.com/company/acme")).toBeNull();
     expect(linkedinUrlOrNull(null)).toBeNull();

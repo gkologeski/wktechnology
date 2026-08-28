@@ -114,11 +114,7 @@ function LeadDetail() {
   const handlePropertiesSaved = async () => {
     const before = linkedinRef.current;
     await load();
-    const { data } = await supabase
-      .from("leads")
-      .select("linkedin_url")
-      .eq("id", id)
-      .maybeSingle();
+    const { data } = await supabase.from("leads").select("linkedin_url").eq("id", id).maybeSingle();
     const after = linkedinUrlOrNull((data as { linkedin_url: string | null } | null)?.linkedin_url);
     linkedinRef.current = after;
     if (!after || sameLinkedinUrl(before, after)) return;
