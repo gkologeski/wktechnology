@@ -39,7 +39,7 @@ export function SubstatusQuickPicker({
   // Etapa sem substatus: gestores veem um atalho para configurar; demais, nada.
   if (options.length === 0 && !current) {
     if (isLoading) return null;
-    return <SubstatusManageHint onClick={(e) => e.preventDefault?.()} />;
+    return <SubstatusManageHint />;
   }
   if (!canUpdate) return <SubstatusBadge substatus={current} />;
 
