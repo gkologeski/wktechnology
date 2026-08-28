@@ -767,6 +767,12 @@ export function QualificationPanel({
             )}
           </div>
 
+          {enrichment.data?.found ? (
+            <EnrichmentSourcesCard enrichment={enrichment.data} />
+          ) : null}
+
+
+
           <QualificationEntityBlocks
             blocks={blocksBefore}
             records={entityFields.records}
