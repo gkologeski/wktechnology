@@ -9548,6 +9548,7 @@ export type Database = {
           active: boolean
           created_at: string
           id: string
+          label: string | null
           name: string
           owner_id: string
           updated_at: string
@@ -9557,6 +9558,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           id?: string
+          label?: string | null
           name: string
           owner_id: string
           updated_at?: string
@@ -9566,6 +9568,7 @@ export type Database = {
           active?: boolean
           created_at?: string
           id?: string
+          label?: string | null
           name?: string
           owner_id?: string
           updated_at?: string

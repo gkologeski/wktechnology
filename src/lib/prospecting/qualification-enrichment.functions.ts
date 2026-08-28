@@ -15,6 +15,8 @@ import type { EnrichmentSuggestions } from "./qualification-enrichment.server";
 
 export type {
   EnrichmentSuggestions,
+  FieldSource,
+  FieldSourceMap,
   PersonSignal,
   SuggestionMap,
   SuggestionValue,
@@ -41,8 +43,15 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }): Promise<EnrichmentSuggestions> => {
     const { supabase } = context;
-    const { LEAD_KEYS, COMPANY_KEYS, CONTACT_KEYS, pick, onlyNew, applyEnrichmentToRecords } =
-      await import("./qualification-enrichment.server");
+    const {
+      LEAD_KEYS,
+      COMPANY_KEYS,
+      CONTACT_KEYS,
+      pick,
+      onlyNew,
+      applyEnrichmentToRecords,
+      buildFieldSources,
+    } = await import("./qualification-enrichment.server");
     const { normalizeLinkedinUrl, sameLinkedinUrl, linkedinUrlOrNull } =
       await import("./linkedin-url");
 
@@ -179,16 +188,18 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
     );
     const companyNew = onlyNew(companySuggestions, companyRow);
 
+    const personSignal: EnrichmentSuggestions["personSignal"] = !result.person
+      ? "none"
+      : linkedin
+        ? "linkedin"
+        : lead.email
+          ? "email"
+          : "name_domain";
+
     const payload: EnrichmentSuggestions = {
       domain: result.domain,
       domainSource: result.domainSource,
-      personSignal: !result.person
-        ? "none"
-        : linkedin
-          ? "linkedin"
-          : lead.email
-            ? "email"
-            : "name_domain",
+      personSignal,
       linkedinUrl: linkedin,
       fetchedAt: new Date().toISOString(),
       cached: false,
@@ -200,6 +211,13 @@ export const enrichLeadForQualification = createServerFn({ method: "POST" })
       lead: leadSuggestions,
       companies: companyNew,
       contacts: contactSuggestions,
+      fieldSources: buildFieldSources({
+        lead: leadSuggestions,
+        companies: companyNew,
+        contacts: contactSuggestions,
+        personSignal: personSignal ?? "none",
+        linkedinFromUser: !!providedLinkedin,
+      }),
     };
 
     // Telefone na Apollo é assíncrono: registramos a revelação pendente com as

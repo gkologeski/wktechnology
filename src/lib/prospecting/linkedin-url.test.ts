@@ -34,6 +34,21 @@ describe("normalizeLinkedinUrl", () => {
     }
   });
 
+  it("dá mensagens específicas por tipo de link recusado", () => {
+    const msg = (input: string) => {
+      const r = normalizeLinkedinUrl(input);
+      return r.ok ? "" : r.error;
+    };
+    expect(msg("")).toContain("Informe o link do LinkedIn");
+    expect(msg("https://www.linkedin.com/company/acme")).toContain("página de empresa");
+    expect(msg("https://www.linkedin.com/school/usp")).toContain("instituição");
+    expect(msg("https://www.linkedin.com/posts/joao_algo-123")).toContain("publicação");
+    expect(msg("https://www.linkedin.com/search/results/all/?keywords=joao")).toContain("busca");
+    expect(msg("https://www.linkedin.com/sales/lead/123")).toContain("Sales Navigator");
+    expect(msg("https://example.com/in/joao-silva")).toContain("não é do LinkedIn");
+    expect(msg("não é url")).toContain("Link inválido");
+  });
+
   it("linkedinUrlOrNull devolve null em entrada inválida", () => {
     expect(linkedinUrlOrNull("https://www.linkedin.com/company/acme")).toBeNull();
     expect(linkedinUrlOrNull(null)).toBeNull();

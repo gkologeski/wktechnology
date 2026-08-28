@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Trash2 } from "lucide-react";
@@ -24,6 +24,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { QualificationPanel } from "@/components/prospecting/qualification-panel";
+import { enrichLeadForQualification } from "@/lib/prospecting/qualification-enrichment.functions";
+import { linkedinUrlOrNull, sameLinkedinUrl } from "@/lib/prospecting/linkedin-url";
 import { SurveyActivityDialog } from "@/components/surveys/survey-activity-dialog";
 import { getPendingSurveyActivity } from "@/lib/surveys/survey-activity.functions";
 import {
@@ -95,6 +97,45 @@ function LeadDetail() {
   const pendingDealFn = useServerFn(getPendingDealIntent);
   const completeDealIntentFn = useServerFn(completeDealIntent);
   const tickWorkflows = useServerFn(triggerTickNow);
+  const enrichLead = useServerFn(enrichLeadForQualification);
+
+  /**
+   * O LinkedIn é o sinal mais preciso da cascata Apollo. Guardamos o valor
+   * atual para detectar, após salvar as propriedades, que ele mudou — e então
+   * reenriquecer o lead (e refletir na empresa/contato vinculados).
+   */
+  const linkedinRef = useRef<string | null>(null);
+  useEffect(() => {
+    linkedinRef.current = linkedinUrlOrNull(lead?.linkedin_url ?? null);
+    // Só reancora ao trocar de lead; edições passam pelo handler abaixo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const handlePropertiesSaved = async () => {
+    const before = linkedinRef.current;
+    await load();
+    const { data } = await supabase.from("leads").select("linkedin_url").eq("id", id).maybeSingle();
+    const after = linkedinUrlOrNull((data as { linkedin_url: string | null } | null)?.linkedin_url);
+    linkedinRef.current = after;
+    if (!after || sameLinkedinUrl(before, after)) return;
+    const toastId = toast.loading("LinkedIn atualizado — reenriquecendo o lead…");
+    try {
+      const result = await enrichLead({ data: { leadId: id, linkedinUrl: after, force: true } });
+      await load();
+      if (result.found) {
+        toast.success("Lead reenriquecido a partir do novo LinkedIn.", { id: toastId });
+      } else {
+        toast.info(result.warnings[0] ?? "Nenhum dado novo encontrado para este LinkedIn.", {
+          id: toastId,
+        });
+      }
+    } catch (e) {
+      // Enriquecimento é complementar: a edição já foi salva.
+      toast.error(e instanceof Error ? e.message : "Não foi possível reenriquecer o lead.", {
+        id: toastId,
+      });
+    }
+  };
 
   /**
    * Abre o modal de criação de oportunidade quando o workflow registrar a
@@ -363,7 +404,7 @@ function LeadDetail() {
               { key: "score", label: "Score", type: "number" },
               { key: "notes", label: "Notas" },
             ]}
-            onSaved={load}
+            onSaved={() => void handlePropertiesSaved()}
           />
         }
         center={

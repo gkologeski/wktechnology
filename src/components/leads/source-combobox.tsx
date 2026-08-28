@@ -11,7 +11,12 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { listLeadSources, ensureLeadSource, type LeadSource } from "@/lib/lead-sources";
+import {
+  listLeadSources,
+  ensureLeadSource,
+  sourceDisplayLabel,
+  type LeadSource,
+} from "@/lib/lead-sources";
 import { useAuth } from "@/lib/auth";
 import { leadSourceLabel } from "@/lib/lead-source-labels";
 import { toast } from "sonner";
@@ -57,6 +62,10 @@ export function SourceCombobox({
   };
 
   const exists = sources.some((s) => s.name.toLowerCase() === search.trim().toLowerCase());
+  // Preferimos o rótulo cadastrado no catálogo; o de-para estático é fallback
+  // para valores vindos de integrações que ainda não estão no catálogo.
+  const selected = sources.find((s) => s.name === value);
+  const selectedLabel = selected ? sourceDisplayLabel(selected) : leadSourceLabel(value);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -68,7 +77,7 @@ export function SourceCombobox({
           className="w-full justify-between font-normal"
         >
           <span className={cn(!value && "text-muted-foreground")}>
-            {value ? leadSourceLabel(value) : placeholder}
+            {value ? selectedLabel : placeholder}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
@@ -93,7 +102,7 @@ export function SourceCombobox({
               {Array.from(
                 sources
                   .reduce((acc, s) => {
-                    const key = leadSourceLabel(s.name).toLowerCase();
+                    const key = sourceDisplayLabel(s).toLowerCase();
                     if (!acc.has(key)) acc.set(key, s);
                     return acc;
                   }, new Map<string, (typeof sources)[number]>())
@@ -110,7 +119,7 @@ export function SourceCombobox({
                   <Check
                     className={cn("mr-2 h-4 w-4", value === s.name ? "opacity-100" : "opacity-0")}
                   />
-                  {leadSourceLabel(s.name)}
+                  {sourceDisplayLabel(s)}
                 </CommandItem>
               ))}
               {search.trim() && !exists && (
