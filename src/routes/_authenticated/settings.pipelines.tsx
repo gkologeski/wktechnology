@@ -322,7 +322,7 @@ function PipelineEditor({
   };
 
   return (
-    <Card>
+    <Card ref={rootRef} className="scroll-mt-20">
       <CardHeader>
         <CardTitle className="text-base">{isNew ? "Novo pipeline" : "Editar pipeline"}</CardTitle>
       </CardHeader>
