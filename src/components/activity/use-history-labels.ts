@@ -10,6 +10,16 @@ type LabelMap = Map<string, string>;
 
 const USER_PROPS = new Set(["owner_id", "assigned_to", "assigned_user_id", "changed_by"]);
 
+/** Propriedades cujo valor é uma etapa de pipeline (slug ou id legado). */
+const STAGE_PROPS = new Set(["stage", "stage_id"]);
+
+/** `property_history.entity` (plural) -> `pipelines.entity` (singular). */
+const PIPELINE_ENTITY: Record<string, string> = {
+  leads: "lead",
+  deals: "deal",
+  tickets: "ticket",
+};
+
 export function useHistoryLabels(rows: PropertyChangeRow[]) {
   const { nameFor } = useWorkspaceMembers();
   const [labels, setLabels] = useState<LabelMap>(new Map());
@@ -21,7 +31,12 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
     const companies = new Set<string>();
     const contacts = new Set<string>();
     const sources = new Set<string>();
+    const stageEntities = new Set<string>();
     for (const r of rows) {
+      if (STAGE_PROPS.has(r.property)) {
+        const pe = PIPELINE_ENTITY[r.entity];
+        if (pe) stageEntities.add(pe);
+      }
       for (const v of [r.old_value, r.new_value]) {
         if (!isUuid(v)) continue;
         if (r.property === "pipeline_id") pipelines.add(v);
@@ -32,7 +47,7 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
         else if (r.property === "source_id") sources.add(v);
       }
     }
-    return { pipelines, substatuses, companies, contacts, sources };
+    return { pipelines, substatuses, companies, contacts, sources, stageEntities };
   }, [rows]);
 
   const key = useMemo(
@@ -43,13 +58,20 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
         [...wanted.companies].sort(),
         [...wanted.contacts].sort(),
         [...wanted.sources].sort(),
+        [...wanted.stageEntities].sort(),
       ]),
     [wanted],
   );
 
   useEffect(() => {
-    const { pipelines, substatuses, companies, contacts, sources } = wanted;
-    const total = pipelines.size + substatuses.size + companies.size + contacts.size + sources.size;
+    const { pipelines, substatuses, companies, contacts, sources, stageEntities } = wanted;
+    const total =
+      pipelines.size +
+      substatuses.size +
+      companies.size +
+      contacts.size +
+      sources.size +
+      stageEntities.size;
     if (total === 0) {
       setLabels((prev) => (prev.size === 0 ? prev : new Map()));
       return;
@@ -119,6 +141,27 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
       );
     }
 
+    if (stageEntities.size > 0) {
+      tasks.push(
+        supabase
+          .from("pipelines")
+          .select("id, entity, stages")
+          .in("entity", [...stageEntities])
+          .then(({ data }) => {
+            for (const p of (data ?? []) as Array<{ stages: unknown }>) {
+              const stages = Array.isArray(p.stages)
+                ? (p.stages as Array<Record<string, unknown>>)
+                : [];
+              for (const st of stages) {
+                const value = String(st["value"] ?? st["id"] ?? "");
+                const label = String(st["label"] ?? "").trim();
+                if (value && label) next.set(`stage:${value}`, label);
+              }
+            }
+          }),
+      );
+    }
+
     void Promise.allSettled(tasks).then(() => {
       if (!cancelled) setLabels(next);
     });
@@ -130,6 +173,15 @@ export function useHistoryLabels(rows: PropertyChangeRow[]) {
 
   /** Rótulo de um valor de propriedade, resolvendo IDs conhecidos. */
   const resolveValue = (property: string, value: unknown): string | null => {
+    if (STAGE_PROPS.has(property)) {
+      if (value === null || value === undefined || value === "") return null;
+      const raw = String(value);
+      const label = labels.get(`stage:${raw}`);
+      if (label) return label;
+      // IDs legados (importação) que não existem mais em nenhum pipeline.
+      if (/^\d{4,}$/.test(raw) || isUuid(raw)) return "Etapa anterior (importada)";
+      return null;
+    }
     if (!isUuid(value)) return null;
     if (USER_PROPS.has(property)) {
       const name = nameFor(value);

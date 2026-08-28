@@ -5,7 +5,7 @@ import { useCurrentUserId } from "@/hooks/use-current-user-id";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CurrencyInput } from "@/components/ui/currency-input";
+import { CurrencyCommitInput } from "@/components/ui/currency-commit-input";
 import { EntityCombobox } from "@/components/ui/entity-combobox";
 import { Wrench, Plus, Trash2, Pencil } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
@@ -461,10 +461,11 @@ export function LineItemsEditorBody({
                   <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
                     Preço
                   </div>
-                  <CurrencyInput
+                  <CurrencyCommitInput
+                    aria-label="Preço"
                     currency={currency}
                     value={n(li.unit_price)}
-                    onValueChange={(v) => update(li.id, { unit_price: v ?? 0 })}
+                    onCommit={(v) => update(li.id, { unit_price: v ?? 0 })}
                   />
                 </div>
                 <div className="space-y-1">
@@ -473,11 +474,12 @@ export function LineItemsEditorBody({
                   </div>
                   <div className="relative">
                     {(li.discount_type ?? "pct") === "amount" ? (
-                      <CurrencyInput
+                      <CurrencyCommitInput
+                        aria-label="Desconto em valor"
                         className="pr-14"
                         currency={currency}
                         value={n(li.discount_amount)}
-                        onValueChange={(v) => update(li.id, { discount_amount: v ?? 0 })}
+                        onCommit={(v) => update(li.id, { discount_amount: v ?? 0 })}
                       />
                     ) : (
                       <Input

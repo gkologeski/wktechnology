@@ -50,8 +50,10 @@ export function groupPropertyChanges(rows: PropertyChangeRow[]): HistoryGroup[] 
       hasMovement: MOVEMENT_PROPERTIES.has(row.property),
     });
   }
-  // Dentro do grupo, movimentações primeiro (mais relevantes).
   for (const g of groups) {
+    // `stage` e `stage_id` gravam a mesma movimentação: exibir uma única linha.
+    g.changes = dedupeStageChanges(g.changes);
+    // Dentro do grupo, movimentações primeiro (mais relevantes).
     g.changes.sort((a, b) => {
       const am = MOVEMENT_PROPERTIES.has(a.property) ? 0 : 1;
       const bm = MOVEMENT_PROPERTIES.has(b.property) ? 0 : 1;
@@ -59,4 +61,30 @@ export function groupPropertyChanges(rows: PropertyChangeRow[]): HistoryGroup[] 
     });
   }
   return groups;
+}
+
+const STAGE_PROPS = ["stage_id", "stage"] as const;
+
+/**
+ * Colapsa alterações redundantes de etapa dentro do mesmo grupo.
+ *
+ * O registro guarda `stage` (slug) e `stage_id` (slug ou id legado) para o
+ * mesmo movimento. Mantemos uma linha por etapa de destino, preferindo
+ * `stage_id` (campo canônico usado por pipelines e kanban).
+ */
+function dedupeStageChanges(changes: PropertyChangeRow[]): PropertyChangeRow[] {
+  const stageRows = changes.filter((c) => STAGE_PROPS.includes(c.property as "stage"));
+  if (stageRows.length <= 1) return changes;
+  const kept: PropertyChangeRow[] = [];
+  const seen = new Set<string>();
+  for (const property of STAGE_PROPS) {
+    for (const row of stageRows) {
+      if (row.property !== property) continue;
+      const key = String(row.new_value ?? "");
+      if (seen.has(key)) continue;
+      seen.add(key);
+      kept.push(row);
+    }
+  }
+  return [...changes.filter((c) => !STAGE_PROPS.includes(c.property as "stage")), ...kept];
 }
