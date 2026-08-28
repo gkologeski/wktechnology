@@ -461,10 +461,11 @@ export function LineItemsEditorBody({
                   <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
                     Preço
                   </div>
-                  <CurrencyInput
+                  <CurrencyCommitInput
+                    aria-label="Preço"
                     currency={currency}
                     value={n(li.unit_price)}
-                    onValueChange={(v) => update(li.id, { unit_price: v ?? 0 })}
+                    onCommit={(v) => update(li.id, { unit_price: v ?? 0 })}
                   />
                 </div>
                 <div className="space-y-1">
@@ -473,11 +474,12 @@ export function LineItemsEditorBody({
                   </div>
                   <div className="relative">
                     {(li.discount_type ?? "pct") === "amount" ? (
-                      <CurrencyInput
+                      <CurrencyCommitInput
+                        aria-label="Desconto em valor"
                         className="pr-14"
                         currency={currency}
                         value={n(li.discount_amount)}
-                        onValueChange={(v) => update(li.id, { discount_amount: v ?? 0 })}
+                        onCommit={(v) => update(li.id, { discount_amount: v ?? 0 })}
                       />
                     ) : (
                       <Input
