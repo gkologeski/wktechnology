@@ -496,17 +496,15 @@ function PipelineEditor({
                   </div>
                 </div>
                 {pipeline?.id && s.value ? (
-                  <div className="sm:col-span-12">
-                    <StageSubstatusesEditor
-                      pipelineId={pipeline.id}
-                      stageValue={s.value}
-                      stageLabel={s.label || s.value}
-                      stageType={s.type ?? "open"}
-                      canManage={canManageSubstatus}
-                    />
-                  </div>
+                  <StageSubstatusesEditor
+                    pipelineId={pipeline.id}
+                    stageValue={s.value}
+                    stageLabel={s.label || s.value}
+                    stageType={s.type ?? "open"}
+                    canManage={canManageSubstatus}
+                  />
                 ) : (
-                  <p className="sm:col-span-12 text-[11px] text-muted-foreground">
+                  <p className="text-[11px] text-muted-foreground">
                     Salve o pipeline para configurar os substatus desta etapa.
                   </p>
                 )}
