@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Plus, Sparkles, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Sparkles, Trash2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +19,12 @@ import {
   usePipelineSubstatuses,
   type StageSubstatus,
 } from "@/lib/pipelines/substatuses";
+import type { SubstatusAiProposalItem } from "./substatus-ai-suggest-dialog";
+
+// Diálogo de IA sob demanda: mantém o editor de pipelines leve.
+const SubstatusAiSuggestDialog = lazy(() =>
+  import("./substatus-ai-suggest-dialog").then((m) => ({ default: m.SubstatusAiSuggestDialog })),
+);
 
 /**
  * Substatus de uma etapa dentro do editor de pipelines.
@@ -132,6 +138,54 @@ export function StageSubstatusesEditor({
       toast.success(created > 0 ? `${created} substatus sugeridos` : "Nada a sugerir");
     });
 
+  /**
+   * Aplica a proposta da IA: cria os substatus novos selecionados e grava a
+   * ordem sugerida (os não selecionados vão para o fim, preservados).
+   */
+  const applyAiProposal = (items: SubstatusAiProposalItem[]) =>
+    run(async () => {
+      const byName = new Map(rows.map((r) => [r.name.trim().toLowerCase(), r]));
+      const orderedIds: string[] = [];
+      let position = 0;
+      let created = 0;
+
+      for (const item of items) {
+        const name = item.name.trim();
+        if (!item.selected || !name) continue;
+        const current = byName.get(name.toLowerCase());
+        if (current) {
+          const saved = await saveSubstatus({
+            ...current,
+            name,
+            position: position++,
+            is_default: item.is_default,
+          });
+          orderedIds.push(saved.id);
+        } else {
+          const saved = await saveSubstatus({
+            pipeline_id: pipelineId,
+            stage_value: stageValue,
+            name,
+            description: item.description,
+            position: position++,
+            is_default: item.is_default,
+          });
+          orderedIds.push(saved.id);
+          created++;
+        }
+      }
+
+      // Substatus existentes fora da proposta continuam ativos, no fim da lista.
+      for (const row of rows) {
+        if (orderedIds.includes(row.id)) continue;
+        orderedIds.push(row.id);
+      }
+      if (orderedIds.length > 0) await reorderSubstatuses(orderedIds);
+      toast.success(
+        created > 0 ? `${created} substatus criado(s) e ordem aplicada` : "Ordem sugerida aplicada",
+      );
+    });
+
   return (
     <div className="rounded-md border bg-muted/20 p-3 space-y-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -139,9 +193,18 @@ export function StageSubstatusesEditor({
           Substatus de “{stageLabel}”
         </Label>
         {canManage && (
-          <div className="flex gap-1">
+          <div className="flex flex-wrap gap-1">
             <Button size="sm" variant="ghost" onClick={seed} disabled={busy}>
               <Sparkles className="h-3 w-3 mr-1" /> Sugerir
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setAiOpen(true)}
+              disabled={busy}
+              title="Gerar sugestões e ordem com IA"
+            >
+              <Wand2 className="h-3 w-3 mr-1" /> Sugerir com IA
             </Button>
             <Button
               size="sm"
@@ -154,6 +217,18 @@ export function StageSubstatusesEditor({
           </div>
         )}
       </div>
+
+      {canManage && aiOpen && (
+        <SubstatusAiSuggestDialog
+          open={aiOpen}
+          setOpen={setAiOpen}
+          pipelineId={pipelineId}
+          stageValue={stageValue}
+          stageLabel={stageLabel}
+          onApply={applyAiProposal}
+        />
+      )}
+
 
       {q.isLoading && <p className="text-xs text-muted-foreground">Carregando substatus…</p>}
       {q.error && (

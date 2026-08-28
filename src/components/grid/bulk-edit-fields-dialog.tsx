@@ -1,18 +1,27 @@
-// Edição em massa dinâmica: lista os campos da entidade a partir do catálogo
-// (mesma fonte do seletor de colunas) e aplica só os campos marcados.
+// Edição em massa no padrão HubSpot: um combo de escolha da propriedade
+// (com busca e agrupamento) e, abaixo, apenas o editor daquela propriedade.
+// Campos dependentes (pipeline → etapa → substatus) aparecem em cascata.
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ChevronDown, ChevronRight, Search } from "lucide-react";
+import { Check, ChevronsUpDown, Info, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { CurrencyInput } from "@/components/ui/currency-input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Select,
   SelectContent,
@@ -29,11 +38,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 import { getEntityFieldCatalog, type EntityFieldDef } from "@/lib/entity-fields.functions";
 import { bulkUpdateEntity } from "@/lib/grid/bulk-edit.functions";
 import { isBulkEditDeniedColumn, type BulkEditEntity } from "@/lib/grid/bulk-edit-fields";
 import { dedupeAliasFields, findAliasConflict } from "@/lib/grid/field-alias-guard";
+import {
+  PIPELINE_FIELD,
+  dependencyHint,
+  dependencyKindFor,
+  groupFields,
+  pipelineEntityFor,
+  STAGE_FIELDS,
+  type DependencyKind,
+} from "@/lib/grid/bulk-edit-dependencies";
+import { usePipelines } from "@/lib/pipelines";
+import { substatusesForStage, usePipelineSubstatuses } from "@/lib/pipelines/substatuses";
 import { BulkRefPicker } from "./bulk-ref-picker";
 
 const LONG_TEXT_FIELDS = new Set([
@@ -53,10 +74,26 @@ type Props = {
   entity: BulkEditEntity;
   ids: string[];
   entityLabel: string;
-  /** Campos que aparecem no topo da lista (os já declarados pela tela). */
+  /** Campos sugeridos no topo do combo (os já declarados pela tela). */
   priorityFields?: string[];
   onDone: () => void;
 };
+
+/** Uma propriedade escolhida para edição, com seu valor e campos-pai. */
+type PropertyRow = {
+  key: string;
+  name: string | null;
+  value: unknown;
+  /** Valores dos campos-pai (ex.: `pipeline_id`, `stage`). */
+  deps: Record<string, string>;
+};
+
+const newRow = (): PropertyRow => ({
+  key: Math.random().toString(36).slice(2),
+  name: null,
+  value: "",
+  deps: {},
+});
 
 function FieldEditor({
   field,
@@ -157,6 +194,219 @@ function FieldEditor({
   );
 }
 
+/** Combo de escolha da propriedade, com busca e agrupamento por categoria. */
+function PropertyCombobox({
+  groups,
+  value,
+  usedNames,
+  onSelect,
+}: {
+  groups: Array<{ group: string; fields: EntityFieldDef[] }>;
+  value: EntityFieldDef | null;
+  usedNames: Set<string>;
+  onSelect: (field: EntityFieldDef) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          <span className={cn("truncate", !value && "text-muted-foreground")}>
+            {value ? value.label : "Selecione uma propriedade para editar"}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Pesquisar" />
+          <CommandList className="max-h-72">
+            <CommandEmpty>Nenhuma propriedade encontrada.</CommandEmpty>
+            {groups.map((g) => (
+              <CommandGroup key={g.group} heading={g.group}>
+                {g.fields.map((f) => {
+                  const disabled = usedNames.has(f.name) && f.name !== value?.name;
+                  return (
+                    <CommandItem
+                      key={f.name}
+                      value={`${f.label} ${f.name}`}
+                      disabled={disabled}
+                      onSelect={() => {
+                        onSelect(f);
+                        setOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          value?.name === f.name ? "opacity-100" : "opacity-0",
+                        )}
+                      />
+                      <span className="truncate">{f.label}</span>
+                      {f.required && <span className="ml-1 text-destructive">*</span>}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+/** Cascata pipeline → etapa (→ substatus) para os campos dependentes. */
+function DependentEditor({
+  kind,
+  field,
+  entity,
+  row,
+  onChange,
+}: {
+  kind: DependencyKind;
+  field: EntityFieldDef;
+  entity: BulkEditEntity;
+  row: PropertyRow;
+  onChange: (patch: Partial<PropertyRow>) => void;
+}) {
+  const pipelineEntity = pipelineEntityFor(entity) ?? "deal";
+  const { pipelines, isLoading } = usePipelines(pipelineEntity);
+
+  const pipelineId = row.deps[PIPELINE_FIELD] ?? "";
+  const stageValue = kind === "stage" ? String(row.value ?? "") : (row.deps["stage"] ?? "");
+  const pipeline = pipelines.find((p) => p.id === pipelineId);
+  const stages = pipeline?.stages ?? [];
+  const stage = stages.find((s) => s.value === stageValue);
+
+  const subs = usePipelineSubstatuses(kind === "substatus" ? pipelineId || null : null);
+  const substatusOptions = useMemo(
+    () => substatusesForStage(subs.data, stageValue),
+    [subs.data, stageValue],
+  );
+
+  if (kind === "lost_reason") {
+    return (
+      <div className="space-y-2">
+        <p className="flex gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          {dependencyHint(kind)}
+        </p>
+        <Label htmlFor={`bulk-${field.name}`}>{field.label}</Label>
+        <FieldEditor field={field} value={row.value} onChange={(v) => onChange({ value: v })} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="flex gap-2 rounded-md bg-muted/50 p-3 text-sm text-muted-foreground">
+        <Info className="mt-0.5 h-4 w-4 shrink-0" />
+        {dependencyHint(kind)}
+      </p>
+
+      <div className="space-y-2">
+        <Label htmlFor={`bulk-dep-pipeline-${row.key}`}>Pipeline</Label>
+        <Select
+          value={pipelineId || undefined}
+          onValueChange={(v) =>
+            onChange({
+              deps: { [PIPELINE_FIELD]: v },
+              value: kind === "stage" ? "" : row.value,
+            })
+          }
+        >
+          <SelectTrigger id={`bulk-dep-pipeline-${row.key}`}>
+            <SelectValue placeholder={isLoading ? "Carregando…" : "Selecione um pipeline"} />
+          </SelectTrigger>
+          <SelectContent>
+            {pipelines.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`bulk-dep-stage-${row.key}`}>
+          {kind === "stage" ? field.label : "Etapa"}
+        </Label>
+        <Select
+          value={stageValue || undefined}
+          disabled={!pipelineId}
+          onValueChange={(v) =>
+            kind === "stage"
+              ? onChange({ value: v })
+              : onChange({ deps: { ...row.deps, stage: v }, value: "" })
+          }
+        >
+          <SelectTrigger id={`bulk-dep-stage-${row.key}`}>
+            <SelectValue placeholder={pipelineId ? "Selecione uma etapa" : "Escolha o pipeline"} />
+          </SelectTrigger>
+          <SelectContent>
+            {stages.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {kind === "substatus" && (
+        <div className="space-y-2">
+          <Label htmlFor={`bulk-dep-substatus-${row.key}`}>{field.label}</Label>
+          <Select
+            value={String(row.value ?? "") || undefined}
+            disabled={!stageValue || substatusOptions.length === 0}
+            onValueChange={(v) => onChange({ value: v })}
+          >
+            <SelectTrigger id={`bulk-dep-substatus-${row.key}`}>
+              <SelectValue
+                placeholder={
+                  !stageValue
+                    ? "Escolha a etapa"
+                    : subs.isLoading
+                      ? "Carregando…"
+                      : substatusOptions.length === 0
+                        ? "Nenhum substatus nesta etapa"
+                        : "Selecione um substatus"
+                }
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {substatusOptions.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {stageValue && !subs.isLoading && substatusOptions.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Cadastre substatus desta etapa em Configurações → Pipelines.
+            </p>
+          )}
+        </div>
+      )}
+
+      {kind === "stage" && stage?.type === "lost" && (
+        <p className="text-xs text-muted-foreground">
+          Etapa de perda: considere também definir o motivo de perda.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function BulkEditFieldsDialog({
   open,
   setOpen,
@@ -169,20 +419,15 @@ export function BulkEditFieldsDialog({
   const loadCatalog = useServerFn(getEntityFieldCatalog);
   const applyBulk = useServerFn(bulkUpdateEntity);
 
-  const [query, setQuery] = useState("");
-  const [enabled, setEnabled] = useState<Record<string, boolean>>({});
-  const [values, setValues] = useState<Record<string, unknown>>({});
-  const [showSystem, setShowSystem] = useState(false);
+  const [rows, setRows] = useState<PropertyRow[]>([newRow()]);
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
     if (!open) {
-      setQuery("");
-      setEnabled({});
-      setValues({});
+      setRows([newRow()]);
       setConfirming(false);
-      setShowSystem(false);
+      setBusy(false);
     }
   }, [open]);
 
@@ -193,57 +438,114 @@ export function BulkEditFieldsDialog({
     queryFn: () => loadCatalog({ data: { entity } }),
   });
 
-  const allFields = useMemo(() => {
-    // Alias legado (ex.: `company_name`) nunca compete com o campo canônico:
-    // fica sempre no bloco de campos de sistema, mesmo que o rótulo colida.
-    const fields = dedupeAliasFields(
-      (catalog.data?.fields ?? []).filter((f) => !isBulkEditDeniedColumn(f.name)),
-    );
+  const allFields = useMemo(
+    () =>
+      dedupeAliasFields((catalog.data?.fields ?? []).filter((f) => !isBulkEditDeniedColumn(f.name))),
+    [catalog.data],
+  );
+
+  const groups = useMemo(() => {
+    const grouped = groupFields(allFields);
     const priority = new Set(priorityFields ?? []);
-    return [...fields].sort((a, b) => {
-      const pa = priority.has(a.name) ? 0 : 1;
-      const pb = priority.has(b.name) ? 0 : 1;
-      if (pa !== pb) return pa - pb;
-      return a.label.localeCompare(b.label, "pt-BR");
-    });
-  }, [catalog.data, priorityFields]);
+    const sugeridas = allFields
+      .filter((f) => priority.has(f.name))
+      .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
+    return sugeridas.length > 0
+      ? [{ group: "Sugeridas para esta tela", fields: sugeridas }, ...grouped]
+      : grouped;
+  }, [allFields, priorityFields]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return allFields;
-    return allFields.filter(
-      (f) => f.label.toLowerCase().includes(q) || f.name.toLowerCase().includes(q),
-    );
-  }, [allFields, query]);
+  const fieldByName = useMemo(
+    () => new Map(allFields.map((f) => [f.name, f])),
+    [allFields],
+  );
 
-  const visible = filtered.filter((f) => !f.system || enabled[f.name]);
-  const systemFields = filtered.filter((f) => f.system && !enabled[f.name]);
+  const usedNames = useMemo(
+    () => new Set(rows.map((r) => r.name).filter((n): n is string => !!n)),
+    [rows],
+  );
 
-  const selectedNames = Object.keys(enabled).filter((k) => enabled[k]);
+  const patchRow = (key: string, patch: Partial<PropertyRow>) =>
+    setRows((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+
+  const filledRows = rows.filter((r) => r.name);
+
+  /** Payload final: valor da propriedade + campos-pai que existem na tabela. */
+  const buildPayload = (): Record<string, unknown> | null => {
+    const payload: Record<string, unknown> = {};
+    for (const row of filledRows) {
+      const field = fieldByName.get(row.name as string);
+      if (!field) continue;
+      const kind = dependencyKindFor(entity, field.name);
+      const raw = row.value;
+      const isEmpty = raw === "" || raw === undefined || raw === null;
+
+      if (isEmpty && field.required) {
+        toast.error(`${field.label}: campo obrigatório não pode ficar vazio.`);
+        return null;
+      }
+      if (isEmpty && (kind === "stage" || kind === "substatus")) {
+        toast.error(`${field.label}: selecione um valor para concluir a cascata.`);
+        return null;
+      }
+
+      payload[field.name] = isEmpty ? null : raw;
+
+      // Campos-pai só entram quando são colunas reais da entidade.
+      for (const [depName, depValue] of Object.entries(row.deps)) {
+        if (!depValue) continue;
+        if (!fieldByName.has(depName)) continue;
+        if (payload[depName] !== undefined && payload[depName] !== depValue) {
+          toast.error("Valores conflitantes para o mesmo campo. Revise as propriedades.");
+          return null;
+        }
+        payload[depName] = depValue;
+      }
+
+      // Etapa exige pipeline quando a tabela tem a coluna.
+      if (
+        (kind === "stage" || kind === "substatus") &&
+        fieldByName.has(PIPELINE_FIELD) &&
+        !payload[PIPELINE_FIELD]
+      ) {
+        toast.error("Selecione o pipeline da etapa.");
+        return null;
+      }
+      if (kind === "substatus" && !row.deps["stage"]) {
+        toast.error("Selecione a etapa do substatus.");
+        return null;
+      }
+      // Substatus grava também a etapa quando a coluna existe.
+      if (kind === "substatus") {
+        for (const stageCol of STAGE_FIELDS) {
+          if (fieldByName.has(stageCol) && payload[stageCol] === undefined) {
+            payload[stageCol] = row.deps["stage"];
+          }
+        }
+      }
+    }
+    return payload;
+  };
 
   const apply = async () => {
-    if (selectedNames.length === 0) {
-      toast.error("Marque ao menos um campo para alterar");
+    if (filledRows.length === 0) {
+      toast.error("Escolha ao menos uma propriedade para editar");
       return;
     }
-    const conflict = findAliasConflict(selectedNames, allFields);
+    const names = filledRows.map((r) => r.name as string);
+    if (new Set(names).size !== names.length) {
+      toast.error("A mesma propriedade foi escolhida duas vezes.");
+      return;
+    }
+    const conflict = findAliasConflict(names, allFields);
     if (conflict) {
       toast.error(
-        `${conflict.canonicalLabel} e ${conflict.aliasLabel} apontam para o mesmo dado. Marque apenas um deles.`,
+        `${conflict.canonicalLabel} e ${conflict.aliasLabel} apontam para o mesmo dado. Escolha apenas um deles.`,
       );
       return;
     }
-    const payload: Record<string, unknown> = {};
-    for (const name of selectedNames) {
-      const field = allFields.find((f) => f.name === name);
-      const raw = values[name];
-      const isEmpty = raw === "" || raw === undefined || raw === null;
-      if (isEmpty && field?.required) {
-        toast.error(`${field.label}: campo obrigatório não pode ficar vazio.`);
-        return;
-      }
-      payload[name] = isEmpty ? null : raw;
-    }
+    const payload = buildPayload();
+    if (!payload) return;
 
     setBusy(true);
     try {
@@ -275,40 +577,29 @@ export function BulkEditFieldsDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col overflow-hidden">
+      <DialogContent className="flex max-h-[85vh] max-w-xl flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>
-            Editar {ids.length.toLocaleString("pt-BR")} {entityLabel}
+            Edição em massa de {ids.length.toLocaleString("pt-BR")} {entityLabel}
           </DialogTitle>
           <DialogDescription>
-            Marque apenas os campos que deseja sobrescrever em todos os registros selecionados.
-            Campos deixados em branco são limpos.
+            Escolha a propriedade e informe o novo valor. Valores em branco limpam o campo nos
+            registros selecionados.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar campo…"
-            className="h-9 pl-8"
-            aria-label="Buscar campo"
-          />
-        </div>
-
-        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+        <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
           {catalog.isLoading && (
             <div className="space-y-2">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-16 w-full" />
               ))}
             </div>
           )}
 
           {catalog.isError && (
-            <div className="rounded-md border border-destructive/40 p-4 text-sm">
-              <p className="font-medium">Não foi possível carregar os campos.</p>
+            <div className="rounded-md border border-destructive/40 p-4 text-sm" role="alert">
+              <p className="font-medium">Não foi possível carregar as propriedades.</p>
               <Button
                 variant="outline"
                 size="sm"
@@ -320,79 +611,89 @@ export function BulkEditFieldsDialog({
             </div>
           )}
 
-          {!catalog.isLoading && !catalog.isError && filtered.length === 0 && (
+          {!catalog.isLoading && !catalog.isError && allFields.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">
-              Nenhum campo encontrado para “{query}”.
+              Nenhuma propriedade disponível para edição em massa nesta entidade.
             </p>
           )}
 
-          {visible.map((f) => (
-            <div key={f.name} className="space-y-2 rounded-md border p-3">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id={`en-${f.name}`}
-                  checked={!!enabled[f.name]}
-                  onCheckedChange={(v) =>
-                    setEnabled((s) => ({ ...s, [f.name]: v === true ? true : false }))
-                  }
-                />
-                <Label htmlFor={`en-${f.name}`} className="cursor-pointer">
-                  {f.label}
-                  {f.required && <span className="ml-1 text-destructive">*</span>}
-                </Label>
-              </div>
-              {enabled[f.name] && (
-                <FieldEditor
-                  field={f}
-                  value={values[f.name]}
-                  onChange={(v) => setValues((s) => ({ ...s, [f.name]: v }))}
-                />
-              )}
-            </div>
-          ))}
-
-          {systemFields.length > 0 && (
-            <div className="rounded-md border">
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
-                onClick={() => setShowSystem((s) => !s)}
-                aria-expanded={showSystem}
-              >
-                {showSystem ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-                Campos de sistema e integração ({systemFields.length})
-              </button>
-              {showSystem && (
-                <div className="space-y-2 border-t p-3">
-                  {systemFields.map((f) => (
-                    <div key={f.name} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`en-${f.name}`}
-                        checked={!!enabled[f.name]}
-                        onCheckedChange={(v) =>
-                          setEnabled((s) => ({ ...s, [f.name]: v === true ? true : false }))
-                        }
-                      />
-                      <Label htmlFor={`en-${f.name}`} className="cursor-pointer">
-                        {f.label}
-                      </Label>
+          {!catalog.isLoading &&
+            !catalog.isError &&
+            allFields.length > 0 &&
+            rows.map((row, index) => {
+              const field = row.name ? (fieldByName.get(row.name) ?? null) : null;
+              const kind = field ? dependencyKindFor(entity, field.name) : null;
+              return (
+                <div key={row.key} className="space-y-3 rounded-md border p-3">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label>Propriedade a atualizar</Label>
+                      {rows.length > 1 && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          aria-label={`Remover propriedade ${index + 1}`}
+                          onClick={() => setRows((prev) => prev.filter((r) => r.key !== row.key))}
+                          disabled={busy}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                  ))}
+                    <PropertyCombobox
+                      groups={groups}
+                      value={field}
+                      usedNames={usedNames}
+                      onSelect={(f) =>
+                        patchRow(row.key, { name: f.name, value: "", deps: {} })
+                      }
+                    />
+                  </div>
+
+                  {field && kind && (
+                    <DependentEditor
+                      kind={kind}
+                      field={field}
+                      entity={entity}
+                      row={row}
+                      onChange={(patch) => patchRow(row.key, patch)}
+                    />
+                  )}
+
+                  {field && !kind && (
+                    <div className="space-y-2">
+                      <Label htmlFor={`bulk-${field.name}`}>
+                        {field.label}
+                        {field.required && <span className="ml-1 text-destructive">*</span>}
+                      </Label>
+                      <FieldEditor
+                        field={field}
+                        value={row.value}
+                        onChange={(v) => patchRow(row.key, { value: v })}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })}
+
+          {!catalog.isLoading && !catalog.isError && allFields.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRows((prev) => [...prev, newRow()])}
+              disabled={busy || rows.some((r) => !r.name)}
+            >
+              <Plus className="mr-1 h-4 w-4" /> Adicionar outra propriedade
+            </Button>
           )}
         </div>
 
         <DialogFooter className="flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted-foreground" aria-live="polite">
-            {selectedNames.length === 0
-              ? "Nenhum campo marcado."
-              : `${selectedNames.length} campo(s) serão alterados em ${ids.length.toLocaleString("pt-BR")} registro(s).`}
+            {filledRows.length === 0
+              ? "Nenhuma propriedade escolhida."
+              : `${filledRows.length} propriedade(s) em ${ids.length.toLocaleString("pt-BR")} registro(s).`}
           </p>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
@@ -405,9 +706,9 @@ export function BulkEditFieldsDialog({
             ) : (
               <Button
                 onClick={() => setConfirming(true)}
-                disabled={busy || selectedNames.length === 0}
+                disabled={busy || filledRows.length === 0}
               >
-                Aplicar
+                Atualizar
               </Button>
             )}
           </div>
