@@ -136,7 +136,8 @@ export function DealsBoard({
     if (!canUpdate) return;
     const id = String(e.active.id);
     const newStage = e.over?.id as string | undefined;
-    if (!newStage) return;
+    // "Sem etapa" é apenas um agrupamento de leitura: não recebe cards.
+    if (!newStage || newStage === ORPHAN_STAGE_VALUE) return;
     const deal = deals.find((d) => d.id === id);
     if (!deal) return;
     const currentKey = deal.stage_id || (deal.stage as string);
