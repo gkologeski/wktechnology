@@ -573,7 +573,6 @@ function TicketsIndex() {
                   Excluir
                 </Button>
               </Can>
-
             </BulkActionBar>
           )}
 

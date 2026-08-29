@@ -93,119 +93,117 @@ export function ContractsBulkBar({
   return (
     <>
       <BulkActionBar count={count} onClear={onClear}>
-
-
-      <Select
-        disabled={busy}
-        onValueChange={(next) =>
-          void runAll("Status atualizado", (row) =>
-            update({ data: { id: row.id, patch: { status: next } as never } }),
-          )
-        }
-      >
-        <SelectTrigger className="h-8 w-44" aria-label="Alterar status em lote">
-          <SelectValue placeholder="Alterar status" />
-        </SelectTrigger>
-        <SelectContent>
-          {STATUS_OPTIONS.map((s) => (
-            <SelectItem key={s.value} value={s.value}>
-              {s.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Select
-        disabled={busy || teamQuery.isLoading}
-        onValueChange={(value) => {
-          const userId = value === "__none__" ? null : value;
-          void runAll("Responsável atualizado", (row) =>
-            update({ data: { id: row.id, patch: { assigned_to: userId } as never } }),
-          );
-        }}
-      >
-        <SelectTrigger className="h-8 w-56" aria-label="Definir responsável em lote">
-          <SelectValue placeholder="Definir responsável" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__none__">Sem responsável</SelectItem>
-          {(teamQuery.data?.members ?? []).map((m) => (
-            <SelectItem key={m.user_id} value={m.user_id}>
-              {m.full_name || m.email || m.user_id.slice(0, 8)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          try {
-            const ids = selected.map((r) => r.id);
-            const { changes } = await standardizeTitles({ data: { ids, preview: true } });
-            if (!changes.length) {
-              toast.info("Nenhum título precisa de ajuste.");
-              return;
-            }
-            const preview = changes
-              .slice(0, 3)
-              .map((c) => `${c.before} → ${c.after}`)
-              .join("\n");
-            const ok = await confirmDialog(
-              `Padronizar ${changes.length} título(s)?\n\n${preview}${changes.length > 3 ? "\n…" : ""}`,
-            );
-            if (!ok) return;
-            const applied = await standardizeTitles({ data: { ids } });
-            await qc.invalidateQueries({ queryKey: ["contracts"] });
-            toast.success(`${applied.changes.length} título(s) padronizado(s).`);
-          } catch (e) {
-            toast.error((e as Error).message);
-          } finally {
-            setBusy(false);
+        <Select
+          disabled={busy}
+          onValueChange={(next) =>
+            void runAll("Status atualizado", (row) =>
+              update({ data: { id: row.id, patch: { status: next } as never } }),
+            )
           }
-        }}
-      >
-        <Type className="mr-1 h-4 w-4" aria-hidden="true" /> Padronizar títulos
-      </Button>
+        >
+          <SelectTrigger className="h-8 w-44" aria-label="Alterar status em lote">
+            <SelectValue placeholder="Alterar status" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={busy || !deleteAllowed}
-            onClick={async () => {
-              if (
-                !(await confirmDialog(
-                  `Excluir ${count} contrato(s)? Esta ação não pode ser desfeita.`,
-                ))
-              )
+        <Select
+          disabled={busy || teamQuery.isLoading}
+          onValueChange={(value) => {
+            const userId = value === "__none__" ? null : value;
+            void runAll("Responsável atualizado", (row) =>
+              update({ data: { id: row.id, patch: { assigned_to: userId } as never } }),
+            );
+          }}
+        >
+          <SelectTrigger className="h-8 w-56" aria-label="Definir responsável em lote">
+            <SelectValue placeholder="Definir responsável" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none__">Sem responsável</SelectItem>
+            {(teamQuery.data?.members ?? []).map((m) => (
+              <SelectItem key={m.user_id} value={m.user_id}>
+                {m.full_name || m.email || m.user_id.slice(0, 8)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            try {
+              const ids = selected.map((r) => r.id);
+              const { changes } = await standardizeTitles({ data: { ids, preview: true } });
+              if (!changes.length) {
+                toast.info("Nenhum título precisa de ajuste.");
                 return;
-              await runAll("Excluídos", (row) => remove({ data: { id: row.id } }));
-            }}
-          >
-            {busy ? (
-              <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Trash2 className="mr-1 h-4 w-4" aria-hidden="true" />
-            )}
-            Excluir
-          </Button>
-        </TooltipTrigger>
-        {!deleteAllowed ? <TooltipContent>{DELETE_NOT_ALLOWED_TITLE}</TooltipContent> : null}
-      </Tooltip>
+              }
+              const preview = changes
+                .slice(0, 3)
+                .map((c) => `${c.before} → ${c.after}`)
+                .join("\n");
+              const ok = await confirmDialog(
+                `Padronizar ${changes.length} título(s)?\n\n${preview}${changes.length > 3 ? "\n…" : ""}`,
+              );
+              if (!ok) return;
+              const applied = await standardizeTitles({ data: { ids } });
+              await qc.invalidateQueries({ queryKey: ["contracts"] });
+              toast.success(`${applied.changes.length} título(s) padronizado(s).`);
+            } catch (e) {
+              toast.error((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <Type className="mr-1 h-4 w-4" aria-hidden="true" /> Padronizar títulos
+        </Button>
 
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={busy || count === 0}
-        onClick={() => setBulkEditOpen(true)}
-      >
-        <Pencil className="mr-1 h-4 w-4" aria-hidden="true" /> Editar em massa
-      </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={busy || !deleteAllowed}
+              onClick={async () => {
+                if (
+                  !(await confirmDialog(
+                    `Excluir ${count} contrato(s)? Esta ação não pode ser desfeita.`,
+                  ))
+                )
+                  return;
+                await runAll("Excluídos", (row) => remove({ data: { id: row.id } }));
+              }}
+            >
+              {busy ? (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Trash2 className="mr-1 h-4 w-4" aria-hidden="true" />
+              )}
+              Excluir
+            </Button>
+          </TooltipTrigger>
+          {!deleteAllowed ? <TooltipContent>{DELETE_NOT_ALLOWED_TITLE}</TooltipContent> : null}
+        </Tooltip>
+
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy || count === 0}
+          onClick={() => setBulkEditOpen(true)}
+        >
+          <Pencil className="mr-1 h-4 w-4" aria-hidden="true" /> Editar em massa
+        </Button>
       </BulkActionBar>
 
       <BulkEditFieldsDialog
@@ -220,6 +218,5 @@ export function ContractsBulkBar({
         }}
       />
     </>
-
   );
 }

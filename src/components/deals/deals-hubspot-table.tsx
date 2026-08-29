@@ -409,7 +409,6 @@ export function DealsHubspotTable({
             >
               Excluir
             </Button>
-
           </>
         </BulkActionBar>
       )}
