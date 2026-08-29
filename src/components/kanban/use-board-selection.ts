@@ -48,6 +48,25 @@ export function useBoardSelection<T extends { id: string }>(rows: T[]) {
     });
   }, []);
 
+  /** Marca explicitamente um conjunto de ids, preservando a seleção anterior. */
+  const selectMany = useCallback((ids: string[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.add(id);
+      return next;
+    });
+  }, []);
+
+  /** Remove explicitamente um conjunto de ids da seleção. */
+  const deselectMany = useCallback((ids: string[]) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const id of ids) next.delete(id);
+      return next;
+    });
+  }, []);
+
+
   const clear = useCallback(() => {
     setSelectedIds(new Set());
     setLastId(null);
