@@ -394,6 +394,49 @@ function LeadsHubspotView() {
   const rows = result?.rows ?? [];
   const total = result?.count ?? 0;
 
+  /**
+   * Quadro (Kanban): consulta própria por etapa, com contagem exata no banco.
+   * Sem isso o cabeçalho da coluna exibia apenas os cards da página atual,
+   * divergindo do total mostrado pelo filtro lateral.
+   */
+  const BOARD_PER_STAGE = 100;
+  const { data: boardColumns, isLoading: boardLoading } = useQuery({
+    enabled: viewMode === "board" && stages.length > 0,
+    queryKey: [
+      "leads",
+      "board",
+      activeView,
+      filters,
+      sortKey,
+      sortDir,
+      debouncedSearch,
+      user?.id,
+      stagesKey,
+    ],
+    queryFn: async () => {
+      return await Promise.all(
+        stages.map(async (s) => {
+          let q = supabase
+            .from("leads")
+            .select(buildGridSelect(BASE_LEAD_KEYS, [], {}), { count: "exact" });
+          q = applyFilters(q);
+          q = q.or(stageOrExpr(stages, s.value));
+          q = q
+            .order(sortKey, { ascending: sortDir === "asc" })
+            .range(0, BOARD_PER_STAGE - 1);
+          const { data, error, count } = await q;
+          if (error) throw error;
+          return {
+            value: s.value,
+            rows: (data ?? []) as unknown as LeadGridRow[],
+            total: count ?? 0,
+          };
+        }),
+      );
+    },
+  });
+
+
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
 
