@@ -12,6 +12,7 @@ export function LeadsTopBar({
   prospectingBusy,
   onStartProspectingMode,
   onCreateLead,
+  selectedCount = 0,
 }: {
   isLoading: boolean;
   total: number;
@@ -21,7 +22,12 @@ export function LeadsTopBar({
   prospectingBusy: boolean;
   onStartProspectingMode: () => void;
   onCreateLead: () => void;
+  /** Quantidade de leads selecionados (tabela ou quadro). */
+  selectedCount?: number;
 }) {
+  const hasSelection = selectedCount > 0;
+  const selectionSuffix = hasSelection ? ` (${selectedCount.toLocaleString("pt-BR")})` : "";
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 px-1 pb-3">
       <div>
