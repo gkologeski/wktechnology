@@ -231,7 +231,6 @@ function LeadsHubspotView() {
       q = q.or(stagesOrExpr(stages, filters.status));
     }
 
-
     if (filters.source.length > 0) q = q.in("source", filters.source);
     if (filters.substatusIds.length > 0) q = q.in("stage_substatus_id", filters.substatusIds);
     if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
@@ -303,7 +302,6 @@ function LeadsHubspotView() {
 
   /** IDs de todos os leads de uma etapa dentro do filtro atual. */
   const fetchStageLeadIds = (stageValue: string) => fetchFilteredLeadIds(5000, stageValue);
-
 
   /**
    * Carrega os leads na fila manual reutilizável "Modo Prospecção (rápida)" e
@@ -421,9 +419,7 @@ function LeadsHubspotView() {
             .select(buildGridSelect(BASE_LEAD_KEYS, [], {}), { count: "exact" });
           q = applyFilters(q);
           q = q.or(stageOrExpr(stages, s.value));
-          q = q
-            .order(sortKey, { ascending: sortDir === "asc" })
-            .range(0, BOARD_PER_STAGE - 1);
+          q = q.order(sortKey, { ascending: sortDir === "asc" }).range(0, BOARD_PER_STAGE - 1);
           const { data, error, count } = await q;
           if (error) throw error;
           return {
@@ -435,7 +431,6 @@ function LeadsHubspotView() {
       );
     },
   });
-
 
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
@@ -759,11 +754,7 @@ function LeadsHubspotView() {
                       toast.error("Selecione ao menos um lead.");
                       return;
                     }
-                    startFocusQueue(
-                      "leads",
-                      ids,
-                      `Leads · ${ids.length.toLocaleString("pt-BR")}`,
-                    );
+                    startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
 
                     toast.success(`Fila iniciada com ${ids.length} lead(s)`);
                     navigate({ to: "/leads/$id", params: { id: ids[0] } });

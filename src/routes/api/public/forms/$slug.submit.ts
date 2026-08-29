@@ -182,7 +182,6 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           .update({ submit_count: (form.submit_count ?? 0) + 1 })
           .eq("id", form.id);
 
-
         return Response.json(
           {
             ok: true,
