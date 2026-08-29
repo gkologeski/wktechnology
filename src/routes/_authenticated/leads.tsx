@@ -278,15 +278,32 @@ function LeadsHubspotView() {
     return q;
   };
 
-  /** IDs dos leads do filtro/ordenação atuais (usado por "Iniciar fila" e "Modo Prospecção"). */
-  const fetchFilteredLeadIds = async (limit: number) => {
-    let q = supabase.from("leads").select("id");
-    q = applyFilters(q);
-    q = q.order(sortKey, { ascending: sortDir === "asc" }).limit(limit);
-    const { data, error } = await q;
-    if (error) throw error;
-    return (data ?? []).map((r) => r.id as string);
+  /**
+   * IDs dos leads do filtro/ordenação atuais (usado por "Iniciar fila" e
+   * "Modo Prospecção"). Pagina em blocos de 1.000 porque a API corta a
+   * resposta nesse tamanho — sem isso a fila era truncada silenciosamente.
+   */
+  const fetchFilteredLeadIds = async (limit: number, stageValue?: string) => {
+    const CHUNK = 1000;
+    const ids: string[] = [];
+    for (let offset = 0; offset < limit; offset += CHUNK) {
+      const size = Math.min(CHUNK, limit - offset);
+      let q = supabase.from("leads").select("id");
+      q = applyFilters(q);
+      if (stageValue) q = q.or(stageOrExpr(stages, stageValue));
+      q = q.order(sortKey, { ascending: sortDir === "asc" }).range(offset, offset + size - 1);
+      const { data, error } = await q;
+      if (error) throw error;
+      const batch = (data ?? []) as { id: string }[];
+      for (const r of batch) ids.push(r.id);
+      if (batch.length < size) break;
+    }
+    return ids;
   };
+
+  /** IDs de todos os leads de uma etapa dentro do filtro atual. */
+  const fetchStageLeadIds = (stageValue: string) => fetchFilteredLeadIds(5000, stageValue);
+
 
   /**
    * Carrega os leads na fila manual reutilizável "Modo Prospecção (rápida)" e
