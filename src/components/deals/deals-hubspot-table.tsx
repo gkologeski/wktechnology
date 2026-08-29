@@ -8,6 +8,7 @@ import type { Deal } from "@/lib/db-types";
 import { type Pipeline, usePipelines } from "@/lib/pipelines";
 import { formatCurrency, formatDate } from "@/lib/crm";
 import { Button } from "@/components/ui/button";
+import { BulkActionBar } from "@/components/bulk-action-bar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -16,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Play, Trophy, X as XIcon } from "lucide-react";
+import { MoreHorizontal, Pencil, Play, Trophy } from "lucide-react";
 import { startFocusQueue } from "@/lib/focus-queue";
 import {
   HeaderCheckbox,
@@ -380,12 +381,9 @@ export function DealsHubspotTable({
 
   return (
     <div className="flex flex-col rounded-md border bg-card">
-      <div className="flex items-center justify-between border-b px-3 py-2">
-        {selectedIds.size > 0 ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-primary">
-              {selectedIds.size} selecionado(s)
-            </span>
+      {selectedIds.size > 0 && (
+        <BulkActionBar count={selectedIds.size} onClear={clearSelection}>
+          <>
             <Button
               variant="ghost"
               size="sm"
@@ -411,14 +409,11 @@ export function DealsHubspotTable({
             >
               Excluir
             </Button>
-
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
-              <XIcon className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">{total} negócio(s)</span>
-        )}
+          </>
+        </BulkActionBar>
+      )}
+      <div className="flex items-center justify-between border-b px-3 py-2">
+        <span className="text-xs text-muted-foreground">{total} negócio(s)</span>
         <ColumnsButton />
       </div>
 

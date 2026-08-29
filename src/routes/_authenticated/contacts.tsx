@@ -13,6 +13,7 @@ import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { cn } from "@/lib/utils";
 import { toE164 } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
+import { BulkActionBar } from "@/components/bulk-action-bar";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -32,7 +33,6 @@ import {
   Plus,
   Search,
   Sparkles,
-  X,
 } from "lucide-react";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { startFocusQueue } from "@/lib/focus-queue";
@@ -708,11 +708,8 @@ function ContactsHubspotView() {
               />
             </div>
 
-            {selectedIds.size > 0 ? (
-              <div className="flex items-center gap-2 rounded-md border bg-primary/5 px-2 py-1">
-                <span className="text-xs font-medium text-primary">
-                  {selectedIds.size} selecionado(s)
-                </span>
+            {selectedIds.size > 0 && (
+              <BulkActionBar count={selectedIds.size} onClear={clearSelection}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -760,51 +757,47 @@ function ContactsHubspotView() {
                     <Pencil className="mr-1 h-3.5 w-3.5" /> Editar em massa
                   </Button>
                 </Can>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <ColumnsButton />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!user?.id}
-                  onClick={async () => {
-                    if (!user?.id) return;
-                    const t = toast.loading("Vinculando contatos por domínio…");
-                    const { data, error } = await supabase.rpc("link_contacts_by_email_domain", {
-                      p_workspace: user.id,
-                    });
-                    toast.dismiss(t);
-                    if (error) {
-                      toast.error(error.message);
-                      return;
-                    }
-                    const n = Number(data ?? 0);
-                    toast.success(
-                      n === 0
-                        ? "Nenhum contato novo foi vinculado"
-                        : `${n} contato${n === 1 ? "" : "s"} vinculado${n === 1 ? "" : "s"} à empresa pelo domínio`,
-                    );
-                    if (n > 0) qc.invalidateQueries({ queryKey: ["contacts"] });
-                  }}
-                >
-                  <Link2 className="mr-1 h-3.5 w-3.5" /> Vincular por domínio
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+              </BulkActionBar>
             )}
+            <div className="flex items-center gap-1.5">
+              <ColumnsButton />
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={!user?.id}
+                onClick={async () => {
+                  if (!user?.id) return;
+                  const t = toast.loading("Vinculando contatos por domínio…");
+                  const { data, error } = await supabase.rpc("link_contacts_by_email_domain", {
+                    p_workspace: user.id,
+                  });
+                  toast.dismiss(t);
+                  if (error) {
+                    toast.error(error.message);
+                    return;
+                  }
+                  const n = Number(data ?? 0);
+                  toast.success(
+                    n === 0
+                      ? "Nenhum contato novo foi vinculado"
+                      : `${n} contato${n === 1 ? "" : "s"} vinculado${n === 1 ? "" : "s"} à empresa pelo domínio`,
+                  );
+                  if (n > 0) qc.invalidateQueries({ queryKey: ["contacts"] });
+                }}
+              >
+                <Link2 className="mr-1 h-3.5 w-3.5" /> Vincular por domínio
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    Ações <ChevronDown className="ml-1 h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto">

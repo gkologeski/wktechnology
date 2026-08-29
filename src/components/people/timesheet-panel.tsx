@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { BulkActionBar } from "@/components/bulk-action-bar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -513,9 +514,8 @@ export function TimesheetPanel({ personId }: { personId: string }) {
 
       {/* Barra de seleção */}
       {selected.size > 0 && (
-        <div className="sticky top-2 z-10 flex items-center justify-between rounded-md border bg-background p-2 shadow-sm">
-          <span className="text-sm">{selected.size} apontamento(s) selecionado(s)</span>
-          <div className="flex gap-2">
+        <BulkActionBar count={selected.size} onClear={() => setSelected(new Set())}>
+          <>
             <Button
               size="sm"
               onClick={() => approveMut.mutate(Array.from(selected))}
@@ -531,11 +531,8 @@ export function TimesheetPanel({ personId }: { personId: string }) {
             >
               Remover aprovação
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
-              Limpar
-            </Button>
-          </div>
-        </div>
+          </>
+        </BulkActionBar>
       )}
 
       {/* Detalhes */}
