@@ -4,7 +4,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Deal } from "@/lib/db-types";
-import type { Pipeline } from "@/lib/pipelines";
+import type { Pipeline, PipelineStage } from "@/lib/pipelines";
+
+/** Valor sintético da coluna que agrupa etapas fora do pipeline atual. */
+const ORPHAN_STAGE_VALUE = "__sem_etapa__";
 import { computeDealSignals } from "@/lib/deals/hot-score";
 import { DealsBoardColumn } from "./deals-board-column";
 import { DealsBoardCard } from "./deals-board-card";
@@ -50,16 +53,28 @@ export function DealsBoard({
     [deals, pipeline, nextActivities],
   );
 
-  const grouped = useMemo(() => {
+  const { grouped, orphans } = useMemo(() => {
     const map: Record<string, Deal[]> = {};
     for (const s of pipeline.stages) map[s.value] = [];
+    const unknown: Deal[] = [];
     for (const d of deals) {
       const key = d.stage_id || (d.stage as string);
       if (map[key]) map[key].push(d);
-      else if (map[pipeline.stages[0]?.value]) map[pipeline.stages[0].value].push(d);
+      // Etapa que não existe neste pipeline (ex.: id legado após troca de
+      // pipeline): fica numa coluna "Sem etapa" em vez de sumir do quadro.
+      else unknown.push(d);
     }
-    return map;
+    return { grouped: map, orphans: unknown };
   }, [deals, pipeline]);
+
+  /** Coluna extra para negócios com etapa desconhecida (só quando houver). */
+  const boardStages = useMemo<PipelineStage[]>(
+    () =>
+      orphans.length
+        ? [...pipeline.stages, { value: ORPHAN_STAGE_VALUE, label: "Sem etapa", type: "open" }]
+        : pipeline.stages,
+    [orphans.length, pipeline.stages],
+  );
 
   const [lostTarget, setLostTarget] = useState<{
     ids: string[];
@@ -121,7 +136,8 @@ export function DealsBoard({
     if (!canUpdate) return;
     const id = String(e.active.id);
     const newStage = e.over?.id as string | undefined;
-    if (!newStage) return;
+    // "Sem etapa" é apenas um agrupamento de leitura: não recebe cards.
+    if (!newStage || newStage === ORPHAN_STAGE_VALUE) return;
     const deal = deals.find((d) => d.id === id);
     if (!deal) return;
     const currentKey = deal.stage_id || (deal.stage as string);
@@ -178,8 +194,8 @@ export function DealsBoard({
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <KanbanScrollContainer ariaLabel="Quadro de negócios">
           <div className="flex gap-2 pb-4">
-            {pipeline.stages.map((s) => {
-              const raw = grouped[s.value] ?? [];
+            {boardStages.map((s) => {
+              const raw = s.value === ORPHAN_STAGE_VALUE ? orphans : (grouped[s.value] ?? []);
               const rows = focusMode
                 ? [...raw].sort((a, b) => {
                     const sa = signals.get(a.id)?.score ?? 0;
