@@ -193,8 +193,8 @@ export function DealsBoard({
       <DndContext sensors={sensors} onDragEnd={onDragEnd}>
         <KanbanScrollContainer ariaLabel="Quadro de negócios">
           <div className="flex gap-2 pb-4">
-            {pipeline.stages.map((s) => {
-              const raw = grouped[s.value] ?? [];
+            {boardStages.map((s) => {
+              const raw = s.value === ORPHAN_STAGE_VALUE ? orphans : (grouped[s.value] ?? []);
               const rows = focusMode
                 ? [...raw].sort((a, b) => {
                     const sa = signals.get(a.id)?.score ?? 0;
