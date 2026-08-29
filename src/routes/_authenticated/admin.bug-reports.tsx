@@ -360,6 +360,15 @@ function BugReportsAdminPage() {
           table="bug_reports"
           stageField="status"
           selectable
+          bulkEditFields={[
+            {
+              name: "status",
+              label: "Status",
+              type: "select",
+              options: BUG_REPORT_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] })),
+            },
+            { name: "resolution_text", label: "Resolução", type: "textarea" },
+          ]}
           entityLabel="chamado interno"
           assignColumn={null}
           canDelete={false}

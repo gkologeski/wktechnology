@@ -208,6 +208,18 @@ function JobDetailPage() {
     }
   };
 
+  // Move várias candidaturas de etapa (ação em massa do quadro).
+  const onBulkMoveStage = async (ids: string[], toStage: string) => {
+    try {
+      for (const applicationId of ids) {
+        await moveApp({ data: { applicationId, toStage, position: 0 } });
+      }
+      toast.success(`${ids.length} candidatura(s) movida(s)`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao mover em massa");
+    }
+  };
+
   const handleExport = async () => {
     try {
       const r = await exportCsv({ data: { jobId: id } });
@@ -395,6 +407,8 @@ function JobDetailPage() {
                     onDragStart={setDragging}
                     onDragEnd={() => setDragging(null)}
                     onDropStage={onDrop}
+                    onBulkMoveStage={onBulkMoveStage}
+                    onBulkDone={refresh}
                   />
                 )}
               </div>

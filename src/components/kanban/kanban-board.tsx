@@ -24,6 +24,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { BoardCardCheckbox } from "@/components/kanban/board-card-checkbox";
 import { useBoardSelection } from "@/components/kanban/use-board-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import type { BulkField } from "@/components/bulk-edit-dialog";
+
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 
 export type KanbanColumn = {
@@ -68,7 +70,13 @@ export type KanbanBoardProps<T extends { id: string }> = {
   canDelete?: boolean;
   /** Rótulo para cada card na seleção (acessibilidade). */
   cardLabel?: (row: T) => string;
+  /**
+   * Campos fixos para edição em massa. Necessário apenas quando a tabela não
+   * está no catálogo dinâmico (`BULK_EDIT_ENTITIES`).
+   */
+  bulkEditFields?: BulkField[];
 };
+
 
 export function KanbanBoard<T extends { id: string }>({
   rows,
@@ -90,6 +98,8 @@ export function KanbanBoard<T extends { id: string }>({
   activityEntity,
   canDelete = false,
   cardLabel,
+  bulkEditFields,
+
 }: KanbanBoardProps<T>) {
   const qc = useQueryClient();
   const selection = useBoardSelection(rows);
@@ -289,6 +299,8 @@ export function KanbanBoard<T extends { id: string }>({
           activityEntity={activityEntity}
           canUpdate={canUpdate}
           canDelete={canDelete}
+          bulkEditFields={bulkEditFields}
+
           onClear={selection.clear}
           onDone={invalidate}
         />

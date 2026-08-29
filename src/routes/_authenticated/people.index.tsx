@@ -31,6 +31,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import type { BulkField } from "@/components/bulk-edit-dialog";
+
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   Dialog,
@@ -93,6 +95,29 @@ const KANBAN_TONE: Record<PeopleStatus, string> = {
   offboarding: "bg-orange-500",
   terminated: "bg-rose-500",
 };
+
+// Campos oferecidos na edição em massa (tabela `people` fica fora do catálogo
+// dinâmico), compartilhados entre a tabela e o quadro.
+const PEOPLE_BULK_EDIT_FIELDS: BulkField[] = [
+  {
+    name: "status",
+    label: "Status",
+    type: "select",
+    options: PEOPLE_STATUSES.map((s) => ({ value: s, label: PEOPLE_STATUS_LABELS[s] })),
+  },
+  {
+    name: "employment_type",
+    label: "Vínculo",
+    type: "select",
+    options: PEOPLE_EMPLOYMENT_TYPES.map((t) => ({
+      value: t,
+      label: PEOPLE_EMPLOYMENT_LABELS[t],
+    })),
+  },
+  { name: "role_title", label: "Cargo / posição", type: "text" },
+  { name: "seniority", label: "Senioridade", type: "text" },
+  { name: "location", label: "Localização", type: "text" },
+];
 
 function initials(name: string) {
   return name
@@ -209,26 +234,7 @@ function PeoplePage() {
             "techpeople.people.update.own",
           ])}
           canDelete={canAny(["techpeople.people.delete.workspace", "techpeople.people.delete.own"])}
-          bulkEditFields={[
-            {
-              name: "status",
-              label: "Status",
-              type: "select",
-              options: PEOPLE_STATUSES.map((s) => ({ value: s, label: PEOPLE_STATUS_LABELS[s] })),
-            },
-            {
-              name: "employment_type",
-              label: "Vínculo",
-              type: "select",
-              options: PEOPLE_EMPLOYMENT_TYPES.map((t) => ({
-                value: t,
-                label: PEOPLE_EMPLOYMENT_LABELS[t],
-              })),
-            },
-            { name: "role_title", label: "Cargo / posição", type: "text" },
-            { name: "seniority", label: "Senioridade", type: "text" },
-            { name: "location", label: "Localização", type: "text" },
-          ]}
+          bulkEditFields={PEOPLE_BULK_EDIT_FIELDS}
         />
       )}
 
@@ -238,6 +244,7 @@ function PeoplePage() {
           table="people"
           stageField="status"
           selectable
+          bulkEditFields={PEOPLE_BULK_EDIT_FIELDS}
           entityLabel="pessoa"
           canDelete={canAny(["techpeople.people.delete.workspace", "techpeople.people.delete.own"])}
           canUpdate={canUpdatePerson}
