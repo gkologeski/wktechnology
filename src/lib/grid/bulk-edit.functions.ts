@@ -92,7 +92,8 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
       if (chosenStage && !isStageOfPipeline(stages, String(chosenStage))) {
         return {
           ok: false as const,
-          message: "A etapa escolhida não pertence ao pipeline de destino. Selecione uma etapa dele.",
+          message:
+            "A etapa escolhida não pertence ao pipeline de destino. Selecione uma etapa dele.",
           requested: uniqueIds.length,
           updated: 0,
         };
