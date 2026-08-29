@@ -117,12 +117,12 @@ function DashboardPage() {
         scope={data?.effectiveScope ?? scope}
         onScopeChange={(v) => navigate({ search: (s) => ({ ...s, scope: v }) })}
         canViewTeam={data?.canViewTeam ?? false}
-        disabled={isLoading}
+        disabled={loading}
       />
 
       <OnboardingChecklist />
 
-      {isLoading ? (
+      {loading ? (
         <DashboardSkeleton />
       ) : isError ? (
         <EmptyState
