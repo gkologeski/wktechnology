@@ -157,10 +157,31 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           referer,
         });
 
+        // Nota na timeline com os campos preenchidos, na ordem definida no
+        // formulário. Falha aqui não invalida o envio: apenas registra log.
+        const filled = fields
+          .filter((f) => clean[f.key])
+          .map((f) => `${f.label || f.key}: ${clean[f.key]}`);
+        if (filled.length && (leadId || contactId)) {
+          const { error: aerr } = await supabaseAdmin.from("activities").insert({
+            owner_id: form.owner_id,
+            workspace_id: form.workspace_id,
+            created_by: form.owner_id,
+            assigned_to: form.owner_id,
+            type: "note",
+            subject: `Formulário enviado: ${form.name ?? params.slug}`,
+            body: filled.join("\n"),
+            related_lead_id: leadId,
+            related_contact_id: contactId,
+          });
+          if (aerr) console.error("[forms.submit] activity insert failed", aerr.message);
+        }
+
         await supabaseAdmin
           .from("forms")
           .update({ submit_count: (form.submit_count ?? 0) + 1 })
           .eq("id", form.id);
+
 
         return Response.json(
           {
