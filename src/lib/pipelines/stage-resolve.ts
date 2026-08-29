@@ -8,6 +8,9 @@ export type StageDef = {
   type?: "open" | "won" | "lost" | string;
 };
 
+/** Entidades cuja etapa (`stage_id`) pertence a um pipeline. */
+export const PIPELINE_ENTITIES = new Set<string>(["deals", "leads", "tickets"]);
+
 /** Enum legado da coluna `stage` (mantida em sincronia com `stage_id`). */
 const LEGACY_STAGE_ENUM = new Set([
   "new",
