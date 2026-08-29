@@ -122,7 +122,10 @@ export function LeadsBoard({
   onStartProspecting?: (ids: string[]) => void;
   /** Todos os ids de uma etapa dentro do filtro atual (seleção da coluna). */
   onFetchStageIds?: (stageValue: string) => Promise<string[]>;
+  /** Informa à página os ids selecionados no quadro. */
+  onSelectionChange?: (ids: string[]) => void;
 }) {
+
   const qc = useQueryClient();
   const [loadingStage, setLoadingStage] = useState<string | null>(null);
 
