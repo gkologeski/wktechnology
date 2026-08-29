@@ -101,6 +101,19 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
         };
       }
 
+      const incoherent = checkStageCoherence(stages, {
+        stage: payload["stage"],
+        stage_id: chosenStage,
+      });
+      if (incoherent) {
+        return {
+          ok: false as const,
+          message: incoherent,
+          requested: uniqueIds.length,
+          updated: 0,
+        };
+      }
+
       if (chosenStage) {
         const legacy = legacyStageFor(stages, String(chosenStage));
         if (legacy && columnTypes.has("stage")) payload["stage"] = legacy;
@@ -147,7 +160,110 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
           });
         }
       }
+    } else if (
+      PIPELINE_ENTITIES.has(data.entity) &&
+      (payload["stage_id"] || payload["stage"]) &&
+      columnTypes.has("pipeline_id")
+    ) {
+      // Sem troca de pipeline: valida/deriva o par (stage, stage_id) contra o
+      // pipeline atual de cada registro, evitando gravar valores contraditórios.
+      const rows: Array<{ id: string; pipeline_id: string | null }> = [];
+      for (const chunk of chunkIds(uniqueIds)) {
+        const { data: current, error } = await client
+          .from(data.entity)
+          .select("id, pipeline_id")
+          .in("id", chunk);
+        if (error) {
+          return {
+            ok: false as const,
+            message: error.message as string,
+            requested: uniqueIds.length,
+            updated: 0,
+          };
+        }
+        rows.push(...((current ?? []) as Array<{ id: string; pipeline_id: string | null }>));
+      }
+
+      const pipelineIds = Array.from(
+        new Set(rows.map((r) => r.pipeline_id).filter((v): v is string => !!v)),
+      );
+      const stagesByPipeline = new Map<string, ReturnType<typeof parseStages>>();
+      if (pipelineIds.length > 0) {
+        const { data: pipes, error: pipesError } = await client
+          .from("pipelines")
+          .select("id, stages")
+          .in("id", pipelineIds);
+        if (pipesError) {
+          return {
+            ok: false as const,
+            message: pipesError.message as string,
+            requested: uniqueIds.length,
+            updated: 0,
+          };
+        }
+        for (const p of (pipes ?? []) as Array<{ id: string; stages: unknown }>) {
+          stagesByPipeline.set(p.id, parseStages(p.stages));
+        }
+      }
+
+      const chosenStage = payload["stage_id"];
+      const chosenLegacy = payload["stage"] == null ? null : String(payload["stage"]);
+
+      // Recusa qualquer combinação contraditória antes de gravar.
+      for (const stages of stagesByPipeline.values()) {
+        if (!stages.length) continue;
+        const incoherent = checkStageCoherence(stages, {
+          stage: chosenLegacy,
+          stage_id: chosenStage,
+        });
+        if (incoherent) {
+          return {
+            ok: false as const,
+            message: incoherent,
+            requested: uniqueIds.length,
+            updated: 0,
+          };
+        }
+      }
+
+      if (chosenStage) {
+        // Etapa informada: deriva o `stage` legado a partir dela.
+        for (const stages of stagesByPipeline.values()) {
+          if (!isStageOfPipeline(stages, String(chosenStage))) continue;
+          const legacy = legacyStageFor(stages, String(chosenStage));
+          if (legacy && columnTypes.has("stage")) payload["stage"] = legacy;
+          break;
+        }
+      } else if (
+        chosenLegacy &&
+        (chosenLegacy === "won" || chosenLegacy === "lost") &&
+        columnTypes.has("stage_id")
+      ) {
+        // Só o estágio informado: ajusta a etapa para a de mesmo tipo no
+        // pipeline de cada registro (agrupando os updates por etapa alvo).
+        const byTarget = new Map<string, string[]>();
+        const untouched: string[] = [];
+        for (const row of rows) {
+          const stages = row.pipeline_id ? stagesByPipeline.get(row.pipeline_id) : undefined;
+          const target = stages?.length ? stageOfType(stages, chosenLegacy) : undefined;
+          if (!target) {
+            untouched.push(row.id);
+            continue;
+          }
+          const list = byTarget.get(target);
+          if (list) list.push(row.id);
+          else byTarget.set(target, [row.id]);
+        }
+        if (byTarget.size > 0) {
+          groups = Array.from(byTarget.entries()).map(([target, ids]) => ({
+            ids,
+            payload: { ...payload, stage_id: target },
+          }));
+          if (untouched.length > 0) groups.push({ ids: untouched, payload });
+        }
+      }
     }
+
 
     let updated = 0;
     for (const group of groups) {
