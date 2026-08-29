@@ -778,16 +778,15 @@ function LeadsHubspotView() {
                   canProspectingMode={canProspectingMode}
                   prospectingBusy={prospectingBusy}
                   onFetchStageIds={fetchStageLeadIds}
+                  onSelectionChange={setBoardSelectedIds}
                   onStartQueue={(ids) => {
                     if (!ids.length) {
                       toast.error("Selecione ao menos um lead.");
                       return;
                     }
-                    startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
-
-                    toast.success(`Fila iniciada com ${ids.length} lead(s)`);
-                    navigate({ to: "/leads/$id", params: { id: ids[0] } });
+                    startQueueWithIds(ids);
                   }}
+
                   onStartProspecting={(ids) =>
                     void startProspectingMode(ids.slice(0, PROSPECTING_MODE_LIMIT))
                   }
