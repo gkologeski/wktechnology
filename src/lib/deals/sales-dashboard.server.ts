@@ -82,9 +82,12 @@ export async function loadSalesDashboard(
   const prevPeriodEnd = new Date(periodStart.getTime() - 1);
 
   // Escopo "equipe" exige permissão granular de visualização além do próprio usuário.
-  const permsRes = await supabase.rpc("current_user_permissions_json", {
-    _workspace_id: workspaceId,
-  });
+  const permsRes = await supabase
+    .rpc("current_user_permissions_json", { _workspace_id: workspaceId })
+    .then(
+      (r) => r,
+      () => ({ data: null }) as { data: unknown },
+    );
   const perms: string[] = Array.isArray(permsRes.data) ? (permsRes.data as string[]) : [];
   const canViewTeam = perms.some((p) => /^techsales\.dashboard\.view\.(team|workspace)$/.test(p));
   const effectiveScope: SalesDashboardScope = input.scope === "team" && canViewTeam ? "team" : "me";
