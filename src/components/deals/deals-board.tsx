@@ -65,7 +65,13 @@ export function DealsBoard({
   }, [deals, pipeline]);
 
   /** Coluna extra para negócios com etapa desconhecida (só quando houver). */
-  const orphanStage = { value: "__sem_etapa__", label: "Sem etapa", type: "open" as const };
+  const boardStages = useMemo<PipelineStage[]>(
+    () =>
+      orphans.length
+        ? [...pipeline.stages, { value: ORPHAN_STAGE_VALUE, label: "Sem etapa", type: "open" }]
+        : pipeline.stages,
+    [orphans.length, pipeline.stages],
+  );
 
   const [lostTarget, setLostTarget] = useState<{
     ids: string[];
