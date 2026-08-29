@@ -60,9 +60,18 @@ export function LeadsTopBar({
           size="sm"
           onClick={onStartQueue}
           disabled={isLoading || total === 0}
-          title="Percorrer todos os leads do filtro atual, um a um"
+          aria-label={
+            hasSelection
+              ? `Iniciar fila com ${selectedCount} lead(s) selecionado(s)`
+              : "Iniciar fila com todos os leads do filtro atual"
+          }
+          title={
+            hasSelection
+              ? "Percorrer apenas os leads selecionados, um a um"
+              : "Percorrer todos os leads do filtro atual, um a um"
+          }
         >
-          <Play className="mr-1.5 h-4 w-4" /> Iniciar fila
+          <Play className="mr-1.5 h-4 w-4" /> Iniciar fila{selectionSuffix}
         </Button>
         {canProspectingMode && (
           <Button
@@ -70,12 +79,22 @@ export function LeadsTopBar({
             size="sm"
             onClick={onStartProspectingMode}
             disabled={isLoading || total === 0 || prospectingBusy}
-            title="Trabalhar os leads do filtro atual na tela de Prospecção (questionário, qualificação e timeline)"
+            aria-label={
+              hasSelection
+                ? `Modo Prospecção com ${selectedCount} lead(s) selecionado(s)`
+                : "Modo Prospecção com os leads do filtro atual"
+            }
+            title={
+              hasSelection
+                ? "Trabalhar os leads selecionados na tela de Prospecção"
+                : "Trabalhar os leads do filtro atual na tela de Prospecção (questionário, qualificação e timeline)"
+            }
           >
             <Headphones className="mr-1.5 h-4 w-4" />
-            {prospectingBusy ? "Preparando…" : "Modo Prospecção"}
+            {prospectingBusy ? "Preparando…" : `Modo Prospecção${selectionSuffix}`}
           </Button>
         )}
+
 
         <Can permission="techsales.leads.create.own">
           <Button size="sm" onClick={onCreateLead}>
