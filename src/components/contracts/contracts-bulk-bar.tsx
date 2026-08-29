@@ -4,10 +4,11 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Loader2, Pencil, Trash2, Type, X } from "lucide-react";
+import { Loader2, Pencil, Trash2, Type } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { BulkActionBar } from "@/components/bulk-action-bar";
 import {
   Select,
   SelectContent,
@@ -90,10 +91,9 @@ export function ContractsBulkBar({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
-      <span className="text-sm font-medium">
-        {count} selecionado{count === 1 ? "" : "s"}
-      </span>
+    <>
+      <BulkActionBar count={count} onClear={onClear}>
+
 
       <Select
         disabled={busy}
@@ -206,10 +206,7 @@ export function ContractsBulkBar({
       >
         <Pencil className="mr-1 h-4 w-4" aria-hidden="true" /> Editar em massa
       </Button>
-
-      <Button variant="ghost" size="sm" className="ml-auto" onClick={onClear} disabled={busy}>
-        <X className="mr-1 h-4 w-4" aria-hidden="true" /> Limpar seleção
-      </Button>
+      </BulkActionBar>
 
       <BulkEditFieldsDialog
         open={bulkEditOpen}
@@ -222,6 +219,7 @@ export function ContractsBulkBar({
           onClear();
         }}
       />
-    </div>
+    </>
+
   );
 }

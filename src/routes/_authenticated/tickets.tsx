@@ -15,6 +15,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { Button } from "@/components/ui/button";
+import { BulkActionBar } from "@/components/bulk-action-bar";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { RichHtmlEditor } from "@/components/rich-html-editor";
@@ -500,9 +501,7 @@ function TicketsIndex() {
 
         <TabsContent value="table" className="mt-4">
           {selected.size > 0 && (
-            <div className="mb-2 rounded-md border bg-[color:var(--hs-orange)]/8 px-3 py-2 flex items-center gap-2 text-sm">
-              <span className="font-medium">{selected.size} selecionado(s)</span>
-              <div className="h-4 w-px bg-border mx-1" />
+            <BulkActionBar count={selected.size} onClear={clearSelection}>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="ghost" className="h-7">
@@ -575,10 +574,7 @@ function TicketsIndex() {
                 </Button>
               </Can>
 
-              <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={clearSelection}>
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            </div>
+            </BulkActionBar>
           )}
 
           <div className="rounded-md border bg-card overflow-hidden">

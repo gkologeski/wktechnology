@@ -15,6 +15,7 @@ import { buildGridSelect } from "@/lib/grid/dynamic-select";
 import { cn } from "@/lib/utils";
 import { toE164 } from "@/lib/validators";
 import { Button } from "@/components/ui/button";
+import { BulkActionBar } from "@/components/bulk-action-bar";
 import { BulkEditFieldsDialog } from "@/components/grid/bulk-edit-fields-dialog";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,7 +35,6 @@ import {
   Pencil,
   Plus,
   Search,
-  X,
 } from "lucide-react";
 import { startFocusQueue } from "@/lib/focus-queue";
 import { enrichCompaniesAddress } from "@/lib/integrations/viacep.functions";
@@ -727,11 +727,8 @@ function CompaniesHubspotView() {
               />
             </div>
 
-            {selectedIds.size > 0 ? (
-              <div className="flex items-center gap-2 rounded-md border bg-primary/5 px-2 py-1">
-                <span className="text-xs font-medium text-primary">
-                  {selectedIds.size} selecionada(s)
-                </span>
+            {selectedIds.size > 0 && (
+              <BulkActionBar count={selectedIds.size} onClear={clearSelection}>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -769,12 +766,9 @@ function CompaniesHubspotView() {
                 >
                   <Pencil className="mr-1 h-3.5 w-3.5" /> Editar em massa
                 </Button>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={clearSelection}>
-                  <X className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5">
+              </BulkActionBar>
+            )}
+            <div className="flex items-center gap-1.5">
                 <ColumnsButton />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -786,8 +780,7 @@ function CompaniesHubspotView() {
                     <DropdownMenuItem onSelect={exportCsv}>Exportar CSV</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
-            )}
+            </div>
           </div>
 
           <div className="min-h-0 flex-1 overflow-auto">
