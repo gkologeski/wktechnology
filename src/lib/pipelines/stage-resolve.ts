@@ -85,3 +85,39 @@ export function legacyStageFor(stages: StageDef[], stageValue: string): string |
   if (type === "won" || type === "lost") return type;
   return undefined;
 }
+
+/** Tipo (`open` | `won` | `lost`) de uma etapa do pipeline. */
+export function stageTypeOf(stages: StageDef[], stageValue: string | null): string | undefined {
+  if (!stageValue) return undefined;
+  const found = stages.find((s) => s.value === stageValue);
+  if (found?.type) return found.type;
+  if (stageValue === "won" || stageValue === "lost") return stageValue;
+  return undefined;
+}
+
+/** Etapa do pipeline com o tipo pedido (`won`/`lost`), quando existir. */
+export function stageOfType(stages: StageDef[], type: string): string | undefined {
+  return stages.find((s) => s.type === type)?.value;
+}
+
+/**
+ * Verifica se `stage` (enum legado) e `stage_id` (etapa do pipeline) descrevem
+ * o mesmo desfecho. Retorna uma mensagem de erro quando são contraditórios,
+ * ou `null` quando o par é coerente (ou não há informação suficiente).
+ */
+export function checkStageCoherence(
+  stages: StageDef[],
+  pair: { stage?: unknown; stage_id?: unknown },
+): string | null {
+  const stage = pair.stage == null ? null : String(pair.stage);
+  const stageId = pair.stage_id == null ? null : String(pair.stage_id);
+  if (!stage || !stageId) return null;
+
+  const stageIdType = stageTypeOf(stages, stageId) ?? "open";
+  const stageType = stage === "won" || stage === "lost" ? stage : "open";
+  if (stageIdType === stageType) return null;
+
+  const label = stages.find((s) => s.value === stageId)?.label ?? stageId;
+  return `A etapa "${label}" é do tipo "${stageIdType}" e não combina com o estágio "${stage}". Ajuste um dos dois campos.`;
+}
+
