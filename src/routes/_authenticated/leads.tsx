@@ -804,38 +804,6 @@ function LeadsHubspotView() {
               entityLabel="leads"
             />
           )}
-
-            </div>
-          ) : (
-            <div className="min-h-0 flex-1 overflow-auto">
-              <LeadsTable
-                visibleColumns={visibleColumns}
-                rows={rows}
-                isLoading={isLoading}
-                isError={isError}
-                listError={listError}
-                refetch={refetch}
-                allSelected={allSelected}
-                someSelected={someSelected}
-                selectedIds={selectedIds}
-                toggleAll={toggleAll}
-                toggleOne={toggleOne}
-                onOpenLead={(id) => navigate({ to: "/leads/$id", params: { id } })}
-                onConvertLead={convert}
-                onRemoveLead={removeOne}
-              />
-            </div>
-          )}
-
-          {/* Pagination */}
-          <TablePagination
-            page={page}
-            pageSize={pageSize}
-            total={total}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            entityLabel="leads"
-          />
         </div>
       </div>
 
