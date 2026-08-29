@@ -41,12 +41,25 @@ function DashboardPage() {
   const pipelineId = search.pipeline ?? null;
   const scope: SalesDashboardScope = search.scope ?? "me";
 
+  const userId = useCurrentUserId();
   const fetchDashboard = useServerFn(getSalesDashboard);
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["sales-dashboard", periodDays, pipelineId, scope],
-    queryFn: () => fetchDashboard({ data: { periodDays, pipelineId, scope } }),
+    queryFn: async () => {
+      const result = await fetchDashboard({ data: { periodDays, pipelineId, scope } });
+      if (!result) {
+        throw new Error(
+          "Sessão expirada ou indisponível. Entre novamente ou tente atualizar o painel.",
+        );
+      }
+      return result;
+    },
+    enabled: !!userId,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
     staleTime: 60_000,
   });
+  const loading = isLoading || !userId;
 
   const header = (
     <PageHeader
