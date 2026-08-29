@@ -53,8 +53,9 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
         const { data: form, error: ferr } = await supabaseAdmin
           .from("forms")
           .select(
-            "id, owner_id, target, fields, active, redirect_url, success_message, submit_count",
+            "id, name, workspace_id, owner_id, target, fields, active, redirect_url, success_message, submit_count",
           )
+
           .eq("slug", params.slug)
           .maybeSingle();
         if (ferr) return Response.json({ error: ferr.message }, { status: 500, headers: cors });
