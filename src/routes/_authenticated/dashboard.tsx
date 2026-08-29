@@ -7,6 +7,7 @@ import { z } from "zod";
 import { BarChart3, Briefcase, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { EmptyState, PageHeader, Skeletons } from "@/components/techhire/ui";
 import { getSalesDashboard } from "@/lib/deals/sales-dashboard.functions";
 import type {
