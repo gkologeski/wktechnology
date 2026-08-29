@@ -759,7 +759,12 @@ function LeadsHubspotView() {
                       toast.error("Selecione ao menos um lead.");
                       return;
                     }
-                    setQueue(ids);
+                    startFocusQueue(
+                      "leads",
+                      ids,
+                      `Leads · ${ids.length.toLocaleString("pt-BR")}`,
+                    );
+
                     toast.success(`Fila iniciada com ${ids.length} lead(s)`);
                     navigate({ to: "/leads/$id", params: { id: ids[0] } });
                   }}
