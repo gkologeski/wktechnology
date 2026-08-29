@@ -151,6 +151,13 @@ export function LeadsBoard({
     [columns, leads],
   );
   const selection = useBoardSelection(allRows);
+  const selectionKey = selection.ids.join(",");
+  useEffect(() => {
+    onSelectionChange?.(selectionKey ? selectionKey.split(",") : []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionKey]);
+
+
 
   const refresh = () => void qc.invalidateQueries({ queryKey: ["leads"] });
 
