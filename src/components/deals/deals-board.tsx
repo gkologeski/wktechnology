@@ -4,7 +4,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Deal } from "@/lib/db-types";
-import type { Pipeline } from "@/lib/pipelines";
+import type { Pipeline, PipelineStage } from "@/lib/pipelines";
+
+/** Valor sintético da coluna que agrupa etapas fora do pipeline atual. */
+const ORPHAN_STAGE_VALUE = "__sem_etapa__";
 import { computeDealSignals } from "@/lib/deals/hot-score";
 import { DealsBoardColumn } from "./deals-board-column";
 import { DealsBoardCard } from "./deals-board-card";
