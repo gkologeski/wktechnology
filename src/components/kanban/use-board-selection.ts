@@ -86,6 +86,9 @@ export function useBoardSelection<T extends { id: string }>(rows: T[]) {
     isSelected: (id: string) => selectedIds.has(id),
     toggle,
     toggleMany,
+    selectMany,
+    deselectMany,
     clear,
   };
 }
+
