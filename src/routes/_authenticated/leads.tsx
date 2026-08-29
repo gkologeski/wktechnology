@@ -742,18 +742,69 @@ function LeadsHubspotView() {
 
           {viewMode === "board" ? (
             <div className="min-h-0 flex-1 overflow-hidden p-3">
-              {isLoading ? (
+              {boardLoading && !boardColumns ? (
                 <p className="text-sm text-muted-foreground">Carregando leads…</p>
               ) : (
                 <LeadsBoard
                   stages={stages}
                   pipelineId={pipelineId}
                   leads={rows}
+                  columns={boardColumns}
                   ownerNames={ownerNameMap}
+                  canProspectingMode={canProspectingMode}
+                  prospectingBusy={prospectingBusy}
+                  onFetchStageIds={fetchStageLeadIds}
+                  onStartQueue={(ids) => {
+                    if (!ids.length) {
+                      toast.error("Selecione ao menos um lead.");
+                      return;
+                    }
+                    setQueue(ids);
+                    toast.success(`Fila iniciada com ${ids.length} lead(s)`);
+                    navigate({ to: "/leads/$id", params: { id: ids[0] } });
+                  }}
+                  onStartProspecting={(ids) =>
+                    void startProspectingMode(ids.slice(0, PROSPECTING_MODE_LIMIT))
+                  }
                   onOpen={(id) => navigate({ to: "/leads/$id", params: { id } })}
                   onRequestQualification={(id) => navigate({ to: "/leads/$id", params: { id } })}
                 />
               )}
+            </div>
+          ) : (
+            <div className="min-h-0 flex-1 overflow-auto">
+              <LeadsTable
+                visibleColumns={visibleColumns}
+                rows={rows}
+                isLoading={isLoading}
+                isError={isError}
+                listError={listError}
+                refetch={refetch}
+                allSelected={allSelected}
+                someSelected={someSelected}
+                selectedIds={selectedIds}
+                toggleAll={toggleAll}
+                toggleOne={toggleOne}
+                onOpenLead={(id) => navigate({ to: "/leads/$id", params: { id } })}
+                onConvertLead={convert}
+                onRemoveLead={removeOne}
+              />
+            </div>
+          )}
+
+          {/* Paginação vale apenas para o modo Tabela: o Quadro traz cada etapa
+              com contagem própria e não usa páginas. */}
+          {viewMode === "table" && (
+            <TablePagination
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              entityLabel="leads"
+            />
+          )}
+
             </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-auto">
