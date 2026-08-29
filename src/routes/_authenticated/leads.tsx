@@ -125,6 +125,9 @@ function LeadsHubspotView() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  /** Seleção feita no Quadro (Kanban) — usada pelas ações do topo nesse modo. */
+  const [boardSelectedIds, setBoardSelectedIds] = useState<string[]>([]);
+
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
   const [prospectingIds, setProspectingIds] = useState<string[] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
