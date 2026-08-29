@@ -264,7 +264,6 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
       }
     }
 
-
     let updated = 0;
     for (const group of groups) {
       for (const chunk of chunkIds(group.ids)) {

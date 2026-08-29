@@ -120,4 +120,3 @@ export function checkStageCoherence(
   const label = stages.find((s) => s.value === stageId)?.label ?? stageId;
   return `A etapa "${label}" é do tipo "${stageIdType}" e não combina com o estágio "${stage}". Ajuste um dos dois campos.`;
 }
-
