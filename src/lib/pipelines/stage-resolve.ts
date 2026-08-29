@@ -75,7 +75,6 @@ export function resolveStageForPipeline(
   return stages[0].value;
 }
 
-
 /**
  * Valor da coluna legada `stage` para uma etapa, quando aplicável.
  * Retorna `undefined` quando a coluna não deve ser tocada.
