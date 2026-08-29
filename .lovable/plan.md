@@ -1,39 +1,49 @@
-# Configurações: tratar itens que navegam para fora de /settings
+# Configurações no padrão HubSpot: tudo dentro de /settings
 
-## Diagnóstico (confirmado no código)
+## Problema (confirmado no código)
 
-Em `src/lib/menu-config.ts` (`SETTINGS_GROUPS`), alguns itens do menu de Configurações apontam para rotas fora de `/settings`, trocando a tela inteira e tirando o usuário do contexto:
+No menu de Configurações (`SETTINGS_GROUPS` em `src/lib/menu-config.ts`) vários itens levam para rotas fora de `/settings`, o que troca a tela inteira e derruba o shell de Configurações:
 
-- **Integrações**: `Marketplace` → `/marketplace`, `Integrações` → `/integrations`, `Importar HubSpot` → `/leads/import-hubspot`, `Sync HubSpot` → `/settings/hubspot-sync` que **redireciona** para `/integrations/$slug` (saída "surpresa").
-- **Plataforma**: todos os itens → `/admin/*` (Status, Alertas, Segurança, Quotas, Sandbox).
-- **Conta**: `Meus chamados` → `/my-bug-reports`.
+- `Integrações` → `/integrations`
+- `Marketplace` → `/marketplace`
+- `Importar HubSpot` → `/leads/import-hubspot` (que redireciona para `/integrations/hubspot`)
+- `Sync HubSpot` → `/settings/hubspot-sync` (rota que redireciona para fora, para `/integrations/hubspot`)
+- Grupo `Plataforma` → `/admin/status`, `/admin/alerts`, `/admin/security-scans`, `/admin/quotas`, `/admin/sandbox`
+- `Meus chamados` → `/my-bug-reports`
 
-Os redirects legados de prospecção (`/settings/scoring` etc. → `/prospecting`) existem apenas como rotas de compatibilidade, sem itens de menu — não fazem parte do problema visível.
+## Princípio adotado (mecânica do HubSpot)
 
-## Sugestão (o que será implementado)
+Configuração vive em Configurações. O usuário entra em `/settings`, e tudo que é configuração — incluindo Integrações, Marketplace, Importações e as telas de Plataforma — é renderizado **dentro** do shell de Configurações, com o cabeçalho/abas/chips sempre visíveis. O caminho inverso também vale: qualquer atalho de configuração exibido em telas operacionais (Leads, Negócios, Reuniões, Prospecção, etc.) "salta" para `/settings/...` e o usuário passa a navegar dentro de Configurações.
 
-Princípio: **dentro de Configurações, tudo fica em /settings; o que sai do contexto é sinalizado visualmente e/ou removido do menu**.
+## O que será feito
 
-1. **Adicionar flag `external?: boolean`** ao tipo `SettingsItem` em `menu-config.ts`.
-2. **Sinalizar visualmente os itens externos**: no shell `/settings` (chips/abas) e no dropdown da engrenagem (`settings-menu.tsx`), itens com `external` ganham ícone `ArrowUpRight` + texto auxiliar discreto ("abre fora de Configurações") — o usuário sabe que vai trocar de tela antes de clicar.
-3. **Corrigir o "salto surpresa" do Sync HubSpot**: o item passa a apontar diretamente para `/integrations/hubspot` com `external: true` (o redirect da rota é mantido para bookmarks).
-4. **Reclassificar itens que não são configuração**:
-   - `Importar HubSpot` → sai do grupo Integrações; mantido acessível pela área de Leads e pela engrenagem, com `external: true` se permanecer em algum grupo.
-   - `Marketplace` e `Integrações` → permanecem no grupo, mas marcados como `external`.
-5. **Grupo Plataforma**: renomear rótulo para "Plataforma (admin)" e marcar todos os itens como `external` — deixa claro que é uma área separada de super-admin.
-6. **Busca e seletor mobile**: itens externos aparecem com o mesmo indicador `ArrowUpRight`.
+1. **Trazer as telas de configuração para dentro de `/settings`** (rotas filhas do shell, reaproveitando os componentes de página já existentes, sem duplicar lógica):
+   - `/settings/integrations` e `/settings/integrations/$slug` (catálogo e detalhe de integração)
+   - `/settings/marketplace` e `/settings/marketplace/$slug`
+   - `/settings/import` — hub de importações, com HubSpot como primeira fonte (Importar HubSpot passa a ser configuração de fato)
+   - `/settings/platform/status`, `/settings/platform/alerts`, `/settings/platform/security`, `/settings/platform/quotas`, `/settings/platform/sandbox` (grupo Plataforma, ainda restrito a super-admin)
+   - `/settings/my-tickets` (Meus chamados)
+2. **Rotas antigas passam a redirecionar** para os novos caminhos em `/settings/...` (`/integrations`, `/integrations/$slug`, `/marketplace`, `/marketplace/$slug`, `/leads/import-hubspot`, `/admin/status|alerts|security-scans|quotas|sandbox`, `/my-bug-reports`), preservando bookmarks e links antigos. Nada é removido nem perde acesso.
+3. **`/settings/hubspot-sync` deixa de sair do contexto**: passa a redirecionar para `/settings/integrations/hubspot`.
+4. **Atualizar todos os apontamentos de menu** para os novos caminhos:
+   - `SETTINGS_GROUPS` (itens acima)
+   - sidebars de módulo (`menu-config.ts`, `menu-config-erp.ts`) — itens que são configuração apontam para `/settings/...`
+   - engrenagem do header (`settings-menu.tsx`), busca do shell de Configurações, seletor mobile e comandos da busca global (`global-search/commands.ts`)
+5. **Sinalização de contexto**: dentro de `/settings`, o grupo/chip do item aberto fica ativo sempre (inclusive nas telas migradas), então o usuário nunca "perde" o menu de Configurações. Atalhos de configuração em telas operacionais recebem um indicador discreto de que levam para Configurações.
 
 ## Fora de escopo
 
-Sem mudanças de rotas, redirects legados, permissões, schema ou regras de negócio. Nenhum item perde acesso — apenas sinalização visual e ajuste de destino do Sync HubSpot.
+Sem mudanças de schema, RLS, permissões ou regras de negócio. As páginas migradas mantêm exatamente a mesma funcionalidade e as mesmas checagens de acesso (`need`/`permissionAny`, super-admin em Plataforma); somente a rota e o enquadramento visual mudam.
 
 ## Detalhes técnicos
 
-- `src/lib/menu-config.ts`: tipo `SettingsItem` + flag `external` nos itens afetados; item Sync HubSpot aponta para `/integrations/hubspot` (rota existente `/integrations/$slug`).
-- `src/routes/_authenticated/settings.tsx`: chip do item externo exibe `ArrowUpRight`; ao trocar de grupo via aba, itens externos continuam contando como "primeira opção" apenas se forem a única opção — caso contrário a navegação automática prefere o primeiro item interno (evita sair de /settings por acidente ao clicar no grupo).
-- `src/components/settings-menu.tsx`: mesmo indicador nos itens do dropdown.
+- Novos arquivos de rota em `src/routes/_authenticated/settings.*.tsx` que apenas montam os componentes de página existentes (`integrations.index`, `marketplace.index`, `marketplace.$slug`, `admin.quotas`, etc.), mantendo o gate `_authenticated` e o layout de `settings.tsx`.
+- Rotas antigas convertidas em `beforeLoad: () => { throw redirect({ to: ..., replace: true }) }`.
+- `menu-config.ts`: grupo `Integrações` ganha `Importar` e passa a apontar para `/settings/integrations` e `/settings/marketplace`; grupo `Plataforma` aponta para `/settings/platform/*`; `Conta` aponta para `/settings/my-tickets`.
+- `menu-config-erp.ts` e `WORKSPACE_ROUTE_PREFIXES` revisados para continuarem reconhecendo os prefixos antigos (redirects) e os novos.
+- Componentes de página não são reescritos; se algum deles hoje renderiza seu próprio `PageHeader` com espaçamento de página cheia, apenas o container é ajustado para o padrão interno de Configurações.
 
 ## Validação
 
-- `bunx tsgo --noEmit` e ESLint nos arquivos alterados.
-- Playwright: abrir `/settings/branding`, conferir que os itens externos mostram o indicador; clicar no grupo "Integrações" não sai de /settings quando houver item interno disponível; clicar em "Marketplace" navega para fora de forma sinalizada.
+- `bunx tsgo --noEmit`, ESLint nos arquivos alterados e `bun run test`.
+- Playwright: a partir de `/settings/branding`, abrir Integrações, Marketplace, Importar e Plataforma e confirmar que o cabeçalho/abas de Configurações permanecem visíveis e o chip correto fica ativo; acessar as URLs antigas (`/integrations`, `/marketplace`, `/leads/import-hubspot`, `/admin/quotas`, `/my-bug-reports`) e confirmar o redirect para `/settings/...`.
