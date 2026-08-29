@@ -68,6 +68,10 @@ import {
   ListChecks,
   Briefcase,
   Image as ImageIcon,
+  Bug,
+  Activity,
+  Gauge,
+  FlaskConical,
 } from "lucide-react";
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
@@ -100,6 +104,8 @@ const sections: Section[] = [
       { to: "/settings/email", label: "Conexão de email", icon: Mail },
       { to: "/settings/notifications", label: "Notificações", icon: Bell },
       { to: "/settings/security", label: "Segurança (2FA)", icon: ShieldCheck },
+      { to: "/settings/privacy", label: "Privacidade & Meus Dados", icon: Lock },
+      { to: "/settings/my-tickets", label: "Meus chamados", icon: Bug },
     ],
   },
   {
@@ -228,12 +234,19 @@ const sections: Section[] = [
   {
     label: "Integrações",
     tabs: [
-      { to: "/integrations", label: "Conectores", icon: Plug, need: "admin" },
+      { to: "/settings/integrations", label: "Conectores", icon: Plug, need: "admin" },
+      { to: "/settings/marketplace", label: "Marketplace", icon: ShoppingBag, need: "admin" },
+      { to: "/settings/import", label: "Importar dados", icon: Upload, need: "admin" },
       { to: "/settings/integrations/linkedin", label: "LinkedIn (Unipile)", icon: Briefcase },
       { to: "/settings/webhooks", label: "Webhooks", icon: Webhook, need: "admin" },
       { to: "/settings/zapier", label: "Zapier", icon: Zap, need: "admin" },
       { to: "/settings/notifications/slack", label: "Slack", icon: Bell, need: "admin" },
-      { to: "/settings/hubspot-sync", label: "Sync HubSpot", icon: RefreshCw, need: "admin" },
+      {
+        to: "/settings/integrations/hubspot",
+        label: "Sync HubSpot",
+        icon: RefreshCw,
+        need: "admin",
+      },
       { to: "/settings/hubspot-users", label: "Usuários HubSpot", icon: Users, need: "admin" },
       { to: "/settings/ads-sync", label: "Sync de anúncios", icon: Megaphone, need: "admin" },
       { to: "/settings/whatsapp", label: "WhatsApp (Meta)", icon: MessageSquare, need: "admin" },
@@ -255,6 +268,21 @@ const sections: Section[] = [
         icon: Megaphone,
         need: "manager",
       },
+    ],
+  },
+  {
+    label: "Plataforma",
+    tabs: [
+      { to: "/settings/platform/status", label: "Status", icon: Activity, need: "platform" },
+      { to: "/settings/platform/alerts", label: "Alertas", icon: Bell, need: "platform" },
+      {
+        to: "/settings/platform/security",
+        label: "Segurança",
+        icon: ShieldCheck,
+        need: "platform",
+      },
+      { to: "/settings/platform/quotas", label: "Quotas", icon: Gauge, need: "platform" },
+      { to: "/settings/platform/sandbox", label: "Sandbox", icon: FlaskConical, need: "platform" },
     ],
   },
 ];

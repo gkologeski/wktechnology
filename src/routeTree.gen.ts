@@ -138,6 +138,7 @@ import { Route as AuthenticatedSettingsPaymentsRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsOnboardingTemplatesRouteImport } from './routes/_authenticated/settings.onboarding-templates'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedSettingsNfseRouteImport } from './routes/_authenticated/settings.nfse'
+import { Route as AuthenticatedSettingsMyTicketsRouteImport } from './routes/_authenticated/settings.my-tickets'
 import { Route as AuthenticatedSettingsMyPermissionsRouteImport } from './routes/_authenticated/settings.my-permissions'
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMediaRouteImport } from './routes/_authenticated/settings.media'
@@ -148,6 +149,7 @@ import { Route as AuthenticatedSettingsLeadSourcesRouteImport } from './routes/_
 import { Route as AuthenticatedSettingsLanguageRouteImport } from './routes/_authenticated/settings.language'
 import { Route as AuthenticatedSettingsKbRouteImport } from './routes/_authenticated/settings.kb'
 import { Route as AuthenticatedSettingsImportCsvRouteImport } from './routes/_authenticated/settings.import-csv'
+import { Route as AuthenticatedSettingsImportRouteImport } from './routes/_authenticated/settings.import'
 import { Route as AuthenticatedSettingsHubspotUsersRouteImport } from './routes/_authenticated/settings.hubspot-users'
 import { Route as AuthenticatedSettingsHubspotSyncRouteImport } from './routes/_authenticated/settings.hubspot-sync'
 import { Route as AuthenticatedSettingsGoalsRouteImport } from './routes/_authenticated/settings.goals'
@@ -253,6 +255,8 @@ import { Route as AuthenticatedatsAtsDashboardRouteImport } from './routes/_auth
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedSettingsRolesIndexRouteImport } from './routes/_authenticated/settings.roles.index'
+import { Route as AuthenticatedSettingsMarketplaceIndexRouteImport } from './routes/_authenticated/settings.marketplace.index'
+import { Route as AuthenticatedSettingsIntegrationsIndexRouteImport } from './routes/_authenticated/settings.integrations.index'
 import { Route as AuthenticatedProspectingCampaignsIndexRouteImport } from './routes/_authenticated/prospecting.campaigns.index'
 import { Route as AuthenticatedContractsTemplatesIndexRouteImport } from './routes/_authenticated/contracts.templates.index'
 import { Route as AuthenticatedatsSourcingIndexRouteImport } from './routes/_authenticated/(ats)/sourcing/index'
@@ -328,8 +332,16 @@ import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/bo
 import { Route as ApiPublicBankingInterWebhookRouteImport } from './routes/api/public/banking/inter-webhook'
 import { Route as AuthenticatedSettingsRolesMatrixRouteImport } from './routes/_authenticated/settings.roles.matrix'
 import { Route as AuthenticatedSettingsRolesRoleIdRouteImport } from './routes/_authenticated/settings.roles.$roleId'
+import { Route as AuthenticatedSettingsPlatformStatusRouteImport } from './routes/_authenticated/settings.platform.status'
+import { Route as AuthenticatedSettingsPlatformSecurityRouteImport } from './routes/_authenticated/settings.platform.security'
+import { Route as AuthenticatedSettingsPlatformSandboxRouteImport } from './routes/_authenticated/settings.platform.sandbox'
+import { Route as AuthenticatedSettingsPlatformQuotasRouteImport } from './routes/_authenticated/settings.platform.quotas'
+import { Route as AuthenticatedSettingsPlatformAlertsRouteImport } from './routes/_authenticated/settings.platform.alerts'
 import { Route as AuthenticatedSettingsNotificationsSlackRouteImport } from './routes/_authenticated/settings.notifications.slack'
+import { Route as AuthenticatedSettingsMarketplaceSlugRouteImport } from './routes/_authenticated/settings.marketplace.$slug'
 import { Route as AuthenticatedSettingsIntegrationsLinkedinRouteImport } from './routes/_authenticated/settings.integrations.linkedin'
+import { Route as AuthenticatedSettingsIntegrationsContaazulRouteImport } from './routes/_authenticated/settings.integrations.contaazul'
+import { Route as AuthenticatedSettingsIntegrationsSlugRouteImport } from './routes/_authenticated/settings.integrations.$slug'
 import { Route as AuthenticatedProspectingCampaignsIdRouteImport } from './routes/_authenticated/prospecting.campaigns.$id'
 import { Route as AuthenticatedProjectsIdEntregaRouteImport } from './routes/_authenticated/projects_.$id.entrega'
 import { Route as AuthenticatedProjectsListsIdRouteImport } from './routes/_authenticated/projects.lists.$id'
@@ -1084,6 +1096,12 @@ const AuthenticatedSettingsNfseRoute =
     path: '/nfse',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsMyTicketsRoute =
+  AuthenticatedSettingsMyTicketsRouteImport.update({
+    id: '/my-tickets',
+    path: '/my-tickets',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsMyPermissionsRoute =
   AuthenticatedSettingsMyPermissionsRouteImport.update({
     id: '/my-permissions',
@@ -1141,6 +1159,12 @@ const AuthenticatedSettingsImportCsvRoute =
   AuthenticatedSettingsImportCsvRouteImport.update({
     id: '/import-csv',
     path: '/import-csv',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsImportRoute =
+  AuthenticatedSettingsImportRouteImport.update({
+    id: '/import',
+    path: '/import',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsHubspotUsersRoute =
@@ -1757,6 +1781,18 @@ const AuthenticatedSettingsRolesIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRolesRoute,
   } as any)
+const AuthenticatedSettingsMarketplaceIndexRoute =
+  AuthenticatedSettingsMarketplaceIndexRouteImport.update({
+    id: '/marketplace/',
+    path: '/marketplace/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsIntegrationsIndexRoute =
+  AuthenticatedSettingsIntegrationsIndexRouteImport.update({
+    id: '/integrations/',
+    path: '/integrations/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedProspectingCampaignsIndexRoute =
   AuthenticatedProspectingCampaignsIndexRouteImport.update({
     id: '/campaigns/',
@@ -2189,16 +2225,64 @@ const AuthenticatedSettingsRolesRoleIdRoute =
     path: '/$roleId',
     getParentRoute: () => AuthenticatedSettingsRolesRoute,
   } as any)
+const AuthenticatedSettingsPlatformStatusRoute =
+  AuthenticatedSettingsPlatformStatusRouteImport.update({
+    id: '/platform/status',
+    path: '/platform/status',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPlatformSecurityRoute =
+  AuthenticatedSettingsPlatformSecurityRouteImport.update({
+    id: '/platform/security',
+    path: '/platform/security',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPlatformSandboxRoute =
+  AuthenticatedSettingsPlatformSandboxRouteImport.update({
+    id: '/platform/sandbox',
+    path: '/platform/sandbox',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPlatformQuotasRoute =
+  AuthenticatedSettingsPlatformQuotasRouteImport.update({
+    id: '/platform/quotas',
+    path: '/platform/quotas',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPlatformAlertsRoute =
+  AuthenticatedSettingsPlatformAlertsRouteImport.update({
+    id: '/platform/alerts',
+    path: '/platform/alerts',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsNotificationsSlackRoute =
   AuthenticatedSettingsNotificationsSlackRouteImport.update({
     id: '/slack',
     path: '/slack',
     getParentRoute: () => AuthenticatedSettingsNotificationsRoute,
   } as any)
+const AuthenticatedSettingsMarketplaceSlugRoute =
+  AuthenticatedSettingsMarketplaceSlugRouteImport.update({
+    id: '/marketplace/$slug',
+    path: '/marketplace/$slug',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsIntegrationsLinkedinRoute =
   AuthenticatedSettingsIntegrationsLinkedinRouteImport.update({
     id: '/integrations/linkedin',
     path: '/integrations/linkedin',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsIntegrationsContaazulRoute =
+  AuthenticatedSettingsIntegrationsContaazulRouteImport.update({
+    id: '/integrations/contaazul',
+    path: '/integrations/contaazul',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsIntegrationsSlugRoute =
+  AuthenticatedSettingsIntegrationsSlugRouteImport.update({
+    id: '/integrations/$slug',
+    path: '/integrations/$slug',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedProspectingCampaignsIdRoute =
@@ -2615,6 +2699,7 @@ export interface FileRoutesByFullPath {
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/hubspot-users': typeof AuthenticatedSettingsHubspotUsersRoute
+  '/settings/import': typeof AuthenticatedSettingsImportRoute
   '/settings/import-csv': typeof AuthenticatedSettingsImportCsvRoute
   '/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
@@ -2625,6 +2710,7 @@ export interface FileRoutesByFullPath {
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
+  '/settings/my-tickets': typeof AuthenticatedSettingsMyTicketsRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
@@ -2711,8 +2797,16 @@ export interface FileRoutesByFullPath {
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
+  '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
+  '/settings/integrations/contaazul': typeof AuthenticatedSettingsIntegrationsContaazulRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
+  '/settings/marketplace/$slug': typeof AuthenticatedSettingsMarketplaceSlugRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
+  '/settings/platform/alerts': typeof AuthenticatedSettingsPlatformAlertsRoute
+  '/settings/platform/quotas': typeof AuthenticatedSettingsPlatformQuotasRoute
+  '/settings/platform/sandbox': typeof AuthenticatedSettingsPlatformSandboxRoute
+  '/settings/platform/security': typeof AuthenticatedSettingsPlatformSecurityRoute
+  '/settings/platform/status': typeof AuthenticatedSettingsPlatformStatusRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
   '/api/public/banking/inter-webhook': typeof ApiPublicBankingInterWebhookRoute
@@ -2788,6 +2882,8 @@ export interface FileRoutesByFullPath {
   '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
+  '/settings/integrations/': typeof AuthenticatedSettingsIntegrationsIndexRoute
+  '/settings/marketplace/': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
@@ -2974,6 +3070,7 @@ export interface FileRoutesByTo {
   '/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/settings/hubspot-users': typeof AuthenticatedSettingsHubspotUsersRoute
+  '/settings/import': typeof AuthenticatedSettingsImportRoute
   '/settings/import-csv': typeof AuthenticatedSettingsImportCsvRoute
   '/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/settings/language': typeof AuthenticatedSettingsLanguageRoute
@@ -2984,6 +3081,7 @@ export interface FileRoutesByTo {
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
+  '/settings/my-tickets': typeof AuthenticatedSettingsMyTicketsRoute
   '/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
@@ -3069,8 +3167,16 @@ export interface FileRoutesByTo {
   '/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/projects/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
+  '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
+  '/settings/integrations/contaazul': typeof AuthenticatedSettingsIntegrationsContaazulRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
+  '/settings/marketplace/$slug': typeof AuthenticatedSettingsMarketplaceSlugRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
+  '/settings/platform/alerts': typeof AuthenticatedSettingsPlatformAlertsRoute
+  '/settings/platform/quotas': typeof AuthenticatedSettingsPlatformQuotasRoute
+  '/settings/platform/sandbox': typeof AuthenticatedSettingsPlatformSandboxRoute
+  '/settings/platform/security': typeof AuthenticatedSettingsPlatformSecurityRoute
+  '/settings/platform/status': typeof AuthenticatedSettingsPlatformStatusRoute
   '/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
   '/api/public/banking/inter-webhook': typeof ApiPublicBankingInterWebhookRoute
@@ -3146,6 +3252,8 @@ export interface FileRoutesByTo {
   '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
   '/contracts/templates': typeof AuthenticatedContractsTemplatesIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
+  '/settings/integrations': typeof AuthenticatedSettingsIntegrationsIndexRoute
+  '/settings/marketplace': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
@@ -3339,6 +3447,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/goals': typeof AuthenticatedSettingsGoalsRoute
   '/_authenticated/settings/hubspot-sync': typeof AuthenticatedSettingsHubspotSyncRoute
   '/_authenticated/settings/hubspot-users': typeof AuthenticatedSettingsHubspotUsersRoute
+  '/_authenticated/settings/import': typeof AuthenticatedSettingsImportRoute
   '/_authenticated/settings/import-csv': typeof AuthenticatedSettingsImportCsvRoute
   '/_authenticated/settings/kb': typeof AuthenticatedSettingsKbRoute
   '/_authenticated/settings/language': typeof AuthenticatedSettingsLanguageRoute
@@ -3349,6 +3458,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/media': typeof AuthenticatedSettingsMediaRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/_authenticated/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
+  '/_authenticated/settings/my-tickets': typeof AuthenticatedSettingsMyTicketsRoute
   '/_authenticated/settings/nfse': typeof AuthenticatedSettingsNfseRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRouteWithChildren
   '/_authenticated/settings/onboarding-templates': typeof AuthenticatedSettingsOnboardingTemplatesRoute
@@ -3435,8 +3545,16 @@ export interface FileRoutesById {
   '/_authenticated/projects/lists/$id': typeof AuthenticatedProjectsListsIdRoute
   '/_authenticated/projects_/$id/entrega': typeof AuthenticatedProjectsIdEntregaRoute
   '/_authenticated/prospecting/campaigns/$id': typeof AuthenticatedProspectingCampaignsIdRoute
+  '/_authenticated/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
+  '/_authenticated/settings/integrations/contaazul': typeof AuthenticatedSettingsIntegrationsContaazulRoute
   '/_authenticated/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
+  '/_authenticated/settings/marketplace/$slug': typeof AuthenticatedSettingsMarketplaceSlugRoute
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
+  '/_authenticated/settings/platform/alerts': typeof AuthenticatedSettingsPlatformAlertsRoute
+  '/_authenticated/settings/platform/quotas': typeof AuthenticatedSettingsPlatformQuotasRoute
+  '/_authenticated/settings/platform/sandbox': typeof AuthenticatedSettingsPlatformSandboxRoute
+  '/_authenticated/settings/platform/security': typeof AuthenticatedSettingsPlatformSecurityRoute
+  '/_authenticated/settings/platform/status': typeof AuthenticatedSettingsPlatformStatusRoute
   '/_authenticated/settings/roles/$roleId': typeof AuthenticatedSettingsRolesRoleIdRoute
   '/_authenticated/settings/roles/matrix': typeof AuthenticatedSettingsRolesMatrixRoute
   '/api/public/banking/inter-webhook': typeof ApiPublicBankingInterWebhookRoute
@@ -3512,6 +3630,8 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/_authenticated/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
+  '/_authenticated/settings/integrations/': typeof AuthenticatedSettingsIntegrationsIndexRoute
+  '/_authenticated/settings/marketplace/': typeof AuthenticatedSettingsMarketplaceIndexRoute
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/_authenticated/(ats)/sourcing/sequences_/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
   '/_authenticated/prospecting/queues/$queueId/play': typeof AuthenticatedProspectingQueuesQueueIdPlayRoute
@@ -3705,6 +3825,7 @@ export interface FileRouteTypes {
     | '/settings/goals'
     | '/settings/hubspot-sync'
     | '/settings/hubspot-users'
+    | '/settings/import'
     | '/settings/import-csv'
     | '/settings/kb'
     | '/settings/language'
@@ -3715,6 +3836,7 @@ export interface FileRouteTypes {
     | '/settings/media'
     | '/settings/mobile'
     | '/settings/my-permissions'
+    | '/settings/my-tickets'
     | '/settings/nfse'
     | '/settings/notifications'
     | '/settings/onboarding-templates'
@@ -3801,8 +3923,16 @@ export interface FileRouteTypes {
     | '/projects/lists/$id'
     | '/projects/$id/entrega'
     | '/prospecting/campaigns/$id'
+    | '/settings/integrations/$slug'
+    | '/settings/integrations/contaazul'
     | '/settings/integrations/linkedin'
+    | '/settings/marketplace/$slug'
     | '/settings/notifications/slack'
+    | '/settings/platform/alerts'
+    | '/settings/platform/quotas'
+    | '/settings/platform/sandbox'
+    | '/settings/platform/security'
+    | '/settings/platform/status'
     | '/settings/roles/$roleId'
     | '/settings/roles/matrix'
     | '/api/public/banking/inter-webhook'
@@ -3878,6 +4008,8 @@ export interface FileRouteTypes {
     | '/sourcing/'
     | '/contracts/templates/'
     | '/prospecting/campaigns/'
+    | '/settings/integrations/'
+    | '/settings/marketplace/'
     | '/settings/roles/'
     | '/sourcing/sequences/$id'
     | '/prospecting/queues/$queueId/play'
@@ -4064,6 +4196,7 @@ export interface FileRouteTypes {
     | '/settings/goals'
     | '/settings/hubspot-sync'
     | '/settings/hubspot-users'
+    | '/settings/import'
     | '/settings/import-csv'
     | '/settings/kb'
     | '/settings/language'
@@ -4074,6 +4207,7 @@ export interface FileRouteTypes {
     | '/settings/media'
     | '/settings/mobile'
     | '/settings/my-permissions'
+    | '/settings/my-tickets'
     | '/settings/nfse'
     | '/settings/notifications'
     | '/settings/onboarding-templates'
@@ -4159,8 +4293,16 @@ export interface FileRouteTypes {
     | '/projects/lists/$id'
     | '/projects/$id/entrega'
     | '/prospecting/campaigns/$id'
+    | '/settings/integrations/$slug'
+    | '/settings/integrations/contaazul'
     | '/settings/integrations/linkedin'
+    | '/settings/marketplace/$slug'
     | '/settings/notifications/slack'
+    | '/settings/platform/alerts'
+    | '/settings/platform/quotas'
+    | '/settings/platform/sandbox'
+    | '/settings/platform/security'
+    | '/settings/platform/status'
     | '/settings/roles/$roleId'
     | '/settings/roles/matrix'
     | '/api/public/banking/inter-webhook'
@@ -4236,6 +4378,8 @@ export interface FileRouteTypes {
     | '/sourcing'
     | '/contracts/templates'
     | '/prospecting/campaigns'
+    | '/settings/integrations'
+    | '/settings/marketplace'
     | '/settings/roles'
     | '/sourcing/sequences/$id'
     | '/prospecting/queues/$queueId/play'
@@ -4428,6 +4572,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/goals'
     | '/_authenticated/settings/hubspot-sync'
     | '/_authenticated/settings/hubspot-users'
+    | '/_authenticated/settings/import'
     | '/_authenticated/settings/import-csv'
     | '/_authenticated/settings/kb'
     | '/_authenticated/settings/language'
@@ -4438,6 +4583,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/media'
     | '/_authenticated/settings/mobile'
     | '/_authenticated/settings/my-permissions'
+    | '/_authenticated/settings/my-tickets'
     | '/_authenticated/settings/nfse'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/onboarding-templates'
@@ -4524,8 +4670,16 @@ export interface FileRouteTypes {
     | '/_authenticated/projects/lists/$id'
     | '/_authenticated/projects_/$id/entrega'
     | '/_authenticated/prospecting/campaigns/$id'
+    | '/_authenticated/settings/integrations/$slug'
+    | '/_authenticated/settings/integrations/contaazul'
     | '/_authenticated/settings/integrations/linkedin'
+    | '/_authenticated/settings/marketplace/$slug'
     | '/_authenticated/settings/notifications/slack'
+    | '/_authenticated/settings/platform/alerts'
+    | '/_authenticated/settings/platform/quotas'
+    | '/_authenticated/settings/platform/sandbox'
+    | '/_authenticated/settings/platform/security'
+    | '/_authenticated/settings/platform/status'
     | '/_authenticated/settings/roles/$roleId'
     | '/_authenticated/settings/roles/matrix'
     | '/api/public/banking/inter-webhook'
@@ -4601,6 +4755,8 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/sourcing/'
     | '/_authenticated/contracts/templates/'
     | '/_authenticated/prospecting/campaigns/'
+    | '/_authenticated/settings/integrations/'
+    | '/_authenticated/settings/marketplace/'
     | '/_authenticated/settings/roles/'
     | '/_authenticated/(ats)/sourcing/sequences_/$id'
     | '/_authenticated/prospecting/queues/$queueId/play'
@@ -5651,6 +5807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsNfseRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/my-tickets': {
+      id: '/_authenticated/settings/my-tickets'
+      path: '/my-tickets'
+      fullPath: '/settings/my-tickets'
+      preLoaderRoute: typeof AuthenticatedSettingsMyTicketsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/my-permissions': {
       id: '/_authenticated/settings/my-permissions'
       path: '/my-permissions'
@@ -5719,6 +5882,13 @@ declare module '@tanstack/react-router' {
       path: '/import-csv'
       fullPath: '/settings/import-csv'
       preLoaderRoute: typeof AuthenticatedSettingsImportCsvRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/import': {
+      id: '/_authenticated/settings/import'
+      path: '/import'
+      fullPath: '/settings/import'
+      preLoaderRoute: typeof AuthenticatedSettingsImportRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/hubspot-users': {
@@ -6456,6 +6626,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRolesIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRolesRoute
     }
+    '/_authenticated/settings/marketplace/': {
+      id: '/_authenticated/settings/marketplace/'
+      path: '/marketplace'
+      fullPath: '/settings/marketplace/'
+      preLoaderRoute: typeof AuthenticatedSettingsMarketplaceIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/integrations/': {
+      id: '/_authenticated/settings/integrations/'
+      path: '/integrations'
+      fullPath: '/settings/integrations/'
+      preLoaderRoute: typeof AuthenticatedSettingsIntegrationsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/prospecting/campaigns/': {
       id: '/_authenticated/prospecting/campaigns/'
       path: '/campaigns'
@@ -6981,6 +7165,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRolesRoleIdRouteImport
       parentRoute: typeof AuthenticatedSettingsRolesRoute
     }
+    '/_authenticated/settings/platform/status': {
+      id: '/_authenticated/settings/platform/status'
+      path: '/platform/status'
+      fullPath: '/settings/platform/status'
+      preLoaderRoute: typeof AuthenticatedSettingsPlatformStatusRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/platform/security': {
+      id: '/_authenticated/settings/platform/security'
+      path: '/platform/security'
+      fullPath: '/settings/platform/security'
+      preLoaderRoute: typeof AuthenticatedSettingsPlatformSecurityRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/platform/sandbox': {
+      id: '/_authenticated/settings/platform/sandbox'
+      path: '/platform/sandbox'
+      fullPath: '/settings/platform/sandbox'
+      preLoaderRoute: typeof AuthenticatedSettingsPlatformSandboxRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/platform/quotas': {
+      id: '/_authenticated/settings/platform/quotas'
+      path: '/platform/quotas'
+      fullPath: '/settings/platform/quotas'
+      preLoaderRoute: typeof AuthenticatedSettingsPlatformQuotasRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/platform/alerts': {
+      id: '/_authenticated/settings/platform/alerts'
+      path: '/platform/alerts'
+      fullPath: '/settings/platform/alerts'
+      preLoaderRoute: typeof AuthenticatedSettingsPlatformAlertsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/notifications/slack': {
       id: '/_authenticated/settings/notifications/slack'
       path: '/slack'
@@ -6988,11 +7207,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsSlackRouteImport
       parentRoute: typeof AuthenticatedSettingsNotificationsRoute
     }
+    '/_authenticated/settings/marketplace/$slug': {
+      id: '/_authenticated/settings/marketplace/$slug'
+      path: '/marketplace/$slug'
+      fullPath: '/settings/marketplace/$slug'
+      preLoaderRoute: typeof AuthenticatedSettingsMarketplaceSlugRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/integrations/linkedin': {
       id: '/_authenticated/settings/integrations/linkedin'
       path: '/integrations/linkedin'
       fullPath: '/settings/integrations/linkedin'
       preLoaderRoute: typeof AuthenticatedSettingsIntegrationsLinkedinRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/integrations/contaazul': {
+      id: '/_authenticated/settings/integrations/contaazul'
+      path: '/integrations/contaazul'
+      fullPath: '/settings/integrations/contaazul'
+      preLoaderRoute: typeof AuthenticatedSettingsIntegrationsContaazulRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/integrations/$slug': {
+      id: '/_authenticated/settings/integrations/$slug'
+      path: '/integrations/$slug'
+      fullPath: '/settings/integrations/$slug'
+      preLoaderRoute: typeof AuthenticatedSettingsIntegrationsSlugRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/prospecting/campaigns/$id': {
@@ -7477,6 +7717,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsGoalsRoute: typeof AuthenticatedSettingsGoalsRoute
   AuthenticatedSettingsHubspotSyncRoute: typeof AuthenticatedSettingsHubspotSyncRoute
   AuthenticatedSettingsHubspotUsersRoute: typeof AuthenticatedSettingsHubspotUsersRoute
+  AuthenticatedSettingsImportRoute: typeof AuthenticatedSettingsImportRoute
   AuthenticatedSettingsImportCsvRoute: typeof AuthenticatedSettingsImportCsvRoute
   AuthenticatedSettingsKbRoute: typeof AuthenticatedSettingsKbRoute
   AuthenticatedSettingsLanguageRoute: typeof AuthenticatedSettingsLanguageRoute
@@ -7487,6 +7728,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsMediaRoute: typeof AuthenticatedSettingsMediaRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
   AuthenticatedSettingsMyPermissionsRoute: typeof AuthenticatedSettingsMyPermissionsRoute
+  AuthenticatedSettingsMyTicketsRoute: typeof AuthenticatedSettingsMyTicketsRoute
   AuthenticatedSettingsNfseRoute: typeof AuthenticatedSettingsNfseRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRouteWithChildren
   AuthenticatedSettingsOnboardingTemplatesRoute: typeof AuthenticatedSettingsOnboardingTemplatesRoute
@@ -7531,7 +7773,17 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsWorkspaceTeamRoute: typeof AuthenticatedSettingsWorkspaceTeamRoute
   AuthenticatedSettingsZapierRoute: typeof AuthenticatedSettingsZapierRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
+  AuthenticatedSettingsIntegrationsSlugRoute: typeof AuthenticatedSettingsIntegrationsSlugRoute
+  AuthenticatedSettingsIntegrationsContaazulRoute: typeof AuthenticatedSettingsIntegrationsContaazulRoute
   AuthenticatedSettingsIntegrationsLinkedinRoute: typeof AuthenticatedSettingsIntegrationsLinkedinRoute
+  AuthenticatedSettingsMarketplaceSlugRoute: typeof AuthenticatedSettingsMarketplaceSlugRoute
+  AuthenticatedSettingsPlatformAlertsRoute: typeof AuthenticatedSettingsPlatformAlertsRoute
+  AuthenticatedSettingsPlatformQuotasRoute: typeof AuthenticatedSettingsPlatformQuotasRoute
+  AuthenticatedSettingsPlatformSandboxRoute: typeof AuthenticatedSettingsPlatformSandboxRoute
+  AuthenticatedSettingsPlatformSecurityRoute: typeof AuthenticatedSettingsPlatformSecurityRoute
+  AuthenticatedSettingsPlatformStatusRoute: typeof AuthenticatedSettingsPlatformStatusRoute
+  AuthenticatedSettingsIntegrationsIndexRoute: typeof AuthenticatedSettingsIntegrationsIndexRoute
+  AuthenticatedSettingsMarketplaceIndexRoute: typeof AuthenticatedSettingsMarketplaceIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
@@ -7566,6 +7818,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsHubspotSyncRoute: AuthenticatedSettingsHubspotSyncRoute,
   AuthenticatedSettingsHubspotUsersRoute:
     AuthenticatedSettingsHubspotUsersRoute,
+  AuthenticatedSettingsImportRoute: AuthenticatedSettingsImportRoute,
   AuthenticatedSettingsImportCsvRoute: AuthenticatedSettingsImportCsvRoute,
   AuthenticatedSettingsKbRoute: AuthenticatedSettingsKbRoute,
   AuthenticatedSettingsLanguageRoute: AuthenticatedSettingsLanguageRoute,
@@ -7579,6 +7832,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
   AuthenticatedSettingsMyPermissionsRoute:
     AuthenticatedSettingsMyPermissionsRoute,
+  AuthenticatedSettingsMyTicketsRoute: AuthenticatedSettingsMyTicketsRoute,
   AuthenticatedSettingsNfseRoute: AuthenticatedSettingsNfseRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRouteWithChildren,
@@ -7635,8 +7889,28 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsWorkspaceTeamRoute,
   AuthenticatedSettingsZapierRoute: AuthenticatedSettingsZapierRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
+  AuthenticatedSettingsIntegrationsSlugRoute:
+    AuthenticatedSettingsIntegrationsSlugRoute,
+  AuthenticatedSettingsIntegrationsContaazulRoute:
+    AuthenticatedSettingsIntegrationsContaazulRoute,
   AuthenticatedSettingsIntegrationsLinkedinRoute:
     AuthenticatedSettingsIntegrationsLinkedinRoute,
+  AuthenticatedSettingsMarketplaceSlugRoute:
+    AuthenticatedSettingsMarketplaceSlugRoute,
+  AuthenticatedSettingsPlatformAlertsRoute:
+    AuthenticatedSettingsPlatformAlertsRoute,
+  AuthenticatedSettingsPlatformQuotasRoute:
+    AuthenticatedSettingsPlatformQuotasRoute,
+  AuthenticatedSettingsPlatformSandboxRoute:
+    AuthenticatedSettingsPlatformSandboxRoute,
+  AuthenticatedSettingsPlatformSecurityRoute:
+    AuthenticatedSettingsPlatformSecurityRoute,
+  AuthenticatedSettingsPlatformStatusRoute:
+    AuthenticatedSettingsPlatformStatusRoute,
+  AuthenticatedSettingsIntegrationsIndexRoute:
+    AuthenticatedSettingsIntegrationsIndexRoute,
+  AuthenticatedSettingsMarketplaceIndexRoute:
+    AuthenticatedSettingsMarketplaceIndexRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =

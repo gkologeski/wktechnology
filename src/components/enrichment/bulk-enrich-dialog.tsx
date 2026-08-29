@@ -123,7 +123,7 @@ export function BulkEnrichDialog({
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 Nenhum provedor de enriquecimento conectado.{" "}
-                <Link to="/integrations" className="underline font-medium">
+                <Link to="/settings/integrations" className="underline font-medium">
                   Conectar Apollo ou Lusha
                 </Link>
                 .

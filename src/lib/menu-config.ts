@@ -425,11 +425,11 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
 export const SIDEBAR_PLATFORM_ITEMS: SidebarItem[] = [
   { title: "Super-admin", url: "/admin/workspaces", icon: ShieldCheck, need: "platform" },
   { title: "Chamados", url: "/admin/bug-reports", icon: Bug, need: "platform" },
-  { title: "Status", url: "/admin/status", icon: Activity, need: "platform" },
-  { title: "Alertas", url: "/admin/alerts", icon: Bell, need: "platform" },
-  { title: "Segurança", url: "/admin/security-scans", icon: ShieldCheck, need: "platform" },
-  { title: "Quotas", url: "/admin/quotas", icon: Gauge, need: "platform" },
-  { title: "Sandbox", url: "/admin/sandbox", icon: FlaskConical, need: "platform" },
+  { title: "Status", url: "/settings/platform/status", icon: Activity, need: "platform" },
+  { title: "Alertas", url: "/settings/platform/alerts", icon: Bell, need: "platform" },
+  { title: "Segurança", url: "/settings/platform/security", icon: ShieldCheck, need: "platform" },
+  { title: "Quotas", url: "/settings/platform/quotas", icon: Gauge, need: "platform" },
+  { title: "Sandbox", url: "/settings/platform/sandbox", icon: FlaskConical, need: "platform" },
 ];
 
 // --- SETTINGS ----------------------------------------------------------------
@@ -442,7 +442,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/settings/email", label: "Conexão de email", icon: Mail },
       { to: "/settings/security", label: "Segurança (2FA)", icon: ShieldCheck },
       { to: "/settings/privacy", label: "Privacidade & Meus Dados", icon: Lock },
-      { to: "/my-bug-reports", label: "Meus chamados", icon: Bug },
+      { to: "/settings/my-tickets", label: "Meus chamados", icon: Bug },
     ],
   },
   {
@@ -603,14 +603,14 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     label: "Integrações",
     items: [
       {
-        to: "/marketplace",
+        to: "/settings/marketplace",
         label: "Marketplace",
         icon: ShoppingBag,
         need: "admin",
         permissionAny: adminAny("system.marketplace"),
       },
       {
-        to: "/integrations",
+        to: "/settings/integrations",
         label: "Integrações",
         icon: Plug,
         need: "admin",
@@ -631,7 +631,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         permissionAny: adminAny("system.linkedin"),
       },
       {
-        to: "/settings/hubspot-sync",
+        to: "/settings/integrations/$slug",
         label: "Sync HubSpot",
         icon: RefreshCw,
         need: "admin",
@@ -645,8 +645,8 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         permissionAny: adminAny("system.widget"),
       },
       {
-        to: "/leads/import-hubspot",
-        label: "Importar HubSpot",
+        to: "/settings/import",
+        label: "Importar dados",
         icon: Download,
         need: "admin",
         permissionAny: adminAny("system.import"),
@@ -657,11 +657,16 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     label: "Plataforma",
     items: [
-      { to: "/admin/status", label: "Status", icon: Activity, need: "platform" },
-      { to: "/admin/alerts", label: "Alertas", icon: Bell, need: "platform" },
-      { to: "/admin/security-scans", label: "Segurança", icon: ShieldCheck, need: "platform" },
-      { to: "/admin/quotas", label: "Quotas", icon: Gauge, need: "platform" },
-      { to: "/admin/sandbox", label: "Sandbox", icon: FlaskConical, need: "platform" },
+      { to: "/settings/platform/status", label: "Status", icon: Activity, need: "platform" },
+      { to: "/settings/platform/alerts", label: "Alertas", icon: Bell, need: "platform" },
+      {
+        to: "/settings/platform/security",
+        label: "Segurança",
+        icon: ShieldCheck,
+        need: "platform",
+      },
+      { to: "/settings/platform/quotas", label: "Quotas", icon: Gauge, need: "platform" },
+      { to: "/settings/platform/sandbox", label: "Sandbox", icon: FlaskConical, need: "platform" },
     ],
   },
 ];
