@@ -98,6 +98,8 @@ export function LeadsBoard({
   onStartQueue,
   onStartProspecting,
   onFetchStageIds,
+  onSelectionChange,
+
 }: {
   stages: LeadStage[];
   pipelineId: string | null;
