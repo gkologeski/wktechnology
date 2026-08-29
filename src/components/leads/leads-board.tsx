@@ -4,7 +4,7 @@
 // questionário na tela do lead.
 import { DndContext, PointerSensor, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Headphones, Loader2, Play } from "lucide-react";
@@ -98,6 +98,7 @@ export function LeadsBoard({
   onStartQueue,
   onStartProspecting,
   onFetchStageIds,
+  onSelectionChange,
 }: {
   stages: LeadStage[];
   pipelineId: string | null;
@@ -120,6 +121,8 @@ export function LeadsBoard({
   onStartProspecting?: (ids: string[]) => void;
   /** Todos os ids de uma etapa dentro do filtro atual (seleção da coluna). */
   onFetchStageIds?: (stageValue: string) => Promise<string[]>;
+  /** Informa à página os ids selecionados no quadro. */
+  onSelectionChange?: (ids: string[]) => void;
 }) {
   const qc = useQueryClient();
   const [loadingStage, setLoadingStage] = useState<string | null>(null);
@@ -146,6 +149,11 @@ export function LeadsBoard({
     [columns, leads],
   );
   const selection = useBoardSelection(allRows);
+  const selectionKey = selection.ids.join(",");
+  useEffect(() => {
+    onSelectionChange?.(selectionKey ? selectionKey.split(",") : []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectionKey]);
 
   const refresh = () => void qc.invalidateQueries({ queryKey: ["leads"] });
 

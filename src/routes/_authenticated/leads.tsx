@@ -125,6 +125,9 @@ function LeadsHubspotView() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(50);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  /** Seleção feita no Quadro (Kanban) — usada pelas ações do topo nesse modo. */
+  const [boardSelectedIds, setBoardSelectedIds] = useState<string[]>([]);
+
   const [enrichIds, setEnrichIds] = useState<string[] | null>(null);
   const [prospectingIds, setProspectingIds] = useState<string[] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -627,19 +630,41 @@ function LeadsHubspotView() {
     }
   };
 
+  /** Seleção ativa conforme o modo de visualização (quadro ou tabela). */
+  const effectiveSelectedIds = viewMode === "board" ? boardSelectedIds : Array.from(selectedIds);
+
+  /** Teto de segurança da fila quando não há seleção. */
+  const QUEUE_LIMIT = 5000;
+
+  const startQueueWithIds = (ids: string[], truncated = false) => {
+    if (!ids.length) {
+      toast.error("Nenhum lead para percorrer.");
+      return;
+    }
+    startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
+    toast.success(
+      truncated
+        ? `Fila iniciada com ${ids.length} lead(s) — limite máximo atingido`
+        : `Fila iniciada com ${ids.length} lead(s)`,
+    );
+    navigate({ to: "/leads/$id", params: { id: ids[0] } });
+  };
+
   return (
     <div className="flex h-full flex-col">
       <LeadsTopBar
         isLoading={isLoading}
         total={total}
+        selectedCount={effectiveSelectedIds.length}
         onExportCsv={exportCsv}
         onStartQueue={async () => {
           try {
-            const ids = await fetchFilteredLeadIds(5000);
-            if (!ids.length) return toast.error("Nenhum lead para percorrer.");
-            startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
-            toast.success(`Fila iniciada com ${ids.length} lead(s)`);
-            navigate({ to: "/leads/$id", params: { id: ids[0] } });
+            if (effectiveSelectedIds.length) {
+              startQueueWithIds(effectiveSelectedIds);
+              return;
+            }
+            const ids = await fetchFilteredLeadIds(QUEUE_LIMIT);
+            startQueueWithIds(ids, ids.length >= QUEUE_LIMIT);
           } catch (e) {
             toast.error((e as Error).message);
           }
@@ -648,7 +673,9 @@ function LeadsHubspotView() {
         prospectingBusy={prospectingBusy}
         onStartProspectingMode={async () => {
           try {
-            const ids = await fetchFilteredLeadIds(PROSPECTING_MODE_LIMIT);
+            const ids = effectiveSelectedIds.length
+              ? effectiveSelectedIds.slice(0, PROSPECTING_MODE_LIMIT)
+              : await fetchFilteredLeadIds(PROSPECTING_MODE_LIMIT);
             await startProspectingMode(ids);
           } catch (e) {
             toast.error((e as Error).message);
@@ -749,15 +776,13 @@ function LeadsHubspotView() {
                   canProspectingMode={canProspectingMode}
                   prospectingBusy={prospectingBusy}
                   onFetchStageIds={fetchStageLeadIds}
+                  onSelectionChange={setBoardSelectedIds}
                   onStartQueue={(ids) => {
                     if (!ids.length) {
                       toast.error("Selecione ao menos um lead.");
                       return;
                     }
-                    startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
-
-                    toast.success(`Fila iniciada com ${ids.length} lead(s)`);
-                    navigate({ to: "/leads/$id", params: { id: ids[0] } });
+                    startQueueWithIds(ids);
                   }}
                   onStartProspecting={(ids) =>
                     void startProspectingMode(ids.slice(0, PROSPECTING_MODE_LIMIT))
