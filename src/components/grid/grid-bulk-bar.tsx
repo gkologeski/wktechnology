@@ -59,6 +59,7 @@ export function GridBulkBar<T extends { id: string }>({
   csvEnabled = true,
   extraActions,
 }: GridBulkBarProps<T>) {
+  const [exporting, setExporting] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   // Quando a tabela está no catálogo dinâmico, a edição em massa passa a
   // oferecer qualquer campo permitido da entidade; senão usa os campos fixos.
@@ -68,16 +69,48 @@ export function GridBulkBar<T extends { id: string }>({
   const [activityOpen, setActivityOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
-  const exportCsv = () => {
-    if (!rows.length) return toast.error("Nada para exportar");
-    const csv = Papa.unparse(rows as unknown as Record<string, unknown>[]);
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${table}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  /** Busca as linhas completas dos ids selecionados (em lotes). */
+  const fetchAllRows = async (): Promise<Record<string, unknown>[]> => {
+    const out: Record<string, unknown>[] = [];
+    const CHUNK = 500;
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from(table)
+        .select("*")
+        .in("id", ids.slice(i, i + CHUNK));
+      if (error) throw new Error(error.message);
+      out.push(...((data ?? []) as Record<string, unknown>[]));
+    }
+    return out;
+  };
+
+  const exportCsv = async () => {
+    if (!ids.length) return toast.error("Nada para exportar");
+    setExporting(true);
+    try {
+      // Quadros paginam os cards (ex.: 100 por etapa) — quando há mais ids
+      // selecionados do que linhas carregadas, busca tudo antes de exportar.
+      const data = rows.length >= ids.length ? rows : await fetchAllRows();
+      if (!data.length) return toast.error("Nada para exportar");
+      if (data.length < ids.length) {
+        toast.warning(
+          `${data.length} de ${ids.length} registros exportados — os demais estão fora do seu acesso.`,
+        );
+      }
+      const csv = Papa.unparse(data as unknown as Record<string, unknown>[]);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${table}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Falha ao exportar");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const bulkDelete = async () => {
