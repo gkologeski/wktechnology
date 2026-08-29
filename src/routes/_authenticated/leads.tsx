@@ -631,8 +631,7 @@ function LeadsHubspotView() {
   };
 
   /** Seleção ativa conforme o modo de visualização (quadro ou tabela). */
-  const effectiveSelectedIds =
-    viewMode === "board" ? boardSelectedIds : Array.from(selectedIds);
+  const effectiveSelectedIds = viewMode === "board" ? boardSelectedIds : Array.from(selectedIds);
 
   /** Teto de segurança da fila quando não há seleção. */
   const QUEUE_LIMIT = 5000;
@@ -684,7 +683,6 @@ function LeadsHubspotView() {
         }}
         onCreateLead={() => setCreateOpen(true)}
       />
-
 
       <LeadsViewTabs
         activeView={activeView}
@@ -786,7 +784,6 @@ function LeadsHubspotView() {
                     }
                     startQueueWithIds(ids);
                   }}
-
                   onStartProspecting={(ids) =>
                     void startProspectingMode(ids.slice(0, PROSPECTING_MODE_LIMIT))
                   }

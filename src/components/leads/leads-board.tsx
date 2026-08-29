@@ -99,7 +99,6 @@ export function LeadsBoard({
   onStartProspecting,
   onFetchStageIds,
   onSelectionChange,
-
 }: {
   stages: LeadStage[];
   pipelineId: string | null;
@@ -125,7 +124,6 @@ export function LeadsBoard({
   /** Informa à página os ids selecionados no quadro. */
   onSelectionChange?: (ids: string[]) => void;
 }) {
-
   const qc = useQueryClient();
   const [loadingStage, setLoadingStage] = useState<string | null>(null);
 
@@ -156,8 +154,6 @@ export function LeadsBoard({
     onSelectionChange?.(selectionKey ? selectionKey.split(",") : []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectionKey]);
-
-
 
   const refresh = () => void qc.invalidateQueries({ queryKey: ["leads"] });
 
