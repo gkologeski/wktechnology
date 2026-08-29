@@ -126,6 +126,14 @@ export async function loadSalesDashboard(
   if (selected) dealsQ = dealsQ.eq("pipeline_id", selected.id);
   dealsQ = mine(dealsQ);
 
+  // Consultas secundárias não podem derrubar o painel inteiro: em caso de
+  // falha, o bloco correspondente fica vazio.
+  const safe = <T>(p: PromiseLike<{ data: T | null; error?: unknown }>) =>
+    Promise.resolve(p).then(
+      (r) => r,
+      () => ({ data: null }) as { data: T | null; error?: unknown },
+    );
+
   // 3) Demais consultas em paralelo
   const [dealsRes, acts14Res, acts30Res, meetingsRes, bookingsRes, tasksRes, goalsRes, leadsRes] =
     await Promise.all([
