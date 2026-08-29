@@ -226,14 +226,9 @@ function LeadsHubspotView() {
       q = q.gte("created_at", since);
     }
     if (filters.status.length > 0) {
-      const stageVals = filters.status;
-      const derived = Array.from(
-        new Set(stageVals.map((v) => deriveLeadStatus(findLeadStage(stages, v)))),
-      );
-      q = q.or(
-        `stage_id.in.(${stageVals.join(",")}),and(stage_id.is.null,status.in.(${derived.join(",")}))`,
-      );
+      q = q.or(stagesOrExpr(stages, filters.status));
     }
+
 
     if (filters.source.length > 0) q = q.in("source", filters.source);
     if (filters.substatusIds.length > 0) q = q.in("stage_substatus_id", filters.substatusIds);
