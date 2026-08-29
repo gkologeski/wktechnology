@@ -55,7 +55,7 @@ export function OnboardingChecklist() {
     {
       done: data.integrations,
       label: "Conecte uma integração (Google, WhatsApp, etc.)",
-      to: "/integrations" as const,
+      to: "/settings/integrations" as const,
     },
     {
       done: data.team,

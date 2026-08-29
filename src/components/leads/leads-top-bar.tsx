@@ -39,7 +39,7 @@ export function LeadsTopBar({
           ]}
         >
           <Button variant="outline" size="sm" asChild>
-            <Link to="/leads/import-hubspot">
+            <Link to="/settings/import">
               <Upload className="mr-1.5 h-4 w-4" /> Importar HubSpot
             </Link>
           </Button>

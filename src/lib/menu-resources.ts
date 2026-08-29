@@ -17,6 +17,11 @@ export const PLATFORM_ONLY_URLS: readonly string[] = [
   "/admin/security-scans",
   "/admin/quotas",
   "/admin/sandbox",
+  "/settings/platform/status",
+  "/settings/platform/alerts",
+  "/settings/platform/security",
+  "/settings/platform/quotas",
+  "/settings/platform/sandbox",
 ];
 
 /** Itens de conta pessoal do usuário — não têm permissão de workspace. */
@@ -25,6 +30,7 @@ export const PERSONAL_URLS: readonly string[] = [
   "/settings/security",
   "/settings/privacy",
   "/my-bug-reports",
+  "/settings/my-tickets",
 ];
 
 export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
@@ -57,6 +63,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/catalog/job-profiles": ["techsales.catalog.services"],
   "/catalog/contracting-presets": ["techsales.catalog.services"],
   "/leads/import-hubspot": ["system.import"],
+  "/settings/import": ["system.import"],
   "/prospecting": [
     "techsales.prospecting_queue",
     "techsales.prospecting_cadences",
@@ -75,10 +82,13 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/modules": ["system.modules"],
   "/files": ["system.files"],
   "/marketplace": ["system.marketplace"],
+  "/settings/marketplace": ["system.marketplace"],
   "/integrations": ["system.integrations"],
+  "/settings/integrations": ["system.integrations"],
   "/settings/whatsapp": ["system.whatsapp"],
   "/settings/integrations/linkedin": ["system.linkedin"],
   "/settings/hubspot-sync": ["system.hubspot_sync"],
+  "/settings/integrations/hubspot": ["system.hubspot_sync"],
   "/settings/widget": ["system.widget"],
   "/settings/branding": ["system.branding"],
   "/settings/legal-entities": ["system.legal_entities"],

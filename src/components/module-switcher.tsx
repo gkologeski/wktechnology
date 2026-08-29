@@ -14,7 +14,7 @@ import { isWorkspacePathname } from "@/lib/menu-config-erp";
 import { cn } from "@/lib/utils";
 
 // Rotas neutras extras do workspace que não constam em WORKSPACE_ROUTE_PREFIXES.
-const EXTRA_WORKSPACE_PREFIXES = ["/integrations"];
+const EXTRA_WORKSPACE_PREFIXES = ["/integrations", "/settings"];
 
 function isWorkspaceRoute(pathname: string): boolean {
   if (isWorkspacePathname(pathname)) return true;

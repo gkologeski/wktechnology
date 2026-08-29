@@ -171,7 +171,7 @@ function ModulesGrid() {
         </CardHeader>
         <CardContent className="mt-auto pt-0">
           <Button size="sm" variant="outline" asChild>
-            <Link to="/marketplace">Abrir marketplace</Link>
+            <Link to="/settings/marketplace">Abrir marketplace</Link>
           </Button>
         </CardContent>
       </Card>
@@ -203,7 +203,7 @@ const SHORTCUTS: Shortcut[] = [
     desc: "Cargos e pacotes de permissão.",
     icon: Shield,
   },
-  { to: "/marketplace", title: "Marketplace", desc: "Add-ons e integrações.", icon: Store },
+  { to: "/settings/marketplace", title: "Marketplace", desc: "Add-ons e integrações.", icon: Store },
   { to: "/invoices", title: "Faturas", desc: "Histórico de pagamentos.", icon: Receipt },
 ];
 

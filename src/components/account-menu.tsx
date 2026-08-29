@@ -39,7 +39,7 @@ export function AccountMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/my-bug-reports">
+          <Link to="/settings/my-tickets">
             <Bug className="h-4 w-4 mr-2" /> Meus chamados
           </Link>
         </DropdownMenuItem>
