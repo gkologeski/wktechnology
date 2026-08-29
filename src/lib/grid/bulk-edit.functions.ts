@@ -60,22 +60,107 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
     }
 
     const uniqueIds = Array.from(new Set(data.ids));
-    let updated = 0;
-    for (const chunk of chunkIds(uniqueIds)) {
-      const { data: affected, error } = await client
-        .from(data.entity)
-        .update(payload)
-        .in("id", chunk)
-        .select("id");
-      if (error) {
+
+    // Coerência pipeline → etapa: uma etapa de outro pipeline deixaria o
+    // registro sem coluna no quadro, então validamos/ajustamos aqui.
+    let groups: Array<{ ids: string[]; payload: Record<string, unknown> }> = [
+      { ids: uniqueIds, payload },
+    ];
+    if (PIPELINE_ENTITIES.has(data.entity) && payload["pipeline_id"]) {
+      const { data: pipe, error: pipeError } = await client
+        .from("pipelines")
+        .select("stages")
+        .eq("id", payload["pipeline_id"])
+        .maybeSingle();
+      if (pipeError) {
         return {
           ok: false as const,
-          message: error.message as string,
+          message: pipeError.message as string,
           requested: uniqueIds.length,
-          updated,
+          updated: 0,
         };
       }
-      updated += ((affected ?? []) as unknown[]).length;
+      const stages = parseStages(pipe?.stages);
+      if (!stages.length) {
+        return {
+          ok: false as const,
+          message: "O pipeline de destino não tem etapas configuradas.",
+          requested: uniqueIds.length,
+          updated: 0,
+        };
+      }
+
+      const chosenStage = payload["stage_id"];
+      if (chosenStage && !isStageOfPipeline(stages, String(chosenStage))) {
+        return {
+          ok: false as const,
+          message: "A etapa escolhida não pertence ao pipeline de destino. Selecione uma etapa dele.",
+          requested: uniqueIds.length,
+          updated: 0,
+        };
+      }
+
+      if (chosenStage) {
+        const legacy = legacyStageFor(stages, String(chosenStage));
+        if (legacy && columnTypes.has("stage")) payload["stage"] = legacy;
+      } else if (columnTypes.has("stage_id")) {
+        // Sem etapa informada: mantém a atual quando ela existe no destino,
+        // senão move para a etapa equivalente (ganho/perda) ou para a primeira.
+        const byTarget = new Map<string, string[]>();
+        for (const chunk of chunkIds(uniqueIds)) {
+          const { data: current, error } = await client
+            .from(data.entity)
+            .select("id, stage_id, stage")
+            .in("id", chunk);
+          if (error) {
+            return {
+              ok: false as const,
+              message: error.message as string,
+              requested: uniqueIds.length,
+              updated: 0,
+            };
+          }
+          for (const row of (current ?? []) as Array<{
+            id: string;
+            stage_id: string | null;
+            stage: string | null;
+          }>) {
+            const target = resolveStageForPipeline(stages, row);
+            if (!target) continue;
+            const list = byTarget.get(target);
+            if (list) list.push(row.id);
+            else byTarget.set(target, [row.id]);
+          }
+        }
+        if (byTarget.size > 0) {
+          groups = Array.from(byTarget.entries()).map(([target, ids]) => {
+            const next: Record<string, unknown> = { ...payload, stage_id: target };
+            const legacy = legacyStageFor(stages, target);
+            if (legacy && columnTypes.has("stage")) next["stage"] = legacy;
+            return { ids, payload: next };
+          });
+        }
+      }
+    }
+
+    let updated = 0;
+    for (const group of groups) {
+      for (const chunk of chunkIds(group.ids)) {
+        const { data: affected, error } = await client
+          .from(data.entity)
+          .update(group.payload)
+          .in("id", chunk)
+          .select("id");
+        if (error) {
+          return {
+            ok: false as const,
+            message: error.message as string,
+            requested: uniqueIds.length,
+            updated,
+          };
+        }
+        updated += ((affected ?? []) as unknown[]).length;
+      }
     }
 
     return {
