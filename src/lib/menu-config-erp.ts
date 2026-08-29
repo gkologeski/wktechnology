@@ -24,7 +24,7 @@ export const ERP_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Home", url: "/home", icon: Home },
       { title: "Módulos", url: "/modules", icon: Boxes },
       { title: "Arquivos", url: "/files", icon: FolderOpen },
-      { title: "Marketplace", url: "/marketplace", icon: Store },
+      { title: "Marketplace", url: "/settings/marketplace", icon: Store },
       { title: "Faturas", url: "/invoices", icon: Receipt },
     ],
   },

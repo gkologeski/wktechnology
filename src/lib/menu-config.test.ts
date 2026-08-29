@@ -32,7 +32,7 @@ const SIDEBAR_MANAGER_PLUS = [
 ];
 
 // Itens de Configurações por need esperado
-const SETTINGS_PUBLIC = ["/settings", "/settings/email", "/settings/security", "/my-bug-reports"];
+const SETTINGS_PUBLIC = ["/settings", "/settings/email", "/settings/security", "/settings/my-tickets"];
 const SETTINGS_MANAGER_PLUS = [
   "/settings/calendars",
   "/settings/user-groups",
@@ -52,18 +52,18 @@ const SETTINGS_ADMIN_ONLY = [
   "/settings/custom-objects",
   "/settings/teams",
   "/settings/permissions",
-  "/marketplace",
-  "/integrations",
+  "/settings/marketplace",
+  "/settings/integrations",
   "/settings/whatsapp",
-  "/settings/hubspot-sync",
-  "/leads/import-hubspot",
+  "/settings/integrations/hubspot",
+  "/settings/import",
 ];
 const SETTINGS_PLATFORM_ONLY = [
-  "/admin/status",
-  "/admin/alerts",
-  "/admin/security-scans",
-  "/admin/quotas",
-  "/admin/sandbox",
+  "/settings/platform/status",
+  "/settings/platform/alerts",
+  "/settings/platform/security",
+  "/settings/platform/quotas",
+  "/settings/platform/sandbox",
 ];
 
 describe("Sidebar — visibilidade por papel", () => {
