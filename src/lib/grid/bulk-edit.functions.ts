@@ -11,14 +11,12 @@ import {
   mirrorAliasColumns,
 } from "./bulk-edit-fields";
 import {
+  PIPELINE_ENTITIES,
   isStageOfPipeline,
   legacyStageFor,
   parseStages,
   resolveStageForPipeline,
 } from "@/lib/pipelines/stage-resolve";
-
-/** Entidades cuja etapa (`stage_id`) pertence a um pipeline. */
-const PIPELINE_ENTITIES = new Set(["deals", "leads", "tickets"]);
 
 export const bulkUpdateEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
