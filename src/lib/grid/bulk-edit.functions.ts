@@ -12,10 +12,12 @@ import {
 } from "./bulk-edit-fields";
 import {
   PIPELINE_ENTITIES,
+  checkStageCoherence,
   isStageOfPipeline,
   legacyStageFor,
   parseStages,
   resolveStageForPipeline,
+  stageOfType,
 } from "@/lib/pipelines/stage-resolve";
 
 export const bulkUpdateEntity = createServerFn({ method: "POST" })
