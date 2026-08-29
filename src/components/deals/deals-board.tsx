@@ -50,16 +50,22 @@ export function DealsBoard({
     [deals, pipeline, nextActivities],
   );
 
-  const grouped = useMemo(() => {
+  const { grouped, orphans } = useMemo(() => {
     const map: Record<string, Deal[]> = {};
     for (const s of pipeline.stages) map[s.value] = [];
+    const unknown: Deal[] = [];
     for (const d of deals) {
       const key = d.stage_id || (d.stage as string);
       if (map[key]) map[key].push(d);
-      else if (map[pipeline.stages[0]?.value]) map[pipeline.stages[0].value].push(d);
+      // Etapa que não existe neste pipeline (ex.: id legado após troca de
+      // pipeline): fica numa coluna "Sem etapa" em vez de sumir do quadro.
+      else unknown.push(d);
     }
-    return map;
+    return { grouped: map, orphans: unknown };
   }, [deals, pipeline]);
+
+  /** Coluna extra para negócios com etapa desconhecida (só quando houver). */
+  const orphanStage = { value: "__sem_etapa__", label: "Sem etapa", type: "open" as const };
 
   const [lostTarget, setLostTarget] = useState<{
     ids: string[];
