@@ -54,9 +54,9 @@ export function resolveStageForPipeline(
   if (!stages.length) return null;
   const currentKey = current.stage_id || current.stage || null;
   if (isStageOfPipeline(stages, currentKey)) return currentKey;
-  const wanted = currentType ?? (current.stage === "won" || current.stage === "lost")
-      ? (current.stage as string)
-      : null;
+  const wanted =
+    currentType ??
+    (current.stage === "won" || current.stage === "lost" ? (current.stage as string) : null);
   if (wanted) {
     const sameType = stages.find((s) => s.type === wanted);
     if (sameType) return sameType.value;
