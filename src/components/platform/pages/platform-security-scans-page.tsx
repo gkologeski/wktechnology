@@ -23,7 +23,6 @@ import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Play, RefreshCw, ShieldAlert } from "lucide-react";
 
-
 type Severity = "info" | "warning" | "error" | "critical";
 
 const SEVERITY_LABEL: Record<Severity, string> = {

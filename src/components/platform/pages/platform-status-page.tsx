@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-
 export function AdminStatusPage() {
   const { isPlatformAdmin, loading } = useIsPlatformAdmin();
   const fn = useServerFn(getPlatformStatus);

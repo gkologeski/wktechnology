@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { listMarketplaceApps } from "@/lib/marketplace.functions";
 
-
 export function MarketplacePage() {
   const list = useServerFn(listMarketplaceApps);
   const [search, setSearch] = useState("");

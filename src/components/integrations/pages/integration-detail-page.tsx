@@ -37,9 +37,8 @@ import { HubspotMaintenancePanel } from "@/components/hubspot/maintenance-panel"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
-
 export function IntegrationDetail({ slug }: { slug: string }) {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const provider = getProvider(slug);
 

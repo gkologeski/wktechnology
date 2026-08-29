@@ -42,7 +42,6 @@ import {
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import { Plus } from "lucide-react";
 
-
 export function AdminSandboxPage() {
   const { isPlatformAdmin, loading } = useIsPlatformAdmin();
   const qc = useQueryClient();

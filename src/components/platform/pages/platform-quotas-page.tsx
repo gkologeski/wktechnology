@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 
-
 // Limites de referência por plano (display-only; cobrança real via Stripe).
 const PLAN_LIMITS: Record<string, Record<string, number>> = {
   free: { emails_sent: 500, whatsapp_sent: 100, api_requests: 1000, ai_credits: 100 },

@@ -34,7 +34,6 @@ import {
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
 import { Trash2, Plus } from "lucide-react";
 
-
 export function AdminAlertsPage() {
   const { isPlatformAdmin, loading } = useIsPlatformAdmin();
   const qc = useQueryClient();

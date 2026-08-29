@@ -32,7 +32,6 @@ import {
 } from "@/components/contaazul/contaazul-sync-progress";
 import { ContaAzulOAuthDiagnostics } from "@/components/contaazul/contaazul-oauth-diagnostics";
 
-
 export function ContaAzulIntegrationPage() {
   const qc = useQueryClient();
   const status = useServerFn(contaAzulStatus);

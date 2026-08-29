@@ -10,7 +10,6 @@ import { Search } from "lucide-react";
 import { PROVIDERS, CATEGORY_LABELS } from "@/lib/integrations/registry";
 import { listIntegrations } from "@/lib/integrations/core.functions";
 
-
 export function IntegrationsCatalog() {
   const list = useServerFn(listIntegrations);
   const { data } = useQuery({

@@ -33,7 +33,6 @@ import { BUG_CATEGORIES, BUG_KINDS } from "@/lib/bug-report-taxonomy";
 import { BugReportImages } from "@/components/bug-report/bug-report-images";
 import { Bug, Pencil, Video, ThumbsUp, ThumbsDown, CheckCircle2 } from "lucide-react";
 
-
 const STATUS_LABEL: Record<string, string> = {
   open: "Aberto",
   triaged: "Triado",

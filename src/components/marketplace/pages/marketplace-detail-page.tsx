@@ -15,9 +15,8 @@ import {
   testMarketplaceConnection,
 } from "@/lib/marketplace.functions";
 
-
 export function MarketplaceDetail({ slug }: { slug: string }) {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const getFn = useServerFn(getMarketplaceApp);
   const install = useServerFn(installMarketplaceApp);
   const uninstall = useServerFn(uninstallMarketplaceApp);
