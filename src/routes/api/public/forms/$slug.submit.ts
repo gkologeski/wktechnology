@@ -53,8 +53,9 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
         const { data: form, error: ferr } = await supabaseAdmin
           .from("forms")
           .select(
-            "id, owner_id, target, fields, active, redirect_url, success_message, submit_count",
+            "id, name, workspace_id, owner_id, target, fields, active, redirect_url, success_message, submit_count",
           )
+
           .eq("slug", params.slug)
           .maybeSingle();
         if (ferr) return Response.json({ error: ferr.message }, { status: 500, headers: cors });
@@ -155,6 +156,26 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           user_agent: ua,
           referer,
         });
+
+        // Nota na timeline com os campos preenchidos, na ordem definida no
+        // formulário. Falha aqui não invalida o envio: apenas registra log.
+        const filled = fields
+          .filter((f) => clean[f.key])
+          .map((f) => `${f.label || f.key}: ${clean[f.key]}`);
+        if (filled.length && (leadId || contactId)) {
+          const { error: aerr } = await supabaseAdmin.from("activities").insert({
+            owner_id: form.owner_id,
+            workspace_id: form.workspace_id,
+            created_by: form.owner_id,
+            assigned_to: form.owner_id,
+            type: "note",
+            subject: `Formulário enviado: ${form.name ?? params.slug}`,
+            body: filled.join("\n"),
+            related_lead_id: leadId,
+            related_contact_id: contactId,
+          });
+          if (aerr) console.error("[forms.submit] activity insert failed", aerr.message);
+        }
 
         await supabaseAdmin
           .from("forms")

@@ -66,7 +66,6 @@ export function useBoardSelection<T extends { id: string }>(rows: T[]) {
     });
   }, []);
 
-
   const clear = useCallback(() => {
     setSelectedIds(new Set());
     setLastId(null);
@@ -91,4 +90,3 @@ export function useBoardSelection<T extends { id: string }>(rows: T[]) {
     clear,
   };
 }
-

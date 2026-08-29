@@ -231,7 +231,6 @@ function LeadsHubspotView() {
       q = q.or(stagesOrExpr(stages, filters.status));
     }
 
-
     if (filters.source.length > 0) q = q.in("source", filters.source);
     if (filters.substatusIds.length > 0) q = q.in("stage_substatus_id", filters.substatusIds);
     if (filters.scoreMin > 0) q = q.gte("score", filters.scoreMin);
@@ -303,7 +302,6 @@ function LeadsHubspotView() {
 
   /** IDs de todos os leads de uma etapa dentro do filtro atual. */
   const fetchStageLeadIds = (stageValue: string) => fetchFilteredLeadIds(5000, stageValue);
-
 
   /**
    * Carrega os leads na fila manual reutilizável "Modo Prospecção (rápida)" e
@@ -421,9 +419,7 @@ function LeadsHubspotView() {
             .select(buildGridSelect(BASE_LEAD_KEYS, [], {}), { count: "exact" });
           q = applyFilters(q);
           q = q.or(stageOrExpr(stages, s.value));
-          q = q
-            .order(sortKey, { ascending: sortDir === "asc" })
-            .range(0, BOARD_PER_STAGE - 1);
+          q = q.order(sortKey, { ascending: sortDir === "asc" }).range(0, BOARD_PER_STAGE - 1);
           const { data, error, count } = await q;
           if (error) throw error;
           return {
@@ -435,7 +431,6 @@ function LeadsHubspotView() {
       );
     },
   });
-
 
   const allSelected = rows.length > 0 && rows.every((r) => selectedIds.has(r.id));
   const someSelected = rows.some((r) => selectedIds.has(r.id));
@@ -742,14 +737,31 @@ function LeadsHubspotView() {
 
           {viewMode === "board" ? (
             <div className="min-h-0 flex-1 overflow-hidden p-3">
-              {isLoading ? (
+              {boardLoading && !boardColumns ? (
                 <p className="text-sm text-muted-foreground">Carregando leads…</p>
               ) : (
                 <LeadsBoard
                   stages={stages}
                   pipelineId={pipelineId}
                   leads={rows}
+                  columns={boardColumns}
                   ownerNames={ownerNameMap}
+                  canProspectingMode={canProspectingMode}
+                  prospectingBusy={prospectingBusy}
+                  onFetchStageIds={fetchStageLeadIds}
+                  onStartQueue={(ids) => {
+                    if (!ids.length) {
+                      toast.error("Selecione ao menos um lead.");
+                      return;
+                    }
+                    startFocusQueue("leads", ids, `Leads · ${ids.length.toLocaleString("pt-BR")}`);
+
+                    toast.success(`Fila iniciada com ${ids.length} lead(s)`);
+                    navigate({ to: "/leads/$id", params: { id: ids[0] } });
+                  }}
+                  onStartProspecting={(ids) =>
+                    void startProspectingMode(ids.slice(0, PROSPECTING_MODE_LIMIT))
+                  }
                   onOpen={(id) => navigate({ to: "/leads/$id", params: { id } })}
                   onRequestQualification={(id) => navigate({ to: "/leads/$id", params: { id } })}
                 />
@@ -776,15 +788,18 @@ function LeadsHubspotView() {
             </div>
           )}
 
-          {/* Pagination */}
-          <TablePagination
-            page={page}
-            pageSize={pageSize}
-            total={total}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-            entityLabel="leads"
-          />
+          {/* Paginação vale apenas para o modo Tabela: o Quadro traz cada etapa
+              com contagem própria e não usa páginas. */}
+          {viewMode === "table" && (
+            <TablePagination
+              page={page}
+              pageSize={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={setPageSize}
+              entityLabel="leads"
+            />
+          )}
         </div>
       </div>
 
