@@ -23,7 +23,7 @@ export function BulkActionBar({
 }: BulkActionBarProps) {
   const showSelectAll = typeof totalMatching === "number" && totalMatching > count && !!onSelectAll;
   return (
-    <div className="sticky top-2 z-20 mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-sm">
+    <div className="fixed bottom-4 inset-x-4 z-40 mx-auto flex w-fit max-w-full flex-wrap items-center justify-center gap-2 rounded-lg border bg-card px-3 py-2 shadow-lg">
       <Button variant="ghost" size="icon" onClick={onClear} aria-label="Limpar seleção">
         <X className="h-4 w-4" />
       </Button>
