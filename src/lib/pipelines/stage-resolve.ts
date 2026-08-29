@@ -52,14 +52,22 @@ export function isStageOfPipeline(stages: StageDef[], stageValue: string | null)
 export function resolveStageForPipeline(
   stages: StageDef[],
   current: { stage_id?: string | null; stage?: string | null },
-  currentType?: string | null,
+  desiredStage?: string | null,
 ): string | null {
   if (!stages.length) return null;
+
+  // Etapa desejada no próprio update (ex.: `stage = 'lost'` na edição em massa)
+  // tem precedência sobre a etapa atual do registro.
+  if (desiredStage) {
+    if (isStageOfPipeline(stages, desiredStage)) return desiredStage;
+    const sameType = stages.find((s) => s.type === desiredStage);
+    if (sameType) return sameType.value;
+  }
+
   const currentKey = current.stage_id || current.stage || null;
   if (isStageOfPipeline(stages, currentKey)) return currentKey;
   const wanted =
-    currentType ??
-    (current.stage === "won" || current.stage === "lost" ? (current.stage as string) : null);
+    current.stage === "won" || current.stage === "lost" ? (current.stage as string) : null;
   if (wanted) {
     const sameType = stages.find((s) => s.type === wanted);
     if (sameType) return sameType.value;

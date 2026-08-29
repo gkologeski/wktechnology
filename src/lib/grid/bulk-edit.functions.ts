@@ -124,7 +124,12 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
             stage_id: string | null;
             stage: string | null;
           }>) {
-            const target = resolveStageForPipeline(stages, row);
+            const target = resolveStageForPipeline(
+              stages,
+              row,
+              payload["stage"] == null ? null : String(payload["stage"]),
+            );
+
             if (!target) continue;
             const list = byTarget.get(target);
             if (list) list.push(row.id);
