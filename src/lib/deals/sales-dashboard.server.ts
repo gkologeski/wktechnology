@@ -82,9 +82,12 @@ export async function loadSalesDashboard(
   const prevPeriodEnd = new Date(periodStart.getTime() - 1);
 
   // Escopo "equipe" exige permissão granular de visualização além do próprio usuário.
-  const permsRes = await supabase.rpc("current_user_permissions_json", {
-    _workspace_id: workspaceId,
-  });
+  const permsRes = await supabase
+    .rpc("current_user_permissions_json", { _workspace_id: workspaceId })
+    .then(
+      (r) => r,
+      () => ({ data: null }) as { data: unknown },
+    );
   const perms: string[] = Array.isArray(permsRes.data) ? (permsRes.data as string[]) : [];
   const canViewTeam = perms.some((p) => /^techsales\.dashboard\.view\.(team|workspace)$/.test(p));
   const effectiveScope: SalesDashboardScope = input.scope === "team" && canViewTeam ? "team" : "me";
@@ -123,75 +126,99 @@ export async function loadSalesDashboard(
   if (selected) dealsQ = dealsQ.eq("pipeline_id", selected.id);
   dealsQ = mine(dealsQ);
 
+  // Consultas secundárias não podem derrubar o painel inteiro: em caso de
+  // falha, o bloco correspondente fica vazio.
+  const safe = <T>(p: PromiseLike<{ data: T | null; error?: unknown }>) =>
+    Promise.resolve(p).then(
+      (r) => r,
+      () => ({ data: null }) as { data: T | null; error?: unknown },
+    );
+
   // 3) Demais consultas em paralelo
   const [dealsRes, acts14Res, acts30Res, meetingsRes, bookingsRes, tasksRes, goalsRes, leadsRes] =
     await Promise.all([
       dealsQ,
-      mine(
+      safe(
+        mine(
+          supabase
+            .from("activities")
+            .select("id, type, created_at")
+            .eq("workspace_id", workspaceId)
+            .gte("created_at", d14.toISOString())
+            .limit(5000),
+        ),
+      ),
+      safe(
+        mine(
+          supabase
+            .from("activities")
+            .select("related_deal_id, created_at")
+            .eq("workspace_id", workspaceId)
+            .not("related_deal_id", "is", null)
+            .gte("created_at", d30.toISOString())
+            .limit(10000),
+        ),
+      ),
+      safe(
+        mine(
+          supabase
+            .from("meetings")
+            .select("id, title, scheduled_at, status, public_token, related_deal_id")
+            .eq("workspace_id", workspaceId)
+            .gte("scheduled_at", now.toISOString())
+            .lte("scheduled_at", in7.toISOString())
+            .not("status", "in", '("cancelled","canceled")')
+            .order("scheduled_at", { ascending: true })
+            .limit(10),
+        ),
+      ),
+      safe(
+        mine(
+          supabase
+            .from("bookings")
+            .select("id, invitee_name, invitee_email, start_at, meet_link, status")
+            .eq("workspace_id", workspaceId)
+            .eq("status", "confirmed")
+            .gte("start_at", now.toISOString())
+            .lte("start_at", in7.toISOString())
+            .order("start_at", { ascending: true })
+            .limit(10),
+        ),
+      ),
+      safe(
         supabase
           .from("activities")
-          .select("id, type, created_at")
+          .select("id, subject, due_date, type, completed")
           .eq("workspace_id", workspaceId)
-          .gte("created_at", d14.toISOString())
-          .limit(5000),
+          .eq("owner_id", userId)
+          .eq("completed", false)
+          .not("due_date", "is", null)
+          .order("due_date", { ascending: true })
+          .limit(12),
       ),
-      mine(
-        supabase
-          .from("activities")
-          .select("related_deal_id, created_at")
-          .eq("workspace_id", workspaceId)
-          .not("related_deal_id", "is", null)
-          .gte("created_at", d30.toISOString())
-          .limit(10000),
+      safe(
+        mine(
+          supabase
+            .from("goals")
+            .select(
+              "id, metric, target_value, period_start, period_end, pipeline_id, target_user_id",
+            )
+            .eq("workspace_id", workspaceId)
+            .eq("metric", "deals_won_value")
+            .lte("period_start", isoDay(monthEnd))
+            .gte("period_end", isoDay(monthStart)),
+        ),
       ),
-      mine(
-        supabase
-          .from("meetings")
-          .select("id, title, scheduled_at, status, public_token, related_deal_id")
-          .eq("workspace_id", workspaceId)
-          .gte("scheduled_at", now.toISOString())
-          .lte("scheduled_at", in7.toISOString())
-          .not("status", "in", '("cancelled","canceled")')
-          .order("scheduled_at", { ascending: true })
-          .limit(10),
-      ),
-      mine(
-        supabase
-          .from("bookings")
-          .select("id, invitee_name, invitee_email, start_at, meet_link, status")
-          .eq("workspace_id", workspaceId)
-          .eq("status", "confirmed")
-          .gte("start_at", now.toISOString())
-          .lte("start_at", in7.toISOString())
-          .order("start_at", { ascending: true })
-          .limit(10),
-      ),
-      supabase
-        .from("activities")
-        .select("id, subject, due_date, type, completed")
-        .eq("workspace_id", workspaceId)
-        .eq("owner_id", userId)
-        .eq("completed", false)
-        .not("due_date", "is", null)
-        .order("due_date", { ascending: true })
-        .limit(12),
-      mine(
-        supabase
-          .from("goals")
-          .select("id, metric, target_value, period_start, period_end, pipeline_id, target_user_id")
-          .eq("workspace_id", workspaceId)
-          .eq("metric", "deals_won_value")
-          .lte("period_start", isoDay(monthEnd))
-          .gte("period_end", isoDay(monthStart)),
-      ),
-      mine(
-        supabase
-          .from("leads")
-          .select("id, first_name, last_name, company_name, status, updated_at")
-          .eq("workspace_id", workspaceId)
-          .in("status", ["new", "contacted", "nurturing"])
-          .order("updated_at", { ascending: true })
-          .limit(500),
+      safe(
+        mine(
+          supabase
+            .from("leads")
+            .select("id, first_name, last_name, company_name, status, updated_at")
+            .eq("workspace_id", workspaceId)
+            .in("status", ["new", "contacted", "nurturing"])
+            .order("updated_at", { ascending: true })
+            .limit(500),
+        ),
       ),
     ]);
 

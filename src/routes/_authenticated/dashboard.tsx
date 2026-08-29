@@ -7,6 +7,7 @@ import { z } from "zod";
 import { BarChart3, Briefcase, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { EmptyState, PageHeader, Skeletons } from "@/components/techhire/ui";
 import { getSalesDashboard } from "@/lib/deals/sales-dashboard.functions";
 import type {
@@ -41,12 +42,25 @@ function DashboardPage() {
   const pipelineId = search.pipeline ?? null;
   const scope: SalesDashboardScope = search.scope ?? "me";
 
+  const userId = useCurrentUserId();
   const fetchDashboard = useServerFn(getSalesDashboard);
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["sales-dashboard", periodDays, pipelineId, scope],
-    queryFn: () => fetchDashboard({ data: { periodDays, pipelineId, scope } }),
+    queryFn: async () => {
+      const result = await fetchDashboard({ data: { periodDays, pipelineId, scope } });
+      if (!result) {
+        throw new Error(
+          "Sessão expirada ou indisponível. Entre novamente ou tente atualizar o painel.",
+        );
+      }
+      return result;
+    },
+    enabled: !!userId,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
     staleTime: 60_000,
   });
+  const loading = isLoading || !userId;
 
   const header = (
     <PageHeader
@@ -103,12 +117,12 @@ function DashboardPage() {
         scope={data?.effectiveScope ?? scope}
         onScopeChange={(v) => navigate({ search: (s) => ({ ...s, scope: v }) })}
         canViewTeam={data?.canViewTeam ?? false}
-        disabled={isLoading}
+        disabled={loading}
       />
 
       <OnboardingChecklist />
 
-      {isLoading ? (
+      {loading ? (
         <DashboardSkeleton />
       ) : isError ? (
         <EmptyState
