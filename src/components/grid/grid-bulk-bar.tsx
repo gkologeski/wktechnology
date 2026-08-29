@@ -142,8 +142,8 @@ export function GridBulkBar<T extends { id: string }>({
         isSelectingAll={isSelectingAll}
       >
         {csvEnabled && (
-          <Button variant="outline" size="sm" onClick={exportCsv}>
-            Exportar selecionados
+          <Button variant="outline" size="sm" disabled={exporting} onClick={() => void exportCsv()}>
+            {exporting ? "Exportando…" : "Exportar selecionados"}
           </Button>
         )}
         {canBulkEdit && (
