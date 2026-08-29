@@ -33,6 +33,8 @@ import {
 } from "@/lib/people/wellbeing.functions";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
+import type { BulkField } from "@/components/bulk-edit-dialog";
+
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
@@ -61,6 +63,29 @@ const SEV_TONE: Record<IncidentSeverity, string> = {
   high: "bg-orange-500/15 text-orange-700 border-orange-500/30",
   critical: "bg-rose-500/15 text-rose-700 border-rose-500/30",
 };
+
+// Campos de edição em massa de incidentes (tabela fora do catálogo dinâmico),
+// compartilhados entre a tabela e o quadro.
+const INCIDENT_BULK_EDIT_FIELDS: BulkField[] = [
+  {
+    name: "severity",
+    label: "Severidade",
+    type: "select",
+    options: INCIDENT_SEVERITIES.map((s) => ({
+      value: s,
+      label: INCIDENT_SEVERITY_LABELS[s],
+    })),
+  },
+  {
+    name: "status",
+    label: "Status",
+    type: "select",
+    options: Object.entries(INCIDENT_STATUS_LABELS).map(([value, label]) => ({
+      value,
+      label: String(label),
+    })),
+  },
+];
 
 function IncidentsListPage() {
   const qc = useQueryClient();
@@ -141,26 +166,7 @@ function IncidentsListPage() {
             "techpeople.incidents.delete.workspace",
             "techpeople.incidents.delete.own",
           ])}
-          bulkEditFields={[
-            {
-              name: "severity",
-              label: "Severidade",
-              type: "select",
-              options: INCIDENT_SEVERITIES.map((s) => ({
-                value: s,
-                label: INCIDENT_SEVERITY_LABELS[s],
-              })),
-            },
-            {
-              name: "status",
-              label: "Status",
-              type: "select",
-              options: Object.entries(INCIDENT_STATUS_LABELS).map(([value, label]) => ({
-                value,
-                label: String(label),
-              })),
-            },
-          ]}
+          bulkEditFields={INCIDENT_BULK_EDIT_FIELDS}
         />
       )}
 
@@ -170,6 +176,7 @@ function IncidentsListPage() {
           table="people_incidents"
           stageField="status"
           selectable
+          bulkEditFields={INCIDENT_BULK_EDIT_FIELDS}
           entityLabel="incidente"
           canDelete={canAny([
             "techpeople.wellbeing.incidents.delete.workspace",

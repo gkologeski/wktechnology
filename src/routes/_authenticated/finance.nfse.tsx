@@ -149,6 +149,7 @@ function NfseListPage() {
           table="nfse_invoices"
           stageField="status"
           selectable
+          bulkEditFields={[{ name: "service_code", label: "Código de serviço", type: "text" }]}
           entityLabel="NFS-e"
           canDelete={false}
           readOnly
