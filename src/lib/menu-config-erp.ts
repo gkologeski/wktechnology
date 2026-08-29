@@ -56,7 +56,6 @@ export const WORKSPACE_ROUTE_PREFIXES: readonly string[] = [
   "/account",
   "/admin",
   "/marketplace",
-  "/settings/marketplace",
   "/invoices",
   "/files",
 ];
