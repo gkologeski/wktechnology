@@ -631,7 +631,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         permissionAny: adminAny("system.linkedin"),
       },
       {
-        to: "/settings/integrations/$slug",
+        to: "/settings/integrations/hubspot",
         label: "Sync HubSpot",
         icon: RefreshCw,
         need: "admin",
