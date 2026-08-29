@@ -12,7 +12,9 @@ import { useAuth } from "@/lib/auth";
 import { useAutoCreateParam } from "@/hooks/use-auto-create-param";
 import { useEnsureDefaultPipeline } from "@/lib/pipelines";
 import { toast } from "sonner";
-import { useLeadStages, deriveLeadStatus, findLeadStage } from "@/lib/leads/stages";
+import { useLeadStages } from "@/lib/leads/stages";
+import { stageOrExpr, stagesOrExpr } from "@/lib/leads/stage-query";
+
 import { usePipelineSubstatuses } from "@/lib/pipelines/substatuses";
 
 import type { Lead } from "@/lib/db-types";
