@@ -232,6 +232,11 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
     // ficam no bloco recolhido para não parecerem campos repetidos.
     const legacySystemFields = LEGACY_SYSTEM_FIELDS;
 
+    // Quando a entidade tem `stage_id` (etapa real do pipeline), a coluna
+    // legada `stage` (enum fixo) não deve ser oferecida como propriedade
+    // editável: escolher nela um slug de pipeline quebraria o enum.
+    const hasStageId = allRows.some((r) => r.column_name === "stage_id");
+
     const fields: EntityFieldDef[] = [];
     for (const r of allRows) {
       const isPipelineStageField =
@@ -252,7 +257,9 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       };
       if (systemFields.has(r.column_name) || legacySystemFields.has(r.column_name))
         def.system = true;
+      if (r.column_name === "stage" && hasStageId) def.system = true;
       if (isContracts && r.column_name === "body_html") def.richText = true;
+
 
       const ref = REF_COLUMNS[r.column_name];
       if (ref) {
