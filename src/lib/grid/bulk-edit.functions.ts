@@ -21,7 +21,6 @@ import {
   stageOfType,
 } from "@/lib/pipelines/stage-resolve";
 
-
 export const bulkUpdateEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -82,7 +81,6 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
       }
     }
 
-
     const uniqueIds = Array.from(new Set(data.ids));
 
     // Coerência pipeline → etapa: uma etapa de outro pipeline deixaria o
@@ -123,7 +121,6 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
           updated: 0,
         };
       }
-
 
       const incoherent = checkStageCoherence(stages, {
         stage: payload["stage"],

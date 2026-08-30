@@ -260,7 +260,6 @@ export const getEntityFieldCatalog = createServerFn({ method: "POST" })
       if (r.column_name === "stage" && hasStageId) def.system = true;
       if (isContracts && r.column_name === "body_html") def.richText = true;
 
-
       const ref = REF_COLUMNS[r.column_name];
       if (ref) {
         // Referência: seletor com busca por nome; grava o ID e nunca lista hashes.
