@@ -24,6 +24,11 @@ const LEGACY_STAGE_ENUM = new Set([
   "nurturing",
 ]);
 
+/** `true` quando o valor é aceito pelo enum legado da coluna `stage`. */
+export function isLegacyStageValue(value: string): boolean {
+  return LEGACY_STAGE_ENUM.has(value);
+}
+
 /** Lê as etapas de um pipeline vindas do jsonb `pipelines.stages`. */
 export function parseStages(raw: unknown): StageDef[] {
   if (!Array.isArray(raw)) return [];
