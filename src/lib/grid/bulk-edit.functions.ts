@@ -61,6 +61,28 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
       throw e;
     }
 
+    // Defesa em profundidade: se vier a coluna legada `stage` com um slug de
+    // pipeline (ex.: "contract"), trata como etapa real e move para `stage_id`
+    // — gravar o slug no enum `deal_stage` falharia no banco.
+    if (PIPELINE_ENTITIES.has(data.entity) && payload["stage"] != null) {
+      const legacyValue = String(payload["stage"]);
+      if (!isLegacyStageValue(legacyValue) && columnTypes.has("stage_id")) {
+        const currentStageId = payload["stage_id"];
+        if (currentStageId != null && String(currentStageId) !== legacyValue) {
+          return {
+            ok: false as const,
+            message:
+              "Valores de etapa conflitantes foram enviados. Selecione apenas a etapa do pipeline.",
+            requested: data.ids.length,
+            updated: 0,
+          };
+        }
+        payload["stage_id"] = legacyValue;
+        delete payload["stage"];
+      }
+    }
+
+
     const uniqueIds = Array.from(new Set(data.ids));
 
     // Coerência pipeline → etapa: uma etapa de outro pipeline deixaria o
