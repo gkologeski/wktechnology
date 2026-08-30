@@ -13,12 +13,14 @@ import {
 import {
   PIPELINE_ENTITIES,
   checkStageCoherence,
+  isLegacyStageValue,
   isStageOfPipeline,
   legacyStageFor,
   parseStages,
   resolveStageForPipeline,
   stageOfType,
 } from "@/lib/pipelines/stage-resolve";
+
 
 export const bulkUpdateEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
