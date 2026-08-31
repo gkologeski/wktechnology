@@ -14,6 +14,10 @@ import { DealsBoardCard } from "./deals-board-card";
 import { KanbanScrollContainer } from "@/components/kanban/kanban-scroll-container";
 import { LostReasonDialog, type LostReasonResult } from "@/components/deals/lost-reason-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
+import { startFocusQueue } from "@/lib/focus-queue";
 import { useBoardSelection } from "@/components/kanban/use-board-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 
@@ -46,6 +50,7 @@ export function DealsBoard({
   onOpen: (d: Deal) => void;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const selection = useBoardSelection(deals);
 
   const signals = useMemo(
@@ -279,6 +284,22 @@ export function DealsBoard({
           canDelete={canDelete}
           onClear={selection.clear}
           onDone={() => void qc.invalidateQueries({ queryKey: ["deals"] })}
+          extraActions={
+            <Button
+              variant="outline"
+              size="sm"
+              title="Percorrer os negócios selecionados, um a um"
+              onClick={() => {
+                const ids = selection.ids;
+                if (!ids.length) return toast.error("Nenhum negócio selecionado.");
+                startFocusQueue("deals", ids, `Negócios · ${ids.length.toLocaleString("pt-BR")}`);
+                toast.success(`Fila iniciada com ${ids.length} negócio(s)`);
+                void navigate({ to: "/deals/$id", params: { id: ids[0] } });
+              }}
+            >
+              <Play className="mr-1 h-4 w-4" /> Iniciar fila
+            </Button>
+          }
         />
       )}
 
