@@ -22,7 +22,14 @@ import {
 } from "@/components/ui/select";
 import { Link } from "@tanstack/react-router";
 import { AssigneeCell } from "@/components/entity/assignee-cell";
+import {
+  AssigneeFilter,
+  ASSIGNEE_ALL,
+  ASSIGNEE_ME,
+  ASSIGNEE_NONE,
+} from "@/components/entity/assignee-filter";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { responsibleId } from "@/lib/entity/responsible";
 import { listRecentCaptures, assignCandidatesResponsible } from "@/lib/ats/hunting.functions";
 import { enrichCapturesBulk } from "@/lib/ats/hunting-enrich.functions";
