@@ -130,7 +130,10 @@ Referência: `docs/techhire-design-system.md` e
 ## 7. Comandos
 
 ```bash
-bun run typecheck     # tsc --noEmit (lento; ~30s+ — ver armadilhas)
+bun run typecheck     # tsgo --noEmit (~25s, sem depender de cache) — use em CI
+bun run typecheck:inc # tsc --noEmit --incremental (~6s com cache quente) — laço curto
+bun run typecheck:tsc # tsc --noEmit completo — validação cruzada
+bun run verify        # typecheck + lint em paralelo, depois test
 bun run lint          # eslint .
 bun run build         # produção
 bun run build:dev     # build de desenvolvimento (valida prerender)
@@ -141,8 +144,11 @@ bun run format        # prettier
 
 ## 8. Armadilhas conhecidas
 
-- **Typecheck lento**: evite selects Supabase gigantes inline; use helpers de
-  projeção existentes e tipos de `src/lib/db-types.ts`.
+- **Typecheck lento**: o cache incremental fica em `.tscache/` (fora de
+  `node_modules`, então sobrevive a `bun install`). Sem cache, `tsc` leva
+  ~2m25s; com cache, ~6s; `tsgo` leva ~25s sempre. Evite também selects
+  Supabase gigantes inline; use helpers de projeção existentes e tipos de
+  `src/lib/db-types.ts`.
 - **Erros transitórios do banco** (`schema cache`, `statement timeout`): use
   `withTransientRetry` de `src/lib/db/transient-retry.ts`.
 - **Exclusão silenciosa por RLS**: `delete-guard.ts` (item 4 acima).
