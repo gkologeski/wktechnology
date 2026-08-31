@@ -50,6 +50,7 @@ export function DealsBoard({
   onOpen: (d: Deal) => void;
 }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const selection = useBoardSelection(deals);
 
   const signals = useMemo(
