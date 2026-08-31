@@ -221,11 +221,17 @@ export function DealsBoardCard({
             <div className="flex items-center gap-2 min-w-0">
               <div
                 className={`flex items-center gap-1 text-xs ${overdue ? "text-destructive" : "text-[var(--hs-text-muted)]"}`}
-                title="Data prevista de fechamento"
+                title={
+                  deal.expected_close_date
+                    ? `Data prevista de fechamento: ${formatDate(deal.expected_close_date)}`
+                    : "Data prevista de fechamento"
+                }
               >
                 <CalendarDays className="h-3 w-3" />
-                <span>
-                  {deal.expected_close_date ? formatDate(deal.expected_close_date) : "Sem data"}
+                <span className="whitespace-nowrap">
+                  {deal.expected_close_date
+                    ? formatCompactDateTime(deal.expected_close_date, "Sem data")
+                    : "Sem data"}
                 </span>
               </div>
               {nextActivityDate && (
@@ -235,10 +241,12 @@ export function DealsBoardCard({
                       ? "text-destructive"
                       : "text-[var(--hs-text-muted)]"
                   }`}
-                  title="Próxima atividade em aberto"
+                  title={`Próxima atividade em aberto: ${formatDate(nextActivityDate)}`}
                 >
                   <Clock className="h-3 w-3" />
-                  <span>{formatDate(nextActivityDate)}</span>
+                  <span className="whitespace-nowrap">
+                    {formatCompactDateTime(nextActivityDate)}
+                  </span>
                 </div>
               )}
             </div>
