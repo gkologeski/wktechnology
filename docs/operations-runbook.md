@@ -114,3 +114,28 @@ Variáveis descontinuadas e **removidas** do ambiente:
 - `UNIPILE_API_VERSION` — não há mais seleção de versão; o cliente fala apenas v2.
 
 Se qualquer uma delas for recriada, será ignorada pelo código.
+
+## 10. Contenção de escopo em manutenção (regra operacional)
+
+Regra adotada na Fase 4 de endurecimento. Vale para qualquer correção,
+refatoração ou tarefa de UX/UI:
+
+1. **Escopo declarado antes da edição.** Liste as tabelas, rotas e arquivos que
+   a tarefa pode tocar. O que não está na lista não é alterado no mesmo ciclo.
+2. **Mudanças aditivas por padrão.** Nada de `DROP`/`RENAME` de coluna ou
+   tabela, nem troca de tipo: coluna nova nullable → backfill → troca do código
+   → `NOT NULL` em migration posterior.
+3. **Exclusões sempre verificadas.** Todo `DELETE` de registro de negócio usa
+   `deleteByIdGuarded`/`deleteWhereGuarded` (`src/lib/db/delete-guarded.ts`),
+   porque RLS nega em silêncio. Limpezas idempotentes de filhos são a única
+   exceção e precisam de comentário explicando por que 0 linhas é válido.
+4. **RLS, autenticação e schema fora de tarefa de UI.** Se a correção de UI
+   revelar um furo de permissão, abra item próprio em
+   `docs/backlog-pendencias.md` em vez de misturar no mesmo diff.
+5. **Validação obrigatória antes de fechar:** `bun run typecheck:inc`,
+   `bun run lint`, `bun run test` e, quando o diff toca permissão/exclusão,
+   `bunx playwright test tests/e2e/permission-visibility-roles.spec.ts`.
+6. **Sessão para E2E.** Além de `E2E_USER_EMAIL`/`E2E_USER_PASSWORD`, o helper
+   aceita a sessão injetada pelo ambiente
+   (`LOVABLE_BROWSER_SUPABASE_SESSION_JSON`). Aponte `E2E_BASE_URL` para
+   `http://localhost:8080` ao rodar contra o preview local.

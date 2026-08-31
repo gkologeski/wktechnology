@@ -2,7 +2,7 @@
 
 > Documento de referência para avaliação futura. Fontes auditadas:
 > `docs/roadmap.md`, `docs/releases-12-21-scope.md`, `docs/hubspot-feature-map.md`, `.lovable/plan.md`.
-> Última atualização: 2026-07-21.
+> Última atualização: 2026-07-21 (Fase 4 — endurecimento de exclusões e E2E de permissões).
 
 ## 0. Workflows cross-módulo (entregue 2026-07-21)
 
@@ -109,3 +109,26 @@ Enquanto a Fase 3 do plano de redução de tempo de implementação não termina
 ficam congeladas. Itens de paridade HubSpot permanecem no backlog sem
 priorização. Correções de bug e polimento de UI seguem, agrupados em um plano
 semanal único (ver `docs/plan-templates.md`).
+
+## 9. Fase 4 — endurecimento (2026-07-21)
+
+Concluído:
+
+- `deleteByIdGuarded`/`deleteWhereGuarded` aplicados em ATS, People, Contratos,
+  Projetos, Finanças, Cotações e Pipelines (193 → 142 pontos sem verificação).
+- Limpezas idempotentes intencionais anotadas no código
+  (`contract_template_services`, `ats_candidate_flags`).
+- `tests/e2e/permission-visibility-roles.spec.ts` executado: 6 passaram,
+  1 ignorado por exigir admin de plataforma.
+- Bug corrigido: derivação de `workspace_id` em `people_events`
+  (migration `0002_fix_people_events_workspace_derivation`).
+- Runbook ganhou a seção 10 (contenção de escopo em manutenção).
+
+Congelado / pendente (avaliar depois, sem trabalho em andamento):
+
+- 142 pontos de `.delete()` remanescentes, concentrados em tabelas de
+  configuração e junção (`teams`, `access-control`, `workspace-invites`,
+  `custom-objects`, `dashboards`, SCIM). Migrar por módulo, não em lote.
+- Contas de teste E2E por papel (manager e member) para rodar o spec de
+  permissões em todos os níveis.
+- `R-01` (payment link Stripe) e `R-02` (Outlook Calendar) seguem como antes.
