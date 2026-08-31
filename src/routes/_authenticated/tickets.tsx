@@ -241,7 +241,14 @@ function TicketsIndex() {
     let list = filterByView(tickets, view, user?.id ?? null);
     if (pipeline?.id) list = list.filter((t) => !t.pipeline_id || t.pipeline_id === pipeline.id);
     if (priorityFilter !== "all") list = list.filter((t) => t.priority === priorityFilter);
-    if (ownerFilter !== "all") list = list.filter((t) => ticketResponsibleId(t) === ownerFilter);
+    if (ownerFilter !== ASSIGNEE_ALL) {
+      list = list.filter((t) => {
+        const responsible = ticketResponsibleId(t);
+        if (ownerFilter === ASSIGNEE_NONE) return responsible == null;
+        if (ownerFilter === ASSIGNEE_ME) return !!user?.id && responsible === user.id;
+        return responsible === ownerFilter;
+      });
+    }
     const q = search.trim().toLowerCase();
     if (q) {
       list = list.filter((t) => {
