@@ -300,9 +300,7 @@ export function EntriesListPage({
                 <span className="tabular-nums font-medium text-foreground">
                   {formatCurrency(Number(e.amount), e.currency)}
                 </span>
-                <span className="text-muted-foreground">
-                  {formatCompactDateTime(e.due_date)}
-                </span>
+                <span className="text-muted-foreground">{formatCompactDateTime(e.due_date)}</span>
               </div>
               <Badge variant="outline" className={STATUS_TONE[e.status] ?? ""}>
                 {STATUS_LABEL[e.status] ?? e.status}
