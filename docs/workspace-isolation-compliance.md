@@ -148,19 +148,36 @@ tabelas de `public`:
   as tornava inalcançáveis pela Data API: `calendar_accounts`, `email_accounts`,
   `outbound_webhooks` e `profiles`. Corrigido por migration (GRANT alinhado às
   políticas existentes, sem alteração de política).
-- `payment_webhook_events` permanece **sem política e sem acesso para
-  `authenticated`/`anon`** de forma intencional: é gravada apenas por webhooks
-  server-side com `service_role`. O aviso "RLS enabled, no policy" do linter é
-  postura aceita para essa tabela.
+- `payment_webhook_events` permanece **sem política** de forma intencional: é
+  gravada apenas por webhooks server-side com `service_role`. Havia ainda um
+  GRANT residual de leitura para `anon`/`authenticated`; ele foi revogado na
+  migration `0001_harden_payment_webhook_events_grants` (apenas `service_role`
+  tem acesso). O aviso "RLS enabled, no policy" do linter é postura aceita.
 
 Avisos de `SECURITY DEFINER` executável por `anon`/`authenticated` reportados pelo
 linter são pré-existentes e correspondem às funções de RBAC (`has_role`,
 `user_can_act`, `current_user_permissions`), que **precisam** ser chamáveis pelo
 usuário logado; as demais são helpers internos usados por policies.
 
+## 7. Exclusões com verificação de linhas afetadas
+
+Quando a RLS nega um `DELETE`, o PostgREST **não** retorna erro — a operação
+apenas afeta 0 linhas. Guardas:
+
+- Cliente: `deleteRowGuarded` / `deleteRowsGuarded` / `deniedIfUnaffected` /
+  `reportBulkDelete` em `src/lib/delete-guard.ts`.
+- Server functions: `deleteByIdGuarded` em `src/lib/db/delete-guarded.ts`
+  (aplicado em Projetos, Finanças, Cotações, Modelos de contrato, Entregas,
+  Resumos de IA, Comentários de atividade e Pipelines).
+
+Regra para código novo: nenhum `DELETE` sem `.select("id")` + verificação do
+número de linhas afetadas.
+
 ### Pendente da Fase 3
 
-- Testes E2E de visibilidade por papel (admin/manager/member) além do já
-  existente `tests/e2e/permission-visibility.spec.ts`.
-- Revisão final dos fluxos de exclusão/edição que ainda não usam
-  `deleteRowGuarded` / `handle-permission-error`.
+- Ampliar a cobertura de `deleteByIdGuarded` nos demais fluxos de exclusão em
+  server functions (levantamento: ~170 pontos ainda sem verificação, a maioria
+  em tabelas de configuração/satélite).
+- Rodar `tests/e2e/permission-visibility-roles.spec.ts` com credenciais de
+  admin, manager e member (requer `E2E_USER_EMAIL`/`E2E_USER_PASSWORD` por
+  papel; ainda não executado neste ambiente).
