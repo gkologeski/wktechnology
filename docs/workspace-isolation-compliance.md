@@ -178,6 +178,35 @@ número de linhas afetadas.
 - Ampliar a cobertura de `deleteByIdGuarded` nos demais fluxos de exclusão em
   server functions (levantamento: ~170 pontos ainda sem verificação, a maioria
   em tabelas de configuração/satélite).
-- Rodar `tests/e2e/permission-visibility-roles.spec.ts` com credenciais de
-  admin, manager e member (requer `E2E_USER_EMAIL`/`E2E_USER_PASSWORD` por
-  papel; ainda não executado neste ambiente).
+- Rodar `tests/e2e/permission-visibility-roles.spec.ts` também com credenciais
+  de manager e member. O spec descobre as permissões efetivas do usuário logado
+  via `current_user_permissions(_workspace_id)`, então serve para qualquer papel
+  sem variantes de código — falta apenas provisionar contas de teste por papel.
+
+## 6. Execução do spec de permissões (2026-07-21)
+
+`tests/e2e/permission-visibility-roles.spec.ts` e `permission-visibility.spec.ts`
+foram executados contra `http://localhost:8080`: **6 passaram, 1 ignorado**.
+
+- O helper `tests/e2e/helpers/auth.ts` aceita agora a sessão já emitida pelo
+  ambiente (`LOVABLE_BROWSER_SUPABASE_SESSION_JSON`) como alternativa ao
+  password grant, o que destrava a execução onde só existe sessão.
+- O teste "registros de workspace do qual o usuário saiu somem" fica ignorado
+  para papéis não-plataforma: a policy `ws_insert_platform` restringe
+  `INSERT` em `workspaces` a admin de plataforma (comportamento desejado).
+- O spec revelou um bug real em `people_child_sync_workspace_id`, que copiava
+  `owner_id` (user id) para `workspace_id` e violava
+  `people_events_workspace_id_fkey`, impedindo o cadastro de pessoas. Corrigido
+  na migration `0002_fix_people_events_workspace_derivation`: a derivação passa
+  a usar o workspace da pessoa, com fallback legado apenas quando o `owner_id`
+  existe em `workspaces`.
+
+## 7. Exclusões verificadas — cobertura atual
+
+`deleteByIdGuarded` / `deleteWhereGuarded` (`src/lib/db/delete-guarded.ts`)
+cobrem agora ATS, People, Contratos, Projetos, Finanças, Cotações e Pipelines:
+os pontos de `.delete()` sem verificação caíram de 193 para 142, e os
+remanescentes são majoritariamente tabelas de configuração/junção e limpezas
+idempotentes (sincronização de filhos), onde 0 linhas afetadas é resultado
+válido. Esses casos ficam anotados no código com o motivo (ex.:
+`contract_template_services`, `ats_candidate_flags`).
