@@ -176,7 +176,10 @@ function HuntingCapturesPage() {
                 <div className="ml-auto">
                   <AssigneeFilter
                     value={assigneeFilter}
-                    onChange={setAssigneeFilter}
+                    onChange={(v) => {
+                      setSelected(new Set());
+                      setAssigneeFilter(v);
+                    }}
                     className="h-8 w-52"
                   />
                 </div>
