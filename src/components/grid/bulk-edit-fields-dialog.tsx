@@ -440,7 +440,9 @@ export function BulkEditFieldsDialog({
 
   const allFields = useMemo(
     () =>
-      dedupeAliasFields((catalog.data?.fields ?? []).filter((f) => !isBulkEditDeniedColumn(f.name))),
+      dedupeAliasFields(
+        (catalog.data?.fields ?? []).filter((f) => !isBulkEditDeniedColumn(f.name)),
+      ),
     [catalog.data],
   );
 
@@ -455,10 +457,7 @@ export function BulkEditFieldsDialog({
       : grouped;
   }, [allFields, priorityFields]);
 
-  const fieldByName = useMemo(
-    () => new Map(allFields.map((f) => [f.name, f])),
-    [allFields],
-  );
+  const fieldByName = useMemo(() => new Map(allFields.map((f) => [f.name, f])), [allFields]);
 
   const usedNames = useMemo(
     () => new Set(rows.map((r) => r.name).filter((n): n is string => !!n)),
@@ -644,9 +643,7 @@ export function BulkEditFieldsDialog({
                       groups={groups}
                       value={field}
                       usedNames={usedNames}
-                      onSelect={(f) =>
-                        patchRow(row.key, { name: f.name, value: "", deps: {} })
-                      }
+                      onSelect={(f) => patchRow(row.key, { name: f.name, value: "", deps: {} })}
                     />
                   </div>
 

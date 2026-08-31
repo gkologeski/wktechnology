@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 function token() {
   return randomBytes(24).toString("hex");
@@ -260,8 +261,7 @@ export const deleteQuote = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("quotes").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "quotes", data.id);
     return { ok: true };
   });
 

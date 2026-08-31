@@ -232,7 +232,6 @@ export function StageSubstatusesEditor({
         </Suspense>
       )}
 
-
       {q.isLoading && <p className="text-xs text-muted-foreground">Carregando substatus…</p>}
       {q.error && (
         <p className="text-xs text-destructive" role="alert">

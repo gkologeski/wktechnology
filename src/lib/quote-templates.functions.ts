@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { blocksToHtml, isTemplateDocument } from "@/lib/quote-template-blocks";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 async function activeWorkspace(supabase: SupabaseClient, userId: string): Promise<string> {
   const { data } = await supabase
@@ -165,8 +166,7 @@ export const deleteQuoteTemplate = createServerFn({ method: "POST" })
     if (!current) throw new Error("Modelo não encontrado");
     if (current.is_system) throw new Error("Modelos do sistema não podem ser excluídos.");
 
-    const { error } = await supabase.from("quote_templates").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "quote_templates", data.id);
     return { ok: true };
   });
 

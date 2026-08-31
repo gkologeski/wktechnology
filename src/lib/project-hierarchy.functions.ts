@@ -5,6 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const categoryEnum = z.enum(["todo", "doing", "done"]);
 const priorityEnum = z.enum(["low", "normal", "high", "urgent"]);
@@ -106,8 +107,7 @@ export const deleteSpace = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_spaces").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_spaces", data.id);
     return { ok: true };
   });
 
@@ -144,8 +144,7 @@ export const deleteFolder = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_folders").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_folders", data.id);
     return { ok: true };
   });
 
@@ -272,8 +271,7 @@ export const deleteList = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_lists").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_lists", data.id);
     return { ok: true };
   });
 
@@ -381,8 +379,7 @@ export const deleteStatus = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_task_statuses").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_task_statuses", data.id);
     return { ok: true };
   });
 
@@ -520,7 +517,6 @@ export const deleteListTask = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_tasks").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_tasks", data.id);
     return { ok: true };
   });

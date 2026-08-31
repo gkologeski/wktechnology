@@ -32,7 +32,12 @@ const SIDEBAR_MANAGER_PLUS = [
 ];
 
 // Itens de Configurações por need esperado
-const SETTINGS_PUBLIC = ["/settings", "/settings/email", "/settings/security", "/settings/my-tickets"];
+const SETTINGS_PUBLIC = [
+  "/settings",
+  "/settings/email",
+  "/settings/security",
+  "/settings/my-tickets",
+];
 const SETTINGS_MANAGER_PLUS = [
   "/settings/calendars",
   "/settings/user-groups",

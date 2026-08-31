@@ -14,6 +14,7 @@ import { formatDateTime } from "@/lib/crm";
 import { toast } from "sonner";
 import { notifyActivityCommentEvent } from "@/lib/notifications.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 type CommentRow = {
   id: string;
@@ -201,8 +202,7 @@ export function ActivityComments({ activityId, workspaceId, team, disabled }: Pr
   const removeOne = async (c: CommentRow) => {
     if (!(await confirmDialog("Excluir este comentário?"))) return;
     try {
-      const { error } = await supabase.from("activity_comments").delete().eq("id", c.id);
-      if (error) throw error;
+      await deleteByIdGuarded(supabase, "activity_comments", c.id);
       setItems((prev) => prev.filter((r) => r.id !== c.id));
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Falha ao excluir");

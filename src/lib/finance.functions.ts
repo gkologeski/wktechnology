@@ -4,6 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const directionEnum = z.enum(["receivable", "payable"]);
 const originEnum = z.enum(["contract", "service", "project_milestone", "manual", "expense"]);
@@ -194,8 +195,7 @@ export const deleteFinancialEntry = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("financial_entries").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "financial_entries", data.id);
     return { ok: true };
   });
 
@@ -246,8 +246,7 @@ export const deletePayment = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("financial_payments").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "financial_payments", data.id);
     return { ok: true };
   });
 
@@ -317,8 +316,7 @@ export const deleteCategory = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("financial_categories").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "financial_categories", data.id);
     return { ok: true };
   });
 

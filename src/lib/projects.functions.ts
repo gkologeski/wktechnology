@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const projectStatusEnum = z.enum(["planning", "active", "on_hold", "done", "cancelled"]);
 const taskStatusEnum = z.enum(["todo", "doing", "review", "done"]);
@@ -179,8 +180,7 @@ export const deleteProject = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techprojects.projects.delete.workspace",
     ]);
-    const { error } = await supabase.from("projects").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "projects", data.id);
     return { ok: true };
   });
 
@@ -287,8 +287,7 @@ export const deleteTask = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techprojects.tasks.delete.workspace",
     ]);
-    const { error } = await supabase.from("project_tasks").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_tasks", data.id);
     return { ok: true };
   });
 
@@ -413,8 +412,7 @@ export const deleteMilestone = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_milestones").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_milestones", data.id);
     return { ok: true };
   });
 
@@ -550,8 +548,7 @@ export const deleteTimeEntry = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_time_entries").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_time_entries", data.id);
     return { ok: true };
   });
 
@@ -635,8 +632,7 @@ export const removeMember = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { error } = await supabase.from("project_members").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "project_members", data.id);
     return { ok: true };
   });
 

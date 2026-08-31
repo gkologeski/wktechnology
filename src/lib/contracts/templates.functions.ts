@@ -9,6 +9,7 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import { mergeTemplateBody } from "@/lib/contracts/template-tokens";
 import type { Json } from "@/integrations/supabase/types";
+import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
 const VIEW = [
   "techcontracts.contract_templates.view.own",
@@ -233,8 +234,7 @@ export const deleteContractTemplate = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     await assertAnyPermission(supabase, userId, workspaceId, DELETE);
-    const { error } = await supabase.from("contract_templates").delete().eq("id", data.id);
-    if (error) throw error;
+    await deleteByIdGuarded(supabase, "contract_templates", data.id);
     return { ok: true };
   });
 
