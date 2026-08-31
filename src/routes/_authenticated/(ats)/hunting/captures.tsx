@@ -52,7 +52,19 @@ function HuntingCapturesPage() {
   });
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const captures = q.data?.captures ?? [];
+  const [assigneeFilter, setAssigneeFilter] = useState<string>(ASSIGNEE_ALL);
+  const meId = useCurrentUserId();
+  const allCaptures = q.data?.captures ?? [];
+  const captures = useMemo(() => {
+    if (assigneeFilter === ASSIGNEE_ALL) return allCaptures;
+    return allCaptures.filter((c) => {
+      const responsible = c.candidate ? responsibleId(c.candidate) : null;
+      if (assigneeFilter === ASSIGNEE_NONE) return responsible == null;
+      if (assigneeFilter === ASSIGNEE_ME) return !!meId && responsible === meId;
+      return responsible === assigneeFilter;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q.data?.captures, assigneeFilter, meId]);
   const allChecked = captures.length > 0 && selected.size === captures.length;
 
   const enrichMut = useMutation({
