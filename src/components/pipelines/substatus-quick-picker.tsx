@@ -105,6 +105,9 @@ export function SubstatusQuickPicker({
             </Button>
           ))}
         </div>
+        {!isLoading && options.length === 0 && (
+          <p className="px-2 py-1.5 text-xs text-muted-foreground">Nenhum substatus nesta etapa</p>
+        )}
         <Button
           variant="ghost"
           size="sm"
@@ -115,6 +118,7 @@ export function SubstatusQuickPicker({
           {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <span className="w-3" />}
           Sem substatus
         </Button>
+        <SubstatusManageHint className="mx-2 my-1.5" />
       </PopoverContent>
     </Popover>
   );
